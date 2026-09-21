@@ -13,6 +13,7 @@
  *   node scripts/trivia-audit.mjs --facts
  *   node scripts/trivia-audit.mjs --watch
  *   node scripts/trivia-audit.mjs --json
+ *   node scripts/trivia-audit.mjs --balance
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, readdirSync, statSync, watch, writeFileSync } from "node:fs";
@@ -1136,7 +1137,7 @@ export async function runAudit({ facts = false, allFacts = false, json = false, 
   if (json) {
     console.log(JSON.stringify(report, null, 2));
   } else {
-    console.log(`Trivia audit · ${items.length} plates · ${errors.length} errors · ${warnings.length} warnings`);
+    console.log(`Trivia audit · ${items.length} trivia cards · ${errors.length} errors · ${warnings.length} warnings`);
     for (const e of errors.slice(0, 40)) {
       console.log(`  ERR  ${e.where}  ${e.kind}  ${e.detail}`);
       console.log(`       ${e.q}`);
@@ -1145,7 +1146,7 @@ export async function runAudit({ facts = false, allFacts = false, json = false, 
     for (const w of warnings.slice(0, 20)) {
       console.log(`  WARN ${w.where}  ${w.detail}`);
     }
-    if (facts) console.log(`  facts checked this pass: ${fact.checked} (${fact.pending} lookup plates queued)`);
+    if (facts) console.log(`  facts checked this pass: ${fact.checked} (${fact.pending} lookup trivia cards queued)`);
   }
   return report;
 }
@@ -1174,7 +1175,7 @@ export function watchTrivia(opts = {}) {
       console.error(`watch failed on ${t}:`, err);
     }
   }
-  console.log("Trivia auditor watching banks. New or changed plates get a Wikipedia pass.");
+  console.log("Trivia auditor watching banks. New or changed trivia cards get a Wikipedia pass.");
   kick();
 }
 
@@ -1189,11 +1190,18 @@ if (isMain()) {
   const json = args.has("--json");
   const facts = args.has("--facts") || args.has("--watch");
   const allFacts = args.has("--all-facts");
+  const wantBalance = args.has("--balance") || args.has("--quotas");
   if (args.has("--watch")) {
     watchTrivia({ json: false, allFacts: false });
   } else {
-    runAudit({ facts, allFacts, json }).then((r) => {
-      process.exit(r.errors.length ? 1 : 0);
+    runAudit({ facts, allFacts, json }).then(async (r) => {
+      let fail = r.errors.length > 0;
+      if (wantBalance) {
+        const { runBalance } = await import("./trivia-balance.mjs");
+        const bal = runBalance({ json, warn: args.has("--warn"), check: true });
+        if (bal.fail) fail = true;
+      }
+      process.exit(fail ? 1 : 0);
     });
   }
 }

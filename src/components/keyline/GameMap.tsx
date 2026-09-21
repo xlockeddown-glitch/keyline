@@ -783,7 +783,7 @@ export function GameMap() {
         ? { lat: run.lat, lng: run.lng }
         : poiId === STACK_ID && st.stack && st.stack.readyAt === 0
           ? { lat: st.stack.lat, lng: st.stack.lng }
-          : CITIES[st.cityId].pois.find((p) => p.id === poiId);
+          : allPois(CITIES[st.cityId], st.blanks).find((p) => p.id === poiId);
     if (!poi) return;
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
     if (d > reach() || cabRef.current?.seated) {

@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import json
 import random
+import sys
 from pathlib import Path
 
 RNG = random.Random(20260919)
 OUT = Path("/workspace/src/game/banks")
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from trivia_quota import assert_bulk, clamp_diff
 
 
 def js(s: str) -> str:
@@ -59,19 +63,24 @@ class Rows:
 
 
 def emit(path: Path, export: str, rows: list) -> None:
+    clamped = []
+    for prompt, choices, answer, diff in rows:
+        d = clamp_diff(prompt, answer, diff, bank=path.stem)
+        clamped.append((prompt, choices, answer, d))
+    assert_bulk(clamped, bank=path.stem)
     lines = [
         'import { q } from "../quiz";',
         'import type { TriviaQ } from "../types";',
         "",
         f"export const {export}: TriviaQ[] = [",
     ]
-    for prompt, choices, answer, diff in rows:
+    for prompt, choices, answer, diff in clamped:
         ch = ", ".join(js(c) for c in choices)
         lines.append(f"  q({js(prompt)}, [{ch}], {js(answer)}, {diff}),")
     lines.append("];")
     lines.append("")
     path.write_text("\n".join(lines) + "\n")
-    print("wrote", path.name, "n=", len(rows))
+    print("wrote", path.name, "n=", len(clamped))
 
 
 def nature() -> None:

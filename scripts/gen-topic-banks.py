@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import json
 import random
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 RNG = random.Random(20260919)
 ROOT = Path("/workspace")
 OUT = ROOT / "src/game/banks"
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from trivia_quota import assert_bulk, clamp_diff
 
 
 def js(s: str) -> str:
@@ -44,6 +48,7 @@ class Rows:
         if answer not in choices or len(choices) != 4 or len(set(choices)) != 4:
             return
         self.seen.add(prompt)
+        diff = clamp_diff(prompt, answer, diff, bank="topic")
         self.rows.append((prompt, choices, answer, diff))
 
     def mc(self, prompt: str, answer: str, pool: list[str], diff: int) -> None:
@@ -81,19 +86,24 @@ def nearby(ans: int, spread: list[int] | None = None) -> list[str]:
 
 
 def emit_array(path: Path, export: str, rows: list[tuple[str, list[str], str, int]]) -> None:
+    clamped = []
+    for prompt, choices, answer, diff in rows:
+        d = clamp_diff(prompt, answer, diff, bank=path.stem)
+        clamped.append((prompt, choices, answer, d))
+    assert_bulk(clamped, bank=path.stem)
     lines = [
         'import { q } from "../quiz";',
         'import type { TriviaQ } from "../types";',
         "",
         f"export const {export}: TriviaQ[] = [",
     ]
-    for prompt, choices, answer, diff in rows:
+    for prompt, choices, answer, diff in clamped:
         ch = ", ".join(js(c) for c in choices)
         lines.append(f"  q({js(prompt)}, [{ch}], {js(answer)}, {diff}),")
     lines.append("];")
     lines.append("")
     path.write_text("\n".join(lines) + "\n")
-    print("wrote", path, "n=", len(rows))
+    print("wrote", path, "n=", len(clamped))
 
 
 def gen_math() -> None:

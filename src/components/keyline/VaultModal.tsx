@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Calculator, FlaskConical, Landmark, Leaf, MapPinned, Palette, ScrollText, Trophy, Utensils } from "lucide-react";
-import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
+import { CITIES, KIND_LABEL, TIER_LABEL, allPois, seriesOf, seriesPoi } from "@/game/data";
 import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/trivia";
@@ -25,6 +25,7 @@ const LETTERS = ["A", "B", "C", "D"] as const;
 export function VaultModal() {
   const openVault = useGame((s) => s.openVault);
   const cityId = useGame((s) => s.cityId);
+  const blanks = useGame((s) => s.blanks);
   const pickCategory = useGame((s) => s.pickCategory);
   const vaultsOpened = useGame((s) => s.vaultsOpened);
   const answer = useGame((s) => s.answer);
@@ -79,7 +80,7 @@ export function VaultModal() {
 
   if (!openVault) return null;
   const series = seriesOf(openVault.poiId);
-  const poi = series ? seriesPoi(series) : CITIES[cityId].pois.find((p) => p.id === openVault.poiId);
+  const poi = series ? seriesPoi(series) : allPois(CITIES[cityId], blanks).find((p) => p.id === openVault.poiId);
   if (!poi) return null;
 
   const left = quiz ? Math.max(0, openVault.deadline - now) : 0;
