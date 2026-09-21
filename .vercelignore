@@ -1,5 +1,7 @@
 node_modules
-assets
+# Root dump only — a bare "assets" rule excludes
+# .vercel/output/static/assets (the hashed CSS/JS) from prebuilt uploads.
+/assets
 screenshots
 artifacts
 tmp

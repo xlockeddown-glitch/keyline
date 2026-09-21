@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+/* k07c — force a new stylesheet hash after a cached 404 on the last publish */
 
 @theme {
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
@@ -31,6 +32,7 @@ html,
 body,
 #app {
   height: 100%;
+  --keyline-stamp: k07c;
 }
 
 body {
