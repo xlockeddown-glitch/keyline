@@ -1,5 +1,8 @@
 node_modules/
-assets/
+# Only the repo-root dump. A bare "assets/" also matches
+# .vercel/output/static/assets and would drop the hashed CSS/JS
+# from git (and from any prebuilt upload that honors gitignore).
+/assets/
 screenshots/
 artifacts/
 tmp/

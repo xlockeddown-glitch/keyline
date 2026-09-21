@@ -2,8 +2,10 @@
 /**
  * Fail the build if the Vercel output would 413 or 500 the way last publish did:
  * WASM sidecars, `+`/`[...]` chunk names, wrong Node entry, oversized function.
+ * Also require the hashed stylesheet and copy it to /keyline.css so a poisoned
+ * CDN 404 on /assets/styles-*.css cannot unstyle the live document.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const output = join(process.cwd(), ".vercel/output");
@@ -70,6 +72,21 @@ if (existsSync(staticDir)) {
     errors.push(`static ${ (staticSize / 1024 / 1024).toFixed(2) }MB exceeds 8MB cap`);
   }
   console.log(`[deploy-guard] static ${(staticSize / 1024 / 1024).toFixed(2)}MB`);
+
+  const assetsDir = join(staticDir, "assets");
+  const cssFiles = existsSync(assetsDir)
+    ? readdirSync(assetsDir).filter((f) => /^styles-.*\.css$/.test(f))
+    : [];
+  if (!cssFiles.length) {
+    errors.push("missing hashed stylesheet in .vercel/output/static/assets");
+  } else {
+    const src = join(assetsDir, cssFiles[0]);
+    const dest = join(staticDir, "keyline.css");
+    copyFileSync(src, dest);
+    console.log(`[deploy-guard] css ${cssFiles[0]} (${statSync(src).size}B) copied to keyline.css`);
+  }
+} else {
+  errors.push("missing .vercel/output/static");
 }
 
 if (errors.length) {
