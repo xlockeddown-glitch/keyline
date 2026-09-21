@@ -31,4 +31,4 @@ TypeScript and Vite. The live game is [keyline.grok.me](https://keyline.grok.me/
 
 Trivia cards: `npm run trivia:balance` inventories mix by topic/bank/city/rarity. `npm run trivia:quotas` fails if that mix breaks the caps in `scripts/trivia-quotas.json` (new bulk stays general/city-shared; deep cuts mainly red/violet). `--warn` reports without failing.
 
-**v0.0.04**
+**v0.0.05**
