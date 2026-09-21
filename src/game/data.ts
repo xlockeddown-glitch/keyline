@@ -3253,6 +3253,18 @@ export const SCOUTS: Record<
     bed: "Coal dusk",
     perk: { label: "+1% coins from lamps · +0.25 s", vaultMs: 250, loot: 1.01 },
   },
+  lynx: {
+    id: "lynx",
+    name: "The last coat",
+    blurb: "Ten times the Fox. Walks through the block.",
+    coins: 880000,
+    walk: "/sprites/scouts/lynx-walk.png",
+    idle: "/sprites/scouts/lynx-idle.png",
+    icon: "/sprites/scouts/lynx.png",
+    gait: 1.12,
+    bed: "Through the block",
+    perk: { label: "Cuts through the block · +1% coins · +0.25 s", vaultMs: 250, loot: 1.01 },
+  },
 };
 
 export function wornPerk(id: import("./types").ScoutId) {
@@ -3260,8 +3272,9 @@ export function wornPerk(id: import("./types").ScoutId) {
 }
 
 export const SUPER_LEGENDARY_LABEL = "Super Legendary";
-/** Hire cost is a multiple of the Fox. Ability is not on the rack. */
-export const SUPER_LEGENDARY_MULT = 3;
+export const SUPER_LEGENDARY_ID: import("./types").ScoutId = "lynx";
+/** Hire cost is exactly this many times the Fox. */
+export const SUPER_LEGENDARY_MULT = 10;
 
 export function superLegendaryCost() {
   return SCOUTS.fox.coins * SUPER_LEGENDARY_MULT;

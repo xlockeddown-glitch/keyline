@@ -1137,6 +1137,14 @@ h3 {
   background-image: url("/sprites/scouts/fox-idle.png?v=k4");
   background-size: 200% 200%;
 }
+.scout-marker[data-scout="lynx"] {
+  background-image: url("/sprites/scouts/lynx-walk.png?v=k4");
+  filter: url(#keyline-chroma) hue-rotate(210deg) saturate(1.18) drop-shadow(0 0 7px #ede8df8c) drop-shadow(0 4px 6px #0000008c);
+}
+.scout-marker[data-scout="lynx"].is-idle {
+  background-image: url("/sprites/scouts/lynx-idle.png?v=k4");
+  background-size: 200% 200%;
+}
 
 .scout-marker.is-seated {
   opacity: 0;

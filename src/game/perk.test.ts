@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { SCOUTS, SCOUT_LIST, SUPER_LEGENDARY_LABEL, SUPER_LEGENDARY_MULT, superLegendaryCost, wornPerk } from "./data.ts";
+import {
+  SCOUTS,
+  SCOUT_LIST,
+  SUPER_LEGENDARY_ID,
+  SUPER_LEGENDARY_LABEL,
+  SUPER_LEGENDARY_MULT,
+  superLegendaryCost,
+  wornPerk,
+} from "./data.ts";
 import { canCutBuildings } from "./streets.ts";
 
 describe("scout perks stay small and scale with the hire", () => {
@@ -35,13 +43,20 @@ describe("scout perks stay small and scale with the hire", () => {
     assert.ok(SCOUTS.fox.coins > SCOUTS.sloth.coins);
   });
 
-  it("Super Legendary hire is three times the Fox and still cannot cut", () => {
+  it("Super Legendary hire is ten times the Fox and can cut", () => {
     assert.equal(SUPER_LEGENDARY_LABEL, "Super Legendary");
-    assert.equal(SUPER_LEGENDARY_MULT, 3);
-    assert.equal(superLegendaryCost(), SCOUTS.fox.coins * 3);
-    assert.equal(superLegendaryCost(), 264000);
-    assert.ok(!("super-legendary" in SCOUTS));
+    assert.equal(SUPER_LEGENDARY_MULT, 10);
+    assert.equal(SUPER_LEGENDARY_ID, "lynx");
+    assert.equal(superLegendaryCost(), SCOUTS.fox.coins * 10);
+    assert.equal(superLegendaryCost(), 880000);
+    assert.equal(SCOUTS.lynx.coins, superLegendaryCost());
+    assert.ok(SCOUT_LIST.some((s) => s.id === SUPER_LEGENDARY_ID));
     assert.equal(canCutBuildings("fox"), false);
-    assert.equal(canCutBuildings("super-legendary"), false);
+    assert.equal(canCutBuildings("raccoon"), false);
+    assert.equal(canCutBuildings(SUPER_LEGENDARY_ID), true);
+    assert.equal(canCutBuildings("lynx"), true);
+    for (const s of SCOUT_LIST) {
+      assert.equal(canCutBuildings(s.id), s.id === SUPER_LEGENDARY_ID, s.id);
+    }
   });
 });

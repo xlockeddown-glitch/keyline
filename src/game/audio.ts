@@ -201,6 +201,24 @@ const BEDS: Record<ScoutId, Bed> = {
     melody: true,
     pad: true,
   },
+  lynx: {
+    bpm: 64,
+    root: 49,
+    scale: [0, 2, 3, 5, 7, 8, 10],
+    chords: [
+      [0, 3, 7, 10],
+      [5, 8, 12, 15],
+      [8, 12, 15, 19],
+      [0, 3, 7, 12],
+    ],
+    swing: 0.1,
+    cutoff: 1800,
+    vinyl: 0.02,
+    kit: "dust",
+    hats: 4,
+    melody: true,
+    pad: true,
+  },
 };
 
 export const BED_NAME: Record<ScoutId, string> = {
@@ -211,6 +229,7 @@ export const BED_NAME: Record<ScoutId, string> = {
   corgi: "Curb bounce",
   sloth: "The long way",
   fox: "Coal dusk",
+  lynx: "Through the block",
 };
 
 function hookVis() {

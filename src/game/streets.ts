@@ -763,10 +763,9 @@ export function pathLength(path: Pt[]): number {
   return n;
 }
 
-/** Super Legendary may cut later. Default scouts never cut buildings. Perk is not wired. */
-export function canCutBuildings(_scout?: string | null): boolean {
-  void _scout;
-  return false;
+/** Super Legendary (lynx) may cut. Default scouts never cut buildings. */
+export function canCutBuildings(scout?: string | null): boolean {
+  return scout === "lynx";
 }
 
 /**

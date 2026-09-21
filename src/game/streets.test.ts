@@ -57,15 +57,16 @@ test("street-only finishPath will not hop to a vault in the block", () => {
   assert.ok(distM(hop.lat, hop.lng, vault.lat, vault.lng) < 1);
 });
 
-test("default scouts cannot cut buildings; 18m hop is gated", () => {
+test("default scouts cannot cut buildings; Super Legendary can; 18m hop is gated", () => {
   assert.equal(canCutBuildings(), false);
   assert.equal(canCutBuildings("raccoon"), false);
   assert.equal(canCutBuildings("fox"), false);
-  assert.equal(canCutBuildings("super-legendary"), false);
+  assert.equal(canCutBuildings("lynx"), true);
   const from = { lat: 30.2672, lng: -97.7431 };
   const to = dest(from.lat, from.lng, 30, 0);
   assert.equal(stuckNudge(from, to, false), null);
-  const hop = stuckNudge(from, to, true);
+  assert.equal(stuckNudge(from, to, canCutBuildings("fox")), null);
+  const hop = stuckNudge(from, to, canCutBuildings("lynx"));
   assert.ok(hop);
   assert.ok(distM(from.lat, from.lng, hop.lat, hop.lng) <= 18.1);
 });
