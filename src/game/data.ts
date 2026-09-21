@@ -3154,6 +3154,15 @@ export function cabSpeed(arterial: boolean, gait = 1) {
   return WALK_PACE * gait * (arterial ? 2.5 : 2);
 }
 
+export const SUPER_LEGENDARY_LABEL = "Super Legendary";
+export const SUPER_LEGENDARY_ID: import("./types").ScoutId = "lynx";
+/** Locked: Super Legendary hire is exactly 10× the Fox — not 3×. */
+export const SUPER_LEGENDARY_MULT = 10;
+const FOX_COINS = 88000;
+export function superLegendaryCost() {
+  return FOX_COINS * SUPER_LEGENDARY_MULT;
+}
+
 export const SCOUTS: Record<
   import("./types").ScoutId,
   {
@@ -3245,7 +3254,7 @@ export const SCOUTS: Record<
     id: "fox",
     name: "The Fox",
     blurb: "Dusk coat. The last hire on the ledger — a long walk to earn it.",
-    coins: 88000,
+    coins: FOX_COINS,
     walk: "/sprites/scouts/fox-walk.png",
     idle: "/sprites/scouts/fox-idle.png",
     icon: "/sprites/scouts/fox.png",
@@ -3257,7 +3266,7 @@ export const SCOUTS: Record<
     id: "lynx",
     name: "The last coat",
     blurb: "Ten times the Fox. Walks through the block.",
-    coins: 880000,
+    coins: superLegendaryCost(),
     walk: "/sprites/scouts/lynx-walk.png",
     idle: "/sprites/scouts/lynx-idle.png",
     icon: "/sprites/scouts/lynx.png",
@@ -3269,15 +3278,6 @@ export const SCOUTS: Record<
 
 export function wornPerk(id: import("./types").ScoutId) {
   return SCOUTS[id]?.perk ?? { label: "" };
-}
-
-export const SUPER_LEGENDARY_LABEL = "Super Legendary";
-export const SUPER_LEGENDARY_ID: import("./types").ScoutId = "lynx";
-/** Hire cost is exactly this many times the Fox. */
-export const SUPER_LEGENDARY_MULT = 10;
-
-export function superLegendaryCost() {
-  return SCOUTS.fox.coins * SUPER_LEGENDARY_MULT;
 }
 
 export const SCOUT_LIST = Object.values(SCOUTS);

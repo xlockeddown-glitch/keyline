@@ -46,10 +46,14 @@ describe("scout perks stay small and scale with the hire", () => {
   it("Super Legendary hire is ten times the Fox and can cut", () => {
     assert.equal(SUPER_LEGENDARY_LABEL, "Super Legendary");
     assert.equal(SUPER_LEGENDARY_MULT, 10);
+    assert.notEqual(SUPER_LEGENDARY_MULT, 3);
     assert.equal(SUPER_LEGENDARY_ID, "lynx");
     assert.equal(superLegendaryCost(), SCOUTS.fox.coins * 10);
     assert.equal(superLegendaryCost(), 880000);
+    assert.notEqual(superLegendaryCost(), SCOUTS.fox.coins * 3);
+    assert.equal(SCOUTS.fox.coins, 88000);
     assert.equal(SCOUTS.lynx.coins, superLegendaryCost());
+    assert.equal(SCOUTS.lynx.coins, SCOUTS.fox.coins * SUPER_LEGENDARY_MULT);
     assert.ok(SCOUT_LIST.some((s) => s.id === SUPER_LEGENDARY_ID));
     assert.equal(canCutBuildings("fox"), false);
     assert.equal(canCutBuildings("raccoon"), false);
