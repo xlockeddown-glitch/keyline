@@ -16,7 +16,7 @@ function Login() {
           <span>Standings</span>
           <strong>KEYLINE</strong>
         </div>
-        <p className="lede">Sign in to post plates under your name. Guests can still read the board.</p>
+        <p className="lede">Sign in to post trivia cards under your name. Guests can still read the board. Names on the board are first name and last initial.</p>
         {isPending ? (
           <div className="h-11 animate-pulse rounded-md bg-bg-subtle" aria-hidden />
         ) : (

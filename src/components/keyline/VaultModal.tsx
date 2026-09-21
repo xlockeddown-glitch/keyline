@@ -125,7 +125,7 @@ export function VaultModal() {
               {openVault.spark
                 ? `Spark · earn a ${TIER_LABEL[poi.tier]} match`
                 : series
-                ? `${series.name} · plate ${Math.max(1, step)} of ${steps}`
+                ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
                 : `${TIER_LABEL[poi.tier]} lamp · ${KIND_LABEL[poi.kind]}`}
               {catMeta ? ` · ${catMeta.label}` : ""}
             </p>
@@ -156,8 +156,8 @@ export function VaultModal() {
             <p className="kicker">Choose a field</p>
             <p className="mt-1 text-sm text-fg-muted">
               {series
-                ? "One field for all plates — they get harder as you go."
-                : "Six this lamp. They rotate. The plates prefer the ground you're on."}
+                ? "One field for all trivia cards — they get harder as you go."
+                : "Six this lamp. They rotate. The trivia cards prefer the ground you're on."}
             </p>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {offered.map((id) => {
@@ -189,7 +189,7 @@ export function VaultModal() {
               <i style={{ width: `${frac * 100}%` }} />
             </div>
             <p className="plate-meta">
-              {series ? <span>Plate {(openVault.run?.step ?? 0) + 1} of {steps}</span> : null}
+              {series ? <span>Trivia card {(openVault.run?.step ?? 0) + 1} of {steps}</span> : null}
               <span>{DIFF_LABEL[quiz.diff]}</span>
               <span className={`grade is-${grade.toLowerCase()}`}>{grade}</span>
               <span className="tabular-nums">{(left / 1000).toFixed(1)}s</span>

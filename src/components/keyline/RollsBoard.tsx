@@ -4,6 +4,7 @@ import { SignInGate } from "@/lib/auth/gates";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 import { TIER_LABEL } from "@/game/data";
 import { fetchBoard, fetchMe, ROLL_TIERS, type Board, type BoardRow, type MyPlates } from "@/game/rolls";
+import { standingName } from "@/game/standingName";
 import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import type { Tier } from "@/game/types";
@@ -25,7 +26,7 @@ export function RollsOverlay({ onClose }: { onClose: () => void }) {
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Standings</p>
-            <h2 className="font-display text-2xl">Most plates, by match</h2>
+            <h2 className="font-display text-2xl">Most trivia cards, by match</h2>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={onClose} aria-label="Close">
             <X className="size-4" />
@@ -135,7 +136,7 @@ export function RollsBoard() {
 
       {user && myRow && myRow.correct > 0 && !onBoard ? (
         <p className="mt-4 text-sm text-fg-muted">
-          Your {TIER_LABEL[tier].toLowerCase()} plates{" "}
+          Your {TIER_LABEL[tier].toLowerCase()} trivia cards{" "}
           <span className="tabular-nums text-fg">{myRow.correct.toLocaleString()}</span>
           {myRow.rank ? (
             <>
@@ -151,7 +152,7 @@ export function RollsBoard() {
           fallback={
             <div className="grid gap-3">
               <p className="text-sm text-pretty text-fg-muted">
-                Sign in to post plates. Guests can still read the board.
+                Sign in to post trivia cards. Guests can still read the board.
                 {local[tier] > 0 ? (
                   <>
                     {" "}
@@ -166,8 +167,8 @@ export function RollsBoard() {
           }
         >
           <p className="text-sm text-fg-muted">
-            Plates post under{" "}
-            <span className="text-fg">{user?.displayName ?? "your name"}</span>
+            Trivia cards post under{" "}
+            <span className="text-fg">{standingName(user?.displayName)}</span>
             {myRow && myRow.correct > 0 ? (
               <>
                 {" "}
@@ -187,7 +188,7 @@ function RollRow({ row, mine }: { row: BoardRow; mine: boolean }) {
     <li className={`rolls-row ${mine ? "is-me" : ""}`}>
       <span className="rolls-rank tabular-nums">{row.rank}</span>
       <span className="min-w-0 truncate font-medium">
-        {row.name}
+        {standingName(row.name)}
         {mine ? <span className="kicker ml-2">You</span> : null}
       </span>
       <span className="ml-auto flex items-center gap-1.5 tabular-nums text-fg">

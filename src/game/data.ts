@@ -3111,8 +3111,8 @@ export const SERIES: Record<SeriesKind, SeriesDef> = {
     steps: 3,
     diffs: [1, 2, 3],
     coolMs: RUN_COOL_MS,
-    lore: "Three plates, one blue match. Easy, then harder, then the last. Clear the lamp and a green match drops. Miss any plate and the match is gone — the street goes dark for ten minutes.",
-    kicker: "three plates, one blue",
+    lore: "Three trivia cards, one blue match. Easy, then harder, then the last. Clear the lamp and a green match drops. Miss any trivia card and the match is gone — the street goes dark for ten minutes.",
+    kicker: "three trivia cards, one blue",
   },
   stack: {
     kind: "stack",
@@ -3124,8 +3124,8 @@ export const SERIES: Record<SeriesKind, SeriesDef> = {
     steps: 4,
     diffs: [1, 2, 3, 3],
     coolMs: 12 * 60_000,
-    lore: "Four plates, one green match. The last two bite. Clear both globes and an amber match drops. Miss any plate and the match is gone — twelve minutes dark.",
-    kicker: "four plates, one green",
+    lore: "Four trivia cards, one green match. The last two bite. Clear both globes and an amber match drops. Miss any trivia card and the match is gone — twelve minutes dark.",
+    kicker: "four trivia cards, one green",
   },
 };
 
