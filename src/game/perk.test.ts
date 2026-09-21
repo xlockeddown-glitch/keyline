@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { SCOUTS, SCOUT_LIST, wornPerk } from "./data.ts";
+import { SCOUTS, SCOUT_LIST, SUPER_LEGENDARY_LABEL, SUPER_LEGENDARY_MULT, superLegendaryCost, wornPerk } from "./data.ts";
+import { canCutBuildings } from "./streets.ts";
 
 describe("scout perks stay small and scale with the hire", () => {
   it("raccoon is the free coat with no extra", () => {
@@ -32,5 +33,15 @@ describe("scout perks stay small and scale with the hire", () => {
     assert.equal(wornPerk("corgi").pace, 1.01);
     assert.equal(wornPerk("fox").loot, 1.01);
     assert.ok(SCOUTS.fox.coins > SCOUTS.sloth.coins);
+  });
+
+  it("Super Legendary hire is three times the Fox and still cannot cut", () => {
+    assert.equal(SUPER_LEGENDARY_LABEL, "Super Legendary");
+    assert.equal(SUPER_LEGENDARY_MULT, 3);
+    assert.equal(superLegendaryCost(), SCOUTS.fox.coins * 3);
+    assert.equal(superLegendaryCost(), 264000);
+    assert.ok(!("super-legendary" in SCOUTS));
+    assert.equal(canCutBuildings("fox"), false);
+    assert.equal(canCutBuildings("super-legendary"), false);
   });
 });

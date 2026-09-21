@@ -763,7 +763,7 @@ export function pathLength(path: Pt[]): number {
   return n;
 }
 
-/** Future Super Legendary perk. Default scouts never cut buildings. Do not wire this to a paid ability yet. */
+/** Super Legendary may cut later. Default scouts never cut buildings. Perk is not wired. */
 export function canCutBuildings(_scout?: string | null): boolean {
   void _scout;
   return false;

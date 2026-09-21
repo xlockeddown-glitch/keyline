@@ -44,6 +44,20 @@ test("Bank 4-up taxes; 3-down is exact", () => {
   const down = bankDownSpec("blue")!;
   assert.equal(down.getN, BANK_DOWN);
   assert.equal(TIER_VALUE.blue, TIER_VALUE.white * BANK_DOWN);
+  for (let i = 0; i < TIER_ORDER.length - 1; i++) {
+    const from = TIER_ORDER[i]!;
+    const to = TIER_ORDER[i + 1]!;
+    const craft = bankUpSpec(from)!;
+    const brk = bankDownSpec(to)!;
+    assert.equal(craft.payN, 4);
+    assert.equal(craft.getN, 1);
+    assert.equal(craft.get, to);
+    assert.equal(brk.payN, 1);
+    assert.equal(brk.getN, 3);
+    assert.equal(brk.get, from);
+  }
+  assert.equal(bankUpSpec("violet"), null);
+  assert.equal(bankDownSpec("white"), null);
 });
 
 test("applyBank refuses a short pocket or a cap overflow", () => {

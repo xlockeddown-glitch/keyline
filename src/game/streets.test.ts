@@ -60,6 +60,8 @@ test("street-only finishPath will not hop to a vault in the block", () => {
 test("default scouts cannot cut buildings; 18m hop is gated", () => {
   assert.equal(canCutBuildings(), false);
   assert.equal(canCutBuildings("raccoon"), false);
+  assert.equal(canCutBuildings("fox"), false);
+  assert.equal(canCutBuildings("super-legendary"), false);
   const from = { lat: 30.2672, lng: -97.7431 };
   const to = dest(from.lat, from.lng, 30, 0);
   assert.equal(stuckNudge(from, to, false), null);
