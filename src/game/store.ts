@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, TIER_POINTS, allPois, interactRadius, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
+import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { streetDrop } from "./streets";
 import { pickTrivia, shuffled, DIFF_MULT, ASKED_KEEP } from "./trivia";
 import { poiName, takeSurvey } from "./survey";
@@ -27,6 +27,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
+import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, matchCap, sparkState, transitLoot } from "./ticket";
 
 const SAVE_KEY = "keyline-save-v1";
@@ -150,6 +151,8 @@ export type GameState = {
   closeVault: () => void;
   claimCrate: () => void;
   claimPulse: () => void;
+  bankUp: (tier: Tier) => void;
+  bankDown: (tier: Tier) => void;
   craft: (id: CharmId) => void;
   equip: (id: CharmId | null) => void;
   buyScout: (id: ScoutId) => void;
@@ -857,7 +860,12 @@ export const useGame = create<GameState>((set, get) => ({
       const bumped = bumpStreak(get);
       const streak = bumped.streak;
       const bonus = 1 + Math.min(0.4, streak * 0.05);
-      const points = Math.round(TIER_POINTS[series.pay] * mult * bonus * 1.15 * (wornPerk(get().scout).loot ?? 1));
+      const points = rewardPoints(series.pay, {
+        mult,
+        bonus,
+        loot: wornPerk(get().scout).loot ?? 1,
+        series: true,
+      });
       const extraKeys: Partial<Record<Tier, number>> = { [series.pay]: 1 };
       if (grades.every((g) => g === "perfect")) extraKeys[series.bonus] = 1;
       else if (get().equipped === "lucky" && Math.random() < 0.15) extraKeys.blue = 1;
@@ -946,7 +954,12 @@ export const useGame = create<GameState>((set, get) => ({
     const streak = bumped.streak;
     const bonus = 1 + Math.min(0.4, streak * 0.05);
     const diff = ov.question.diff ?? 2;
-    const points = Math.round(TIER_POINTS[poi.tier] * mult * bonus * DIFF_MULT[diff] * (wornPerk(get().scout).loot ?? 1));
+    const points = rewardPoints(poi.tier, {
+      mult,
+      bonus,
+      diffMult: DIFF_MULT[diff],
+      loot: wornPerk(get().scout).loot ?? 1,
+    });
     const brass =
       1 +
       (poi.tier === "green" || poi.tier === "amber" ? 2 : 0) +
@@ -1083,6 +1096,34 @@ export const useGame = create<GameState>((set, get) => ({
     window.setTimeout(() => {
       if (get().toast?.includes("City Pulse")) set({ toast: null });
     }, 2200);
+  },
+  bankUp: (tier) => {
+    const spec = bankUpSpec(tier);
+    if (!spec) return;
+    const next = applyBank(get().keys, spec, matchCap);
+    if (!next) {
+      set({ toast: "The bank won't take that pocket." });
+      window.setTimeout(() => set({ toast: null }), 1600);
+      return;
+    }
+    sfx.pickup();
+    set({ keys: next, toast: `Four ${TIER_LABEL[spec.pay]} for one ${TIER_LABEL[spec.get]}. Tax paid.` });
+    scheduleSave(get);
+    window.setTimeout(() => set({ toast: null }), 2000);
+  },
+  bankDown: (tier) => {
+    const spec = bankDownSpec(tier);
+    if (!spec) return;
+    const next = applyBank(get().keys, spec, matchCap);
+    if (!next) {
+      set({ toast: "The bank won't take that pocket." });
+      window.setTimeout(() => set({ toast: null }), 1600);
+      return;
+    }
+    sfx.pickup();
+    set({ keys: next, toast: `One ${TIER_LABEL[spec.pay]} for three ${TIER_LABEL[spec.get]}. No tax.` });
+    scheduleSave(get);
+    window.setTimeout(() => set({ toast: null }), 2000);
   },
   craft: (id) => {
     if (get().charms.includes(id)) return;
