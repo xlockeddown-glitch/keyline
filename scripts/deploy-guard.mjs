@@ -2,12 +2,14 @@
 /**
  * Fail the build if the Vercel output would 413 or 500 the way last publish did:
  * WASM sidecars, `+`/`[...]` chunk names, wrong Node entry, oversized function.
- * Also require the hashed stylesheet and copy it to /keyline.css so a poisoned
- * CDN 404 on /assets/styles-*.css cannot unstyle the live document.
+ * Copy the hashed stylesheet to /sheet-k07d.css (outside /assets, whose 404s
+ * are CDN-cached for a year) and stop missing /assets/* from inheriting
+ * immutable cache via the SSR HTML fallback.
  */
-import { copyFileSync, existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+const SHEET_NAME = "sheet-k07d.css";
 const output = join(process.cwd(), ".vercel/output");
 const func = join(output, "functions/__server.func");
 const staticDir = join(output, "static");
@@ -81,12 +83,50 @@ if (existsSync(staticDir)) {
     errors.push("missing hashed stylesheet in .vercel/output/static/assets");
   } else {
     const src = join(assetsDir, cssFiles[0]);
-    const dest = join(staticDir, "keyline.css");
+    const dest = join(staticDir, SHEET_NAME);
     copyFileSync(src, dest);
-    console.log(`[deploy-guard] css ${cssFiles[0]} (${statSync(src).size}B) copied to keyline.css`);
+    const publicDest = join(process.cwd(), "public", SHEET_NAME);
+    copyFileSync(src, publicDest);
+    if (!existsSync(dest) || statSync(dest).size < 1000) {
+      errors.push(`${SHEET_NAME} missing or empty after copy`);
+    }
+    console.log(`[deploy-guard] css ${cssFiles[0]} (${statSync(src).size}B) copied to /${SHEET_NAME}`);
   }
 } else {
   errors.push("missing .vercel/output/static");
+}
+
+const configPath = join(output, "config.json");
+if (existsSync(configPath)) {
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  let routes = Array.isArray(config.routes) ? config.routes : [];
+  // Drop the blanket immutable header on /assets/* — it was applied to
+  // HTML 404 fallbacks and Cloudflare cached those 404s for a year.
+  routes = routes.filter(
+    (r) =>
+      !(
+        r &&
+        r.src === "/assets/(.*)" &&
+        r.headers &&
+        r.status == null &&
+        r.dest == null &&
+        r.handle == null
+      ),
+  );
+  const already = routes.some((r) => r && r.src === "/assets/(.*)" && r.status === 404);
+  if (!already) {
+    const fsIdx = routes.findIndex((r) => r && r.handle === "filesystem");
+    const miss = {
+      src: "/assets/(.*)",
+      status: 404,
+      headers: { "cache-control": "no-store" },
+    };
+    if (fsIdx >= 0) routes.splice(fsIdx + 1, 0, miss);
+    else routes.push(miss);
+  }
+  config.routes = routes;
+  writeFileSync(configPath, JSON.stringify(config, null, 2));
+  console.log("[deploy-guard] /assets miss → 404 no-store; no immutable header on misses");
 }
 
 if (errors.length) {
