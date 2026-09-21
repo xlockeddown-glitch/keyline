@@ -816,7 +816,7 @@ export const useGame = create<GameState>((set, get) => ({
           loot: null,
           miss: { answer: ov.question.answer, fact: ov.question.fact },
           ...seriesPatch(series.kind, coolSeries(get(), series)),
-          toast: `${series.name} breaks on plate ${step + 1}.`,
+          toast: `${series.name} breaks on trivia card ${step + 1}.`,
         });
         scheduleSave(get);
         return;

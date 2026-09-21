@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import type { Tier } from "./types";
+import { standingName } from "./standingName";
 
 export const ROLL_TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
 
@@ -50,9 +51,7 @@ function emptyMine(): MyPlates {
 }
 
 function publicName(name: string | null | undefined) {
-  const raw = (name ?? "").trim() || "Walker";
-  const clean = raw.replace(/[\u0000-\u001f]/g, "").slice(0, 32).trim();
-  return clean || "Walker";
+  return standingName(name);
 }
 
 /** Public ranked read — guests may view. Writes stay behind authMiddleware. */

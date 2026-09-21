@@ -90,7 +90,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props)
     else if (nearest && isScoutShop(nearest)) cue = `${formatDist(hud.nearestDist)} · brass awning, coats`;
     else if (seriesNear) {
       if (inReach && !haveKey) cue = `Need a ${TIER_LABEL[seriesNear.cost]} match for ${seriesNear.name}`;
-      else if (armed) cue = `${seriesNear.name} · ${seriesNear.steps} plates · E`;
+      else if (armed) cue = `${seriesNear.name} · ${seriesNear.steps} trivia cards · E`;
       else cue = `${formatDist(hud.nearestDist)} · ${seriesNear.kicker}`;
     } else if (recasting) cue = "Recasting — come back later";
     else if (inReach && !haveKey) {
@@ -254,7 +254,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props)
                 <div className="flex items-center justify-between gap-3">
                   <p className="kicker">
                     {seriesNear
-                      ? `${seriesNear.name} · ${seriesNear.steps} plates`
+                      ? `${seriesNear.name} · ${seriesNear.steps} trivia cards`
                       : isScoutShop(nearest)
                         ? "Outfitter"
                         : isFareDesk(nearest)

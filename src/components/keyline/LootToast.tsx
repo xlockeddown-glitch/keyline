@@ -60,7 +60,7 @@ export function LootToast() {
               <>
                 <p className="kicker">Spent</p>
                 <p className="font-display mt-1 text-3xl leading-none">Miss</p>
-                <p className="mt-3 text-sm text-fg-muted">The match is spent. The plate read:</p>
+                <p className="mt-3 text-sm text-fg-muted">The match is spent. The trivia card read:</p>
                 <p className="mt-1 text-base font-medium text-pretty">{miss!.answer}</p>
                 {miss!.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{miss!.fact}</p> : null}
               </>
