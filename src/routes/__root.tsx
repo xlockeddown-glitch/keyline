@@ -1,10 +1,11 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
-import { PUBLISH_STAMP } from "@/version";
+import { PUBLISH_STAMP, SHEET_HREF } from "@/version";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "KEYLINE";
+const cssHref = import.meta.env.PROD ? SHEET_HREF : appCss;
 
 export const Route = createRootRoute({
   head: () => ({
@@ -14,6 +15,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       { name: "theme-color", content: "#0B0C0E" },
       { name: "keyline-build", content: PUBLISH_STAMP },
+      { name: "keyline-sheet-src", content: String(appCss) },
       {
         name: "description",
         content: "Walk a real city. Light lamps. Answer trivia.",
@@ -21,11 +23,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-      // Stable path first: /assets/styles-*.css was CDN-404-poisoned for a year.
-      ...(import.meta.env.PROD
-        ? [{ rel: "stylesheet" as const, href: `/keyline.css?v=${PUBLISH_STAMP}` }]
-        : []),
-      { rel: "stylesheet", href: appCss },
+      { rel: "stylesheet", href: cssHref },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
       {
