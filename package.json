@@ -1,6 +1,7 @@
 {
   "name": "app-builder-workspace",
   "private": true,
+  "version": "0.0.02",
   "sideEffects": false,
   "type": "module",
   "overrides": {
@@ -17,9 +18,10 @@
     "typecheck": "tsc --noEmit",
     "trivia:audit": "node scripts/trivia-audit.mjs --facts",
     "trivia:watch": "node scripts/trivia-audit.mjs --watch",
+    "trivia:retune": "node --experimental-strip-types scripts/trivia-retune.mjs",
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "check:uniformity": "node scripts/uniformity-qa.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/game/place.test.ts src/game/ward.test.ts src/game/pace.test.ts src/game/perk.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/game/place.test.ts src/game/ward.test.ts src/game/pace.test.ts src/game/perk.test.ts src/game/rarity.test.ts src/game/telemetry.test.ts src/game/crate.test.ts src/game/pulse.test.ts src/game/retune.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

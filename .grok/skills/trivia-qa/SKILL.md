@@ -38,9 +38,10 @@ The script already:
    (unmatched parens, duplicate choices once punctuation is stripped), and
    contextual overlap of distinctive answer words.
 3. **Semantics** — partial-truth distractors (Europe sitting next to
-   Asia / Europe), alias pairs (Holland and the Netherlands), WH-type
-   mismatch (city vs year), generator filler ("as this name"), soccer vs
-   football on a FIFA plate, father/son gotchas on white vaults.
+   Asia / Europe), reverse leaks (the answer named inside a wrong choice),
+   alias pairs (Holland and the Netherlands), WH-type mismatch (city vs year),
+   generator filler ("as this name"), soccer vs football on a FIFA plate,
+   father/son gotchas on white vaults.
 4. **Math** — computes arithmetic / algebra / named-value plates.
 5. **Facts (changed plates)** — Wikipedia REST summary (Wikimedia). A miss is
    a warning; a distractor on the page and not the answer is an error.

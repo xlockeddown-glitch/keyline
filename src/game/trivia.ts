@@ -1,6 +1,15 @@
 import { PLACE } from "@/game/banks/place";
 import { aboutTopic, pinCats, placeWeights, topicsFor } from "./place";
 import { q } from "./quiz";
+import {
+  allowedRarities,
+  emptyBuckets,
+  isSeen,
+  pickUnseenRarity,
+  rarityStats,
+  sealPlate,
+  stampCityRecord,
+} from "./rarity";
 import { GENERAL_BANK } from "@/game/banks/general";
 import { MATH_BANK } from "@/game/banks/math";
 import { MATH_MORE } from "@/game/banks/math_more";
@@ -1246,7 +1255,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Speaker of the Lords only"
 			], "Head of government"),
 			q("The Mayor of London is…", [
-				"The same office as the Prime Minister",
+				"The same office",
 				"A separately elected city-region executive",
 				"Appointed by the Crown only",
 				"The monarch"
@@ -1658,7 +1667,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Royal Ontario Museum sits on which street?", ["Queen", "Bloor", "King only", "Spadina's south end"], "Bloor", 1),
 			q("The Art Gallery of Ontario faces…", ["Bloor", "Dundas", "the Gardiner", "Yonge-Dundas Square only"], "Dundas", 2),
 			q("The Hockey Hall of Fame in Toronto displays…", ["the Vince Lombardi Trophy", "the Stanley Cup", "the Claret Jug", "the America's Cup only"], "the Stanley Cup", 1),
-			q("Fort York in Toronto dates to fighting in…", ["the American Civil War", "the War of 1812", "World War I", "the Fenian only as a myth"], "the War of 1812", 2),
+			q("Fort York in Toronto dates to fighting in…", ["the American Civil War", "the War of 1812", "World War I", "the Fenian"], "the War of 1812", 2),
 			q("Union Station is Toronto's main…", ["subway-only stop", "intercity rail hall", "ferry terminal", "streetcar barn"], "intercity rail hall", 1),
 			q("Billy Bishop Airport sits on…", ["the mainland at Pearson", "the Toronto Islands", "Hamilton harbour only", "Lake Simcoe"], "the Toronto Islands", 2),
 			q("Toronto Pearson is the region's…", ["island STOL strip only", "main international airport", "union bus garage", "seaplane base downtown"], "main international airport", 1),
@@ -1802,7 +1811,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		arts: [
 			q("Boston's Museum of Fine Arts sits on…", ["Beacon Hill", "Huntington Avenue", "the Common", "Long Wharf"], "Huntington Avenue", 1),
 			q("The Isabella Stewart Gardner Museum is known for a 1990…", ["roof collapse", "art theft whose empty frames still hang", "subway fire", "marathon bombing"], "art theft whose empty frames still hang", 2),
-			q("Symphony Hall is home to the…", ["Boston Symphony Orchestra", "Boston Pops only as a separate hall", "Boston Ballet's only stage", "the Bruins' practice rink"], "Boston Symphony Orchestra", 1),
+			q("Symphony Hall is home to the…", ["Boston Symphony Orchestra", "Boston Pops", "Boston Ballet's only stage", "the Bruins' practice rink"], "Boston Symphony Orchestra", 1),
 			q("Trinity Church on Copley Square is a masterpiece of…", ["Frank Gehry", "H. H. Richardson", "I. M. Pei", "Charles Bulfinch only"], "H. H. Richardson", 2),
 			q("The Hatch Shell on the Esplanade is known for…", ["the Green Monster", "July 4 Boston Pops concerts", "the Tea Party ships", "subway music only"], "July 4 Boston Pops concerts", 1)
 		]
@@ -1861,6 +1870,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		]
 	}
 };
+stampCityRecord(CITY);
 const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 	austin: {
 		local: TEXAS_LOCAL,
@@ -2122,7 +2132,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Crosses Scotland",
 				"Rings Greater London",
 				"Follows Hadrian's Wall",
-				"Ends at Dover only as a ferry"
+				"Ends at Dover"
 			], "Rings Greater London", 2),
 			q("The White Cliffs of Dover face which body of water?", [
 				"the Irish Sea",
@@ -2344,7 +2354,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Chicago",
 				"Detroit",
 				"Cleveland",
-				"Toledo only as a twin"
+				"Toledo"
 			], "Detroit", 1),
 			q("Henry Ford's company and Dearborn sit next to…", [
 				"Chicago",
@@ -2537,7 +2547,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Revolutionary War's opening fights in 1775 were at…", ["Bunker Hill only", "Lexington and Concord", "Valley Forge", "Yorktown"], "Lexington and Concord", 1),
 			q("Worcester is a large city…", ["on Cape Cod", "inland in Massachusetts", "in New Hampshire", "on Nantucket"], "inland in Massachusetts", 1),
 			q("The Berkshires are in…", ["eastern Massachusetts on the Cape", "western Massachusetts", "downtown Boston", "Rhode Island only"], "western Massachusetts", 1),
-			q("Rhode Island lies generally…", ["north of Maine", "south of Massachusetts", "west of New York", "east of the Atlantic only as a land border"], "south of Massachusetts", 1),
+			q("Rhode Island lies generally…", ["north of Maine", "south of Massachusetts", "west of New York", "east of the Atlantic"], "south of Massachusetts", 1),
 			q("New Hampshire lies generally…", ["south of Rhode Island", "north of Massachusetts", "west of New York", "on Cape Cod"], "north of Massachusetts", 1),
 			q("Martha's Vineyard and Nantucket are…", ["Vermont lakes", "islands off Massachusetts", "Boston Harbor's only names", "New Hampshire peaks"], "islands off Massachusetts", 1),
 			q("Lowell, Massachusetts grew as a…", ["gold camp", "nineteenth-century mill city", "ski town only", "whaling capital of Nantucket"], "nineteenth-century mill city", 2),
@@ -2580,12 +2590,12 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		sports: [
 			q("LSU's main campus and Tiger Stadium are in…", ["New Orleans", "Baton Rouge", "Lafayette", "Shreveport"], "Baton Rouge", 1),
-			q("The Sugar Bowl is a college football game long associated with…", ["New Orleans", "Dallas only", "Pasadena only", "Miami only as its only home"], "New Orleans", 1)
+			q("The Sugar Bowl is a college football game long associated with…", ["New Orleans", "Dallas only", "Pasadena only", "Miami"], "New Orleans", 1)
 		],
 		political: [
 			q("Louisiana's U.S. nickname is often the…", ["Bay State", "Pelican State", "Sunshine State", "Empire State"], "Pelican State", 1),
 			q("The Louisiana Purchase was completed in…", ["1776", "1803", "1815", "1865"], "1803", 1),
-			q("Napoleon sold Louisiana to the…", ["British Crown", "United States", "Spanish Empire only as a gift", "Republic of Texas"], "United States", 1)
+			q("Napoleon sold Louisiana to the…", ["British Crown", "United States", "Spanish Empire", "Republic of Texas"], "United States", 1)
 		],
 		food: [
 			q("Crawfish boils are a spring ritual in…", ["Vermont", "Louisiana", "Alaska", "Arizona"], "Louisiana", 1),
@@ -2598,6 +2608,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		]
 	}
 };
+stampCityRecord(REGION);
 function draw(list: TriviaQ[]): TriviaQ | null {
 	if (!list.length) return null;
 	return list[Math.floor(Math.random() * list.length)];
@@ -2657,7 +2668,7 @@ function localWeights(tier?: Tier): [number, number, number] {
 	];
 }
 function fresh(list: TriviaQ[], avoid: Set<string>): TriviaQ[] {
-	const open = list.filter((x) => !avoid.has(x.q));
+	const open = list.filter((x) => !isSeen(x, avoid));
 	return open.length ? open : list;
 }
 function drawPrefer(list: TriviaQ[], prefer: TriviaDiff, avoid: Set<string>, strict = false): TriviaQ {
@@ -2677,7 +2688,7 @@ type TriviaBin = { w: number; qs: TriviaQ[] };
 function pickFromBins(bins: TriviaBin[], prefer: TriviaDiff, seen: Set<string>, strict: boolean): TriviaQ {
 	const loaded = bins.filter((b) => b.qs.length);
 	const live = loaded
-		.map((b) => ({ w: b.w, qs: b.qs.filter((x) => !seen.has(x.q)) }))
+		.map((b) => ({ w: b.w, qs: b.qs.filter((x) => !isSeen(x, seen)) }))
 		.filter((b) => b.qs.length);
 	const pool = live.length ? live : loaded;
 	if (!pool.length) {
@@ -2828,10 +2839,14 @@ function collectPlaceQs(cityId: CityId, cat: TriviaCat, poi?: Poi): TriviaQ[] {
 	if (!poi) return [];
 	const topics = topicsFor(poi);
 	const fromPlace = topics.flatMap((t) => PLACE[t]?.[cat] ?? []);
-	const door = [poi.quiz, ...(poi.quizzes ?? [])].filter(Boolean) as TriviaQ[];
+	const door = [poi.quiz, ...(poi.quizzes ?? [])].flatMap((x) => (x ? [sealPlate(x, { city: true })] : []));
 	const doorUse = cat === "math" ? [] : door;
 	const keyedCity = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []).filter((x) => aboutTopic(x, poi));
 	return mergeCat(mergeCat(doorUse, fromPlace), keyedCity);
+}
+
+function filterRarity(list: TriviaQ[], allowed: Set<Tier>) {
+	return list.filter((x) => allowed.has(x.rarity));
 }
 
 export function pickTrivia(
@@ -2844,39 +2859,48 @@ export function pickTrivia(
 ): TriviaQ {
 	const cityQs = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []);
 	const regionQs = REGION[cityId]?.[cat] ?? [];
-	const prefer = want ?? preferDiff(tier ?? poi?.tier);
+	const color: Tier = tier ?? poi?.tier ?? "white";
+	const prefer = want ?? preferDiff(color);
 	const strict = want != null;
 	const seen = new Set(avoid);
 	const placeQs = collectPlaceQs(cityId, cat, poi);
-	const [pw, cw, rw, gw] = placeWeights(tier ?? poi?.tier);
-	if (cat === "local") {
-		const scoped = (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId));
-		return pickFromBins(
-			[
-				{ w: pw, qs: placeQs },
-				{ w: cw, qs: cityQs },
-				{ w: rw, qs: regionQs },
-				{ w: gw, qs: scoped },
-			],
-			prefer,
-			seen,
-			strict,
-		);
-	}
-	const generalQs = GENERAL[cat] ?? [];
-	return pickFromBins(
-		[
-			{ w: pw, qs: placeQs },
-			{ w: cw, qs: cityQs },
-			{ w: rw, qs: regionQs },
-			{ w: gw, qs: generalQs },
-		],
-		prefer,
-		seen,
-		strict,
-	);
+	const cityPool = mergeCat(mergeCat(placeQs, cityQs), regionQs);
+	const globalPool =
+		cat === "local"
+			? (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId))
+			: (GENERAL[cat] ?? []);
+	const hit = pickUnseenRarity(color, cityPool, globalPool, seen, want);
+	if (hit) return hit.plate;
+
+	rarityStats.fallbacks += 1;
+	const allowed = allowedRarities(color);
+	const [pw, cw, rw, gw] = placeWeights(color);
+	const bins =
+		cat === "local"
+			? [
+					{ w: pw, qs: filterRarity(placeQs, allowed) },
+					{ w: cw, qs: filterRarity(cityQs, allowed) },
+					{ w: rw, qs: filterRarity(regionQs, allowed) },
+					{ w: gw, qs: filterRarity(globalPool, allowed) },
+				]
+			: [
+					{ w: pw, qs: filterRarity(placeQs, allowed) },
+					{ w: cw, qs: filterRarity(cityQs, allowed) },
+					{ w: rw, qs: filterRarity(regionQs, allowed) },
+					{ w: gw, qs: filterRarity(globalPool, allowed) },
+				];
+	if (bins.some((b) => b.qs.length)) return pickFromBins(bins, prefer, seen, strict);
+	return q("How many degrees in a right angle?", ["45", "90", "180", "360"], "90", 1);
 }
-export function shuffled(quiz: TriviaQ): { q: string; choices: string[]; answer: string; fact?: string; diff: TriviaDiff } {
+export function shuffled(quiz: TriviaQ): {
+	q: string;
+	choices: string[];
+	answer: string;
+	fact?: string;
+	diff: TriviaDiff;
+	id: string;
+	rarity: Tier;
+} {
 	const choices = [...quiz.choices];
 	for (let i = choices.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
@@ -2887,7 +2911,9 @@ export function shuffled(quiz: TriviaQ): { q: string; choices: string[]; answer:
 		choices,
 		answer: quiz.answer,
 		fact: quiz.fact,
-		diff: quiz.diff ?? 2
+		diff: quiz.diff ?? 2,
+		id: quiz.id,
+		rarity: quiz.rarity,
 	};
 }
 
@@ -2912,6 +2938,7 @@ export function offerCats(poiId: string, vaultsOpened: number, n = 6, poi?: Poi)
 
 export function bankSize() {
 	const byDiff = { 1: 0, 2: 0, 3: 0 };
+	const byRarity = emptyBuckets();
 	let total = 0;
 	const perCat: Record<string, number> = {};
 	for (const cat of ALL_CATS) {
@@ -2925,8 +2952,34 @@ export function bankSize() {
 		perCat[cat] = unique.size;
 		total += unique.size;
 		for (const item of all) {
-			if (unique.delete(item.q)) byDiff[(item.diff ?? 2) as 1 | 2 | 3] += 1;
+			if (unique.delete(item.q)) {
+				byDiff[(item.diff ?? 2) as 1 | 2 | 3] += 1;
+				byRarity[item.rarity] += 1;
+			}
 		}
 	}
-	return { total, perCat, byDiff };
+	return { total, perCat, byDiff, byRarity };
+}
+
+export function rarityCensus() {
+	const buckets = emptyBuckets();
+	const seen = new Set<string>();
+	const add = (list: TriviaQ[]) => {
+		for (const x of list) {
+			if (seen.has(x.id)) continue;
+			seen.add(x.id);
+			buckets[x.rarity] += 1;
+		}
+	};
+	for (const cat of ALL_CATS) {
+		add(GENERAL[cat] ?? []);
+		for (const c of Object.values(CITY)) add(c[cat] ?? []);
+		for (const c of Object.values(CITY_EXTRA)) add(c[cat] ?? []);
+		for (const c of Object.values(REGION)) add(c[cat] ?? []);
+	}
+	for (const topic of Object.values(PLACE)) {
+		if (!topic) continue;
+		for (const list of Object.values(topic)) add(list ?? []);
+	}
+	return { total: seen.size, buckets, downfills: rarityStats.downfills, fallbacks: rarityStats.fallbacks };
 }

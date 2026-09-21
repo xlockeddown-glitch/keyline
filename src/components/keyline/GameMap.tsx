@@ -564,6 +564,10 @@ export function GameMap() {
       target = clampWard(w, lat, lng);
       bumpFence();
     }
+    const prior = waypoint.current;
+    if (prior && distM(prior.lat, prior.lng, target.lat, target.lng) < 14 && (routeRef.current?.length ?? 0) >= 2) {
+      return;
+    }
     const seated = Boolean(cabRef.current?.seated);
     const net = seated ? driveRef.current : g;
     const snappedRaw = net ? pullToStreet(net, target.lat, target.lng, seated ? 120 : 220) : target;
@@ -767,6 +771,7 @@ export function GameMap() {
         zIndexOffset: 300,
       }).addTo(map);
       keyMarkers.current.set(k.id, marker);
+      marker.on("click", () => tryCollect(k.id));
     }
   }
 
@@ -788,6 +793,27 @@ export function GameMap() {
     }
     const err = st.tryOpen(poiId, performance.now());
     if (err) useGame.setState({ toast: err });
+  }
+
+  function tryCollect(keyId: string) {
+    const k = useGame.getState().mapKeys.find((x) => x.id === keyId);
+    if (!k) return;
+    if (cabRef.current?.seated) {
+      flash("Park at the curb. Matches are on foot.", 1800);
+      void setDestination(k.lat, k.lng);
+      return;
+    }
+    const d = distM(pos.current.lat, pos.current.lng, k.lat, k.lng);
+    if (d > 22) {
+      void setDestination(k.lat, k.lng);
+      return;
+    }
+    useGame.getState().collectKey(k.id);
+    const g = graphRef.current;
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (g) snapKeys(g);
+    if (L && map) rebuildPins(L, map);
   }
 
   function interactNearest() {

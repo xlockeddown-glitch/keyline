@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityShop } from "@/game/data";
 import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
+import { PULSE_POINTS, pulseDue } from "@/game/pulse";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
 import { sfx } from "@/game/audio";
@@ -34,7 +35,9 @@ export function HqPanel() {
   const pressPass = useGame((s) => s.pressPass);
   const keys = useGame((s) => s.keys);
   const claimCrate = useGame((s) => s.claimCrate);
+  const claimPulse = useGame((s) => s.claimPulse);
   const lastCrateDay = useGame((s) => s.lastCrateDay);
+  const lastPulseDay = useGame((s) => s.lastPulseDay);
   const crateStreak = useGame((s) => s.crateStreak);
   const vaultsOpened = useGame((s) => s.vaultsOpened);
   const distanceM = useGame((s) => s.distanceM);
@@ -52,6 +55,11 @@ export function HqPanel() {
   const claimed = lastCrateDay === today;
   const crateDay = claimed ? Math.max(1, crateStreak) : nextCrateStreak(lastCrateDay, crateStreak, today);
   const loot = crateLoot(crateDay);
+  const pulseReady = pulseDue(lastPulseDay, today);
+
+  useEffect(() => {
+    if (hqOpen && pulseReady) setTab("Ledger");
+  }, [hqOpen, pulseReady]);
 
   if (!hqOpen) return null;
 
@@ -220,6 +228,26 @@ export function HqPanel() {
 
           {tab === "Ledger" ? (
             <div className="grid gap-4 text-sm">
+              <div>
+                <p className="kicker">Quests</p>
+                <button
+                  type="button"
+                  className="mt-2 flex w-full items-center gap-3 rounded-md border border-border bg-bg-subtle/50 p-3 text-left disabled:opacity-70"
+                  disabled={!pulseReady}
+                  onClick={() => {
+                    sfx.ui();
+                    claimPulse();
+                  }}
+                >
+                  <ItemIcon item="coin" size={48} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{pulseReady ? "File City Pulse" : "City Pulse filed"}</p>
+                    <p className="text-xs text-fg-muted">
+                      Once a day at the desk. {PULSE_POINTS} coin. Separate from the crate streak.
+                    </p>
+                  </div>
+                </button>
+              </div>
               <button
                 type="button"
                 className="flex items-center gap-3 rounded-md border border-border bg-bg-subtle/50 p-3 text-left disabled:opacity-70"

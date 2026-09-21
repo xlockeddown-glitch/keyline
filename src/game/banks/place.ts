@@ -39,7 +39,7 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
     science: [
       q("A planetarium is built to show…", ["fish", "the night sky", "ore samples only", "live aircraft"], "the night sky", 1),
       q("Lift on a wing comes mainly from…", ["the landing gear", "air moving over the wing's shape", "the tail number", "cabin pressure alone"], "air moving over the wing's shape", 2),
-      q("The first powered airplane flight is credited to the…", ["Wright brothers", "Lindbergh as the builder", "NASA in 1969", "the RAF in 1914"], "Wright brothers", 1),
+      q("The first powered airplane flight is credited to the…", ["Wright brothers", "Lindbergh", "NASA in 1969", "the RAF in 1914"], "Wright brothers", 1),
       q("Low Earth orbit is…", ["on the Moon", "a band of space just above the atmosphere", "inside a hangar", "the Marianas Trench"], "a band of space just above the atmosphere", 2),
     ],
     history: [
@@ -57,7 +57,7 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
       q("Vincent van Gogh's The Starry Night hangs at…", ["the Louvre only", "the Museum of Modern Art, New York", "the British Library", "the Alamo"], "the Museum of Modern Art, New York", 2),
       q("Pablo Picasso is a central figure of…", ["Cubism", "Gregorian chant", "Baroque opera only", "photoreal airline posters"], "Cubism", 1),
       q("A fresco is paint applied to…", ["wet plaster", "polished steel", "ice", "newsprint"], "wet plaster", 2),
-      q("The Thinker is a sculpture by…", ["Rodin", "Warhol", "O'Keeffe", "Calder only as a mobile"], "Rodin", 1),
+      q("The Thinker is a sculpture by…", ["Rodin", "Warhol", "O'Keeffe", "Calder"], "Rodin", 1),
       q("Primary colors in paint are typically…", ["green, orange, purple", "red, blue, yellow", "black, white, grey", "gold, silver, bronze"], "red, blue, yellow", 1),
       q("The Guggenheim Museum in New York was designed by…", ["I. M. Pei only", "Frank Lloyd Wright", "Gaudi", "Christopher Wren"], "Frank Lloyd Wright", 2),
       q("Tate Modern in London occupies a former…", ["royal palace", "power station", "dry dock only", "grain silo in Chicago"], "power station", 2),
@@ -66,7 +66,7 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
     ],
     history: [
       q("The Renaissance in painting is associated first with…", ["medieval England only", "Italy", "colonial Virginia", "Meiji Japan"], "Italy", 1),
-      q("Leonardo da Vinci painted the Mona Lisa, now in the…", ["Louvre, Paris", "Prado as its only home", "Vatican gift shop", "Uffizi as the Mona"], "Louvre, Paris", 1),
+      q("Leonardo da Vinci painted the Mona Lisa, now in the…", ["Louvre, Paris", "Prado as its only home", "Vatican gift shop", "Uffizi"], "Louvre, Paris", 1),
     ],
     local: [
       q("The Blanton Museum of Art belongs to…", ["Rice University", "the University of Texas at Austin", "Texas A&M", "SMU only"], "the University of Texas at Austin", 2),
