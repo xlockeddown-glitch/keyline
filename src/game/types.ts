@@ -110,7 +110,7 @@ export type MapKey = {
 
 export type CharmId = "scholar" | "sprinter" | "lantern" | "lucky";
 
-export type ScoutId = "raccoon" | "cat" | "turtle" | "owl" | "corgi" | "sloth" | "fox";
+export type ScoutId = "raccoon" | "cat" | "turtle" | "owl" | "corgi" | "sloth" | "fox" | "lynx";
 
 export type ScoutPerk = {
   label: string;
