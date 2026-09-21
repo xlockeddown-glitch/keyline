@@ -5,11 +5,11 @@ import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
 import { AudioDock } from "./AudioDock";
 import { AuthChip } from "./AuthChip";
+import { FirstLoginOverlay, useEnterGate } from "./FirstLogin";
 import { RollsOverlay } from "./RollsBoard";
 import { APP_VERSION } from "@/version";
 
 export function TitleScreen() {
-  const pickCity = useGame((s) => s.pickCity);
   const setScreen = useGame((s) => s.setScreen);
   const points = useGame((s) => s.points);
   const cityId = useGame((s) => s.cityId);
@@ -17,6 +17,7 @@ export function TitleScreen() {
   const journey = useGame((s) => s.journey);
   const tickJourney = useGame((s) => s.tickJourney);
   const [rollsOpen, setRollsOpen] = useState(false);
+  const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();
   const city = CITIES[cityId];
   const stubs = [city, ...CITY_LIST.filter((c) => c.id !== cityId).slice(0, 4)];
 
@@ -29,7 +30,7 @@ export function TitleScreen() {
       tickJourney();
       if (useGame.getState().journey) return;
     }
-    pickCity(id);
+    requestEnter(id);
   }
 
   const rideTo = journey ? CITIES[journey.to].name : null;
@@ -119,6 +120,9 @@ export function TitleScreen() {
             setRollsOpen(false);
           }}
         />
+      ) : null}
+      {showPrompt || waiting ? (
+        <FirstLoginOverlay waiting={waiting} onGuest={continueAsGuest} />
       ) : null}
     </div>
   );
