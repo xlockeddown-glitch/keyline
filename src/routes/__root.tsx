@@ -5,7 +5,7 @@ import { PUBLISH_STAMP, SHEET_HREF } from "@/version";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "KEYLINE";
-const cssHref = import.meta.env.PROD ? SHEET_HREF : appCss;
+const cssHref = import.meta.env.PROD ? `${SHEET_HREF}?v=${PUBLISH_STAMP}` : appCss;
 
 export const Route = createRootRoute({
   head: () => ({

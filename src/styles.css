@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
-/* k07d — hashed /assets CSS is not linked; sheet lives at /sheet-k07d.css */
+/* k08a — hashed /assets CSS is not linked; sheet lives at /sheet-k07d.css */
 
 @theme {
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
@@ -32,7 +32,7 @@ html,
 body,
 #app {
   height: 100%;
-  --keyline-stamp: k07d;
+  --keyline-stamp: k08a;
 }
 
 body {
@@ -105,33 +105,33 @@ h3 {
   }
 }
 .scout-marker{
-  background-image:url(/sprites/player-walk.png?v=k4);
+  background-image:url(/sprites/player-walk.png?v=k8);
   background-repeat:no-repeat;
   background-size:400% 400%
 }
 .scout-marker.is-idle{
-  background-image:url(/sprites/player-idle.png?v=k4);
+  background-image:url(/sprites/player-idle.png?v=k8);
   background-size:200% 200%
 }
 .scout-marker[data-scout=cat]{
-  background-image:url(/sprites/scouts/cat-walk.png?v=k4)
+  background-image:url(/sprites/scouts/cat-walk.png?v=k8)
 }
 .scout-marker[data-scout=cat].is-idle{
-  background-image:url(/sprites/scouts/cat-idle.png?v=k4);
+  background-image:url(/sprites/scouts/cat-idle.png?v=k8);
   background-size:200% 200%
 }
 .scout-marker[data-scout=turtle]{
-  background-image:url(/sprites/scouts/turtle-walk.png?v=k4)
+  background-image:url(/sprites/scouts/turtle-walk.png?v=k8)
 }
 .scout-marker[data-scout=turtle].is-idle{
-  background-image:url(/sprites/scouts/turtle-idle.png?v=k4);
+  background-image:url(/sprites/scouts/turtle-idle.png?v=k8);
   background-size:200% 200%
 }
 .scout-marker[data-scout=owl]{
-  background-image:url(/sprites/scouts/owl-walk.png?v=k4)
+  background-image:url(/sprites/scouts/owl-walk.png?v=k8)
 }
 .scout-marker[data-scout=owl].is-idle{
-  background-image:url(/sprites/scouts/owl-idle.png?v=k4);
+  background-image:url(/sprites/scouts/owl-idle.png?v=k8);
   background-size:200% 200%
 }
 .scout-hire{
@@ -1119,32 +1119,31 @@ h3 {
 }
 
 .scout-marker[data-scout="corgi"] {
-  background-image: url("/sprites/scouts/corgi-walk.png?v=k4");
+  background-image: url("/sprites/scouts/corgi-walk.png?v=k8");
 }
 .scout-marker[data-scout="corgi"].is-idle {
-  background-image: url("/sprites/scouts/corgi-idle.png?v=k4");
+  background-image: url("/sprites/scouts/corgi-idle.png?v=k8");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="sloth"] {
-  background-image: url("/sprites/scouts/sloth-walk.png?v=k4");
+  background-image: url("/sprites/scouts/sloth-walk.png?v=k8");
 }
 .scout-marker[data-scout="sloth"].is-idle {
-  background-image: url("/sprites/scouts/sloth-idle.png?v=k4");
+  background-image: url("/sprites/scouts/sloth-idle.png?v=k8");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="fox"] {
-  background-image: url("/sprites/scouts/fox-walk.png?v=k4");
+  background-image: url("/sprites/scouts/fox-walk.png?v=k8");
 }
 .scout-marker[data-scout="fox"].is-idle {
-  background-image: url("/sprites/scouts/fox-idle.png?v=k4");
+  background-image: url("/sprites/scouts/fox-idle.png?v=k8");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="lynx"] {
-  background-image: url("/sprites/scouts/lynx-walk.png?v=k4");
-  filter: url(#keyline-chroma) hue-rotate(210deg) saturate(1.18) drop-shadow(0 0 7px #ede8df8c) drop-shadow(0 4px 6px #0000008c);
+  background-image: url("/sprites/scouts/lynx-walk.png?v=k8");
 }
 .scout-marker[data-scout="lynx"].is-idle {
-  background-image: url("/sprites/scouts/lynx-idle.png?v=k4");
+  background-image: url("/sprites/scouts/lynx-idle.png?v=k8");
   background-size: 200% 200%;
 }
 
