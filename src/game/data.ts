@@ -1,4 +1,5 @@
 import type { City, CityId, Poi } from "./types";
+import { TIER_VALUE } from "./rewards.ts";
 
 function poi(p: Poi): Poi {
   return p;
@@ -3012,14 +3013,7 @@ export const CITY_LIST: City[] = [
   CITIES.nola,
 ];
 
-export const TIER_POINTS: Record<import("./types").Tier, number> = {
-  white: 28,
-  blue: 80,
-  green: 280,
-  amber: 820,
-  red: 2400,
-  violet: 7000,
-};
+export const TIER_POINTS = TIER_VALUE;
 
 export const TIER_LABEL: Record<import("./types").Tier, string> = {
   white: "White",

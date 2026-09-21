@@ -8,6 +8,7 @@ import {
   bindWalkGraph,
   bootstrapDrive,
   bootstrapStreets,
+  canCutBuildings,
   closestOnPath,
   constrainStep,
   expandGraph,
@@ -27,6 +28,7 @@ import {
   routeWalk,
   scatterStreetLamps,
   spreadOnGraph,
+  stuckNudge,
   type Pt,
   type StreetGraph,
 } from "@/game/streets";
@@ -585,8 +587,10 @@ export function GameMap() {
     useGame.getState().setHud({ waypoint: target });
 
     const from = { lat: pos.current.lat, lng: pos.current.lng };
+    const cut = canCutBuildings(useGame.getState().scout);
+    const walkTo = seated || cut ? (seated ? snapped : target) : snapped;
     const apply = (raw: Pt[] | null) => {
-      const path = seated ? raw : finishPath(raw, from, target);
+      const path = seated ? raw : finishPath(raw, cut ? from : (g ? pullToStreet(g, from.lat, from.lng, 140) : from), walkTo, { cutBuildings: cut });
       if (!path || path.length < 2) return false;
       const here = closestOnPath(path, pos.current.lat, pos.current.lng, routeAlong.current);
       if (here.dist > 160 && distM(path[0]!.lat, path[0]!.lng, from.lat, from.lng) > 40) return false;
@@ -599,7 +603,7 @@ export function GameMap() {
       return true;
     };
 
-    const local = net ? routeOnGraph(net, from, seated ? snapped : target) : null;
+    const local = net ? routeOnGraph(net, from, walkTo) : null;
     apply(local);
 
     const path = seated
@@ -687,15 +691,11 @@ export function GameMap() {
       const wp = waypoint.current;
       if (wp) {
         const left = distM(pos.current.lat, pos.current.lng, wp.lat, wp.lng);
-        if (left < 80) {
-          const hop = Math.min(18, left);
-          const n = ((wp.lat - pos.current.lat) * 111_320) / (left || 1);
-          const e =
-            ((wp.lng - pos.current.lng) * 111_320 * Math.cos((pos.current.lat * Math.PI) / 180)) / (left || 1);
-          const next = dest(pos.current.lat, pos.current.lng, n * hop, e * hop);
-          pos.current.lat = next.lat;
-          pos.current.lng = next.lng;
-          routeAlong.current = Math.min(routeAlong.current + hop, total - 1);
+        const hop = stuckNudge(pos.current, wp, canCutBuildings(useGame.getState().scout));
+        if (hop) {
+          pos.current.lat = hop.lat;
+          pos.current.lng = hop.lng;
+          routeAlong.current = Math.min(routeAlong.current + Math.min(18, left), total - 1);
         } else if (skips.current <= 3) {
           void setDestination(wp.lat, wp.lng);
         }

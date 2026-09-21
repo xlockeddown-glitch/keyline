@@ -1,5 +1,5 @@
-import { dest, distM, metersPerDegLng, yawToTarget } from "./geo";
-import { getOsmWays } from "./streetApi";
+import { dest, distM, metersPerDegLng, yawToTarget } from "./geo.ts";
+import { getOsmWays } from "./streetApi.ts";
 import type { Poi, Tier } from "./types";
 
 export type Pt = { lat: number; lng: number };
@@ -763,12 +763,37 @@ export function pathLength(path: Pt[]): number {
   return n;
 }
 
-/** Stick the walker's feet and the real door on a street route. */
-export function finishPath(path: Pt[] | null, from: Pt, to: Pt): Pt[] | null {
-  const out = path && path.length ? path.slice() : [{ lat: from.lat, lng: from.lng }];
-  if (distM(out[0]!.lat, out[0]!.lng, from.lat, from.lng) > 8) out.unshift({ lat: from.lat, lng: from.lng });
-  const last = out[out.length - 1]!;
-  if (distM(last.lat, last.lng, to.lat, to.lng) > 8) out.push({ lat: to.lat, lng: to.lng });
+/** Future Super Legendary perk. Default scouts never cut buildings. Do not wire this to a paid ability yet. */
+export function canCutBuildings(_scout?: string | null): boolean {
+  void _scout;
+  return false;
+}
+
+/**
+ * Direct hop toward a door. Default is off — only a future canCutBuildings perk may use it.
+ * The ~18 m near-target hop used to skip through blocks.
+ */
+export function stuckNudge(from: Pt, to: Pt, cutBuildings = false): Pt | null {
+  if (!cutBuildings) return null;
+  const left = distM(from.lat, from.lng, to.lat, to.lng);
+  if (left >= 80 || left < 0.4) return null;
+  const hop = Math.min(18, left);
+  const n = ((to.lat - from.lat) * 111_320) / left;
+  const e = ((to.lng - from.lng) * 111_320 * Math.cos((from.lat * Math.PI) / 180)) / left;
+  return dest(from.lat, from.lng, n * hop, e * hop);
+}
+
+/** Keep a walk on the street graph. Off-graph hops only if cutBuildings is true. */
+export function finishPath(path: Pt[] | null, from: Pt, to: Pt, opts?: { cutBuildings?: boolean }): Pt[] | null {
+  const cut = Boolean(opts?.cutBuildings);
+  const out = path && path.length ? path.slice() : [];
+  if (cut) {
+    if (!out.length) out.push({ lat: from.lat, lng: from.lng });
+    if (distM(out[0]!.lat, out[0]!.lng, from.lat, from.lng) > 8) out.unshift({ lat: from.lat, lng: from.lng });
+    const last = out[out.length - 1]!;
+    if (distM(last.lat, last.lng, to.lat, to.lng) > 8) out.push({ lat: to.lat, lng: to.lng });
+  }
+  if (!out.length) return null;
   const tidy = tidyPath(out);
   return tidy.length >= 2 ? tidy : null;
 }

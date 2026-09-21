@@ -4,6 +4,8 @@ import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityShop } from "@/game/
 import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { PULSE_POINTS, pulseDue } from "@/game/pulse";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
+import { BANK_DOWN, BANK_UP, TIER_ORDER, TIER_VALUE, bankDownSpec, bankUpSpec } from "@/game/rewards";
+import { matchCap } from "@/game/ticket";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
 import { sfx } from "@/game/audio";
 import { fareDesk } from "@/game/ticket";
@@ -36,6 +38,8 @@ export function HqPanel() {
   const keys = useGame((s) => s.keys);
   const claimCrate = useGame((s) => s.claimCrate);
   const claimPulse = useGame((s) => s.claimPulse);
+  const bankUp = useGame((s) => s.bankUp);
+  const bankDown = useGame((s) => s.bankDown);
   const lastCrateDay = useGame((s) => s.lastCrateDay);
   const lastPulseDay = useGame((s) => s.lastPulseDay);
   const crateStreak = useGame((s) => s.crateStreak);
@@ -273,6 +277,54 @@ export function HqPanel() {
                   </p>
                 </div>
               </button>
+              <div>
+                <p className="kicker mt-2">Bank</p>
+                <p className="mt-1 text-xs text-fg-muted">
+                  {BANK_UP} up, tax. {BANK_DOWN} down, none. Values from the match table — white {TIER_VALUE.white} coin.
+                </p>
+                <ul className="mt-2 grid gap-2">
+                  {TIER_ORDER.map((tier) => {
+                    const up = bankUpSpec(tier);
+                    const down = bankDownSpec(tier);
+                    if (!up && !down) return null;
+                    const have = keys[tier] ?? 0;
+                    return (
+                      <li key={tier} className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-bg-subtle/50 p-3">
+                        <ItemIcon item={tier} size={28} />
+                        <span className="min-w-0 flex-1 font-medium">
+                          {TIER_LABEL[tier]} <span className="tabular-nums text-fg-muted">×{have}</span>
+                        </span>
+                        {up ? (
+                          <button
+                            type="button"
+                            className="btn btn-quiet px-3 text-xs"
+                            disabled={have < up.payN || (keys[up.get] ?? 0) + up.getN > matchCap(up.get)}
+                            onClick={() => {
+                              sfx.ui();
+                              bankUp(tier);
+                            }}
+                          >
+                            {up.payN}→{TIER_LABEL[up.get]}
+                          </button>
+                        ) : null}
+                        {down ? (
+                          <button
+                            type="button"
+                            className="btn btn-quiet px-3 text-xs"
+                            disabled={have < down.payN || (keys[down.get] ?? 0) + down.getN > matchCap(down.get)}
+                            onClick={() => {
+                              sfx.ui();
+                              bankDown(tier);
+                            }}
+                          >
+                            1→{down.getN} {TIER_LABEL[down.get]}
+                          </button>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
               <p>
                 <span className="text-fg-muted">Points</span>{" "}
                 <span className="tabular-nums">{points.toLocaleString()}</span>
