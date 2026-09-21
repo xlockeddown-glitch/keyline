@@ -5,6 +5,10 @@ import { pickTrivia, shuffled, DIFF_MULT, ASKED_KEEP } from "./trivia";
 import { poiName, takeSurvey } from "./survey";
 import { sfx } from "./audio";
 import { reportCorrect } from "./rolls";
+import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type PlateEvent, type PlateRollMap } from "./telemetry";
+import { reportPlate } from "./reportPlate";
+import { fetchRetune } from "./retuneJob";
+import { setQuarantine, setRetune } from "./rarity";
 import type {
   CharmId,
   CityId,
@@ -22,6 +26,7 @@ import type {
   VaultRuntime,
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
+import { PULSE_POINTS, pulseDue } from "./pulse";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, matchCap, sparkState, transitLoot } from "./ticket";
 
 const SAVE_KEY = "keyline-save-v1";
@@ -98,6 +103,7 @@ export type GameState = {
   distanceM: number;
   lastCrateDay: string;
   crateStreak: number;
+  lastPulseDay: string;
   sparkDay: string;
   sparkN: number;
   sparkLamps: string[];
@@ -106,6 +112,11 @@ export type GameState = {
   tutorial: number;
   howtoDone: boolean;
   asked: string[];
+  seenIds: string[];
+  saveId: string;
+  plates: PlateEvent[];
+  plateAgg: PlateAgg;
+  plateRoll: PlateRollMap;
   sessionAt: number;
   lastKeyAt: number;
   fares: number;
@@ -138,6 +149,7 @@ export type GameState = {
   answer: (choice: string, now: number) => void;
   closeVault: () => void;
   claimCrate: () => void;
+  claimPulse: () => void;
   craft: (id: CharmId) => void;
   equip: (id: CharmId | null) => void;
   buyScout: (id: ScoutId) => void;
@@ -266,6 +278,7 @@ function persistable(s: GameState) {
     distanceM: s.distanceM,
     lastCrateDay: s.lastCrateDay,
     crateStreak: s.crateStreak,
+    lastPulseDay: s.lastPulseDay,
     sparkDay: s.sparkDay,
     sparkN: s.sparkN,
     sparkLamps: s.sparkLamps,
@@ -274,6 +287,11 @@ function persistable(s: GameState) {
     tutorial: s.tutorial,
     howtoDone: s.howtoDone,
     asked: s.asked.slice(-ASKED_KEEP),
+    seenIds: (s.seenIds ?? []).slice(-ASKED_KEEP),
+    saveId: s.saveId,
+    plates: (s.plates ?? []).slice(-PLATE_KEEP),
+    plateAgg: s.plateAgg ?? emptyAgg(),
+    plateRoll: s.plateRoll ?? {},
     fares: s.fares,
     cityVaults: s.cityVaults,
     journey: s.journey,
@@ -362,6 +380,29 @@ function postClear(tier: Tier) {
     });
 }
 
+function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boolean) {
+  const q = ov.question;
+  const { event, plates, plateAgg, plateRoll } = emitOnAnswer({
+    plates: get().plates ?? [],
+    plateAgg: get().plateAgg,
+    plateRoll: get().plateRoll ?? {},
+    saveId: get().saveId,
+    cityId: get().cityId,
+    plateId: q?.id,
+    shownAt: ov.startedAt,
+    answeredAt: now,
+    correct,
+    rarity: q?.rarity,
+    difficulty: q?.diff ?? null,
+  });
+  if (event) {
+    void reportPlate({ data: event }).catch(() => {
+      /* signed out — local ring still stands */
+    });
+  }
+  return { plates, plateAgg, plateRoll };
+}
+
 function paySurvey(set: (p: Partial<GameState>) => void, get: () => GameState, keys?: Record<Tier, number>) {
   const hit = takeSurvey({
     atlas: get().atlas,
@@ -407,6 +448,7 @@ export const useGame = create<GameState>((set, get) => ({
   distanceM: saved?.distanceM ?? 0,
   lastCrateDay: saved?.lastCrateDay ?? "",
   crateStreak: saved?.crateStreak ?? 0,
+  lastPulseDay: typeof saved?.lastPulseDay === "string" ? saved.lastPulseDay : "",
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
   sparkLamps: saved?.sparkLamps ?? [],
@@ -415,6 +457,11 @@ export const useGame = create<GameState>((set, get) => ({
   tutorial: saved?.howtoDone ? (saved.tutorial ?? 4) : 0,
   howtoDone: saved?.howtoDone === true,
   asked: saved?.asked ?? [],
+  seenIds: Array.isArray(saved?.seenIds) ? saved.seenIds : [],
+  saveId: typeof saved?.saveId === "string" && saved.saveId ? saved.saveId : mintSaveId(),
+  plates: Array.isArray(saved?.plates) ? saved.plates.slice(-PLATE_KEEP) : [],
+  plateAgg: { ...emptyAgg(), ...(saved?.plateAgg ?? {}) },
+  plateRoll: saved?.plateRoll && typeof saved.plateRoll === "object" ? saved.plateRoll : {},
   sessionAt: Date.now(),
   lastKeyAt: Date.now(),
   fares: saved?.fares ?? 0,
@@ -445,8 +492,17 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   setScreen: (s) => {
-    set({ screen: s });
+    const hint =
+      s === "play" && pulseDue(get().lastPulseDay, today()) && get().screen !== "play"
+        ? "City Pulse is waiting in HQ · Ledger."
+        : get().toast;
+    set({ screen: s, toast: hint });
     if (s === "play") paySurvey(set, get);
+    if (hint && hint.includes("City Pulse")) {
+      window.setTimeout(() => {
+        if (get().toast?.includes("City Pulse")) set({ toast: null });
+      }, 2800);
+    }
     scheduleSave(get);
   },
   pickCity: (id) => {
@@ -657,7 +713,7 @@ export const useGame = create<GameState>((set, get) => ({
       openVault: {
         poiId: ov.poiId,
         category: cat,
-        question: shuffled(pickTrivia(city.id, cat, poi, poi?.tier, get().asked, want)),
+        question: shuffled(pickTrivia(city.id, cat, poi, poi?.tier, [...get().seenIds, ...get().asked], want)),
         startedAt: now,
         deadline: now + (spark ? 20000 : 25000) + (spark ? (get().equipped === "scholar" ? 3000 : 0) : extra),
         run: series ? { step: 0, steps: series.steps, grades: [], spent: true } : undefined,
@@ -676,6 +732,10 @@ export const useGame = create<GameState>((set, get) => ({
     const elapsed = now - ov.startedAt;
     const correct = choice === ov.question.answer;
     const asked = [...get().asked.filter((x) => x !== ov.question!.q), ov.question.q].slice(-ASKED_KEEP);
+    const seenIds = ov.question.id
+      ? [...get().seenIds.filter((x) => x !== ov.question!.id), ov.question.id].slice(-ASKED_KEEP)
+      : get().seenIds;
+    const logged = logPlate(get, ov, now, correct);
 
     if (ov.spark) {
       const spark = sparksNow(get);
@@ -690,6 +750,8 @@ export const useGame = create<GameState>((set, get) => ({
           ...used,
           streak: 0,
           asked,
+          seenIds,
+          ...logged,
           openVault: null,
           loot: null,
           miss: { answer: ov.question.answer, fact: ov.question.fact },
@@ -707,6 +769,8 @@ export const useGame = create<GameState>((set, get) => ({
           ...used,
           ...bumpStreak(get),
           asked,
+          seenIds,
+          ...logged,
           points: get().points + 12,
           openVault: null,
           loot: null,
@@ -721,6 +785,8 @@ export const useGame = create<GameState>((set, get) => ({
           keys: { ...get().keys, [poi.tier]: have + 1 },
           ...bumpStreak(get),
           asked,
+          seenIds,
+          ...logged,
           openVault: null,
           loot: null,
           miss: null,
@@ -744,6 +810,8 @@ export const useGame = create<GameState>((set, get) => ({
         set({
           streak: 0,
           asked,
+          seenIds,
+          ...logged,
           openVault: null,
           loot: null,
           miss: { answer: ov.question.answer, fact: ov.question.fact },
@@ -765,12 +833,14 @@ export const useGame = create<GameState>((set, get) => ({
         const correctByTier = bumpCorrect(get, series.cost);
         set({
           asked,
+          seenIds,
+          ...logged,
           ...bumpStreak(get),
           correctByTier,
           openVault: {
             poiId: series.id,
             category: ov.category,
-            question: shuffled(pickTrivia(city.id, ov.category, poi, poi.tier, asked, want)),
+            question: shuffled(pickTrivia(city.id, ov.category, poi, poi.tier, [...seenIds, ...asked], want)),
             startedAt: now,
             deadline: now + 25000 + extra,
             run: { step: step + 1, steps, grades, spent: true },
@@ -830,6 +900,8 @@ export const useGame = create<GameState>((set, get) => ({
         vaultsOpened: get().vaultsOpened + 1,
         correctByTier,
         asked,
+        seenIds,
+        ...logged,
         openVault: null,
         loot,
         miss: null,
@@ -851,6 +923,8 @@ export const useGame = create<GameState>((set, get) => ({
         keys,
         streak: 0,
         asked,
+        seenIds,
+        ...logged,
         openVault: null,
         loot: null,
         miss: { answer: ov.question.answer, fact: ov.question.fact },
@@ -944,6 +1018,8 @@ export const useGame = create<GameState>((set, get) => ({
       vaultsOpened: get().vaultsOpened + 1,
       correctByTier,
       asked,
+      seenIds,
+      ...logged,
       openVault: null,
       loot,
       miss: null,
@@ -993,6 +1069,20 @@ export const useGame = create<GameState>((set, get) => ({
     window.setTimeout(() => {
       if (get().toast?.includes("crate")) set({ toast: null });
     }, 2400);
+  },
+  claimPulse: () => {
+    const d = today();
+    if (!pulseDue(get().lastPulseDay, d)) return;
+    sfx.pickup();
+    set({
+      lastPulseDay: d,
+      points: get().points + PULSE_POINTS,
+      toast: `City Pulse filed. ${PULSE_POINTS} coin.`,
+    });
+    scheduleSave(get);
+    window.setTimeout(() => {
+      if (get().toast?.includes("City Pulse")) set({ toast: null });
+    }, 2200);
   },
   craft: (id) => {
     if (get().charms.includes(id)) return;
@@ -1310,6 +1400,14 @@ if (typeof window !== "undefined") {
   if (import.meta.env.DEV) {
     (window as unknown as { __keyline: typeof useGame }).__keyline = useGame;
   }
+  void fetchRetune()
+    .then((pack) => {
+      setRetune(pack?.overrides ?? {});
+      setQuarantine(pack?.quarantine ?? []);
+    })
+    .catch(() => {
+      /* local / unsigned — assigned rarity still stands */
+    });
   const flush = () => {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(persistable(useGame.getState())));

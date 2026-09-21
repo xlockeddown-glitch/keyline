@@ -350,7 +350,7 @@ export function contentOverlap(prompt, answer) {
 }
 
 const FILLER_RE =
-  /\bas this (name|label|plate|sandwich|museum|site|weather)\b|\bas the third of the name\b|\bonly as the name\b/i;
+  /\bas this [a-z']+(?:'s)?(?:\s+[a-z']+)?\b|\bas the name\b|\bas a leaving of\b|\bas the kelvin number\b|\bonly as (the name|downtown)\b|\sas (this|the)\s+[a-z]/i;
 
 const ALIAS_PAIRS = [
   ["holland", "netherlands"],
@@ -382,6 +382,32 @@ export function namedDistractor(answer, choices) {
   return null;
 }
 
+function escapeRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Distractor names the answer inside leftover filler (Medina sitting in "Mecca as a leaving of Medina"). */
+export function reverseLeak(answer, choices) {
+  const ans = String(answer).trim();
+  if (ans.length < 4) return null;
+  const word = new RegExp(`(^|[^A-Za-z0-9])${escapeRe(ans)}([^A-Za-z0-9]|$)`, "i");
+  const contrast = new RegExp(`^(never|not|no|non)[- ]${escapeRe(ans)}$`, "i");
+  const prefix = new RegExp(
+    `^(New|Holy|Old|North|South|East|West|Greater|Upper|Lower)\\s+${escapeRe(ans)}\\b`,
+    "i",
+  );
+  for (const c of choices) {
+    if (c === answer) continue;
+    const t = String(c).trim();
+    if (!word.test(t)) continue;
+    if (contrast.test(t) || prefix.test(t)) continue;
+    if (new RegExp(`^[A-Za-z]+-${escapeRe(ans)}\\b`, "i").test(t)) continue;
+    if (new RegExp(`\\b${escapeRe(ans)}-[A-Za-z]+`, "i").test(t)) continue;
+    if (t.length >= ans.length + 8) return c;
+  }
+  return null;
+}
+
 /**
  * Semantic nuance: partial-truth distractors, alias pairs, WH-type mismatch,
  * leftover generator filler, father/son gotchas on white vaults.
@@ -403,10 +429,19 @@ export function auditSemantics(items) {
         `Distractor ${JSON.stringify(partial)} is also written into the answer — a partial truth.`,
       );
     }
+    const back = reverseLeak(answer, choices);
+    if (back) {
+      flag(
+        errors,
+        "nuance",
+        item,
+        `Distractor ${JSON.stringify(back)} names the answer — a reverse leak.`,
+      );
+    }
 
-    for (const c of [answer, ...choices]) {
+    for (const c of choices) {
       if (FILLER_RE.test(c)) {
-        flag(warnings, "nuance", item, `Filler phrasing ${JSON.stringify(c)}.`);
+        flag(errors, "nuance", item, `Filler phrasing ${JSON.stringify(c)}.`);
       }
     }
 

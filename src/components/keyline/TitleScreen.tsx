@@ -6,6 +6,7 @@ import type { CityId } from "@/game/types";
 import { AudioDock } from "./AudioDock";
 import { AuthChip } from "./AuthChip";
 import { RollsOverlay } from "./RollsBoard";
+import { APP_VERSION } from "@/version";
 
 export function TitleScreen() {
   const pickCity = useGame((s) => s.pickCity);
@@ -69,6 +70,7 @@ export function TitleScreen() {
         </div>
 
         <p className="lede">Walk a real city. Light lamps. Answer trivia.</p>
+        <p className="mt-1 text-xs text-fg-subtle tabular-nums tracking-wide">v{APP_VERSION}</p>
 
         {rideTo ? (
           <button type="button" className="btn btn-primary title-go" onClick={() => enter(cityId)}>

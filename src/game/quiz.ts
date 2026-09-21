@@ -1,3 +1,4 @@
+import { sealPlate } from "./rarity";
 import type { TriviaDiff, TriviaQ } from "./types";
 
 export function q(
@@ -11,5 +12,5 @@ export function q(
     fact = diff;
     diff = 2;
   }
-  return { q: prompt, choices, answer, fact, diff };
+  return sealPlate({ q: prompt, choices, answer, fact, diff });
 }

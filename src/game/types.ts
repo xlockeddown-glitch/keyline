@@ -20,6 +20,27 @@ export type TriviaCat = "sports" | "local" | "political" | "food" | "arts" | "ma
 
 export type TriviaDiff = 1 | 2 | 3;
 
+/** Draft plate (POI door quizzes). `q()` / `sealPlate` fill id, diff, rarity. */
+export type TriviaSeed = {
+  q: string;
+  choices: [string, string, string, string];
+  answer: string;
+  fact?: string;
+  diff?: TriviaDiff;
+  id?: string;
+  rarity?: Tier;
+};
+
+export type TriviaQ = {
+  q: string;
+  choices: [string, string, string, string];
+  answer: string;
+  fact?: string;
+  diff: TriviaDiff;
+  id: string;
+  rarity: Tier;
+};
+
 export type PlaceTopic =
   | "defense"
   | "aerospace"
@@ -53,14 +74,6 @@ export type PlaceTopic =
   | "bridge"
   | "market";
 
-export type TriviaQ = {
-  q: string;
-  choices: [string, string, string, string];
-  answer: string;
-  fact?: string;
-  diff?: TriviaDiff;
-};
-
 export type Poi = {
   id: string;
   name: string;
@@ -69,8 +82,8 @@ export type Poi = {
   kind: PoiKind;
   tier: Tier;
   lore: string;
-  quiz?: TriviaQ;
-  quizzes?: TriviaQ[];
+  quiz?: TriviaSeed;
+  quizzes?: TriviaSeed[];
   printShop?: boolean;
 };
 

@@ -15,6 +15,7 @@ import {
   hashItem,
   isLookupPlate,
   namedDistractor,
+  reverseLeak,
   teamCityGiveaway,
 } from "./trivia-audit.mjs";
 
@@ -204,5 +205,25 @@ test("semantics catches partial-truth distractors and alias pairs", () => {
   ]);
   assert.equal(errors.some((e) => e.detail.includes("partial truth")), true);
   assert.equal(errors.some((e) => e.detail.includes("Soccer and football")), true);
-  assert.equal(warnings.some((w) => w.detail.includes("as this name")), true);
+  assert.equal(errors.some((e) => e.detail.includes("as this name")), true);
+});
+
+test("semantics catches reverse leaks without flagging New Mexico", () => {
+  assert.equal(
+    reverseLeak("Medina", ["Mecca as a leaving of Medina", "Medina", "Jerusalem", "Cairo"]),
+    "Mecca as a leaving of Medina",
+  );
+  assert.equal(reverseLeak("Mexico", ["Mexico", "New Mexico only", "Oklahoma", "Louisiana"]), null);
+  assert.equal(reverseLeak("Oxidized", ["Never oxidized", "Oxidized", "Fermented", "Smoked"]), null);
+  const { errors } = auditSemantics([
+    {
+      q: "The Hijra is the move to…",
+      choices: ["Mecca as a leaving of Medina", "Medina", "Jerusalem", "Cairo"],
+      answer: "Medina",
+      diff: 2,
+      file: "hist.ts",
+      line: 1,
+    },
+  ]);
+  assert.equal(errors.some((e) => e.detail.includes("reverse leak")), true);
 });

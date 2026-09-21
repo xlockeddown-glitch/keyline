@@ -4,6 +4,7 @@ import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
 import { nextSurvey } from "@/game/survey";
 import { isFareDesk, SPARK_DAY, VAULTS_PER_FARE } from "@/game/ticket";
+import { pulseDue } from "@/game/pulse";
 import { useGame } from "@/game/store";
 import type { Tier } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
@@ -31,6 +32,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props)
   const hud = useGame((s) => s.hud);
   const cityId = useGame((s) => s.cityId);
   const toggleHq = useGame((s) => s.toggleHq);
+  const lastPulseDay = useGame((s) => s.lastPulseDay);
   const toggleInv = useGame((s) => s.toggleInv);
   const replayTutorial = useGame((s) => s.replayTutorial);
   const streak = useGame((s) => s.streak);
@@ -61,6 +63,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props)
   const sparkN = useGame((s) => s.sparkN);
   const sparkLamps = useGame((s) => s.sparkLamps);
   const today = new Date().toISOString().slice(0, 10);
+  const pulseReady = pulseDue(lastPulseDay, today);
   const sparksLeft = (sparkDay === today ? SPARK_DAY - sparkN : SPARK_DAY);
   const sparkedHere = Boolean(nearest && sparkDay === today && sparkLamps.includes(nearest.id));
   const canSpark = Boolean(
@@ -190,12 +193,13 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props)
           </button>
           <button
             type="button"
-            className="hud-plate is-kit pointer-events-auto"
+            className="hud-plate is-kit pointer-events-auto relative"
             onClick={() => toggleHq(true)}
-            aria-label="Open HQ"
+            aria-label={pulseReady ? "Open HQ, City Pulse waiting" : "Open HQ"}
           >
             <BookOpen className="size-4 text-fg-muted" strokeWidth={1.75} />
             <span className="kicker hidden sm:inline">HQ</span>
+            {pulseReady ? <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" aria-hidden /> : null}
           </button>
         </div>
       </div>

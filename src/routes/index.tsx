@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { CITY_LIST, CITIES } from "@/game/data";
+import { APP_VERSION } from "@/version";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -50,6 +51,7 @@ function TitleShell() {
           <span className="scout-marker is-idle title-scout" data-scout="raccoon" data-row="0" data-col="0" />
         </div>
         <p className="lede">Walk a real city. Light lamps. Answer trivia.</p>
+        <p className="mt-1 text-xs text-fg-subtle tabular-nums tracking-wide">v{APP_VERSION}</p>
         <button type="button" className="btn btn-primary title-go" disabled>
           Walk {city.name}
         </button>
