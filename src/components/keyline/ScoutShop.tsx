@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { SCOUT_LIST, cityShop } from "@/game/data";
+import { SCOUT_LIST, SUPER_LEGENDARY_LABEL, cityShop, superLegendaryCost } from "@/game/data";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
@@ -12,6 +12,7 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
   const wearScout = useGame((s) => s.wearScout);
   const cityId = useGame((s) => s.cityId);
   const shop = cityShop(cityId);
+  const superCost = superLegendaryCost();
 
   return (
     <div className="grid gap-3">
@@ -65,6 +66,34 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
           </div>
         );
       })}
+      <div className="flex items-start gap-3 rounded-md border border-border bg-bg-subtle/50 p-4">
+        <div className="scout-hire" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-display text-lg leading-tight">The last coat</p>
+              <p className="text-sm text-pretty text-fg-muted">
+                Three times the Fox. Not on the rack. Walks still keep the curb.
+              </p>
+              <p className="mt-1 kicker">{SUPER_LEGENDARY_LABEL}</p>
+            </div>
+            {hire ? (
+              <button type="button" className="btn btn-quiet shrink-0 px-3 text-xs" disabled>
+                Not yet · {superCost.toLocaleString()}
+              </button>
+            ) : (
+              <p className="shrink-0 self-center text-xs text-fg-subtle tabular-nums">
+                Not yet · {superCost.toLocaleString()}
+              </p>
+            )}
+          </div>
+          <p className="mt-2 flex items-center gap-1.5 text-sm tabular-nums text-fg-muted">
+            <ItemIcon item="coin" size={18} />
+            {superCost.toLocaleString()}
+            <span className="text-xs text-fg-subtle">· {SUPER_LEGENDARY_LABEL}</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

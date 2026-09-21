@@ -280,7 +280,7 @@ export function HqPanel() {
               <div>
                 <p className="kicker mt-2">Bank</p>
                 <p className="mt-1 text-xs text-fg-muted">
-                  {BANK_UP} up, tax. {BANK_DOWN} down, none. Values from the match table — white {TIER_VALUE.white} coin.
+                  Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower, none. White {TIER_VALUE.white} coin.
                 </p>
                 <ul className="mt-2 grid gap-2">
                   {TIER_ORDER.map((tier) => {
@@ -299,12 +299,13 @@ export function HqPanel() {
                             type="button"
                             className="btn btn-quiet px-3 text-xs"
                             disabled={have < up.payN || (keys[up.get] ?? 0) + up.getN > matchCap(up.get)}
+                            aria-label={`Craft ${up.payN} ${TIER_LABEL[tier]} to 1 ${TIER_LABEL[up.get]}`}
                             onClick={() => {
                               sfx.ui();
                               bankUp(tier);
                             }}
                           >
-                            {up.payN}→{TIER_LABEL[up.get]}
+                            {up.payN} {TIER_LABEL[tier]} → 1 {TIER_LABEL[up.get]}
                           </button>
                         ) : null}
                         {down ? (
@@ -312,12 +313,13 @@ export function HqPanel() {
                             type="button"
                             className="btn btn-quiet px-3 text-xs"
                             disabled={have < down.payN || (keys[down.get] ?? 0) + down.getN > matchCap(down.get)}
+                            aria-label={`Break 1 ${TIER_LABEL[tier]} to ${down.getN} ${TIER_LABEL[down.get]}`}
                             onClick={() => {
                               sfx.ui();
                               bankDown(tier);
                             }}
                           >
-                            1→{down.getN} {TIER_LABEL[down.get]}
+                            1 {TIER_LABEL[tier]} → {down.getN} {TIER_LABEL[down.get]}
                           </button>
                         ) : null}
                       </li>

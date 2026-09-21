@@ -3259,6 +3259,14 @@ export function wornPerk(id: import("./types").ScoutId) {
   return SCOUTS[id]?.perk ?? { label: "" };
 }
 
+export const SUPER_LEGENDARY_LABEL = "Super Legendary";
+/** Hire cost is a multiple of the Fox. Ability is not on the rack. */
+export const SUPER_LEGENDARY_MULT = 3;
+
+export function superLegendaryCost() {
+  return SCOUTS.fox.coins * SUPER_LEGENDARY_MULT;
+}
+
 export const SCOUT_LIST = Object.values(SCOUTS);
 
 export const KIOSK = {
