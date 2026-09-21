@@ -3,12 +3,21 @@ import { allCities } from "@/game/store";
 import { useGame } from "@/game/store";
 import { sfx, startBed, unlockAudio } from "@/game/audio";
 import { CITIES, cityShop } from "@/game/data";
+import type { CityId } from "@/game/types";
 import { AudioDock } from "./AudioDock";
+import { FirstLoginOverlay, useEnterGate } from "./FirstLogin";
 
 export function CitySelect() {
-  const pickCity = useGame((s) => s.pickCity);
   const setScreen = useGame((s) => s.setScreen);
   const atlas = useGame((s) => s.atlas);
+  const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();
+
+  function enter(id: CityId) {
+    unlockAudio();
+    startBed(useGame.getState().scout);
+    sfx.ui();
+    requestEnter(id);
+  }
 
   return (
     <div className="min-h-dvh bg-bg text-fg">
@@ -35,12 +44,7 @@ export function CitySelect() {
               <button
                 type="button"
                 className="panel w-full p-5 text-left transition-colors duration-[var(--motion-fast,250ms)] hover:border-border-strong"
-                onClick={() => {
-                  unlockAudio();
-                  startBed(useGame.getState().scout);
-                  sfx.ui();
-                  pickCity(c.id);
-                }}
+                onClick={() => enter(c.id)}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -64,6 +68,9 @@ export function CitySelect() {
           );
         })}
       </ul>
+      {showPrompt || waiting ? (
+        <FirstLoginOverlay waiting={waiting} onGuest={continueAsGuest} />
+      ) : null}
     </div>
   );
 }
