@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "topics": ["sports", "food", "arts", "local", "political", "math", "science", "history", "nature"],
+  "cityIds": ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola"],
+  "cats": ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature"],
+  "placeTopics": [
+    "defense", "aerospace", "art", "history", "natural-history", "science", "library", "campus",
+    "medicine", "food", "bbq", "sports", "football", "baseball", "basketball", "theatre", "music",
+    "civic", "capitol", "park", "nature", "water", "zoo", "rail", "airport", "finance", "memorial",
+    "church", "hotel", "bridge", "market"
+  ],
+  "deepCutBanks": ["nature_life", "history_life", "science_life"],
+  "niches": {
+    "sports-franchise": {
+      "pattern": "based in which city|calls [\\w .]+ home|club is nicknamed|NFL club|NBA club|NHL club|MLB club",
+      "topic": "sports"
+    },
+    "tarantula": {
+      "pattern": "tarantula|urticating|avicularia|psalmopoeus|theraphos|\\bmolt\\b|book-lung|spinneret|ephebopus",
+      "topic": "nature"
+    },
+    "metrology": {
+      "pattern": "gauge block|\\bCMM\\b|metrology|deadweight|optical flat|SI brochure|\\bwring\\b|gauge-block",
+      "topic": "science"
+    },
+    "aerospace-ops": {
+      "pattern": "\\bGSE\\b|hold-down|range safety|LOX loading|\\bcubesat\\b|\\bRTG\\b|\\bMLI\\b|fairing recovery|Kessler",
+      "topic": "science"
+    },
+    "marine-deep": {
+      "pattern": "baleen|goblin shark|boxfish|urticating hairs",
+      "topic": "nature"
+    }
+  },
+  "thresholds": {
+    "maxTopicShare": 0.32,
+    "maxNicheShare": 0.2,
+    "maxBankShare": 0.5,
+    "specialtyMaxEasyShare": 0.4,
+    "specialtyMinDeepRarityShare": 0.35
+  },
+  "generator": {
+    "bulkMaxSpecialtyShare": 0.15,
+    "bulkMaxTopicShare": 0.4,
+    "deepCutMinDiff": 3,
+    "deepCutMaxEasyShare": 0.25
+  },
+  "easyRarities": ["white", "blue"],
+  "deepRarities": ["red", "violet"]
+}

@@ -4,8 +4,13 @@ from __future__ import annotations
 
 import json
 import random
+import sys
 from collections import defaultdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from trivia_expand import apply
+from trivia_quota import assert_bulk, clamp_diff
 
 RNG = random.Random(20260913)
 
@@ -46,6 +51,7 @@ class Bank:
         if len(set(choices)) != 4:
             return
         self.seen.add(prompt)
+        diff = clamp_diff(prompt, answer, diff, bank="general")
         self.rows[cat].append((prompt, choices, answer, diff))
 
     def mc(self, cat: str, prompt: str, answer: str, pool: list[str], diff: int) -> None:
@@ -896,12 +902,6 @@ LEAGUES = [
 for prompt, ans, ch, d in LEAGUES:
     B.add("sports", prompt, ch, ans, d)
 
-from pathlib import Path
-import sys
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from trivia_expand import apply
-
 apply(B)
 
 # emit
@@ -932,5 +932,10 @@ print("wrote", out_path)
 print("per cat", dict(counts), "sum", sum(counts.values()))
 print("by diff", dict(diffs))
 print("unique prompts", len(B.seen))
+flat = []
+for cat in cats:
+    for prompt, choices, answer, diff in B.rows[cat]:
+        flat.append((cat, prompt, choices, answer, diff))
+assert_bulk(flat, bank="general")
 if sum(counts.values()) < 1000:
     raise SystemExit("under 1000")
