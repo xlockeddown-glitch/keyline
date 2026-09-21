@@ -60,6 +60,7 @@ if (baselineRequested) {
 }
 
 const timeoutMs = Number(process.env.BROWSER_SMOKE_TIMEOUT_MS || 45000);
+const SHEET_PATH = "/sheet-k07d.css";
 
 const VIEWPORTS = [
   { name: "desktop", width: 1280, height: 800, screenshot: outPng },
@@ -96,6 +97,19 @@ try {
   });
 
   const viewports = {};
+  const sheetUrl = new URL(SHEET_PATH, url).href;
+  const sheetCtx = await browser.newContext();
+  const sheetResp = await sheetCtx.request.get(sheetUrl);
+  const sheetBody = await sheetResp.body();
+  const sheet = {
+    url: sheetUrl,
+    status: sheetResp.status(),
+    contentType: sheetResp.headers()["content-type"] || "",
+    bytes: sheetBody.length,
+  };
+  await sheetCtx.close();
+  const sheetOk = sheet.status === 200 && /css/i.test(sheet.contentType) && sheet.bytes > 1000;
+
   for (const vp of VIEWPORTS) {
     const errors = { consoleErrors: [], pageErrors: [] };
     const page = await browser.newPage({
@@ -149,7 +163,7 @@ try {
       buildAuthEnabled: buildAuthEnabled(),
     }),
   );
-  const verdict = { url, viewports, brandWarnings, authWarnings, verdictFile: outJson };
+  const verdict = { url, viewports, sheet, brandWarnings, authWarnings, verdictFile: outJson };
   if (baselineRequested) {
     const { divergesFromBaseline, reasons } = compareAgainstBaseline(verdict);
     verdict.divergesFromBaseline = divergesFromBaseline;
@@ -162,7 +176,8 @@ try {
   // Set the code rather than aborting the process so the `finally` browser
   // teardown always runs (agents typically smoke twice per turn; leaking
   // Chromium accumulates across retries).
-  process.exitCode = exitCodeFor(viewports);
+  process.exitCode = sheetOk ? exitCodeFor(viewports) : 1;
+  if (!sheetOk) console.error(`CSS asset ${sheetUrl} → ${sheet.status} ${sheet.contentType}`);
 } catch (err) {
   const failure = { ok: false, url, error: String(err?.message || err) };
   try {

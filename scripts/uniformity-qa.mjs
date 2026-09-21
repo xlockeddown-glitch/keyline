@@ -77,7 +77,7 @@ try {
   );
 
   const failures = [];
-  if (plates.length !== 7) failures.push(`expected 7 scout plates, got ${plates.length}`);
+  if (plates.length !== 8) failures.push(`expected 8 scout plates, got ${plates.length}`);
 
   const keyOf = (p) => `${p.width}|${p.height}|${p.radius}|${p.background}`;
   const keys = new Set(plates.map(keyOf));
