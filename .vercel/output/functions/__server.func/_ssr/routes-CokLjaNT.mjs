@@ -1,0 +1,5045 @@
+import { o as __toESM } from "../_runtime.mjs";
+import { B as require_react, b as require_jsx_runtime } from "../_libs/@tanstack/react-router--chunk.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-CokLjaNT.js
+var import_react = /* @__PURE__ */ __toESM(require_react());
+var import_jsx_runtime = require_jsx_runtime();
+function poi(p) {
+	return p;
+}
+var austin = {
+	id: "austin",
+	name: "Austin",
+	region: "Texas",
+	blurb: "Capitol granite, bats at dusk, springs that never freeze.",
+	spawn: {
+		lat: 30.2681,
+		lng: -97.7418
+	},
+	pois: [
+		poi({
+			id: "tx-capitol",
+			name: "Texas State Capitol",
+			lat: 30.2747,
+			lng: -97.7404,
+			kind: "civic",
+			tier: "red",
+			lore: "Sunset Red granite, taller than the U.S. Capitol. The Goddess of Liberty stands on the dome with a gilded star.",
+			quiz: {
+				q: "The Texas Capitol is clad in which local stone?",
+				choices: [
+					"Limestone",
+					"Sunset Red granite",
+					"Marble",
+					"Sandstone"
+				],
+				answer: "Sunset Red granite"
+			}
+		}),
+		poi({
+			id: "gov-mansion",
+			name: "Texas Governor's Mansion",
+			lat: 30.2715,
+			lng: -97.7428,
+			kind: "civic",
+			tier: "green",
+			lore: "Greek Revival, 1856. Still the governor's house after a 2008 arson fire and a careful rebuild."
+		}),
+		poi({
+			id: "ut-tower",
+			name: "UT Tower",
+			lat: 30.2862,
+			lng: -97.7394,
+			kind: "campus",
+			tier: "amber",
+			lore: "The Main Building's tower is the university's clock and weather vane. It turns burnt orange after a Longhorn win.",
+			quiz: {
+				q: "How many stories is the UT Tower?",
+				choices: [
+					"14",
+					"21",
+					"27",
+					"33"
+				],
+				answer: "27"
+			}
+		}),
+		poi({
+			id: "dk-royal",
+			name: "Darrell K Royal–Texas Memorial Stadium",
+			lat: 30.2836,
+			lng: -97.7326,
+			kind: "stadium",
+			tier: "green",
+			lore: "Home of the Longhorns. The stadium sits in the old east campus, a few blocks from the Tower."
+		}),
+		poi({
+			id: "barton-springs",
+			name: "Barton Springs Pool",
+			lat: 30.264,
+			lng: -97.7713,
+			kind: "water",
+			tier: "amber",
+			lore: "A limestone-bottom spring pool that holds near 70°F all year. Austin's original public bath.",
+			quiz: {
+				q: "Barton Springs stays near what temperature year-round?",
+				choices: [
+					"55°F",
+					"70°F",
+					"85°F",
+					"It freezes in winter"
+				],
+				answer: "70°F"
+			}
+		}),
+		poi({
+			id: "zilker",
+			name: "Zilker Park",
+			lat: 30.2669,
+			lng: -97.7729,
+			kind: "park",
+			tier: "white",
+			lore: "The city's front lawn. ACL Fest, kite weekends, and the trailhead into the Barton Creek Greenbelt."
+		}),
+		poi({
+			id: "bat-bridge",
+			name: "Congress Avenue Bridge",
+			lat: 30.2617,
+			lng: -97.7452,
+			kind: "landmark",
+			tier: "amber",
+			lore: "Under the deck lives the largest urban bat colony on Earth. They lift off at dusk over Lady Bird Lake.",
+			quiz: {
+				q: "Which animals pour out from under this bridge at dusk in summer?",
+				choices: [
+					"Chimney swifts",
+					"Mexican free-tailed bats",
+					"Grackles",
+					"Cave swallows"
+				],
+				answer: "Mexican free-tailed bats"
+			}
+		}),
+		poi({
+			id: "lady-bird",
+			name: "Lady Bird Lake — Auditorium Shores",
+			lat: 30.2625,
+			lng: -97.7515,
+			kind: "water",
+			tier: "white",
+			lore: "A reservoir of the Colorado, renamed in 2007 for Lady Bird Johnson. Boardwalk, rowers, skyline.",
+			quiz: {
+				q: "What was Lady Bird Lake called before 2007?",
+				choices: [
+					"Lake Austin",
+					"Town Lake",
+					"Lake Travis",
+					"Colorado Bend"
+				],
+				answer: "Town Lake"
+			}
+		}),
+		poi({
+			id: "blanton",
+			name: "Blanton Museum of Art",
+			lat: 30.2808,
+			lng: -97.7376,
+			kind: "museum",
+			tier: "green",
+			lore: "UT's art museum. Ellsworth Kelly's Austin building sits next door like a stone chapel of color."
+		}),
+		poi({
+			id: "bullock",
+			name: "Bullock Texas State History Museum",
+			lat: 30.2803,
+			lng: -97.739,
+			kind: "museum",
+			tier: "blue",
+			lore: "Star of the Republic out front. Inside: the story Texas tells about itself."
+		}),
+		poi({
+			id: "paramount",
+			name: "Paramount Theatre",
+			lat: 30.2694,
+			lng: -97.742,
+			kind: "theatre",
+			tier: "green",
+			lore: "A 1915 vaudeville house on Congress. Still running films and touring acts under a restored proscenium."
+		}),
+		poi({
+			id: "moody-center",
+			name: "Moody Center",
+			lat: 30.2805,
+			lng: -97.7306,
+			kind: "stadium",
+			tier: "blue",
+			lore: "The new arena on the east edge of campus. Basketball, concerts, and a lot of orange."
+		}),
+		poi({
+			id: "mt-bonnell",
+			name: "Mount Bonnell",
+			lat: 30.321,
+			lng: -97.7735,
+			kind: "park",
+			tier: "green",
+			lore: "A limestone bluff over Lake Austin. 106 steps, a small summit, the city laid out below."
+		}),
+		poi({
+			id: "soco",
+			name: "South Congress",
+			lat: 30.2495,
+			lng: -97.7495,
+			kind: "landmark",
+			tier: "white",
+			lore: "Porch shops, murals, and the stretch Austin put on postcards. The skyline sits at the north end."
+		}),
+		poi({
+			id: "franklin",
+			name: "Franklin Barbecue",
+			lat: 30.2702,
+			lng: -97.7313,
+			kind: "food",
+			tier: "green",
+			lore: "The line starts before dawn. Brisket that made a whole city argue about smoke.",
+			quiz: {
+				q: "Franklin Barbecue is most famous for which smoked meat?",
+				choices: [
+					"Turkey",
+					"Beef brisket",
+					"Sausage",
+					"Pork ribs"
+				],
+				answer: "Beef brisket"
+			}
+		}),
+		poi({
+			id: "acl-live",
+			name: "ACL Live at the Moody Theater",
+			lat: 30.2653,
+			lng: -97.7472,
+			kind: "theatre",
+			tier: "blue",
+			lore: "Austin City Limits' downtown house. The longest-running music series on American television."
+		}),
+		poi({
+			id: "central-lib",
+			name: "Austin Central Library",
+			lat: 30.266,
+			lng: -97.753,
+			kind: "library",
+			tier: "blue",
+			lore: "A glass box on Shoal Creek with a rooftop garden. The city's public stacks, rebuilt for this century.",
+			printShop: true
+		}),
+		poi({
+			id: "ransom",
+			name: "Harry Ransom Center",
+			lat: 30.2842,
+			lng: -97.738,
+			kind: "library",
+			tier: "green",
+			lore: "A Gutenberg Bible, the Watergate papers, and a photography vault. Research library as treasure house.",
+			printShop: true
+		}),
+		poi({
+			id: "lbj-lib",
+			name: "LBJ Presidential Library",
+			lat: 30.2858,
+			lng: -97.7292,
+			kind: "museum",
+			tier: "green",
+			lore: "Johnson's archive on the east mall. The Great Society, Vietnam, and a 1960s motorcade of paper."
+		}),
+		poi({
+			id: "treaty-oak",
+			name: "Treaty Oak",
+			lat: 30.2753,
+			lng: -97.7556,
+			kind: "park",
+			tier: "white",
+			lore: "A 500-year-old live oak. Poisoned in 1989, it survived on about a third of its crown."
+		}),
+		poi({
+			id: "driskill",
+			name: "Driskill Hotel",
+			lat: 30.2681,
+			lng: -97.7418,
+			kind: "landmark",
+			tier: "blue",
+			lore: "Cattle-baron Romanesque on 6th. Opened 1886, still taking reservations."
+		}),
+		poi({
+			id: "state-cemetery",
+			name: "Texas State Cemetery",
+			lat: 30.2655,
+			lng: -97.726,
+			kind: "civic",
+			tier: "white",
+			lore: "Stephen F. Austin is buried here. A small hill of Texas names east of downtown."
+		}),
+		poi({
+			id: "umlauf",
+			name: "Umlauf Sculpture Garden",
+			lat: 30.263,
+			lng: -97.7663,
+			kind: "museum",
+			tier: "white",
+			lore: "Bronze figures among live oaks near Zilker. Quiet, and usually empty at noon."
+		}),
+		poi({
+			id: "ney",
+			name: "Elisabet Ney Museum",
+			lat: 30.3063,
+			lng: -97.7263,
+			kind: "museum",
+			tier: "white",
+			lore: "The sculptor's Hyde Park studio. Formosa, she called it — her Texas Athens."
+		}),
+		poi({
+			id: "whole-foods",
+			name: "Whole Foods Flagship",
+			lat: 30.2706,
+			lng: -97.7535,
+			kind: "food",
+			tier: "white",
+			lore: "The original grocery that outgrew the city. Still a landmark on Lamar."
+		}),
+		poi({
+			id: "cathedral-junk",
+			name: "Cathedral of Junk",
+			lat: 30.2189,
+			lng: -97.7718,
+			kind: "landmark",
+			tier: "white",
+			lore: "A backyard spire of bicycle wheels and television carcasses in South Austin. Folk architecture, licensed as art."
+		}),
+		poi({
+			id: "laguna-gloria",
+			name: "The Contemporary Austin — Laguna Gloria",
+			lat: 30.3117,
+			lng: -97.7736,
+			kind: "museum",
+			tier: "blue",
+			lore: "A 1916 villa on the lake, now sculpture grounds. Clara Driscoll's Italianate daydream."
+		})
+	]
+};
+var temple = {
+	id: "temple",
+	name: "Temple",
+	region: "Texas",
+	blurb: "A railroad town that grew a hospital system. Quiet streets, real distances.",
+	spawn: {
+		lat: 31.0957,
+		lng: -97.3452
+	},
+	pois: [
+		poi({
+			id: "sf-depot",
+			name: "Santa Fe Depot & Railroad Museum",
+			lat: 31.0957,
+			lng: -97.3452,
+			kind: "station",
+			tier: "amber",
+			lore: "The 1911 Santa Fe depot. Amtrak still calls, and Baldwin 4-6-2 #3423 sits in the yard.",
+			quiz: {
+				q: "Temple, Texas was named for a railroad civil engineer. Who?",
+				choices: [
+					"Jay Gould",
+					"Bernard Moore Temple",
+					"Leland Stanford",
+					"Cyrus K. Holliday"
+				],
+				answer: "Bernard Moore Temple"
+			}
+		}),
+		poi({
+			id: "city-hall-temple",
+			name: "Temple Municipal Building",
+			lat: 31.09729,
+			lng: -97.34153,
+			kind: "civic",
+			tier: "blue",
+			lore: "Downtown civic core, a short walk from the depot and the active BNSF yard."
+		}),
+		poi({
+			id: "temple-po",
+			name: "Temple Post Office",
+			lat: 31.10092,
+			lng: -97.33919,
+			kind: "civic",
+			tier: "white",
+			lore: "A federal building on the north edge of downtown. Morning light on limestone."
+		}),
+		poi({
+			id: "bsw-temple",
+			name: "Baylor Scott & White Medical Center",
+			lat: 31.07753,
+			lng: -97.36383,
+			kind: "campus",
+			tier: "red",
+			lore: "Founded 1897 as Temple Sanitarium by Drs. Arthur Scott and Raleigh White. Now a Level I trauma house.",
+			quiz: {
+				q: "Scott & White began in Temple in which year?",
+				choices: [
+					"1845",
+					"1876",
+					"1897",
+					"1918"
+				],
+				answer: "1897"
+			}
+		}),
+		poi({
+			id: "tam-med",
+			name: "Texas A&M College of Medicine — Temple",
+			lat: 31.07879,
+			lng: -97.34806,
+			kind: "campus",
+			tier: "green",
+			lore: "The medical school campus tied to the teaching hospital. White coats on South 31st.",
+			printShop: true
+		}),
+		poi({
+			id: "temple-college",
+			name: "Temple College",
+			lat: 31.07046,
+			lng: -97.35112,
+			kind: "campus",
+			tier: "blue",
+			lore: "The junior college on South 1st. Night classes, ballfields, a town that trains its own.",
+			printShop: true
+		}),
+		poi({
+			id: "sammons",
+			name: "Sammons Park",
+			lat: 31.10323,
+			lng: -97.36723,
+			kind: "park",
+			tier: "blue",
+			lore: "West of downtown: golf, the Mayborn Center, and the Cultural Activities Center in one civic cluster."
+		}),
+		poi({
+			id: "ths",
+			name: "Temple High School",
+			lat: 31.10685,
+			lng: -97.35334,
+			kind: "campus",
+			tier: "white",
+			lore: "The Wildcats. Friday lights a few blocks from the Santa Fe gardens."
+		}),
+		poi({
+			id: "baker-field",
+			name: "Baker Field",
+			lat: 31.09685,
+			lng: -97.33528,
+			kind: "park",
+			tier: "white",
+			lore: "East-side parkland. Kids, diamonds, and a view back toward the depot tower."
+		}),
+		poi({
+			id: "tarrant",
+			name: "Tarrant Park",
+			lat: 31.07379,
+			lng: -97.34139,
+			kind: "park",
+			tier: "white",
+			lore: "A neighborhood green south of downtown. Good for spotting a white lamp at dusk."
+		}),
+		poi({
+			id: "jaycee",
+			name: "Temple Jaycee Park",
+			lat: 31.07907,
+			lng: -97.37362,
+			kind: "park",
+			tier: "blue",
+			lore: "West Temple park, near the hospital gravity well. Picnic tables and a long throw to Sammons."
+		}),
+		poi({
+			id: "scott-white-park",
+			name: "Scott and White Park",
+			lat: 31.08379,
+			lng: -97.35612,
+			kind: "park",
+			tier: "white",
+			lore: "Named for the hospital founders. A pocket of shade between downtown and the medical mile."
+		}),
+		poi({
+			id: "barclay-bryan",
+			name: "Barclay-Bryan House",
+			lat: 31.09212,
+			lng: -97.3575,
+			kind: "landmark",
+			tier: "green",
+			lore: "A historic house west of the tracks. Temple's residential past in wood and porch."
+		}),
+		poi({
+			id: "lions-park",
+			name: "Temple Lions Park",
+			lat: 31.06296,
+			lng: -97.40278,
+			kind: "park",
+			tier: "green",
+			lore: "Farther west. A longer walk, a quieter lamp, the kind of park a railroad town actually uses."
+		}),
+		poi({
+			id: "miller-springs",
+			name: "Miller Springs Nature Center",
+			lat: 31.0916,
+			lng: -97.4718,
+			kind: "park",
+			tier: "amber",
+			lore: "On the Leon River below Belton Lake Dam. Bottomland trails, a different county seat a few miles west.",
+			quiz: {
+				q: "Temple sits in which Texas county, whose seat is Belton?",
+				choices: [
+					"McLennan",
+					"Bell",
+					"Williamson",
+					"Falls"
+				],
+				answer: "Bell"
+			}
+		}),
+		poi({
+			id: "draughon",
+			name: "Draughon-Miller Airport",
+			lat: 31.15167,
+			lng: -97.40972,
+			kind: "landmark",
+			tier: "blue",
+			lore: "Once Temple Army Air Field. The town's northwest edge, still flying."
+		})
+	]
+};
+var nyc = {
+	id: "nyc",
+	name: "New York",
+	region: "New York",
+	blurb: "A compressed atlas. Lamps on every other corner.",
+	spawn: {
+		lat: 40.758,
+		lng: -73.9855
+	},
+	pois: [
+		poi({
+			id: "times-sq",
+			name: "Times Square",
+			lat: 40.758,
+			lng: -73.9855,
+			kind: "landmark",
+			tier: "blue",
+			lore: "The bowtie. Named for the newspaper that moved here in 1904."
+		}),
+		poi({
+			id: "esb",
+			name: "Empire State Building",
+			lat: 40.7484,
+			lng: -73.9857,
+			kind: "landmark",
+			tier: "red",
+			lore: "102 floors, 1931. Built in 13 months at the bottom of the Depression.",
+			quiz: {
+				q: "How many floors does the Empire State Building have?",
+				choices: [
+					"86",
+					"100",
+					"102",
+					"110"
+				],
+				answer: "102"
+			}
+		}),
+		poi({
+			id: "nypl",
+			name: "New York Public Library — 42nd Street",
+			lat: 40.7532,
+			lng: -73.9822,
+			kind: "library",
+			tier: "amber",
+			lore: "Patience and Fortitude, the lions. The Rose Main Reading Room is a city of tables.",
+			printShop: true
+		}),
+		poi({
+			id: "grand-central",
+			name: "Grand Central Terminal",
+			lat: 40.7527,
+			lng: -73.9772,
+			kind: "station",
+			tier: "amber",
+			lore: "A celestial ceiling, a whispering gallery, and the clock that still runs the commute.",
+			quiz: {
+				q: "Grand Central's main concourse ceiling depicts…",
+				choices: [
+					"The Hudson Valley",
+					"A Mediterranean zodiac",
+					"Locomotives",
+					"Manhattan 1903"
+				],
+				answer: "A Mediterranean zodiac"
+			}
+		}),
+		poi({
+			id: "rock-center",
+			name: "Rockefeller Center",
+			lat: 40.7587,
+			lng: -73.9787,
+			kind: "landmark",
+			tier: "green",
+			lore: "Prometheus, the rink, and a private city inside the city."
+		}),
+		poi({
+			id: "st-pats",
+			name: "St. Patrick's Cathedral",
+			lat: 40.7586,
+			lng: -73.9762,
+			kind: "civic",
+			tier: "green",
+			lore: "Gothic Revival on Fifth. White marble against the glass."
+		}),
+		poi({
+			id: "met",
+			name: "The Metropolitan Museum of Art",
+			lat: 40.7794,
+			lng: -73.9632,
+			kind: "museum",
+			tier: "red",
+			lore: "The Met. A walk through every century that kept its objects."
+		}),
+		poi({
+			id: "guggenheim",
+			name: "Solomon R. Guggenheim Museum",
+			lat: 40.783,
+			lng: -73.9589,
+			kind: "museum",
+			tier: "green",
+			lore: "Wright's spiral on Fifth. You descend through the art."
+		}),
+		poi({
+			id: "moma",
+			name: "Museum of Modern Art",
+			lat: 40.7614,
+			lng: -73.9776,
+			kind: "museum",
+			tier: "green",
+			lore: "The collection that taught America what modern looked like."
+		}),
+		poi({
+			id: "bethesda",
+			name: "Bethesda Fountain",
+			lat: 40.7759,
+			lng: -73.971,
+			kind: "park",
+			tier: "white",
+			lore: "The Angel of the Waters. Central Park's terrace over the lake."
+		}),
+		poi({
+			id: "bull",
+			name: "Charging Bull",
+			lat: 40.7056,
+			lng: -74.0134,
+			kind: "landmark",
+			tier: "green",
+			lore: "Arturo Di Modica dropped it here in 1989. The city kept it."
+		}),
+		poi({
+			id: "one-wtc",
+			name: "One World Trade Center",
+			lat: 40.7127,
+			lng: -74.0134,
+			kind: "landmark",
+			tier: "amber",
+			lore: "1,776 feet. The skyline put back, with a name that still means the old one."
+		}),
+		poi({
+			id: "memorial",
+			name: "9/11 Memorial",
+			lat: 40.7115,
+			lng: -74.0133,
+			kind: "civic",
+			tier: "blue",
+			lore: "Twin voids where the towers stood. Names around the water."
+		}),
+		poi({
+			id: "brooklyn-br",
+			name: "Brooklyn Bridge — Manhattan",
+			lat: 40.7061,
+			lng: -73.9969,
+			kind: "landmark",
+			tier: "amber",
+			lore: "Roebling's 1883 span. Gothic towers, steel lace, the East River underfoot."
+		}),
+		poi({
+			id: "wsq",
+			name: "Washington Square Park",
+			lat: 40.7308,
+			lng: -73.9973,
+			kind: "park",
+			tier: "white",
+			lore: "The arch, the fountain, NYU's front yard."
+		}),
+		poi({
+			id: "flatiron",
+			name: "Flatiron Building",
+			lat: 40.7411,
+			lng: -73.9897,
+			kind: "landmark",
+			tier: "green",
+			lore: "A steel wedge at 23rd. Completed 1902, still the shape people draw."
+		}),
+		poi({
+			id: "msg",
+			name: "Madison Square Garden",
+			lat: 40.7505,
+			lng: -73.9934,
+			kind: "stadium",
+			tier: "blue",
+			lore: "Over Penn Station. The Garden is the building; the station is the wound."
+		}),
+		poi({
+			id: "high-line",
+			name: "The High Line — 14th Street",
+			lat: 40.7419,
+			lng: -74.0048,
+			kind: "park",
+			tier: "white",
+			lore: "A freight viaduct turned into a garden. Wild plants, tame views."
+		}),
+		poi({
+			id: "chrysler",
+			name: "Chrysler Building",
+			lat: 40.7516,
+			lng: -73.9755,
+			kind: "landmark",
+			tier: "green",
+			lore: "Art Deco crown, eagle gargoyles, briefly the tallest thing on Earth."
+		}),
+		poi({
+			id: "amnh",
+			name: "American Museum of Natural History",
+			lat: 40.7813,
+			lng: -73.974,
+			kind: "museum",
+			tier: "green",
+			lore: "The blue whale, the dinosaurs, the planetarium next door."
+		}),
+		poi({
+			id: "bryant",
+			name: "Bryant Park",
+			lat: 40.7536,
+			lng: -73.9832,
+			kind: "park",
+			tier: "white",
+			lore: "The lawn behind the library. Reading room with a sky."
+		}),
+		poi({
+			id: "union-sq",
+			name: "Union Square",
+			lat: 40.7359,
+			lng: -73.9911,
+			kind: "park",
+			tier: "white",
+			lore: "Market days and statues. The grid's pause between uptown and down."
+		}),
+		poi({
+			id: "lincoln",
+			name: "Lincoln Center",
+			lat: 40.7725,
+			lng: -73.9835,
+			kind: "theatre",
+			tier: "blue",
+			lore: "Opera, ballet, philharmonic — a campus of performance on the Upper West Side."
+		}),
+		poi({
+			id: "nyse",
+			name: "New York Stock Exchange",
+			lat: 40.7069,
+			lng: -74.0113,
+			kind: "civic",
+			tier: "blue",
+			lore: "Wall Street's colonnade. The bell, the floor, the idea of a market as a place."
+		})
+	]
+};
+var sf = {
+	id: "sf",
+	name: "San Francisco",
+	region: "California",
+	blurb: "Hills, fog, and a bridge painted International Orange.",
+	spawn: {
+		lat: 37.7952,
+		lng: -122.4028
+	},
+	pois: [
+		poi({
+			id: "ferry-bldg",
+			name: "Ferry Building",
+			lat: 37.7956,
+			lng: -122.3933,
+			kind: "station",
+			tier: "green",
+			lore: "The clock tower on the Embarcadero. Ferries, a hall of food, the bay at the back door."
+		}),
+		poi({
+			id: "transamerica",
+			name: "Transamerica Pyramid",
+			lat: 37.7952,
+			lng: -122.4028,
+			kind: "landmark",
+			tier: "amber",
+			lore: "1972 pyramid over the old Montgomery Block. The city's sharpest silhouette."
+		}),
+		poi({
+			id: "coit",
+			name: "Coit Tower",
+			lat: 37.8024,
+			lng: -122.4058,
+			kind: "landmark",
+			tier: "green",
+			lore: "Lillie Coit's gift on Telegraph Hill. Murals of the 1930s inside a concrete flume."
+		}),
+		poi({
+			id: "lombard",
+			name: "Lombard Street",
+			lat: 37.8021,
+			lng: -122.4187,
+			kind: "landmark",
+			tier: "white",
+			lore: "Eight hairpins down Russian Hill. The crooked street is a garden with a speed limit."
+		}),
+		poi({
+			id: "city-hall-sf",
+			name: "San Francisco City Hall",
+			lat: 37.7793,
+			lng: -122.4193,
+			kind: "civic",
+			tier: "green",
+			lore: "A dome taller than the U.S. Capitol's. Beaux-Arts rebuilt after 1906."
+		}),
+		poi({
+			id: "sfpl",
+			name: "SF Public Library — Main",
+			lat: 37.779,
+			lng: -122.4158,
+			kind: "library",
+			tier: "blue",
+			lore: "The new main across from Civic Center. Stacks with a view of the dome.",
+			printShop: true
+		}),
+		poi({
+			id: "chinatown-gate",
+			name: "Chinatown Dragon Gate",
+			lat: 37.7909,
+			lng: -122.4056,
+			kind: "landmark",
+			tier: "blue",
+			lore: "Grant Avenue's southern gate. The oldest Chinatown in North America starts here."
+		}),
+		poi({
+			id: "union-sq-sf",
+			name: "Union Square",
+			lat: 37.788,
+			lng: -122.4075,
+			kind: "park",
+			tier: "white",
+			lore: "Named for Union rallies in the Civil War. Shopping now, Dewey's column still in the middle."
+		}),
+		poi({
+			id: "pier39",
+			name: "Pier 39",
+			lat: 37.8087,
+			lng: -122.4098,
+			kind: "landmark",
+			tier: "blue",
+			lore: "The sea lions took the docks. Tourists took the rest."
+		}),
+		poi({
+			id: "wharf",
+			name: "Fisherman's Wharf",
+			lat: 37.808,
+			lng: -122.4177,
+			kind: "food",
+			tier: "white",
+			lore: "Crab, sourdough, and the smell of the bay. Working boats still leave from here."
+		}),
+		poi({
+			id: "palace",
+			name: "Palace of Fine Arts",
+			lat: 37.802,
+			lng: -122.4487,
+			kind: "landmark",
+			tier: "amber",
+			lore: "Maybeck's 1915 rotunda, rebuilt in concrete so the fake ruin would last."
+		}),
+		poi({
+			id: "gg-crissy",
+			name: "Crissy Field — Golden Gate view",
+			lat: 37.8076,
+			lng: -122.4667,
+			kind: "park",
+			tier: "red",
+			lore: "The old airfield under the bridge. International Orange against the headlands.",
+			quiz: {
+				q: "The Golden Gate Bridge is painted which color?",
+				choices: [
+					"Gold",
+					"International Orange",
+					"Navy gray",
+					"Red oxide"
+				],
+				answer: "International Orange"
+			}
+		}),
+		poi({
+			id: "deyoung",
+			name: "de Young Museum",
+			lat: 37.7715,
+			lng: -122.4687,
+			kind: "museum",
+			tier: "green",
+			lore: "Copper in Golden Gate Park. The tower looks over the Presidio and the Pacific."
+		}),
+		poi({
+			id: "cal-academy",
+			name: "California Academy of Sciences",
+			lat: 37.7699,
+			lng: -122.4661,
+			kind: "museum",
+			tier: "green",
+			lore: "A living roof, a rainforest dome, and an aquarium under the park."
+		}),
+		poi({
+			id: "painted-ladies",
+			name: "Painted Ladies — Alamo Square",
+			lat: 37.7763,
+			lng: -122.4328,
+			kind: "landmark",
+			tier: "white",
+			lore: "Victorian row, downtown in the backdrop. The postcard that still works."
+		}),
+		poi({
+			id: "twin-peaks",
+			name: "Twin Peaks",
+			lat: 37.7544,
+			lng: -122.4477,
+			kind: "park",
+			tier: "blue",
+			lore: "The city's ridge. Fog pours over it like a river."
+		}),
+		poi({
+			id: "oracle-park",
+			name: "Oracle Park",
+			lat: 37.7786,
+			lng: -122.3893,
+			kind: "stadium",
+			tier: "blue",
+			lore: "McCovey Cove. Splash hits and a walkway around right field."
+		}),
+		poi({
+			id: "dolores",
+			name: "Mission Dolores",
+			lat: 37.7642,
+			lng: -122.4268,
+			kind: "civic",
+			tier: "green",
+			lore: "1776 adobe. The oldest surviving building in the city."
+		}),
+		poi({
+			id: "castro",
+			name: "Castro Theatre",
+			lat: 37.762,
+			lng: -122.435,
+			kind: "theatre",
+			tier: "blue",
+			lore: "A 1922 movie palace on Castro Street. The organ still rises."
+		}),
+		poi({
+			id: "ghirardelli",
+			name: "Ghirardelli Square",
+			lat: 37.8059,
+			lng: -122.422,
+			kind: "food",
+			tier: "white",
+			lore: "The chocolate factory turned courtyard. Hill down to Aquatic Park."
+		})
+	]
+};
+var london = {
+	id: "london",
+	name: "London",
+	region: "England",
+	blurb: "A river city of towers, markets, and rooms of stolen time.",
+	spawn: {
+		lat: 51.508,
+		lng: -.1281
+	},
+	pois: [
+		poi({
+			id: "trafalgar",
+			name: "Trafalgar Square",
+			lat: 51.508,
+			lng: -.1281,
+			kind: "landmark",
+			tier: "blue",
+			lore: "Nelson's Column, the lions, the fourth plinth that keeps changing."
+		}),
+		poi({
+			id: "nat-gallery",
+			name: "The National Gallery",
+			lat: 51.5089,
+			lng: -.1283,
+			kind: "museum",
+			tier: "amber",
+			lore: "Western painting on Trafalgar. Free to walk in. Hard to walk out."
+		}),
+		poi({
+			id: "big-ben",
+			name: "Elizabeth Tower",
+			lat: 51.5007,
+			lng: -.1246,
+			kind: "civic",
+			tier: "red",
+			lore: "The tower is Elizabeth; the bell is Big Ben. People still get this wrong on purpose.",
+			quiz: {
+				q: "What is 'Big Ben' actually the name of?",
+				choices: [
+					"The clock face",
+					"The tower",
+					"The Great Bell",
+					"The Houses of Parliament"
+				],
+				answer: "The Great Bell"
+			}
+		}),
+		poi({
+			id: "westminster-abbey",
+			name: "Westminster Abbey",
+			lat: 51.4994,
+			lng: -.1273,
+			kind: "civic",
+			tier: "amber",
+			lore: "Coronations since 1066. Poets in one corner, kings in another."
+		}),
+		poi({
+			id: "buckingham",
+			name: "Buckingham Palace",
+			lat: 51.5014,
+			lng: -.1419,
+			kind: "civic",
+			tier: "green",
+			lore: "The working palace. The Mall runs straight at it like a ruler."
+		}),
+		poi({
+			id: "british-museum",
+			name: "British Museum",
+			lat: 51.5194,
+			lng: -.127,
+			kind: "museum",
+			tier: "red",
+			lore: "The world's attic. Rosetta Stone, Parthenon sculptures, a glass court."
+		}),
+		poi({
+			id: "tower",
+			name: "Tower of London",
+			lat: 51.5081,
+			lng: -.0759,
+			kind: "landmark",
+			tier: "amber",
+			lore: "William's white keep, the Crown Jewels, and ravens under contract.",
+			quiz: {
+				q: "Legend says the kingdom falls if which birds leave the Tower?",
+				choices: [
+					"Pigeons",
+					"Ravens",
+					"Swans",
+					"Falcons"
+				],
+				answer: "Ravens"
+			}
+		}),
+		poi({
+			id: "tower-bridge",
+			name: "Tower Bridge",
+			lat: 51.5055,
+			lng: -.0754,
+			kind: "landmark",
+			tier: "green",
+			lore: "1894 bascule. Not London Bridge, no matter what the postcards imply."
+		}),
+		poi({
+			id: "st-pauls",
+			name: "St Paul's Cathedral",
+			lat: 51.5138,
+			lng: -.0984,
+			kind: "civic",
+			tier: "amber",
+			lore: "Wren's dome after the Fire. The Whispering Gallery still whispers."
+		}),
+		poi({
+			id: "tate",
+			name: "Tate Modern",
+			lat: 51.5076,
+			lng: -.0994,
+			kind: "museum",
+			tier: "green",
+			lore: "A power station that kept its chimney. Turbine Hall swallows sculpture whole."
+		}),
+		poi({
+			id: "shard",
+			name: "The Shard",
+			lat: 51.5045,
+			lng: -.0865,
+			kind: "landmark",
+			tier: "blue",
+			lore: "Piano's glass spike over London Bridge station."
+		}),
+		poi({
+			id: "covent",
+			name: "Covent Garden",
+			lat: 51.5117,
+			lng: -.123,
+			kind: "food",
+			tier: "blue",
+			lore: "The old fruit market, now a piazza. Performers under the west portico."
+		}),
+		poi({
+			id: "piccadilly",
+			name: "Piccadilly Circus",
+			lat: 51.5101,
+			lng: -.1342,
+			kind: "landmark",
+			tier: "white",
+			lore: "Eros, the lights, the junction that became a verb."
+		}),
+		poi({
+			id: "nhm",
+			name: "Natural History Museum",
+			lat: 51.4967,
+			lng: -.1764,
+			kind: "museum",
+			tier: "green",
+			lore: "Hintze Hall's blue whale. Terracotta animals climbing the facade."
+		}),
+		poi({
+			id: "va",
+			name: "Victoria and Albert Museum",
+			lat: 51.4966,
+			lng: -.1722,
+			kind: "museum",
+			tier: "green",
+			lore: "The world's decorative-arts hoard. Cast courts, fashion, a John Madejski garden."
+		}),
+		poi({
+			id: "british-lib",
+			name: "British Library",
+			lat: 51.5299,
+			lng: -.1275,
+			kind: "library",
+			tier: "green",
+			lore: "The King's Library tower in glass. Magna Carta, manuscripts, a public reading room.",
+			printShop: true
+		}),
+		poi({
+			id: "globe",
+			name: "Shakespeare's Globe",
+			lat: 51.5081,
+			lng: -.0972,
+			kind: "theatre",
+			tier: "blue",
+			lore: "A reconstruction near the original Bankside site. Open roof, standing yard."
+		}),
+		poi({
+			id: "borough",
+			name: "Borough Market",
+			lat: 51.5055,
+			lng: -.091,
+			kind: "food",
+			tier: "blue",
+			lore: "A market under the railway. Cheese, smoke, the river a street away."
+		}),
+		poi({
+			id: "london-eye",
+			name: "London Eye",
+			lat: 51.5033,
+			lng: -.1195,
+			kind: "landmark",
+			tier: "white",
+			lore: "A millennial wheel that stayed. The South Bank's slow orbit."
+		}),
+		poi({
+			id: "kings-cross",
+			name: "King's Cross Station",
+			lat: 51.532,
+			lng: -.1233,
+			kind: "station",
+			tier: "blue",
+			lore: "The new western concourse, the old vaults, and a trolley in a wall for the tourists."
+		}),
+		poi({
+			id: "albert-hall",
+			name: "Royal Albert Hall",
+			lat: 51.5009,
+			lng: -.1774,
+			kind: "theatre",
+			tier: "blue",
+			lore: "The circular concert hall in South Ken. Proms, and an echo they later tamed."
+		})
+	]
+};
+var chicago = {
+	id: "chicago",
+	name: "Chicago",
+	region: "Illinois",
+	blurb: "Grid, lake, steel. Architecture as a competitive sport.",
+	spawn: {
+		lat: 41.8827,
+		lng: -87.6233
+	},
+	pois: [
+		poi({
+			id: "bean",
+			name: "Cloud Gate",
+			lat: 41.8827,
+			lng: -87.6233,
+			kind: "landmark",
+			tier: "amber",
+			lore: "Anish Kapoor's bean. The city folded on stainless steel.",
+			quiz: {
+				q: "Cloud Gate in Millennium Park was designed by whom?",
+				choices: [
+					"Frank Gehry",
+					"Anish Kapoor",
+					"Jaume Plensa",
+					"Alexander Calder"
+				],
+				answer: "Anish Kapoor"
+			}
+		}),
+		poi({
+			id: "art-institute",
+			name: "Art Institute of Chicago",
+			lat: 41.8796,
+			lng: -87.6237,
+			kind: "museum",
+			tier: "red",
+			lore: "The lions on Michigan Avenue. American Gothic lives inside."
+		}),
+		poi({
+			id: "willis",
+			name: "Willis Tower",
+			lat: 41.8789,
+			lng: -87.6359,
+			kind: "landmark",
+			tier: "amber",
+			lore: "Sears, then Willis. The skydeck still hangs you over Wacker.",
+			quiz: {
+				q: "Willis Tower was originally named…",
+				choices: [
+					"Hancock Center",
+					"Sears Tower",
+					"Standard Oil Building",
+					"Marina City"
+				],
+				answer: "Sears Tower"
+			}
+		}),
+		poi({
+			id: "navy-pier",
+			name: "Navy Pier",
+			lat: 41.8917,
+			lng: -87.6086,
+			kind: "landmark",
+			tier: "white",
+			lore: "A municipal pier that became a carnival. The lake is the real attraction."
+		}),
+		poi({
+			id: "field",
+			name: "Field Museum",
+			lat: 41.8663,
+			lng: -87.617,
+			kind: "museum",
+			tier: "green",
+			lore: "Sue the T. rex. A white temple on the museum campus."
+		}),
+		poi({
+			id: "shedd",
+			name: "Shedd Aquarium",
+			lat: 41.8676,
+			lng: -87.614,
+			kind: "museum",
+			tier: "blue",
+			lore: "The aquarium that faces the lake it competes with."
+		}),
+		poi({
+			id: "adler",
+			name: "Adler Planetarium",
+			lat: 41.8663,
+			lng: -87.6068,
+			kind: "museum",
+			tier: "blue",
+			lore: "The first planetarium in the Western Hemisphere. The skyline from the point."
+		}),
+		poi({
+			id: "buckingham",
+			name: "Buckingham Fountain",
+			lat: 41.8758,
+			lng: -87.6189,
+			kind: "park",
+			tier: "white",
+			lore: "Grant Park's rococo water clock. Inspired by Versailles, scaled for a prairie metropolis."
+		}),
+		poi({
+			id: "wrigley",
+			name: "Wrigley Field",
+			lat: 41.9484,
+			lng: -87.6553,
+			kind: "stadium",
+			tier: "green",
+			lore: "Ivy, a manual scoreboard, and a neighborhood that grew around a ballpark."
+		}),
+		poi({
+			id: "hancock",
+			name: "875 North Michigan Avenue",
+			lat: 41.8988,
+			lng: -87.6231,
+			kind: "landmark",
+			tier: "green",
+			lore: "The Hancock. X-bracing you can read from the river."
+		}),
+		poi({
+			id: "water-tower",
+			name: "Chicago Water Tower",
+			lat: 41.8972,
+			lng: -87.6246,
+			kind: "landmark",
+			tier: "white",
+			lore: "Survived the Fire of 1871. A limestone castle for pumps."
+		}),
+		poi({
+			id: "marina",
+			name: "Marina City",
+			lat: 41.8882,
+			lng: -87.629,
+			kind: "landmark",
+			tier: "white",
+			lore: "Bertrand Goldberg's corncobs. Parking ramps as architecture."
+		}),
+		poi({
+			id: "chicago-theatre",
+			name: "Chicago Theatre",
+			lat: 41.8853,
+			lng: -87.6276,
+			kind: "theatre",
+			tier: "blue",
+			lore: "The marquee that became a logo. State Street's bright name."
+		}),
+		poi({
+			id: "union-st",
+			name: "Chicago Union Station",
+			lat: 41.8786,
+			lng: -87.6394,
+			kind: "station",
+			tier: "green",
+			lore: "The Great Hall. Columns, light, and the trains underneath."
+		}),
+		poi({
+			id: "harold-lib",
+			name: "Harold Washington Library",
+			lat: 41.8763,
+			lng: -87.6282,
+			kind: "library",
+			tier: "blue",
+			lore: "The city's central library, owls on the roof. A print shop of a civic kind.",
+			printShop: true
+		}),
+		poi({
+			id: "united-center",
+			name: "United Center",
+			lat: 41.8807,
+			lng: -87.6742,
+			kind: "stadium",
+			tier: "white",
+			lore: "Bulls and Blackhawks. Jordan still in bronze out front."
+		}),
+		poi({
+			id: "lincoln-zoo",
+			name: "Lincoln Park Zoo",
+			lat: 41.9211,
+			lng: -87.634,
+			kind: "park",
+			tier: "white",
+			lore: "A free zoo on the North Side. The park that made the lake livable."
+		}),
+		poi({
+			id: "msi",
+			name: "Museum of Science and Industry",
+			lat: 41.7906,
+			lng: -87.583,
+			kind: "museum",
+			tier: "green",
+			lore: "The Palace of Fine Arts from the 1893 fair, kept. A U-boat in the basement."
+		})
+	]
+};
+var detroit = {
+	id: "detroit",
+	name: "Detroit",
+	region: "Michigan",
+	blurb: "Motors, Motown, a river that looks at Canada. Woodward is the spine.",
+	spawn: {
+		lat: 42.3314,
+		lng: -83.0466
+	},
+	pois: [
+		poi({
+			id: "campus-martius",
+			name: "Campus Martius Park",
+			lat: 42.3314,
+			lng: -83.0466,
+			kind: "park",
+			tier: "white",
+			lore: "The city's old parade ground, rebuilt as a park. Woodward, Michigan, and Monroe meet here.",
+			quiz: {
+				q: "Campus Martius sits at the downtown hub of which Detroit avenue?",
+				choices: [
+					"Gratiot",
+					"Woodward",
+					"Jefferson only",
+					"8 Mile"
+				],
+				answer: "Woodward"
+			}
+		}),
+		poi({
+			id: "guardian",
+			name: "Guardian Building",
+			lat: 42.3294,
+			lng: -83.046,
+			kind: "landmark",
+			tier: "green",
+			lore: "A Mayan Revival brick cathedral of finance. The Union Trust's 1929 skyscraper."
+		}),
+		poi({
+			id: "spirit-detroit",
+			name: "Spirit of Detroit",
+			lat: 42.3292,
+			lng: -83.0445,
+			kind: "civic",
+			tier: "white",
+			lore: "Marshall Fredericks' bronze at the municipal center. Family in one hand, gilt sun in the other."
+		}),
+		poi({
+			id: "hart-plaza",
+			name: "Hart Plaza",
+			lat: 42.3276,
+			lng: -83.0443,
+			kind: "civic",
+			tier: "green",
+			lore: "Riverfront hardscape. The fist, the fountain, Canada across the water.",
+			quiz: {
+				q: "The giant bronze fist downtown commemorates which boxer?",
+				choices: [
+					"Joe Frazier",
+					"Joe Louis",
+					"Sugar Ray Robinson",
+					"Thomas Hearns"
+				],
+				answer: "Joe Louis"
+			}
+		}),
+		poi({
+			id: "rencen",
+			name: "Renaissance Center",
+			lat: 42.3287,
+			lng: -83.0397,
+			kind: "landmark",
+			tier: "amber",
+			lore: "GM's river towers. A fortress of glass that turned the city to face the water."
+		}),
+		poi({
+			id: "fox-det",
+			name: "Fox Theatre",
+			lat: 42.3383,
+			lng: -83.0514,
+			kind: "theatre",
+			tier: "green",
+			lore: "A 1928 movie palace on Woodward. Hindu-Siamese fantasy in plaster and gold."
+		}),
+		poi({
+			id: "comerica",
+			name: "Comerica Park",
+			lat: 42.339,
+			lng: -83.0485,
+			kind: "stadium",
+			tier: "green",
+			lore: "Tigers since 2000. Tigers in stone, a carousel, downtown baseball."
+		}),
+		poi({
+			id: "ford-field",
+			name: "Ford Field",
+			lat: 42.34,
+			lng: -83.0456,
+			kind: "stadium",
+			tier: "blue",
+			lore: "The Lions' dome next door to the Tigers. Super Bowl XL lived here."
+		}),
+		poi({
+			id: "lca",
+			name: "Little Caesars Arena",
+			lat: 42.3411,
+			lng: -83.0554,
+			kind: "stadium",
+			tier: "white",
+			lore: "Red Wings and Pistons under one roof. The district that replaced the old Joe."
+		}),
+		poi({
+			id: "mcs",
+			name: "Michigan Central Station",
+			lat: 42.331,
+			lng: -83.0778,
+			kind: "station",
+			tier: "red",
+			lore: "Beaux-Arts ruin, then Ford's restoration. Corktown's cathedral of arrivals."
+		}),
+		poi({
+			id: "dia",
+			name: "Detroit Institute of Arts",
+			lat: 42.3594,
+			lng: -83.0648,
+			kind: "museum",
+			tier: "red",
+			lore: "Rivera's Detroit Industry murals. A palace of art on Woodward's cultural mile.",
+			quiz: {
+				q: "Diego Rivera's Detroit Industry murals are in which museum?",
+				choices: [
+					"MoMA",
+					"the Detroit Institute of Arts",
+					"the Louvre",
+					"the Art Institute of Chicago"
+				],
+				answer: "the Detroit Institute of Arts"
+			}
+		}),
+		poi({
+			id: "motown",
+			name: "Motown Museum",
+			lat: 42.3642,
+			lng: -83.0885,
+			kind: "landmark",
+			tier: "amber",
+			lore: "Hitsville U.S.A. Studio A is still a house on West Grand Boulevard."
+		}),
+		poi({
+			id: "eastern-mkt",
+			name: "Eastern Market",
+			lat: 42.3456,
+			lng: -83.0405,
+			kind: "food",
+			tier: "white",
+			lore: "Saturday sheds, peppers, and murals. One of the oldest public markets in the country."
+		}),
+		poi({
+			id: "dpl",
+			name: "Detroit Public Library — Main",
+			lat: 42.3587,
+			lng: -83.0666,
+			kind: "library",
+			tier: "blue",
+			lore: "Cass Gilbert's white marble across from the DIA. A print shop of a civic kind.",
+			printShop: true
+		}),
+		poi({
+			id: "orchestra-det",
+			name: "Orchestra Hall",
+			lat: 42.3389,
+			lng: -83.0592,
+			kind: "theatre",
+			tier: "white",
+			lore: "The Detroit Symphony's home. A 1919 hall that was saved from a wrecking ball."
+		}),
+		poi({
+			id: "lafayette-coney",
+			name: "Lafayette Coney Island",
+			lat: 42.3316,
+			lng: -83.0489,
+			kind: "food",
+			tier: "white",
+			lore: "Chili, mustard, onions. The Detroit dog, next door to its rival of seventy years."
+		}),
+		poi({
+			id: "wayne-state",
+			name: "Wayne State University",
+			lat: 42.3573,
+			lng: -83.0705,
+			kind: "campus",
+			tier: "white",
+			lore: "A midtown campus between the DIA and the Motor City. Old Main still faces Cass."
+		}),
+		poi({
+			id: "greektown",
+			name: "Greektown",
+			lat: 42.3355,
+			lng: -83.0422,
+			kind: "food",
+			tier: "white",
+			lore: "Monroe Street, baklava, and a casino. The parish still rings on Sunday."
+		})
+	]
+};
+var tucson = {
+	id: "tucson",
+	name: "Tucson",
+	region: "Arizona",
+	blurb: "The Old Pueblo. Saguaros, a pink courthouse, and a university older than the state.",
+	spawn: {
+		lat: 32.2219,
+		lng: -110.969
+	},
+	pois: [
+		poi({
+			id: "el-presidio",
+			name: "El Presidio Park",
+			lat: 32.2239,
+			lng: -110.9754,
+			kind: "park",
+			tier: "blue",
+			lore: "The city's first square. Adobe, a Spanish fort's footprint, and the Santa Catalinas on the north sky.",
+			quiz: {
+				q: "Tucson's name comes from an O'odham phrase referring to which landform?",
+				choices: [
+					"A dry lake",
+					"The black base of a hill",
+					"A copper mine",
+					"A cottonwood bosque"
+				],
+				answer: "The black base of a hill"
+			}
+		}),
+		poi({
+			id: "pima-courthouse",
+			name: "Pima County Courthouse",
+			lat: 32.223,
+			lng: -110.9746,
+			kind: "civic",
+			tier: "amber",
+			lore: "Pink Moorish Revival, a tiled dome, the county's postcard. Roy Place, 1929.",
+			quiz: {
+				q: "The historic Pima County Courthouse is famous for which color of stucco?",
+				choices: [
+					"White",
+					"Pink",
+					"Terra-cotta red",
+					"Sand"
+				],
+				answer: "Pink"
+			}
+		}),
+		poi({
+			id: "tma",
+			name: "Tucson Museum of Art",
+			lat: 32.2236,
+			lng: -110.9758,
+			kind: "museum",
+			tier: "green",
+			lore: "Art in the Presidio. Historic houses on the block, and a collection that faces the desert."
+		}),
+		poi({
+			id: "hotel-congress",
+			name: "Hotel Congress",
+			lat: 32.2218,
+			lng: -110.9668,
+			kind: "landmark",
+			tier: "blue",
+			lore: "1919, across from the depot. A fire here in 1934 flushed Dillinger's gang out of their rooms.",
+			quiz: {
+				q: "A 1934 fire at Hotel Congress helped capture which outlaw's gang?",
+				choices: [
+					"Bonnie and Clyde",
+					"John Dillinger",
+					"Pretty Boy Floyd",
+					"Al Capone"
+				],
+				answer: "John Dillinger"
+			}
+		}),
+		poi({
+			id: "rialto-tucson",
+			name: "Rialto Theatre",
+			lat: 32.2219,
+			lng: -110.9664,
+			kind: "theatre",
+			tier: "green",
+			lore: "A 1920 movie house on Congress, still putting bands under the old plaster sky."
+		}),
+		poi({
+			id: "fox-tucson",
+			name: "Fox Tucson Theatre",
+			lat: 32.2217,
+			lng: -110.9694,
+			kind: "theatre",
+			tier: "white",
+			lore: "Art Deco on Congress. Closed, then restored, then the organ played again."
+		}),
+		poi({
+			id: "st-augustine",
+			name: "Cathedral of Saint Augustine",
+			lat: 32.2195,
+			lng: -110.9728,
+			kind: "civic",
+			tier: "green",
+			lore: "Stone Avenue's cathedral. A Spanish colonial front on a desert parish that predates the state."
+		}),
+		poi({
+			id: "tucson-library",
+			name: "Joel D. Valdez Main Library",
+			lat: 32.2228,
+			lng: -110.9708,
+			kind: "library",
+			tier: "blue",
+			lore: "The downtown stacks on Stone. A print shop of a civic kind, a few blocks from the courthouse.",
+			printShop: true
+		}),
+		poi({
+			id: "ua-old-main",
+			name: "University of Arizona — Old Main",
+			lat: 32.2319,
+			lng: -110.9534,
+			kind: "campus",
+			tier: "red",
+			lore: "The territorial university's first building, 1891. The Wildcats were here before Arizona was a state.",
+			quiz: {
+				q: "The University of Arizona was founded in which year?",
+				choices: [
+					"1862",
+					"1885",
+					"1912",
+					"1929"
+				],
+				answer: "1885"
+			}
+		}),
+		poi({
+			id: "arizona-stadium",
+			name: "Arizona Stadium",
+			lat: 32.2289,
+			lng: -110.9488,
+			kind: "stadium",
+			tier: "green",
+			lore: "Bear Down. The Wildcats' football bowl with the Catalinas over the north end."
+		}),
+		poi({
+			id: "mckale",
+			name: "McKale Center",
+			lat: 32.2303,
+			lng: -110.947,
+			kind: "stadium",
+			tier: "blue",
+			lore: "Basketball under a name that still means Bear Down. The student section is loud in the desert."
+		}),
+		poi({
+			id: "az-state-museum",
+			name: "Arizona State Museum",
+			lat: 32.2314,
+			lng: -110.954,
+			kind: "museum",
+			tier: "blue",
+			lore: "The oldest anthropological museum in the Southwest. Pottery, Hohokam, and a campus lawn."
+		}),
+		poi({
+			id: "a-mountain",
+			name: "Sentinel Peak",
+			lat: 32.213,
+			lng: -110.9885,
+			kind: "park",
+			tier: "amber",
+			lore: "A Mountain. A basaltic lookout with a white A. The O'odham name is why the city is Tucson.",
+			quiz: {
+				q: "The white letter on Sentinel Peak in Tucson stands for…",
+				choices: [
+					"Arizona",
+					"the University of Arizona",
+					"the Arizona Rangers",
+					"Ajo"
+				],
+				answer: "the University of Arizona"
+			}
+		}),
+		poi({
+			id: "fourth-ave",
+			name: "Fourth Avenue",
+			lat: 32.228,
+			lng: -110.9655,
+			kind: "landmark",
+			tier: "white",
+			lore: "Vintage shops, the underpass, the streetcar. Tucson's porch between downtown and campus."
+		}),
+		poi({
+			id: "barrio-viejo",
+			name: "Barrio Viejo",
+			lat: 32.2165,
+			lng: -110.9735,
+			kind: "landmark",
+			tier: "white",
+			lore: "Sonoran adobe row houses in lime wash. The old barrio south of the convention halls."
+		}),
+		poi({
+			id: "reid-zoo",
+			name: "Reid Park Zoo",
+			lat: 32.2105,
+			lng: -110.9238,
+			kind: "park",
+			tier: "white",
+			lore: "A small zoo in a city park. Elephants in the same basin as the Santa Cruz."
+		}),
+		poi({
+			id: "san-xavier",
+			name: "Mission San Xavier del Bac",
+			lat: 32.1071,
+			lng: -111.0079,
+			kind: "civic",
+			tier: "red",
+			lore: "The White Dove of the Desert. A 1797 mission still in use on Tohono O'odham land.",
+			quiz: {
+				q: "Mission San Xavier del Bac is often called the…",
+				choices: [
+					"Pink Dome of the Valley",
+					"White Dove of the Desert",
+					"Copper Bell of the Mines",
+					"Red Wall of the Canyon"
+				],
+				answer: "White Dove of the Desert"
+			}
+		}),
+		poi({
+			id: "main-gate",
+			name: "Main Gate Square",
+			lat: 32.2317,
+			lng: -110.9568,
+			kind: "food",
+			tier: "white",
+			lore: "University Boulevard at the campus gate. Food, streetcar, and a crowd in red and blue."
+		})
+	]
+};
+var toronto = {
+	id: "toronto",
+	name: "Toronto",
+	region: "Ontario",
+	blurb: "A tower over the lake. Streetcars, a PATH under the core, and hockey in the air.",
+	spawn: {
+		lat: 43.6532,
+		lng: -79.3832
+	},
+	pois: [
+		poi({
+			id: "cn-tower",
+			name: "CN Tower",
+			lat: 43.6426,
+			lng: -79.3871,
+			kind: "landmark",
+			tier: "red",
+			lore: "553 metres of concrete and a glass floor. Opened 1976 as a CN communications mast.",
+			quiz: {
+				q: "The CN Tower opened to the public in which year?",
+				choices: [
+					"1967",
+					"1976",
+					"1989",
+					"1999"
+				],
+				answer: "1976"
+			}
+		}),
+		poi({
+			id: "nps",
+			name: "Nathan Phillips Square",
+			lat: 43.6525,
+			lng: -79.3836,
+			kind: "civic",
+			tier: "amber",
+			lore: "The city's front yard. Viljo Revell's two towers and a pool that becomes a rink.",
+			quiz: {
+				q: "Toronto City Hall's ceremonial square is named for which mayor?",
+				choices: [
+					"Mel Lastman",
+					"Nathan Phillips",
+					"Rob Ford",
+					"David Miller"
+				],
+				answer: "Nathan Phillips"
+			}
+		}),
+		poi({
+			id: "union-to",
+			name: "Union Station",
+			lat: 43.6452,
+			lng: -79.3806,
+			kind: "station",
+			tier: "green",
+			lore: "The Beaux-Arts hall that still runs the region. GO, UP Express, the subway under the floor."
+		}),
+		poi({
+			id: "rogers-centre",
+			name: "Rogers Centre",
+			lat: 43.6414,
+			lng: -79.3894,
+			kind: "stadium",
+			tier: "green",
+			lore: "The retractable lid next to the Tower. SkyDome in another life. Blue Jays live here."
+		}),
+		poi({
+			id: "scotia-arena",
+			name: "Scotiabank Arena",
+			lat: 43.6435,
+			lng: -79.3791,
+			kind: "stadium",
+			tier: "amber",
+			lore: "Leafs and Raptors under one roof. The Air Canada Centre until the bank bought the name."
+		}),
+		poi({
+			id: "rom",
+			name: "Royal Ontario Museum",
+			lat: 43.6677,
+			lng: -79.3948,
+			kind: "museum",
+			tier: "amber",
+			lore: "Dinosaurs, a crystal on Bloor, and a century of collecting. Libeskind's addition still argues with the street.",
+			quiz: {
+				q: "The crystal addition on the Royal Ontario Museum was designed by…",
+				choices: [
+					"Frank Gehry",
+					"Daniel Libeskind",
+					"Zaha Hadid",
+					"I. M. Pei"
+				],
+				answer: "Daniel Libeskind"
+			}
+		}),
+		poi({
+			id: "ago",
+			name: "Art Gallery of Ontario",
+			lat: 43.6536,
+			lng: -79.3925,
+			kind: "museum",
+			tier: "green",
+			lore: "Dundas West. Gehry grew up nearby and later wrapped the gallery in glass and wood."
+		}),
+		poi({
+			id: "casa-loma",
+			name: "Casa Loma",
+			lat: 43.678,
+			lng: -79.4094,
+			kind: "landmark",
+			tier: "green",
+			lore: "Sir Henry Pellatt's hillside house. A folly with tunnels and a view of the city."
+		}),
+		poi({
+			id: "st-lawrence-mkt",
+			name: "St. Lawrence Market",
+			lat: 43.6487,
+			lng: -79.3716,
+			kind: "food",
+			tier: "blue",
+			lore: "Saturday farmers, a peameal counter, the city's old south market."
+		}),
+		poi({
+			id: "distillery-to",
+			name: "Distillery District",
+			lat: 43.6505,
+			lng: -79.3594,
+			kind: "landmark",
+			tier: "blue",
+			lore: "Gooderham & Worts in brick. Distilling stopped; the Victorian industrial street stayed."
+		}),
+		poi({
+			id: "hockey-hof",
+			name: "Hockey Hall of Fame",
+			lat: 43.6469,
+			lng: -79.3773,
+			kind: "museum",
+			tier: "green",
+			lore: "Brookfield Place. The Stanley Cup in a bank's old lobby."
+		}),
+		poi({
+			id: "queens-park",
+			name: "Queen's Park",
+			lat: 43.6645,
+			lng: -79.3922,
+			kind: "civic",
+			tier: "green",
+			lore: "The Ontario Legislative Building in pink sandstone. The province sits here, not Ottawa.",
+			quiz: {
+				q: "Queen's Park is the seat of which legislature?",
+				choices: [
+					"Parliament of Canada",
+					"Ontario Legislative Assembly",
+					"Toronto City Council only",
+					"the Senate"
+				],
+				answer: "Ontario Legislative Assembly"
+			}
+		}),
+		poi({
+			id: "uoft-uc",
+			name: "University College — U of T",
+			lat: 43.6633,
+			lng: -79.3957,
+			kind: "campus",
+			tier: "blue",
+			lore: "A Romanesque hall on the St. George campus. The university older than Confederation.",
+			printShop: true
+		}),
+		poi({
+			id: "kensington-to",
+			name: "Kensington Market",
+			lat: 43.6544,
+			lng: -79.4005,
+			kind: "food",
+			tier: "blue",
+			lore: "A grid of shops west of Spadina. Vintage, fruit, a Saturday crush."
+		}),
+		poi({
+			id: "dundas-square",
+			name: "Yonge-Dundas Square",
+			lat: 43.6561,
+			lng: -79.3802,
+			kind: "landmark",
+			tier: "white",
+			lore: "Screens and a crossing. Toronto's loudest corner."
+		}),
+		poi({
+			id: "harbourfront-to",
+			name: "Harbourfront",
+			lat: 43.6389,
+			lng: -79.3817,
+			kind: "water",
+			tier: "white",
+			lore: "The lake's edge. Ferries to the islands, a boardwalk, the city at your back."
+		}),
+		poi({
+			id: "ripleys-to",
+			name: "Ripley's Aquarium",
+			lat: 43.6424,
+			lng: -79.386,
+			kind: "museum",
+			tier: "blue",
+			lore: "Next to the Tower. A tunnel of fish under the railway lands."
+		}),
+		poi({
+			id: "ref-lib-to",
+			name: "Toronto Reference Library",
+			lat: 43.6719,
+			lng: -79.3868,
+			kind: "library",
+			tier: "green",
+			lore: "Yonge and Bloor. A five-storey stack with a light well. The city's paper.",
+			printShop: true
+		}),
+		poi({
+			id: "roy-thomson",
+			name: "Roy Thomson Hall",
+			lat: 43.6465,
+			lng: -79.3863,
+			kind: "theatre",
+			tier: "blue",
+			lore: "A glass roundhouse for the symphony. King Street's other stage."
+		}),
+		poi({
+			id: "fort-york",
+			name: "Fort York",
+			lat: 43.639,
+			lng: -79.4035,
+			kind: "landmark",
+			tier: "green",
+			lore: "1813, the Battle of York. A garrison in the shadow of the Gardiner."
+		})
+	]
+};
+var la = {
+	id: "la",
+	name: "Los Angeles",
+	region: "California",
+	blurb: "Basin light, a hall of steel petals, and a walk of stars on the hill.",
+	spawn: {
+		lat: 34.0536,
+		lng: -118.2427
+	},
+	pois: [
+		poi({
+			id: "la-city-hall",
+			name: "Los Angeles City Hall",
+			lat: 34.0536,
+			lng: -118.2427,
+			kind: "civic",
+			tier: "amber",
+			lore: "The 1928 tower that was the city's height limit for decades. Free observation on a clear day.",
+			quiz: {
+				q: "Los Angeles City Hall opened in which year?",
+				choices: [
+					"1913",
+					"1928",
+					"1955",
+					"1971"
+				],
+				answer: "1928"
+			}
+		}),
+		poi({
+			id: "disney-hall",
+			name: "Walt Disney Concert Hall",
+			lat: 34.0553,
+			lng: -118.2498,
+			kind: "theatre",
+			tier: "red",
+			lore: "Gehry's steel on Grand Avenue. The Philharmonic's house, opened 2003.",
+			quiz: {
+				q: "Walt Disney Concert Hall was designed by…",
+				choices: [
+					"Frank Lloyd Wright",
+					"Frank Gehry",
+					"I. M. Pei",
+					"Thom Mayne"
+				],
+				answer: "Frank Gehry"
+			}
+		}),
+		poi({
+			id: "union-la",
+			name: "Union Station",
+			lat: 34.0561,
+			lng: -118.2365,
+			kind: "station",
+			tier: "green",
+			lore: "1939, the last of the great American stations. Mission Revival and a garden courtyard."
+		}),
+		poi({
+			id: "the-broad",
+			name: "The Broad",
+			lat: 34.0544,
+			lng: -118.2506,
+			kind: "museum",
+			tier: "green",
+			lore: "A honeycomb vault of contemporary work next to Disney Hall. Free, with a wait."
+		}),
+		poi({
+			id: "moca-la",
+			name: "MOCA Grand Avenue",
+			lat: 34.0535,
+			lng: -118.2506,
+			kind: "museum",
+			tier: "blue",
+			lore: "The city's contemporary museum on Bunker Hill. Isozaki's red sandstone."
+		}),
+		poi({
+			id: "central-lib-la",
+			name: "Los Angeles Central Library",
+			lat: 34.0505,
+			lng: -118.2551,
+			kind: "library",
+			tier: "green",
+			lore: "Goodhue's 1926 pyramid. A 1986 fire, a rebuild, the city's stacks.",
+			printShop: true
+		}),
+		poi({
+			id: "olvera",
+			name: "Olvera Street",
+			lat: 34.0573,
+			lng: -118.238,
+			kind: "food",
+			tier: "blue",
+			lore: "El Pueblo. A tourist lane on the city's oldest block, still a Saturday."
+		}),
+		poi({
+			id: "grand-central-la",
+			name: "Grand Central Market",
+			lat: 34.0508,
+			lng: -118.2488,
+			kind: "food",
+			tier: "blue",
+			lore: "1917, still a hall of counters. Broadway downstairs, Angels Flight up the hill."
+		}),
+		poi({
+			id: "angels-flight",
+			name: "Angels Flight",
+			lat: 34.0514,
+			lng: -118.2504,
+			kind: "landmark",
+			tier: "white",
+			lore: "The world's shortest railway, depending who you ask. Two cars on Bunker Hill."
+		}),
+		poi({
+			id: "bradbury",
+			name: "Bradbury Building",
+			lat: 34.0508,
+			lng: -118.2478,
+			kind: "landmark",
+			tier: "green",
+			lore: "1893 iron and a skylight. Blade Runner's office, still a working lobby."
+		}),
+		poi({
+			id: "crypto-arena",
+			name: "Crypto.com Arena",
+			lat: 34.043,
+			lng: -118.2673,
+			kind: "stadium",
+			tier: "amber",
+			lore: "Staples Center until the name sold. Lakers, Kings, a downtown bowl."
+		}),
+		poi({
+			id: "dodger-stad",
+			name: "Dodger Stadium",
+			lat: 34.0739,
+			lng: -118.24,
+			kind: "stadium",
+			tier: "red",
+			lore: "Chavez Ravine, 1962. The view of the palm line from the top deck.",
+			quiz: {
+				q: "The Dodgers moved from Brooklyn to Los Angeles in…",
+				choices: [
+					"1947",
+					"1958",
+					"1962",
+					"1974"
+				],
+				answer: "1958"
+			}
+		}),
+		poi({
+			id: "lacma",
+			name: "LACMA",
+			lat: 34.0639,
+			lng: -118.3592,
+			kind: "museum",
+			tier: "amber",
+			lore: "Wilshire's art campus. Urban Light out front: 202 street lamps in rows."
+		}),
+		poi({
+			id: "griffith-obs",
+			name: "Griffith Observatory",
+			lat: 34.1184,
+			lng: -118.3004,
+			kind: "landmark",
+			tier: "red",
+			lore: "1935, a deco dome over the basin. The Hollywood Sign sits in the same park.",
+			quiz: {
+				q: "Griffith Observatory opened in which year?",
+				choices: [
+					"1915",
+					"1935",
+					"1955",
+					"1969"
+				],
+				answer: "1935"
+			}
+		}),
+		poi({
+			id: "tcl-chinese",
+			name: "TCL Chinese Theatre",
+			lat: 34.102,
+			lng: -118.3409,
+			kind: "theatre",
+			tier: "green",
+			lore: "Grauman's, 1927. Handprints in the forecourt, a pagoda on Hollywood Blvd."
+		}),
+		poi({
+			id: "capitol-records",
+			name: "Capitol Records",
+			lat: 34.1032,
+			lng: -118.3264,
+			kind: "landmark",
+			tier: "blue",
+			lore: "A stack of records on Vine. The 1956 tower still lights a Hollywood Christmas tree."
+		}),
+		poi({
+			id: "hollywood-bowl",
+			name: "Hollywood Bowl",
+			lat: 34.1122,
+			lng: -118.3391,
+			kind: "theatre",
+			tier: "amber",
+			lore: "A bandshell in the Cahuenga Pass. Picnics, the Philharmonic, the hills."
+		}),
+		poi({
+			id: "echo-park-lake",
+			name: "Echo Park Lake",
+			lat: 34.0739,
+			lng: -118.2606,
+			kind: "park",
+			tier: "white",
+			lore: "Lotus, a boathouse, downtown on the south shore."
+		}),
+		poi({
+			id: "pershing-sq",
+			name: "Pershing Square",
+			lat: 34.0484,
+			lng: -118.2529,
+			kind: "park",
+			tier: "white",
+			lore: "The old downtown green. Purple towers, a seasonal rink, the Biltmore across the street."
+		}),
+		poi({
+			id: "coliseum-la",
+			name: "Los Angeles Memorial Coliseum",
+			lat: 34.0141,
+			lng: -118.2879,
+			kind: "stadium",
+			tier: "green",
+			lore: "Exposition Park. Two Olympics already, USC on Saturdays."
+		}),
+		poi({
+			id: "nhm-la",
+			name: "Natural History Museum of L.A.",
+			lat: 34.017,
+			lng: -118.2888,
+			kind: "museum",
+			tier: "green",
+			lore: "Exposition Park's older house. Dinosaurs and a rose garden next door."
+		})
+	]
+};
+var boston = {
+	id: "boston",
+	name: "Boston",
+	region: "Massachusetts",
+	blurb: "A red-brick trail, a gold dome, and a park older than the country.",
+	spawn: {
+		lat: 42.3555,
+		lng: -71.0636
+	},
+	pois: [
+		poi({
+			id: "boston-common",
+			name: "Boston Common",
+			lat: 42.355,
+			lng: -71.0656,
+			kind: "park",
+			tier: "amber",
+			lore: "1634. The oldest public park in the country. A red line starts here.",
+			quiz: {
+				q: "Boston Common is considered the oldest public park in the U.S. It dates to…",
+				choices: [
+					"1492",
+					"1634",
+					"1776",
+					"1893"
+				],
+				answer: "1634"
+			}
+		}),
+		poi({
+			id: "ma-state-house",
+			name: "Massachusetts State House",
+			lat: 42.3582,
+			lng: -71.0637,
+			kind: "civic",
+			tier: "red",
+			lore: "Bulfinch's gold dome on Beacon Hill. The General Court still sits under it.",
+			quiz: {
+				q: "The Massachusetts State House was designed by…",
+				choices: [
+					"H. H. Richardson",
+					"Charles Bulfinch",
+					"I. M. Pei",
+					"Frederick Law Olmsted"
+				],
+				answer: "Charles Bulfinch"
+			}
+		}),
+		poi({
+			id: "faneuil",
+			name: "Faneuil Hall",
+			lat: 42.36,
+			lng: -71.0561,
+			kind: "civic",
+			tier: "amber",
+			lore: "The Cradle of Liberty. A meeting hall over a market, still arguing upstairs.",
+			quiz: {
+				q: "Faneuil Hall is nicknamed the…",
+				choices: [
+					"Cradle of Liberty",
+					"Hub of the Universe",
+					"Athens of America only",
+					"Old Ironsides"
+				],
+				answer: "Cradle of Liberty"
+			}
+		}),
+		poi({
+			id: "quincy-mkt",
+			name: "Quincy Market",
+			lat: 42.3604,
+			lng: -71.0551,
+			kind: "food",
+			tier: "blue",
+			lore: "1826 granite, a food hall since the revival. The market next to Faneuil."
+		}),
+		poi({
+			id: "old-north",
+			name: "Old North Church",
+			lat: 42.3664,
+			lng: -71.0544,
+			kind: "civic",
+			tier: "amber",
+			lore: "Christ Church, 1723. Two lanterns in the steeple: the British by sea.",
+			quiz: {
+				q: "Two lanterns in Old North Church meant the British were coming…",
+				choices: [
+					"by land",
+					"by sea",
+					"from Canada",
+					"at dawn only"
+				],
+				answer: "by sea"
+			}
+		}),
+		poi({
+			id: "revere-house",
+			name: "Paul Revere House",
+			lat: 42.3638,
+			lng: -71.0537,
+			kind: "landmark",
+			tier: "green",
+			lore: "North Square. A 1680 house, the rider's home, still standing in the North End."
+		}),
+		poi({
+			id: "uss-constitution",
+			name: "USS Constitution",
+			lat: 42.3724,
+			lng: -71.0565,
+			kind: "landmark",
+			tier: "red",
+			lore: "Old Ironsides. A 1797 frigate still afloat in Charlestown Navy Yard.",
+			quiz: {
+				q: "USS Constitution is nicknamed…",
+				choices: [
+					"Old Glory",
+					"Old Ironsides",
+					"Old North",
+					"the Hub"
+				],
+				answer: "Old Ironsides"
+			}
+		}),
+		poi({
+			id: "bunker-hill",
+			name: "Bunker Hill Monument",
+			lat: 42.3763,
+			lng: -71.0608,
+			kind: "landmark",
+			tier: "green",
+			lore: "A granite obelisk in Charlestown. The 1775 fight was mostly on Breed's Hill."
+		}),
+		poi({
+			id: "fenway",
+			name: "Fenway Park",
+			lat: 42.3467,
+			lng: -71.0972,
+			kind: "stadium",
+			tier: "red",
+			lore: "1912. The Green Monster in left, the oldest big-league park still in use.",
+			quiz: {
+				q: "Fenway Park opened in…",
+				choices: [
+					"1894",
+					"1912",
+					"1934",
+					"1967"
+				],
+				answer: "1912"
+			}
+		}),
+		poi({
+			id: "td-garden",
+			name: "TD Garden",
+			lat: 42.3662,
+			lng: -71.0621,
+			kind: "stadium",
+			tier: "amber",
+			lore: "Over North Station. Celtics and Bruins. The old Garden's ghost in the rafters."
+		}),
+		poi({
+			id: "bpl",
+			name: "Boston Public Library",
+			lat: 42.3494,
+			lng: -71.0785,
+			kind: "library",
+			tier: "green",
+			lore: "Copley Square. McKim's palace for the people. Free to all.",
+			printShop: true
+		}),
+		poi({
+			id: "mfa-boston",
+			name: "Museum of Fine Arts",
+			lat: 42.3394,
+			lng: -71.094,
+			kind: "museum",
+			tier: "amber",
+			lore: "Huntington Avenue. A wing of Impressionists and a bronze baby in the court."
+		}),
+		poi({
+			id: "gardner",
+			name: "Isabella Stewart Gardner Museum",
+			lat: 42.3382,
+			lng: -71.0991,
+			kind: "museum",
+			tier: "green",
+			lore: "A Venetian court in the Fens. Empty frames from the 1990 theft still hang."
+		}),
+		poi({
+			id: "public-garden",
+			name: "Public Garden",
+			lat: 42.3543,
+			lng: -71.0705,
+			kind: "park",
+			tier: "blue",
+			lore: "America's first public botanical garden. Swan boats on the lagoon."
+		}),
+		poi({
+			id: "south-station-b",
+			name: "South Station",
+			lat: 42.3519,
+			lng: -71.0552,
+			kind: "station",
+			tier: "blue",
+			lore: "The south door of the city. Red Line, commuter rail, a clock on Dewey Square."
+		}),
+		poi({
+			id: "nea",
+			name: "New England Aquarium",
+			lat: 42.3591,
+			lng: -71.0498,
+			kind: "museum",
+			tier: "blue",
+			lore: "Central Wharf. A giant ocean tank and the harbor behind it."
+		}),
+		poi({
+			id: "gov-center",
+			name: "Boston City Hall",
+			lat: 42.3604,
+			lng: -71.058,
+			kind: "civic",
+			tier: "blue",
+			lore: "Brutalist concrete on a brick plaza. Arguments about it never close."
+		}),
+		poi({
+			id: "old-state-house",
+			name: "Old State House",
+			lat: 42.3588,
+			lng: -71.0576,
+			kind: "civic",
+			tier: "green",
+			lore: "The 1713 seat. The Massacre was a few steps from the balcony."
+		}),
+		poi({
+			id: "trinity-copley",
+			name: "Trinity Church",
+			lat: 42.3499,
+			lng: -71.0757,
+			kind: "civic",
+			tier: "green",
+			lore: "Richardson's Romanesque on Copley. The Hancock glass next door."
+		}),
+		poi({
+			id: "harvard-yard",
+			name: "Harvard Yard",
+			lat: 42.3744,
+			lng: -71.1169,
+			kind: "campus",
+			tier: "amber",
+			lore: "Cambridge. The oldest university in the country, a brick yard and a statue that is not John Harvard.",
+			printShop: true
+		}),
+		poi({
+			id: "mit-dome",
+			name: "MIT — Killian Court",
+			lat: 42.3592,
+			lng: -71.0921,
+			kind: "campus",
+			tier: "green",
+			lore: "The Great Dome on the Charles. A tech campus that faces Boston across the water."
+		})
+	]
+};
+var nola = {
+	id: "nola",
+	name: "New Orleans",
+	region: "Louisiana",
+	blurb: "A crescent on the river. Brass in the street, tombs above the water.",
+	spawn: {
+		lat: 29.9576,
+		lng: -90.063
+	},
+	pois: [
+		poi({
+			id: "nola-jackson",
+			name: "Jackson Square",
+			lat: 29.9574,
+			lng: -90.0629,
+			kind: "park",
+			tier: "amber",
+			lore: "The old Place d'Armes. Jackson on a horse, the cathedral behind him, the river at your back.",
+			quiz: {
+				q: "Jackson Square was renamed for the victor of which battle?",
+				choices: [
+					"Gettysburg",
+					"the Battle of New Orleans",
+					"Yorktown",
+					"San Jacinto"
+				],
+				answer: "the Battle of New Orleans"
+			}
+		}),
+		poi({
+			id: "nola-cathedral",
+			name: "St. Louis Cathedral",
+			lat: 29.9578,
+			lng: -90.0638,
+			kind: "civic",
+			tier: "red",
+			lore: "Three spires on the square. The oldest Catholic cathedral in continuous use in the country.",
+			quiz: {
+				q: "St. Louis Cathedral faces which New Orleans square?",
+				choices: [
+					"Lafayette Square",
+					"Jackson Square",
+					"Congo Square",
+					"Lee Circle"
+				],
+				answer: "Jackson Square"
+			}
+		}),
+		poi({
+			id: "nola-cabildo",
+			name: "The Cabildo",
+			lat: 29.9574,
+			lng: -90.064,
+			kind: "civic",
+			tier: "amber",
+			lore: "Spanish colonial stone next to the cathedral. The Louisiana Purchase was transferred here.",
+			quiz: {
+				q: "The Cabildo is where the United States took possession of…",
+				choices: [
+					"Texas",
+					"Louisiana (the Purchase)",
+					"Florida only",
+					"the Oregon Country"
+				],
+				answer: "Louisiana (the Purchase)"
+			}
+		}),
+		poi({
+			id: "nola-du-monde",
+			name: "Café du Monde",
+			lat: 29.9575,
+			lng: -90.0618,
+			kind: "food",
+			tier: "blue",
+			lore: "Decatur Street. Powdered sugar, café au lait, a line that never really ends."
+		}),
+		poi({
+			id: "nola-market",
+			name: "French Market",
+			lat: 29.961,
+			lng: -90.0585,
+			kind: "food",
+			tier: "blue",
+			lore: "The city's old public market, still selling from sheds toward the mint."
+		}),
+		poi({
+			id: "nola-hall",
+			name: "Preservation Hall",
+			lat: 29.9581,
+			lng: -90.0659,
+			kind: "theatre",
+			tier: "amber",
+			lore: "St. Peter Street. A small room that kept traditional jazz alive after the brass almost left.",
+			quiz: {
+				q: "Preservation Hall in the French Quarter is devoted to…",
+				choices: [
+					"opera",
+					"traditional New Orleans jazz",
+					"ballet",
+					"silent film"
+				],
+				answer: "traditional New Orleans jazz"
+			}
+		}),
+		poi({
+			id: "nola-congo",
+			name: "Congo Square",
+			lat: 29.9617,
+			lng: -90.0675,
+			kind: "park",
+			tier: "green",
+			lore: "Armstrong Park. Enslaved people gathered here on Sundays. The beat of the city starts in the dirt."
+		}),
+		poi({
+			id: "nola-cemetery1",
+			name: "St. Louis Cemetery No. 1",
+			lat: 29.9594,
+			lng: -90.0714,
+			kind: "landmark",
+			tier: "green",
+			lore: "Basin Street. Tombs above the water table. Marie Laveau's city of the dead."
+		}),
+		poi({
+			id: "nola-frenchmen",
+			name: "Frenchmen Street",
+			lat: 29.9639,
+			lng: -90.0577,
+			kind: "theatre",
+			tier: "blue",
+			lore: "Marigny. Clubs in a row, brass leaking onto the sidewalk after the Quarter goes loud."
+		}),
+		poi({
+			id: "nola-dome",
+			name: "Caesars Superdome",
+			lat: 29.9509,
+			lng: -90.0812,
+			kind: "stadium",
+			tier: "red",
+			lore: "The Saints' house. A white lid on Poydras, rebuilt in the city's imagination after the storm.",
+			quiz: {
+				q: "The New Orleans Saints play football at the…",
+				choices: [
+					"Smoothie King Center only",
+					"Caesars Superdome",
+					"Tiger Stadium",
+					"the French Market"
+				],
+				answer: "Caesars Superdome"
+			}
+		}),
+		poi({
+			id: "nola-ww2",
+			name: "National WWII Museum",
+			lat: 29.943,
+			lng: -90.0703,
+			kind: "museum",
+			tier: "red",
+			lore: "Andrew Higgins built the boats here. The museum grew from a D-Day house into the national one.",
+			quiz: {
+				q: "The National WWII Museum in New Orleans grew from a museum about…",
+				choices: [
+					"the Civil War",
+					"D-Day",
+					"the War of 1812",
+					"Vietnam"
+				],
+				answer: "D-Day"
+			}
+		}),
+		poi({
+			id: "nola-ogden",
+			name: "Ogden Museum of Southern Art",
+			lat: 29.9436,
+			lng: -90.069,
+			kind: "museum",
+			tier: "green",
+			lore: "Camp Street. A warehouse of the South's painters, next to the war museum."
+		}),
+		poi({
+			id: "nola-aquarium",
+			name: "Audubon Aquarium",
+			lat: 29.9512,
+			lng: -90.0631,
+			kind: "museum",
+			tier: "blue",
+			lore: "The river's foot. Gulf fish in glass, the ferry to Algiers beyond."
+		}),
+		poi({
+			id: "nola-moonwalk",
+			name: "Moon Walk — Woldenberg Park",
+			lat: 29.9548,
+			lng: -90.0625,
+			kind: "water",
+			tier: "white",
+			lore: "A path on the Mississippi. Steamboats, a levee, the Quarter over your shoulder."
+		}),
+		poi({
+			id: "nola-lafayette",
+			name: "Lafayette Square",
+			lat: 29.9484,
+			lng: -90.0706,
+			kind: "park",
+			tier: "white",
+			lore: "The CBD's old green. Gallier Hall looks across the oaks."
+		}),
+		poi({
+			id: "nola-nopl",
+			name: "New Orleans Public Library",
+			lat: 29.9536,
+			lng: -90.0768,
+			kind: "library",
+			tier: "green",
+			lore: "Main on Loyola. A civic stack between City Hall and the Dome.",
+			printShop: true
+		}),
+		poi({
+			id: "nola-upt",
+			name: "Union Passenger Terminal",
+			lat: 29.9465,
+			lng: -90.0814,
+			kind: "station",
+			tier: "blue",
+			lore: "The city's rail hall. Amtrak under a long modern roof."
+		}),
+		poi({
+			id: "nola-gallier",
+			name: "Gallier Hall",
+			lat: 29.9478,
+			lng: -90.0715,
+			kind: "civic",
+			tier: "green",
+			lore: "The old city hall on St. Charles. Greek Revival, still used for civic ritual."
+		}),
+		poi({
+			id: "nola-circle",
+			name: "Lee Circle — St. Charles",
+			lat: 29.9435,
+			lng: -90.0714,
+			kind: "landmark",
+			tier: "blue",
+			lore: "The streetcar turns the ring. The oldest line in the world still rattles through."
+		}),
+		poi({
+			id: "nola-commanders",
+			name: "Commander's Palace",
+			lat: 29.9288,
+			lng: -90.0843,
+			kind: "food",
+			tier: "amber",
+			lore: "Garden District turquoise. Turtle soup and a jazz brunch under the live oaks."
+		}),
+		poi({
+			id: "nola-mint",
+			name: "Old U.S. Mint",
+			lat: 29.9614,
+			lng: -90.0578,
+			kind: "museum",
+			tier: "green",
+			lore: "Esplanade and the river. Coins, then jazz archives. The Quarter's downriver wall."
+		})
+	]
+};
+function withMarks(city, extra) {
+	return {
+		...city,
+		pois: [...city.pois, ...extra]
+	};
+}
+var AUSTIN_MARKS = [
+	poi({
+		id: "wooldridge",
+		name: "Wooldridge Square",
+		lat: 30.2715,
+		lng: -97.7445,
+		kind: "park",
+		tier: "white",
+		lore: "A courthouse lawn of live oaks. Chess tables, shade, a small lamp in the grass."
+	}),
+	poi({
+		id: "republic-sq",
+		name: "Republic Square",
+		lat: 30.2676,
+		lng: -97.7471,
+		kind: "park",
+		tier: "white",
+		lore: "Four blocks from the lake. Food trucks and a grid of young trees."
+	}),
+	poi({
+		id: "brush-sq",
+		name: "Brush Square",
+		lat: 30.2668,
+		lng: -97.7395,
+		kind: "park",
+		tier: "white",
+		lore: "O. Henry's house on the edge. A pocket park on the east side of downtown."
+	}),
+	poi({
+		id: "waterloo-pk",
+		name: "Waterloo Park",
+		lat: 30.2689,
+		lng: -97.7312,
+		kind: "park",
+		tier: "white",
+		lore: "A creek pulled out from under the highway. Stage, lawn, the skyline from the east."
+	}),
+	poi({
+		id: "pease-pk",
+		name: "Pease Park",
+		lat: 30.2817,
+		lng: -97.7519,
+		kind: "park",
+		tier: "white",
+		lore: "Shoal Creek's green ribbon. Eeyore's Birthday and a limestone bed."
+	}),
+	poi({
+		id: "rainey",
+		name: "Rainey Street",
+		lat: 30.2583,
+		lng: -97.7388,
+		kind: "landmark",
+		tier: "white",
+		lore: "Bungalows turned into bars. The lake at the south end."
+	}),
+	poi({
+		id: "mexic-arte",
+		name: "Mexic-Arte Museum",
+		lat: 30.2665,
+		lng: -97.7434,
+		kind: "museum",
+		tier: "white",
+		lore: "Congress and 5th. A small house of Mexican and Latinx work."
+	}),
+	poi({
+		id: "pfluger",
+		name: "Pfluger Pedestrian Bridge",
+		lat: 30.2641,
+		lng: -97.7546,
+		kind: "landmark",
+		tier: "white",
+		lore: "Bikes and walkers over Lady Bird Lake. The boardwalk starts here."
+	}),
+	poi({
+		id: "auditorium-shores",
+		name: "Auditorium Shores",
+		lat: 30.2628,
+		lng: -97.7515,
+		kind: "park",
+		tier: "white",
+		lore: "The south bank lawn. Skyline across the water, a small lamp on the path."
+	}),
+	poi({
+		id: "sixth-st",
+		name: "Sixth Street",
+		lat: 30.2674,
+		lng: -97.7398,
+		kind: "landmark",
+		tier: "white",
+		lore: "The strip of neon between Congress and I-35. A blank on a lamp."
+	}),
+	poi({
+		id: "city-hall-atx",
+		name: "Austin City Hall",
+		lat: 30.2648,
+		lng: -97.747,
+		kind: "civic",
+		tier: "blue",
+		lore: "Copper and limestone on the lake. Council chambers, a civic lamp in the courtyard."
+	}),
+	poi({
+		id: "jones-center",
+		name: "The Contemporary Austin — Jones Center",
+		lat: 30.2688,
+		lng: -97.7428,
+		kind: "museum",
+		tier: "blue",
+		lore: "Congress Avenue's art house. A lamp in the stairwell light."
+	}),
+	poi({
+		id: "o-henry",
+		name: "O. Henry Museum",
+		lat: 30.2664,
+		lng: -97.7393,
+		kind: "museum",
+		tier: "blue",
+		lore: "The writer's cottage on Brush Square. Short stories, a blue plate."
+	}),
+	poi({
+		id: "long-center",
+		name: "Long Center",
+		lat: 30.2608,
+		lng: -97.7514,
+		kind: "theatre",
+		tier: "blue",
+		lore: "The city's hall on the south shore. A lamp by the terrace."
+	}),
+	poi({
+		id: "zavala-archive",
+		name: "Texas State Library",
+		lat: 30.2699,
+		lng: -97.7386,
+		kind: "library",
+		tier: "blue",
+		lore: "Lorenzo de Zavala. The state's paper, a civic stack."
+	}),
+	poi({
+		id: "macc",
+		name: "Emma S. Barrientos MACC",
+		lat: 30.2588,
+		lng: -97.7365,
+		kind: "museum",
+		tier: "blue",
+		lore: "Mexican American Cultural Center on the lake. A lamp in the plaza."
+	})
+];
+var TEMPLE_MARKS = [
+	poi({
+		id: "cultural-temple",
+		name: "Cultural Activities Center",
+		lat: 31.0989,
+		lng: -97.3685,
+		kind: "theatre",
+		tier: "white",
+		lore: "A civic stage west of downtown. Community shows, a quiet lamp in the lobby story."
+	}),
+	poi({
+		id: "wilson-pk-temple",
+		name: "Wilson Park",
+		lat: 31.1082,
+		lng: -97.3421,
+		kind: "park",
+		tier: "white",
+		lore: "North-side grass and a pool in summer. Neighborhood blank."
+	}),
+	poi({
+		id: "woodson-field",
+		name: "Woodson Field",
+		lat: 31.0704,
+		lng: -97.3422,
+		kind: "stadium",
+		tier: "white",
+		lore: "High-school lights south of the tracks. Friday nights in the heat."
+	}),
+	poi({
+		id: "cannon-pk",
+		name: "Cannon Park",
+		lat: 31.0895,
+		lng: -97.3488,
+		kind: "park",
+		tier: "white",
+		lore: "A small green near the medical mile. Shade if you can find it."
+	}),
+	poi({
+		id: "ave-a-depot",
+		name: "Avenue A Plaza",
+		lat: 31.0962,
+		lng: -97.3441,
+		kind: "landmark",
+		tier: "white",
+		lore: "Between the rails and downtown. A pause on the way to the depot."
+	}),
+	poi({
+		id: "jefferson-pk-t",
+		name: "Jefferson Park",
+		lat: 31.1024,
+		lng: -97.3372,
+		kind: "park",
+		tier: "white",
+		lore: "East of the high school. Ball fields and a quiet corner lamp."
+	}),
+	poi({
+		id: "midtown-temple",
+		name: "Midtown Crossing",
+		lat: 31.0856,
+		lng: -97.3429,
+		kind: "landmark",
+		tier: "white",
+		lore: "South 1st and the everyday grid. A blank on a lamp post."
+	}),
+	poi({
+		id: "lions-club-lake",
+		name: "Temple Lake Park",
+		lat: 31.0574,
+		lng: -97.3895,
+		kind: "water",
+		tier: "white",
+		lore: "A stocked pond on the west side. Ducks, a pier, small game."
+	}),
+	poi({
+		id: "south-1st-green",
+		name: "South 1st Green",
+		lat: 31.0828,
+		lng: -97.3436,
+		kind: "park",
+		tier: "white",
+		lore: "A pocket lawn on the south grid. Everyday Temple."
+	}),
+	poi({
+		id: "keefer-pk",
+		name: "Keefer Park",
+		lat: 31.0902,
+		lng: -97.3358,
+		kind: "park",
+		tier: "white",
+		lore: "East-side grass near the tracks. A quiet corner lamp."
+	}),
+	poi({
+		id: "temple-library",
+		name: "Temple Public Library",
+		lat: 31.0984,
+		lng: -97.3431,
+		kind: "library",
+		tier: "blue",
+		lore: "Downtown stacks. A civic lamp at the desk."
+	}),
+	poi({
+		id: "temple-civic-th",
+		name: "Temple Civic Theater",
+		lat: 31.1012,
+		lng: -97.3484,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Community stage west of the rails. A blue plate at the house lights."
+	}),
+	poi({
+		id: "railroad-park-t",
+		name: "Railroad Park",
+		lat: 31.0951,
+		lng: -97.3444,
+		kind: "park",
+		tier: "blue",
+		lore: "Grass by the depot. Trains still set the clock."
+	}),
+	poi({
+		id: "first-methodist-t",
+		name: "First Methodist — Temple",
+		lat: 31.0978,
+		lng: -97.3435,
+		kind: "landmark",
+		tier: "blue",
+		lore: "A downtown steeple on the courthouse walk. A lamp in the shade."
+	}),
+	poi({
+		id: "veterans-pk-t",
+		name: "Veterans Park — Temple",
+		lat: 31.1046,
+		lng: -97.3522,
+		kind: "park",
+		tier: "blue",
+		lore: "North of the medical mile. Flags, a path, a blue lamp."
+	})
+];
+var NYC_MARKS = [
+	poi({
+		id: "columbus-cir",
+		name: "Columbus Circle",
+		lat: 40.7681,
+		lng: -73.9819,
+		kind: "landmark",
+		tier: "white",
+		lore: "The southwest gate of the park. A statue in traffic."
+	}),
+	poi({
+		id: "tompkins",
+		name: "Tompkins Square Park",
+		lat: 40.7265,
+		lng: -73.9818,
+		kind: "park",
+		tier: "white",
+		lore: "Elms, dogs, the East Village's square. A lamp on a bench end."
+	}),
+	poi({
+		id: "madison-sq-pk",
+		name: "Madison Square Park",
+		lat: 40.742,
+		lng: -73.988,
+		kind: "park",
+		tier: "white",
+		lore: "Shake Shack's original lawn. Flatiron in the sightline."
+	}),
+	poi({
+		id: "stonewall-pk",
+		name: "Christopher Park",
+		lat: 40.7336,
+		lng: -74.0027,
+		kind: "park",
+		tier: "white",
+		lore: "Across from the Stonewall. A small triangle that holds a lot."
+	}),
+	poi({
+		id: "little-island",
+		name: "Little Island",
+		lat: 40.742,
+		lng: -74.01,
+		kind: "park",
+		tier: "white",
+		lore: "Tulip pots in the Hudson. A park on concrete stems."
+	}),
+	poi({
+		id: "herald-sq",
+		name: "Herald Square",
+		lat: 40.7502,
+		lng: -73.9876,
+		kind: "landmark",
+		tier: "white",
+		lore: "Macy's and the clock. The grid at 34th."
+	}),
+	poi({
+		id: "battery-pk",
+		name: "Battery Park",
+		lat: 40.7033,
+		lng: -74.017,
+		kind: "park",
+		tier: "white",
+		lore: "The harbor's edge. Ferries, a breeze, Castle Clinton in the trees."
+	}),
+	poi({
+		id: "st-marks",
+		name: "St. Mark's Place",
+		lat: 40.7289,
+		lng: -73.988,
+		kind: "landmark",
+		tier: "white",
+		lore: "A short street with a long reputation. Stoops and signs."
+	}),
+	poi({
+		id: "bowery-ball",
+		name: "Bowery",
+		lat: 40.7205,
+		lng: -73.9936,
+		kind: "landmark",
+		tier: "white",
+		lore: "The old road north. A blank on a corner that used to be the city line."
+	}),
+	poi({
+		id: "gramercy",
+		name: "Gramercy Park",
+		lat: 40.7379,
+		lng: -73.986,
+		kind: "park",
+		tier: "white",
+		lore: "A locked square. You can still walk the fence and light a lamp."
+	}),
+	poi({
+		id: "chelsea-mkt",
+		name: "Chelsea Market",
+		lat: 40.7424,
+		lng: -74.0061,
+		kind: "food",
+		tier: "blue",
+		lore: "The Nabisco factory, now a hall of counters. A lamp by the High Line stairs."
+	}),
+	poi({
+		id: "strand-books",
+		name: "Strand Book Store",
+		lat: 40.7333,
+		lng: -73.9908,
+		kind: "landmark",
+		tier: "blue",
+		lore: "Eighteen miles of books. A blue plate in the stacks."
+	}),
+	poi({
+		id: "cooper-union",
+		name: "Cooper Union",
+		lat: 40.7294,
+		lng: -73.9903,
+		kind: "campus",
+		tier: "blue",
+		lore: "The Foundation Building on the Bowery. Lincoln spoke here."
+	}),
+	poi({
+		id: "whitney",
+		name: "Whitney Museum",
+		lat: 40.7396,
+		lng: -74.0089,
+		kind: "museum",
+		tier: "blue",
+		lore: "American art on Gansevoort. The Hudson in the windows."
+	}),
+	poi({
+		id: "radio-city",
+		name: "Radio City Music Hall",
+		lat: 40.76,
+		lng: -73.98,
+		kind: "theatre",
+		tier: "blue",
+		lore: "The Rockettes' house. A lamp under the marquee."
+	}),
+	poi({
+		id: "new-museum",
+		name: "New Museum",
+		lat: 40.7223,
+		lng: -73.9928,
+		kind: "museum",
+		tier: "blue",
+		lore: "Stacked boxes on the Bowery. Contemporary work, a blue lamp."
+	})
+];
+var SF_MARKS = [
+	poi({
+		id: "civic-plaza-sf",
+		name: "Civic Center Plaza",
+		lat: 37.7796,
+		lng: -122.4169,
+		kind: "park",
+		tier: "white",
+		lore: "Between City Hall and the library. A wide stone lawn."
+	}),
+	poi({
+		id: "wash-sq-nb",
+		name: "Washington Square — North Beach",
+		lat: 37.8008,
+		lng: -122.4101,
+		kind: "park",
+		tier: "white",
+		lore: "Saints Peter and Paul over the grass. Tai chi in the morning."
+	}),
+	poi({
+		id: "dolores-pk",
+		name: "Dolores Park",
+		lat: 37.7596,
+		lng: -122.4269,
+		kind: "park",
+		tier: "white",
+		lore: "A hillside lawn with downtown in it. Mission light."
+	}),
+	poi({
+		id: "tea-garden",
+		name: "Japanese Tea Garden",
+		lat: 37.7701,
+		lng: -122.4703,
+		kind: "park",
+		tier: "white",
+		lore: "Hagiwara's garden in Golden Gate Park. A moon bridge, a lamp in the shade."
+	}),
+	poi({
+		id: "fort-mason",
+		name: "Fort Mason",
+		lat: 37.8069,
+		lng: -122.4313,
+		kind: "park",
+		tier: "white",
+		lore: "Piers turned into arts space. The bay from a former post."
+	}),
+	poi({
+		id: "valencia-16",
+		name: "16th and Valencia",
+		lat: 37.7553,
+		lng: -122.4209,
+		kind: "landmark",
+		tier: "white",
+		lore: "The Mission's crossroads. Murals, a BART mouth, a blank on the corner."
+	}),
+	poi({
+		id: "ina-coolbrith",
+		name: "Ina Coolbrith Park",
+		lat: 37.7994,
+		lng: -122.4136,
+		kind: "park",
+		tier: "white",
+		lore: "Stairs, a poet's name, the bay between trees."
+	}),
+	poi({
+		id: "embarcadero-pl",
+		name: "Embarcadero Plaza",
+		lat: 37.7946,
+		lng: -122.3965,
+		kind: "park",
+		tier: "white",
+		lore: "Vaillancourt's fountain and the Ferry Building clock."
+	}),
+	poi({
+		id: "justin-herman",
+		name: "Justin Herman Plaza path",
+		lat: 37.7954,
+		lng: -122.396,
+		kind: "landmark",
+		tier: "white",
+		lore: "The ferry foot of Market. A blank on the promenade."
+	}),
+	poi({
+		id: "south-park-sf",
+		name: "South Park",
+		lat: 37.7816,
+		lng: -122.394,
+		kind: "park",
+		tier: "white",
+		lore: "An oval lawn south of Market. SoMa's old square."
+	}),
+	poi({
+		id: "asian-art",
+		name: "Asian Art Museum",
+		lat: 37.7802,
+		lng: -122.4163,
+		kind: "museum",
+		tier: "blue",
+		lore: "The old main library's stone. Jade, a civic lamp in the court."
+	}),
+	poi({
+		id: "exploratorium",
+		name: "Exploratorium",
+		lat: 37.8014,
+		lng: -122.3973,
+		kind: "museum",
+		tier: "blue",
+		lore: "Piers 15 and 17. Hands-on science on the bay."
+	}),
+	poi({
+		id: "cable-car-mus",
+		name: "Cable Car Museum",
+		lat: 37.7946,
+		lng: -122.4116,
+		kind: "museum",
+		tier: "blue",
+		lore: "The winding machinery under Nob Hill. A lamp by the sheaves."
+	}),
+	poi({
+		id: "sfmoma",
+		name: "SFMOMA",
+		lat: 37.7857,
+		lng: -122.4011,
+		kind: "museum",
+		tier: "blue",
+		lore: "Third Street's brick and snorkel. Modern work, a blue plate."
+	}),
+	poi({
+		id: "war-memorial",
+		name: "War Memorial Opera House",
+		lat: 37.7785,
+		lng: -122.4207,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Civic Center's hall. The UN Charter was signed next door."
+	}),
+	poi({
+		id: "mission-dolores",
+		name: "Mission Dolores",
+		lat: 37.7642,
+		lng: -122.4269,
+		kind: "civic",
+		tier: "blue",
+		lore: "The city's oldest surviving building. Adobe, a cemetery, a lamp."
+	})
+];
+var LONDON_MARKS = [
+	poi({
+		id: "soho-sq",
+		name: "Soho Square",
+		lat: 51.5153,
+		lng: -.1323,
+		kind: "park",
+		tier: "white",
+		lore: "A garden behind the offices. French oak, a tiny Tudor-looking hut."
+	}),
+	poi({
+		id: "russell-sq",
+		name: "Russell Square",
+		lat: 51.5218,
+		lng: -.126,
+		kind: "park",
+		tier: "white",
+		lore: "Bloomsbury grass. The museum a short walk south."
+	}),
+	poi({
+		id: "neals-yard",
+		name: "Neal's Yard",
+		lat: 51.5145,
+		lng: -.1265,
+		kind: "landmark",
+		tier: "white",
+		lore: "Painted brick and a courtyard. Covent Garden's pocket."
+	}),
+	poi({
+		id: "st-james-pk",
+		name: "St James's Park",
+		lat: 51.5025,
+		lng: -.1348,
+		kind: "park",
+		tier: "white",
+		lore: "Pelicans on the lake. The palace at one end, Whitehall at the other."
+	}),
+	poi({
+		id: "seven-dials",
+		name: "Seven Dials",
+		lat: 51.5138,
+		lng: -.127,
+		kind: "landmark",
+		tier: "white",
+		lore: "Seven streets to a pillar. A sundial that never quite told time."
+	}),
+	poi({
+		id: "leadenhall",
+		name: "Leadenhall Market",
+		lat: 51.5128,
+		lng: -.0833,
+		kind: "food",
+		tier: "white",
+		lore: "Victorian iron, the City's covered lane. A pint after the Tower."
+	}),
+	poi({
+		id: "brick-lane",
+		name: "Brick Lane",
+		lat: 51.5203,
+		lng: -.0718,
+		kind: "food",
+		tier: "white",
+		lore: "Curry houses, a Sunday market, a street that keeps changing names."
+	}),
+	poi({
+		id: "carnaby",
+		name: "Carnaby Street",
+		lat: 51.5133,
+		lng: -.1387,
+		kind: "landmark",
+		tier: "white",
+		lore: "A pedestrian lane with a pop history. Soho's shop window."
+	}),
+	poi({
+		id: "lincoln-inn",
+		name: "Lincoln's Inn Fields",
+		lat: 51.516,
+		lng: -.1163,
+		kind: "park",
+		tier: "white",
+		lore: "London's largest square. Lawns, a lamp on a bench."
+	}),
+	poi({
+		id: "bermondsey",
+		name: "Bermondsey Square",
+		lat: 51.4984,
+		lng: -.0812,
+		kind: "landmark",
+		tier: "white",
+		lore: "Antiques on Friday. A blank south of the river."
+	}),
+	poi({
+		id: "southbank-centre",
+		name: "Southbank Centre",
+		lat: 51.5058,
+		lng: -.1165,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Festival Hall on the Thames. A lamp under the brutalist soffit."
+	}),
+	poi({
+		id: "science-museum",
+		name: "Science Museum",
+		lat: 51.4978,
+		lng: -.1745,
+		kind: "museum",
+		tier: "blue",
+		lore: "South Kensington's machines. Stephenson, a blue plate."
+	}),
+	poi({
+		id: "royal-opera",
+		name: "Royal Opera House",
+		lat: 51.513,
+		lng: -.122,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Covent Garden's house. A lamp in the colonnade."
+	}),
+	poi({
+		id: "the-monument",
+		name: "The Monument",
+		lat: 51.5102,
+		lng: -.086,
+		kind: "landmark",
+		tier: "blue",
+		lore: "Wren's column for the Great Fire. 202 steps, a civic lamp."
+	}),
+	poi({
+		id: "smithfield",
+		name: "Smithfield Market",
+		lat: 51.5186,
+		lng: -.1015,
+		kind: "food",
+		tier: "blue",
+		lore: "The meat market that still runs. Iron, a lamp at dawn."
+	}),
+	poi({
+		id: "imperial-war",
+		name: "Imperial War Museum",
+		lat: 51.4975,
+		lng: -.1087,
+		kind: "museum",
+		tier: "blue",
+		lore: "Lambeth's guns on the lawn. A lamp in the former hospital."
+	})
+];
+var CHICAGO_MARKS = [
+	poi({
+		id: "maggie-daley",
+		name: "Maggie Daley Park",
+		lat: 41.8826,
+		lng: -87.619,
+		kind: "park",
+		tier: "white",
+		lore: "Play hills east of Millennium. A lamp by the climbing wall."
+	}),
+	poi({
+		id: "crown-fountain",
+		name: "Crown Fountain",
+		lat: 41.8836,
+		lng: -87.6238,
+		kind: "park",
+		tier: "white",
+		lore: "Faces that spit water in summer. Millennium Park's other landmark."
+	}),
+	poi({
+		id: "chinatown-chi",
+		name: "Chinatown Square",
+		lat: 41.853,
+		lng: -87.632,
+		kind: "landmark",
+		tier: "white",
+		lore: "The gate and the square south of the Loop. A blank under the 'L'."
+	}),
+	poi({
+		id: "riverwalk-chi",
+		name: "Chicago Riverwalk",
+		lat: 41.8885,
+		lng: -87.6212,
+		kind: "water",
+		tier: "white",
+		lore: "Below street level along the river. Kayaks and a lamp on a landing."
+	}),
+	poi({
+		id: "wicker-pk",
+		name: "Wicker Park",
+		lat: 41.9086,
+		lng: -87.6773,
+		kind: "park",
+		tier: "white",
+		lore: "A triangle of grass northwest of downtown. Six corners nearby."
+	}),
+	poi({
+		id: "second-city",
+		name: "Second City — Old Town",
+		lat: 41.9116,
+		lng: -87.635,
+		kind: "theatre",
+		tier: "white",
+		lore: "The brick theatre on Wells. A small lamp by the marquee."
+	}),
+	poi({
+		id: "pilsen-18",
+		name: "18th Street — Pilsen",
+		lat: 41.8578,
+		lng: -87.656,
+		kind: "landmark",
+		tier: "white",
+		lore: "Murals on the Pink Line. A neighborhood corner south of the Loop."
+	}),
+	poi({
+		id: "grant-field",
+		name: "Hutchinson Field",
+		lat: 41.8722,
+		lng: -87.6189,
+		kind: "park",
+		tier: "white",
+		lore: "Grant Park's south lawn. The fountain uphill, the museum campus south."
+	}),
+	poi({
+		id: "oz-park",
+		name: "Oz Park",
+		lat: 41.9215,
+		lng: -87.6465,
+		kind: "park",
+		tier: "white",
+		lore: "Lincoln Park's yellow brick. A tin man, a small lamp."
+	}),
+	poi({
+		id: "ping-tom",
+		name: "Ping Tom Memorial Park",
+		lat: 41.8554,
+		lng: -87.6343,
+		kind: "park",
+		tier: "white",
+		lore: "Chinatown on the river. A pagoda, a blank on the path."
+	}),
+	poi({
+		id: "cultural-center",
+		name: "Chicago Cultural Center",
+		lat: 41.8837,
+		lng: -87.6247,
+		kind: "civic",
+		tier: "blue",
+		lore: "The old main library. Tiffany glass, a civic lamp in the hall."
+	}),
+	poi({
+		id: "tribune-tower",
+		name: "Tribune Tower",
+		lat: 41.8904,
+		lng: -87.6233,
+		kind: "landmark",
+		tier: "blue",
+		lore: "Gothic stone on Michigan. Fragments from other buildings in the walls."
+	}),
+	poi({
+		id: "merch-mart",
+		name: "Merchandise Mart",
+		lat: 41.8885,
+		lng: -87.635,
+		kind: "landmark",
+		tier: "blue",
+		lore: "A city block of floor space on the river. A lamp at the doors."
+	}),
+	poi({
+		id: "civic-opera",
+		name: "Civic Opera House",
+		lat: 41.8826,
+		lng: -87.6373,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Wacker Drive's throne. A blue plate at the river."
+	}),
+	poi({
+		id: "chi-history",
+		name: "Chicago History Museum",
+		lat: 41.912,
+		lng: -87.6313,
+		kind: "museum",
+		tier: "blue",
+		lore: "Lincoln Park's attic. The city's paper, a lamp in the court."
+	}),
+	poi({
+		id: "palmer-house",
+		name: "Palmer House",
+		lat: 41.8802,
+		lng: -87.6267,
+		kind: "landmark",
+		tier: "blue",
+		lore: "A Loop hotel with a frescoed lobby. Brownies were born in the kitchen."
+	})
+];
+var DETROIT_MARKS = [
+	poi({
+		id: "grand-circus",
+		name: "Grand Circus Park",
+		lat: 42.3365,
+		lng: -83.0497,
+		kind: "park",
+		tier: "white",
+		lore: "A pair of half-circles on Woodward. The old theatre district's lawn."
+	}),
+	poi({
+		id: "riverwalk-det",
+		name: "Detroit Riverwalk",
+		lat: 42.3285,
+		lng: -83.04,
+		kind: "water",
+		tier: "white",
+		lore: "Canada across the water. A path from Hart Plaza toward the east."
+	}),
+	poi({
+		id: "the-belt",
+		name: "The Belt",
+		lat: 42.3355,
+		lng: -83.0475,
+		kind: "landmark",
+		tier: "white",
+		lore: "An alley of murals between Broadway and Library. Lights at night."
+	}),
+	poi({
+		id: "dequindre",
+		name: "Dequindre Cut",
+		lat: 42.338,
+		lng: -83.0325,
+		kind: "park",
+		tier: "white",
+		lore: "A freight cut turned into a greenway. Bikes below street grade."
+	}),
+	poi({
+		id: "heidelberg",
+		name: "Heidelberg Project",
+		lat: 42.3586,
+		lng: -83.021,
+		kind: "landmark",
+		tier: "white",
+		lore: "Houses as art on the east side. Dots, toys, a lot that is the work."
+	}),
+	poi({
+		id: "corktown-tap",
+		name: "Corktown — Michigan Avenue",
+		lat: 42.3315,
+		lng: -83.0678,
+		kind: "food",
+		tier: "white",
+		lore: "West of downtown toward the station. Brick bars and a wide street."
+	}),
+	poi({
+		id: "bagley",
+		name: "Bagley Street — Mexicantown",
+		lat: 42.3235,
+		lng: -83.0695,
+		kind: "food",
+		tier: "white",
+		lore: "Bakeries and a gate. Southwest Detroit's front street."
+	}),
+	poi({
+		id: "belle-isle-cas",
+		name: "Belle Isle — Casino building",
+		lat: 42.3384,
+		lng: -82.9858,
+		kind: "park",
+		tier: "white",
+		lore: "A park in the river. The 1908 casino is a hall, not a wager."
+	}),
+	poi({
+		id: "capitol-park-det",
+		name: "Capitol Park",
+		lat: 42.3334,
+		lng: -83.0498,
+		kind: "park",
+		tier: "white",
+		lore: "A small green west of Woodward. The old capitol sat here."
+	}),
+	poi({
+		id: "brush-park",
+		name: "Brush Park",
+		lat: 42.3452,
+		lng: -83.0522,
+		kind: "landmark",
+		tier: "white",
+		lore: "Mansions north of downtown. Restoration and empty lots on the same block."
+	}),
+	poi({
+		id: "music-hall-det",
+		name: "Music Hall",
+		lat: 42.3378,
+		lng: -83.0462,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Madison Avenue's hall. A lamp under the marquee."
+	}),
+	poi({
+		id: "fillmore-det",
+		name: "The Fillmore Detroit",
+		lat: 42.3376,
+		lng: -83.0522,
+		kind: "theatre",
+		tier: "blue",
+		lore: "The old State Theatre. A blue plate on Woodward's west side."
+	}),
+	poi({
+		id: "detroit-hist",
+		name: "Detroit Historical Museum",
+		lat: 42.3594,
+		lng: -83.0674,
+		kind: "museum",
+		tier: "blue",
+		lore: "Woodward at Kirby. Streets of Old Detroit in the basement."
+	}),
+	poi({
+		id: "charles-wright",
+		name: "Charles H. Wright Museum",
+		lat: 42.3592,
+		lng: -83.0607,
+		kind: "museum",
+		tier: "blue",
+		lore: "African American history on the cultural center. A lamp in the rotunda."
+	}),
+	poi({
+		id: "pewabic",
+		name: "Pewabic Pottery",
+		lat: 42.3428,
+		lng: -83.0147,
+		kind: "museum",
+		tier: "blue",
+		lore: "East Jefferson's kiln. Iridescent tile, a blue lamp."
+	}),
+	poi({
+		id: "fisher-bldg",
+		name: "Fisher Building",
+		lat: 42.3695,
+		lng: -83.0775,
+		kind: "landmark",
+		tier: "blue",
+		lore: "New Center's cathedral of commerce. Gold leaf in the lobby."
+	})
+];
+var TUCSON_MARKS = [
+	poi({
+		id: "armory-pk",
+		name: "Armory Park",
+		lat: 32.2178,
+		lng: -110.9695,
+		kind: "park",
+		tier: "white",
+		lore: "Bungalows south of downtown. A square of grass and a library branch nearby."
+	}),
+	poi({
+		id: "mercado-agustin",
+		name: "Mercado San Agustín",
+		lat: 32.2189,
+		lng: -110.9848,
+		kind: "food",
+		tier: "white",
+		lore: "A west-side market hall. Streetcar, shade, Sonoran plates."
+	}),
+	poi({
+		id: "el-tiradito",
+		name: "El Tiradito",
+		lat: 32.2158,
+		lng: -110.9728,
+		kind: "landmark",
+		tier: "white",
+		lore: "The wishing shrine. Candles in a barrio niche, a lamp at the wall."
+	}),
+	poi({
+		id: "iron-horse",
+		name: "Iron Horse Park",
+		lat: 32.2228,
+		lng: -110.9615,
+		kind: "park",
+		tier: "white",
+		lore: "East of the tracks. A small green between downtown and Fourth Ave."
+	}),
+	poi({
+		id: "himmel",
+		name: "Himmel Park",
+		lat: 32.2365,
+		lng: -110.9385,
+		kind: "park",
+		tier: "white",
+		lore: "A midtown pool and library lawn. Tucson's everyday park."
+	}),
+	poi({
+		id: "tcc-music",
+		name: "Tucson Convention Center",
+		lat: 32.2205,
+		lng: -110.9748,
+		kind: "theatre",
+		tier: "white",
+		lore: "Music Hall and arena under one civic roof. A blank on the plaza."
+	}),
+	poi({
+		id: "flandrau",
+		name: "Flandrau Science Center",
+		lat: 32.231,
+		lng: -110.9465,
+		kind: "museum",
+		tier: "white",
+		lore: "A planetarium on campus. Meteorites and a small lamp by the dome."
+	}),
+	poi({
+		id: "santa-cruz-pk",
+		name: "Santa Cruz River Park",
+		lat: 32.221,
+		lng: -110.9805,
+		kind: "water",
+		tier: "white",
+		lore: "A dry river with a path. Cottonwoods when the monsoon comes."
+	}),
+	poi({
+		id: "deanza-pk",
+		name: "DeAnza Park",
+		lat: 32.2278,
+		lng: -110.9682,
+		kind: "park",
+		tier: "white",
+		lore: "A midtown lawn north of downtown. Shade if the mesquite holds."
+	}),
+	poi({
+		id: "five-points-tuc",
+		name: "Five Points",
+		lat: 32.2286,
+		lng: -110.9612,
+		kind: "landmark",
+		tier: "white",
+		lore: "Stone and 6th. A blank where the streets fan out."
+	}),
+	poi({
+		id: "ua-art",
+		name: "UA Museum of Art",
+		lat: 32.2316,
+		lng: -110.9556,
+		kind: "museum",
+		tier: "blue",
+		lore: "On the mall. A campus lamp in the galleries."
+	}),
+	poi({
+		id: "temple-of-music",
+		name: "Temple of Music and Art",
+		lat: 32.2215,
+		lng: -110.9692,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Arizona Theatre Company's house. A lamp in the courtyard."
+	}),
+	poi({
+		id: "kids-museum-tuc",
+		name: "Children's Museum Tucson",
+		lat: 32.2235,
+		lng: -110.969,
+		kind: "museum",
+		tier: "blue",
+		lore: "Downtown play hall. A small blue plate by the door."
+	}),
+	poi({
+		id: "carnegie-tuc",
+		name: "Carnegie Free Library",
+		lat: 32.2224,
+		lng: -110.9736,
+		kind: "library",
+		tier: "blue",
+		lore: "The 1901 stack, now the children's museum's neighbor. A civic lamp."
+	}),
+	poi({
+		id: "trolley-stop",
+		name: "Congress / Granada stop",
+		lat: 32.2217,
+		lng: -110.9758,
+		kind: "station",
+		tier: "blue",
+		lore: "The streetcar's downtown pause. A lamp on the platform."
+	}),
+	poi({
+		id: "sosa-ave",
+		name: "Sosa Avenue",
+		lat: 32.2138,
+		lng: -110.9732,
+		kind: "landmark",
+		tier: "blue",
+		lore: "Barrio Viejo's adobe street. A blue plate on a rammed-earth wall."
+	}),
+	poi({
+		id: "pima-air",
+		name: "Pima Air & Space Museum",
+		lat: 32.1397,
+		lng: -110.8683,
+		kind: "museum",
+		tier: "amber",
+		lore: "A desert field of retired wings. B-52s on the gravel, the boneyard next door.",
+		quizzes: [{
+			q: "Pima Air & Space Museum is in which city?",
+			choices: [
+				"Phoenix",
+				"Tucson",
+				"Albuquerque",
+				"El Paso"
+			],
+			answer: "Tucson",
+			diff: 1
+		}, {
+			q: "The military aircraft storage yard next to Pima Air & Space is…",
+			choices: [
+				"AMARG, the boneyard",
+				"JPL",
+				"Cape Canaveral's only hangar",
+				"O'Hare's cargo lot"
+			],
+			answer: "AMARG, the boneyard",
+			diff: 2
+		}]
+	}),
+	poi({
+		id: "raytheon-tucson",
+		name: "Raytheon Missiles & Defense",
+		lat: 32.1294,
+		lng: -110.9336,
+		kind: "landmark",
+		tier: "red",
+		lore: "Hermans Road. Radar, missiles, a plant that still says Raytheon in a city that grew around it.",
+		quizzes: [
+			{
+				q: "Raytheon Missiles & Defense's big desert plant is in…",
+				choices: [
+					"Tucson",
+					"Flagstaff",
+					"Yuma",
+					"Page"
+				],
+				answer: "Tucson",
+				diff: 1
+			},
+			{
+				q: "The Patriot system, long built by Raytheon, is a…",
+				choices: [
+					"surface-to-air missile system",
+					"aircraft carrier class",
+					"infantry rifle",
+					"weather satellite"
+				],
+				answer: "surface-to-air missile system",
+				diff: 1
+			},
+			{
+				q: "RTX, Raytheon's parent, is primarily a…",
+				choices: [
+					"retail grocer",
+					"aerospace and defense company",
+					"desert utility",
+					"national park service"
+				],
+				answer: "aerospace and defense company",
+				diff: 2
+			}
+		]
+	})
+];
+var TORONTO_MARKS = [
+	poi({
+		id: "graffiti-alley",
+		name: "Graffiti Alley",
+		lat: 43.6478,
+		lng: -79.3986,
+		kind: "landmark",
+		tier: "white",
+		lore: "Rush Lane, west of Spadina. A legal wall that keeps changing."
+	}),
+	poi({
+		id: "trinity-bellwoods",
+		name: "Trinity Bellwoods Park",
+		lat: 43.647,
+		lng: -79.4195,
+		kind: "park",
+		tier: "white",
+		lore: "A west-end lawn with a hill. Dogs, a pit, Queen Street at the south gate."
+	}),
+	poi({
+		id: "chinatown-spadina",
+		name: "Chinatown — Spadina",
+		lat: 43.6529,
+		lng: -79.3981,
+		kind: "food",
+		tier: "white",
+		lore: "Dundas and Spadina. A streetcar through the produce."
+	}),
+	poi({
+		id: "roundhouse-to",
+		name: "Roundhouse Park",
+		lat: 43.6409,
+		lng: -79.3859,
+		kind: "park",
+		tier: "white",
+		lore: "A railway roundhouse under the Tower. Steam Whistle in the stalls."
+	}),
+	poi({
+		id: "yorkville-to",
+		name: "Yorkville",
+		lat: 43.6706,
+		lng: -79.3933,
+		kind: "landmark",
+		tier: "white",
+		lore: "Bloor's old village. Cafes, a park on a parking garage."
+	}),
+	poi({
+		id: "sugar-beach",
+		name: "Sugar Beach",
+		lat: 43.6426,
+		lng: -79.3674,
+		kind: "water",
+		tier: "white",
+		lore: "Pink umbrellas on the inner harbour. The Redpath silos next door."
+	}),
+	poi({
+		id: "allan-gardens",
+		name: "Allan Gardens",
+		lat: 43.6617,
+		lng: -79.3747,
+		kind: "park",
+		tier: "white",
+		lore: "A Victorian greenhouse east of Yonge. Palms in January."
+	}),
+	poi({
+		id: "the-annex",
+		name: "The Annex",
+		lat: 43.6697,
+		lng: -79.4035,
+		kind: "landmark",
+		tier: "white",
+		lore: "Houses and porches west of the university. A Saturday street."
+	}),
+	poi({
+		id: "massey-hall",
+		name: "Massey Hall",
+		lat: 43.6473,
+		lng: -79.3774,
+		kind: "theatre",
+		tier: "blue",
+		lore: "1894, still a room that rings. Shuter Street's old hall."
+	}),
+	poi({
+		id: "elgin-to",
+		name: "Elgin and Winter Garden",
+		lat: 43.653,
+		lng: -79.3792,
+		kind: "theatre",
+		tier: "blue",
+		lore: "A stacked Edwardian pair. The last operating double-decker theatre of its kind."
+	}),
+	poi({
+		id: "tiff-lightbox",
+		name: "TIFF Lightbox",
+		lat: 43.6467,
+		lng: -79.3903,
+		kind: "theatre",
+		tier: "blue",
+		lore: "King West. The film festival's year-round house."
+	}),
+	poi({
+		id: "st-james-to",
+		name: "Cathedral Church of St. James",
+		lat: 43.6502,
+		lng: -79.3741,
+		kind: "civic",
+		tier: "blue",
+		lore: "The Anglican cathedral on King. A spire over the old town."
+	}),
+	poi({
+		id: "osgoode",
+		name: "Osgoode Hall",
+		lat: 43.652,
+		lng: -79.3858,
+		kind: "civic",
+		tier: "blue",
+		lore: "The Law Society's iron fence. Courts, a lawn, Queen and University."
+	}),
+	poi({
+		id: "steam-whistle",
+		name: "Steam Whistle",
+		lat: 43.6406,
+		lng: -79.3858,
+		kind: "food",
+		tier: "blue",
+		lore: "Pilsner in the roundhouse. A lamp by the turntable."
+	}),
+	poi({
+		id: "bata-shoe",
+		name: "Bata Shoe Museum",
+		lat: 43.6674,
+		lng: -79.4003,
+		kind: "museum",
+		tier: "blue",
+		lore: "Bloor West. A shoebox of a building, shoes from everywhere."
+	}),
+	poi({
+		id: "high-park",
+		name: "High Park",
+		lat: 43.6465,
+		lng: -79.4637,
+		kind: "park",
+		tier: "white",
+		lore: "The west-end woods. A pond, cherry trees, a long walk from the core."
+	})
+];
+var LA_MARKS = [
+	poi({
+		id: "grand-park-la",
+		name: "Grand Park",
+		lat: 34.0558,
+		lng: -118.2455,
+		kind: "park",
+		tier: "white",
+		lore: "A civic lawn between City Hall and the Music Center. Pink benches."
+	}),
+	poi({
+		id: "little-tokyo",
+		name: "Little Tokyo",
+		lat: 34.0502,
+		lng: -118.2395,
+		kind: "landmark",
+		tier: "white",
+		lore: "First Street's Japanese block. A plaza, a museum, a Saturday."
+	}),
+	poi({
+		id: "arts-district-la",
+		name: "Arts District",
+		lat: 34.0406,
+		lng: -118.233,
+		kind: "landmark",
+		tier: "white",
+		lore: "Warehouses east of Alameda. Murals, coffee, a blank on a loading dock."
+	}),
+	poi({
+		id: "macarthur-pk",
+		name: "MacArthur Park",
+		lat: 34.0587,
+		lng: -118.2778,
+		kind: "park",
+		tier: "white",
+		lore: "A lake west of downtown. The song, the street vendors, Wilshire at the south."
+	}),
+	poi({
+		id: "hollywood-highland",
+		name: "Hollywood & Highland",
+		lat: 34.1025,
+		lng: -118.3398,
+		kind: "landmark",
+		tier: "white",
+		lore: "The boulevard's tourist knot. Stars in the sidewalk, the Dolby up the stairs."
+	}),
+	poi({
+		id: "vista-hermosa",
+		name: "Vista Hermosa Park",
+		lat: 34.0695,
+		lng: -118.257,
+		kind: "park",
+		tier: "white",
+		lore: "A hillside lawn with downtown in it. Echo Park's quieter cousin."
+	}),
+	poi({
+		id: "bunker-steps",
+		name: "Bunker Hill steps",
+		lat: 34.0548,
+		lng: -118.2502,
+		kind: "landmark",
+		tier: "white",
+		lore: "A cascade between Fifth and Fourth. Office gardens, a lamp on a landing."
+	}),
+	poi({
+		id: "cathedral-la",
+		name: "Cathedral of Our Lady of the Angels",
+		lat: 34.0577,
+		lng: -118.2456,
+		kind: "civic",
+		tier: "blue",
+		lore: "Rafael Moneo's concrete nave. Alameda and the 101."
+	}),
+	poi({
+		id: "orpheum-la",
+		name: "Orpheum Theatre",
+		lat: 34.0424,
+		lng: -118.2548,
+		kind: "theatre",
+		tier: "blue",
+		lore: "Broadway's 1926 palace. Still a room that can hold a picture."
+	}),
+	poi({
+		id: "janm",
+		name: "Japanese American National Museum",
+		lat: 34.0494,
+		lng: -118.2389,
+		kind: "museum",
+		tier: "blue",
+		lore: "Little Tokyo. A lamp in the plaza, history in the galleries."
+	}),
+	poi({
+		id: "grammy-museum",
+		name: "GRAMMY Museum",
+		lat: 34.0446,
+		lng: -118.2656,
+		kind: "museum",
+		tier: "blue",
+		lore: "L.A. Live. A small house of recorded sound next to the arena."
+	}),
+	poi({
+		id: "last-bookstore",
+		name: "The Last Bookstore",
+		lat: 34.0476,
+		lng: -118.2496,
+		kind: "landmark",
+		tier: "blue",
+		lore: "Spring Street's old bank. Books in the vault, a labyrinth upstairs."
+	}),
+	poi({
+		id: "cliftons",
+		name: "Clifton's",
+		lat: 34.046,
+		lng: -118.2535,
+		kind: "food",
+		tier: "blue",
+		lore: "A cafeteria in a forest. Broadway's old oddball, still serving."
+	}),
+	poi({
+		id: "philippes",
+		name: "Philippe the Original",
+		lat: 34.0595,
+		lng: -118.237,
+		kind: "food",
+		tier: "blue",
+		lore: "French dip, sawdust, a counter north of Union Station."
+	}),
+	poi({
+		id: "farmers-mkt-la",
+		name: "Farmers Market — Fairfax",
+		lat: 34.0714,
+		lng: -118.3607,
+		kind: "food",
+		tier: "blue",
+		lore: "Third and Fairfax. Stalls since 1934, The Grove next door."
+	}),
+	poi({
+		id: "urban-light",
+		name: "Urban Light",
+		lat: 34.0633,
+		lng: -118.3591,
+		kind: "landmark",
+		tier: "white",
+		lore: "Chris Burden's lamps on Wilshire. LACMA's front porch."
+	})
+];
+var BOSTON_MARKS = [
+	poi({
+		id: "long-wharf",
+		name: "Long Wharf",
+		lat: 42.3601,
+		lng: -71.0502,
+		kind: "water",
+		tier: "white",
+		lore: "The old pier into the harbor. Ferries, a Marriott, the aquarium next door."
+	}),
+	poi({
+		id: "north-end",
+		name: "Hanover Street — North End",
+		lat: 42.3642,
+		lng: -71.0542,
+		kind: "food",
+		tier: "white",
+		lore: "Cannoli and a tight brick street. Boston's old Italian block."
+	}),
+	poi({
+		id: "copley-sq",
+		name: "Copley Square",
+		lat: 42.3501,
+		lng: -71.0756,
+		kind: "landmark",
+		tier: "white",
+		lore: "Trinity, the library, the Hancock. A Saturday farmers' market."
+	}),
+	poi({
+		id: "granary",
+		name: "Granary Burying Ground",
+		lat: 42.3574,
+		lng: -71.0615,
+		kind: "landmark",
+		tier: "white",
+		lore: "Revere, Hancock, Samuel Adams under the stones. Tremont Street's yard."
+	}),
+	poi({
+		id: "beacon-hill",
+		name: "Acorn Street",
+		lat: 42.3576,
+		lng: -71.0689,
+		kind: "landmark",
+		tier: "white",
+		lore: "Cobbles and federal houses. Beacon Hill's most photographed lane."
+	}),
+	poi({
+		id: "esplanade",
+		name: "Charles River Esplanade",
+		lat: 42.3572,
+		lng: -71.0758,
+		kind: "park",
+		tier: "white",
+		lore: "The Hatch Shell, a path on the water. July 4 from the grass."
+	}),
+	poi({
+		id: "haymarket-b",
+		name: "Haymarket",
+		lat: 42.3634,
+		lng: -71.0585,
+		kind: "food",
+		tier: "white",
+		lore: "A weekend produce crush under the Greenway. Cheap fruit, loud vendors."
+	}),
+	poi({
+		id: "newbury",
+		name: "Newbury Street",
+		lat: 42.3488,
+		lng: -71.0845,
+		kind: "landmark",
+		tier: "white",
+		lore: "Back Bay's shopping street. Brownstones, a lamp in a stoop."
+	}),
+	poi({
+		id: "park-st-church",
+		name: "Park Street Church",
+		lat: 42.3566,
+		lng: -71.0621,
+		kind: "civic",
+		tier: "blue",
+		lore: "Brimstone Corner. A steeple at the Common's northeast."
+	}),
+	poi({
+		id: "old-south",
+		name: "Old South Meeting House",
+		lat: 42.357,
+		lng: -71.0586,
+		kind: "civic",
+		tier: "blue",
+		lore: "The Tea Party was argued here before the harbor."
+	}),
+	poi({
+		id: "kings-chapel",
+		name: "King's Chapel",
+		lat: 42.3581,
+		lng: -71.0603,
+		kind: "civic",
+		tier: "blue",
+		lore: "Stone on Tremont. An Anglican church that became Unitarian."
+	}),
+	poi({
+		id: "symphony-hall",
+		name: "Symphony Hall",
+		lat: 42.3429,
+		lng: -71.0858,
+		kind: "theatre",
+		tier: "blue",
+		lore: "1900. The Boston Symphony's room. Huntington Avenue."
+	}),
+	poi({
+		id: "wang",
+		name: "Boch Center — Wang Theatre",
+		lat: 42.3502,
+		lng: -71.0652,
+		kind: "theatre",
+		tier: "blue",
+		lore: "A 1920s movie palace on Tremont. Gilt and a long stage."
+	}),
+	poi({
+		id: "ica-boston",
+		name: "ICA Boston",
+		lat: 42.3527,
+		lng: -71.0429,
+		kind: "museum",
+		tier: "blue",
+		lore: "The Seaport's contemporary museum. A cantilever over the water."
+	}),
+	poi({
+		id: "tea-party",
+		name: "Boston Tea Party Ships",
+		lat: 42.3522,
+		lng: -71.0513,
+		kind: "landmark",
+		tier: "blue",
+		lore: "Congress Street Bridge. A replica brig and a chest in the water."
+	}),
+	poi({
+		id: "christian-science",
+		name: "Christian Science Plaza",
+		lat: 42.3446,
+		lng: -71.0858,
+		kind: "landmark",
+		tier: "white",
+		lore: "A long reflecting pool in the Back Bay. The Mapparium next door."
+	})
+];
+var NOLA_MARKS = [
+	poi({
+		id: "nola-bourbon",
+		name: "Bourbon Street",
+		lat: 29.9568,
+		lng: -90.0682,
+		kind: "landmark",
+		tier: "white",
+		lore: "The loudest block. Neon, brass, a lamp in a doorway if you can hear it."
+	}),
+	poi({
+		id: "nola-royal",
+		name: "Royal Street",
+		lat: 29.9572,
+		lng: -90.0654,
+		kind: "landmark",
+		tier: "white",
+		lore: "Antiques and galleries one street off Bourbon. A quieter French Quarter."
+	}),
+	poi({
+		id: "nola-canal",
+		name: "Canal Streetcar",
+		lat: 29.9536,
+		lng: -90.0698,
+		kind: "station",
+		tier: "white",
+		lore: "The wide neutral ground. Red cars toward the cemeteries and the park."
+	}),
+	poi({
+		id: "nola-jax",
+		name: "Jax Brewery",
+		lat: 29.9558,
+		lng: -90.0632,
+		kind: "landmark",
+		tier: "white",
+		lore: "The old river brewery. Shops now, the levee still at the door."
+	}),
+	poi({
+		id: "nola-pontalba",
+		name: "Pontalba Buildings",
+		lat: 29.957,
+		lng: -90.0635,
+		kind: "landmark",
+		tier: "white",
+		lore: "The oldest apartments in the country, flanking Jackson Square."
+	}),
+	poi({
+		id: "nola-lafitte",
+		name: "Lafitte's Blacksmith Shop",
+		lat: 29.9612,
+		lng: -90.0638,
+		kind: "food",
+		tier: "white",
+		lore: "A Creole cottage on Bourbon that claims to be the oldest bar in the country."
+	}),
+	poi({
+		id: "nola-spanish",
+		name: "Spanish Plaza",
+		lat: 29.9496,
+		lng: -90.0638,
+		kind: "water",
+		tier: "white",
+		lore: "A fountain at the river. The ferry to Algiers, the aquarium next door."
+	}),
+	poi({
+		id: "nola-central",
+		name: "Central Grocery",
+		lat: 29.959,
+		lng: -90.0612,
+		kind: "food",
+		tier: "blue",
+		lore: "Decatur. The muffuletta was invented across this counter."
+	}),
+	poi({
+		id: "nola-napoleon",
+		name: "Napoleon House",
+		lat: 29.9558,
+		lng: -90.0652,
+		kind: "food",
+		tier: "blue",
+		lore: "A Pontalba-era house. Pimm's Cup in a crumbling courtyard."
+	}),
+	poi({
+		id: "nola-patobrien",
+		name: "Pat O'Brien's",
+		lat: 29.9584,
+		lng: -90.0664,
+		kind: "food",
+		tier: "blue",
+		lore: "St. Peter. The Hurricane was mixed here in a courtyard with a flaming fountain."
+	}),
+	poi({
+		id: "nola-cac",
+		name: "Contemporary Arts Center",
+		lat: 29.9438,
+		lng: -90.0682,
+		kind: "museum",
+		tier: "blue",
+		lore: "Camp Street warehouse. The Warehouse District's living room."
+	}),
+	poi({
+		id: "nola-smooth",
+		name: "Smoothie King Center",
+		lat: 29.949,
+		lng: -90.0821,
+		kind: "stadium",
+		tier: "blue",
+		lore: "The Pelicans' court, next to the Dome."
+	}),
+	poi({
+		id: "nola-marigny",
+		name: "Washington Square — Marigny",
+		lat: 29.9648,
+		lng: -90.0558,
+		kind: "park",
+		tier: "white",
+		lore: "A Creole faubourg green. Frenchmen Street starts a block away."
+	}),
+	poi({
+		id: "nola-tremé",
+		name: "St. Augustine Church",
+		lat: 29.9642,
+		lng: -90.0718,
+		kind: "civic",
+		tier: "blue",
+		lore: "Tremé. One of the oldest African-American Catholic parishes in the country."
+	}),
+	poi({
+		id: "nola-riverfront",
+		name: "Riverfront Streetcar",
+		lat: 29.9532,
+		lng: -90.0624,
+		kind: "station",
+		tier: "white",
+		lore: "The cars along the levee. The Quarter on one side, the Mississippi on the other."
+	}),
+	poi({
+		id: "nola-antoines",
+		name: "Antoine's",
+		lat: 29.9564,
+		lng: -90.0666,
+		kind: "food",
+		tier: "blue",
+		lore: "St. Louis Street, 1840. Oysters Rockefeller was born in this dining room."
+	})
+];
+var CITIES = {
+	austin: withMarks(austin, AUSTIN_MARKS),
+	temple: withMarks(temple, TEMPLE_MARKS),
+	nyc: withMarks(nyc, NYC_MARKS),
+	sf: withMarks(sf, SF_MARKS),
+	london: withMarks(london, LONDON_MARKS),
+	chicago: withMarks(chicago, CHICAGO_MARKS),
+	detroit: withMarks(detroit, DETROIT_MARKS),
+	tucson: withMarks(tucson, TUCSON_MARKS),
+	toronto: withMarks(toronto, TORONTO_MARKS),
+	la: withMarks(la, LA_MARKS),
+	boston: withMarks(boston, BOSTON_MARKS),
+	nola: withMarks(nola, NOLA_MARKS)
+};
+var SCOUT_SHOPS = {
+	austin: poi({
+		id: "shop-austin",
+		name: "Night Coat",
+		lat: 30.267,
+		lng: -97.7385,
+		kind: "shop",
+		tier: "white",
+		lore: "East Sixth. A narrow door, coats on hooks, a lantern in the window. Scouts hire here."
+	}),
+	temple: poi({
+		id: "shop-temple",
+		name: "Main Street Outfitter",
+		lat: 31.0982,
+		lng: -97.3428,
+		kind: "shop",
+		tier: "white",
+		lore: "A storefront near the depot. Wool on the rack, brass on the counter. Scouts hire here."
+	}),
+	nyc: poi({
+		id: "shop-nyc",
+		name: "Dusk Thread",
+		lat: 40.7539,
+		lng: -73.9897,
+		kind: "shop",
+		tier: "white",
+		lore: "Garment District, 38th Street. The window holds one lantern and a row of small coats."
+	}),
+	sf: poi({
+		id: "shop-sf",
+		name: "Fog Coat",
+		lat: 37.7968,
+		lng: -122.4053,
+		kind: "shop",
+		tier: "white",
+		lore: "Jackson Square edge. Damp wool, a brass bell, scouts behind the counter."
+	}),
+	london: poi({
+		id: "shop-london",
+		name: "Lantern & Thread",
+		lat: 51.5104,
+		lng: -.1294,
+		kind: "shop",
+		tier: "white",
+		lore: "Cecil Court. A book-lane tailor that still cuts night coats."
+	}),
+	chicago: poi({
+		id: "shop-chicago",
+		name: "Afterglow Tailor",
+		lat: 41.8832,
+		lng: -87.6278,
+		kind: "shop",
+		tier: "white",
+		lore: "State Street. The awning is brass. The rack is short coats and one long one."
+	}),
+	detroit: poi({
+		id: "shop-detroit",
+		name: "Woodward Coat",
+		lat: 42.3335,
+		lng: -83.0495,
+		kind: "shop",
+		tier: "white",
+		lore: "Capitol Park. A lamp in the window, scouts on the pegs."
+	}),
+	tucson: poi({
+		id: "shop-tucson",
+		name: "Congress Outfitter",
+		lat: 32.2217,
+		lng: -110.9748,
+		kind: "shop",
+		tier: "white",
+		lore: "Congress and Stone. Desert wool, a small lantern, the door stays open after dark."
+	}),
+	toronto: poi({
+		id: "shop-toronto",
+		name: "Queen Street Coat",
+		lat: 43.6508,
+		lng: -79.3875,
+		kind: "shop",
+		tier: "white",
+		lore: "Queen West. A narrow tailor with a brass awning and a fox in the window some nights."
+	}),
+	la: poi({
+		id: "shop-la",
+		name: "Broadway Night Coat",
+		lat: 34.0506,
+		lng: -118.249,
+		kind: "shop",
+		tier: "white",
+		lore: "By Grand Central Market. The street is loud. The shop is one lantern and a counter."
+	}),
+	boston: poi({
+		id: "shop-boston",
+		name: "Beacon Thread",
+		lat: 42.3578,
+		lng: -71.0703,
+		kind: "shop",
+		tier: "white",
+		lore: "Charles Street. Beacon Hill wool, a lantern on the stoop, scouts for hire inside."
+	}),
+	nola: poi({
+		id: "shop-nola",
+		name: "Royal Coat",
+		lat: 29.9586,
+		lng: -90.0658,
+		kind: "shop",
+		tier: "white",
+		lore: "Royal Street. A Creole shopfront, brass in the transom, coats on a quiet rail."
+	})
+};
+for (const id of Object.keys(SCOUT_SHOPS)) {
+	const shop = SCOUT_SHOPS[id];
+	const city = CITIES[id];
+	if (!city.pois.some((p) => p.id === shop.id)) city.pois.push(shop);
+}
+var CITY_LIST = [
+	CITIES.austin,
+	CITIES.temple,
+	CITIES.nyc,
+	CITIES.sf,
+	CITIES.london,
+	CITIES.chicago,
+	CITIES.detroit,
+	CITIES.tucson,
+	CITIES.toronto,
+	CITIES.la,
+	CITIES.boston,
+	CITIES.nola
+];
+var SERIES = {
+	run: {
+		kind: "run",
+		id: "__run__",
+		name: "The Run",
+		cost: "blue",
+		pay: "green",
+		bonus: "amber",
+		steps: 3,
+		diffs: [
+			1,
+			2,
+			3
+		],
+		coolMs: 6e5,
+		lore: "Three plates, one blue match. Easy, then harder, then the last. Clear the lamp and a green match drops. Miss any plate and the match is gone — the street goes dark for ten minutes.",
+		kicker: "three plates, one blue"
+	},
+	stack: {
+		kind: "stack",
+		id: "__stack__",
+		name: "The Stack",
+		cost: "green",
+		pay: "amber",
+		bonus: "red",
+		steps: 4,
+		diffs: [
+			1,
+			2,
+			3,
+			3
+		],
+		coolMs: 72e4,
+		lore: "Four plates, one green match. The last two bite. Clear both globes and an amber match drops. Miss any plate and the match is gone — twelve minutes dark.",
+		kicker: "four plates, one green"
+	}
+};
+function seriesPoi(s) {
+	return {
+		id: s.id,
+		name: s.name,
+		lat: 0,
+		lng: 0,
+		kind: "landmark",
+		tier: s.cost,
+		lore: s.lore
+	};
+}
+seriesPoi(SERIES.run);
+seriesPoi(SERIES.stack);
+Object.values({
+	raccoon: {
+		id: "raccoon",
+		name: "The Raccoon",
+		blurb: "The original scout. Coat, lantern, no charge.",
+		coins: 0,
+		walk: "/sprites/player-walk.png",
+		idle: "/sprites/player-idle.png",
+		icon: "/sprites/scouts/raccoon.png",
+		gait: 1,
+		bed: "Lantern dust",
+		perk: { label: "The original coat. No extra." }
+	},
+	cat: {
+		id: "cat",
+		name: "The Tabby",
+		blurb: "A quieter step. The lantern still swings.",
+		coins: 7200,
+		walk: "/sprites/scouts/cat-walk.png",
+		idle: "/sprites/scouts/cat-idle.png",
+		icon: "/sprites/scouts/cat.png",
+		gait: 1.08,
+		bed: "Quiet step",
+		perk: {
+			label: "+0.25 s on every lamp",
+			vaultMs: 250
+		}
+	},
+	turtle: {
+		id: "turtle",
+		name: "The Plate",
+		blurb: "Takes the long way. The shell remembers.",
+		coins: 18600,
+		walk: "/sprites/scouts/turtle-walk.png",
+		idle: "/sprites/scouts/turtle-idle.png",
+		icon: "/sprites/scouts/turtle.png",
+		gait: .86,
+		bed: "Shell tide",
+		perk: {
+			label: "+0.5 s on every lamp",
+			vaultMs: 500
+		}
+	},
+	owl: {
+		id: "owl",
+		name: "The Owl",
+		blurb: "Night eyes. The lantern still swings.",
+		coins: 14e3,
+		walk: "/sprites/scouts/owl-walk.png",
+		idle: "/sprites/scouts/owl-idle.png",
+		icon: "/sprites/scouts/owl.png",
+		gait: 1.06,
+		bed: "Night eyes",
+		perk: {
+			label: "Lamps from a hair farther",
+			reach: 1.05
+		}
+	},
+	corgi: {
+		id: "corgi",
+		name: "The Corgi",
+		blurb: "Short legs, long errand. The lantern still clears the curb.",
+		coins: 9600,
+		walk: "/sprites/scouts/corgi-walk.png",
+		idle: "/sprites/scouts/corgi-idle.png",
+		icon: "/sprites/scouts/corgi.png",
+		gait: 1.12,
+		bed: "Curb bounce",
+		perk: {
+			label: "+1% walk",
+			pace: 1.01
+		}
+	},
+	sloth: {
+		id: "sloth",
+		name: "The Sloth",
+		blurb: "Takes the longer long way. The coat still fits.",
+		coins: 24e3,
+		walk: "/sprites/scouts/sloth-walk.png",
+		idle: "/sprites/scouts/sloth-idle.png",
+		icon: "/sprites/scouts/sloth.png",
+		gait: .74,
+		bed: "The long way",
+		perk: {
+			label: "+0.75 s on every lamp",
+			vaultMs: 750
+		}
+	},
+	fox: {
+		id: "fox",
+		name: "The Fox",
+		blurb: "Dusk coat. The last hire on the ledger — a long walk to earn it.",
+		coins: 88e3,
+		walk: "/sprites/scouts/fox-walk.png",
+		idle: "/sprites/scouts/fox-idle.png",
+		icon: "/sprites/scouts/fox.png",
+		gait: 1.1,
+		bed: "Coal dusk",
+		perk: {
+			label: "+1% coins from lamps · +0.25 s",
+			vaultMs: 250,
+			loot: 1.01
+		}
+	}
+});
+var gameImport = Promise.resolve(null);
+function Home() {
+	const [App, setApp] = (0, import_react.useState)(null);
+	(0, import_react.useEffect)(() => {
+		let live = true;
+		gameImport.then((mod) => {
+			if (live && mod) setApp(() => mod.KeylineApp);
+		});
+		return () => {
+			live = false;
+		};
+	}, []);
+	return App ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(App, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TitleShell, {});
+}
+function TitleShell() {
+	const city = CITIES.austin;
+	const stubs = [city, ...CITY_LIST.filter((c) => c.id !== city.id).slice(0, 4)];
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "title-night",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "title-pave",
+			"aria-hidden": true
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "title-folio",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "street-blade",
+					"aria-label": "Keyline",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [city.name, " St"] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "KEYLINE" })]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "block-map",
+					"aria-hidden": true,
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "block-road is-ns" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "block-road is-ew" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "block-road is-ew-2" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "block-glow" }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "lantern title-lamp",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "lantern-cap" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", {
+									className: "lantern-frame",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "lantern-glass" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "lantern-post" })
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "match-pin tier-white title-key",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "match-head" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("i", { className: "match-stick" })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "scout-marker is-idle title-scout",
+							"data-scout": "raccoon",
+							"data-row": "0",
+							"data-col": "0"
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "lede",
+					children: "Walk a real city. Light lamps. Answer trivia."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					className: "btn btn-primary title-go",
+					disabled: true,
+					children: ["Walk ", city.name]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("nav", {
+					className: "city-stubs",
+					"aria-label": "Cities",
+					children: stubs.map((c) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: c.id === city.id ? "is-here" : "",
+						disabled: true,
+						children: c.name
+					}, c.id))
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex justify-center gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: "title-more",
+						disabled: true,
+						children: "All cities"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						className: "title-more",
+						disabled: true,
+						children: "Standings"
+					})]
+				})
+			]
+		})]
+	});
+}
+//#endregion
+export { Home as component };

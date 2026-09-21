@@ -1,0 +1,12 @@
+node_modules/
+assets/
+screenshots/
+artifacts/
+tmp/
+*.log
+.grok/og-raw.jpg
+.grok/title-hero-raw.jpg
+.grok/preview.log
+.grok/og-pending
+.grok/trivia-audit-cache.json
+.grok/trivia-audit-report.json
