@@ -32,6 +32,9 @@ export function Satchel() {
   const atlas = useGame((s) => s.atlas);
   const vaults = useGame((s) => s.vaults);
   const blanks = useGame((s) => s.blanks);
+  const heldCards = useGame((s) => s.heldCards);
+  const pins = useGame((s) => s.pins);
+  const ribbon = useGame((s) => s.ribbon);
   const [sel, setSel] = useState<ItemId>("blue");
   const city = CITIES[cityId];
   const lamps = allPois(city, blanks);
@@ -137,22 +140,32 @@ export function Satchel() {
 
             {isTier(sel) ? (
               <ul className="mt-4 grid gap-1.5">
-                {lamps.filter((p) => p.tier === sel).length === 0 ? (
-                  <li className="text-xs text-fg-subtle">No {TIER_LABEL[sel].toLowerCase()} lamps in {city.name}.</li>
-                ) : (
-                  lamps
-                    .filter((p) => p.tier === sel)
-                    .map((p) => {
-                      const cool = (vaults[p.id]?.coolUntil ?? 0) > Date.now();
-                      const known = Boolean(atlas[p.id]);
-                      return (
-                        <li key={p.id} className="text-sm text-fg">
-                          <span className="text-fg-muted">{known ? p.name : "Undiscovered lamp"}</span>
-                          {cool ? <span className="ml-2 text-xs text-fg-subtle">recasting</span> : null}
+                {(() => {
+                  const ofTier = lamps.filter((p) => p.tier === sel);
+                  const named = ofTier.filter((p) => atlas[p.id]);
+                  const hidden = ofTier.length - named.length;
+                  if (!ofTier.length) {
+                    return <li className="text-xs text-fg-subtle">No {TIER_LABEL[sel].toLowerCase()} lamps in {city.name}.</li>;
+                  }
+                  return (
+                    <>
+                      {named.map((p) => {
+                        const cool = (vaults[p.id]?.coolUntil ?? 0) > Date.now();
+                        return (
+                          <li key={p.id} className="text-sm text-fg">
+                            <span className="text-fg-muted">{p.name}</span>
+                            {cool ? <span className="ml-2 text-xs text-fg-subtle">recasting</span> : null}
+                          </li>
+                        );
+                      })}
+                      {hidden > 0 ? (
+                        <li className="text-sm text-fg-muted">
+                          {hidden} undiscovered lamp{hidden === 1 ? "" : "s"}
                         </li>
-                      );
-                    })
-                )}
+                      ) : null}
+                    </>
+                  );
+                })()}
               </ul>
             ) : null}
 
@@ -184,6 +197,17 @@ export function Satchel() {
 
             {isMaterial(sel) ? (
               <p className="mt-4 text-xs text-fg-subtle">Spent at the print shop to make charms. Tab opens HQ.</p>
+            ) : null}
+            {heldCards.length ? (
+              <p className="mt-4 text-xs text-fg-muted">
+                {heldCards.length} city trivia card{heldCards.length === 1 ? "" : "s"} from the news kiosk.
+              </p>
+            ) : null}
+            {pins.length || ribbon ? (
+              <p className="mt-2 text-xs text-fg-muted">
+                {ribbon ? "Scout ribbon on. " : ""}
+                {pins.length ? `${pins.length} ward pin${pins.length === 1 ? "" : "s"}.` : ""}
+              </p>
             ) : null}
           </aside>
         </div>
