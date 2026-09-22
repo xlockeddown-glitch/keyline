@@ -1,6 +1,7 @@
 import { q } from "../quiz";
 import { stampCityRecord } from "../rarity";
 import type { CityId, TriviaCat, TriviaQ } from "../types";
+import { CITY_WEEKLY } from "./cities_weekly";
 
 export const CITY_EXTRA: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
   austin: {
@@ -153,7 +154,7 @@ export const CITY_EXTRA: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> =
     local: [
       q("Windsor, Ontario faces Detroit across the…", ["the Rouge only", "the Detroit River", "the St. Clair", "the Hudson"], "the Detroit River", 1),
       q("Motown Records was founded in…", ["Chicago", "Detroit", "Cleveland", "Memphis"], "Detroit", 1),
-      q("The Renaissance Center is a…", ["auto plant only in Dearborn", "riverfront tower cluster (GM's headquarters among tenants)", "baseball park", "airport"], "riverfront tower cluster (GM's headquarters among tenants)", 2),
+      q("The Renaissance Center is a…", ["auto plant only in Dearborn", "riverfront tower cluster long tied to GM (HQ moved to Hudson's in 2026)", "baseball park", "airport"], "riverfront tower cluster long tied to GM (HQ moved to Hudson's in 2026)", 2),
       q("Belle Isle is a…", ["suburb in Ohio", "park island in the Detroit River", "factory in Flint", "lake in Michigan's U.P. only"], "park island in the Detroit River", 2),
       q("The Guardian Building is a…", ["auto plant", "Art Deco skyscraper downtown", "stadium", "bridge to Canada only"], "Art Deco skyscraper downtown", 3),
       q("Campus Martius is a…", ["Ford's Rouge plant", "downtown park / square", "airport", "cemetery of the auto barons only"], "downtown park / square", 2),
@@ -325,5 +326,24 @@ export const CITY_EXTRA: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> =
   },
 };
 
+function mergeWeekly(
+  extra: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>>,
+  weekly: Partial<Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>>>,
+): void {
+  for (const city of Object.keys(weekly) as CityId[]) {
+    const weeklyCity = weekly[city];
+    if (!weeklyCity) continue;
+    extra[city] ??= {};
+    for (const cat of Object.keys(weeklyCity) as TriviaCat[]) {
+      const add = weeklyCity[cat];
+      if (!add?.length) continue;
+      const existing = extra[city][cat] ?? [];
+      const seen = new Set(existing.map((x) => x.q));
+      extra[city][cat] = [...existing, ...add.filter((x) => !seen.has(x.q))];
+    }
+  }
+}
+
+mergeWeekly(CITY_EXTRA, CITY_WEEKLY);
 stampCityRecord(CITY_EXTRA);
 

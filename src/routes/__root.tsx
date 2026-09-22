@@ -1,7 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
-import { PUBLISH_STAMP, SHEET_HREF } from "@/version";
+import { APP_VERSION, PUBLISH_STAMP, SHEET_HREF } from "@/version";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "KEYLINE";
@@ -12,7 +12,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: APP_NAME },
+      { title: `${APP_NAME} v${APP_VERSION}` },
       { name: "theme-color", content: "#0B0C0E" },
       { name: "keyline-build", content: PUBLISH_STAMP },
       { name: "keyline-sheet-src", content: String(appCss) },
