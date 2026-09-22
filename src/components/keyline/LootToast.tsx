@@ -55,6 +55,9 @@ export function LootToast() {
                   )}
                 </div>
                 {toast ? <p className="mt-2 text-xs text-fg-muted">{toast}</p> : null}
+                {loot.boosts?.length ? (
+                  <p className="mt-1 text-xs text-fg-muted">{loot.boosts.join(" · ")}</p>
+                ) : null}
               </>
             ) : (
               <>

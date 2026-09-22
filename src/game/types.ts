@@ -130,6 +130,7 @@ export type LootDrop = {
   ink: number;
   vellum: number;
   schematic: boolean;
+  boosts?: string[];
 };
 
 export type MissFlash = {

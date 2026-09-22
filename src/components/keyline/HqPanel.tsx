@@ -282,6 +282,9 @@ export function HqPanel() {
                 <p className="mt-1 text-xs text-fg-muted">
                   Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower, none. White {TIER_VALUE.white} coin.
                 </p>
+                <p className="mt-3 text-xs text-fg-muted">
+                  Trivia: three in a row pays a white match. Under 3 seconds pays +5 coin. First correct of a topic each UTC day pays a white, three topics a day.
+                </p>
                 <ul className="mt-2 grid gap-2">
                   {TIER_ORDER.map((tier) => {
                     const up = bankUpSpec(tier);

@@ -28,6 +28,7 @@ import type {
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
+import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, matchCap, sparkState, transitLoot } from "./ticket";
 
 const SAVE_KEY = "keyline-save-v1";
@@ -108,6 +109,8 @@ export type GameState = {
   sparkDay: string;
   sparkN: number;
   sparkLamps: string[];
+  charmDay: string;
+  charmTopics: TriviaCat[];
   blanks: Poi[];
   streetSpread: boolean;
   tutorial: number;
@@ -187,6 +190,34 @@ function bumpStreak(get: () => GameState): Pick<GameState, "streak" | "bestStrea
 
 function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function rollBoosts(
+  get: () => GameState,
+  correct: boolean,
+  elapsedMs: number,
+  topic: TriviaCat | null | undefined,
+) {
+  return applyTriviaBoosts({
+    correct,
+    elapsedMs,
+    topic: topic ?? null,
+    streakAfter: correct ? get().streak + 1 : 0,
+    charmDay: typeof get().charmDay === "string" ? get().charmDay : "",
+    charmTopics: Array.isArray(get().charmTopics) ? get().charmTopics : [],
+  });
+}
+
+function payBoosts(keys: Record<Tier, number>, points: number, award: ReturnType<typeof applyTriviaBoosts>) {
+  const paid = creditWhite(keys, award.white);
+  return {
+    keys: paid.keys,
+    points: points + award.coins,
+    whiteAdded: paid.added,
+    boosts: award.labels,
+    charmDay: award.charmDay,
+    charmTopics: award.charmTopics,
+  };
 }
 
 function sparksNow(get: () => GameState) {
@@ -285,6 +316,8 @@ function persistable(s: GameState) {
     sparkDay: s.sparkDay,
     sparkN: s.sparkN,
     sparkLamps: s.sparkLamps,
+    charmDay: s.charmDay,
+    charmTopics: s.charmTopics,
     blanks: s.blanks,
     streetSpread: s.streetSpread,
     tutorial: s.tutorial,
@@ -455,6 +488,8 @@ export const useGame = create<GameState>((set, get) => ({
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
   sparkLamps: saved?.sparkLamps ?? [],
+  charmDay: typeof saved?.charmDay === "string" ? saved.charmDay : "",
+  charmTopics: Array.isArray(saved?.charmTopics) ? saved.charmTopics : [],
   blanks: Array.isArray(saved?.blanks) ? saved.blanks : [],
   streetSpread: Boolean(saved?.streetSpread),
   tutorial: saved?.howtoDone ? (saved.tutorial ?? 4) : 0,
@@ -749,9 +784,12 @@ export const useGame = create<GameState>((set, get) => ({
       };
       if (!correct) {
         sfx.wrong();
+        const boost = rollBoosts(get, false, elapsed, ov.category);
         set({
           ...used,
           streak: 0,
+          charmDay: boost.charmDay,
+          charmTopics: boost.charmTopics,
           asked,
           seenIds,
           ...logged,
@@ -766,35 +804,48 @@ export const useGame = create<GameState>((set, get) => ({
       const have = get().keys[poi.tier] ?? 0;
       const cap = matchCap(poi.tier);
       const correctByTier = bumpCorrect(get, poi.tier);
+      const boost = rollBoosts(get, true, elapsed, ov.category);
       if (have >= cap) {
         sfx.correct();
+        const paid = payBoosts(get().keys, get().points + 12, boost);
         set({
           ...used,
           ...bumpStreak(get),
           asked,
           seenIds,
           ...logged,
-          points: get().points + 12,
+          keys: paid.keys,
+          points: paid.points,
+          charmDay: paid.charmDay,
+          charmTopics: paid.charmTopics,
           openVault: null,
           loot: null,
           miss: null,
           correctByTier,
-          toast: "Pocket full. The spark paid in coin.",
+          toast: paid.boosts.length
+            ? `Pocket full. The spark paid in coin. ${paid.boosts.join(" · ")}.`
+            : "Pocket full. The spark paid in coin.",
         });
       } else {
         sfx.correct();
+        const paid = payBoosts({ ...get().keys, [poi.tier]: have + 1 }, get().points, boost);
         set({
           ...used,
-          keys: { ...get().keys, [poi.tier]: have + 1 },
+          keys: paid.keys,
+          points: paid.points,
           ...bumpStreak(get),
           asked,
           seenIds,
           ...logged,
+          charmDay: paid.charmDay,
+          charmTopics: paid.charmTopics,
           openVault: null,
           loot: null,
           miss: null,
           correctByTier,
-          toast: `A ${TIER_LABEL[poi.tier]} match from the wick.`,
+          toast: paid.boosts.length
+            ? `A ${TIER_LABEL[poi.tier]} match from the wick. ${paid.boosts.join(" · ")}.`
+            : `A ${TIER_LABEL[poi.tier]} match from the wick.`,
         });
       }
       scheduleSave(get);
@@ -810,8 +861,11 @@ export const useGame = create<GameState>((set, get) => ({
       const steps = ov.run?.steps ?? series.steps;
       if (!correct) {
         sfx.wrong();
+        const boost = rollBoosts(get, false, elapsed, ov.category);
         set({
           streak: 0,
+          charmDay: boost.charmDay,
+          charmTopics: boost.charmTopics,
           asked,
           seenIds,
           ...logged,
@@ -834,12 +888,19 @@ export const useGame = create<GameState>((set, get) => ({
         if (grade === "perfect") sfx.perfect();
         else sfx.correct();
         const correctByTier = bumpCorrect(get, series.cost);
+        const boost = rollBoosts(get, true, elapsed, ov.category);
+        const paid = payBoosts(get().keys, get().points, boost);
         set({
           asked,
           seenIds,
           ...logged,
           ...bumpStreak(get),
+          keys: paid.keys,
+          points: paid.points,
+          charmDay: paid.charmDay,
+          charmTopics: paid.charmTopics,
           correctByTier,
+          toast: paid.boosts.length ? paid.boosts.join(" · ") : get().toast,
           openVault: {
             poiId: series.id,
             category: ov.category,
@@ -892,19 +953,30 @@ export const useGame = create<GameState>((set, get) => ({
         keys: nextKeys,
       });
       if (surveyHit) nextKeys = surveyHit.keys;
+      const boost = rollBoosts(get, true, elapsed, ov.category);
+      const paid = payBoosts(nextKeys, get().points + loot.points, boost);
+      if (paid.whiteAdded) extraKeys.white = (extraKeys.white ?? 0) + paid.whiteAdded;
+      loot.keys = extraKeys;
+      loot.points = paid.points - get().points;
+      loot.boosts = paid.boosts.length ? paid.boosts : undefined;
       if (loot.grade === "perfect") sfx.perfect();
       else sfx.correct();
       const bonusHit = Boolean(extraKeys[series.bonus]);
       const correctByTier = bumpCorrect(get, series.cost);
+      const clearLine = bonusHit
+        ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
+        : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`;
       set({
-        keys: nextKeys,
-        points: get().points + loot.points,
+        keys: paid.keys,
+        points: paid.points,
         brass: get().brass + brass,
         ink: get().ink + ink,
         vellum: get().vellum + vellum,
         schematics: get().schematics + (schematic ? 1 : 0),
         survey: surveyHit?.survey ?? get().survey,
         ...bumped,
+        charmDay: paid.charmDay,
+        charmTopics: paid.charmTopics,
         vaultsOpened: get().vaultsOpened + 1,
         correctByTier,
         asked,
@@ -914,9 +986,7 @@ export const useGame = create<GameState>((set, get) => ({
         loot,
         miss: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
-        toast: bonusHit
-          ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
-          : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`,
+        toast: paid.boosts.length ? `${clearLine} ${paid.boosts.join(" · ")}.` : clearLine,
         tutorial: Math.max(get().tutorial, 2),
       });
       postClear(series.cost);
@@ -927,9 +997,12 @@ export const useGame = create<GameState>((set, get) => ({
     const keys = { ...get().keys, [poi.tier]: get().keys[poi.tier] - 1 };
     if (!correct) {
       sfx.wrong();
+      const boost = rollBoosts(get, false, elapsed, ov.category);
       set({
         keys,
         streak: 0,
+        charmDay: boost.charmDay,
+        charmTopics: boost.charmTopics,
         asked,
         seenIds,
         ...logged,
@@ -986,6 +1059,13 @@ export const useGame = create<GameState>((set, get) => ({
     });
     const survey = surveyHit?.survey ?? get().survey;
     if (surveyHit) nextKeys = surveyHit.keys;
+    const boost = rollBoosts(get, true, elapsed, ov.category);
+    const paid = payBoosts(nextKeys, get().points + points, boost);
+    nextKeys = paid.keys;
+    if (paid.whiteAdded) extraKeys.white = (extraKeys.white ?? 0) + paid.whiteAdded;
+    loot.keys = extraKeys;
+    loot.points = paid.points - get().points;
+    loot.boosts = paid.boosts.length ? paid.boosts : undefined;
     const coolMs =
       poi.tier === "white" ? 90_000 : poi.tier === "blue" ? 140_000 : poi.tier === "green" ? 220_000 : 400_000;
     const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + coolMs } };
@@ -1014,6 +1094,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (grade === "perfect") sfx.perfect();
     else sfx.correct();
     const correctByTier = bumpCorrect(get, poi.tier);
+    const boostLine = paid.boosts.length ? paid.boosts.join(" · ") : null;
     set({
       keys: nextKeys,
       points: get().points + loot.points,
@@ -1028,6 +1109,8 @@ export const useGame = create<GameState>((set, get) => ({
       fares,
       cityVaults,
       ...bumped,
+      charmDay: paid.charmDay,
+      charmTopics: paid.charmTopics,
       vaultsOpened: get().vaultsOpened + 1,
       correctByTier,
       asked,
@@ -1036,7 +1119,7 @@ export const useGame = create<GameState>((set, get) => ({
       openVault: null,
       loot,
       miss: null,
-      toast: contractToast ?? fareToast ?? surveyHit?.message ?? null,
+      toast: contractToast ?? fareToast ?? surveyHit?.message ?? boostLine,
       tutorial: Math.max(get().tutorial, 2),
     });
     postClear(poi.tier);
