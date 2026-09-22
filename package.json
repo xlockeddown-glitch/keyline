@@ -1,7 +1,7 @@
 {
   "name": "app-builder-workspace",
   "private": true,
-  "version": "0.0.09",
+  "version": "0.0.10",
   "sideEffects": false,
   "type": "module",
   "overrides": {
@@ -12,7 +12,7 @@
     "build": "node scripts/with-app-env.mjs vite build && node scripts/strip-server-wasm.mjs && node scripts/sanitize-server-chunks.mjs && node scripts/deploy-guard.mjs && npm run db:migrate",
     "db:migrate": "node scripts/migrate.mjs",
     "build:dev": "node scripts/with-app-env.mjs vite build --mode development",
-    "preview": "node scripts/with-app-env.mjs vite preview",
+    "preview": "node scripts.with-app-env.mjs vite preview",
     "preview:restart": "node scripts/preview.mjs restart",
     "preview:stop": "node scripts/preview.mjs stop",
     "typecheck": "tsc --noEmit",
@@ -24,7 +24,7 @@
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "check:uniformity": "node scripts/uniformity-qa.mjs",
     "qa:sprites": "python3 scripts/qa-sprites.py",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/game/place.test.ts src/game/ward.test.ts src/game/pace.test.ts src/game/perk.test.ts src/game/rarity.test.ts src/game/telemetry.test.ts src/game/crate.test.ts src/game/pulse.test.ts src/game/retune.test.ts src/game/rolls.test.ts src/game/standings.test.ts src/game/rewards.test.ts src/game/streets.test.ts src/game/firstLogin.test.ts src/game/boosts.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/game/place.test.ts src/game/ward.test.ts src/game/pace.test.ts src/game/perk.test.ts src/game/rarity.test.ts src/game/telemetry.test.ts src/game/crate.test.ts src/game/pulse.test.ts src/game/retune.test.ts src/game/rolls.test.ts src/game/standings.test.ts src/game/rewards.test.ts src/game/streets.test.ts src/game/firstLogin.test.ts src/game/boosts.test.ts src/game/pass2.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -38,7 +38,7 @@
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
-    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-label": "^1.1.8",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-radio-group": "^1.3.8",
