@@ -23,6 +23,12 @@ import { NATURE_BANK } from "@/game/banks/nature";
 import { NATURE_MORE } from "@/game/banks/nature_more";
 import { NATURE_LIFE } from "@/game/banks/nature_life";
 import { CITY_EXTRA } from "@/game/banks/cities";
+import {
+  WEEKLY_HISTORY,
+  WEEKLY_NATURE,
+  WEEKLY_POLITICAL,
+  WEEKLY_SCIENCE,
+} from "@/game/banks/weekly_20260922";
 import type { CityId, Poi, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 
 export const TRIVIA_CATS: { id: TriviaCat; label: string; blurb: string }[] = [
@@ -329,13 +335,13 @@ function mergeCat(a: TriviaQ[], b: TriviaQ[]): TriviaQ[] {
 const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	sports: mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []),
 	local: mergeCat(CORE_GENERAL.local ?? [], GENERAL_BANK.local ?? []),
-	political: mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []),
+	political: mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL),
 	food: mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []),
 	arts: mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []),
 	math: mergeCat(MATH_BANK, MATH_MORE),
-	science: mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE),
-	history: mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE),
-	nature: mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE),
+	science: mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE),
+	history: mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY),
+	nature: mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE),
 };
 const TEXAS_LOCAL = [
 	q("Texas has how many official state capitol buildings still standing in Austin's grounds story — the current Capitol opened in which decade?", [

@@ -13,7 +13,7 @@ import {
 } from "@/game/items";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
-import type { CharmId } from "@/game/types";
+import type { CharmId, Tier } from "@/game/types";
 import { CostIcons, ItemIcon } from "./ItemIcon";
 
 export function Satchel() {
@@ -32,9 +32,6 @@ export function Satchel() {
   const atlas = useGame((s) => s.atlas);
   const vaults = useGame((s) => s.vaults);
   const blanks = useGame((s) => s.blanks);
-  const heldCards = useGame((s) => s.heldCards);
-  const pins = useGame((s) => s.pins);
-  const ribbon = useGame((s) => s.ribbon);
   const [sel, setSel] = useState<ItemId>("blue");
   const city = CITIES[cityId];
   const lamps = allPois(city, blanks);
@@ -73,12 +70,7 @@ export function Satchel() {
               <ul className="grid grid-cols-6 gap-2">
                 {TIERS.map((t) => (
                   <li key={t}>
-                    <Slot
-                      item={t}
-                      qty={keys[t]}
-                      selected={sel === t}
-                      onClick={() => pick(t)}
-                    />
+                    <Slot item={t} qty={keys[t]} selected={sel === t} onClick={() => pick(t)} />
                   </li>
                 ))}
               </ul>
@@ -139,34 +131,7 @@ export function Satchel() {
             <p className="mt-3 text-sm text-pretty text-fg-muted">{itemBlurb(sel)}</p>
 
             {isTier(sel) ? (
-              <ul className="mt-4 grid gap-1.5">
-                {(() => {
-                  const ofTier = lamps.filter((p) => p.tier === sel);
-                  const named = ofTier.filter((p) => atlas[p.id]);
-                  const hidden = ofTier.length - named.length;
-                  if (!ofTier.length) {
-                    return <li className="text-xs text-fg-subtle">No {TIER_LABEL[sel].toLowerCase()} lamps in {city.name}.</li>;
-                  }
-                  return (
-                    <>
-                      {named.map((p) => {
-                        const cool = (vaults[p.id]?.coolUntil ?? 0) > Date.now();
-                        return (
-                          <li key={p.id} className="text-sm text-fg">
-                            <span className="text-fg-muted">{p.name}</span>
-                            {cool ? <span className="ml-2 text-xs text-fg-subtle">recasting</span> : null}
-                          </li>
-                        );
-                      })}
-                      {hidden > 0 ? (
-                        <li className="text-sm text-fg-muted">
-                          {hidden} undiscovered lamp{hidden === 1 ? "" : "s"}
-                        </li>
-                      ) : null}
-                    </>
-                  );
-                })()}
-              </ul>
+              <LampList lamps={lamps} tier={sel} cityName={city.name} atlas={atlas} vaults={vaults} />
             ) : null}
 
             {charm ? (
@@ -198,21 +163,53 @@ export function Satchel() {
             {isMaterial(sel) ? (
               <p className="mt-4 text-xs text-fg-subtle">Spent at the print shop to make charms. Tab opens HQ.</p>
             ) : null}
-            {heldCards.length ? (
-              <p className="mt-4 text-xs text-fg-muted">
-                {heldCards.length} city trivia card{heldCards.length === 1 ? "" : "s"} from the news kiosk.
-              </p>
-            ) : null}
-            {pins.length || ribbon ? (
-              <p className="mt-2 text-xs text-fg-muted">
-                {ribbon ? "Scout ribbon on. " : ""}
-                {pins.length ? `${pins.length} ward pin${pins.length === 1 ? "" : "s"}.` : ""}
-              </p>
-            ) : null}
           </aside>
         </div>
       </div>
     </div>
+  );
+}
+
+function LampList({
+  lamps,
+  tier,
+  cityName,
+  atlas,
+  vaults,
+}: {
+  lamps: ReturnType<typeof allPois>;
+  tier: Tier;
+  cityName: string;
+  atlas: Record<string, unknown>;
+  vaults: Record<string, { coolUntil?: number }>;
+}) {
+  const tierLamps = lamps.filter((p) => p.tier === tier);
+  const namedLamps = tierLamps.filter((p) => Boolean(atlas[p.id]));
+  const undiscoveredCount = tierLamps.length - namedLamps.length;
+
+  return (
+    <ul className="mt-4 grid gap-1.5">
+      {tierLamps.length === 0 ? (
+        <li className="text-xs text-fg-subtle">
+          No {TIER_LABEL[tier].toLowerCase()} lamps in {cityName}.
+        </li>
+      ) : (
+        <>
+          {namedLamps.map((p) => {
+            const cool = (vaults[p.id]?.coolUntil ?? 0) > Date.now();
+            return (
+              <li key={p.id} className="text-sm text-fg">
+                <span className="text-fg-muted">{p.name}</span>
+                {cool ? <span className="ml-2 text-xs text-fg-subtle">recasting</span> : null}
+              </li>
+            );
+          })}
+          {undiscoveredCount > 0 ? (
+            <li className="text-sm text-fg-muted">{undiscoveredCount} undiscovered lamps</li>
+          ) : null}
+        </>
+      )}
+    </ul>
   );
 }
 

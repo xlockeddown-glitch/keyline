@@ -4,3 +4,5 @@ export const APP_VERSION = "0.0.11";
 export const PUBLISH_STAMP = "k11a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
+
+// Weekly trivia ship 2026-09-22: cities_weekly + weekly_20260922 wired; Detroit RenCen HQ fix.
