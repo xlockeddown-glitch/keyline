@@ -150,8 +150,8 @@
 }
 
 /* Shop / HQ facade (v0.0.13 / k13a) — hybrid visual-direction item 2.
-   Brass awning + hanging lamp on the outfitter pin; HQ plate brass edge + small wick.
-   Reuses lantern-cap / lantern-frame / lantern-glass. OSM tiles untouched. No magenta. */
+   Brass awning + CSS-only hanging lamp on outfitter pin; HQ plate brass edge + small wick.
+   Same brass/soot/wick language as lantern glass. OSM tiles untouched. No magenta. */
 
 /* Outfitter — brass awning (same metal as lantern-cap), not a flat accent slab */
 .shop-awning{
@@ -181,50 +181,42 @@
     0 0 5px color-mix(in oklab, var(--glow, var(--color-vault-amber)) 45%, transparent)
 }
 
-/* Hanging lamp over the awning — scaled lantern glass */
-.shop-lamp{
-  position:absolute;
-  right:3px;
-  top:0;
-  width:12px;
-  height:18px;
-  z-index:2;
-  pointer-events:none
+/* Hanging lamp over the awning — CSS-only (no markup): chain + brass cap + soot glass + wick.
+   Same brass/soot/wick language as lantern-glass; reuses --glow when set on .shop-pin. */
+.shop-pin{
+  --glow:var(--color-vault-amber)
 }
-.shop-chain{
+.shop-awning::before{
+  content:"";
   position:absolute;
-  left:50%;
-  top:0;
+  right:6px;
+  top:100%;
   width:1px;
   height:4px;
-  margin-left:-.5px;
   background:linear-gradient(180deg,#e0c788,#8a6a38);
-  display:block
+  z-index:3
 }
-.shop-lamp .lantern-cap{
+.shop-pin::after{
+  content:"";
+  position:absolute;
+  right:3px;
+  top:10px;
   width:8px;
-  height:3px;
-  left:2px;
-  top:3px
-}
-.shop-lamp .lantern-frame{
-  width:8px;
-  height:9px;
-  left:2px;
-  top:6px;
-  padding:1px;
-  border-radius:1px
-}
-.shop-lamp .lantern-glass{
-  border-radius:1px
-}
-/* Tiny hanging glass — shrink the shared wick so it fits the chamber */
-.shop-lamp .lantern-glass::before{
-  width:2px;
-  height:3px;
-  margin-left:-1px;
-  margin-top:-2px;
-  top:58%
+  height:10px;
+  z-index:3;
+  pointer-events:none;
+  border-radius:1px;
+  border:1px solid #8a7348;
+  box-shadow:
+    inset 0 0 0 1px #2a2218,
+    0 0 5px color-mix(in oklab, var(--glow) 45%, transparent);
+  background:
+    linear-gradient(180deg,#e0c788 0%,#c9a35e 35%,#8a6a38 100%) 0 0/8px 3px no-repeat,
+    radial-gradient(ellipse 70% 55% at 50% 62%,
+      color-mix(in oklab, var(--glow) 85%, #fff4d6) 0%,
+      color-mix(in oklab, var(--glow) 35%, #1a1612) 58%,
+      #0c0a08 100%);
+  background-color:#12100e
 }
 
 /* HQ Ledger / desk plate — brass edge + small wick (storefront, not settings sheet) */
