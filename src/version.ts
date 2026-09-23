@@ -9,4 +9,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 
 // 0.0.12: HQ tab labels (Atlas/Print/Ledger/Standings) high-contrast chips — were invisible on elevated panel.
 // 0.0.13: Lantern glass art pass — soot rim, warm wick, short bloom; street + vault hero share layered glass (brass/soot).
-// 0.0.13 facade: shop brass awning + hanging lamp; HQ panel brass edge + wick (still k13a, no bump).
+// 0.0.13 facade: shop brass awning + CSS hanging lamp; HQ panel brass edge + wick (still k13a, no bump).
