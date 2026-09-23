@@ -1,0 +1,32 @@
+/* HQ tabs — high contrast chips (v0.0.12). Atlas/Print/Ledger/Standings were invisible on elevated panel. */
+.hq-tabs{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  border-bottom:1px solid var(--color-border);
+  padding:8px 12px 10px;
+  -webkit-overflow-scrolling:touch
+}
+.hq-tab{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  min-height:44px;
+  padding:0 14px;
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-sm);
+  background:var(--color-bg-subtle);
+  color:var(--color-fg)!important;
+  font-size:.875rem;
+  font-weight:500;
+  white-space:nowrap;
+  opacity:1
+}
+.hq-tab.is-on,
+.hq-tab:hover,
+.hq-tab:focus-visible{
+  color:var(--color-accent-fg)!important;
+  border-color:var(--color-accent);
+  background:var(--color-accent)
+}
