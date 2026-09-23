@@ -267,3 +267,45 @@
   pointer-events:none;
   z-index:2
 }
+
+/* Title folio lamp (v0.0.13 / k13a) — hybrid visual-direction item 3.
+   Same in-world lantern markup (cap / frame / glass / post). White-tier glow.
+   Folio stays a map block (roads + scout + key), not a poster. */
+
+/* Override block-map amber inherit — white street lamp language */
+.title-lamp.tier-white{
+  --glow:var(--color-vault-white)
+}
+
+/* Match street wick flicker (title lamp is not inside .vault-pin) */
+.title-lamp .lantern-glass{
+  animation:2.5s ease-in-out infinite glass-flicker
+}
+@media (prefers-reduced-motion:reduce){
+  .title-lamp .lantern-glass{
+    animation:none
+  }
+}
+
+/* Soft white pool on the block — lamp light, not amber wash / poster glow */
+.block-map{
+  background:
+    radial-gradient(9rem 7rem at 48% 38%, color-mix(in oklab, var(--color-vault-white) 16%, transparent), transparent 68%),
+    linear-gradient(180deg, #16181d, #101216)
+}
+.block-map .block-glow{
+  background:radial-gradient(circle, color-mix(in oklab, var(--color-vault-white) 40%, transparent), transparent 70%)
+}
+
+/* Title scale already in styles.css (.title-lamp scale 1.35); bloom rides the transform.
+   Slightly taller bloom so the white wick reads at folio size without leaving map-block framing. */
+.title-lamp::before{
+  width:30px;
+  height:30px;
+  margin-left:-15px;
+  top:8px;
+  background:radial-gradient(circle,
+    color-mix(in oklab, var(--glow) 42%, transparent) 0%,
+    color-mix(in oklab, var(--glow) 14%, transparent) 48%,
+    transparent 74%)
+}
