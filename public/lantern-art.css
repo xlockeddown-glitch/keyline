@@ -148,3 +148,130 @@
     animation:none
   }
 }
+
+/* Shop / HQ facade (v0.0.13 / k13a) — hybrid visual-direction item 2.
+   Brass awning + hanging lamp on the outfitter pin; HQ plate brass edge + small wick.
+   Reuses lantern-cap / lantern-frame / lantern-glass. OSM tiles untouched. No magenta. */
+
+/* Outfitter — brass awning (same metal as lantern-cap), not a flat accent slab */
+.shop-awning{
+  background:linear-gradient(180deg,#e0c788 0%,#c9a35e 42%,#8a6a38 100%);
+  box-shadow:0 1px 0 #5a4528;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))
+}
+.shop-pin.near .shop-awning{
+  filter:drop-shadow(0 2px 5px color-mix(in oklab, #c9a35e 45%, transparent))
+}
+
+/* Brass rim on the storefront body */
+.shop-body{
+  border-color:#8a7348;
+  box-shadow:inset 0 0 0 1px #2a2218
+}
+
+/* Window reads as warm glass, not flat accent fill */
+.shop-window{
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 60%,
+      color-mix(in oklab, var(--glow, var(--color-vault-amber)) 80%, #fff4d6) 0%,
+      color-mix(in oklab, var(--glow, var(--color-vault-amber)) 35%, #1a1612) 70%,
+      #0c0a08 100%);
+  box-shadow:
+    inset 0 0 2px rgba(255,244,214,.35),
+    0 0 5px color-mix(in oklab, var(--glow, var(--color-vault-amber)) 45%, transparent)
+}
+
+/* Hanging lamp over the awning — scaled lantern glass */
+.shop-lamp{
+  position:absolute;
+  right:3px;
+  top:0;
+  width:12px;
+  height:18px;
+  z-index:2;
+  pointer-events:none
+}
+.shop-chain{
+  position:absolute;
+  left:50%;
+  top:0;
+  width:1px;
+  height:4px;
+  margin-left:-.5px;
+  background:linear-gradient(180deg,#e0c788,#8a6a38);
+  display:block
+}
+.shop-lamp .lantern-cap{
+  width:8px;
+  height:3px;
+  left:2px;
+  top:3px
+}
+.shop-lamp .lantern-frame{
+  width:8px;
+  height:9px;
+  left:2px;
+  top:6px;
+  padding:1px;
+  border-radius:1px
+}
+.shop-lamp .lantern-glass{
+  border-radius:1px
+}
+/* Tiny hanging glass — shrink the shared wick so it fits the chamber */
+.shop-lamp .lantern-glass::before{
+  width:2px;
+  height:3px;
+  margin-left:-1px;
+  margin-top:-2px;
+  top:58%
+}
+
+/* HQ Ledger / desk plate — brass edge + small wick (storefront, not settings sheet) */
+.panel:has(.hq-tabs){
+  border-color:#8a7348;
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, #c9a35e 40%, transparent),
+    inset 0 0 0 1px #2a2218,
+    var(--shadow-panel)
+}
+.panel:has(.hq-tabs) > header{
+  position:relative;
+  border-bottom-color:#8a7348;
+  padding-left:2.85rem
+}
+/* Small wick accent — desk lamp on the plate (left, clear of AuthChip) */
+.panel:has(.hq-tabs) > header::after{
+  content:"";
+  position:absolute;
+  left:1.15rem;
+  top:1.35rem;
+  width:7px;
+  height:10px;
+  border-radius:1px;
+  border:1px solid #8a7348;
+  box-shadow:
+    inset 0 0 0 1px #2a2218,
+    0 0 6px color-mix(in oklab, var(--color-vault-amber) 45%, transparent);
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 62%,
+      color-mix(in oklab, var(--color-vault-amber) 85%, #fff4d6) 0%,
+      color-mix(in oklab, var(--color-vault-amber) 30%, #1a1612) 65%,
+      #0c0a08 100%);
+  pointer-events:none;
+  z-index:1
+}
+/* Brass cap nub above the wick chamber */
+.panel:has(.hq-tabs) > header::before{
+  content:"";
+  position:absolute;
+  left:1.3rem;
+  top:1.05rem;
+  width:5px;
+  height:3px;
+  background:linear-gradient(180deg,#e0c788,#8a6a38);
+  box-shadow:0 1px 0 #5a4528;
+  clip-path:polygon(50% 0,100% 100%,0 100%);
+  pointer-events:none;
+  z-index:2
+}
