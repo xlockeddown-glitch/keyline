@@ -1,1 +1,1 @@
-{{file:/workspace/keyline-quota/src/game/banks/cities.ts}}
+@file:///workspace/keyline-quota/src/game/banks/cities.ts
