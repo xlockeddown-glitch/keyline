@@ -1,5 +1,8 @@
 import { q } from "../quiz";
 import type { TriviaQ } from "../types";
+import { HISTORY_LIFE_PART_A } from "./history_life_part_a";
+import { NATURE_LIFE_PART_A } from "./nature_life_part_a";
+import { SCIENCE_LIFE_PART_A } from "./science_life_part_a";
 
 /** Weekly topic trivia (2026-09-22 + 2026-09-25). Wired via trivia.ts WEEKLY_* merges. */
 export const WEEKLY_NATURE: TriviaQ[] = [
@@ -19,12 +22,16 @@ export const WEEKLY_NATURE: TriviaQ[] = [
   q("Book lungs in tarantulas are…", ["tracheal tubes identical to beetles", "lamellate respiratory organs in the abdomen", "gills on the spinnerets", "air sacs in the fangs"], "lamellate respiratory organs in the abdomen", 3),
   q("An exuvium after ecdysis is the…", ["egg sac", "shed exoskeleton", "sperm web", "urticating pellet"], "shed exoskeleton", 3),
   q("Tliltocatl was split from Brachypelma largely on…", ["silk color alone", "molecular and morphological revision of New World theraphosids", "CITES paperwork only", "hobby nickname votes"], "molecular and morphological revision of New World theraphosids", 3),
+  // v0.0.16 deep-cut bank (nature_life_part_a)
+  ...NATURE_LIFE_PART_A,
 ];
 
 export const WEEKLY_HISTORY: TriviaQ[] = [
   q("King Charles III was crowned in…", ["2020", "2021", "2023", "2025"], "2023", 2),
   q("Magna Carta was sealed in England in…", ["1066", "1215", "1492", "1776"], "1215", 2),
   q("The Apollo 11 Moon landing took place in…", ["1965", "1969", "1972", "1981"], "1969", 1),
+  // v0.0.16 deep-cut bank (history_life_part_a)
+  ...HISTORY_LIFE_PART_A,
 ];
 
 export const WEEKLY_SCIENCE: TriviaQ[] = [
@@ -45,6 +52,8 @@ export const WEEKLY_SCIENCE: TriviaQ[] = [
   q("MLI blankets reduce heat transfer mainly by…", ["conduction through thick foam only", "many low-emissivity layers that block radiation", "spinning reaction wheels", "absorbing LOX"], "many low-emissivity layers that block radiation", 3),
   q("A cubesat's typical form-factor unit (1U) is about…", ["10 cm on a side", "1 m on a side", "a full Falcon fairing", "a gauge-block set"], "10 cm on a side", 3),
   q("Kessler syndrome describes…", ["gauge-block wring failure", "cascading collisions that multiply orbital debris", "LOX boil-off chemistry", "tarantula stridulation"], "cascading collisions that multiply orbital debris", 3),
+  // v0.0.16 deep-cut bank (science_life_part_a)
+  ...SCIENCE_LIFE_PART_A,
 ];
 
 export const WEEKLY_POLITICAL: TriviaQ[] = [
