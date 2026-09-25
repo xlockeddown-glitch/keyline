@@ -10,6 +10,7 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
     ],
     food: [
       q("Migas on an Austin breakfast plate usually means…", ["only a kolache of prune", "eggs scrambled with tortilla strips (and toppings)", "only ceviche", "only oatmeal of Scotland"], "eggs scrambled with tortilla strips (and toppings)", 2),
+      q("Umami is the taste quality often described as…", ["only sour", "savory", "only bitter", "only sweet"], "savory", 1),
     ],
     nature: [
       q("Barton Springs' cold clear water comes mainly from…", ["desalination plants on the Gulf", "the Edwards Aquifer", "Lake Michigan diversion", "the Red River only"], "the Edwards Aquifer", 2),
@@ -42,6 +43,9 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
       q("The Thames Barrier was built chiefly to protect London from…", ["avalanches of the Alps", "tidal / storm surges up the Thames", "volcanic ash of Iceland only", "desert sandstorms"], "tidal / storm surges up the Thames", 2),
       q("Big Ben is the nickname commonly used for the Great Bell (and clock tower) at…", ["Edinburgh Castle", "the Palace of Westminster", "Tower Bridge's only bascule", "Buckingham Palace's kitchens"], "the Palace of Westminster", 1),
     ],
+    arts: [
+      q("A traditional English sonnet has how many lines?", ["8", "12", "14", "20"], "14", 2),
+    ],
   },
   sf: {
     political: [
@@ -50,6 +54,9 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
     local: [
       q("Alcatraz Island sits in…", ["Lake Tahoe", "San Francisco Bay", "the Sacramento River delta only", "Monterey Canyon as an island"], "San Francisco Bay", 1),
     ],
+    food: [
+      q("A sourdough starter is chiefly…", ["instant yeast packets only", "a living fermented culture of flour and water", "baking powder dissolved in milk", "food coloring for crust"], "a living fermented culture of flour and water", 2),
+    ],
   },
   nyc: {
     political: [
@@ -57,6 +64,9 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
     ],
     local: [
       q("The Hudson River forms much of Manhattan's…", ["eastern shore only", "western edge", "only Central Park lake", "only Brooklyn's oceanfront"], "western edge", 1),
+    ],
+    arts: [
+      q("The Mona Lisa hangs in the…", ["British Museum", "Louvre", "Uffizi only as its permanent home", "Met's armor hall"], "Louvre", 1),
     ],
   },
   chicago: {
