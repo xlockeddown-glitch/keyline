@@ -93,7 +93,7 @@ la: {
       q("Angels Flight downtown is a…", ["airport tram of LAX", "tiny funicular on Bunker Hill", "subway to Long Beach", "ferry to Catalina"], "tiny funicular on Bunker Hill", 3),
       q("Bunker Hill downtown was reshaped by…", ["only oil derricks still", "redevelopment towers and cultural buildings", "only a mission", "only a harbor"], "redevelopment towers and cultural buildings", 3),
       q("The L.A. River is a…", ["year-round barge canal to the Midwest", "mostly channelized watercourse through the basin", "Great Lake", "tidal fjord"], "mostly channelized watercourse through the basin", 2),
-      q("Aerospace-ops culture around LA/Long Beach includes…", ["only surf contests", "spacecraft GSE, fairing work, and cleanroom flows for West Coast launch/assembly", "gauge-block wringing as the city's main export", "tarantula ranches on the 405"], "spacecraft GSE, fairing work, and cleanroom flows for West Coast launch/assembly", 3),
+      q("Aerospace-ops culture around LA/Long Beach includes…", ["only surf contests", "spacecraft GSE, fairing work, and cleanroom flows for West Coast launch/assembly", "Detroit auto plants relocated as L.A.'s main industry", "tarantula ranches on the 405"], "spacecraft GSE, fairing work, and cleanroom flows for West Coast launch/assembly", 3),
 
     ],
     food: [
