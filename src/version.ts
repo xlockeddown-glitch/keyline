@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.15";
+export const APP_VERSION = "0.0.16";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k15a";
+export const PUBLISH_STAMP = "k16a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -13,3 +13,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.13 title folio: white-tier lamp (cap/frame/glass/post) on map block (still k13a, no bump).
 // 0.0.14: trivia quota rebalance — trim excess math; deepen specialty red/violet (k14a).
 // 0.0.15: Friday weekly trivia audit + growth (k15a).
+// 0.0.16: trivia quota fix — cut 37 exact-duplicate math cards (math.ts copies of math_more prompts); +193 deep-cut specialty cards in science/nature/history_life_part_a (wired via weekly_20260922); science_life_part_a placeholder filled (k16a).

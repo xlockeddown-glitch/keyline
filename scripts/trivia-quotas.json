@@ -9,7 +9,7 @@
     "civic", "capitol", "park", "nature", "water", "zoo", "rail", "airport", "finance", "memorial",
     "church", "hotel", "bridge", "market"
   ],
-  "deepCutBanks": ["nature_life", "history_life", "science_life"],
+  "deepCutBanks": ["nature_life", "history_life", "science_life", "science_life_part_a", "nature_life_part_a", "history_life_part_a"],
   "niches": {
     "sports-franchise": {
       "pattern": "based in which city|calls [\\w .]+ home|club is nicknamed|NFL club|NBA club|NHL club|MLB club",
