@@ -4,6 +4,7 @@ import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityShop } from "@/game/
 import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { PULSE_POINTS, pulseDue } from "@/game/pulse";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
+import { INGREDIENTS, cityStaple, type IngredientId } from "@/game/ingredients";
 import { BANK_DOWN, BANK_UP, TIER_ORDER, TIER_VALUE, bankDownSpec, bankUpSpec } from "@/game/rewards";
 import { matchCap } from "@/game/ticket";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
@@ -29,6 +30,7 @@ export function HqPanel() {
   const ink = useGame((s) => s.ink);
   const vellum = useGame((s) => s.vellum);
   const schematics = useGame((s) => s.schematics);
+  const pantry = useGame((s) => s.pantry);
   const charms = useGame((s) => s.charms);
   const equipped = useGame((s) => s.equipped);
   const craft = useGame((s) => s.craft);
@@ -73,7 +75,7 @@ export function HqPanel() {
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Headquarters</p>
-            <h2 className="font-display text-2xl">Hideout · {city.name}</h2>
+            <h2 className="font-display text-xl leading-tight">Hideout · {city.name}</h2>
             <button
               type="button"
               className="mt-2 text-xs text-fg-subtle underline-offset-2 hover:text-fg-muted hover:underline"
@@ -117,22 +119,17 @@ export function HqPanel() {
               {city.pois.map((p) => {
                 const known = Boolean(atlas[p.id]);
                 return (
-                  <li
-                    key={p.id}
-                    className="flex items-start justify-between gap-3 rounded-md border border-border bg-bg-subtle/50 p-3"
-                  >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <ItemIcon item={p.tier} size={28} />
-                      <div>
-                        <p className="kicker">
-                          {p.kind === "shop" ? "Outfitter" : `${TIER_LABEL[p.tier]} · ${KIND_LABEL[p.kind]}`}
-                          {p.printShop ? " · Print" : ""}
-                        </p>
-                        <p className="font-medium">{known ? p.name : p.kind === "shop" ? "Undiscovered outfitter" : "Undiscovered lamp"}</p>
-                        <p className="mt-1 text-sm text-pretty text-fg-muted">
-                          {known ? p.lore : p.kind === "shop" ? "Look for the brass awning on the street." : "Walk up to it to stamp the atlas."}
-                        </p>
-                      </div>
+                  <li key={p.id} className="hq-row">
+                    <ItemIcon item={p.tier} size={36} />
+                    <div className="hq-row-copy">
+                      <p className="kicker">
+                        {p.kind === "shop" ? "Outfitter" : `${TIER_LABEL[p.tier]} · ${KIND_LABEL[p.kind]}`}
+                        {p.printShop ? " · Print" : ""}
+                      </p>
+                      <p className="hq-row-title">{known ? p.name : p.kind === "shop" ? "Undiscovered outfitter" : "Undiscovered lamp"}</p>
+                      <p className="hq-row-sub">
+                        {known ? p.lore : p.kind === "shop" ? "Look for the brass awning on the street." : "Walk up to it to stamp the atlas."}
+                      </p>
                     </div>
                   </li>
                 );
@@ -142,14 +139,36 @@ export function HqPanel() {
 
           {tab === "Print" ? (
             <div className="grid gap-3">
-              <ul className="flex flex-wrap gap-3">
+              <ul className="grid gap-2 sm:grid-cols-2">
                 {MATERIAL_LIST.map((m) => (
-                  <li key={m.id} className="hud-chip px-2 py-1.5">
-                    <ItemIcon item={m.id} size={24} />
-                    <span className="text-sm tabular-nums">{stock[m.id]}</span>
-                    <span className="kicker">{m.name}</span>
+                  <li key={m.id} className="hq-row">
+                    <ItemIcon item={m.id} size={36} />
+                    <div className="hq-row-copy">
+                      <p className="hq-row-title">
+                        {m.name} <span className="tabular-nums text-fg-muted">×{stock[m.id]}</span>
+                      </p>
+                      <p className="hq-row-sub">{m.blurb}</p>
+                    </div>
                   </li>
                 ))}
+              </ul>
+              <p className="kicker mt-2">Press stock</p>
+              <p className="hq-row-sub">Green vaults and up drop this city's ingredient. A few landmarks drop a ward cut from amber up. Print spends one.</p>
+              <ul className="grid gap-2">
+                {(Object.keys(pantry) as IngredientId[])
+                  .filter((id) => (pantry[id] ?? 0) > 0)
+                  .concat((pantry[cityStaple(cityId)] ?? 0) > 0 ? [] : [cityStaple(cityId)])
+                  .filter((id, i, arr) => arr.indexOf(id) === i)
+                  .map((id) => (
+                    <li key={id} className="hq-row">
+                      <div className="hq-row-copy">
+                        <p className="hq-row-title">
+                          {INGREDIENTS[id].name} <span className="tabular-nums text-fg-muted">×{pantry[id] ?? 0}</span>
+                        </p>
+                        <p className="hq-row-sub">{INGREDIENTS[id].blurb}</p>
+                      </div>
+                    </li>
+                  ))}
               </ul>
               <p className="kicker mt-2">Desk tray</p>
               <p className="text-sm text-fg-muted">Coin for the ward — not another coat.</p>
@@ -169,20 +188,23 @@ export function HqPanel() {
                           ? `${keys.violet} violet`
                           : null;
                 return (
-                  <div key={item.id} className="flex items-start justify-between gap-3 rounded-md border border-border bg-bg-subtle/50 p-4">
-                    <div className="min-w-0">
-                      <p className="font-display text-lg leading-tight">{item.name}</p>
-                      <p className="text-sm text-pretty text-fg-muted">{item.blurb}</p>
-                      {extra ? <p className="mt-1 kicker">{extra}</p> : null}
+                  <div key={item.id} className="hq-row">
+                    <ItemIcon item="coin" size={36} />
+                    <div className="hq-row-copy">
+                      <p className="hq-row-title">{item.name}</p>
+                      <p className="hq-row-sub">{item.blurb}</p>
+                      {extra ? <p className="hq-row-sub">{extra}</p> : null}
+                      <div className="hq-row-actions">
+                        <button
+                          type="button"
+                          className={`btn shrink-0 px-3 text-xs ${points >= item.cost ? "btn-primary" : "btn-quiet"}`}
+                          onClick={() => buyKiosk(item.id)}
+                        >
+                          <ItemIcon item="coin" size={18} />
+                          {item.cost.toLocaleString()}
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      className={`btn shrink-0 px-3 text-xs ${points >= item.cost ? "btn-primary" : "btn-quiet"}`}
-                      onClick={() => buyKiosk(item.id)}
-                    >
-                      <ItemIcon item="coin" size={14} />
-                      {item.cost.toLocaleString()}
-                    </button>
                   </div>
                 );
               })}
@@ -196,14 +218,17 @@ export function HqPanel() {
                 const c = CHARMS[id];
                 const owned = charms.includes(id);
                 return (
-                  <div key={id} className="flex items-start gap-3 rounded-md border border-border bg-bg-subtle/50 p-4">
-                    <ItemIcon item={id} size={56} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-display text-lg leading-tight">{c.name}</p>
-                          <p className="text-sm text-pretty text-fg-muted">{c.blurb}</p>
+                  <div key={id} className="hq-row">
+                    <ItemIcon item={id} size={40} />
+                    <div className="hq-row-copy">
+                      <p className="hq-row-title">{c.name}</p>
+                      <p className="hq-row-sub">{c.blurb} Print also spends one {INGREDIENTS[cityStaple(cityId)].name}.</p>
+                      {owned ? null : (
+                        <div className="mt-2">
+                          <CostIcons cost={c.cost} have={have} />
                         </div>
+                      )}
+                      <div className="hq-row-actions">
                         {owned ? (
                           <button
                             type="button"
@@ -218,11 +243,6 @@ export function HqPanel() {
                           </button>
                         )}
                       </div>
-                      {owned ? null : (
-                        <div className="mt-2">
-                          <CostIcons cost={c.cost} have={have} />
-                        </div>
-                      )}
                     </div>
                   </div>
                 );
@@ -238,38 +258,34 @@ export function HqPanel() {
                 <p className="kicker">Quests</p>
                 <button
                   type="button"
-                  className="mt-2 flex w-full items-center gap-3 rounded-md border border-border bg-bg-subtle/50 p-3 text-left disabled:opacity-70"
+                  className="hq-row mt-2 w-full text-left disabled:opacity-70"
                   disabled={!pulseReady}
                   onClick={() => {
                     sfx.ui();
                     claimPulse();
                   }}
                 >
-                  <ItemIcon item="coin" size={48} />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">{pulseReady ? "File City Pulse" : "City Pulse filed"}</p>
-                    <p className="text-xs text-fg-muted">
-                      Once a day at the desk. {PULSE_POINTS} coin. Separate from the crate streak.
-                    </p>
+                  <ItemIcon item="coin" size={40} />
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title">{pulseReady ? "File City Pulse" : "City Pulse filed"}</p>
+                    <p className="hq-row-sub">Once a day at the desk. {PULSE_POINTS} coin. Separate from the crate streak.</p>
                   </div>
                 </button>
               </div>
               <button
                 type="button"
-                className="flex items-center gap-3 rounded-md border border-border bg-bg-subtle/50 p-3 text-left disabled:opacity-70"
+                className="hq-row w-full text-left disabled:opacity-70"
                 disabled={claimed}
                 onClick={claimCrate}
               >
-                <ItemIcon item="crate" size={48} />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">
-                    {claimed ? `Day ${crateDay} claimed` : `Claim day ${crateDay} crate`}
-                  </p>
-                  <p className="text-xs text-fg-muted">
+                <ItemIcon item="crate" size={40} />
+                <div className="hq-row-copy">
+                  <p className="hq-row-title">{claimed ? `Day ${crateDay} claimed` : `Claim day ${crateDay} crate`}</p>
+                  <p className="hq-row-sub">
                     Login streak {crateDay}/{CRATE_MAX}. One missed day is forgiven.
                     {crateDay >= 30 ? " A violet is in the box." : ""}
                   </p>
-                  <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
+                  <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
                     {TIERS.filter((t) => loot[t] > 0).map((t) => (
                       <span key={t} className="inline-flex items-center gap-1">
                         <ItemIcon item={t} size={22} />
@@ -294,11 +310,20 @@ export function HqPanel() {
                     if (!up && !down) return null;
                     const have = keys[tier] ?? 0;
                     return (
-                      <li key={tier} className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-bg-subtle/50 p-3">
-                        <ItemIcon item={tier} size={28} />
-                        <span className="min-w-0 flex-1 font-medium">
-                          {TIER_LABEL[tier]} <span className="tabular-nums text-fg-muted">×{have}</span>
-                        </span>
+                      <li key={tier} className="hq-row">
+                        <ItemIcon item={tier} size={36} />
+                        <div className="hq-row-copy">
+                          <p className="hq-row-title">
+                            {TIER_LABEL[tier]} <span className="tabular-nums text-fg-muted">×{have}</span>
+                          </p>
+                          <p className="hq-row-sub">
+                            {up
+                              ? `${up.payN} of these craft 1 ${TIER_LABEL[up.get]}. Taxed.`
+                              : down
+                                ? `1 breaks into ${down.getN} ${TIER_LABEL[down.get]}. No tax.`
+                                : "Held."}
+                          </p>
+                          <div className="hq-row-actions">
                         {up ? (
                           <button
                             type="button"
@@ -327,54 +352,68 @@ export function HqPanel() {
                             1 {TIER_LABEL[tier]} → {down.getN} {TIER_LABEL[down.get]}
                           </button>
                         ) : null}
+                          </div>
+                        </div>
                       </li>
                     );
                   })}
                 </ul>
               </div>
-              <p>
-                <span className="text-fg-muted">Points</span>{" "}
-                <span className="tabular-nums">{points.toLocaleString()}</span>
-              </p>
-              <p>
-                <span className="text-fg-muted">Lamps lit</span>{" "}
-                <span className="tabular-nums">{vaultsOpened}</span>
-              </p>
-              <p>
-                <span className="text-fg-muted">Best streak</span>{" "}
-                <span className="tabular-nums">{bestStreak}</span>
-              </p>
-              <p>
-                <span className="text-fg-muted">Distance walked</span>{" "}
-                <span className="tabular-nums">{(distanceM / 1000).toFixed(1)} km</span>
-              </p>
-              <p>
-                <span className="text-fg-muted">Fares</span>{" "}
-                <span className="tabular-nums">{fares}</span>
-                <span className="text-fg-subtle"> · punch at {desk.name}</span>
-              </p>
-              <p>
-                <span className="text-fg-muted">Atlas</span>{" "}
-                {city.pois.filter((p) => atlas[p.id]).length} / {city.pois.length}
-                <span className="text-fg-subtle"> · {Object.keys(atlas).length} filed</span>
-              </p>
+              <ul className="hq-stats">
+                <li className="hq-row">
+                  <ItemIcon item="coin" size={36} />
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title tabular-nums">{points.toLocaleString()}</p>
+                    <p className="hq-row-sub">Coin on the desk.</p>
+                  </div>
+                </li>
+                <li className="hq-row">
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title tabular-nums">{vaultsOpened}</p>
+                    <p className="hq-row-sub">Lamps lit.</p>
+                  </div>
+                </li>
+                <li className="hq-row">
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title tabular-nums">{bestStreak}</p>
+                    <p className="hq-row-sub">Best answer streak.</p>
+                  </div>
+                </li>
+                <li className="hq-row">
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title tabular-nums">{(distanceM / 1000).toFixed(1)} km</p>
+                    <p className="hq-row-sub">Walked on the street.</p>
+                  </div>
+                </li>
+                <li className="hq-row">
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title tabular-nums">{fares}</p>
+                    <p className="hq-row-sub">Fares. Punch at {desk.name}.</p>
+                  </div>
+                </li>
+                <li className="hq-row">
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title tabular-nums">
+                      {city.pois.filter((p) => atlas[p.id]).length}/{city.pois.length}
+                    </p>
+                    <p className="hq-row-sub">Atlas in {city.name}. {Object.keys(atlas).length} filed.</p>
+                  </div>
+                </li>
+              </ul>
               <p className="kicker mt-2">Survey</p>
               <ul className="grid gap-2">
                 {SURVEY_GOALS.filter((g) => g.kind !== "ward" || g.cityId === cityId).map((g) => {
                   const have = surveyHave(g, atlas, distanceM);
                   const done = Boolean(survey[g.id]);
                   return (
-                    <li
-                      key={g.id}
-                      className="flex items-center justify-between gap-3 rounded-md border border-border bg-bg-subtle/50 px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className={done ? "text-fg-muted" : "font-medium"}>{g.label}</p>
-                        <p className="text-xs text-fg-muted">{g.blurb}</p>
+                    <li key={g.id} className="hq-row">
+                      <div className="hq-row-copy">
+                        <p className={done ? "hq-row-title text-fg-muted" : "hq-row-title"}>{g.label}</p>
+                        <p className="hq-row-sub">{g.blurb}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <ItemIcon item={g.reward} size={22} />
-                        <span className="text-xs tabular-nums text-fg-muted">
+                        <ItemIcon item={g.reward} size={28} />
+                        <span className="text-sm tabular-nums text-fg-muted">
                           {done
                             ? "Paid"
                             : g.kind === "walk"

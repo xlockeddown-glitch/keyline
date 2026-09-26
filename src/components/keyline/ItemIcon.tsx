@@ -21,6 +21,13 @@ export function ItemIcon({
       </span>
     );
   }
+  if (item === "coin") {
+    return (
+      <span className={`coin-well ${className}`} style={{ width: size, height: size }} aria-hidden>
+        <img src={itemSrc(item)} alt="" width={size} height={size} draggable={false} />
+      </span>
+    );
+  }
   return (
     <img
       src={itemSrc(item)}

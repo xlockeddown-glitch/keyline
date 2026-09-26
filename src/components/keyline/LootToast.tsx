@@ -50,6 +50,7 @@ export function LootToast() {
                   <QtyChip item="ink" n={loot.ink} />
                   <QtyChip item="vellum" n={loot.vellum} />
                   {loot.schematic ? <QtyChip item="schematic" n={1} /> : null}
+                  {loot.ingredient ? <span className="kicker">{loot.ingredient.name}</span> : null}
                   {(Object.entries(loot.keys) as [Tier, number][]).map(([t, n]) =>
                     n ? <QtyChip key={t} item={t} n={n} /> : null,
                   )}
