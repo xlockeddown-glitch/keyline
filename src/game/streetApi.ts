@@ -15,6 +15,8 @@ const DRIVE = new Set([
   "living_street",
   "service",
 ]);
+/** Sidewalks and park paths. Long ones in Manhattan are drawn through the block. */
+const WALK_SKIP = new Set(["footway", "path", "steps", "cycleway", "track", "bridleway", "corridor", "service"]);
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
 
 const OVERPASS = [
@@ -83,10 +85,10 @@ export const getOsmWays = createServerFn({ method: "POST" })
         const lines: number[][] = [];
         const drive: { line: number[]; arterial: boolean }[] = [];
         for (const el of json.elements ?? []) {
+          const hw = el.tags?.highway ?? "";
           const packed = packLine(el.geometry ?? []);
           if (packed.length < 4) continue;
-          lines.push(packed);
-          const hw = el.tags?.highway ?? "";
+          if (!WALK_SKIP.has(hw)) lines.push(packed);
           if (DRIVE.has(hw)) drive.push({ line: packed, arterial: ARTERIAL.has(hw) });
         }
         const payload = { lines, drive };

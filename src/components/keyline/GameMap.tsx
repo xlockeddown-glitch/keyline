@@ -460,14 +460,16 @@ export function GameMap() {
         zoomControl: true,
         attributionControl: true,
         keyboard: false,
-        zoomSnap: 0.25,
+        zoomSnap: 1,
+        zoomDelta: 1,
         minZoom: 15,
-        maxZoom: 19,
+        maxZoom: 18,
       }).setView([dock.lat, dock.lng], 16);
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap",
         maxZoom: 19,
+        maxNativeZoom: 18,
         className: "atlas-tiles",
       }).addTo(map);
 

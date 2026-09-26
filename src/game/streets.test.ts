@@ -6,8 +6,10 @@ import {
   createGraph,
   finishPath,
   ingestLine,
+  ingestOsmWays,
   nearest,
   pathLength,
+  routeHugsGraph,
   routeOnGraph,
   stuckNudge,
   type Pt,
@@ -42,6 +44,18 @@ test("route around a block never cuts the interior", () => {
     assert.ok(snap && snap.dist < 8, "path stays on the curb");
     assert.ok(distM(p.lat, p.lng, vault.lat, vault.lng) > 20, "path does not enter the block");
   }
+});
+
+test("a footway across the block is not a walk edge", () => {
+  const { g, west, east, vault, o } = blockGraph();
+  const sw = o;
+  const ne = dest(o.lat, o.lng, 80, 80);
+  ingestOsmWays(g, [{ geometry: [{ lat: sw.lat, lon: sw.lng }, { lat: ne.lat, lon: ne.lng }], tags: { highway: "footway" } }]);
+  const path = routeOnGraph(g, west, east)!;
+  assert.ok(pathLength(path) > 100);
+  for (const p of path) assert.ok(distM(p.lat, p.lng, vault.lat, vault.lng) > 20);
+  assert.equal(routeHugsGraph(g, [west, vault, east]), false);
+  assert.equal(routeHugsGraph(g, path), true);
 });
 
 test("street-only finishPath will not hop to a vault in the block", () => {

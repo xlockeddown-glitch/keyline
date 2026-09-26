@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.20";
+export const APP_VERSION = "0.0.21";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k20a";
+export const PUBLISH_STAMP = "k21a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -18,3 +18,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.18: street marker tier fix — The Run marker was hard-coded tier-amber but costs a blue match (map showed amber, toast said "Need a Blue match"); Run/Stack/lamp markup now built in game/pins.ts from series.cost / poi.tier; Run halo ring follows tier; pre-hydration title lamp gets tier-white (k18a).
 // 0.0.19: vault ingredients — green+ drops the city's press stock; amber+ at a named ward drops that cut; Print spends one (k19a).
 // 0.0.20: ledger quests, lantern cloth, red scrap and violet pattern (k20a).
+// 0.0.21: New York walks stay on the curb; map zoom no longer stacks street names (k21a).
