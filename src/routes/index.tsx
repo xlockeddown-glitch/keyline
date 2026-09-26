@@ -37,7 +37,7 @@ function TitleShell() {
           <i className="block-road is-ew" />
           <i className="block-road is-ew-2" />
           <i className="block-glow" />
-          <span className="lantern title-lamp">
+          <span className="lantern title-lamp tier-white">
             <i className="lantern-cap" />
             <i className="lantern-frame">
               <i className="lantern-glass" />

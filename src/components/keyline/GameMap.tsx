@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
-import { CITIES, RUN_ID, SCOUTS, STACK_ID, allPois, cabSpeed, interactRadius, isScoutShop, walkSpeed } from "@/game/data";
+import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isScoutShop, walkSpeed } from "@/game/data";
+import { seriesPinHtml, vaultPinHtml } from "@/game/pins";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
@@ -718,7 +719,7 @@ export function GameMap() {
       const lit = desk && st.fares > 0;
       const el = shop
         ? `<div class="shop-pin" title="${poi.name}"><span class="shop-awning"></span><span class="shop-body"><i class="shop-window"></i><i class="shop-door"></i></span></div>`
-        : `<div class="vault-pin tier-${poi.tier}${cooling ? " cooling" : ""}${desk ? " is-desk" : ""}${lit ? " is-fare" : ""}"><span class="lantern"><i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"></i></i><i class="lantern-post"></i></span>${desk ? `<i class="fare-stub"></i>` : ""}</div>`;
+        : vaultPinHtml(poi, { cooling, desk, lit });
       const marker = L.marker([poi.lat, poi.lng], {
         icon: L.divIcon({ className: "", html: el, iconSize: shop ? [36, 42] : [32, 48], iconAnchor: shop ? [18, 40] : [16, 46] }),
         keyboard: false,
@@ -737,7 +738,7 @@ export function GameMap() {
     }
     const run = st.run;
     if (run && run.readyAt === 0) {
-      const el = `<div class="vault-pin is-run tier-amber"><span class="lantern"><i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"></i></i><i class="lantern-post"></i></span></div>`;
+      const el = seriesPinHtml(SERIES.run);
       const marker = L.marker([run.lat, run.lng], {
         icon: L.divIcon({ className: "", html: el, iconSize: [38, 56], iconAnchor: [19, 54] }),
         keyboard: false,
@@ -748,7 +749,7 @@ export function GameMap() {
     }
     const stack = st.stack;
     if (stack && stack.readyAt === 0) {
-      const el = `<div class="vault-pin is-stack tier-green"><span class="stack-lamp"><i class="lantern-cap"></i><i class="stack-globe a"><i class="lantern-glass"></i></i><i class="stack-globe b"><i class="lantern-glass"></i></i><i class="lantern-post"></i></span></div>`;
+      const el = seriesPinHtml(SERIES.stack);
       const marker = L.marker([stack.lat, stack.lng], {
         icon: L.divIcon({ className: "", html: el, iconSize: [28, 64], iconAnchor: [14, 62] }),
         keyboard: false,
