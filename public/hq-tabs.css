@@ -30,3 +30,39 @@
   border-color:var(--color-accent);
   background:var(--color-accent)
 }
+.hq-row{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-sm);
+  background:color-mix(in oklab, var(--color-bg-subtle) 70%, var(--color-bg));
+  padding:12px
+}
+.hq-row-copy{
+  min-width:0;
+  flex:1
+}
+.hq-row-title{
+  font-size:1rem;
+  font-weight:500;
+  line-height:1.25;
+  color:var(--color-fg)
+}
+.hq-row-sub{
+  margin-top:2px;
+  font-size:.875rem;
+  line-height:1.35;
+  color:var(--color-fg-muted)
+}
+.hq-row-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:8px
+}
+.hq-stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px
+}

@@ -11,6 +11,7 @@ import {
   itemName,
   type ItemId,
 } from "@/game/items";
+import { INGREDIENTS, type IngredientId } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import type { CharmId, Tier } from "@/game/types";
@@ -25,6 +26,7 @@ export function Satchel() {
   const ink = useGame((s) => s.ink);
   const vellum = useGame((s) => s.vellum);
   const schematics = useGame((s) => s.schematics);
+  const pantry = useGame((s) => s.pantry);
   const charms = useGame((s) => s.charms);
   const equipped = useGame((s) => s.equipped);
   const equip = useGame((s) => s.equip);
@@ -89,6 +91,23 @@ export function Satchel() {
                     />
                   </li>
                 ))}
+              </ul>
+            </section>
+
+            <section>
+              <p className="kicker mb-2">Press stock</p>
+              <ul className="grid gap-2">
+                {(Object.entries(pantry) as [IngredientId, number][])
+                  .filter(([, n]) => n > 0)
+                  .map(([id, n]) => (
+                    <li key={id} className="flex items-baseline justify-between gap-3 text-sm">
+                      <span>{INGREDIENTS[id].name}</span>
+                      <span className="tabular-nums text-fg-muted">×{n}</span>
+                    </li>
+                  ))}
+                {Object.values(pantry).every((n) => !n) ? (
+                  <li className="text-sm text-fg-muted">Green vaults and up. Print spends one.</li>
+                ) : null}
               </ul>
             </section>
 

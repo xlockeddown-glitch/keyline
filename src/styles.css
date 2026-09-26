@@ -584,6 +584,20 @@ h3 {
   padding:8px 12px;
   display:flex
 }
+.coin-well{
+  display:inline-grid;
+  place-items:center;
+  flex-shrink:0;
+  border-radius:999px;
+  background:#1a140e;
+  box-shadow:inset 0 0 0 1px #e4c27a, 0 1px 2px #00000073;
+  line-height:0
+}
+.coin-well img{
+  width:72%;
+  height:72%;
+  filter:saturate(1.2) contrast(1.08)
+}
 .hud-plate{
   background:color-mix(in oklab, var(--color-night) 82%, transparent)
 }

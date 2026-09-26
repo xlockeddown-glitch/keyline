@@ -30,6 +30,7 @@ import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, matchCap, sparkState, transitLoot } from "./ticket";
+import { addIngredient, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
 
 const SAVE_KEY = "keyline-save-v1";
 const SAVE_VERSION = 2;
@@ -87,6 +88,7 @@ export type GameState = {
   ink: number;
   vellum: number;
   schematics: number;
+  pantry: Partial<Record<IngredientId, number>>;
   charms: CharmId[];
   equipped: CharmId | null;
   scouts: ScoutId[];
@@ -294,6 +296,7 @@ function persistable(s: GameState) {
     ink: s.ink,
     vellum: s.vellum,
     schematics: s.schematics,
+    pantry: s.pantry,
     charms: s.charms,
     equipped: s.equipped,
     scouts: s.scouts,
@@ -466,6 +469,7 @@ export const useGame = create<GameState>((set, get) => ({
   ink: saved?.ink ?? 0,
   vellum: saved?.vellum ?? 0,
   schematics: saved?.schematics ?? 0,
+  pantry: saved?.pantry ?? {},
   charms: saved?.charms ?? [],
   equipped: saved?.equipped ?? null,
   scouts: saved?.scouts?.length ? saved.scouts : ["raccoon"],
@@ -900,7 +904,7 @@ export const useGame = create<GameState>((set, get) => ({
           charmDay: paid.charmDay,
           charmTopics: paid.charmTopics,
           correctByTier,
-          toast: paid.boosts.length ? paid.boosts.join(" · ") : get().toast,
+          toast: paid.boosts.length ? paid.boosts.join(" · ") : null,
           openVault: {
             poiId: series.id,
             category: ov.category,
@@ -912,6 +916,12 @@ export const useGame = create<GameState>((set, get) => ({
         });
         postClear(series.cost);
         scheduleSave(get);
+        if (paid.boosts.length) {
+          const line = paid.boosts.join(" · ");
+          window.setTimeout(() => {
+            if (get().toast === line) set({ toast: null });
+          }, 2200);
+        }
         return;
       }
       let mult = 0.4;
@@ -934,6 +944,8 @@ export const useGame = create<GameState>((set, get) => ({
       const ink = series.kind === "stack" ? 4 : 3;
       const vellum = series.kind === "stack" ? 3 : 2;
       const schematic = grades.every((g) => g === "perfect") || Math.random() < (series.kind === "stack" ? 0.28 : 0.2);
+      const ing = rollIngredient(get().cityId, { id: series.id, tier: series.cost });
+      const pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
       const loot: LootDrop = {
         points,
         grade: grades.includes("perfect") ? "perfect" : grades.includes("great") ? "great" : "good",
@@ -943,6 +955,7 @@ export const useGame = create<GameState>((set, get) => ({
         ink,
         vellum,
         schematic,
+        ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
       };
       let nextKeys = { ...get().keys };
       for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) nextKeys[t] += n;
@@ -966,6 +979,7 @@ export const useGame = create<GameState>((set, get) => ({
       const clearLine = bonusHit
         ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
         : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`;
+      const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
       set({
         keys: paid.keys,
         points: paid.points,
@@ -973,6 +987,7 @@ export const useGame = create<GameState>((set, get) => ({
         ink: get().ink + ink,
         vellum: get().vellum + vellum,
         schematics: get().schematics + (schematic ? 1 : 0),
+        pantry,
         survey: surveyHit?.survey ?? get().survey,
         ...bumped,
         charmDay: paid.charmDay,
@@ -986,7 +1001,7 @@ export const useGame = create<GameState>((set, get) => ({
         loot,
         miss: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
-        toast: paid.boosts.length ? `${clearLine} ${paid.boosts.join(" · ")}.` : clearLine,
+        toast: [paid.boosts.length ? `${clearLine} ${paid.boosts.join(" · ")}.` : clearLine, ingLine].filter(Boolean).join(" "),
         tutorial: Math.max(get().tutorial, 2),
       });
       postClear(series.cost);
@@ -1041,11 +1056,23 @@ export const useGame = create<GameState>((set, get) => ({
     const ink = poi.kind === "museum" || poi.kind === "library" || poi.kind === "theatre" ? 2 : 1;
     const vellum = poi.kind === "park" || poi.kind === "campus" ? 2 : Math.random() < 0.4 ? 1 : 0;
     const schematic = poi.tier === "amber" || poi.tier === "red" || poi.tier === "violet" || (poi.tier !== "white" && Math.random() < 0.08);
+    const ing = rollIngredient(get().cityId, poi);
+    const pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
     const extraKeys: Partial<Record<Tier, number>> = {};
     if (get().equipped === "lucky" && Math.random() < 0.15) extraKeys[poi.tier] = 1;
     if (grade === "perfect" && Math.random() < 0.1) extraKeys.blue = (extraKeys.blue ?? 0) + 1;
 
-    const loot: LootDrop = { points, grade, diff, keys: extraKeys, brass, ink, vellum, schematic };
+    const loot: LootDrop = {
+      points,
+      grade,
+      diff,
+      keys: extraKeys,
+      brass,
+      ink,
+      vellum,
+      schematic,
+      ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
+    };
     let nextKeys = { ...keys };
     for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) {
       nextKeys[t] += n;
@@ -1095,6 +1122,7 @@ export const useGame = create<GameState>((set, get) => ({
     else sfx.correct();
     const correctByTier = bumpCorrect(get, poi.tier);
     const boostLine = paid.boosts.length ? paid.boosts.join(" · ") : null;
+    const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
     set({
       keys: nextKeys,
       points: get().points + loot.points,
@@ -1102,6 +1130,7 @@ export const useGame = create<GameState>((set, get) => ({
       ink: get().ink + ink,
       vellum: get().vellum + vellum,
       schematics: get().schematics + (schematic ? 1 : 0),
+      pantry,
       atlas,
       survey,
       vaults,
@@ -1119,7 +1148,7 @@ export const useGame = create<GameState>((set, get) => ({
       openVault: null,
       loot,
       miss: null,
-      toast: contractToast ?? fareToast ?? surveyHit?.message ?? boostLine,
+      toast: [contractToast, fareToast, surveyHit?.message, boostLine, ingLine].filter(Boolean).join(" ") || null,
       tutorial: Math.max(get().tutorial, 2),
     });
     postClear(poi.tier);
@@ -1212,9 +1241,11 @@ export const useGame = create<GameState>((set, get) => ({
     if (get().charms.includes(id)) return;
     const c = CHARMS[id];
     const s = get();
-    if (s.brass < c.cost.brass || s.ink < c.cost.ink || s.vellum < c.cost.vellum || s.schematics < c.cost.schematic) {
-      set({ toast: "Need more stock." });
-      window.setTimeout(() => set({ toast: null }), 1400);
+    const press = spendIngredient(s.cityId, s.pantry);
+    if (s.brass < c.cost.brass || s.ink < c.cost.ink || s.vellum < c.cost.vellum || s.schematics < c.cost.schematic || !press) {
+      const staple = ingredientName(rollIngredient(s.cityId, { id: "press", tier: "green" }) ?? "pecan");
+      set({ toast: press ? "Need more stock." : `Need more stock. Print wants a ${staple} from a green vault or higher.` });
+      window.setTimeout(() => set({ toast: null }), 1800);
       return;
     }
     sfx.craft();
@@ -1223,6 +1254,7 @@ export const useGame = create<GameState>((set, get) => ({
       ink: s.ink - c.cost.ink,
       vellum: s.vellum - c.cost.vellum,
       schematics: s.schematics - c.cost.schematic,
+      pantry: { ...s.pantry, [press]: (s.pantry[press] ?? 1) - 1 },
       charms: [...s.charms, id],
       equipped: s.equipped ?? id,
       toast: `Printed ${c.name}.`,
@@ -1349,7 +1381,7 @@ export const useGame = create<GameState>((set, get) => ({
     const next = v ?? !get().invOpen;
     set({ invOpen: next, hqOpen: next ? false : get().hqOpen, shopOpen: next ? false : get().shopOpen });
   },
-  dismissLoot: () => set({ loot: null, miss: null }),
+  dismissLoot: () => set({ loot: null, miss: null, toast: null }),
   skipTutorial: () => {
     set({ tutorial: 4, howtoDone: true });
     scheduleSave(get);
