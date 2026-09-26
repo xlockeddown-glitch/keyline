@@ -36,17 +36,18 @@ const HIGHWAY =
 const HIGHWAY_DRIVE =
   "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service";
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
-
+/** These OSM classes cut through Manhattan blocks. Keep the curb, not the shortcut. */
+const WALK_SKIP = new Set(["footway", "path", "steps", "cycleway", "track", "bridleway", "corridor", "service"]);
+const OSRM_FOOT = [
+  "https://routing.openstreetmap.de/routed-foot/route/v1/foot",
+  "https://router.project-osrm.org/route/v1/foot",
+];
 const OVERPASS = [
   "https://overpass.openstreetmap.fr/api/interpreter",
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
 ];
 
-const OSRM_FOOT = [
-  "https://routing.openstreetmap.de/routed-foot/route/v1/driving",
-  "https://router.project-osrm.org/route/v1/foot",
-];
 const OSRM_DRIVE = [
   "https://router.project-osrm.org/route/v1/driving",
   "https://routing.openstreetmap.de/routed-car/route/v1/driving",
@@ -210,6 +211,7 @@ export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
     const geom = way.geometry;
     if (!geom || geom.length < 2) continue;
     const hw = way.tags?.highway ?? "";
+    if (!drive && WALK_SKIP.has(hw)) continue;
     if (drive && hw && !ARTERIAL.has(hw) && !HIGHWAY_DRIVE.split("|").includes(hw)) continue;
     const arterial = way.arterial ?? ARTERIAL.has(hw);
     ingestLine(
@@ -797,12 +799,29 @@ export function finishPath(path: Pt[] | null, from: Pt, to: Pt, opts?: { cutBuil
   return tidy.length >= 2 ? tidy : null;
 }
 
+export function routeHugsGraph(g: StreetGraph, path: Pt[], maxOff = 32): boolean {
+  if (!g.segs.length || path.length < 2) return false;
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i]!;
+    const b = path[i + 1]!;
+    const span = distM(a.lat, a.lng, b.lat, b.lng);
+    const steps = Math.max(1, Math.ceil(span / 24));
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const lat = a.lat + (b.lat - a.lat) * t;
+      const lng = a.lng + (b.lng - a.lng) * t;
+      const near = nearest(g, lat, lng, maxOff);
+      if (!near || near.dist > maxOff) return false;
+    }
+  }
+  return true;
+}
+
 export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220) : to;
   const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
-  if (online && online.length >= 2) {
-    if (g) ingestLine(g, online);
+  if (online && online.length >= 2 && (!g || routeHugsGraph(g, online))) {
     return tidyPath(online);
   }
   if (g) return routeOnGraph(g, snappedFrom, snappedTo);
