@@ -120,6 +120,8 @@
 .vault-pin.tier-amber,.vault-night.tier-amber{ --glow:var(--lamp-amber); --pips:4; --bloom-a:46%; --bloom-r:14px; --bloom-hr:17px }
 .vault-pin.tier-red,.vault-night.tier-red{ --glow:var(--lamp-red); --pips:5; --bloom-a:54%; --bloom-r:15px; --bloom-hr:18px }
 .vault-pin.tier-violet,.vault-night.tier-violet{ --glow:var(--lamp-violet); --pips:6; --bloom-a:62%; --bloom-r:16px; --bloom-hr:19px }
+/* The Run's halo ring follows its tier too (was fixed amber around a blue-cost lamp, 0.0.18) */
+.vault-pin.is-run::after{ border-color:color-mix(in oklab, var(--glow) 70%, transparent) }
 /* Fare desks keep their amber call-out (same precedence as styles.css) */
 .vault-pin.is-fare{ --glow:var(--lamp-amber) }
 /* Match glyphs in lists / HQ / street keys carry the same lit tier hue */
