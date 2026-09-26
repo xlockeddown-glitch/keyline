@@ -84,6 +84,14 @@ export function cityStaple(cityId: CityId): IngredientId {
   return CITY_STAPLE[cityId];
 }
 
+export function isNamedWard(poiId: string): boolean {
+  return poiId in AREA;
+}
+
+export function cityHasWard(cityId: CityId): boolean {
+  return Object.values(AREA).some((id) => INGREDIENTS[id].cityId === cityId);
+}
+
 /** One press ingredient, or null on white and blue (those already pay brass and ink). */
 export function rollIngredient(cityId: CityId, poi: { id: string; tier: Tier }): IngredientId | null {
   if (!PRESS_TIERS.includes(poi.tier)) return null;

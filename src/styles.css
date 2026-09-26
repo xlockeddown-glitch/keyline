@@ -1164,6 +1164,33 @@ h3 {
 .scout-marker.is-seated {
   opacity: 0;
 }
+.scout-marker[data-cloth]::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  left: 34px;
+  top: 8px;
+  border-radius: 50%;
+  background: var(--cloth, #e4c27a);
+  box-shadow: 0 0 8px var(--cloth, #e4c27a);
+  pointer-events: none;
+}
+.scout-marker[data-cloth="road-dust"] { --cloth: #d7b072; }
+.scout-marker[data-cloth="red-book"] { --cloth: #e15a4a; }
+.scout-marker[data-cloth="night-glass"] { --cloth: #b9a0e8; }
+.scout-marker[data-cloth="scarf-austin"] { --cloth: #c46a3a; }
+.scout-marker[data-cloth="scarf-temple"] { --cloth: #e6d2a2; }
+.scout-marker[data-cloth="scarf-nyc"] { --cloth: #d8d2c4; }
+.scout-marker[data-cloth="scarf-sf"] { --cloth: #9eb8c9; }
+.scout-marker[data-cloth="scarf-london"] { --cloth: #8a8478; }
+.scout-marker[data-cloth="scarf-chicago"] { --cloth: #8aa0b8; }
+.scout-marker[data-cloth="scarf-detroit"] { --cloth: #c0c6cc; }
+.scout-marker[data-cloth="scarf-tucson"] { --cloth: #c47a45; }
+.scout-marker[data-cloth="scarf-toronto"] { --cloth: #c4503a; }
+.scout-marker[data-cloth="scarf-la"] { --cloth: #e2b33c; }
+.scout-marker[data-cloth="scarf-boston"] { --cloth: #8c3a32; }
+.scout-marker[data-cloth="scarf-nola"] { --cloth: #6a8f62; }
 
 .pawn {
   position: relative;

@@ -1,7 +1,7 @@
 {
   "name": "app-builder-workspace",
   "private": true,
-  "version": "0.0.19",
+  "version": "0.0.20",
   "sideEffects": false,
   "type": "module",
   "overrides": {
@@ -24,7 +24,7 @@
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "check:uniformity": "node scripts/uniformity-qa.mjs",
     "qa:sprites": "python3 scripts/qa-sprites.py",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/game/place.test.ts src/game/ward.test.ts src/game/pace.test.ts src/game/perk.test.ts src/game/rarity.test.ts src/game/telemetry.test.ts src/game/crate.test.ts src/game/pulse.test.ts src/game/retune.test.ts src/game/rolls.test.ts src/game/standings.test.ts src/game/rewards.test.ts src/game/streets.test.ts src/game/firstLogin.test.ts src/game/boosts.test.ts src/game/pass2.test.ts src/game/pins.test.ts src/game/ingredients.test.ts",
+    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts src/game/place.test.ts src/game/ward.test.ts src/game/pace.test.ts src/game/perk.test.ts src/game/rarity.test.ts src/game/telemetry.test.ts src/game/crate.test.ts src/game/pulse.test.ts src/game/retune.test.ts src/game/rolls.test.ts src/game/standings.test.ts src/game/rewards.test.ts src/game/streets.test.ts src/game/firstLogin.test.ts src/game/boosts.test.ts src/game/pass2.test.ts src/game/pins.test.ts src/game/ingredients.test.ts src/game/quests.test.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
