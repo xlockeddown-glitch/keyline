@@ -30,7 +30,23 @@ import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, matchCap, sparkState, transitLoot } from "./ticket";
-import { addIngredient, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
+import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
+import {
+  claimCircuit,
+  claimErrand,
+  claimLong,
+  grantScrap,
+  hydrateQuests,
+  noteAnswer,
+  noteClear,
+  notePrint,
+  clothName,
+  printPattern,
+  rareExtra,
+  type ClothId,
+  type LongId,
+  type QuestLog,
+} from "./quests";
 
 const SAVE_KEY = "keyline-save-v1";
 const SAVE_VERSION = 2;
@@ -89,6 +105,7 @@ export type GameState = {
   vellum: number;
   schematics: number;
   pantry: Partial<Record<IngredientId, number>>;
+  quests: QuestLog;
   charms: CharmId[];
   equipped: CharmId | null;
   scouts: ScoutId[];
@@ -160,6 +177,11 @@ export type GameState = {
   bankDown: (tier: Tier) => void;
   craft: (id: CharmId) => void;
   equip: (id: CharmId | null) => void;
+  claimErrand: () => void;
+  claimCircuit: () => void;
+  claimLong: (id: LongId) => void;
+  wearCloth: (id: ClothId | null) => void;
+  printPattern: () => void;
   buyScout: (id: ScoutId) => void;
   wearScout: (id: ScoutId) => void;
   buyKiosk: (id: KioskId) => void;
@@ -297,6 +319,7 @@ function persistable(s: GameState) {
     vellum: s.vellum,
     schematics: s.schematics,
     pantry: s.pantry,
+    quests: s.quests,
     charms: s.charms,
     equipped: s.equipped,
     scouts: s.scouts,
@@ -404,6 +427,25 @@ function flashToast(set: (p: Partial<GameState>) => void, get: () => GameState, 
   }, ms);
 }
 
+function answered(get: () => GameState, correct: boolean, perfect: boolean) {
+  return noteAnswer(get().quests, correct, perfect);
+}
+
+function cleared(get: () => GameState, base: QuestLog, poi: { id: string; tier: Tier }) {
+  let quests = noteClear(base, { cityId: get().cityId, poiId: poi.id, tier: poi.tier });
+  const extra = rareExtra(poi.tier, Math.random());
+  let line: string | null = null;
+  if (extra === "scrap") {
+    const g = grantScrap(quests);
+    quests = g.log;
+    line = g.fresh ? "Road dust for the lantern." : null;
+  } else if (extra === "pattern") {
+    quests = { ...quests, patterns: quests.patterns + 1 };
+    line = "A violet pattern for the press.";
+  }
+  return { quests, line };
+}
+
 function bumpCorrect(get: () => GameState, tier: Tier): Record<Tier, number> {
   const cur = get().correctByTier;
   return { ...cur, [tier]: (cur[tier] ?? 0) + 1 };
@@ -470,6 +512,7 @@ export const useGame = create<GameState>((set, get) => ({
   vellum: saved?.vellum ?? 0,
   schematics: saved?.schematics ?? 0,
   pantry: saved?.pantry ?? {},
+  quests: hydrateQuests(saved?.quests, savedCity),
   charms: saved?.charms ?? [],
   equipped: saved?.equipped ?? null,
   scouts: saved?.scouts?.length ? saved.scouts : ["raccoon"],
@@ -801,6 +844,7 @@ export const useGame = create<GameState>((set, get) => ({
           loot: null,
           miss: { answer: ov.question.answer, fact: ov.question.fact },
           toast: "The spark dies.",
+          quests: answered(get, false, false),
         });
         scheduleSave(get);
         return;
@@ -809,6 +853,7 @@ export const useGame = create<GameState>((set, get) => ({
       const cap = matchCap(poi.tier);
       const correctByTier = bumpCorrect(get, poi.tier);
       const boost = rollBoosts(get, true, elapsed, ov.category);
+      const questHit = cleared(get, answered(get, true, elapsed <= 3000), poi);
       if (have >= cap) {
         sfx.correct();
         const paid = payBoosts(get().keys, get().points + 12, boost);
@@ -829,6 +874,7 @@ export const useGame = create<GameState>((set, get) => ({
           toast: paid.boosts.length
             ? `Pocket full. The spark paid in coin. ${paid.boosts.join(" · ")}.`
             : "Pocket full. The spark paid in coin.",
+          quests: questHit.quests,
         });
       } else {
         sfx.correct();
@@ -847,9 +893,15 @@ export const useGame = create<GameState>((set, get) => ({
           loot: null,
           miss: null,
           correctByTier,
-          toast: paid.boosts.length
-            ? `A ${TIER_LABEL[poi.tier]} match from the wick. ${paid.boosts.join(" · ")}.`
-            : `A ${TIER_LABEL[poi.tier]} match from the wick.`,
+          toast: [
+            paid.boosts.length
+              ? `A ${TIER_LABEL[poi.tier]} match from the wick. ${paid.boosts.join(" · ")}.`
+              : `A ${TIER_LABEL[poi.tier]} match from the wick.`,
+            questHit.line,
+          ]
+            .filter(Boolean)
+            .join(" "),
+          quests: questHit.quests,
         });
       }
       scheduleSave(get);
@@ -878,6 +930,7 @@ export const useGame = create<GameState>((set, get) => ({
           miss: { answer: ov.question.answer, fact: ov.question.fact },
           ...seriesPatch(series.kind, coolSeries(get(), series)),
           toast: `${series.name} breaks on trivia card ${step + 1}.`,
+          quests: answered(get, false, false),
         });
         scheduleSave(get);
         return;
@@ -905,6 +958,7 @@ export const useGame = create<GameState>((set, get) => ({
           charmTopics: paid.charmTopics,
           correctByTier,
           toast: paid.boosts.length ? paid.boosts.join(" · ") : null,
+          quests: answered(get, true, grade === "perfect"),
           openVault: {
             poiId: series.id,
             category: ov.category,
@@ -980,6 +1034,7 @@ export const useGame = create<GameState>((set, get) => ({
         ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
         : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`;
       const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
+      const questHit = cleared(get, answered(get, true, grade === "perfect"), { id: series.id, tier: series.cost });
       set({
         keys: paid.keys,
         points: paid.points,
@@ -1001,7 +1056,8 @@ export const useGame = create<GameState>((set, get) => ({
         loot,
         miss: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
-        toast: [paid.boosts.length ? `${clearLine} ${paid.boosts.join(" · ")}.` : clearLine, ingLine].filter(Boolean).join(" "),
+        toast: [paid.boosts.length ? `${clearLine} ${paid.boosts.join(" · ")}.` : clearLine, ingLine, questHit.line].filter(Boolean).join(" "),
+        quests: questHit.quests,
         tutorial: Math.max(get().tutorial, 2),
       });
       postClear(series.cost);
@@ -1025,6 +1081,7 @@ export const useGame = create<GameState>((set, get) => ({
         loot: null,
         miss: { answer: ov.question.answer, fact: ov.question.fact },
         toast: null,
+        quests: answered(get, false, false),
       });
       scheduleSave(get);
       return;
@@ -1123,6 +1180,7 @@ export const useGame = create<GameState>((set, get) => ({
     const correctByTier = bumpCorrect(get, poi.tier);
     const boostLine = paid.boosts.length ? paid.boosts.join(" · ") : null;
     const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
+    const questHit = cleared(get, answered(get, true, grade === "perfect"), poi);
     set({
       keys: nextKeys,
       points: get().points + loot.points,
@@ -1148,7 +1206,8 @@ export const useGame = create<GameState>((set, get) => ({
       openVault: null,
       loot,
       miss: null,
-      toast: [contractToast, fareToast, surveyHit?.message, boostLine, ingLine].filter(Boolean).join(" ") || null,
+      toast: [contractToast, fareToast, surveyHit?.message, boostLine, ingLine, questHit.line].filter(Boolean).join(" ") || null,
+      quests: questHit.quests,
       tutorial: Math.max(get().tutorial, 2),
     });
     postClear(poi.tier);
@@ -1258,12 +1317,79 @@ export const useGame = create<GameState>((set, get) => ({
       charms: [...s.charms, id],
       equipped: s.equipped ?? id,
       toast: `Printed ${c.name}.`,
+      quests: notePrint(s.quests, s.cityId),
     });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 1600);
   },
   equip: (id) => {
     set({ equipped: id });
+    scheduleSave(get);
+  },
+  claimErrand: () => {
+    const paid = claimErrand(get().quests, get().cityId);
+    if (!paid) {
+      flashToast(set, get, "The errand is not finished.", 1400);
+      return;
+    }
+    sfx.pickup();
+    const pantry = addIngredient(get().pantry, paid.ingredient);
+    set({ quests: paid.log, pantry });
+    flashToast(set, get, `${ingredientName(paid.ingredient)} from the errand.`, 1800);
+    scheduleSave(get);
+  },
+  claimCircuit: () => {
+    const s = get();
+    const paid = claimCircuit(s.quests, s.cityId, s.pantry[cityStaple(s.cityId)] ?? 0, s.charms.length);
+    if (!paid) {
+      flashToast(set, get, "Circuit still open. Red, a ward, three stock, and a charm.", 1800);
+      return;
+    }
+    sfx.pickup();
+    set({ quests: paid.log });
+    flashToast(set, get, `${clothName(paid.cloth)} on the lantern.`, 1800);
+    scheduleSave(get);
+  },
+  claimLong: (id) => {
+    const paid = claimLong(get().quests, id, get().distanceM);
+    if (!paid) return;
+    sfx.pickup();
+    set({
+      quests: paid.log,
+      schematics: get().schematics + (paid.schematic ? 1 : 0),
+    });
+    const msg = paid.title
+      ? `Title: ${paid.title}.`
+      : paid.schematic
+        ? "A schematic from the unbroken run."
+        : paid.pattern
+          ? "A pattern for the press."
+          : paid.cloth
+            ? "Cloth for the lantern."
+            : "Filed.";
+    flashToast(set, get, msg, 1800);
+    scheduleSave(get);
+  },
+  wearCloth: (id) => {
+    const owned = id == null || get().quests.cloths.includes(id);
+    if (!owned) return;
+    set({ quests: { ...get().quests, worn: id } });
+    scheduleSave(get);
+  },
+  printPattern: () => {
+    const s = get();
+    const press = spendIngredient(s.cityId, s.pantry);
+    const printed = printPattern(s.quests);
+    if (!printed || !press) {
+      flashToast(set, get, "Need a pattern and one press ingredient.", 1600);
+      return;
+    }
+    sfx.craft();
+    set({
+      quests: printed.log,
+      pantry: { ...s.pantry, [press]: (s.pantry[press] ?? 1) - 1 },
+    });
+    flashToast(set, get, "Night glass printed.", 1600);
     scheduleSave(get);
   },
   buyScout: (id) => {

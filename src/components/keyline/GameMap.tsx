@@ -1162,6 +1162,8 @@ export function GameMap() {
         playerMarker.current?.getElement()?.querySelector(".scout-marker")) as HTMLElement | null;
       if (el) {
         el.dataset.scout = st.scout;
+        if (st.quests.worn) el.dataset.cloth = st.quests.worn;
+        else el.removeAttribute("data-cloth");
         el.classList.toggle("is-idle", !moving);
         el.classList.toggle("is-seated", seated);
         if (!seated) {
@@ -1234,10 +1236,12 @@ export function GameMap() {
 
   useEffect(() => {
     const unsub = useGame.subscribe((s, p) => {
-      if (s.scout !== p.scout) {
+      if (s.scout !== p.scout || s.quests.worn !== p.quests.worn) {
         const el = playerMarker.current?.getElement()?.querySelector(".scout-marker") as HTMLElement | null;
         if (el) el.dataset.scout = s.scout;
-        startBed(s.scout);
+        if (el && s.quests.worn) el.dataset.cloth = s.quests.worn;
+        else el?.removeAttribute("data-cloth");
+        if (s.scout !== p.scout) startBed(s.scout);
       }
       if (s.fares > p.fares) {
         const desk = fareDesk(CITIES[s.cityId]);

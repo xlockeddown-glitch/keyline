@@ -5,6 +5,7 @@ import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { PULSE_POINTS, pulseDue } from "@/game/pulse";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
 import { INGREDIENTS, cityStaple, type IngredientId } from "@/game/ingredients";
+import { LONG_COPY, circuitReady, clothBlurb, clothName, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
 import { BANK_DOWN, BANK_UP, TIER_ORDER, TIER_VALUE, bankDownSpec, bankUpSpec } from "@/game/rewards";
 import { matchCap } from "@/game/ticket";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
@@ -31,6 +32,12 @@ export function HqPanel() {
   const vellum = useGame((s) => s.vellum);
   const schematics = useGame((s) => s.schematics);
   const pantry = useGame((s) => s.pantry);
+  const quests = useGame((s) => s.quests);
+  const claimErrand = useGame((s) => s.claimErrand);
+  const claimCircuit = useGame((s) => s.claimCircuit);
+  const claimLongQuest = useGame((s) => s.claimLong);
+  const wearCloth = useGame((s) => s.wearCloth);
+  const printNight = useGame((s) => s.printPattern);
   const charms = useGame((s) => s.charms);
   const equipped = useGame((s) => s.equipped);
   const craft = useGame((s) => s.craft);
@@ -214,6 +221,19 @@ export function HqPanel() {
               </p>
               <ScoutRoster hire={false} />
               <p className="kicker mt-2">Charms</p>
+              {quests.patterns > 0 && !quests.cloths.includes("night-glass") ? (
+                <div className="hq-row">
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title">Night glass ×{quests.patterns}</p>
+                    <p className="hq-row-sub">Print spends the pattern and one {INGREDIENTS[cityStaple(cityId)].name}.</p>
+                    <div className="hq-row-actions">
+                      <button type="button" className="btn btn-quiet px-3 text-xs" onClick={() => printNight()}>
+                        Print
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               {(Object.keys(CHARMS) as CharmId[]).map((id) => {
                 const c = CHARMS[id];
                 const owned = charms.includes(id);
@@ -295,6 +315,19 @@ export function HqPanel() {
                   </p>
                 </div>
               </button>
+              <QuestDesk
+                cityId={cityId}
+                cityName={city.name}
+                staple={pantry[cityStaple(cityId)] ?? 0}
+                stapleName={INGREDIENTS[cityStaple(cityId)].name}
+                charms={charms.length}
+                distanceM={distanceM}
+                quests={quests}
+                onErrand={claimErrand}
+                onCircuit={claimCircuit}
+                onLong={claimLongQuest}
+                onWear={wearCloth}
+              />
               <div>
                 <p className="kicker mt-2">Bank</p>
                 <p className="mt-1 text-xs text-fg-muted">
@@ -448,6 +481,119 @@ export function HqPanel() {
             </div>
           ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function QuestDesk({
+  cityId,
+  cityName,
+  staple,
+  stapleName,
+  charms,
+  distanceM,
+  quests,
+  onErrand,
+  onCircuit,
+  onLong,
+  onWear,
+}: {
+  cityId: import("@/game/types").CityId;
+  cityName: string;
+  staple: number;
+  stapleName: string;
+  charms: number;
+  distanceM: number;
+  quests: QuestLog;
+  onErrand: () => void;
+  onCircuit: () => void;
+  onLong: (id: LongId) => void;
+  onWear: (id: ClothId | null) => void;
+}) {
+  const errand = errandLabel(quests.errand);
+  const ready = errandDone(quests.errand);
+  const circuit = circuitReady(quests, cityId, staple, charms);
+  const cityCircuit = quests.circuit[cityId];
+  const longs = longProgress(quests, distanceM);
+  return (
+    <div>
+      <p className="kicker mt-2">Quests</p>
+      <div className="mt-2 grid gap-2">
+        <div className="hq-row">
+          <div className="hq-row-copy">
+            <p className="hq-row-title">{errand.title}</p>
+            <p className="hq-row-sub">{errand.sub}</p>
+            <div className="hq-row-actions">
+              <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!ready} onClick={onErrand}>
+                {ready ? "Take stock" : "In progress"}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="hq-row">
+          <div className="hq-row-copy">
+            <p className="hq-row-title">{cityName} circuit</p>
+            <p className="hq-row-sub">
+              {cityCircuit?.claimed
+                ? "Scarf claimed."
+                : `Red ${cityCircuit?.red ? "yes" : "no"} · ward ${cityCircuit?.ward ? "yes" : "no"} · ${stapleName} ${staple}/3 · charm ${cityCircuit?.printed || charms > 0 ? "yes" : "no"}.`}
+            </p>
+            {cityCircuit?.claimed ? null : (
+              <div className="hq-row-actions">
+                <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!circuit} onClick={onCircuit}>
+                  Claim scarf
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        {(Object.keys(LONG_COPY) as LongId[]).map((id) => {
+          const row = longs[id];
+          const copy = LONG_COPY[id];
+          const shown = id === "walk" ? `${(row.n / 1000).toFixed(1)}/${(row.need / 1000).toFixed(0)} km` : `${Math.min(row.n, row.need)}/${row.need}`;
+          return (
+            <div key={id} className="hq-row">
+              <div className="hq-row-copy">
+                <p className="hq-row-title">{copy.title}</p>
+                <p className="hq-row-sub">
+                  {copy.sub} {shown}.
+                </p>
+                {row.done ? null : (
+                  <div className="hq-row-actions">
+                    <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!row.ready} onClick={() => onLong(id)}>
+                      {row.ready ? "Claim" : "In progress"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {quests.cloths.length ? (
+          <div className="hq-row">
+            <div className="hq-row-copy">
+              <p className="hq-row-title">{quests.title ? `${quests.title}` : "Cloth"}</p>
+              <p className="hq-row-sub">Worn cloth tints the lantern. No new coat.</p>
+              <div className="hq-row-actions">
+                <button type="button" className={`btn px-3 text-xs ${quests.worn ? "btn-ghost" : "btn-primary"}`} onClick={() => onWear(null)}>
+                  None
+                </button>
+                {quests.cloths.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`btn px-3 text-xs ${quests.worn === id ? "btn-primary" : "btn-quiet"}`}
+                    onClick={() => onWear(id)}
+                    title={clothBlurb(id)}
+                  >
+                    {clothName(id)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
