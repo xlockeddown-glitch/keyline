@@ -3,7 +3,7 @@ import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, a
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
 import { nextSurvey } from "@/game/survey";
-import { isFareDesk, SPARK_DAY, VAULTS_PER_FARE } from "@/game/ticket";
+import { formatCool, isFareDesk, SPARK_DAY, VAULTS_PER_FARE } from "@/game/ticket";
 import { pulseDue } from "@/game/pulse";
 import { useGame } from "@/game/store";
 import type { Tier } from "@/game/types";
@@ -92,8 +92,10 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props)
       if (inReach && !haveKey) cue = `Need a ${TIER_LABEL[seriesNear.cost]} match for ${seriesNear.name}`;
       else if (armed) cue = `${seriesNear.name} · ${seriesNear.steps} trivia cards · E`;
       else cue = `${formatDist(hud.nearestDist)} · ${seriesNear.kicker}`;
-    } else if (recasting) cue = "Recasting — come back later";
-    else if (inReach && !haveKey) {
+    } else if (recasting) {
+      const left = (vaults[nearest.id]?.coolUntil ?? 0) - Date.now();
+      cue = left > 45 * 60_000 ? `Dark for ${formatCool(left)}` : "Recasting — come back later";
+    } else if (inReach && !haveKey) {
       cue = canSpark
         ? `Strike a spark · E — earn a ${TIER_LABEL[nearest.tier]} match`
         : sparkedHere

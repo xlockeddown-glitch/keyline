@@ -41,6 +41,7 @@ import { VaultModal } from "./VaultModal";
 import { HqPanel } from "./HqPanel";
 import { ScoutShop } from "./ScoutShop";
 import { LootToast } from "./LootToast";
+import { MysteryWheel } from "./MysteryWheel";
 import { Satchel } from "./Satchel";
 import { Fireworks } from "./Fireworks";
 import { Timetable } from "./Timetable";
@@ -1337,6 +1338,7 @@ export function GameMap() {
         }}
       />
       <LootToast />
+      <MysteryWheel />
       <VaultModal />
       <Satchel />
       <HqPanel />

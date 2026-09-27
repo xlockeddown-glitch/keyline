@@ -8,6 +8,24 @@ export const WHITE_POCKET = 4;
 export const BLUE_POCKET = 4;
 export const GREEN_POCKET = 1;
 export const SPARK_DAY = 6;
+/** A violet lamp stays dark for six hours after it pays. */
+export const VIOLET_COOL_MS = 6 * 60 * 60_000;
+
+export function lampCoolMs(tier: import("./types").Tier) {
+  if (tier === "white") return 90_000;
+  if (tier === "blue") return 140_000;
+  if (tier === "green") return 220_000;
+  if (tier === "violet") return VIOLET_COOL_MS;
+  return 400_000;
+}
+
+export function formatCool(ms: number) {
+  const m = Math.ceil(Math.max(0, ms) / 60_000);
+  if (m <= 1) return "a minute";
+  if (m < 90) return `${m} min`;
+  const h = Math.max(1, Math.round(m / 60));
+  return h === 1 ? "1 hr" : `${h} hr`;
+}
 
 export function sparkState(day: string, n: number, lamps: string[], today: string) {
   if (day === today) return { sparkDay: day, sparkN: n, sparkLamps: lamps };

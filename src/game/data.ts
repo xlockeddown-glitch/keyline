@@ -18,7 +18,7 @@ const austin: City = {
       lat: 30.2747,
       lng: -97.7404,
       kind: "civic",
-      tier: "red",
+      tier: "violet",
       lore: "Sunset Red granite, taller than the U.S. Capitol. The Goddess of Liberty stands on the dome with a gilded star.",
       quiz: {
         q: "The Texas Capitol is clad in which local stone?",
@@ -483,7 +483,7 @@ const nyc: City = {
       lat: 40.7484,
       lng: -73.9857,
       kind: "landmark",
-      tier: "red",
+      tier: "violet",
       lore: "102 floors, 1931. Built in 13 months at the bottom of the Depression.",
       quiz: {
         q: "How many floors does the Empire State Building have?",
@@ -925,7 +925,7 @@ const london: City = {
       lat: 51.5007,
       lng: -0.1246,
       kind: "civic",
-      tier: "red",
+      tier: "violet",
       lore: "The tower is Elizabeth; the bell is Big Ben. People still get this wrong on purpose.",
       quiz: {
         q: "What is 'Big Ben' actually the name of?",
@@ -1691,7 +1691,7 @@ const toronto: City = {
       lat: 43.6426,
       lng: -79.3871,
       kind: "landmark",
-      tier: "red",
+      tier: "violet",
       lore: "553 metres of concrete and a glass floor. Opened 1976 as a CN communications mast.",
       quiz: {
         q: "The CN Tower opened to the public in which year?",

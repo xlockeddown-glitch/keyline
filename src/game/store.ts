@@ -29,8 +29,9 @@ import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
-import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, matchCap, sparkState, transitLoot } from "./ticket";
+import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, sparkState, transitLoot } from "./ticket";
 import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
+import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
   claimCircuit,
   claimErrand,
@@ -121,6 +122,8 @@ export type GameState = {
   bestStreak: number;
   vaultsOpened: number;
   correctByTier: Record<Tier, number>;
+  wheelClaimed: Record<Tier, number>;
+  wheel: WheelOffer | null;
   distanceM: number;
   lastCrateDay: string;
   crateStreak: number;
@@ -189,6 +192,7 @@ export type GameState = {
   toggleHq: (v?: boolean) => void;
   toggleInv: (v?: boolean) => void;
   dismissLoot: () => void;
+  claimWheel: () => void;
   skipTutorial: () => void;
   advanceTutorial: (n?: number) => void;
   replayTutorial: () => void;
@@ -335,6 +339,8 @@ function persistable(s: GameState) {
     bestStreak: s.bestStreak,
     vaultsOpened: s.vaultsOpened,
     correctByTier: s.correctByTier,
+    wheelClaimed: s.wheelClaimed,
+    wheel: s.wheel,
     distanceM: s.distanceM,
     lastCrateDay: s.lastCrateDay,
     crateStreak: s.crateStreak,
@@ -451,6 +457,18 @@ function bumpCorrect(get: () => GameState, tier: Tier): Record<Tier, number> {
   return { ...cur, [tier]: (cur[tier] ?? 0) + 1 };
 }
 
+function foldWheel(get: () => GameState, tier: Tier): { correctByTier: Record<Tier, number>; wheel: WheelOffer | null } {
+  const correctByTier = bumpCorrect(get, tier);
+  const held = get().wheel;
+  if (held) return { correctByTier, wheel: held };
+  const n = correctByTier[tier] ?? 0;
+  const claimed = get().wheelClaimed[tier] ?? 0;
+  if (n > 0 && n % WHEEL_EVERY === 0 && Math.floor(n / WHEEL_EVERY) > claimed) {
+    return { correctByTier, wheel: buildWheel(tier, get().cityId, Math.random()) };
+  }
+  return { correctByTier, wheel: held };
+}
+
 function postClear(tier: Tier) {
   void reportCorrect({ data: { tier } })
     .then(() => {
@@ -528,6 +546,11 @@ export const useGame = create<GameState>((set, get) => ({
   bestStreak: saved?.bestStreak ?? 0,
   vaultsOpened: saved?.vaultsOpened ?? 0,
   correctByTier: { ...EMPTY_CORRECT, ...saved?.correctByTier },
+  wheelClaimed:
+    saved && saved.wheelClaimed
+      ? { ...emptyWheelClaims(), ...saved.wheelClaimed }
+      : caughtUpClaims({ ...EMPTY_CORRECT, ...saved?.correctByTier }),
+  wheel: null,
   distanceM: saved?.distanceM ?? 0,
   lastCrateDay: saved?.lastCrateDay ?? "",
   crateStreak: saved?.crateStreak ?? 0,
@@ -747,7 +770,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const v = get().vaults[poiId];
     const clock = Date.now();
-    if (v && v.state === "cooling" && v.coolUntil > clock) return "This lamp is recasting.";
+    if (v && v.state === "cooling" && v.coolUntil > clock) return `This lamp is dark for ${formatCool(v.coolUntil - clock)}.`;
     if (get().keys[poi.tier] < 1) {
       const spark = sparksNow(get);
       if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} match. Sparks are spent today.`;
@@ -851,7 +874,7 @@ export const useGame = create<GameState>((set, get) => ({
       }
       const have = get().keys[poi.tier] ?? 0;
       const cap = matchCap(poi.tier);
-      const correctByTier = bumpCorrect(get, poi.tier);
+      const spun = foldWheel(get, poi.tier);
       const boost = rollBoosts(get, true, elapsed, ov.category);
       const questHit = cleared(get, answered(get, true, elapsed <= 3000), poi);
       if (have >= cap) {
@@ -870,7 +893,7 @@ export const useGame = create<GameState>((set, get) => ({
           openVault: null,
           loot: null,
           miss: null,
-          correctByTier,
+          ...spun,
           toast: paid.boosts.length
             ? `Pocket full. The spark paid in coin. ${paid.boosts.join(" · ")}.`
             : "Pocket full. The spark paid in coin.",
@@ -892,7 +915,7 @@ export const useGame = create<GameState>((set, get) => ({
           openVault: null,
           loot: null,
           miss: null,
-          correctByTier,
+          ...spun,
           toast: [
             paid.boosts.length
               ? `A ${TIER_LABEL[poi.tier]} match from the wick. ${paid.boosts.join(" · ")}.`
@@ -944,7 +967,7 @@ export const useGame = create<GameState>((set, get) => ({
         const want = series.diffs[step + 1];
         if (grade === "perfect") sfx.perfect();
         else sfx.correct();
-        const correctByTier = bumpCorrect(get, series.cost);
+        const spun = foldWheel(get, series.cost);
         const boost = rollBoosts(get, true, elapsed, ov.category);
         const paid = payBoosts(get().keys, get().points, boost);
         set({
@@ -956,7 +979,7 @@ export const useGame = create<GameState>((set, get) => ({
           points: paid.points,
           charmDay: paid.charmDay,
           charmTopics: paid.charmTopics,
-          correctByTier,
+          ...spun,
           toast: paid.boosts.length ? paid.boosts.join(" · ") : null,
           quests: answered(get, true, grade === "perfect"),
           openVault: {
@@ -1029,7 +1052,7 @@ export const useGame = create<GameState>((set, get) => ({
       if (loot.grade === "perfect") sfx.perfect();
       else sfx.correct();
       const bonusHit = Boolean(extraKeys[series.bonus]);
-      const correctByTier = bumpCorrect(get, series.cost);
+      const spun = foldWheel(get, series.cost);
       const clearLine = bonusHit
         ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
         : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`;
@@ -1048,7 +1071,7 @@ export const useGame = create<GameState>((set, get) => ({
         charmDay: paid.charmDay,
         charmTopics: paid.charmTopics,
         vaultsOpened: get().vaultsOpened + 1,
-        correctByTier,
+        ...spun,
         asked,
         seenIds,
         ...logged,
@@ -1150,8 +1173,7 @@ export const useGame = create<GameState>((set, get) => ({
     loot.keys = extraKeys;
     loot.points = paid.points - get().points;
     loot.boosts = paid.boosts.length ? paid.boosts : undefined;
-    const coolMs =
-      poi.tier === "white" ? 90_000 : poi.tier === "blue" ? 140_000 : poi.tier === "green" ? 220_000 : 400_000;
+    const coolMs = lampCoolMs(poi.tier);
     const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + coolMs } };
     let contract = get().contract;
     let contractToast: string | null = null;
@@ -1177,7 +1199,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     if (grade === "perfect") sfx.perfect();
     else sfx.correct();
-    const correctByTier = bumpCorrect(get, poi.tier);
+    const spun = foldWheel(get, poi.tier);
     const boostLine = paid.boosts.length ? paid.boosts.join(" · ") : null;
     const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
     const questHit = cleared(get, answered(get, true, grade === "perfect"), poi);
@@ -1199,7 +1221,7 @@ export const useGame = create<GameState>((set, get) => ({
       charmDay: paid.charmDay,
       charmTopics: paid.charmTopics,
       vaultsOpened: get().vaultsOpened + 1,
-      correctByTier,
+      ...spun,
       asked,
       seenIds,
       ...logged,
@@ -1508,6 +1530,30 @@ export const useGame = create<GameState>((set, get) => ({
     set({ invOpen: next, hqOpen: next ? false : get().hqOpen, shopOpen: next ? false : get().shopOpen });
   },
   dismissLoot: () => set({ loot: null, miss: null, toast: null }),
+  claimWheel: () => {
+    const offer = get().wheel;
+    if (!offer) return;
+    const paid = grantWheelPrize(offer.slices[offer.win]!, {
+      keys: get().keys,
+      points: get().points,
+      pantry: get().pantry,
+    });
+    const wheelClaimed = { ...get().wheelClaimed, [offer.tier]: (get().wheelClaimed[offer.tier] ?? 0) + 1 };
+    const next = owedTier(get().correctByTier, wheelClaimed);
+    sfx.pickup();
+    set({
+      keys: paid.keys,
+      points: paid.points,
+      pantry: paid.pantry,
+      wheelClaimed,
+      wheel: next ? buildWheel(next, get().cityId, Math.random()) : null,
+      toast: paid.line,
+    });
+    scheduleSave(get);
+    window.setTimeout(() => {
+      if (get().toast === paid.line) set({ toast: null });
+    }, 2200);
+  },
   skipTutorial: () => {
     set({ tutorial: 4, howtoDone: true });
     scheduleSave(get);
