@@ -10,6 +10,7 @@ import {
   bootstrapDrive,
   bootstrapStreets,
   canCutBuildings,
+  clearCorner,
   closestOnPath,
   constrainStep,
   expandGraph,
@@ -382,7 +383,8 @@ export function GameMap() {
   }
 
   function placeOnStreet(g: StreetGraph, lat: number, lng: number) {
-    const p = pullToStreet(g, lat, lng, 140);
+    const snapped = pullToStreet(g, lat, lng, 140);
+    const p = clearCorner(g, snapped.lat, snapped.lng);
     pos.current.lat = p.lat;
     pos.current.lng = p.lng;
     const city = CITIES[useGame.getState().cityId];
@@ -488,7 +490,7 @@ export function GameMap() {
         className: "",
         html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}" data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
         iconSize: [56, 56],
-        iconAnchor: [28, 48],
+        iconAnchor: [28, 30],
       });
       playerMarker.current = L.marker([dock.lat, dock.lng], {
         icon,
@@ -627,8 +629,9 @@ export function GameMap() {
     const total = pathLength(route);
     if (total < 4) {
       const end = route[route.length - 1]!;
-      pos.current.lat = end.lat;
-      pos.current.lng = end.lng;
+      const rest = routeMode.current === "drive" || !graphRef.current ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      pos.current.lat = rest.lat;
+      pos.current.lng = rest.lng;
       pos.current.speed = 0;
       const wasDrive = routeMode.current === "drive" && cabRef.current?.seated;
       clearRoute();
@@ -653,8 +656,9 @@ export function GameMap() {
     const remaining = total - routeAlong.current;
     if (remaining < 6) {
       const end = route[route.length - 1]!;
-      pos.current.lat = end.lat;
-      pos.current.lng = end.lng;
+      const rest = routeMode.current === "drive" || !graphRef.current ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      pos.current.lat = rest.lat;
+      pos.current.lng = rest.lng;
       pos.current.speed = 0;
       const wasDrive = routeMode.current === "drive" && cabRef.current?.seated;
       clearRoute();

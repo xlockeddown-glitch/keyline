@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { dest, distM } from "./geo.ts";
 import {
   canCutBuildings,
+  clearCorner,
   createGraph,
   finishPath,
   ingestLine,
@@ -44,6 +45,15 @@ test("route around a block never cuts the interior", () => {
     assert.ok(snap && snap.dist < 8, "path stays on the curb");
     assert.ok(distM(p.lat, p.lng, vault.lat, vault.lng) > 20, "path does not enter the block");
   }
+});
+
+test("a stop on a corner rests in the street", () => {
+  const { g, o } = blockGraph();
+  const rest = clearCorner(g, o.lat, o.lng);
+  const along = distM(rest.lat, rest.lng, o.lat, o.lng);
+  assert.ok(along > 5 && along < 16, `expected a short step off the corner, got ${along}`);
+  const snap = nearest(g, rest.lat, rest.lng, 20);
+  assert.ok(snap && snap.dist < 2);
 });
 
 test("a footway across the block is not a walk edge", () => {

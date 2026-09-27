@@ -515,6 +515,23 @@ export function constrainStep(g: StreetGraph, lat: number, lng: number, yaw: num
   return slide(g, here, yaw, dist);
 }
 
+/** Pull a stop off a corner node so the token sits in the street, not on the building. */
+export function clearCorner(g: StreetGraph, lat: number, lng: number): Pt {
+  const s = nearest(g, lat, lng, 40);
+  if (!s) return { lat, lng };
+  const seg = g.segs[s.seg]!;
+  const a = g.nodes[seg.a]!;
+  const b = g.nodes[seg.b]!;
+  const nearA = distM(s.lat, s.lng, a.lat, a.lng) <= distM(s.lat, s.lng, b.lat, b.lng);
+  const end = nearA ? a : b;
+  const other = nearA ? b : a;
+  if (distM(s.lat, s.lng, end.lat, end.lng) > 7) return { lat: s.lat, lng: s.lng };
+  const len = distM(end.lat, end.lng, other.lat, other.lng) || 1;
+  const hop = Math.min(12, Math.max(6, len * 0.28));
+  const t = Math.min(0.45, hop / len);
+  return { lat: end.lat + (other.lat - end.lat) * t, lng: end.lng + (other.lng - end.lng) * t };
+}
+
 export function pullToStreet(g: StreetGraph, lat: number, lng: number, max = 110): Pt {
   const s = nearest(g, lat, lng, max);
   return s ? { lat: s.lat, lng: s.lng } : onStreet(g, lat, lng);
