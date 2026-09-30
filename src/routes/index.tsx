@@ -1,6 +1,6 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CITY_LIST, CITIES } from "@/game/data";
+import { CITIES } from "@/game/data";
 import { APP_VERSION } from "@/version";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -23,46 +23,22 @@ function Home() {
 
 function TitleShell() {
   const city = CITIES.austin;
-  const stubs = [city, ...CITY_LIST.filter((c) => c.id !== city.id).slice(0, 4)];
   return (
-    <div className="title-night">
-      <div className="title-pave" aria-hidden />
-      <div className="title-folio">
-        <div className="street-blade" aria-label="Keyline">
-          <span>{city.name} St</span>
-          <strong>KEYLINE</strong>
-        </div>
-        <div className="block-map" aria-hidden>
-          <i className="block-road is-ns" />
-          <i className="block-road is-ew" />
-          <i className="block-road is-ew-2" />
-          <i className="block-glow" />
-          <span className="lantern title-lamp tier-white">
-            <i className="lantern-cap" />
-            <i className="lantern-frame">
-              <i className="lantern-glass" />
-            </i>
-            <i className="lantern-post" />
-          </span>
-          <span className="match-pin tier-white title-key">
-            <i className="match-head" />
-            <i className="match-stick" />
-          </span>
-          <span className="scout-marker is-idle title-scout" data-scout="raccoon" data-row="0" data-col="0" />
-        </div>
-        <p className="lede">Walk a real city. Light lamps. Answer trivia.</p>
-        <p className="mt-1 text-xs text-fg-subtle tabular-nums tracking-wide">v{APP_VERSION}</p>
-        <button type="button" className="btn btn-primary title-go" disabled>
-          Walk {city.name}
-        </button>
-        <nav className="city-stubs" aria-label="Cities">
-          {stubs.map((c) => (
-            <button key={c.id} type="button" className={c.id === city.id ? "is-here" : ""} disabled>
-              {c.name}
-            </button>
+    <div className="title-night is-book">
+      <div className="book-stage">
+        <button type="button" className="matchbook" disabled>
+          {["white", "blue", "green", "amber", "red", "violet"].map((tier) => (
+            <span key={tier} className={`matchbook-stick tier-${tier}`} aria-hidden>
+              <i />
+            </span>
           ))}
-        </nav>
-        <div className="flex justify-center gap-2">
+          <span className="matchbook-cover">
+            <strong>KEYLINE</strong>
+            <span className="matchbook-strike">{city.name}</span>
+          </span>
+        </button>
+        <p className="book-lede">Tap to walk {city.name}.</p>
+        <div className="book-links">
           <button type="button" className="title-more" disabled>
             All cities
           </button>
@@ -70,6 +46,7 @@ function TitleShell() {
             Standings
           </button>
         </div>
+        <p className="book-ver">v{APP_VERSION}</p>
       </div>
     </div>
   );

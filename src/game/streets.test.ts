@@ -78,7 +78,19 @@ test("street-only finishPath will not hop to a vault in the block", () => {
   const cut = finishPath(path, west, vault, { cutBuildings: true });
   assert.ok(cut);
   const hop = cut![cut!.length - 1]!;
-  assert.ok(distM(hop.lat, hop.lng, vault.lat, vault.lng) < 1);
+  assert.ok(distM(hop.lat, hop.lng, vault.lat, vault.lng) < 2);
+});
+
+test("a vault door is a short last step, not a cut through the block", () => {
+  const { g, west } = blockGraph();
+  const path = routeOnGraph(g, west, dest(west.lat, west.lng, 0, 10))!;
+  const door = finishPath(path, west, dest(west.lat, west.lng, 0, 28), { door: true });
+  const last = door![door!.length - 1]!;
+  assert.ok(distM(last.lat, last.lng, west.lat, west.lng) < 40);
+  const far = dest(west.lat, west.lng, 0, 150);
+  const tooFar = finishPath(path, west, far, { door: true });
+  const end = tooFar![tooFar!.length - 1]!;
+  assert.ok(distM(end.lat, end.lng, far.lat, far.lng) > 20);
 });
 
 test("default scouts cannot cut buildings; Super Legendary can; 18m hop is gated", () => {

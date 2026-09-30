@@ -5,7 +5,7 @@ import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { PULSE_POINTS, pulseDue } from "@/game/pulse";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
 import { INGREDIENTS, cityStaple, type IngredientId } from "@/game/ingredients";
-import { LONG_COPY, circuitReady, clothBlurb, clothName, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
+import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
 import { BANK_DOWN, BANK_UP, TIER_ORDER, TIER_VALUE, bankDownSpec, bankUpSpec } from "@/game/rewards";
 import { matchCap } from "@/game/ticket";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
@@ -79,7 +79,7 @@ export function HqPanel() {
   return (
     <div className="absolute inset-0 z-[700] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
       <div className="panel flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
-        <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Headquarters</p>
             <h2 className="font-display text-xl leading-tight">Hideout · {city.name}</h2>
@@ -102,7 +102,7 @@ export function HqPanel() {
           </div>
         </header>
 
-        <div className="hq-tabs" role="tablist" aria-label="Headquarters sections">
+        <div className="hq-tabs shrink-0" role="tablist" aria-label="Headquarters sections">
           {TABS.map((t) => (
             <button
               key={t}
@@ -570,30 +570,38 @@ function QuestDesk({
             </div>
           );
         })}
-        {quests.cloths.length ? (
-          <div className="hq-row">
-            <div className="hq-row-copy">
-              <p className="hq-row-title">{quests.title ? `${quests.title}` : "Cloth"}</p>
-              <p className="hq-row-sub">Worn cloth tints the lantern. No new coat.</p>
-              <div className="hq-row-actions">
-                <button type="button" className={`btn px-3 text-xs ${quests.worn ? "btn-ghost" : "btn-primary"}`} onClick={() => onWear(null)}>
-                  None
-                </button>
-                {quests.cloths.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`btn px-3 text-xs ${quests.worn === id ? "btn-primary" : "btn-quiet"}`}
-                    onClick={() => onWear(id)}
-                    title={clothBlurb(id)}
-                  >
-                    {clothName(id)}
-                  </button>
-                ))}
+      </div>
+      <p className="kicker mt-4">Cloth</p>
+      <p className="mt-1 text-xs text-fg-muted">Wear one. The perk is coin on a clear, not a new coat.</p>
+      <div className="mt-2 grid gap-2">
+        {clothShelf(quests, cityId).map((id) => {
+          const owned = quests.cloths.includes(id);
+          const worn = quests.worn === id;
+          return (
+            <div key={id} className="hq-row">
+              <div className="hq-row-copy">
+                <p className="hq-row-title">
+                  {clothName(id)}
+                  {worn ? " · worn" : ""}
+                </p>
+                <p className="hq-row-sub">{owned ? clothPerk(id) : clothEarn(id)}</p>
+                {owned ? (
+                  <div className="hq-row-actions">
+                    <button
+                      type="button"
+                      className={`btn px-3 text-xs ${worn ? "btn-primary" : "btn-quiet"}`}
+                      onClick={() => onWear(worn ? null : id)}
+                    >
+                      {worn ? "Take off" : "Wear"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="hq-row-sub">Not in the closet.</p>
+                )}
               </div>
             </div>
-          </div>
-        ) : null}
+          );
+        })}
       </div>
     </div>
   );

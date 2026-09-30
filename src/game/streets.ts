@@ -24,6 +24,8 @@ export type StreetGraph = {
   nodeIndex: Map<string, number>;
   cell: number;
   covers: { lat: number; lng: number; r: number }[];
+  comp?: Int32Array;
+  compGen?: number;
 };
 
 const M_PER_DEG_LAT = 111_320;
@@ -236,7 +238,7 @@ function projectToSeg(g: StreetGraph, lat: number, lng: number, seg: Seg): Snap 
   return { lat: slat, lng: slng, dist: distM(lat, lng, slat, slng), seg: -1, t };
 }
 
-export function nearest(g: StreetGraph, lat: number, lng: number, max = 90): Snap | null {
+export function nearest(g: StreetGraph, lat: number, lng: number, max = 90, only?: Int32Array, compId?: number): Snap | null {
   if (!g.segs.length) return null;
   const { x, y } = toXY(g, lat, lng);
   const cx = Math.floor(x / g.cell);
@@ -249,6 +251,7 @@ export function nearest(g: StreetGraph, lat: number, lng: number, max = 90): Sna
       if (!list) continue;
       for (const id of list) {
         const seg = g.segs[id]!;
+        if (only && compId !== undefined && only[seg.a] !== compId && only[seg.b] !== compId) continue;
         const snap = projectToSeg(g, lat, lng, seg);
         snap.seg = id;
         if (!best || snap.dist < best.dist) best = snap;
@@ -372,12 +375,38 @@ function blankLabel(p: Pt, origin: Pt, used: Set<string>) {
 /** Unnamed lamps on empty blocks so the ward isn't a downtown clump. */
 export function scatterStreetLamps(g: StreetGraph, hubs: Pt[], cityId: string): Poi[] {
   if (!g.segs.length) return [];
+  const comp = new Int32Array(g.nodes.length).fill(-1);
+  const size: number[] = [];
+  for (let i = 0; i < g.nodes.length; i++) {
+    if (comp[i] !== -1 || !g.adj[i]?.length) continue;
+    const id = size.length;
+    const stack = [i];
+    comp[i] = id;
+    let n = 0;
+    while (stack.length) {
+      const cur = stack.pop()!;
+      n++;
+      for (const sid of g.adj[cur]!) {
+        const seg = g.segs[sid]!;
+        const o = seg.a === cur ? seg.b : seg.a;
+        if (comp[o] === -1) {
+          comp[o] = id;
+          stack.push(o);
+        }
+      }
+    }
+    size.push(n);
+  }
+  let main = 0;
+  for (let i = 1; i < size.length; i++) if (size[i]! > size[main]!) main = i;
   const occupied = new Set<string>();
   for (const h of hubs) occupied.add(cellAt(g, h.lat, h.lng, BLANK_CELL));
   const buckets = new Map<string, Pt[]>();
   const step = Math.max(1, Math.floor(g.segs.length / 2200));
   for (let i = 0; i < g.segs.length; i += step) {
-    const p = lerpSeg(g, g.segs[i]!, 0.5);
+    const seg = g.segs[i]!;
+    if (comp[seg.a] !== main) continue;
+    const p = lerpSeg(g, seg, 0.5);
     const k = cellAt(g, p.lat, p.lng, BLANK_CELL);
     if (occupied.has(k)) continue;
     const list = buckets.get(k);
@@ -532,8 +561,43 @@ export function clearCorner(g: StreetGraph, lat: number, lng: number): Pt {
   return { lat: end.lat + (other.lat - end.lat) * t, lng: end.lng + (other.lng - end.lng) * t };
 }
 
-export function pullToStreet(g: StreetGraph, lat: number, lng: number, max = 110): Pt {
-  const s = nearest(g, lat, lng, max);
+function ensureComp(g: StreetGraph): Int32Array {
+  if (g.comp && g.compGen === g.segs.length) return g.comp;
+  const comp = new Int32Array(g.nodes.length).fill(-1);
+  let id = 0;
+  for (let i = 0; i < g.nodes.length; i++) {
+    if (comp[i] !== -1 || !g.adj[i]?.length) continue;
+    const stack = [i];
+    comp[i] = id;
+    while (stack.length) {
+      const cur = stack.pop()!;
+      for (const sid of g.adj[cur]!) {
+        const seg = g.segs[sid]!;
+        const o = seg.a === cur ? seg.b : seg.a;
+        if (comp[o] === -1) {
+          comp[o] = id;
+          stack.push(o);
+        }
+      }
+    }
+    id++;
+  }
+  g.comp = comp;
+  g.compGen = g.segs.length;
+  return comp;
+}
+
+export function pullToStreet(g: StreetGraph, lat: number, lng: number, max = 110, from?: Pt): Pt {
+  let labels: Int32Array | undefined;
+  let compId: number | undefined;
+  if (from) {
+    const start = nearest(g, from.lat, from.lng, 180);
+    if (start) {
+      labels = ensureComp(g);
+      compId = labels[g.segs[start.seg]!.a];
+    }
+  }
+  const s = nearest(g, lat, lng, max, labels, compId);
   return s ? { lat: s.lat, lng: s.lng } : onStreet(g, lat, lng);
 }
 
@@ -699,8 +763,11 @@ function heapPop(h: HeapItem[]) {
 
 export function routeOnGraph(g: StreetGraph, from: Pt, to: Pt): Pt[] | null {
   const a = nearest(g, from.lat, from.lng, 160);
-  const b = nearest(g, to.lat, to.lng, 200);
-  if (!a || !b) return null;
+  if (!a) return null;
+  const labels = ensureComp(g);
+  const startComp = labels[g.segs[a.seg]!.a]!;
+  const b = nearest(g, to.lat, to.lng, 220, labels, startComp) ?? nearest(g, to.lat, to.lng, 200);
+  if (!b) return null;
   if (a.seg === b.seg || distM(a.lat, a.lng, b.lat, b.lng) < 12) return tidyPath([a, b]);
 
   const startSeg = g.segs[a.seg]!;
@@ -801,8 +868,8 @@ export function stuckNudge(from: Pt, to: Pt, cutBuildings = false): Pt | null {
   return dest(from.lat, from.lng, n * hop, e * hop);
 }
 
-/** Keep a walk on the street graph. Off-graph hops only if cutBuildings is true. */
-export function finishPath(path: Pt[] | null, from: Pt, to: Pt, opts?: { cutBuildings?: boolean }): Pt[] | null {
+/** Keep a walk on the street graph. A vault door may add one short last step off the curb. */
+export function finishPath(path: Pt[] | null, from: Pt, to: Pt, opts?: { cutBuildings?: boolean; door?: boolean }): Pt[] | null {
   const cut = Boolean(opts?.cutBuildings);
   const out = path && path.length ? path.slice() : [];
   if (cut) {
@@ -810,6 +877,10 @@ export function finishPath(path: Pt[] | null, from: Pt, to: Pt, opts?: { cutBuil
     if (distM(out[0]!.lat, out[0]!.lng, from.lat, from.lng) > 8) out.unshift({ lat: from.lat, lng: from.lng });
     const last = out[out.length - 1]!;
     if (distM(last.lat, last.lng, to.lat, to.lng) > 8) out.push({ lat: to.lat, lng: to.lng });
+  } else if (opts?.door && out.length) {
+    const last = out[out.length - 1]!;
+    const gap = distM(last.lat, last.lng, to.lat, to.lng);
+    if (gap > 6 && gap <= 110) out.push({ lat: to.lat, lng: to.lng });
   }
   if (!out.length) return null;
   const tidy = tidyPath(out);
@@ -835,7 +906,7 @@ export function routeHugsGraph(g: StreetGraph, path: Pt[], maxOff = 32): boolean
 }
 
 export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
-  const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220) : to;
+  const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220, from) : to;
   const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
   if (online && online.length >= 2 && (!g || routeHugsGraph(g, online))) {

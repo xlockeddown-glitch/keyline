@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CITY_LIST, CITIES } from "@/game/data";
+import { CITIES } from "@/game/data";
 import { unlockAudio, sfx, startBed } from "@/game/audio";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
@@ -13,13 +13,11 @@ export function TitleScreen() {
   const setScreen = useGame((s) => s.setScreen);
   const points = useGame((s) => s.points);
   const cityId = useGame((s) => s.cityId);
-  const scout = useGame((s) => s.scout);
   const journey = useGame((s) => s.journey);
   const tickJourney = useGame((s) => s.tickJourney);
   const [rollsOpen, setRollsOpen] = useState(false);
   const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();
   const city = CITIES[cityId];
-  const stubs = [city, ...CITY_LIST.filter((c) => c.id !== cityId).slice(0, 4)];
 
   function enter(id: CityId) {
     unlockAudio();
@@ -36,8 +34,7 @@ export function TitleScreen() {
   const rideTo = journey ? CITIES[journey.to].name : null;
 
   return (
-    <div className="title-night">
-      <div className="title-pave" aria-hidden />
+    <div className="title-night is-book">
       <div className="title-account">
         <AuthChip />
       </div>
@@ -45,59 +42,21 @@ export function TitleScreen() {
         <AudioDock />
       </div>
 
-      <div className="title-folio">
-        <div className="street-blade" aria-label="Keyline">
-          <span>{city.name} St</span>
-          <strong>KEYLINE</strong>
-        </div>
-
-        <div className="block-map" aria-hidden>
-          <i className="block-road is-ns" />
-          <i className="block-road is-ew" />
-          <i className="block-road is-ew-2" />
-          <i className="block-glow" />
-          <span className="lantern title-lamp tier-white">
-            <i className="lantern-cap" />
-            <i className="lantern-frame">
-              <i className="lantern-glass" />
-            </i>
-            <i className="lantern-post" />
-          </span>
-          <span className="match-pin tier-white title-key">
-            <i className="match-head" />
-            <i className="match-stick" />
-          </span>
-          <span className="scout-marker is-idle title-scout" data-scout={scout} data-row="0" data-col="0" />
-        </div>
-
-        <p className="lede">Walk a real city. Light lamps. Answer trivia.</p>
-        <p className="mt-1 text-xs text-fg-subtle tabular-nums tracking-wide">v{APP_VERSION}</p>
-
-        {rideTo ? (
-          <button type="button" className="btn btn-primary title-go" onClick={() => enter(cityId)}>
-            On the train to {rideTo}
-          </button>
-        ) : (
-          <button type="button" className="btn btn-primary title-go" onClick={() => enter(cityId)}>
-            Walk {city.name}
-            {points > 0 ? <span className="tabular-nums">{points.toLocaleString()}</span> : null}
-          </button>
-        )}
-
-        <nav className="city-stubs" aria-label="Cities">
-          {stubs.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={c.id === cityId ? "is-here" : ""}
-              onClick={() => enter(c.id)}
-            >
-              {c.name}
-            </button>
+      <div className="book-stage">
+        <button type="button" className="matchbook" onClick={() => enter(cityId)}>
+          {["white", "blue", "green", "amber", "red", "violet"].map((tier) => (
+            <span key={tier} className={`matchbook-stick tier-${tier}`} aria-hidden>
+              <i />
+            </span>
           ))}
-        </nav>
-
-        <div className="flex justify-center gap-2">
+          <span className="matchbook-cover">
+            <strong>KEYLINE</strong>
+            <span className="matchbook-strike">{rideTo ? `Train · ${rideTo}` : city.name}</span>
+          </span>
+        </button>
+        <p className="book-lede">{rideTo ? `On the train to ${rideTo}.` : `Tap to walk ${city.name}.`}</p>
+        {points > 0 ? <p className="book-coin tabular-nums">{points.toLocaleString()}</p> : null}
+        <div className="book-links">
           <button type="button" className="title-more" onClick={() => setScreen("cities")}>
             All cities
           </button>
@@ -112,6 +71,7 @@ export function TitleScreen() {
             Standings
           </button>
         </div>
+        <p className="book-ver">v{APP_VERSION}</p>
       </div>
       {rollsOpen ? (
         <RollsOverlay

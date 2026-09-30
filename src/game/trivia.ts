@@ -13,6 +13,7 @@ import {
 import { GENERAL_BANK } from "@/game/banks/general";
 import { MATH_BANK } from "@/game/banks/math";
 import { MATH_MORE } from "@/game/banks/math_more";
+import { rescoreMath } from "./math-diff";
 import { SCIENCE_BANK } from "@/game/banks/science";
 import { SCIENCE_MORE } from "@/game/banks/science_more";
 import { SCIENCE_LIFE } from "@/game/banks/science_life";
@@ -22,6 +23,8 @@ import { HISTORY_LIFE } from "@/game/banks/history_life";
 import { NATURE_BANK } from "@/game/banks/nature";
 import { NATURE_MORE } from "@/game/banks/nature_more";
 import { NATURE_LIFE } from "@/game/banks/nature_life";
+import { GAMES_BANK } from "@/game/banks/games";
+import { CELEBRITY_BANK } from "@/game/banks/celebrity";
 import { CITY_EXTRA } from "@/game/banks/cities";
 import {
   WEEKLY_HISTORY,
@@ -41,6 +44,8 @@ export const TRIVIA_CATS: { id: TriviaCat; label: string; blurb: string }[] = [
 	{ id: "science", label: "Science", blurb: "Earth, sky, the stuff of the lab." },
 	{ id: "history", label: "History", blurb: "Years, wars, who wrote the plate." },
 	{ id: "nature", label: "Nature", blurb: "Woods, water, the living street." },
+	{ id: "games", label: "Video games", blurb: "Cartridges, consoles, the names on the title screen." },
+	{ id: "celebrity", label: "Celebrity", blurb: "Screens, stages, the names everyone knows." },
 ];
 export const ALL_CATS: TriviaCat[] = TRIVIA_CATS.map((c) => c.id);
 export const DIFF_LABEL = {
@@ -338,10 +343,12 @@ const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	political: mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL),
 	food: mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []),
 	arts: mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []),
-	math: mergeCat(MATH_BANK, MATH_MORE),
+	math: mergeCat(MATH_BANK, MATH_MORE).map(rescoreMath),
 	science: mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE),
 	history: mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY),
 	nature: mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE),
+	games: GAMES_BANK,
+	celebrity: CELEBRITY_BANK,
 };
 const TEXAS_LOCAL = [
 	q("Texas has how many official state capitol buildings still standing in Austin's grounds story — the current Capitol opened in which decade?", [
@@ -2624,6 +2631,11 @@ function preferDiff(tier?: Tier): TriviaDiff {
 	if (tier === "green" || tier === "amber") return 2;
 	return 3;
 }
+function preferMathDiff(tier?: Tier): TriviaDiff {
+	if (tier === "green") return 2;
+	if (tier === "amber" || tier === "red" || tier === "violet") return 3;
+	return 1;
+}
 function binWeights(tier?: Tier): [number, number, number] {
 	if (tier === "white") return [
 		1,
@@ -2866,8 +2878,9 @@ export function pickTrivia(
 	const cityQs = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []);
 	const regionQs = REGION[cityId]?.[cat] ?? [];
 	const color: Tier = tier ?? poi?.tier ?? "white";
-	const prefer = want ?? preferDiff(color);
-	const strict = want != null;
+	const mathLamp = cat === "math";
+	const prefer = want ?? (mathLamp ? preferMathDiff(color) : preferDiff(color));
+	const strict = want != null || (mathLamp && (color === "amber" || color === "red" || color === "violet"));
 	const seen = new Set(avoid);
 	const placeQs = collectPlaceQs(cityId, cat, poi);
 	const cityPool = mergeCat(mergeCat(placeQs, cityQs), regionQs);
@@ -2875,7 +2888,7 @@ export function pickTrivia(
 		cat === "local"
 			? (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId))
 			: (GENERAL[cat] ?? []);
-	const hit = pickUnseenRarity(color, cityPool, globalPool, seen, want);
+	const hit = pickUnseenRarity(color, cityPool, globalPool, seen, mathLamp ? prefer : want);
 	if (hit) return hit.plate;
 
 	rarityStats.fallbacks += 1;

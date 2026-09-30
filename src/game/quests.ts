@@ -229,11 +229,37 @@ export function clothName(id: ClothId): string {
   return CITY_NAME[id.slice(6) as CityId] ? `${CITY_NAME[id.slice(6) as CityId]} scarf` : "Scarf";
 }
 
-export function clothBlurb(id: ClothId): string {
-  if (id === "road-dust") return "Common. A tint on the lantern. From the long walk, or a rare red scrap.";
-  if (id === "red-book") return "Rare. One red vault in every city.";
-  if (id === "night-glass") return "Violet pattern, printed. The lantern glass goes night-purple.";
-  return "This city's circuit. Scarf on the lantern.";
+export function clothEarn(id: ClothId): string {
+  if (id === "road-dust") return "Walk 10 km, or a rare red scrap.";
+  if (id === "red-book") return "A red vault in every city.";
+  if (id === "night-glass") return "Print a violet pattern. Spends one press stock.";
+  return "Finish this city's circuit.";
+}
+
+export function clothPerk(id: ClothId): string {
+  if (id === "road-dust") return "Worn: every clear pays 20 extra coin.";
+  if (id === "red-book") return "Worn: a red clear pays 80 extra coin.";
+  if (id === "night-glass") return "Worn: a violet clear pays 150 extra coin.";
+  return "Worn in its city: a clear pays 45 extra coin.";
+}
+
+/** Extra coin for the cloth currently worn. Zero if it does not apply. */
+export function clothCoin(worn: ClothId | null, cityId: CityId, tier: Tier): number {
+  if (worn === "road-dust") return 20;
+  if (worn === "red-book" && tier === "red") return 80;
+  if (worn === "night-glass" && tier === "violet") return 150;
+  if (worn?.startsWith("scarf-") && worn.slice(6) === cityId) return 45;
+  return 0;
+}
+
+/** Closet rows: dust, this city's scarf, other owned scarves, the two rare cuts. */
+export function clothShelf(log: QuestLog, cityId: CityId): ClothId[] {
+  const ids: ClothId[] = ["road-dust", `scarf-${cityId}`];
+  for (const id of log.cloths) {
+    if (id.startsWith("scarf-") && !ids.includes(id)) ids.push(id);
+  }
+  ids.push("red-book", "night-glass");
+  return ids;
 }
 
 export const LONG_COPY: Record<LongId, { title: string; sub: string }> = {

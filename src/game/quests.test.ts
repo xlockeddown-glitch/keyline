@@ -9,6 +9,8 @@ import {
   noteAnswer,
   noteClear,
   notePrint,
+  clothCoin,
+  clothShelf,
   rareExtra,
 } from "./quests.ts";
 
@@ -54,6 +56,18 @@ describe("quests", () => {
     }
     const paid = claimLong(q, "redbook", 0);
     assert.equal(paid?.cloth, "red-book");
+  });
+
+  it("worn cloth pays only when it applies", () => {
+    assert.equal(clothCoin("road-dust", "la", "white"), 20);
+    assert.equal(clothCoin("red-book", "la", "red"), 80);
+    assert.equal(clothCoin("red-book", "la", "blue"), 0);
+    assert.equal(clothCoin("night-glass", "nyc", "violet"), 150);
+    assert.equal(clothCoin("scarf-austin", "austin", "green"), 45);
+    assert.equal(clothCoin("scarf-austin", "la", "green"), 0);
+    assert.equal(clothCoin(null, "la", "red"), 0);
+    const shelf = clothShelf({ ...freshQuests("la"), cloths: ["scarf-austin"] }, "la");
+    assert.deepEqual(shelf, ["road-dust", "scarf-la", "scarf-austin", "red-book", "night-glass"]);
   });
 
   it("red can scrap and violet can drop a pattern", () => {

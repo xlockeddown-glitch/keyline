@@ -15,6 +15,8 @@ type Props = {
   onVector: (x: number, y: number) => void;
   onInteract: () => void;
   onCab: () => void;
+  autoSprint: boolean;
+  onAutoSprint: () => void;
   onTimetable: () => void;
   onDesk: () => void;
 };
@@ -26,7 +28,7 @@ function rangePips(dist: number, reachM: number) {
   return 1;
 }
 
-export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props) {
+export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onTimetable, onDesk }: Props) {
   const keys = useGame((s) => s.keys);
   const points = useGame((s) => s.points);
   const hud = useGame((s) => s.hud);
@@ -234,6 +236,16 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk }: Props)
               </span>
             </button>
             <TouchPad onVector={onVector} stamina={hud.stamina} />
+            <button
+              type="button"
+              className={`hud-plate is-kit pointer-events-auto ${autoSprint ? "is-on" : ""}`}
+              onClick={onAutoSprint}
+              aria-pressed={autoSprint}
+              aria-label={autoSprint ? "Auto-sprint on" : "Auto-sprint off"}
+            >
+              <span className="kicker">Run</span>
+              <span className="block text-xs text-fg-muted">{autoSprint ? "On" : "Off"}</span>
+            </button>
             <button
               type="button"
               className={`hud-plate is-kit pointer-events-auto ${hud.seated ? "is-cab" : ""}`}

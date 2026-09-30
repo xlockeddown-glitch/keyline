@@ -42,6 +42,7 @@ import {
   noteClear,
   notePrint,
   clothName,
+  clothCoin,
   printPattern,
   rareExtra,
   type ClothId,
@@ -283,10 +284,33 @@ function placeRun(cityId: CityId): StreetRun {
   return { lat: p.lat, lng: p.lng, readyAt: 0 };
 }
 
-function seedKeys(cityId: CityId, n = 6): MapKey[] {
+function streetKeyCap(pocket: number): number {
+  return pocket >= 5 ? 5 : 8;
+}
+
+/** A little rarer the longer this session has been going. Violet stays off the curb. */
+function streetKeyTier(playMin: number): Tier {
+  const t = Math.min(90, Math.max(0, playMin));
+  const weights: [Tier, number][] = [
+    ["white", Math.max(0.22, 0.78 - t * 0.0055)],
+    ["blue", 0.18 + t * 0.002],
+    ["green", 0.04 + t * 0.0018],
+    ["amber", t > 18 ? (t - 18) * 0.0014 : 0],
+    ["red", t > 50 ? (t - 50) * 0.00045 : 0],
+  ];
+  const sum = weights.reduce((s, [, w]) => s + w, 0) || 1;
+  let r = Math.random() * sum;
+  for (const [tier, w] of weights) {
+    r -= w;
+    if (r <= 0) return tier;
+  }
+  return "white";
+}
+
+function seedKeys(cityId: CityId, n = 9): MapKey[] {
   const c = CITIES[cityId];
   const out: MapKey[] = [];
-  const tiers: Tier[] = ["white", "blue", "white", "white", "blue", "white"];
+  const tiers: Tier[] = ["white", "blue", "white", "white", "blue", "white", "white", "blue", "white"];
   for (let i = 0; i < n; i++) {
     const around = c.spawn;
     const p = streetDrop(around, 160 + i * 90, 2100);
@@ -686,14 +710,12 @@ export const useGame = create<GameState>((set, get) => ({
     const playMin = (now - get().sessionAt) / 60_000 + get().vaultsOpened * 0.35;
     const pocket = pocketStreet(get().keys);
     if (pocket >= 7) return;
-    const cap = pocket >= 5 ? 3 : 5;
+    const cap = streetKeyCap(pocket);
     const interval = Math.max(28_000, 78_000 - playMin * 900);
     if (get().mapKeys.length >= cap) return;
     if (now - get().lastKeyAt < interval) return;
-    const r = Math.random();
-    const tier: Tier = r < 0.78 ? "white" : r < 0.96 ? "blue" : "green";
     set({
-      mapKeys: [...get().mapKeys, placeKey(get().cityId, tier)],
+      mapKeys: [...get().mapKeys, placeKey(get().cityId, streetKeyTier(playMin))],
       lastKeyAt: now,
     });
     scheduleSave(get);
@@ -1122,12 +1144,13 @@ export const useGame = create<GameState>((set, get) => ({
     const streak = bumped.streak;
     const bonus = 1 + Math.min(0.4, streak * 0.05);
     const diff = ov.question.diff ?? 2;
+    const tip = clothCoin(get().quests.worn, get().cityId, poi.tier);
     const points = rewardPoints(poi.tier, {
       mult,
       bonus,
       diffMult: DIFF_MULT[diff],
       loot: wornPerk(get().scout).loot ?? 1,
-    });
+    }) + tip;
     const brass =
       1 +
       (poi.tier === "green" || poi.tier === "amber" ? 2 : 0) +
@@ -1201,6 +1224,8 @@ export const useGame = create<GameState>((set, get) => ({
     else sfx.correct();
     const spun = foldWheel(get, poi.tier);
     const boostLine = paid.boosts.length ? paid.boosts.join(" · ") : null;
+    const wornCloth = get().quests.worn;
+    const clothLine = tip > 0 && wornCloth ? `${clothName(wornCloth)} +${tip}.` : null;
     const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
     const questHit = cleared(get, answered(get, true, grade === "perfect"), poi);
     set({
@@ -1228,7 +1253,7 @@ export const useGame = create<GameState>((set, get) => ({
       openVault: null,
       loot,
       miss: null,
-      toast: [contractToast, fareToast, surveyHit?.message, boostLine, ingLine, questHit.line].filter(Boolean).join(" ") || null,
+      toast: [contractToast, fareToast, surveyHit?.message, boostLine, clothLine, ingLine, questHit.line].filter(Boolean).join(" ") || null,
       quests: questHit.quests,
       tutorial: Math.max(get().tutorial, 2),
     });
@@ -1369,7 +1394,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     sfx.pickup();
     set({ quests: paid.log });
-    flashToast(set, get, `${clothName(paid.cloth)} on the lantern.`, 1800);
+    flashToast(set, get, `${clothName(paid.cloth)} in the closet.`, 1800);
     scheduleSave(get);
   },
   claimLong: (id) => {

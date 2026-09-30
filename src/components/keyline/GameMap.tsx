@@ -119,6 +119,8 @@ export function GameMap() {
   const cityId = useGame((s) => s.cityId);
   const [streets, setStreets] = useState<"loading" | "ready" | "error">("loading");
   const [boardOpen, setBoardOpen] = useState(false);
+  const [runOn, setRunOn] = useState(false);
+  const autoSprint = useRef(false);
 
   function strokeColor() {
     if (typeof document === "undefined") return "#c4a35a";
@@ -561,7 +563,7 @@ export function GameMap() {
     }).addTo(map);
   }
 
-  async function setDestination(lat: number, lng: number) {
+  async function setDestination(lat: number, lng: number, door = false) {
     follow.current = true;
     const L = Lref.current;
     const map = mapRef.current;
@@ -576,9 +578,10 @@ export function GameMap() {
     if (prior && distM(prior.lat, prior.lng, target.lat, target.lng) < 14 && (routeRef.current?.length ?? 0) >= 2) {
       return;
     }
+    const from = { lat: pos.current.lat, lng: pos.current.lng };
     const seated = Boolean(cabRef.current?.seated);
     const net = seated ? driveRef.current : g;
-    const snappedRaw = net ? pullToStreet(net, target.lat, target.lng, seated ? 120 : 220) : target;
+    const snappedRaw = net ? pullToStreet(net, target.lat, target.lng, seated ? 120 : 220, seated ? undefined : from) : target;
     const snapped = w ? clampWard(w, snappedRaw.lat, snappedRaw.lng) : snappedRaw;
     if (seated && distM(snapped.lat, snapped.lng, target.lat, target.lng) > 140) {
       flash("No road that way.");
@@ -592,11 +595,11 @@ export function GameMap() {
     if (L && map) placeWaypoint(L, map, target.lat, target.lng);
     useGame.getState().setHud({ waypoint: target });
 
-    const from = { lat: pos.current.lat, lng: pos.current.lng };
     const cut = canCutBuildings(useGame.getState().scout);
     const walkTo = seated || cut ? (seated ? snapped : target) : snapped;
+    const arrive = door && !cut && !seated ? target : walkTo;
     const apply = (raw: Pt[] | null) => {
-      const path = seated ? raw : finishPath(raw, cut ? from : (g ? pullToStreet(g, from.lat, from.lng, 140) : from), walkTo, { cutBuildings: cut });
+      const path = seated ? raw : finishPath(raw, cut ? from : (g ? pullToStreet(g, from.lat, from.lng, 140, from) : from), arrive, { cutBuildings: cut, door: door && !cut && !seated });
       if (!path || path.length < 2) return false;
       const here = closestOnPath(path, pos.current.lat, pos.current.lng, routeAlong.current);
       if (here.dist > 160 && distM(path[0]!.lat, path[0]!.lng, from.lat, from.lng) > 40) return false;
@@ -630,7 +633,9 @@ export function GameMap() {
     const total = pathLength(route);
     if (total < 4) {
       const end = route[route.length - 1]!;
-      const rest = routeMode.current === "drive" || !graphRef.current ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      const curb = graphRef.current ? nearest(graphRef.current, end.lat, end.lng, 40) : null;
+      const offStreet = !curb || curb.dist > 16;
+      const rest = routeMode.current === "drive" || !graphRef.current || offStreet ? end : clearCorner(graphRef.current, end.lat, end.lng);
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
@@ -657,7 +662,9 @@ export function GameMap() {
     const remaining = total - routeAlong.current;
     if (remaining < 6) {
       const end = route[route.length - 1]!;
-      const rest = routeMode.current === "drive" || !graphRef.current ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      const curb = graphRef.current ? nearest(graphRef.current, end.lat, end.lng, 40) : null;
+      const offStreet = !curb || curb.dist > 16;
+      const rest = routeMode.current === "drive" || !graphRef.current || offStreet ? end : clearCorner(graphRef.current, end.lat, end.lng);
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
@@ -796,7 +803,7 @@ export function GameMap() {
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
     if (d > reach() || cabRef.current?.seated) {
       if (cabRef.current?.seated) flash("Park at the curb. The door is on foot.", 1800);
-      void setDestination(poi.lat, poi.lng);
+      void setDestination(poi.lat, poi.lng, true);
       return;
     }
     const err = st.tryOpen(poiId, performance.now());
@@ -990,7 +997,7 @@ export function GameMap() {
       const worn = SCOUTS[st.scout];
       const gait = (worn?.gait ?? 1) * (worn?.perk.pace ?? 1);
       const driveG = driveRef.current;
-      const sprintHeld = held.has("ShiftLeft") || held.has("ShiftRight");
+      const sprintHeld = autoSprint.current || held.has("ShiftLeft") || held.has("ShiftRight");
       const sprinting = !seated && sprintHeld && pos.current.stamina > 0.08 && (throttle > 0 || auto);
       const hasSprinter = st.equipped === "sprinter";
       if (!seated) {
@@ -1313,6 +1320,12 @@ export function GameMap() {
         }}
         onInteract={interactNearest}
         onCab={toggleCab}
+        autoSprint={runOn}
+        onAutoSprint={() => {
+          const next = !autoSprint.current;
+          autoSprint.current = next;
+          setRunOn(next);
+        }}
         onDesk={() => {
           const s = useGame.getState();
           if (s.hud.seated) {

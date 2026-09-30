@@ -1,11 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#0B0C0E"/>
-  <rect x="1.5" y="1.5" width="29" height="29" fill="none" stroke="#A8B0B8" stroke-width="1.5"/>
-  <path fill="#EDE8DF" d="M10 12.5L12.2 6.2l4 5.6zM18 11.8l3.8-5.6L24 12.5z"/>
-  <ellipse cx="16" cy="19" rx="10" ry="8.4" fill="#EDE8DF"/>
-  <ellipse cx="11.4" cy="18.2" rx="4.1" ry="3.1" fill="#0B0C0E"/>
-  <ellipse cx="20.6" cy="18.2" rx="4.1" ry="3.1" fill="#0B0C0E"/>
-  <circle cx="11.4" cy="18.2" r="1.25" fill="#EDE8DF"/>
-  <circle cx="20.6" cy="18.2" r="1.25" fill="#EDE8DF"/>
-  <ellipse cx="16" cy="22.6" rx="1.5" ry="1.1" fill="#0B0C0E"/>
+  <rect width="32" height="32" rx="6" fill="#0E1216"/>
+  <rect x="6.5" y="11" width="19" height="16.5" rx="2" fill="#172028" stroke="#A8B4C0" stroke-width="1.5"/>
+  <rect x="11" y="14.2" width="10" height="1.6" rx="0.3" fill="#D5DEE6"/>
+  <rect x="8.6" y="22.6" width="14.8" height="2.7" fill="#24303A"/>
+  <rect x="14.6" y="4.2" width="2.8" height="8" rx="0.6" fill="#C9B496"/>
+  <ellipse cx="16" cy="4.3" rx="2.5" ry="2.6" fill="#C9A35E"/>
 </svg>
