@@ -38,8 +38,8 @@ const HIGHWAY =
 const HIGHWAY_DRIVE =
   "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service";
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
-/** These OSM classes cut through Manhattan blocks. Keep the curb, not the shortcut. */
-const WALK_SKIP = new Set(["footway", "path", "steps", "cycleway", "track", "bridleway", "corridor", "service"]);
+/** Indoor corridors cut through buildings. Walking may use a path, alley, or road. */
+const WALK_SKIP = new Set(["corridor"]);
 const OSRM_FOOT = [
   "https://routing.openstreetmap.de/routed-foot/route/v1/foot",
   "https://router.project-osrm.org/route/v1/foot",
@@ -588,17 +588,18 @@ function ensureComp(g: StreetGraph): Int32Array {
 }
 
 export function pullToStreet(g: StreetGraph, lat: number, lng: number, max = 110, from?: Pt): Pt {
-  let labels: Int32Array | undefined;
-  let compId: number | undefined;
-  if (from) {
+  const anywhere = nearest(g, lat, lng, max);
+  if (from && anywhere) {
     const start = nearest(g, from.lat, from.lng, 180);
     if (start) {
-      labels = ensureComp(g);
-      compId = labels[g.segs[start.seg]!.a];
+      const labels = ensureComp(g);
+      const compId = labels[g.segs[start.seg]!.a];
+      const same = nearest(g, lat, lng, max, labels, compId);
+      if (same && same.dist <= anywhere.dist + 28) return { lat: same.lat, lng: same.lng };
     }
   }
-  const s = nearest(g, lat, lng, max, labels, compId);
-  return s ? { lat: s.lat, lng: s.lng } : onStreet(g, lat, lng);
+  if (anywhere) return { lat: anywhere.lat, lng: anywhere.lng };
+  return onStreet(g, lat, lng);
 }
 
 export function faceAlongStreet(g: StreetGraph, lat: number, lng: number, toward?: Pt) {
@@ -766,7 +767,9 @@ export function routeOnGraph(g: StreetGraph, from: Pt, to: Pt): Pt[] | null {
   if (!a) return null;
   const labels = ensureComp(g);
   const startComp = labels[g.segs[a.seg]!.a]!;
-  const b = nearest(g, to.lat, to.lng, 220, labels, startComp) ?? nearest(g, to.lat, to.lng, 200);
+  const onComp = nearest(g, to.lat, to.lng, 220, labels, startComp);
+  const any = nearest(g, to.lat, to.lng, 220);
+  const b = any && (!onComp || any.dist + 28 < onComp.dist) ? any : onComp;
   if (!b) return null;
   if (a.seg === b.seg || distM(a.lat, a.lng, b.lat, b.lng) < 12) return tidyPath([a, b]);
 
@@ -909,7 +912,8 @@ export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220, from) : to;
   const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
-  if (online && online.length >= 2 && (!g || routeHugsGraph(g, online))) {
+  if (online && online.length >= 2) {
+    if (g) ingestLine(g, online);
     return tidyPath(online);
   }
   if (g) return routeOnGraph(g, snappedFrom, snappedTo);
@@ -964,7 +968,6 @@ export async function bootstrapStreets(cityId: string, lat: number, lng: number,
       const packed = (await res.json()) as { lines?: number[][] };
       if (packed.lines?.length) {
         ingestOsmWays(g, unpackLines(packed.lines));
-        g.covers.push({ lat, lng, r: 720 });
       }
     }
   } catch {

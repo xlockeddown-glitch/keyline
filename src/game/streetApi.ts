@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const HIGHWAY =
-  "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|pedestrian|footway|path|steps|cycleway|track|bridleway";
+  "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|pedestrian|footway|path|steps|cycleway|service|track|bridleway";
 const DRIVE = new Set([
   "primary",
   "primary_link",
@@ -15,8 +15,8 @@ const DRIVE = new Set([
   "living_street",
   "service",
 ]);
-/** Sidewalks and park paths. Long ones in Manhattan are drawn through the block. */
-const WALK_SKIP = new Set(["footway", "path", "steps", "cycleway", "track", "bridleway", "corridor", "service"]);
+/** Indoor corridors cut through buildings. Paths, alleys, and roads all stay walkable. */
+const WALK_SKIP = new Set(["corridor"]);
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
 
 const OVERPASS = [
@@ -74,7 +74,7 @@ export const getOsmWays = createServerFn({ method: "POST" })
   .validator((u) => Input.parse(u))
   .handler(async ({ data }) => {
     const { lat, lng, radius } = data;
-    const key = `${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
+    const key = `walk2:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
     const hit = cache.get(key);
     if (hit) return hit;
     const q = `[out:json][timeout:25];way["highway"~"^(${HIGHWAY})$"]["area"!="yes"]["access"!="private"]["access"!="no"](around:${Math.round(radius)},${lat.toFixed(5)},${lng.toFixed(5)});out tags geom;`;

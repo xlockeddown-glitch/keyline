@@ -1403,31 +1403,32 @@ h3 {
 .matchbook-stick {
   --tilt: -8deg;
   position: absolute;
-  top: -0.2rem;
+  top: -3.8rem;
   z-index: 0;
-  width: 0.55rem;
-  height: 3.15rem;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #8a5a32, #d7b48a 45%, #6b4324);
+  width: 1.2rem;
+  height: 12.5rem;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #8a5a32, #d7b48a 42%, #6b4324);
   transform: rotate(var(--tilt));
+  transform-origin: 50% 100%;
 }
 .matchbook-stick i {
   position: absolute;
   left: 50%;
-  top: -0.45rem;
-  width: 0.95rem;
-  height: 1.1rem;
+  top: -1.15rem;
+  width: 2rem;
+  height: 2.35rem;
   transform: translateX(-50%);
-  border-radius: 50% 50% 45% 45%;
+  border-radius: 50% 50% 42% 42%;
   background: radial-gradient(circle at 38% 32%, #fff, var(--glow) 46%, color-mix(in oklab, var(--glow) 55%, #1a120c) 100%);
-  box-shadow: 0 0 8px var(--glow);
+  box-shadow: 0 0 12px var(--glow);
 }
-.matchbook-stick.tier-white { --glow: var(--color-vault-white); --tilt: -16deg; left: 14%; animation-delay: 0s; }
-.matchbook-stick.tier-blue { --glow: var(--color-vault-blue); --tilt: -10deg; left: 28%; animation-delay: 1.15s; }
-.matchbook-stick.tier-green { --glow: var(--color-vault-green); --tilt: -3deg; left: 42%; animation-delay: 2.3s; }
-.matchbook-stick.tier-amber { --glow: var(--color-vault-amber); --tilt: 3deg; left: 56%; animation-delay: 3.45s; }
-.matchbook-stick.tier-red { --glow: var(--color-vault-red); --tilt: 10deg; left: 70%; animation-delay: 4.6s; }
-.matchbook-stick.tier-violet { --glow: var(--color-vault-violet); --tilt: 16deg; left: 82%; animation-delay: 5.75s; }
+.matchbook-stick.tier-white { --glow: var(--color-vault-white); --tilt: -12deg; left: 16%; animation-delay: 0s; }
+.matchbook-stick.tier-blue { --glow: var(--color-vault-blue); --tilt: -7deg; left: 30%; animation-delay: 1.15s; }
+.matchbook-stick.tier-green { --glow: var(--color-vault-green); --tilt: -2deg; left: 44%; animation-delay: 2.3s; }
+.matchbook-stick.tier-amber { --glow: var(--color-vault-amber); --tilt: 2deg; left: 56%; animation-delay: 3.45s; }
+.matchbook-stick.tier-red { --glow: var(--color-vault-red); --tilt: 7deg; left: 68%; animation-delay: 4.6s; }
+.matchbook-stick.tier-violet { --glow: var(--color-vault-violet); --tilt: 12deg; left: 80%; animation-delay: 5.75s; }
 @media (prefers-reduced-motion: no-preference) {
   .matchbook-stick {
     animation: 6.9s ease-in-out infinite match-pop;
@@ -1439,11 +1440,11 @@ h3 {
 }
 @keyframes match-pop {
   0%, 62%, 100% { transform: translateY(0) rotate(var(--tilt)); }
-  14% { transform: translateY(-1.45rem) rotate(var(--tilt)); }
+  14% { transform: translateY(-2.4rem) rotate(var(--tilt)); }
 }
 @keyframes match-flare {
-  0%, 62%, 100% { filter: brightness(0.82); box-shadow: 0 0 6px var(--glow); }
-  14% { filter: brightness(1.45); box-shadow: 0 0 16px var(--glow), 0 0 28px var(--glow); }
+  0%, 62%, 100% { filter: brightness(0.82); box-shadow: 0 0 8px var(--glow); }
+  14% { filter: brightness(1.45); box-shadow: 0 0 18px var(--glow), 0 0 32px var(--glow); }
 }
 .matchbook-cover {
   position: absolute;

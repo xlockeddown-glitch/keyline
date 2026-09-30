@@ -56,15 +56,14 @@ test("a stop on a corner rests in the street", () => {
   assert.ok(snap && snap.dist < 2);
 });
 
-test("a footway across the block is not a walk edge", () => {
-  const { g, west, east, vault, o } = blockGraph();
+test("a footway across the block is a walk edge", () => {
+  const { g, o } = blockGraph();
   const sw = o;
   const ne = dest(o.lat, o.lng, 80, 80);
   ingestOsmWays(g, [{ geometry: [{ lat: sw.lat, lon: sw.lng }, { lat: ne.lat, lon: ne.lng }], tags: { highway: "footway" } }]);
-  const path = routeOnGraph(g, west, east)!;
-  assert.ok(pathLength(path) > 100);
-  for (const p of path) assert.ok(distM(p.lat, p.lng, vault.lat, vault.lng) > 20);
-  assert.equal(routeHugsGraph(g, [west, vault, east]), false);
+  const path = routeOnGraph(g, sw, ne)!;
+  assert.ok(path);
+  assert.ok(pathLength(path) < 140, `the path should cross the block, got ${pathLength(path)}`);
   assert.equal(routeHugsGraph(g, path), true);
 });
 

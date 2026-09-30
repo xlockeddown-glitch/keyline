@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.22";
+export const APP_VERSION = "0.0.23";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k22a";
+export const PUBLISH_STAMP = "k23a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -20,3 +20,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.20: ledger quests, lantern cloth, red scrap and violet pattern (k20a).
 // 0.0.21: New York walks stay on the curb; map zoom no longer stacks street names (k21a).
 // 0.0.22: mystery wheel every 25 of a color; four violet night marks, six-hour dark (k22a).
+// 0.0.23: math follows the lamp; more street keys that drift rarer; Video games and Celebrity; Run holds sprint; walks use paths and roads; matchbook matches fill the box (k23a).
