@@ -55,7 +55,7 @@ export const CELEBRITY_BANK: TriviaQ[] = [
   q("Katharine Hepburn won how many Academy Awards for Best Actress?", ["4", "2", "3", "5"], "4", 3),
   q("Daniel Day-Lewis has won Best Actor how many times?", ["3", "1", "2", "4"], "3", 3),
   q("Marilyn Monroe's birth name was…", ["Norma Jeane Mortenson", "Norma Jean Baker", "Marilyn Baker", "Jean Harlow"], "Norma Jeane Mortenson", 3),
-  q("Cary Grant was born…", ["Archibald Leach", "Archie Grant", "Cary Leach", "Bernard Schwartz"], "Archibald Leach", 3),
+  q("Cary Grant was born with the name…", ["Archibald Alec Leach", "Archibald Cary Grant", "Alec Cary Leach", "Bernard Schwartz"], "Archibald Alec Leach", 3),
   q("Casablanca premiered in…", ["1942", "1939", "1946", "1951"], "1942", 3),
   q("The line \"Here's looking at you, kid\" is from…", ["Casablanca", "Gone with the Wind", "Citizen Kane", "The Maltese Falcon"], "Casablanca", 3),
   q("Citizen Kane was directed by…", ["Orson Welles", "Alfred Hitchcock", "John Ford", "Howard Hawks"], "Orson Welles", 3),
