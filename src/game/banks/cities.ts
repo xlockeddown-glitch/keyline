@@ -5,6 +5,7 @@ import { CITY_EXTRA_PART_A } from "./cities_part_a";
 import { CITY_EXTRA_PART_B } from "./cities_part_b";
 import { CITY_EXTRA_PART_C } from "./cities_part_c";
 import { CITY_EXTRA_PART_D } from "./cities_part_d";
+import { CITY_EXTRA_PART_E } from "./cities_part_e";
 
 function mergeParts(
   ...parts: Partial<Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>>>[]
@@ -25,7 +26,7 @@ function mergeParts(
   return out;
 }
 
-export const CITY_EXTRA = mergeParts(CITY_EXTRA_PART_A, CITY_EXTRA_PART_B, CITY_EXTRA_PART_C, CITY_EXTRA_PART_D);
+export const CITY_EXTRA = mergeParts(CITY_EXTRA_PART_A, CITY_EXTRA_PART_B, CITY_EXTRA_PART_C, CITY_EXTRA_PART_D, CITY_EXTRA_PART_E);
 
 
 function mergeWeekly(
