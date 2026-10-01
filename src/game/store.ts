@@ -443,6 +443,18 @@ function scheduleSave(get: () => GameState) {
   }, 400);
 }
 
+/** Write the save right away. Ride rounds use it: the ride tick keeps resetting the debounce. */
+function saveNow(get: () => GameState) {
+  if (typeof window === "undefined") return;
+  if (saveTimer) window.clearTimeout(saveTimer);
+  saveTimer = null;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(persistable(get())));
+  } catch {
+    /* private mode */
+  }
+}
+
 function rideFindCopy(add: { white: number; blue: number; green: number }) {
   const parts: string[] = [];
   if (add.white) parts.push(add.white === 1 ? "white" : `${add.white} white`);
@@ -1646,7 +1658,7 @@ export const useGame = create<GameState>((set, get) => ({
     const ms = lampRoundMs(j.arriveAt - now);
     if (ms == null) return null;
     set({ journey: openRound(j, now) });
-    scheduleSave(get);
+    saveNow(get);
     return ms;
   },
   finishRideRound: (outcome) => {
@@ -1656,7 +1668,7 @@ export const useGame = create<GameState>((set, get) => ({
     set({ journey: markRound(j, outcome) });
     get().tickJourney();
     const after = get().keys;
-    scheduleSave(get);
+    saveNow(get);
     return {
       white: Math.max(0, (after.white ?? 0) - (before.white ?? 0)),
       blue: Math.max(0, (after.blue ?? 0) - (before.blue ?? 0)),
@@ -1667,7 +1679,7 @@ export const useGame = create<GameState>((set, get) => ({
     const j = get().journey;
     if (!j || j.roundAt == null) return;
     set({ journey: forfeitRound(j) });
-    scheduleSave(get);
+    saveNow(get);
   },
   tickJourney: () => {
     const j = get().journey;
