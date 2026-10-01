@@ -11,7 +11,8 @@ test("a thin pool (white lamp, Local) cycles every card before any repeat, oldes
   try {
     const h = { asked: [], seenIds: [] };
     const order = [];
-    for (let i = 0; i < 160; i++) {
+    // Enough draws to see the whole pool at least once and well into the second cycle.
+    for (let i = 0; i < 400; i++) {
       const card = G.pickTrivia("austin", "local", poi, "white", [...h.seenIds, ...h.asked]);
       order.push(G.dupKey(card.q));
       remember(h, card, G.ASKED_KEEP);
@@ -22,7 +23,9 @@ test("a thin pool (white lamp, Local) cycles every card before any repeat, oldes
     const firstRepeat = order.findIndex((k, i) => order.indexOf(k) < i);
     assert.equal(firstRepeat, distinct, `repeat at card ${firstRepeat + 1} of ${distinct}`);
     // …and recycled cards come back in the order they were first seen.
-    assert.deepEqual(order.slice(distinct, distinct * 2), order.slice(0, distinct));
+    const second = order.slice(distinct, distinct * 2);
+    assert.ok(second.length >= 10, `only ${second.length} recycled draws checked`);
+    assert.deepEqual(second, order.slice(0, second.length));
   } finally {
     Math.random = real;
   }
