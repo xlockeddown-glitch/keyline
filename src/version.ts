@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.28";
+export const APP_VERSION = "0.0.29";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k28a";
+export const PUBLISH_STAMP = "k29a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -28,3 +28,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.26 (k26b): upgrade @tanstack/react-start to 1.168.60 (start-server-core 1.169.39) for CVE-2026-102989 / GHSA-qx66-fv34-fjm8.
 // 0.0.27: +374 local cards Detroit/London/Austin/Temple/Tucson; +297 local cards Toronto/New Orleans/Boston/LA (k27a).
 // 0.0.28: +140 video game and +140 celebrity trivia cards; +141 history cards; Cary Grant fix; duplicate/odd-distractor cleanup (k28a).
+// 0.0.29: Where am I? ride game for 2–6 min rides (clues from shipped city lore); history cleanup — 17 duplicate cards dropped (history and general.ts), odd only/as distractors fixed in 164 cards (k29a).
