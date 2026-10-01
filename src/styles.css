@@ -114,24 +114,24 @@ h3 {
   background-size:200% 200%
 }
 .scout-marker[data-scout=cat]{
-  background-image:url(/sprites/scouts/cat-walk.png?v=k24)
+  background-image:url(/sprites/scouts/cat-walk.png?v=k24a)
 }
 .scout-marker[data-scout=cat].is-idle{
   background-image:url(/sprites/scouts/cat-idle.png?v=k8);
   background-size:200% 200%
 }
 .scout-marker[data-scout=turtle]{
-  background-image:url(/sprites/scouts/turtle-walk.png?v=k24)
+  background-image:url(/sprites/scouts/turtle-walk.png?v=k24a)
 }
 .scout-marker[data-scout=turtle].is-idle{
   background-image:url(/sprites/scouts/turtle-idle.png?v=k8);
   background-size:200% 200%
 }
 .scout-marker[data-scout=owl]{
-  background-image:url(/sprites/scouts/owl-walk.png?v=k24)
+  background-image:url(/sprites/scouts/owl-walk.png?v=k24a)
 }
 .scout-marker[data-scout=owl].is-idle{
-  background-image:url(/sprites/scouts/owl-idle.png?v=k8);
+  background-image:url(/sprites/scouts/owl-idle.png?v=k24a);
   background-size:200% 200%
 }
 .scout-hire{
@@ -1192,14 +1192,14 @@ h3 {
 }
 
 .scout-marker[data-scout="corgi"] {
-  background-image: url("/sprites/scouts/corgi-walk.png?v=k24");
+  background-image: url("/sprites/scouts/corgi-walk.png?v=k24a");
 }
 .scout-marker[data-scout="corgi"].is-idle {
-  background-image: url("/sprites/scouts/corgi-idle.png?v=k8");
+  background-image: url("/sprites/scouts/corgi-idle.png?v=k24a");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="sloth"] {
-  background-image: url("/sprites/scouts/sloth-walk.png?v=k24");
+  background-image: url("/sprites/scouts/sloth-walk.png?v=k24a");
 }
 .scout-marker[data-scout="sloth"].is-idle {
   background-image: url("/sprites/scouts/sloth-idle.png?v=k8");
@@ -1284,6 +1284,12 @@ h3 {
 }
 .pawn .cab-sprite[hidden] {
   display: none;
+}
+/* Seated, the cab sits on the pawn's own 56px box instead of stacking below the hidden scout. */
+.pawn .cab-sprite {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 .pawn.is-seated .cab-sprite {
   display: block;

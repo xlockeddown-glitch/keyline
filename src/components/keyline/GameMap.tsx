@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isScoutShop, walkSpeed } from "@/game/data";
 import { seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
+import { faceFromYaw as cabFace, walkRow } from "@/game/facing";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
@@ -57,11 +58,7 @@ const CAB_REACH = 28;
 type CabFace = "down" | "left" | "right" | "up";
 
 function faceFromYaw(yaw: number): CabFace {
-  const deg = ((yaw * 180) / Math.PI + 360) % 360;
-  if (deg >= 45 && deg < 135) return "left";
-  if (deg >= 135 && deg < 225) return "down";
-  if (deg >= 225 && deg < 315) return "right";
-  return "up";
+  return cabFace(yaw);
 }
 
 function cabMarkup(face: CabFace, lamps: boolean) {
@@ -1168,11 +1165,7 @@ export function GameMap() {
         anim.current.acc = 0;
         anim.current.frame = (anim.current.frame + 1) % 4;
       }
-      const deg = ((pos.current.yaw * 180) / Math.PI + 360) % 360;
-      let row = 3;
-      if (deg >= 45 && deg < 135) row = 1;
-      else if (deg >= 135 && deg < 225) row = 0;
-      else if (deg >= 225 && deg < 315) row = 2;
+      const row = walkRow(pos.current.yaw);
       const pawn = playerMarker.current?.getElement()?.querySelector(".pawn") as HTMLElement | null;
       const el = (pawn?.querySelector(".scout-marker") ??
         playerMarker.current?.getElement()?.querySelector(".scout-marker")) as HTMLElement | null;
