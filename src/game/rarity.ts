@@ -20,7 +20,7 @@ export const BOOTSTRAP: Record<TriviaDiff, readonly (readonly [Tier, number])[]>
   ],
 };
 
-export const rarityStats = { downfills: 0, fallbacks: 0 };
+export const rarityStats = { downfills: 0, fallbacks: 0, recycles: 0 };
 
 export function fnv1a(s: string): number {
   let h = 0x811c9dc5;
@@ -147,8 +147,67 @@ export function effectiveRarity(item: { id: string; rarity: Tier }): Tier {
   return retuneMap[item.id] ?? item.rarity;
 }
 
+const DUP_STOP = new Set(
+  "a an the of to in on at for from with and or is are was were be by its it this that which what who".split(" "),
+);
+const dupMemo = new Map<string, string>();
+/**
+ * Near-duplicate key for a prompt: case, punctuation, ellipses and filler words dropped.
+ * Word order is ignored unless the prompt holds a digit ("36 ÷ 6" ≠ "6 ÷ 36").
+ * Two cards with the same key count as the same card for "seen".
+ */
+export function dupKey(q: string): string {
+  const hit = dupMemo.get(q);
+  if (hit !== undefined) return hit;
+  const words = q
+    .toLowerCase()
+    .replace(/…|\.{3}/g, " ")
+    .replace(/[?!.:,;'"’‘“”()]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w && !DUP_STOP.has(w));
+  const key = `~${(/\d/.test(q) ? words : words.sort()).join(" ")}`;
+  if (dupMemo.size > 50000) dupMemo.clear();
+  dupMemo.set(q, key);
+  return key;
+}
+
+/** Seen set from the save's history (card ids and prompts, oldest first), with near-duplicate keys. */
+export function seenSet(avoid: readonly string[]): Set<string> {
+  const out = new Set<string>();
+  for (const x of avoid) {
+    out.add(x);
+    out.add(dupKey(x));
+  }
+  return out;
+}
+
+/** Last position of each history entry (higher = more recent). */
+export function recencyRank(avoid: readonly string[]): Map<string, number> {
+  const out = new Map<string, number>();
+  avoid.forEach((x, i) => {
+    out.set(x, i);
+    out.set(dupKey(x), i);
+  });
+  return out;
+}
+
+/** When every candidate has been seen: the one seen longest ago (never-seen first), ties at random. */
+export function oldestSeen(list: TriviaQ[], rank: Map<string, number>): TriviaQ | null {
+  let best: TriviaQ[] = [];
+  let bestAt = Infinity;
+  for (const x of list) {
+    if (quarantined.has(x.id)) continue;
+    const at = Math.max(rank.get(x.id) ?? -1, rank.get(x.q) ?? -1, rank.get(dupKey(x.q)) ?? -1);
+    if (at < bestAt) {
+      bestAt = at;
+      best = [x];
+    } else if (at === bestAt) best.push(x);
+  }
+  return best.length ? draw(best) : null;
+}
+
 export function isSeen(item: TriviaQ, seen: Set<string>) {
-  return seen.has(item.id) || seen.has(item.q);
+  return seen.has(item.id) || seen.has(item.q) || seen.has(dupKey(item.q));
 }
 
 function ofRarity(list: TriviaQ[], rarity: Tier, seen: Set<string>) {
@@ -186,6 +245,19 @@ export function pickUnseenRarity(
   rarityStats.downfills += 1;
   console.info(`[trivia] down-fill ${want} → ${down} (${rarityStats.downfills})`);
   return { plate: drawSoft(pool, wantDiff), downfill: true };
+}
+
+/** Unseen card at exactly this rarity, city pool first. */
+export function pickUnseenAt(
+  tier: Tier,
+  city: TriviaQ[],
+  global: TriviaQ[],
+  seen: Set<string>,
+  wantDiff?: TriviaDiff,
+): TriviaQ | null {
+  let pool = ofRarity(city, tier, seen);
+  if (!pool.length) pool = ofRarity(global, tier, seen);
+  return pool.length ? drawSoft(pool, wantDiff) : null;
 }
 
 export function allowedRarities(want: Tier): Set<Tier> {

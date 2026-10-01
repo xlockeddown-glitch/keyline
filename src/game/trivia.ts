@@ -5,8 +5,15 @@ import {
   allowedRarities,
   emptyBuckets,
   isSeen,
+  oldestSeen,
+  pickUnseenAt,
   pickUnseenRarity,
   rarityStats,
+  recencyRank,
+  seenSet,
+  dupKey,
+  effectiveRarity,
+  upStep,
   sealPlate,
   stampCityRecord,
 } from "./rarity";
@@ -2881,7 +2888,7 @@ export function pickTrivia(
 	const mathLamp = cat === "math";
 	const prefer = want ?? (mathLamp ? preferMathDiff(color) : preferDiff(color));
 	const strict = want != null || (mathLamp && (color === "amber" || color === "red" || color === "violet"));
-	const seen = new Set(avoid);
+	const seen = seenSet(avoid);
 	const placeQs = collectPlaceQs(cityId, cat, poi);
 	const cityPool = mergeCat(mergeCat(placeQs, cityQs), regionQs);
 	const globalPool =
@@ -2908,9 +2915,36 @@ export function pickTrivia(
 					{ w: rw, qs: filterRarity(regionQs, allowed) },
 					{ w: gw, qs: filterRarity(globalPool, allowed) },
 				];
-	if (bins.some((b) => b.qs.length)) return pickFromBins(bins, prefer, seen, strict);
+	if (bins.some((b) => b.qs.some((x) => !isSeen(x, seen)))) return pickFromBins(bins, prefer, seen, strict);
+	// Every allowed card in this category has been seen: try the nearest tier up before repeating.
+	const up = upStep(color);
+	for (let t = up; t; t = upStep(t)) {
+		const upHit = pickUnseenAt(t, cityPool, globalPool, seen, mathLamp ? prefer : want);
+		if (upHit) return upHit;
+	}
+	// Still nothing new: recycle the card seen longest ago, never a recent one.
+	rarityStats.recycles += 1;
+	const restQs = [...cityPool, ...globalPool].filter((x) => !allowed.has(effectiveRarity(x)));
+	const again = oldestSeen([...bins.flatMap((b) => b.qs), ...restQs], recencyRank(avoid));
+	if (again) return again;
 	return q("How many degrees in a right angle?", ["45", "90", "180", "360"], "90", 1);
 }
+
+/** Distinct cards (near-duplicates merged) a lamp of each tier can draw, per category, for one city. */
+export function poolCensus(cityId: CityId): Record<TriviaCat, Record<Tier, number>> {
+	const out = {} as Record<TriviaCat, Record<Tier, number>>;
+	for (const cat of ALL_CATS) {
+		const cityQs = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []);
+		const regionQs = REGION[cityId]?.[cat] ?? [];
+		const globalPool =
+			cat === "local" ? (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId)) : (GENERAL[cat] ?? []);
+		const keys = Object.fromEntries(RARITY_TIERS.map((t) => [t, new Set<string>()])) as Record<Tier, Set<string>>;
+		for (const x of [...cityQs, ...regionQs, ...globalPool]) keys[x.rarity].add(dupKey(x.q));
+		out[cat] = Object.fromEntries(RARITY_TIERS.map((t) => [t, keys[t].size])) as Record<Tier, number>;
+	}
+	return out;
+}
+const RARITY_TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 export function shuffled(quiz: TriviaQ): {
 	q: string;
 	choices: string[];

@@ -52,6 +52,14 @@ import {
 } from "./quests";
 
 const SAVE_KEY = "keyline-save-v1";
+
+/** Move a trivia card to the newest end of the seen history (oldest drop off at ASKED_KEEP). */
+function markSeen(asked: string[], seenIds: string[], card: { q: string; id?: string }) {
+  return {
+    asked: [...asked.filter((x) => x !== card.q), card.q].slice(-ASKED_KEEP),
+    seenIds: card.id ? [...seenIds.filter((x) => x !== card.id), card.id].slice(-ASKED_KEEP) : seenIds,
+  };
+}
 const SAVE_VERSION = 2;
 
 const EMPTY_KEYS: Record<Tier, number> = {
@@ -885,10 +893,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (!poi) return;
     const elapsed = now - ov.startedAt;
     const correct = choice === ov.question.answer;
-    const asked = [...get().asked.filter((x) => x !== ov.question!.q), ov.question.q].slice(-ASKED_KEEP);
-    const seenIds = ov.question.id
-      ? [...get().seenIds.filter((x) => x !== ov.question!.id), ov.question.id].slice(-ASKED_KEEP)
-      : get().seenIds;
+    const { asked, seenIds } = markSeen(get().asked, get().seenIds, ov.question);
     const logged = logPlate(get, ov, now, correct);
 
     if (ov.spark) {
@@ -1287,6 +1292,8 @@ export const useGame = create<GameState>((set, get) => ({
   closeVault: () => {
     const ov = get().openVault;
     const series = ov ? seriesOf(ov.poiId) : null;
+    // A trivia card that was shown and walked away from counts as seen, so closing is not a reroll.
+    if (ov?.question) set(markSeen(get().asked, get().seenIds, ov.question));
     if (series && ov?.run?.spent) {
       sfx.wrong();
       set({
@@ -1302,6 +1309,7 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     set({ openVault: null });
+    if (ov?.question) scheduleSave(get);
   },
   closeShop: () => set({ shopOpen: false }),
   claimCrate: () => {
