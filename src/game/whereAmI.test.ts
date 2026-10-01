@@ -177,3 +177,29 @@ test("Where am I? rounds fit 30–75s and end before the platform", () => {
   assert.equal(rideRoundMs(pickRideGame(4 * MIN), 4 * MIN), WHERE_ROUND_MAX_MS);
   assert.equal(rideRoundMs(pickRideGame(90_000), 90_000), 60_000);
 });
+
+test("Temple and Tucson carry NYC-sized clue pools; noClue marks never show up as clues or decoys", () => {
+  const nyc = cluePool(CITIES.nyc.pois).length;
+  for (const id of ["temple", "tucson"] as const) {
+    const pois = CITIES[id].pois;
+    assert.ok(cluePool(pois).length >= Math.min(28, nyc), `${id} pool ${cluePool(pois).length}`);
+    const hidden = new Set(pois.filter((p) => p.noClue).map((p) => p.name));
+    assert.ok(hidden.size > 0, `${id} has unverified marks flagged`);
+    for (let r = 0; r < 8; r++) {
+      for (const c of whereRound(pois, 4242 + r, r)) {
+        assert.ok(!hidden.has(c.answer));
+        for (const ch of c.choices) assert.ok(!hidden.has(ch), `${id}: ${ch} is noClue`);
+      }
+    }
+  }
+});
+
+test("no clue leans on time-sensitive or mood-only wording", () => {
+  const dated = /\b(the new|keeps changing|never close|these days|nowadays|recently|soon)\b/i;
+  for (const c of Object.values(CITIES)) {
+    for (const p of cluePool(c.pois)) {
+      assert.ok(!dated.test(p.lore), `${c.id}/${p.id}: ${p.lore}`);
+      assert.ok(!/^shade if\b/i.test(p.lore.split(". ").pop() ?? ""), `${c.id}/${p.id}: mood-only tail`);
+    }
+  }
+});

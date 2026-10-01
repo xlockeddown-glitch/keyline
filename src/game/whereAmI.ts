@@ -41,7 +41,7 @@ const FLAVOR = /\b(lamp|blank|plate|stack|lantern|scout)s?\b/i;
 export function cluePool(pois: readonly Poi[]): Poi[] {
   const seen = new Set<string>();
   return pois.filter((p) => {
-    if (seen.has(p.id) || p.kind === "shop") return false;
+    if (seen.has(p.id) || p.kind === "shop" || p.noClue) return false;
     seen.add(p.id);
     const lore = p.lore?.trim() ?? "";
     if (lore.length < WHERE_MIN_CLUE || FLAVOR.test(lore)) return false;
@@ -65,7 +65,7 @@ function decoys(target: Poi, pois: readonly Poi[], rnd: () => number): string[] 
   const own = new Set(words(target.name));
   const names = new Set<string>([target.name]);
   const out: string[] = [];
-  const real = pois.filter((p) => p.kind !== "shop");
+  const real = pois.filter((p) => p.kind !== "shop" && !p.noClue);
   const sameKind = real.filter((p) => p.kind === target.kind);
   const rest = real.filter((p) => p.kind !== target.kind);
   for (const p of [...shuffle(sameKind, rnd), ...shuffle(rest, rnd)]) {

@@ -87,6 +87,8 @@ export type Poi = {
   quiz?: TriviaSeed;
   quizzes?: TriviaSeed[];
   printShop?: boolean;
+  /** Keep out of Where am I? (clue and decoy): unverified or game-made marks. */
+  noClue?: boolean;
 };
 
 export type City = {
