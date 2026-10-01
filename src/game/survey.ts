@@ -1,5 +1,6 @@
-import { CITY_LIST, KIND_LABEL, TIER_LABEL } from "./data";
-import type { CityId, PoiKind, Tier } from "./types";
+import { CITY_LIST, KIND_LABEL, TIER_LABEL } from "./data.ts";
+import { RETIRED_POIS } from "./retired.ts";
+import type { CityId, PoiKind, Tier } from "./types.ts";
 
 export type SurveyGoal = {
   id: string;
@@ -65,6 +66,12 @@ export const SURVEY_GOALS: SurveyGoal[] = [...WALK, ...VISIT, ...KIND, ...WARD];
 const POI_KIND: Record<string, PoiKind> = {};
 const POI_CITY: Record<string, CityId> = {};
 const POI_NAME: Record<string, string> = {};
+// Retired marks still count toward kind and city surveys for saves that visited them.
+for (const [id, r] of Object.entries(RETIRED_POIS)) {
+  POI_KIND[id] = r.kind;
+  POI_CITY[id] = r.cityId;
+  POI_NAME[id] = r.name;
+}
 for (const c of CITY_LIST) {
   for (const p of c.pois) {
     POI_KIND[p.id] = p.kind;

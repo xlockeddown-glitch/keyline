@@ -3,6 +3,7 @@ import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, 
 import { streetDrop } from "./streets";
 import { pickTrivia, shuffled, DIFF_MULT, ASKED_KEEP } from "./trivia";
 import { poiName, takeSurvey } from "./survey";
+import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
 import { reportCorrect } from "./rolls";
 import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type PlateEvent, type PlateRollMap } from "./telemetry";
@@ -432,7 +433,7 @@ function loadSave(): Partial<GameState> | null {
     if (data.version === 1) {
       data.keys = tightenKeys(data.keys);
     }
-    return data;
+    return migratePoiIds(data);
   } catch {
     return null;
   }
