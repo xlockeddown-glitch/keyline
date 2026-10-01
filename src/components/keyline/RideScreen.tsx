@@ -6,15 +6,18 @@ import {
   RIDE_GAME_NAME,
   journeyOutcome,
   lampOutcome,
-  lampRoundMs,
   lampVerdict,
   pickRideGame,
   rideReward,
+  rideRoundMs,
   type LampTally,
+  type RideGameId,
   type RideOutcome,
 } from "@/game/rideGames";
 import { AudioDock } from "./AudioDock";
 import { Lamplighter } from "./Lamplighter";
+import { WhereAmI } from "./WhereAmI";
+import { whereOutcome, whereRound, whereVerdict, type WhereClue, type WhereTally } from "@/game/whereAmI";
 
 function lootLine(j: { grantedWhite?: number; grantedBlue?: number; grantedGreen?: number }) {
   const bits: string[] = [];
@@ -33,7 +36,13 @@ function matchList(r: { white: number; blue: number; green?: number }) {
   return bits.join(" · ");
 }
 
-type Result = { tally: LampTally; outcome: RideOutcome; add: { white: number; blue: number; green: number } };
+type Result = { verdict: string; sub?: string; outcome: RideOutcome; add: { white: number; blue: number; green: number } };
+
+/** What the play button promises, per game. */
+const GAME_PITCH: Partial<Record<RideGameId, string>> = {
+  lamplighter: "light the street lamps as they pass",
+  "where-am-i": "name the place from a clue about the city ahead",
+};
 
 export function RideScreen() {
   const journey = useGame((s) => s.journey);
@@ -42,7 +51,7 @@ export function RideScreen() {
   const finishRideRound = useGame((s) => s.finishRideRound);
   const dropRideRound = useGame((s) => s.dropRideRound);
   const [, beat] = useState(0);
-  const [round, setRound] = useState<{ ms: number; seed: number } | null>(null);
+  const [round, setRound] = useState<{ ms: number; seed: number; clues?: WhereClue[] } | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
@@ -68,21 +77,30 @@ export function RideScreen() {
   const total = Math.max(1, journey.arriveAt - journey.departAt);
   const gone = 1 - left / total;
   const game = pickRideGame(total);
-  const canPlay = lampRoundMs(left) != null;
+  const canPlay = rideRoundMs(game, left) != null;
   const forRide = rideReward(total, journeyOutcome(journey));
 
   const play = () => {
     const ms = startRideRound();
     if (ms == null) return;
     setResult(null);
+    const n = (journey.game?.rounds ?? 0) + (journey.forfeits ?? 0);
+    if (game === "where-am-i") {
+      const clues = whereRound(to.pois, journey.departAt, n);
+      if (!clues.length) return;
+      setRound({ ms, seed: journey.departAt, clues });
+      return;
+    }
     setRound({ ms, seed: journey.departAt + (journey.game?.rounds ?? 0) * 7919 + (journey.forfeits ?? 0) });
   };
-  const done = (tally: LampTally) => {
-    const outcome = lampOutcome(tally);
+  const settle = (outcome: RideOutcome, verdict: string, sub?: string) => {
     const add = finishRideRound(outcome);
     setRound(null);
-    setResult({ tally, outcome, add });
+    setResult({ verdict, sub, outcome, add });
   };
+  const done = (tally: LampTally) =>
+    settle(lampOutcome(tally), lampVerdict(tally), tally.streak >= 5 ? `Best run: ${tally.streak} in a row.` : undefined);
+  const doneWhere = (tally: WhereTally) => settle(whereOutcome(tally), whereVerdict(tally, to.name));
   const quit = () => {
     dropRideRound();
     setRound(null);
@@ -105,13 +123,15 @@ export function RideScreen() {
         </div>
         {lootLine(journey) ? <p className="ride-loot">{lootLine(journey)}</p> : null}
 
-        {round ? (
+        {round?.clues ? (
+          <WhereAmI city={to.name} clues={round.clues} roundMs={round.ms} onDone={doneWhere} onQuit={quit} />
+        ) : round ? (
           <Lamplighter roundMs={round.ms} seed={round.seed} onDone={done} onQuit={quit} />
         ) : result ? (
           <div className="ride-result">
             <p className="kicker">{RIDE_GAME_NAME[game]}</p>
-            <p className="ride-result-line">{lampVerdict(result.tally)}</p>
-            {result.tally.streak >= 5 ? <p className="ride-result-sub">Best run: {result.tally.streak} in a row.</p> : null}
+            <p className="ride-result-line">{result.verdict}</p>
+            {result.sub ? <p className="ride-result-sub">{result.sub}</p> : null}
             <p className="ride-result-pay">
               This ride pays <strong>{matchList(forRide)}</strong>.
             </p>
@@ -141,7 +161,7 @@ export function RideScreen() {
                   Play while you ride
                 </button>
                 <p className="ride-play-sub text-xs text-fg-subtle">
-                  {RIDE_GAME_NAME[game]} · light the street lamps as they pass. Skip it and the seat still pays.
+                  {RIDE_GAME_NAME[game]} · {GAME_PITCH[game] ?? "a round on the way"}. Skip it and the seat still pays.
                 </p>
               </>
             ) : journey.game ? null : (

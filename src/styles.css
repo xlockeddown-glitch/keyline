@@ -2346,8 +2346,109 @@ h3 {
   padding: 0 12px;
   font-size: 0.8rem;
 }
+/* Where am I? — the same carriage window, holding a clue card instead of a street. */
+.wh-card {
+  position: relative;
+  margin-top: 0.6rem;
+  min-height: clamp(7.5rem, 22vh, 10rem);
+  padding: 1rem 1.1rem 1.1rem;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 6px solid #2a2622;
+  outline: 1px solid color-mix(in oklab, var(--color-vault-amber) 40%, transparent);
+  background:
+    radial-gradient(120% 80% at 50% 120%, #1b1f2a, transparent 70%),
+    linear-gradient(#0b0d14, #141824 70%, #1a1712);
+  transition: outline-color 0.15s, box-shadow 0.15s;
+}
+.wh-card.is-hit {
+  outline-color: var(--color-vault-amber);
+  box-shadow: 0 0 24px -6px color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
+}
+.wh-card.is-stray {
+  outline-color: color-mix(in oklab, #ff4b3e 70%, transparent);
+}
+.wh-where {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-vault-amber) 80%, var(--color-fg-subtle));
+}
+.wh-clue {
+  margin-top: 0.45rem;
+  font-size: clamp(1.02rem, 4.2vw, 1.3rem);
+  line-height: 1.35;
+  color: var(--color-fg);
+  text-wrap: pretty;
+}
+.wh-choices {
+  margin-top: 0.7rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+}
+@media (min-width: 560px) {
+  .wh-choices {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.wh-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  padding: 0.55rem 0.8rem;
+  text-align: left;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  color: var(--color-fg);
+  border-radius: 10px;
+  border: 1px solid #3b342b;
+  background: color-mix(in oklab, #15130f 85%, var(--color-vault-amber) 4%);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s, border-color 0.12s, opacity 0.12s;
+}
+.wh-choice:not(:disabled):hover,
+.wh-choice:focus-visible {
+  border-color: color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
+  outline: none;
+}
+.wh-choice:disabled {
+  cursor: default;
+}
+.wh-key {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--color-fg-subtle);
+  border: 1px solid #3b342b;
+}
+.wh-choice.is-answer {
+  border-color: var(--color-vault-amber);
+  background: color-mix(in oklab, var(--color-vault-amber) 18%, #15130f);
+}
+.wh-choice.is-answer .wh-key {
+  color: #15130f;
+  background: var(--color-vault-amber);
+  border-color: var(--color-vault-amber);
+}
+.wh-choice.is-wrong {
+  border-color: color-mix(in oklab, #ff4b3e 70%, transparent);
+  background: color-mix(in oklab, #ff4b3e 14%, #15130f);
+}
+.wh-choice.is-dim {
+  opacity: 0.45;
+}
 @media (prefers-reduced-motion: reduce) {
-  .ll-head {
+  .ll-head,
+  .wh-card,
+  .wh-choice {
     transition: none;
   }
 }

@@ -174,8 +174,13 @@ test("no room for a blue: it comes as three whites", () => {
   assert.deepEqual(some.add, { white: 9, blue: 1, green: 0 });
 });
 
-test("selector: Lamplighter for every length until the others ship", () => {
-  for (const m of [0.8, 1.9, 2, 4, 6, 10, 14]) assert.equal(pickRideGame(m * MIN), "lamplighter");
+test("selector: Lamplighter under two minutes and past six; Where am I? owns two to six", () => {
+  for (const m of [0.8, 1.9, 6, 10, 14]) assert.equal(pickRideGame(m * MIN), "lamplighter", `${m}m`);
+  for (const m of [2, 3, 4, 5.9]) assert.equal(pickRideGame(m * MIN), "where-am-i", `${m}m`);
+  for (const seed of [0, 1, 2, 3]) assert.equal(pickRideGame(4 * MIN, undefined, seed), "where-am-i", "match sorter not built yet");
+  assert.equal(pickRideGame(48_000), "lamplighter");
+  assert.equal(pickRideGame(2 * MIN - 1), "lamplighter");
+  assert.equal(pickRideGame(6 * MIN - 1), "where-am-i");
   assert.equal(pickRideGame(3 * MIN, ["lamplighter", "where-am-i", "match-sorter"], 0), "where-am-i");
   assert.equal(pickRideGame(3 * MIN, ["lamplighter", "where-am-i", "match-sorter"], 1), "match-sorter");
   assert.equal(pickRideGame(9 * MIN, ["lamplighter", "route-puzzle"]), "route-puzzle");

@@ -103,7 +103,7 @@ export type RideGameId = "lamplighter" | "where-am-i" | "match-sorter" | "route-
 
 export const RIDE_GAME_NAME: Record<RideGameId, string> = {
   lamplighter: "Lamplighter",
-  "where-am-i": "Where am I",
+  "where-am-i": "Where am I?",
   "match-sorter": "Match sorter",
   "route-puzzle": "Route puzzle",
 };
@@ -116,13 +116,29 @@ export const RIDE_GAME_BANDS: { underMs: number; games: RideGameId[] }[] = [
 ];
 
 /** Games that are built. Lamplighter fills any band whose games aren't ready yet. */
-export const READY_RIDE_GAMES: readonly RideGameId[] = ["lamplighter"];
+export const READY_RIDE_GAMES: readonly RideGameId[] = ["lamplighter", "where-am-i"];
 
 export function pickRideGame(rideMs: number, ready: readonly RideGameId[] = READY_RIDE_GAMES, seed = 0): RideGameId {
   const band = RIDE_GAME_BANDS.find((b) => rideMs < b.underMs) ?? RIDE_GAME_BANDS[RIDE_GAME_BANDS.length - 1]!;
   const open = band.games.filter((g) => ready.includes(g));
   if (!open.length) return "lamplighter";
   return open[Math.abs(Math.floor(seed)) % open.length]!;
+}
+
+/** Where am I? rounds: up to 75s, and none under 30s. */
+export const WHERE_ROUND_MAX_MS = 75_000;
+export const WHERE_ROUND_MIN_MS = 30_000;
+
+/** Where am I? round length for the time left, or null when the platform is too close. */
+export function whereRoundMs(remainingMs: number): number | null {
+  const room = Math.floor(remainingMs - ARRIVAL_BUFFER_MS);
+  if (room < WHERE_ROUND_MIN_MS) return null;
+  return Math.min(WHERE_ROUND_MAX_MS, room);
+}
+
+/** Round length for this ride's game. */
+export function rideRoundMs(game: RideGameId, remainingMs: number): number | null {
+  return game === "where-am-i" ? whereRoundMs(remainingMs) : lampRoundMs(remainingMs);
 }
 
 // ── Lamplighter ─────────────────────────────────────────────────────────
