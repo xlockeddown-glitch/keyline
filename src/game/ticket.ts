@@ -45,6 +45,17 @@ export function matchCap(tier: import("./types").Tier) {
   return 99;
 }
 
+/** How many more lamps this city wants before it prints a train ticket. */
+export function lampsToTicket(cityVaults: number) {
+  return Math.max(1, VAULTS_PER_FARE - Math.max(0, cityVaults));
+}
+
+/** "Light 2 more lamps to earn a train ticket" — the empty-pocket hint. */
+export function ticketHint(cityVaults: number) {
+  const n = lampsToTicket(cityVaults);
+  return `Light ${n} more lamp${n === 1 ? "" : "s"} to earn a train ticket`;
+}
+
 export function fareDesk(city: City): Poi {
   return city.pois.find((p) => p.kind === "station") ?? city.pois.find((p) => p.printShop) ?? city.pois[0]!;
 }

@@ -3298,8 +3298,8 @@ export const KIOSK = {
   fare: {
     id: "fare" as const,
     cost: 1800,
-    name: "Reprint a fare",
-    blurb: "A ticket without the three lamps. Punch it at the desk.",
+    name: "Reprint a train ticket",
+    blurb: "A ticket without the three lamps. Board at the station.",
   },
   smear: {
     id: "smear" as const,

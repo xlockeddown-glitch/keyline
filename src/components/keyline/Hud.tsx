@@ -3,7 +3,7 @@ import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, a
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
 import { nextSurvey } from "@/game/survey";
-import { formatCool, isFareDesk, SPARK_DAY, VAULTS_PER_FARE } from "@/game/ticket";
+import { formatCool, isFareDesk, SPARK_DAY, ticketHint, VAULTS_PER_FARE } from "@/game/ticket";
 import { pulseDue } from "@/game/pulse";
 import { useGame } from "@/game/store";
 import type { Tier } from "@/game/types";
@@ -86,8 +86,8 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
   let cue = hud.seated ? "Park at the curb. The door is on foot." : "Lamps mark the questions. Click the map to walk.";
   if (nearest) {
     if (hud.seated) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
-    else if (canPunch) cue = `Punch a fare · T · ${nearest.name}`;
-    else if (atDesk && !fares) cue = `Fare desk. ${cityVaults}/${VAULTS_PER_FARE} lamps toward a ticket.`;
+    else if (canPunch) cue = `Board train · T · ${nearest.name}`;
+    else if (atDesk && !fares) cue = `Train station. ${ticketHint(cityVaults)}.`;
     else if (atShop) cue = `${nearest.name} · coats for hire · E`;
     else if (nearest && isScoutShop(nearest)) cue = `${formatDist(hud.nearestDist)} · brass awning, coats`;
     else if (seriesNear) {
@@ -115,13 +115,13 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
       <div className="flex items-start justify-between gap-2 pl-12">
         <div className="hud-plate pointer-events-none min-w-0">
           <div className="flex items-start gap-3">
-            <div className="hud-compass" title={fares > 0 ? `Toward ${hud.deskName}` : "Toward the mark"} aria-hidden>
+            <div className="hud-compass" title={fares > 0 ? `Toward ${hud.deskName}` : "Toward your waypoint"} aria-hidden>
               <i style={{ transform: `rotate(${hud.aimDeg}deg)` }} />
             </div>
             <div className="min-w-0">
           <p className="kicker">
             {city.name}
-            {fares === 0 ? ` · ${cityVaults}/${VAULTS_PER_FARE} fare` : ""}
+            {fares === 0 ? ` · ${cityVaults}/${VAULTS_PER_FARE} ticket` : ""}
           </p>
           <p className="font-display flex items-center gap-2 text-3xl leading-none tabular-nums">
             <ItemIcon item="coin" size={28} />
@@ -144,22 +144,27 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
           ) : null}
           {surveyLine ? (
             <p className="mt-1 truncate text-xs text-fg-muted">
-              <span className="kicker mr-1.5">Survey</span>
+              <span className="kicker mr-1.5">Goals</span>
               {surveyLine}
             </p>
           ) : null}
           {fares > 0 && !canPunch ? (
             <button type="button" className="fare-hint pointer-events-auto mt-1" onClick={onDesk}>
-              <span className="kicker mr-1.5">Fare</span>
+              <span className="kicker mr-1.5">Train</span>
               Walk to {hud.deskName}
               <span className="tabular-nums text-fg-subtle"> · {formatDist(hud.deskDist)}</span>
             </button>
           ) : fares > 0 ? (
             <p className="mt-1 truncate text-xs text-fg-muted">
-              <span className="kicker mr-1.5">Fare</span>
-              {hud.deskName} · T to punch
+              <span className="kicker mr-1.5">Train</span>
+              {hud.deskName} · T to board
             </p>
-          ) : null}
+          ) : (
+            <p className="mt-1 truncate text-xs text-fg-muted">
+              <span className="kicker mr-1.5">Train</span>
+              {ticketHint(cityVaults)}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -199,10 +204,10 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             type="button"
             className="hud-plate is-kit pointer-events-auto relative"
             onClick={() => toggleHq(true)}
-            aria-label={pulseReady ? "Open HQ, City Pulse waiting" : "Open HQ"}
+            aria-label={pulseReady ? "Open Journal, City Pulse waiting" : "Open Journal"}
           >
             <BookOpen className="size-4 text-fg-muted" strokeWidth={1.75} />
-            <span className="kicker hidden sm:inline">HQ</span>
+            <span className="kicker hidden sm:inline">Journal</span>
             {pulseReady ? <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" aria-hidden /> : null}
           </button>
         </div>
@@ -225,7 +230,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
               ))}
               <span
                 className={`key-slot ${canPunch || fares > 0 ? "is-mark" : ""}`}
-                title={fares > 0 ? `Walk to ${hud.deskName}` : "Fares"}
+                title={fares > 0 ? `Walk to ${hud.deskName}` : "Train tickets"}
                 onClick={(e) => {
                   e.stopPropagation();
                   onDesk();
@@ -272,7 +277,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
                       : isScoutShop(nearest)
                         ? "Outfitter"
                         : isFareDesk(nearest)
-                        ? `Fare desk · ${KIND_LABEL[nearest.kind]}`
+                        ? `Train station · ${KIND_LABEL[nearest.kind]}`
                         : `${TIER_LABEL[nearest.tier]} · ${KIND_LABEL[nearest.kind]}`}
                   </p>
                   <span className="range-pips" aria-hidden>
@@ -293,7 +298,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             type="button"
             className={`act-btn pointer-events-auto ${canPunch ? "is-armed" : armed ? "is-armed" : ""}`}
             onClick={canPunch ? onTimetable : onInteract}
-            aria-label={canPunch ? "Punch a fare" : atShop ? "Open outfitter" : armed ? "Light lamp" : "Interact"}
+            aria-label={canPunch ? "Board train" : atShop ? "Open outfitter" : armed ? "Light lamp" : "Interact"}
           >
             {canPunch ? "T" : "E"}
           </button>

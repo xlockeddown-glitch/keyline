@@ -6,7 +6,7 @@ Keyline is a walking trivia game on real maps. You pick a ward, wander it, and s
 
 ## A session
 
-Title → pick a city → walk the map → lamps, matches, vaults → trivia cards → HQ when you need a desk.
+Title → pick a city → walk the map → lamps, matches, vaults → trivia cards → Journal when you need a desk.
 
 Tap a distant match and you'll walk there. Walk over one and it's yours. Lamps want a match of their color. Vaults want more trivia cards and pay better.
 
@@ -16,11 +16,11 @@ White, blue, green, amber, red, violet.
 
 Rarer colors are harder trivia cards and nicer loot. Spend them or they stop showing up. Surplus is a planning problem, not a feature.
 
-## HQ
+## Journal
 
-Open **HQ** from the kit.
+Open the **Journal** from the kit. Tabs: **Places**, **Supplies**, **Progress**, **Leaderboard**.
 
-- **Ledger** — daily crate streak. One missed day is forgiven. Caps at 30.
+- **Progress** — daily crate streak. One missed day is forgiven. Caps at 30.
 - **Quests** — **City Pulse**, a separate daily check-in at the desk. Coin, once a day. Not the crate. Don't mix them up.
 - **Bank** — four lower matches buy one higher (tax). One higher breaks into three lower (no tax). Walks stay on the street; lamps are a step off the curb, not a shortcut through the block.
 - **Trivia boosts** — three correct in a row: a white match (Streak spark). Correct under 3 seconds: +5 coin (Perfect timing). First correct of a topic each UTC day: a white, up to three topics (Category charm).
@@ -30,7 +30,13 @@ Open **HQ** from the kit.
 - **Satchel** — named lamps listed; unnamed ones collapse to one count line (no "Undiscovered lamp" spam).
 - **Super Legendary** — the last coat at the outfitter, ten times the Fox. Hireable. That coat may cut the block. Default coats keep the curb.
 
-**Standings** list first name and last initial only — Ryan G., not the whole name.
+The **Leaderboard** lists first name and last initial only — Ryan G., not the whole name.
+
+## Trains
+
+Light 3 lamps in a city and it prints a train ticket. Board at the station (the train sign on the map). The ride clock runs while you're away.
+
+On the ride, **Play while you ride** opens a mini-game (Lamplighter for now: tap as each lamp meets the window frame). A ride pays one outcome, the best you managed: sitting idle, playing, or winning. An 8-minute ride pays 1 / 3 / 5–7 white, scaled by ride length. Strong wins can trade three whites for a blue. Ten minutes on the rail still adds a blue, and sitting the whole 10+ minute haul with the tab open still adds a green. Close the tab mid-round and that round is lost, but the seat still pays.
 
 ## For people who open the repo
 

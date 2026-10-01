@@ -68,7 +68,7 @@ export function TitleScreen() {
               setRollsOpen(true);
             }}
           >
-            Standings
+            Leaderboard
           </button>
         </div>
         <p className="book-ver">v{APP_VERSION}</p>

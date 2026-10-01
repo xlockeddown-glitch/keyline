@@ -61,7 +61,7 @@ export function CitySelect() {
                   {CITIES[c.id].pois.filter((p) => p.printShop).length} print shop
                   {CITIES[c.id].pois.filter((p) => p.printShop).length === 1 ? "" : "s"}
                   {cityShop(c.id) ? ` · ${cityShop(c.id)!.name}` : ""}
-                  {found ? ` · ${found} in your atlas` : ""}
+                  {found ? ` · ${found} visited` : ""}
                 </p>
               </button>
             </li>

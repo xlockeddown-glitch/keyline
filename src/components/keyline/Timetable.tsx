@@ -22,13 +22,13 @@ export function Timetable({ onClose, onPunch }: Props) {
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Timetable</p>
-            <h2 className="font-display text-2xl">Punch a fare</h2>
+            <h2 className="font-display text-2xl">Board train</h2>
             <p className="mt-1 text-sm text-fg-muted">
               {seated
                 ? "Park first. The window doesn’t take a ticket."
                 : fares
-                  ? `${fares} fare${fares === 1 ? "" : "s"} in the pocket. Clock runs while you’re away. Matches turn up in the car.`
-                  : "Need a fare. Light three lamps in this city."}
+                  ? `${fares} train ticket${fares === 1 ? "" : "s"} in the pocket. Clock runs while you’re away. Matches turn up in the car.`
+                  : "Need a train ticket. Light 3 lamps in this city."}
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={onClose} aria-label="Close">

@@ -38,7 +38,7 @@ export function RollsOverlay({ onClose }: { onClose: () => void }) {
       <div className="panel flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <p className="kicker">Standings</p>
+            <p className="kicker">Leaderboard</p>
             <h2 className="font-display text-2xl">Trivia cards, by match</h2>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={onClose} aria-label="Close">

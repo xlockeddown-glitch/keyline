@@ -43,7 +43,7 @@ function TitleShell() {
             All cities
           </button>
           <button type="button" className="title-more" disabled>
-            Standings
+            Leaderboard
           </button>
         </div>
         <p className="book-ver">v{APP_VERSION}</p>

@@ -13,7 +13,7 @@ function Login() {
       <div className="title-pave" aria-hidden />
       <main className="title-folio">
         <div className="street-blade" aria-label="Keyline">
-          <span>Standings</span>
+          <span>Leaderboard</span>
           <strong>KEYLINE</strong>
         </div>
         <p className="lede">Sign in to post trivia cards under your name. Guests can still read the board. Names on the board are first name and last initial.</p>

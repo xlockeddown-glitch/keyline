@@ -876,7 +876,7 @@ export function GameMap() {
         const here = desks.find((p) => distM(pos.current.lat, pos.current.lng, p.lat, p.lng) <= reach());
         if (!here) {
           const desk = fareDesk(city);
-          flash(`Walk to ${desk.name}. Punch a fare there.`);
+          flash(`Walk to ${desk.name}. Board the train there.`);
           void setDestination(desk.lat, desk.lng);
           return;
         }
@@ -1341,7 +1341,7 @@ export function GameMap() {
             return;
           }
           void setDestination(desk.lat, desk.lng);
-          flash(`${desk.name} punches fares.`);
+          flash(`Trains board at ${desk.name}.`);
         }}
         onTimetable={() => {
           const s = useGame.getState();
@@ -1370,7 +1370,7 @@ export function GameMap() {
             );
             if (!atDesk) {
               const desk = fareDesk(city);
-              flash(`Walk to ${desk.name}. Punch a fare there.`);
+              flash(`Walk to ${desk.name}. Board the train there.`);
               setBoardOpen(false);
               void setDestination(desk.lat, desk.lng);
               return;

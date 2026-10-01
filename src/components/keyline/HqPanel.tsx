@@ -18,14 +18,14 @@ import { AuthChip } from "./AuthChip";
 import { RollsBoard } from "./RollsBoard";
 import { ScoutRoster } from "./ScoutShop";
 
-const TABS = ["Atlas", "Print", "Ledger", "Standings"] as const;
+const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
 
 export function HqPanel() {
   const hqOpen = useGame((s) => s.hqOpen);
   const toggleHq = useGame((s) => s.toggleHq);
   const cityId = useGame((s) => s.cityId);
   const atlas = useGame((s) => s.atlas);
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Atlas");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Places");
   const points = useGame((s) => s.points);
   const brass = useGame((s) => s.brass);
   const ink = useGame((s) => s.ink);
@@ -71,7 +71,7 @@ export function HqPanel() {
   const pulseReady = pulseDue(lastPulseDay, today);
 
   useEffect(() => {
-    if (hqOpen && pulseReady) setTab("Ledger");
+    if (hqOpen && pulseReady) setTab("Progress");
   }, [hqOpen, pulseReady]);
 
   if (!hqOpen) return null;
@@ -81,7 +81,7 @@ export function HqPanel() {
       <div className="panel flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <p className="kicker">Headquarters</p>
+            <p className="kicker">Journal</p>
             <h2 className="font-display text-xl leading-tight">Hideout · {city.name}</h2>
             <button
               type="button"
@@ -102,7 +102,7 @@ export function HqPanel() {
           </div>
         </header>
 
-        <div className="hq-tabs shrink-0" role="tablist" aria-label="Headquarters sections">
+        <div className="hq-tabs shrink-0" role="tablist" aria-label="Journal sections">
           {TABS.map((t) => (
             <button
               key={t}
@@ -121,7 +121,7 @@ export function HqPanel() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          {tab === "Atlas" ? (
+          {tab === "Places" ? (
             <ul className="grid gap-2">
               {city.pois.map((p) => {
                 const known = Boolean(atlas[p.id]);
@@ -135,7 +135,7 @@ export function HqPanel() {
                       </p>
                       <p className="hq-row-title">{known ? p.name : p.kind === "shop" ? "Undiscovered outfitter" : "Undiscovered lamp"}</p>
                       <p className="hq-row-sub">
-                        {known ? p.lore : p.kind === "shop" ? "Look for the brass awning on the street." : "Walk up to it to stamp the atlas."}
+                        {known ? p.lore : p.kind === "shop" ? "Look for the brass awning on the street." : "Walk up to it to add it to Places."}
                       </p>
                     </div>
                   </li>
@@ -144,7 +144,7 @@ export function HqPanel() {
             </ul>
           ) : null}
 
-          {tab === "Print" ? (
+          {tab === "Supplies" ? (
             <div className="grid gap-3">
               <ul className="grid gap-2 sm:grid-cols-2">
                 {MATERIAL_LIST.map((m) => (
@@ -270,9 +270,9 @@ export function HqPanel() {
             </div>
           ) : null}
 
-          {tab === "Standings" ? <RollsBoard /> : null}
+          {tab === "Leaderboard" ? <RollsBoard /> : null}
 
-          {tab === "Ledger" ? (
+          {tab === "Progress" ? (
             <div className="grid gap-4 text-sm">
               <div>
                 <p className="kicker">Quests</p>
@@ -421,7 +421,7 @@ export function HqPanel() {
                 <li className="hq-row">
                   <div className="hq-row-copy">
                     <p className="hq-row-title tabular-nums">{fares}</p>
-                    <p className="hq-row-sub">Fares. Punch at {desk.name}.</p>
+                    <p className="hq-row-sub">Train tickets. Board at {desk.name}.</p>
                   </div>
                 </li>
                 <li className="hq-row">
@@ -429,11 +429,11 @@ export function HqPanel() {
                     <p className="hq-row-title tabular-nums">
                       {city.pois.filter((p) => atlas[p.id]).length}/{city.pois.length}
                     </p>
-                    <p className="hq-row-sub">Atlas in {city.name}. {Object.keys(atlas).length} filed.</p>
+                    <p className="hq-row-sub">Places in {city.name}. {Object.keys(atlas).length} visited.</p>
                   </div>
                 </li>
               </ul>
-              <p className="kicker mt-2">Survey</p>
+              <p className="kicker mt-2">Goals</p>
               <ul className="grid gap-2">
                 {SURVEY_GOALS.filter((g) => g.kind !== "ward" || g.cityId === cityId).map((g) => {
                   const have = surveyHave(g, atlas, distanceM);
@@ -468,7 +468,7 @@ export function HqPanel() {
                   onClick={() => {
                     toggleHq(false);
                     sfx.ui();
-                    useGame.setState({ toast: `Walk to ${desk.name}. Punch a fare there.` });
+                    useGame.setState({ toast: `Walk to ${desk.name}. Board the train there.` });
                   }}
                 >
                   Other wards

@@ -21,22 +21,22 @@ const WALK: SurveyGoal[] = [
 ];
 
 const VISIT: SurveyGoal[] = [
-  { id: "visit-4", kind: "visit", need: 4, reward: "blue", label: "Four stamps", blurb: "Walk up to 4 different marks." },
-  { id: "visit-10", kind: "visit", need: 10, reward: "green", label: "Ten stamps", blurb: "Stamp 10 marks in the atlas." },
-  { id: "visit-18", kind: "visit", need: 18, reward: "amber", label: "Eighteen stamps", blurb: "Stamp 18 marks." },
-  { id: "visit-32", kind: "visit", need: 32, reward: "red", label: "City reader", blurb: "Stamp 32 marks." },
-  { id: "visit-55", kind: "visit", need: 55, reward: "violet", label: "Full plate", blurb: "Stamp 55 marks across the atlas." },
+  { id: "visit-4", kind: "visit", need: 4, reward: "blue", label: "Four places", blurb: "Visit 4 different places." },
+  { id: "visit-10", kind: "visit", need: 10, reward: "green", label: "Ten places", blurb: "Visit 10 places." },
+  { id: "visit-18", kind: "visit", need: 18, reward: "amber", label: "Eighteen places", blurb: "Visit 18 places." },
+  { id: "visit-32", kind: "visit", need: 32, reward: "red", label: "City reader", blurb: "Visit 32 places." },
+  { id: "visit-55", kind: "visit", need: 55, reward: "violet", label: "Full plate", blurb: "Visit 55 places across every city." },
 ];
 
 const KIND: SurveyGoal[] = [
   { id: "kind-park-6", kind: "kind", poiKind: "park", need: 6, reward: "green", label: "Park circuit", blurb: "Visit 6 parks." },
-  { id: "kind-civic-4", kind: "kind", poiKind: "civic", need: 4, reward: "amber", label: "Civic tour", blurb: "Visit 4 civic marks." },
+  { id: "kind-civic-4", kind: "kind", poiKind: "civic", need: 4, reward: "amber", label: "Civic tour", blurb: "Visit 4 civic places." },
   { id: "kind-museum-4", kind: "kind", poiKind: "museum", need: 4, reward: "green", label: "Gallery walk", blurb: "Visit 4 museums." },
-  { id: "kind-food-5", kind: "kind", poiKind: "food", need: 5, reward: "blue", label: "Table tour", blurb: "Visit 5 food marks." },
+  { id: "kind-food-5", kind: "kind", poiKind: "food", need: 5, reward: "blue", label: "Table tour", blurb: "Visit 5 food places." },
   { id: "kind-theatre-3", kind: "kind", poiKind: "theatre", need: 3, reward: "green", label: "Marquee night", blurb: "Visit 3 theatres." },
   { id: "kind-stadium-3", kind: "kind", poiKind: "stadium", need: 3, reward: "amber", label: "Arena run", blurb: "Visit 3 stadiums." },
-  { id: "kind-campus-3", kind: "kind", poiKind: "campus", need: 3, reward: "green", label: "Quad walk", blurb: "Visit 3 campus marks." },
-  { id: "kind-water-3", kind: "kind", poiKind: "water", need: 3, reward: "blue", label: "Waterline", blurb: "Visit 3 water marks." },
+  { id: "kind-campus-3", kind: "kind", poiKind: "campus", need: 3, reward: "green", label: "Quad walk", blurb: "Visit 3 campus places." },
+  { id: "kind-water-3", kind: "kind", poiKind: "water", need: 3, reward: "blue", label: "Waterline", blurb: "Visit 3 waterfront places." },
 ];
 
 const WARD: SurveyGoal[] = CITY_LIST.flatMap((c) => [
@@ -46,8 +46,8 @@ const WARD: SurveyGoal[] = CITY_LIST.flatMap((c) => [
     cityId: c.id,
     need: 8,
     reward: "green" as const,
-    label: `${c.name} survey`,
-    blurb: `Stamp 8 marks in ${c.name}.`,
+    label: `${c.name} tour`,
+    blurb: `Visit 8 places in ${c.name}.`,
   },
   {
     id: `ward-${c.id}-all`,
@@ -55,8 +55,8 @@ const WARD: SurveyGoal[] = CITY_LIST.flatMap((c) => [
     cityId: c.id,
     need: c.pois.length,
     reward: "amber" as const,
-    label: `${c.name} atlas`,
-    blurb: `Stamp every mark in ${c.name}.`,
+    label: `All of ${c.name}`,
+    blurb: `Visit every place in ${c.name}.`,
   },
 ]);
 
@@ -134,10 +134,10 @@ export function nextSurvey(s: SurveySnap & { cityId: CityId }) {
     }
   }
   const have = surveyHave(best, s.atlas, s.distanceM);
-  const kindBit = best.poiKind ? KIND_LABEL[best.poiKind].toLowerCase() : "stamps";
+  const kindBit = best.poiKind ? KIND_LABEL[best.poiKind].toLowerCase() : "places";
   const progress =
     best.kind === "walk"
       ? `${(have / 1000).toFixed(1)} / ${(best.need / 1000).toFixed(0)} km`
-      : `${Math.min(have, best.need)} / ${best.need} ${best.kind === "kind" ? kindBit : "stamps"}`;
+      : `${Math.min(have, best.need)} / ${best.need} ${best.kind === "kind" ? kindBit : "places"}`;
   return { goal: best, have, line: `${progress} · ${TIER_LABEL[best.reward]}` };
 }

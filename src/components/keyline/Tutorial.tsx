@@ -25,9 +25,9 @@ const STEPS = [
     lines: [
       "Matches on the ground: walk over them. The street stays thin — spend them or they stop appearing.",
       "F calls a cab. Park and get out before you light a lamp.",
-      "Light 3 lamps and you get a ticket.",
+      "Light 3 lamps and you get a train ticket.",
       "Two green globes stacked: four questions. The bright amber ring: three.",
-      "The station lamp has a small ticket on it. Walk there and press T to go to another city.",
+      "The train sign is the station. Walk there and press T to board a train to another city. Play a round on the way and the ride pays better.",
       "The brass awning is a coat shop. Walk up and press E to hire a scout. Each coat has a small habit — a hair more time, a hair more pace. Nothing loud.",
     ],
   },

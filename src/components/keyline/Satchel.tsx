@@ -173,14 +173,14 @@ export function Satchel() {
                       toggleHq(true);
                     }}
                   >
-                    Print at HQ
+                    Print in Journal
                   </button>
                 )}
               </div>
             ) : null}
 
             {isMaterial(sel) ? (
-              <p className="mt-4 text-xs text-fg-subtle">Spent at the print shop to make charms. Tab opens HQ.</p>
+              <p className="mt-4 text-xs text-fg-subtle">Spent at the print shop to make charms. Tab opens the Journal.</p>
             ) : null}
           </aside>
         </div>

@@ -29,7 +29,7 @@ import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
-import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState } from "./ticket";
+import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
 import { forfeitRound, lampRoundMs, markRound, openRound, type RideOutcome } from "./rideGames";
 import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
@@ -645,7 +645,7 @@ export const useGame = create<GameState>((set, get) => ({
   setScreen: (s) => {
     const hint =
       s === "play" && pulseDue(get().lastPulseDay, today()) && get().screen !== "play"
-        ? "City Pulse is waiting in HQ · Ledger."
+        ? "City Pulse is waiting in Journal · Progress."
         : get().toast;
     set({ screen: s, toast: hint });
     if (s === "play") paySurvey(set, get);
@@ -704,7 +704,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     if (!n) return;
     sfx.ui();
-    const msg = n === 1 ? `Stamped · ${name}` : `Stamped ${n} marks`;
+    const msg = n === 1 ? `Visited · ${name}` : `Visited ${n} places`;
     set({ atlas });
     if (!paySurvey(set, get)) flashToast(set, get, msg, 1400);
     scheduleSave(get);
@@ -1236,8 +1236,8 @@ export const useGame = create<GameState>((set, get) => ({
       fares += 1;
       cityVaults = 0;
       fareToast = fares === 1
-        ? `A fare printed. Walk to ${fareDesk(CITIES[get().cityId]).name} and punch it.`
-        : `Another fare. Two is the pocket. ${fareDesk(CITIES[get().cityId]).name} still punches.`;
+        ? `A train ticket printed. Walk to ${fareDesk(CITIES[get().cityId]).name} and board.`
+        : `Another train ticket. Two is the pocket. Board at ${fareDesk(CITIES[get().cityId]).name}.`;
     }
     if (grade === "perfect") sfx.perfect();
     else sfx.correct();
@@ -1524,7 +1524,7 @@ export const useGame = create<GameState>((set, get) => ({
       }
       sfx.craft();
       set({ points: get().points - item.cost, fares: get().fares + 1 });
-      flashToast(set, get, `A fare reprinted. Punch it at ${fareDesk(CITIES[get().cityId]).name}.`, 2400);
+      flashToast(set, get, `A train ticket reprinted. Board at ${fareDesk(CITIES[get().cityId]).name}.`, 2400);
       scheduleSave(get);
       return;
     }
@@ -1631,7 +1631,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (get().hud.seated) return "Park at the curb. The door is on foot.";
     if (to === get().cityId) return "You're already in this ward.";
     if (!CITIES[to]) return "No ward by that name.";
-    if (get().fares < 1) return "Need a fare. Light lamps in this city.";
+    if (get().fares < 1) return `Need a train ticket. ${ticketHint(get().cityVaults)} in this city.`;
     if (get().journey) return "You're already on a train.";
     const now = Date.now();
     const arriveAt = now + fareMs(get().cityId, to);
