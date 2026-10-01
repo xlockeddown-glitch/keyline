@@ -1,3 +1,5 @@
+import type { RideGameMark } from "./rideGames.ts";
+
 export type Tier = "white" | "blue" | "green" | "amber" | "red" | "violet";
 
 export type PoiKind =
@@ -158,4 +160,4 @@ export type Journey = {
   grantedWhite?: number;
   grantedBlue?: number;
   grantedGreen?: number;
-};
+} & RideGameMark;

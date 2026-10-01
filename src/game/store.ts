@@ -29,7 +29,8 @@ import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
-import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, sparkState, transitLoot } from "./ticket";
+import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState } from "./ticket";
+import { forfeitRound, lampRoundMs, markRound, openRound, type RideOutcome } from "./rideGames";
 import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
@@ -201,6 +202,12 @@ export type GameState = {
   clearFireworks: () => void;
   boardFare: (to: CityId) => string | null;
   tickJourney: () => void;
+  /** Start a ride-game round. Returns its length, or null if the train is too close to the platform. */
+  startRideRound: () => number | null;
+  /** Bank a finished round (best outcome only) and pay what it newly earns. */
+  finishRideRound: (outcome: RideOutcome) => { white: number; blue: number; green: number };
+  /** Walk away mid-round: forfeit it. Idle pay still stands. */
+  dropRideRound: () => void;
 };
 
 function bumpStreak(get: () => GameState): Pick<GameState, "streak" | "bestStreak" | "fireworks"> {
@@ -445,7 +452,7 @@ function rideFindCopy(add: { white: number; blue: number; green: number }) {
   const list =
     parts.length === 1 ? parts[0]! : parts.length === 2 ? `${parts[0]} and ${parts[1]}` : `${parts[0]}, ${parts[1]}, and ${parts[2]}`;
   if (add.green) return `${list} match${parts.length > 1 || add.white > 1 ? "es" : ""}. You sat the whole haul.`;
-  if (add.blue) return `${list} match${parts.length > 1 || add.white > 1 ? "es" : ""}. Ten minutes on the rail.`;
+  if (add.blue) return `${list} match${parts.length > 1 || add.white > 1 ? "es" : ""} in the car.`;
   if (add.white === 1) return "White match. Left on the seat.";
   return `${add.white} white matches in the car.`;
 }
@@ -598,7 +605,7 @@ export const useGame = create<GameState>((set, get) => ({
   lastKeyAt: Date.now(),
   fares: saved?.fares ?? 0,
   cityVaults: saved?.cityVaults ?? 0,
-  journey: saved?.journey ?? null,
+  journey: saved?.journey ? forfeitRound(saved.journey) : null,
   landAtStation: Boolean(saved?.landAtStation),
   pressPass: saved?.pressPass ?? 0,
   loot: null,
@@ -1632,6 +1639,36 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
     return null;
   },
+  startRideRound: () => {
+    const j = get().journey;
+    if (!j) return null;
+    const now = Date.now();
+    const ms = lampRoundMs(j.arriveAt - now);
+    if (ms == null) return null;
+    set({ journey: openRound(j, now) });
+    scheduleSave(get);
+    return ms;
+  },
+  finishRideRound: (outcome) => {
+    const j = get().journey;
+    if (!j) return { white: 0, blue: 0, green: 0 };
+    const before = get().keys;
+    set({ journey: markRound(j, outcome) });
+    get().tickJourney();
+    const after = get().keys;
+    scheduleSave(get);
+    return {
+      white: Math.max(0, (after.white ?? 0) - (before.white ?? 0)),
+      blue: Math.max(0, (after.blue ?? 0) - (before.blue ?? 0)),
+      green: Math.max(0, (after.green ?? 0) - (before.green ?? 0)),
+    };
+  },
+  dropRideRound: () => {
+    const j = get().journey;
+    if (!j || j.roundAt == null) return;
+    set({ journey: forfeitRound(j) });
+    scheduleSave(get);
+  },
   tickJourney: () => {
     const j = get().journey;
     if (!j) return;
@@ -1640,39 +1677,12 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     const now = Date.now();
-    const last = j.lastTickAt ?? j.departAt;
-    const clipped = Math.min(now, j.arriveAt);
-    const dt = Math.max(0, clipped - last);
     const watching =
       typeof document !== "undefined" &&
       document.visibilityState === "visible" &&
       get().screen === "ride";
-    const openMs = (j.openMs ?? 0) + (watching ? dt : 0);
-    const wallMs = Math.max(0, clipped - j.departAt);
-    const due = transitLoot(wallMs, openMs);
-    const have = {
-      white: j.grantedWhite ?? 0,
-      blue: j.grantedBlue ?? 0,
-      green: j.grantedGreen ?? 0,
-    };
-    const keys = { ...get().keys };
-    const add = {
-      white: Math.min(Math.max(0, WHITE_POCKET - (keys.white ?? 0)), Math.max(0, due.white - have.white)),
-      blue: Math.min(Math.max(0, BLUE_POCKET - (keys.blue ?? 0)), Math.max(0, due.blue - have.blue)),
-      green: Math.min(Math.max(0, GREEN_POCKET - (keys.green ?? 0)), Math.max(0, due.green - have.green)),
-    };
+    const { journey: nextJourney, keys, add } = settleRide(j, get().keys, now, watching);
     const found = add.white + add.blue + add.green;
-    keys.white += add.white;
-    keys.blue += add.blue;
-    keys.green += add.green;
-    const nextJourney = {
-      ...j,
-      openMs,
-      lastTickAt: clipped,
-      grantedWhite: have.white + add.white,
-      grantedBlue: have.blue + add.blue,
-      grantedGreen: have.green + add.green,
-    };
     if (found > 0) {
       sfx.pickup();
       if (now < j.arriveAt) {

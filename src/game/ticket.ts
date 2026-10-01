@@ -1,12 +1,18 @@
 import { CITIES, CITY_LIST } from "./data.ts";
 import { distM } from "./geo.ts";
-import type { City, CityId, Poi } from "./types";
+import { IDLE, journeyOutcome, rideReward, type RideOutcome } from "./rideGames.ts";
+import type { City, CityId, Journey, Poi, Tier } from "./types";
 
 export const VAULTS_PER_FARE = 3;
 export const FARES_CAP = 2;
 export const WHITE_POCKET = 4;
 export const BLUE_POCKET = 4;
 export const GREEN_POCKET = 1;
+/**
+ * Ride grants alone may fill whites this far, so a 14-minute win lands whole.
+ * Every other source still stops at WHITE_POCKET.
+ */
+export const RIDE_WHITE_POCKET = 15;
 export const SPARK_DAY = 6;
 /** A violet lamp stays dark for six hours after it pays. */
 export const VIOLET_COOL_MS = 6 * 60 * 60_000;
@@ -66,19 +72,66 @@ export function otherWards(from: CityId) {
   return CITY_LIST.filter((c) => c.id !== from);
 }
 
-/** Matches found in the carriage. Longer waits pay more; 10+ min is a blue; sitting the whole 10+ min haul is a green. */
-export function transitLoot(wallMs: number, openMs: number) {
-  let white = 0;
-  if (wallMs >= 12_000) white = 1;
-  white += Math.floor(wallMs / 120_000);
-  if (openMs >= 22_000) white += 1;
-  white += Math.floor(openMs / 180_000);
+/**
+ * What the carriage owes so far. Whites are the ride's one payout (idle, played or won — the best
+ * finished round), due once the train has run 12s; strong wins may carry swapped blues.
+ * 10+ min is a blue; sitting the whole 10+ min haul with the tab open is a green.
+ */
+export function transitLoot(wallMs: number, openMs: number, rideMs = wallMs, outcome: RideOutcome = IDLE) {
+  const pay = rideReward(rideMs, outcome);
+  const started = wallMs >= 12_000 || outcome.kind !== "idle";
   const ten = 10 * 60_000;
   const blue = wallMs >= ten ? 1 : 0;
   const sat = wallMs >= ten && openMs >= ten && openMs >= wallMs * 0.85;
   return {
-    white: Math.min(WHITE_POCKET, white),
-    blue,
+    white: started ? pay.white : 0,
+    blue: blue + (started ? pay.blue : 0),
     green: sat ? 1 : 0,
   };
+}
+
+/**
+ * Put ride matches in the pocket. Whites may stack to RIDE_WHITE_POCKET; a blue with no room
+ * comes as three whites instead; anything still over is dropped.
+ */
+export function pocketRide(keys: Record<Tier, number>, owe: { white: number; blue: number; green: number }) {
+  const want = { white: Math.max(0, owe.white), blue: Math.max(0, owe.blue), green: Math.max(0, owe.green) };
+  const blue = Math.min(want.blue, Math.max(0, BLUE_POCKET - (keys.blue ?? 0)));
+  const spill = (want.blue - blue) * 3;
+  const white = Math.min(want.white + spill, Math.max(0, RIDE_WHITE_POCKET - (keys.white ?? 0)));
+  const green = Math.min(want.green, Math.max(0, GREEN_POCKET - (keys.green ?? 0)));
+  return {
+    keys: { ...keys, white: (keys.white ?? 0) + white, blue: (keys.blue ?? 0) + blue, green: (keys.green ?? 0) + green },
+    add: { white, blue, green },
+  };
+}
+
+/**
+ * One carriage tick: advance the journey clock and pay whatever is newly owed.
+ * Granted counts what the ride has settled, pocketed or not, so nothing pays twice.
+ */
+export function settleRide(j: Journey, keys: Record<Tier, number>, now: number, watching: boolean) {
+  const last = j.lastTickAt ?? j.departAt;
+  const clipped = Math.min(now, j.arriveAt);
+  const dt = Math.max(0, clipped - last);
+  const openMs = (j.openMs ?? 0) + (watching ? dt : 0);
+  const wallMs = Math.max(0, clipped - j.departAt);
+  const rideMs = Math.max(0, j.arriveAt - j.departAt);
+  const due = transitLoot(wallMs, openMs, rideMs, journeyOutcome(j));
+  const have = { white: j.grantedWhite ?? 0, blue: j.grantedBlue ?? 0, green: j.grantedGreen ?? 0 };
+  const owe = {
+    white: Math.max(0, due.white - have.white),
+    blue: Math.max(0, due.blue - have.blue),
+    green: Math.max(0, due.green - have.green),
+  };
+  const paid = pocketRide(keys, owe);
+  const journey: Journey = {
+    ...j,
+    openMs,
+    lastTickAt: clipped,
+    grantedWhite: have.white + owe.white,
+    grantedBlue: have.blue + owe.blue,
+    grantedGreen: have.green + owe.green,
+  };
+  return { journey, keys: paid.keys, add: paid.add, arrived: now >= j.arriveAt };
 }

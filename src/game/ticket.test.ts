@@ -41,14 +41,15 @@ test("short closed tab still yields one match", () => {
   assert.deepEqual(transitLoot(5_000, 0), { white: 0, blue: 0, green: 0 });
 });
 
-test("open tab adds an extra white", () => {
-  assert.deepEqual(transitLoot(48_000, 25_000), { white: 2, blue: 0, green: 0 });
+test("open tab no longer trickles extra whites", () => {
+  assert.deepEqual(transitLoot(48_000, 25_000), { white: 1, blue: 0, green: 0 });
   assert.deepEqual(transitLoot(48_000, 10_000), { white: 1, blue: 0, green: 0 });
 });
 
-test("waiting longer finds more whites", () => {
-  assert.equal(transitLoot(4 * 60_000, 0).white, 3);
-  assert.equal(transitLoot(8 * 60_000, 0).white, 4);
+test("an idle ride pays its idle rate, not more per minute", () => {
+  assert.equal(transitLoot(4 * 60_000, 0, 4 * 60_000).white, 1);
+  assert.equal(transitLoot(8 * 60_000, 0, 8 * 60_000).white, 1);
+  assert.equal(transitLoot(14 * 60_000, 0, 14 * 60_000).white, 2);
 });
 
 test("ten minutes is a blue, green only if the tab sat the haul", () => {

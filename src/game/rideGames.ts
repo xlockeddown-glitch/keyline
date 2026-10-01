@@ -1,0 +1,217 @@
+/**
+ * Ride mini-games: what a fare pays, which game a trip gets, and Lamplighter's rules.
+ * Pure — no store, no DOM — so node tests can run it straight.
+ */
+
+export type RideOutcome = { kind: "idle" } | { kind: "played" } | { kind: "won"; perf: number };
+
+export const IDLE: RideOutcome = { kind: "idle" };
+
+/** Payout table is written for an eight-minute ride and scaled from there. */
+export const RIDE_BASE_MS = 8 * 60_000;
+export const BASE_IDLE = 1;
+export const BASE_PLAYED = 3;
+export const BASE_WON_LOW = 5;
+export const BASE_WON_HIGH = 7;
+/** A win at or above this performance is strong: it can trade three whites for a blue. */
+export const STRONG_WIN = 0.75;
+/** Rides this long can trade twice. */
+export const LONG_RIDE_MS = 12 * 60_000;
+export const BLUE_IN_WHITES = 3;
+
+function clamp01(n: number) {
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(1, Math.max(0, n));
+}
+
+/**
+ * Matches one ride pays for its best outcome. Scale = minutes / 8, rounded, at least 1.
+ * Played never pays under idle, won never under played, and a strong win always beats played.
+ * Strong wins worth 5+ whites swap 3 whites for 1 blue (two swaps on 12+ minute rides at 10+).
+ */
+export function rideReward(rideMs: number, outcome: RideOutcome): { white: number; blue: number } {
+  const scale = Math.max(0, rideMs) / RIDE_BASE_MS;
+  const idle = Math.max(1, Math.round(BASE_IDLE * scale));
+  if (outcome.kind === "idle") return { white: idle, blue: 0 };
+  const played = Math.max(idle, Math.round(BASE_PLAYED * scale));
+  if (outcome.kind === "played") return { white: played, blue: 0 };
+  const perf = clamp01(outcome.perf);
+  const strong = perf >= STRONG_WIN;
+  let white = Math.max(played, Math.round((BASE_WON_LOW + (BASE_WON_HIGH - BASE_WON_LOW) * perf) * scale));
+  if (strong) white = Math.max(white, played + 1);
+  let blue = 0;
+  if (strong && white >= 5) {
+    blue = rideMs >= LONG_RIDE_MS && white >= 10 ? 2 : 1;
+    white -= BLUE_IN_WHITES * blue;
+  }
+  return { white, blue };
+}
+
+/** Worth in whites, for comparing payouts. */
+export function rideValue(r: { white: number; blue: number }) {
+  return r.white + BLUE_IN_WHITES * r.blue;
+}
+
+const RANK = { idle: 0, played: 1, won: 2 } as const;
+
+/** The better of two outcomes. A ride only ever pays its best. */
+export function betterOutcome(a: RideOutcome, b: RideOutcome): RideOutcome {
+  if (RANK[b.kind] !== RANK[a.kind]) return RANK[b.kind] > RANK[a.kind] ? b : a;
+  if (a.kind === "won" && b.kind === "won") return b.perf > a.perf ? b : a;
+  return a;
+}
+
+/** What the journey remembers about ride games. Lives on the save so a reload can't re-pay. */
+export type RideGameMark = {
+  /** Best finished round this ride. */
+  game?: { kind: "played" | "won"; perf: number; rounds: number };
+  /** Set while a round is running. Still set on load means the tab closed mid-round. */
+  roundAt?: number;
+  forfeits?: number;
+};
+
+export function journeyOutcome(j: RideGameMark): RideOutcome {
+  const g = j.game;
+  if (!g) return IDLE;
+  if (g.kind === "won") return { kind: "won", perf: clamp01(g.perf) };
+  return { kind: "played" };
+}
+
+/** Fold a finished round into the journey. Keeps the best; counts the round. */
+export function markRound<J extends RideGameMark>(j: J, outcome: RideOutcome): J {
+  const best = betterOutcome(journeyOutcome(j), outcome);
+  const rounds = (j.game?.rounds ?? 0) + 1;
+  const next: J = { ...j, roundAt: undefined };
+  if (best.kind === "idle") return next;
+  next.game = { kind: best.kind, perf: best.kind === "won" ? best.perf : 0, rounds };
+  return next;
+}
+
+export function openRound<J extends RideGameMark>(j: J, now: number): J {
+  return { ...j, roundAt: now };
+}
+
+/** A round still open when the save loads was cut off: forfeit it. Idle pay and earlier bests stand. */
+export function forfeitRound<J extends RideGameMark>(j: J): J {
+  if (j.roundAt == null) return j;
+  return { ...j, roundAt: undefined, forfeits: (j.forfeits ?? 0) + 1 };
+}
+
+// ── Which game a trip gets ──────────────────────────────────────────────
+
+export type RideGameId = "lamplighter" | "where-am-i" | "match-sorter" | "route-puzzle";
+
+export const RIDE_GAME_NAME: Record<RideGameId, string> = {
+  lamplighter: "Lamplighter",
+  "where-am-i": "Where am I",
+  "match-sorter": "Match sorter",
+  "route-puzzle": "Route puzzle",
+};
+
+/** Short trips get quick reflex games, long trips get thinkers. */
+export const RIDE_GAME_BANDS: { underMs: number; games: RideGameId[] }[] = [
+  { underMs: 2 * 60_000, games: ["lamplighter"] },
+  { underMs: 6 * 60_000, games: ["where-am-i", "match-sorter"] },
+  { underMs: Number.POSITIVE_INFINITY, games: ["route-puzzle"] },
+];
+
+/** Games that are built. Lamplighter fills any band whose games aren't ready yet. */
+export const READY_RIDE_GAMES: readonly RideGameId[] = ["lamplighter"];
+
+export function pickRideGame(rideMs: number, ready: readonly RideGameId[] = READY_RIDE_GAMES, seed = 0): RideGameId {
+  const band = RIDE_GAME_BANDS.find((b) => rideMs < b.underMs) ?? RIDE_GAME_BANDS[RIDE_GAME_BANDS.length - 1]!;
+  const open = band.games.filter((g) => ready.includes(g));
+  if (!open.length) return "lamplighter";
+  return open[Math.abs(Math.floor(seed)) % open.length]!;
+}
+
+// ── Lamplighter ─────────────────────────────────────────────────────────
+
+export const ROUND_MAX_MS = 60_000;
+export const ROUND_MIN_MS = 15_000;
+/** Rounds end at least this long before the train pulls in. */
+export const ARRIVAL_BUFFER_MS = 8_000;
+/** How long a lamp takes to cross the window. */
+export const LAMP_TRAVEL_MS = 2_600;
+/** Tap within this of a lamp crossing the frame and it lights. */
+export const LAMP_HIT_MS = 200;
+/** Light at least this share of lamps (strays count against you) to win. */
+export const WIN_ACC = 0.6;
+
+/** Round length for the time left, or null when the platform is too close for a round. */
+export function lampRoundMs(remainingMs: number): number | null {
+  const room = Math.floor(remainingMs - ARRIVAL_BUFFER_MS);
+  if (room < ROUND_MIN_MS) return null;
+  return Math.min(ROUND_MAX_MS, room);
+}
+
+export type LampTier = "white" | "blue" | "green" | "amber";
+export type Lamp = { id: number; at: number; tier: LampTier };
+
+export function seededRng(seed: number) {
+  let a = (Math.floor(seed) >>> 0) || 0x9e3779b9;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** When each lamp crosses the frame. Gaps tighten as the round goes on. */
+export function lampSchedule(roundMs: number, seed: number): Lamp[] {
+  const rnd = seededRng(seed);
+  const out: Lamp[] = [];
+  let at = 1_700;
+  let id = 0;
+  while (at <= roundMs - 700) {
+    const t = at / roundMs;
+    const roll = rnd();
+    const tier: LampTier = roll < 0.55 ? "white" : roll < 0.8 ? "blue" : roll < 0.95 ? "green" : "amber";
+    out.push({ id: id++, at: Math.round(at), tier });
+    const gap = 1_350 - 550 * t;
+    at += gap + (rnd() - 0.5) * 360;
+  }
+  return out;
+}
+
+/** The unlit lamp nearest the frame at time t, if one is close enough to light. */
+export function lampInFrame(lamps: Lamp[], lit: ReadonlySet<number>, t: number): Lamp | null {
+  let best: Lamp | null = null;
+  let gap = LAMP_HIT_MS + 1;
+  for (const l of lamps) {
+    if (lit.has(l.id)) continue;
+    const d = Math.abs(l.at - t);
+    if (d < gap) {
+      gap = d;
+      best = l;
+    }
+  }
+  return gap <= LAMP_HIT_MS ? best : null;
+}
+
+export type LampTally = { lamps: number; hits: number; strays: number; streak: number };
+
+/** Accuracy counts every lamp that passed plus every tap at an empty frame. */
+export function lampAccuracy(t: Pick<LampTally, "lamps" | "hits" | "strays">) {
+  const shots = t.lamps + t.strays;
+  return shots > 0 ? Math.min(1, t.hits / shots) : 0;
+}
+
+export function lampOutcome(t: Pick<LampTally, "lamps" | "hits" | "strays">): RideOutcome {
+  const acc = lampAccuracy(t);
+  if (t.lamps > 0 && acc >= WIN_ACC) return { kind: "won", perf: clamp01((acc - WIN_ACC) / (1 - WIN_ACC)) };
+  return { kind: "played" };
+}
+
+/** End-of-round line, in the conductor's voice. */
+export function lampVerdict(t: Pick<LampTally, "lamps" | "hits" | "strays">) {
+  const acc = lampAccuracy(t);
+  const of = `${t.hits} of ${t.lamps} lit.`;
+  if (t.lamps > 0 && t.hits === t.lamps && t.strays === 0) return `${of} Every one. The conductor tips his cap.`;
+  if (acc >= 0.9) return `${of} Clean work. The street looks warmer.`;
+  if (acc >= WIN_ACC) return `${of} Good enough to get paid.`;
+  if (t.hits === 0) return `${of} The street stayed dark. The seat still pays.`;
+  return `${of} Bit jumpy. You still get the carriage rate.`;
+}

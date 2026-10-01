@@ -13,3 +13,4 @@ tmp/
 .grok/og-pending
 .grok/trivia-audit-cache.json
 .grok/trivia-audit-report.json
+__pycache__/
