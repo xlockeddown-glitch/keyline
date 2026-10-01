@@ -21,6 +21,7 @@
     "trivia:retune": "node --experimental-strip-types scripts/trivia-retune.mjs",
     "trivia:balance": "node scripts/trivia-balance.mjs",
     "trivia:quotas": "node scripts/trivia-balance.mjs --check",
+    "trivia:lint": "node scripts/trivia-lint.mjs",
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "check:uniformity": "node scripts/uniformity-qa.mjs",
     "qa:sprites": "python3 scripts/qa-sprites.py",

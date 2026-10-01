@@ -351,7 +351,7 @@ const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	celebrity: CELEBRITY_BANK,
 };
 const TEXAS_LOCAL = [
-	q("Texas has how many official state capitol buildings still standing in Austin's grounds story — the current Capitol opened in which decade?", [
+	q("The current Texas Capitol in Austin opened in which decade?", [
 		"1860s",
 		"1880s",
 		"1910s",
@@ -1268,7 +1268,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Speaker of the Lords only"
 			], "Head of government"),
 			q("The Mayor of London is…", [
-				"The same office",
+				"A second title held by the Prime Minister",
 				"A separately elected city-region executive",
 				"Appointed by the Crown only",
 				"The monarch"
