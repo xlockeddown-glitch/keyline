@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.25";
+export const APP_VERSION = "0.0.26";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k25b";
+export const PUBLISH_STAMP = "k26a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -24,3 +24,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.24: ride mini-games slice 1 — Play while you ride (Lamplighter), one best-outcome ride payout (idle/played/won), ride white pocket 15; station-sign fare desk; Journal/Places/Supplies/Progress/Leaderboard, Goals, train tickets (k24a). Briefed as "0.0.19 k19a"; main had already shipped 0.0.19–0.0.23.
 // 0.0.25: ride games + Lamplighter, train station, Journal renames, trivia QA + anti-repeat, character art fixes (k25a).
 // 0.0.25 k25b: Vercel function runtime nodejs20.x → nodejs22.x (Node 20 runtime discontinued; k25a publish failed). Still 0.0.25 — k25a never went live.
+// 0.0.26: +358 local trivia cards for Chicago/NYC/SF; easy city cards can be white (k26a).

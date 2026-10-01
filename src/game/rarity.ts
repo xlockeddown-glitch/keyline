@@ -64,7 +64,8 @@ export function tagNudge(item: TriviaSeed, city = false): -1 | 0 | 1 {
   const blob = `${item.q} ${item.answer} ${item.fact ?? ""}`;
   let plus = 0;
   let minus = 0;
-  if (city) plus = 1;
+  // City cards step up one tier, except easy (diff 1) ones: those band like any diff-1 card (white 70 / blue 30).
+  if (city && (item.diff ?? 2) !== 1) plus = 1;
   if (DATE_RE.test(blob)) plus = 1;
   if (MULTI_RE.test(blob)) plus = 1;
   if (NICK_RE.test(blob)) plus = 1;

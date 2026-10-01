@@ -143,3 +143,29 @@ test("down-fill is exactly one step and is counted", () => {
   const skip = pickUnseenRarity("green", city, [], new Set());
   assert.equal(skip, null);
 });
+
+test("easy (diff 1) city cards are not bumped: they can roll white, about 70/30 white/blue", () => {
+  const counts = { white: 0, blue: 0, other: 0 };
+  const n = 4000;
+  for (let i = 0; i < n; i++) {
+    const seed: TriviaSeed = {
+      // Letters only: a number like 1871 in the prompt would trip the date nudge.
+      q: `Local landmark card ${i.toString(26).replace(/\d/g, (d) => "qrstuvwxyz"[Number(d)])} sits on…`,
+      choices: ["a", "b", "c", "d"],
+      answer: "a",
+      diff: 1,
+    };
+    const tier = sealPlate(seed, { city: true }).rarity;
+    if (tier === "white") counts.white += 1;
+    else if (tier === "blue") counts.blue += 1;
+    else counts.other += 1;
+  }
+  assert.equal(counts.other, 0);
+  assert.ok(counts.white > 0, "a diff-1 city card can be white");
+  const whiteShare = counts.white / n;
+  assert.ok(whiteShare > 0.65 && whiteShare < 0.75, `white share ${whiteShare}`);
+  // Tag nudges still apply on top, and diff 2/3 city cards keep their one-tier bump.
+  assert.equal(tagNudge({ q: "Local card", choices: ["a", "b", "c", "d"], answer: "a", diff: 1 }, true), 0);
+  assert.equal(tagNudge({ q: "Local card", choices: ["a", "b", "c", "d"], answer: "a", diff: 2 }, true), 1);
+  assert.equal(tagNudge({ q: "Local card", choices: ["a", "b", "c", "d"], answer: "a", diff: 3 }, true), 1);
+});
