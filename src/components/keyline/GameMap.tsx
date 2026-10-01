@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isScoutShop, walkSpeed } from "@/game/data";
-import { seriesPinHtml, vaultPinHtml } from "@/game/pins";
+import { seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
@@ -733,7 +733,9 @@ export function GameMap() {
       const lit = desk && st.fares > 0;
       const el = shop
         ? `<div class="shop-pin" title="${poi.name}"><span class="shop-awning"></span><span class="shop-body"><i class="shop-window"></i><i class="shop-door"></i></span></div>`
-        : vaultPinHtml(poi, { cooling, desk, lit });
+        : desk
+          ? stationPinHtml({ cooling, fare: lit })
+          : vaultPinHtml(poi, { cooling });
       const marker = L.marker([poi.lat, poi.lng], {
         icon: L.divIcon({ className: "", html: el, iconSize: shop ? [36, 42] : [32, 48], iconAnchor: shop ? [18, 40] : [16, 46] }),
         keyboard: false,

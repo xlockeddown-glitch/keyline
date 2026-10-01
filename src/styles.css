@@ -359,9 +359,6 @@ h3 {
   transform:scale(1.35);
   transform-origin:50% 100%
 }
-.vault-pin.is-fare .lantern{
-  filter:drop-shadow(0 0 8px var(--color-vault-amber))
-}
 .vault-pin.tier-white,
 .vault-night.tier-white{
   --glow:var(--color-vault-white)
@@ -386,33 +383,91 @@ h3 {
 .vault-night.tier-violet{
   --glow:var(--color-vault-violet)
 }
-.vault-pin.is-desk .fare-stub{
+/* Fare desk = station sign. Enamel plate + cream train; no lamp glass, no tier hue. */
+.station-pin{
+  position:relative;
+  width:32px;
+  height:48px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  filter:drop-shadow(0 2px 3px #000a);
+}
+.station-sign{
+  position:relative;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  border-radius:6px;
+  background:#1c2b3a;
+  border:2px solid #ece4d6;
+  box-shadow:inset 0 0 0 1px #0008;
+}
+.station-train{
+  width:20px;
+  height:20px;
+  fill:#ece4d6;
+  stroke:none;
+}
+.station-train .pane{
+  fill:#1c2b3a;
+}
+.station-train .eye{
+  fill:#1c2b3a;
+}
+.station-train .rails{
+  fill:none;
+  stroke:#ece4d6;
+  stroke-width:1.6;
+  stroke-linecap:round;
+}
+.station-post{
+  display:block;
+  width:3px;
+  height:16px;
+  margin-top:-1px;
+  background:linear-gradient(#ece4d6, #6f6a60);
+  border-radius:0 0 2px 2px;
+}
+.station-pin.cooling{
+  opacity:.55;
+}
+/* Holding a fare: the sign turns over to cream and a ring calls you to the platform. */
+.station-pin.has-fare .station-sign{
+  background:#ece4d6;
+  border-color:#1c2b3a;
+}
+.station-pin.has-fare .station-train{
+  fill:#1c2b3a;
+}
+.station-pin.has-fare .station-train .pane,
+.station-pin.has-fare .station-train .eye{
+  fill:#ece4d6;
+}
+.station-pin.has-fare .station-train .rails{
+  stroke:#1c2b3a;
+}
+.station-pin.has-fare .station-sign::after{
+  content:"";
   position:absolute;
-  left:50%;
-  bottom:2px;
-  width:12px;
-  height:8px;
-  margin-left:-6px;
+  inset:-7px;
+  border-radius:10px;
+  border:2px solid #ece4d6;
+  opacity:0;
+  animation:1.6s ease-out infinite station-call;
   pointer-events:none;
 }
-.vault-pin.is-desk{
-  position:relative;
-}
-.vault-pin.is-fare{
-  --glow:var(--color-vault-amber);
-}
-.vault-pin.is-fare .fare-stub{
-  box-shadow:0 0 8px color-mix(in oklab, var(--color-vault-amber) 80%, transparent);
-  animation:1.6s ease-in-out infinite fare-pulse;
-}
-@keyframes fare-pulse{
-  50%{
-    transform:rotate(-12deg) scale(1.15);
-  }
+@keyframes station-call{
+  0%{ opacity:.9; transform:scale(.82) }
+  100%{ opacity:0; transform:scale(1.25) }
 }
 @media (prefers-reduced-motion: reduce) {
-  .vault-pin.is-fare .fare-stub{
+  .station-pin.has-fare .station-sign::after{
     animation:none;
+    opacity:.8;
   }
 }
 .fare-hint{

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CITY_LIST, SERIES, TIER_LABEL, seriesPoi, type SeriesDef } from "./data.ts";
 import { RARITY_LADDER as TIERS } from "./rarity.ts";
-import { pinTier, seriesPinHtml, vaultPinHtml } from "./pins.ts";
+import { pinTier, seriesPinHtml, stationPinHtml, vaultPinHtml } from "./pins.ts";
 import { isFareDesk } from "./ticket.ts";
 
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
@@ -12,7 +12,7 @@ test("street marker tier === required match tier, all six tiers", () => {
   assert.equal(TIERS.length, 6);
   for (const tier of TIERS) {
     assert.equal(pinTier(vaultPinHtml({ tier })), tier, `lamp ${tier}`);
-    assert.equal(pinTier(vaultPinHtml({ tier }, { cooling: true, desk: true })), tier, `desk ${tier}`);
+    assert.equal(pinTier(vaultPinHtml({ tier }, { cooling: true })), tier, `cooling ${tier}`);
     for (const kind of ["run", "stack"] as const) {
       const s: SeriesDef = { ...SERIES[kind], cost: tier };
       // store: keys[series.cost] check + VaultModal hero uses seriesPoi(series).tier
@@ -33,8 +33,8 @@ test("The Run / The Stack markers carry their match cost", () => {
 test("every city lamp marker matches its poi tier", () => {
   for (const c of CITY_LIST) {
     for (const p of c.pois) {
-      if (p.kind === "shop") continue;
-      assert.equal(pinTier(vaultPinHtml(p, { desk: isFareDesk(p) })), p.tier, `${c.id}/${p.id}`);
+      if (p.kind === "shop" || isFareDesk(p)) continue;
+      assert.equal(pinTier(vaultPinHtml(p)), p.tier, `${c.id}/${p.id}`);
     }
   }
 });
@@ -51,4 +51,31 @@ test("lantern-art.css styles every tier name the game uses", () => {
   const css = read("../../public/lantern-art.css");
   for (const tier of TIERS) assert.match(css, new RegExp(`\\.vault-pin\\.tier-${tier}\\b`), tier);
   assert.doesNotMatch(css, /tier-(yellow|gold)\b/);
+});
+
+const LAMP_CLASS = /\b(vault-pin|lantern[\w-]*|stack-lamp|stack-globe|tier-[\w-]+|is-run|is-stack)\b/;
+
+test("fare desk markers are station signs, never lamps or tiers", () => {
+  for (const o of [{}, { fare: true }, { cooling: true }, { fare: true, cooling: true }]) {
+    const html = stationPinHtml(o);
+    const classes = [...html.matchAll(/class="([^"]*)"/g)].map((m) => m[1]).join(" ");
+    assert.doesNotMatch(classes, LAMP_CLASS, JSON.stringify(o));
+    assert.equal(pinTier(html), null);
+    assert.match(html, /^<div class="station-pin\b/);
+    assert.match(html, /station-train/);
+  }
+  assert.match(stationPinHtml({ fare: true }), /has-fare/);
+  assert.doesNotMatch(stationPinHtml({}), /has-fare/);
+});
+
+test("GameMap draws every fare desk with the station marker", () => {
+  const src = read("../components/keyline/GameMap.tsx");
+  assert.match(src, /desk\s*\?\s*stationPinHtml\(/);
+  assert.doesNotMatch(src, /vaultPinHtml\([^)]*desk/);
+});
+
+test("no amber fare call-out left on lamps", () => {
+  const css = read("../../public/lantern-art.css") + read("../styles.css");
+  assert.doesNotMatch(css, /\.vault-pin\.is-(fare|desk)\b/);
+  assert.match(read("../styles.css"), /\.station-pin\.has-fare\b/);
 });
