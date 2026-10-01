@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.26";
+export const APP_VERSION = "0.0.27";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k26b";
+export const PUBLISH_STAMP = "k27a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -26,3 +26,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.25 k25b: Vercel function runtime nodejs20.x → nodejs22.x (Node 20 runtime discontinued; k25a publish failed). Still 0.0.25 — k25a never went live.
 // 0.0.26: +358 local trivia cards for Chicago/NYC/SF; easy city cards can be white (k26a).
 // 0.0.26 (k26b): upgrade @tanstack/react-start to 1.168.60 (start-server-core 1.169.39) for CVE-2026-102989 / GHSA-qx66-fv34-fjm8.
+// 0.0.27: +374 local cards Detroit/London/Austin/Temple/Tucson; +297 local cards Toronto/New Orleans/Boston/LA (k27a).
