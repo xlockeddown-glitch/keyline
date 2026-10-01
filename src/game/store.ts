@@ -431,10 +431,15 @@ function loadSave(): Partial<GameState> | null {
 }
 
 let saveTimer: number | null = null;
+/**
+ * Save within 400ms of the first change, writing whatever the state is then. A pending save is
+ * not pushed back: the ride screen ticks every 250ms, and a resetting debounce never fired there.
+ */
 function scheduleSave(get: () => GameState) {
   if (typeof window === "undefined") return;
-  if (saveTimer) window.clearTimeout(saveTimer);
+  if (saveTimer) return;
   saveTimer = window.setTimeout(() => {
+    saveTimer = null;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(persistable(get())));
     } catch {
@@ -443,7 +448,7 @@ function scheduleSave(get: () => GameState) {
   }, 400);
 }
 
-/** Write the save right away. Ride rounds use it: the ride tick keeps resetting the debounce. */
+/** Write the save right away. Ride rounds use it so a reload can't land between round and save. */
 function saveNow(get: () => GameState) {
   if (typeof window === "undefined") return;
   if (saveTimer) window.clearTimeout(saveTimer);
