@@ -1,7 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CITIES } from "./data.ts";
-import { ARRIVAL_BUFFER_MS, pickRideGame, rideReward, rideRoundMs, rideValue } from "./rideGames.ts";
+import {
+  ARRIVAL_BUFFER_MS,
+  RIDE_PERFECT_BONUS,
+  betterOutcome,
+  journeyOutcome,
+  lampOutcome,
+  markRound,
+  perfectLine,
+  pickRideGame,
+  rideReward,
+  rideRoundMs,
+  rideValue,
+  type RideGameMark,
+} from "./rideGames.ts";
+import { transitLoot } from "./ticket.ts";
 import {
   WHERE_CHOICES,
   WHERE_ROUND_MAX_MS,
@@ -11,6 +25,7 @@ import {
   namesIn,
   whereDeck,
   whereOutcome,
+  wherePerfect,
   whereRound,
   whereRoundMs,
   whereVerdict,
@@ -90,7 +105,7 @@ test("pool drops thin, flavor-only, and self-naming lore", () => {
 });
 
 test("scoring: four of five wins, five is a strong win, short or incomplete is played", () => {
-  assert.deepEqual(whereOutcome({ asked: 5, right: 5, total: 5 }), { kind: "won", perf: 1 });
+  assert.deepEqual(whereOutcome({ asked: 5, right: 5, total: 5 }), { kind: "won", perf: 1, perfect: true });
   assert.deepEqual(whereOutcome({ asked: 5, right: 4, total: 5 }), { kind: "won", perf: 0.5 });
   assert.deepEqual(whereOutcome({ asked: 5, right: 3, total: 5 }), { kind: "played" });
   assert.deepEqual(whereOutcome({ asked: 0, right: 0, total: 5 }), { kind: "played" });
@@ -109,10 +124,46 @@ test("scoring → reward: a clean sheet beats four of five beats played beats id
     assert.ok(v(3) >= idle, `${m}m: played at least idle`);
     assert.ok(v(5) >= 1);
   }
-  // Four-minute ride: idle 1, played 2, 4/5 = 4 whites, 5/5 = 4 whites (strong win, no blue under 5).
+  // Four-minute ride: idle 1, played 2, 4/5 = 3 whites, 5/5 = 4 whites (strong win, no blue under 5) + 1 perfect bonus.
   assert.deepEqual(rideReward(4 * MIN, whereOutcome({ asked: 5, right: 3, total: 5 })), { white: 2, blue: 0 });
   assert.deepEqual(rideReward(4 * MIN, whereOutcome({ asked: 5, right: 4, total: 5 })), { white: 3, blue: 0 });
-  assert.deepEqual(rideReward(4 * MIN, whereOutcome({ asked: 5, right: 5, total: 5 })), { white: 4, blue: 0 });
+  assert.deepEqual(rideReward(4 * MIN, whereOutcome({ asked: 5, right: 5, total: 5 })), { white: 5, blue: 0 });
+});
+
+test("perfect round: 5/5 pays the base strong win plus one flat white; 4/5 is unchanged", () => {
+  for (const m of [1, 2, 3, 4, 5.4, 5.9, 8, 14]) {
+    const ms = m * MIN;
+    const base5 = rideReward(ms, { kind: "won", perf: 1 });
+    const base4 = rideReward(ms, { kind: "won", perf: 0.5 });
+    const five = rideReward(ms, whereOutcome({ asked: 5, right: 5, total: 5 }));
+    assert.deepEqual(five, { white: base5.white + RIDE_PERFECT_BONUS, blue: base5.blue }, `${m}m: 5/5 = base + 1`);
+    assert.deepEqual(rideReward(ms, whereOutcome({ asked: 5, right: 4, total: 5 })), base4, `${m}m: 4/5 unchanged`);
+  }
+  assert.equal(RIDE_PERFECT_BONUS, 1);
+  // A short deck (fewer than five clues) can still win, but isn't a perfect round.
+  assert.equal(wherePerfect({ asked: 4, right: 4, total: 4 }), false);
+  assert.deepEqual(whereOutcome({ asked: 4, right: 4, total: 4 }), { kind: "won", perf: 1 });
+  assert.match(perfectLine(whereOutcome({ asked: 5, right: 5, total: 5 })) ?? "", /Perfect round: \+1 white/);
+  assert.equal(perfectLine(whereOutcome({ asked: 5, right: 4, total: 5 })), undefined);
+  // Lamplighter never sets the flag, so its pay is untouched.
+  assert.equal("perfect" in lampOutcome({ lamps: 20, hits: 20, strays: 0 }), false);
+});
+
+test("perfect round is remembered on the journey and survives a worse later round", () => {
+  const five = whereOutcome({ asked: 5, right: 5, total: 5 });
+  let j: RideGameMark = markRound({}, whereOutcome({ asked: 5, right: 4, total: 5 }));
+  assert.equal(j.game?.perfect, undefined);
+  j = markRound(j, five);
+  assert.equal(j.game?.perfect, true);
+  j = markRound(j, whereOutcome({ asked: 5, right: 3, total: 5 }));
+  assert.deepEqual(journeyOutcome(j), five);
+  assert.equal(j.game?.rounds, 3);
+  // Same perf, with and without the flag: the perfect one wins the tie.
+  assert.deepEqual(betterOutcome({ kind: "won", perf: 1 }, five), five);
+  assert.deepEqual(betterOutcome(five, { kind: "won", perf: 1 }), five);
+  // The fare settles with the bonus.
+  const ms = 5.4 * MIN;
+  assert.equal(transitLoot(ms, ms, ms, five).white, transitLoot(ms, ms, ms, { kind: "won", perf: 1 }).white + 1);
 });
 
 test("Where am I? rounds fit 30–75s and end before the platform", () => {

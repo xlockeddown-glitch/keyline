@@ -7,6 +7,7 @@ import {
   journeyOutcome,
   lampOutcome,
   lampVerdict,
+  perfectLine,
   pickRideGame,
   rideReward,
   rideRoundMs,
@@ -100,7 +101,10 @@ export function RideScreen() {
   };
   const done = (tally: LampTally) =>
     settle(lampOutcome(tally), lampVerdict(tally), tally.streak >= 5 ? `Best run: ${tally.streak} in a row.` : undefined);
-  const doneWhere = (tally: WhereTally) => settle(whereOutcome(tally), whereVerdict(tally, to.name));
+  const doneWhere = (tally: WhereTally) => {
+    const outcome = whereOutcome(tally);
+    settle(outcome, whereVerdict(tally, to.name), perfectLine(outcome));
+  };
   const quit = () => {
     dropRideRound();
     setRound(null);

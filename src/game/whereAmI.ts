@@ -110,11 +110,17 @@ export function whereWinAt(total: number) {
   return Math.max(1, Math.ceil(total * (WHERE_WIN / WHERE_ROUNDS)));
 }
 
+/** A full five-clue round with every answer right. Earns the flat perfect-round bonus. */
+export function wherePerfect(t: WhereTally) {
+  return t.total >= WHERE_ROUNDS && t.asked >= t.total && t.right >= t.total;
+}
+
 /** Win: answered every clue and got at least four of five. Perf 0.5 at the line, 1 for a clean sheet. */
 export function whereOutcome(t: WhereTally): RideOutcome {
   const need = whereWinAt(t.total);
   if (t.total >= WHERE_WIN && t.asked >= t.total && t.right >= need) {
-    return { kind: "won", perf: Math.min(1, (t.right - need + 1) / (t.total - need + 1)) };
+    const perf = Math.min(1, (t.right - need + 1) / (t.total - need + 1));
+    return wherePerfect(t) ? { kind: "won", perf, perfect: true } : { kind: "won", perf };
   }
   return { kind: "played" };
 }
