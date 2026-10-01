@@ -47,7 +47,7 @@ else {
   if (!existsSync(vcPath)) errors.push("missing .vc-config.json");
   else {
     const vc = JSON.parse(readFileSync(vcPath, "utf8"));
-    if (vc.runtime !== "nodejs20.x") errors.push(`runtime is ${vc.runtime}, need nodejs20.x`);
+    if (vc.runtime !== "nodejs22.x") errors.push(`runtime is ${vc.runtime}, need nodejs22.x`);
     if (vc.handler !== "index.mjs") errors.push(`handler is ${vc.handler}, need index.mjs`);
     if (vc.launcherType !== "Nodejs") errors.push(`launcherType is ${vc.launcherType}, need Nodejs`);
   }

@@ -205,7 +205,7 @@ export default defineConfig(({ command, isPreview }) => ({
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
             vercel: {
-              functions: { runtime: "nodejs20.x" },
+              functions: { runtime: "nodejs22.x" },
               // Classic Node (req, res) handler — Grok's Vercel launcher does
               // not accept Nitro's newer web `fetch` entry.
               entryFormat: "node",
