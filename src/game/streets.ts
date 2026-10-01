@@ -708,6 +708,7 @@ export async function osrmRoute(from: Pt, to: Pt, signal?: AbortSignal, drive = 
   const path = `${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
   const bases = drive ? OSRM_DRIVE : OSRM_FOOT;
   for (const base of bases) {
+    if (signal?.aborted) return null;
     try {
       const res = await fetch(`${base}/${path}`, { signal: mergeAbort(signal, 8000) });
       if (!res.ok) continue;
@@ -908,10 +909,13 @@ export function routeHugsGraph(g: StreetGraph, path: Pt[], maxOff = 32): boolean
   return true;
 }
 
+/** Online route with an offline graph fallback. Resolves null once `signal` aborts, never a stale path. */
 export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220, from) : to;
   const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
+  // Aborted (map torn down, city changed): no fallback path. The caller's map may be gone.
+  if (signal?.aborted) return null;
   if (online && online.length >= 2) {
     if (g) ingestLine(g, online);
     return tidyPath(online);
@@ -925,6 +929,7 @@ export async function routeDrive(g: StreetGraph | null, from: Pt, to: Pt, signal
   const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
   if (g && distM(snappedTo.lat, snappedTo.lng, to.lat, to.lng) > 160) return null;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, true);
+  if (signal?.aborted) return null;
   if (online && online.length >= 2) {
     if (g) ingestLine(g, online, false);
     return tidyPath(online);

@@ -334,6 +334,7 @@ export function GameMap() {
   }
 
   function drawRoute(L: LModule, map: LMap, path: Pt[]) {
+    if (mapRef.current !== map) return; // removed map: Leaflet would throw adding to its gone panes
     routeLine.current?.remove();
     routeLine.current = L.polyline(
       path.map((p) => [p.lat, p.lng] as [number, number]),
@@ -540,6 +541,9 @@ export function GameMap() {
       cabMarker.current?.remove();
       cabMarker.current = null;
       routeLine.current = null;
+      routeRef.current = null;
+      waypoint.current = null;
+      waypointMarker.current = null;
       vaultMarkers.current.clear();
       keyMarkers.current.clear();
     };
@@ -547,6 +551,7 @@ export function GameMap() {
   }, [cityId]);
 
   function placeWaypoint(L: LModule, map: LMap, lat: number, lng: number) {
+    if (mapRef.current !== map) return;
     waypointMarker.current?.remove();
     waypointMarker.current = L.marker([lat, lng], {
       icon: L.divIcon({
@@ -612,13 +617,14 @@ export function GameMap() {
     const local = net ? routeOnGraph(net, from, walkTo) : null;
     apply(local);
 
-    const path = seated
-      ? await routeDrive(net, from, snapped, abortRef.current?.signal)
-      : await routeWalk(g, from, snapped, abortRef.current?.signal);
+    // The online route resolves later; by then the map may have been torn down (boarding a fare,
+    // switching city). Hold this map's own signal and drop the answer if the map isn't live.
+    const signal = abortRef.current?.signal;
+    const path = seated ? await routeDrive(net, from, snapped, signal) : await routeWalk(g, from, snapped, signal);
+    if (signal?.aborted || mapRef.current !== map) return;
     if (waypoint.current !== target) return;
     if (apply(path)) return;
     if (!routeRef.current) {
-      if (abortRef.current?.signal.aborted) return;
       useGame.setState({ toast: "No street that way." });
       window.setTimeout(() => useGame.setState({ toast: null }), 1400);
     }

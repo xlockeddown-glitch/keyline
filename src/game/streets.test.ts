@@ -11,7 +11,9 @@ import {
   nearest,
   pathLength,
   routeHugsGraph,
+  routeDrive,
   routeOnGraph,
+  routeWalk,
   stuckNudge,
   type Pt,
 } from "./streets.ts";
@@ -104,4 +106,30 @@ test("default scouts cannot cut buildings; Super Legendary can; 18m hop is gated
   const hop = stuckNudge(from, to, canCutBuildings("lynx"));
   assert.ok(hop);
   assert.ok(distM(from.lat, from.lng, hop.lat, hop.lng) <= 18.1);
+});
+
+test("routeWalk/routeDrive resolve null once aborted, never a stale offline path (map torn down mid-route)", async () => {
+  const { g, west, east } = blockGraph();
+  const realFetch = globalThis.fetch;
+  try {
+    // Offline: online router fails, so the graph fallback answers.
+    globalThis.fetch = (async () => new Response("", { status: 503 })) as typeof fetch;
+    const live = await routeWalk(g, west, east, new AbortController().signal);
+    assert.ok(live && live.length >= 2, "fallback still routes while the map is live");
+    // Abort while the online request is in flight (what boarding a fare does to the map).
+    const ctl = new AbortController();
+    globalThis.fetch = ((_u: unknown, init?: RequestInit) =>
+      new Promise((_, reject) => {
+        const no = () => reject(new DOMException("aborted", "AbortError"));
+        if (init?.signal?.aborted) no();
+        else init?.signal?.addEventListener("abort", no);
+      })) as typeof fetch;
+    const walking = routeWalk(g, west, east, ctl.signal);
+    const driving = routeDrive(g, west, east, ctl.signal);
+    ctl.abort();
+    assert.equal(await walking, null);
+    assert.equal(await driving, null);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
