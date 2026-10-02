@@ -7,9 +7,9 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
     science: [
       q("Radar is an acronym involving which pair of words?", ["Radio and ranging", "Rail and drone", "Rocket and radius", "Random and array"], "Radio and ranging", 1, "RAdio Detection And Ranging."),
       q("A surface-to-air missile is designed to hit…", ["submarines only", "aircraft or incoming missiles", "tanks in a city block", "satellites as its only job"], "aircraft or incoming missiles", 1),
-      q("The U.S. Patriot is primarily a…", ["naval gun", "surface-to-air missile system", "infantry rifle", "space telescope"], "surface-to-air missile system", 1, "Raytheon (now RTX) has long built Patriot."),
+      q("The U.S. Patriot is primarily a…", ["naval gun system on destroyers", "surface-to-air missile system", "infantry rifle for the Army", "space telescope in orbit"], "surface-to-air missile system", 1, "Raytheon (now RTX) has long built Patriot."),
       q("AMRAAM, used by U.S. fighters, is a…", ["torpedo", "air-to-air missile", "howitzer shell", "sonar buoy"], "air-to-air missile", 2, "AIM-120. Hughes/Raytheon lineage."),
-      q("The AIM-9 Sidewinder is a famous…", ["ballistic ICBM", "heat-seeking air-to-air missile", "depth charge", "anti-ship ram"], "heat-seeking air-to-air missile", 2),
+      q("The AIM-9 Sidewinder is a famous…", ["ballistic ICBM fired from silos", "heat-seeking air-to-air missile", "depth charge dropped on submarines", "radar-guided anti-ship missile"], "heat-seeking air-to-air missile", 2),
       q("A Tomahawk is a…", ["short-range grenade", "cruise missile", "pistol round", "weather balloon"], "cruise missile", 2),
       q("Mach 1 is…", ["escape velocity", "the speed of sound", "the speed of light", "orbital speed"], "the speed of sound", 1),
       q("An ICBM is built to travel…", ["across a football field", "between continents", "only underwater", "only in the ionosphere as a plane"], "between continents", 2),
@@ -21,14 +21,14 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
       q("The Secretary of Defense is a member of the…", ["Supreme Court", "U.S. Cabinet", "Federal Reserve board only", "UN General Assembly staff"], "U.S. Cabinet", 1),
     ],
     history: [
-      q("Raytheon began in the 1920s as a…", ["desert copper mine", "electronics firm in Massachusetts", "Texas cattle brand", "British shipyard"], "electronics firm in Massachusetts", 2, "Cambridge, Massachusetts, 1922."),
-      q("The Cold War arms race pushed the U.S. to build…", ["only sailing ships", "long-range missiles and radar nets", "more canals", "a second Capitol"], "long-range missiles and radar nets", 1),
+      q("Raytheon began in the 1920s as a…", ["copper mine in the Arizona desert", "electronics firm in Massachusetts", "cattle brand from West Texas", "shipyard on the River Clyde"], "electronics firm in Massachusetts", 2, "Cambridge, Massachusetts, 1922."),
+      q("The Cold War arms race pushed the U.S. to build…", ["more sailing ships for the Navy", "long-range missiles and radar nets", "more canals across the plains", "a second Capitol building"], "long-range missiles and radar nets", 1),
       q("RTX is the company that includes the old…", ["Raytheon", "Kodak only", "Pan Am", "Woolworth"], "Raytheon", 2),
     ],
     local: [
       q("Raytheon (RTX) Missiles & Defense is a major employer in…", ["Tucson", "Flagstaff only", "Yuma's port", "Page"], "Tucson", 1),
       q("Davis-Monthan Air Force Base sits on which side of Tucson?", ["the northwest mountains only", "the city's southeast", "inside Mexico", "the Grand Canyon rim"], "the city's southeast", 2),
-      q("AMARG, the 'boneyard' of stored military aircraft, is at…", ["Davis-Monthan AFB, Tucson", "LAX", "O'Hare", "Heathrow"], "Davis-Monthan AFB, Tucson", 2),
+      q("AMARG, the 'boneyard' of stored military aircraft, is at…", ["Davis-Monthan AFB, Tucson", "Edwards AFB, California", "Nellis AFB, Las Vegas", "Luke AFB, Phoenix"], "Davis-Monthan AFB, Tucson", 2),
     ],
     math: [
       q("A missile at 400 m/s for 5 seconds covers…", ["80 m", "400 m", "2,000 m", "20,000 m"], "2,000 m", 1),
@@ -38,9 +38,9 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
   aerospace: {
     science: [
       q("A planetarium is built to show…", ["fish", "the night sky", "ore samples only", "live aircraft"], "the night sky", 1),
-      q("Lift on a wing comes mainly from…", ["the landing gear", "air moving over the wing's shape", "the tail number", "cabin pressure alone"], "air moving over the wing's shape", 2),
+      q("Lift on a wing comes mainly from…", ["the weight of the landing gear", "air moving over the wing's shape", "thrust from the tail rudder", "cabin pressure pushing upward"], "air moving over the wing's shape", 2),
       q("The first powered airplane flight is credited to the…", ["Wright brothers", "Lindbergh", "NASA in 1969", "the RAF in 1914"], "Wright brothers", 1),
-      q("Low Earth orbit is…", ["on the Moon", "a band of space just above the atmosphere", "inside a hangar", "the Marianas Trench"], "a band of space just above the atmosphere", 2),
+      q("Low Earth orbit is…", ["the surface of the Moon", "space just above the atmosphere", "the ozone layer of the atmosphere", "the deepest part of the ocean"], "space just above the atmosphere", 2),
     ],
     history: [
       q("The U.S. Air Force became a separate service in…", ["1776", "1918", "1947", "1969"], "1947", 2),
@@ -54,14 +54,14 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
   art: {
     arts: [
       q("Impressionism is most tied to 19th-century…", ["Japan's Edo navy", "France", "the Inca court", "Chicago's steel mills"], "France", 1),
-      q("Vincent van Gogh's The Starry Night hangs at…", ["the Louvre only", "the Museum of Modern Art, New York", "the British Library", "the Alamo"], "the Museum of Modern Art, New York", 2),
+      q("Vincent van Gogh's The Starry Night hangs at…", ["the Van Gogh Museum, Amsterdam", "the Museum of Modern Art, New York", "the Musée d'Orsay, Paris", "the National Gallery, London"], "the Museum of Modern Art, New York", 2),
       q("Pablo Picasso is a central figure of…", ["Cubism", "Gregorian chant", "Baroque opera only", "photoreal airline posters"], "Cubism", 1),
       q("A fresco is paint applied to…", ["wet plaster", "polished steel", "ice", "newsprint"], "wet plaster", 2),
       q("The Thinker is a sculpture by…", ["Rodin", "Warhol", "O'Keeffe", "Calder"], "Rodin", 1),
       q("Primary colors in paint are typically…", ["green, orange, purple", "red, blue, yellow", "black, white, grey", "gold, silver, bronze"], "red, blue, yellow", 1),
       q("The Guggenheim Museum in New York was designed by…", ["I. M. Pei only", "Frank Lloyd Wright", "Gaudi", "Christopher Wren"], "Frank Lloyd Wright", 2),
       q("Tate Modern in London occupies a former…", ["royal palace", "power station", "dry dock only", "grain silo in Chicago"], "power station", 2),
-      q("American Gothic hangs at the…", ["Tate Britain", "Art Institute of Chicago", "MoMA lobby", "Prado"], "Art Institute of Chicago", 2),
+      q("American Gothic hangs at the…", ["Metropolitan Museum of Art", "Art Institute of Chicago", "Des Moines Art Center", "National Gallery of Art"], "Art Institute of Chicago", 2),
       q("The Metropolitan Museum of Art sits on…", ["Fifth Avenue along Central Park", "Coney Island boardwalk", "the Brooklyn Navy Yard", "Staten Island ferry terminal"], "Fifth Avenue along Central Park", 1),
     ],
     history: [
@@ -69,7 +69,7 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
       q("Leonardo da Vinci painted the Mona Lisa, now in the…", ["Louvre, Paris", "Prado as its only home", "Vatican gift shop", "Uffizi"], "Louvre, Paris", 1),
     ],
     local: [
-      q("The Blanton Museum of Art belongs to…", ["Rice University", "the University of Texas at Austin", "Texas A&M", "SMU only"], "the University of Texas at Austin", 2),
+      q("The Blanton Museum of Art belongs to…", ["Rice University in Houston", "the University of Texas at Austin", "Texas A&M at College Station", "Southern Methodist University"], "the University of Texas at Austin", 2),
       q("The Tucson Museum of Art sits in downtown Tucson near…", ["Old Town Artisans / El Presidio", "Mount Lemmon's ski lodge", "the Grand Canyon rim", "Phoenix City Hall"], "Old Town Artisans / El Presidio", 2),
     ],
   },
@@ -105,13 +105,13 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
   },
   bbq: {
     food: [
-      q("Central Texas barbecue is famous for…", ["boiled lobster", "brisket from a post-oak pit", "raw oysters only", "fondue"], "brisket from a post-oak pit", 1),
+      q("Central Texas barbecue is famous for…", ["boiled lobster with butter", "brisket from a post-oak pit", "raw oysters on the half shell", "cheese fondue with bread"], "brisket from a post-oak pit", 1),
       q("Franklin Barbecue is a pit house in…", ["Dallas", "Austin", "Houston", "El Paso"], "Austin", 1),
     ],
   },
   campus: {
     local: [
-      q("A 'quad' on a campus is typically…", ["a parking garage only", "a rectangular lawn among buildings", "the football locker", "a dining hall tray"], "a rectangular lawn among buildings", 1),
+      q("A 'quad' on a campus is typically…", ["a parking garage near the stadium", "a rectangular lawn among buildings", "the football team's locker room", "a tray line in the dining hall"], "a rectangular lawn among buildings", 1),
     ],
     history: [
       q("Land-grant universities in the U.S. trace to the…", ["Morrill Act", "Stamp Act", "Marshall Plan", "NATO charter"], "Morrill Act", 3),
@@ -119,7 +119,7 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
   },
   library: {
     arts: [
-      q("The Dewey Decimal System is used to…", ["score baseball", "classify library books", "tune pianos", "grade beef"], "classify library books", 1),
+      q("The Dewey Decimal System is used to…", ["score baseball games", "classify library books", "tune pianos by ear", "grade cuts of beef"], "classify library books", 1),
     ],
     history: [
       q("The Library of Congress is in…", ["Boston", "Washington, D.C.", "Philadelphia only", "New York's City Hall"], "Washington, D.C.", 1),
@@ -136,13 +136,13 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
       q("A state capitol building is the seat of…", ["the city zoo", "the state legislature", "a county sheriff only", "the Federal Reserve"], "the state legislature", 1),
     ],
     history: [
-      q("A capitol dome in the U.S. often echoes…", ["a grain silo", "the U.S. Capitol in Washington", "a pagoda", "a minaret only"], "the U.S. Capitol in Washington", 1),
+      q("A capitol dome in the U.S. often echoes…", ["a grain silo on the prairie", "the U.S. Capitol in Washington", "a Buddhist pagoda in Kyoto", "a minaret in Istanbul"], "the U.S. Capitol in Washington", 1),
     ],
   },
   church: {
     history: [
-      q("A Spanish colonial mission in the Southwest was typically…", ["a ski lodge", "a church and community founded by missionaries", "a gold mint", "a radio tower"], "a church and community founded by missionaries", 1),
-      q("San Xavier del Bac is a mission church of the…", ["Gold Rush of 1849", "late 1700s Spanish frontier", "World War I", "the Interstate era"], "late 1700s Spanish frontier", 2, "The present church was finished in 1797."),
+      q("A Spanish colonial mission in the Southwest was typically…", ["a ski lodge built by the railroad", "a church community founded by friars", "a gold mint run by the army", "a fort built for the cavalry"], "a church community founded by friars", 1),
+      q("San Xavier del Bac is a mission church of the…", ["California Gold Rush of 1849", "late 1700s Spanish frontier", "years just after World War I", "early Interstate highway era"], "late 1700s Spanish frontier", 2, "The present church was finished in 1797."),
     ],
     arts: [
       q("A cathedral's nave is…", ["the bell", "the long central hall", "the gift shop", "the parking crypt only"], "the long central hall", 2),
@@ -171,12 +171,12 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
   nature: {
     science: [
       q("A saguaro is a giant cactus of the…", ["Sonoran Desert", "Arctic tundra", "Amazon canopy", "Scottish moor"], "Sonoran Desert", 1),
-      q("A sky island is a…", ["floating airport", "mountain range rising from desert, with its own climate", "coral atoll only", "subway platform"], "mountain range rising from desert, with its own climate", 2),
+      q("A sky island is a…", ["floating airport on a lake", "mountain range rising from desert", "coral atoll in the Pacific", "platform high in a skyscraper"], "mountain range rising from desert", 2),
     ],
   },
   water: {
     science: [
-      q("An ephemeral desert river often…", ["never exists on maps", "runs after storms and sits dry between them", "is a glacier year-round", "is saltwater only"], "runs after storms and sits dry between them", 2),
+      q("An ephemeral desert river often…", ["never appears on any maps", "runs after storms, then sits dry", "stays frozen year-round", "carries only salt water"], "runs after storms, then sits dry", 2),
     ],
   },
   zoo: {
@@ -200,17 +200,17 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
       q("Dinosaurs (non-bird) went extinct about…", ["1,000 years ago", "66 million years ago", "in 1492", "last Tuesday"], "66 million years ago", 1),
     ],
     history: [
-      q("Natural history museums grew from…", ["only sports halls", "cabinets of curiosity and scientific collecting", "stock exchanges", "missile silos"], "cabinets of curiosity and scientific collecting", 2),
+      q("Natural history museums grew from…", ["old sports halls", "cabinets of curiosity", "stock exchanges", "missile silos"], "cabinets of curiosity", 2),
     ],
   },
   history: {
     history: [
-      q("Primary sources are…", ["later textbooks only", "documents or objects from the time studied", "always paintings of the event", "Wikipedia talk pages"], "documents or objects from the time studied", 2),
+      q("Primary sources are…", ["later textbooks about the period", "documents or objects from the time studied", "paintings made long after the event", "Wikipedia talk pages"], "documents or objects from the time studied", 2),
     ],
   },
   memorial: {
     history: [
-      q("The National September 11 Memorial sits at…", ["the old World Trade Center site", "Pearl Harbor only", "Gettysburg", "the Arizona Capitol"], "the old World Trade Center site", 1),
+      q("The National September 11 Memorial sits at…", ["the old World Trade Center site", "Pearl Harbor's naval base", "the Gettysburg battlefield", "the Arizona State Capitol"], "the old World Trade Center site", 1),
     ],
   },
   finance: {
@@ -220,7 +220,7 @@ export const PLACE: Partial<Record<PlaceTopic, Partial<Record<TriviaCat, TriviaQ
   },
   hotel: {
     local: [
-      q("A historic downtown hotel often sat next to…", ["the rail depot or main street", "an ICBM field", "a glacier", "an oil derrick only"], "the rail depot or main street", 1),
+      q("A historic downtown hotel often sat next to…", ["the rail depot or main street", "an ICBM field outside town", "a glacier lake", "an oil derrick at the edge"], "the rail depot or main street", 1),
     ],
   },
   bridge: {

@@ -3,9 +3,9 @@ import type { TriviaQ } from "../types";
 
 /** Deep-cut nature trivia cards (tarantulas, sharks, deep-sea fish). v0.0.16 k16a. Wired via weekly_20260922. */
 export const NATURE_LIFE_PART_A: TriviaQ[] = [
-  q("Adult male Theraphosa blondi are unusual because they lack…", ["pedipalps", "tibial spurs (mating hooks)", "book lungs", "urticating hairs"], "tibial spurs (mating hooks)", 3),
-  q("Monocentropus balfouri stands out among tarantulas for…", ["being venomless", "communal living, with mothers tolerating young", "living only in caves", "ballooning on silk as adults"], "communal living, with mothers tolerating young", 3),
-  q("Sexing a tarantula from its molt means checking for spermathecae near the…", ["spinnerets", "epigastric furrow", "chelicerae", "eye tubercle"], "epigastric furrow", 3),
+  q("Adult male Theraphosa blondi are unusual because they lack…", ["pedipalps", "tibial spurs", "book lungs", "urticating hairs"], "tibial spurs", 3),
+  q("Monocentropus balfouri stands out among tarantulas for…", ["being completely venomless", "communal living with its young", "living only in limestone caves", "ballooning on silk as adults"], "communal living with its young", 3),
+  q("Sexing a tarantula from its molt means checking for spermathecae near the…", ["posterior spinnerets", "epigastric furrow", "base of the chelicerae", "ocular tubercle"], "epigastric furrow", 3),
   q("Harpactirinae, the 'baboon' tarantula subfamily, is native to…", ["South America", "Africa", "Southeast Asia", "Australia"], "Africa", 3),
   q("The tarantula subfamily Theraphosinae is native to the…", ["Old World tropics", "Americas", "Australia", "Indian subcontinent"], "Americas", 3),
   q("Stromatopelma calceatum is the hobby's…", ["featherleg baboon", "king baboon", "horned baboon", "cobalt blue"], "featherleg baboon", 3),
@@ -16,10 +16,10 @@ export const NATURE_LIFE_PART_A: TriviaQ[] = [
   q("Greenland shark ages were estimated by radiocarbon-dating the…", ["vertebral rings", "eye-lens nucleus", "fin spines", "teeth"], "eye-lens nucleus", 3),
   q("The first megamouth shark was found in 1976 off…", ["Japan", "Hawaii", "South Africa", "California"], "Hawaii", 3),
   q("Sand tiger embryos eating their siblings in the uterus is called…", ["oophagy", "adelphophagy", "placentotrophy", "ovoviviparity"], "adelphophagy", 3),
-  q("In oophagy, lamniform shark embryos feed on…", ["their siblings", "unfertilized eggs the mother keeps producing", "a yolk-sac placenta", "uterine milk only"], "unfertilized eggs the mother keeps producing", 3),
+  q("In oophagy, lamniform shark embryos feed on…", ["algae growing inside the egg case", "unfertilized eggs the mother produces", "nutrients through a yolk-sac placenta", "uterine milk secreted by the mother"], "unfertilized eggs the mother produces", 3),
   q("The first confirmed shark virgin birth (reported 2007) was in a captive…", ["bonnethead", "zebra shark", "blacktip reef shark", "whitespotted bamboo shark"], "bonnethead", 3),
   q("The Indonesian coelacanth species is…", ["Latimeria chalumnae", "Latimeria menadoensis", "Neoceratodus forsteri", "Protopterus annectens"], "Latimeria menadoensis", 3),
-  q("The 1938 coelacanth rediscovery came from a trawler catch off…", ["Madagascar", "East London, South Africa", "Sulawesi", "the Comoros"], "East London, South Africa", 3),
+  q("The 1938 coelacanth rediscovery came from a trawler catch off…", ["Toliara, Madagascar", "East London, South Africa", "Manado, Sulawesi", "Moroni, the Comoros"], "East London, South Africa", 3),
   q("The Australian lungfish is…", ["Protopterus annectens", "Lepidosiren paradoxa", "Neoceratodus forsteri", "Latimeria chalumnae"], "Neoceratodus forsteri", 3),
   q("A sawfish's rostral 'teeth' are actually modified…", ["true jaw teeth", "dermal denticles", "fin rays", "gill rakers"], "dermal denticles", 3),
   q("Electrophorus voltai, described in 2019, can discharge up to about…", ["60 V", "220 V", "860 V", "5 000 V"], "860 V", 3),

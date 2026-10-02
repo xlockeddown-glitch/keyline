@@ -424,13 +424,13 @@ export const NATURE_LIFE: TriviaQ[] = [
   q("A cleaner station on a reef is where…", ["sharks gather to lay their eggs", "small fish or shrimp clean other fish", "sea turtles come ashore to nest", "corals spawn all at once"], "small fish or shrimp clean other fish", 2),
   q("The Sargasso Sea is named for…", ["a genus of Atlantic sharks", "floating sargassum seaweed", "a Portuguese navigator", "a desert coast of Peru"], "floating sargassum seaweed", 2),
   q("An atoll, in the tropical ocean, is typically a…", ["mountain of granite only", "ring of coral around a lagoon", "shark tooth", "book lung"], "ring of coral around a lagoon", 1),
-  q("A gyre is a…", ["type of dorsal fin", "large rotating ocean current system", "tarantula molt", "coral polyp"], "large rotating ocean current system", 2),
+  q("A gyre is a…", ["type of dorsal fin on a shark", "large rotating ocean current system", "stage in a tarantula's molt", "polyp at the base of a coral"], "large rotating ocean current system", 2),
   q("The Gulf Stream is a…", ["cold Antarctic bottom current", "warm Atlantic current", "river of the Amazon", "wind of the Gobi"], "warm Atlantic current", 1),
-  q("El Niño is a…", ["shark species", "Pacific climate swing that reshapes fisheries and weather", "tarantula genus", "moon of Jupiter"], "Pacific climate swing that reshapes fisheries and weather", 2),
+  q("El Niño is a…", ["shark species of the eastern Pacific", "Pacific climate swing that shifts weather", "tarantula genus of South America", "moon of Jupiter seen by Galileo"], "Pacific climate swing that shifts weather", 2),
   q("A fish ladder helps…", ["sharks climb trees", "migratory fish pass a dam", "tarantulas molt", "coral bleach on purpose"], "migratory fish pass a dam", 1),
-  q("Bycatch reduction gear is meant to…", ["catch more sharks", "let non-target species, including some sharks, escape nets", "drain estuaries", "plant kelp on land"], "let non-target species, including some sharks, escape nets", 2),
-  q("Shark sanctuaries are…", ["airports", "national waters that restrict shark fishing", "desert parks of Arizona only", "tarantula rooms"], "national waters that restrict shark fishing", 2),
+  q("Bycatch reduction gear is meant to…", ["catch more sharks in the same nets", "let non-target species escape the nets", "drain estuaries before trawling", "plant kelp beds near the shore"], "let non-target species escape the nets", 2),
+  q("Shark sanctuaries are…", ["zoos that breed sharks for release", "national waters that restrict shark fishing", "inland parks with shark aquariums", "harbors where sharks are farmed"], "national waters that restrict shark fishing", 2),
   q("A tag-and-release study of sharks tracks…", ["only color of the tank", "movements and survival", "book-lung counts", "silk quality"], "movements and survival", 1),
-  q("The IUCN Red List is used to…", ["set SI units", "score extinction risk, including for many sharks and rays", "name tarantula colors only", "time rocket burns"], "score extinction risk, including for many sharks and rays", 2),
+  q("The IUCN Red List is used to…", ["set international SI units", "score species' extinction risk", "name new tarantula color forms", "set global fishing quotas"], "score species' extinction risk", 2),
 ];
 

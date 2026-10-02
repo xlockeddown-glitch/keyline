@@ -3,7 +3,7 @@ import type { TriviaQ } from "../types";
 
 export const SCIENCE_LIFE: TriviaQ[] = [
   q("Metrology is the science of…", ["weather only", "measurement", "insects", "poetry"], "measurement", 1),
-  q("The SI is the…", ["U.S. customary only", "International System of Units", "stock index", "medical code"], "International System of Units", 1),
+  q("The SI is the…", ["U.S. customary system of units", "International System of Units", "stock index for science firms", "standard index of medical codes"], "International System of Units", 1),
   q("How many SI base units are there?", ["3", "5", "7", "10"], "7", 1),
   q("The SI base unit of length is the…", ["inch", "metre", "yard", "angstrom"], "metre", 1),
   q("The SI base unit of mass is the…", ["gram", "kilogram", "pound", "tonne"], "kilogram", 1),
@@ -13,11 +13,11 @@ export const SCIENCE_LIFE: TriviaQ[] = [
   q("The SI base unit of amount of substance is the…", ["gram", "mole", "litre", "molecule"], "mole", 1),
   q("The SI base unit of luminous intensity is the…", ["lumen", "candela", "lux", "watt"], "candela", 2),
   q("The BIPM, keeper of the SI, is in…", ["Gaithersburg", "Sèvres, France", "Teddington", "Berlin as BIPM"], "Sèvres, France", 2),
-  q("NIST is the U.S.…", ["weather service", "national metrology institute", "patent court only", "census only"], "national metrology institute", 1),
-  q("NPL is the national metrology institute of the…", ["France", "United Kingdom", "Japan", "Canada"], "United Kingdom", 2),
+  q("NIST is the U.S.…", ["national weather service", "national metrology institute", "federal patent court", "national census bureau"], "national metrology institute", 1),
+  q("NPL is the national metrology institute of the…", ["Netherlands", "United Kingdom", "Switzerland", "South Africa"], "United Kingdom", 2),
   q("PTB is the national metrology institute of…", ["Italy", "Germany", "Spain", "Poland"], "Germany", 2),
   q("NRC (metrology) is associated with…", ["Mexico", "Canada", "Brazil", "India as NRC-metrology's only home"], "Canada", 3),
-  q("A national metrology institute realizes…", ["traffic laws", "measurement standards for a country", "sports records only", "postal codes"], "measurement standards for a country", 1),
+  q("A national metrology institute realizes…", ["traffic laws for a country", "measurement standards for a country", "sports records for a country", "postal codes for a country"], "measurement standards for a country", 1),
   q("The Metre Convention dates to…", ["1776", "1875", "1945", "1960"], "1875", 3),
   q("CIPM stands for the…", ["International Olympic Committee", "International Committee for Weights and Measures", "a U.S. Army lab only", "a bank"], "International Committee for Weights and Measures", 3),
   q("The 2019 SI overhaul redefined the kilogram using the…", ["International Prototype Kilogram only still", "Planck constant", "a liter of water", "Earth's mass"], "Planck constant", 2),

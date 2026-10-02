@@ -10,18 +10,18 @@ export const WEEKLY_NATURE: TriviaQ[] = [
   q("Photosynthesis in green plants mainly happens in the…", ["mitochondria", "chloroplasts", "ribosomes", "vacuoles only"], "chloroplasts", 1),
   q("A biome is best described as…", ["a single tree species", "a large-scale ecological community shaped by climate", "a virus particle", "a tectonic plate"], "a large-scale ecological community shaped by climate", 2),
   // v0.0.15 specialty deep-cuts (from orphan part files)
-  q("Urticating setae types I–VI are classified by…", ["only color under UV", "structure and how they embed in skin or mucosa", "SI base units", "wing venation"], "structure and how they embed in skin or mucosa", 3),
+  q("Urticating setae types I–VI are classified by…", ["color under UV light", "structure and how they embed", "length in SI base units", "venom content per hair"], "structure and how they embed", 3),
   q("A spermatheca in a female tarantula stores…", ["silk only", "sperm after mating", "book-lung air", "urticating hairs"], "sperm after mating", 3),
   q("Ephebopus (skeleton tarantulas) kick urticating hairs from…", ["the abdomen only like Theraphosa", "the pedipalps", "the spinnerets", "the fangs"], "the pedipalps", 3),
-  q("Avicularia-group Type II hairs are often…", ["kicked as a dense cloud like Type III", "embedded by contact rather than flicked in a cloud", "venom crystals", "found only on African baboons"], "embedded by contact rather than flicked in a cloud", 3),
+  q("Avicularia-group Type II hairs are often…", ["kicked as a dense cloud like Type III", "embedded by contact, not flicked", "tipped with venom crystals", "found only on African baboons"], "embedded by contact, not flicked", 3),
   q("Poecilotheria (ornamentals) are Old World arboreals that…", ["kick Type III abdominal clouds as a first defense", "lack urticating hairs and rely on speed and venom", "are desert fossorials of Arizona", "breathe with gills"], "lack urticating hairs and rely on speed and venom", 3),
   q("The foveal 'horn' of some Ceratogyrus sits on the…", ["spinnerets", "carapace", "each tarsus", "egg sac only"], "carapace", 3),
-  q("Theraphosa blondi's defensive display often pairs a threat pose with…", ["ink release", "hissing stridulation and kicked urticating hairs", "playing dead for hours as a rule", "spraying formic acid"], "hissing stridulation and kicked urticating hairs", 3),
-  q("A sperm web is where a male tarantula…", ["lays eggs", "deposits and charges sperm into his palpal emboli", "molts the carapace", "builds a bird nest"], "deposits and charges sperm into his palpal emboli", 3),
+  q("Theraphosa blondi's defensive display often pairs a threat pose with…", ["releasing ink like an octopus", "hissing and kicked urticating hairs", "playing dead for hours", "spraying formic acid like ants"], "hissing and kicked urticating hairs", 3),
+  q("A sperm web is where a male tarantula…", ["lays and guards eggs", "charges his palps with sperm", "molts its old carapace", "wraps prey for later"], "charges his palps with sperm", 3),
   q("Mygalomorphae fang orientation is…", ["sideways pincer-style like many araneomorphs", "parallel and striking downward", "backward only into the abdomen", "absent in adults"], "parallel and striking downward", 3),
   q("Book lungs in tarantulas are…", ["tracheal tubes identical to beetles", "lamellate respiratory organs in the abdomen", "gills on the spinnerets", "air sacs in the fangs"], "lamellate respiratory organs in the abdomen", 3),
   q("An exuvium after ecdysis is the…", ["egg sac", "shed exoskeleton", "sperm web", "urticating pellet"], "shed exoskeleton", 3),
-  q("Tliltocatl was split from Brachypelma largely on…", ["silk color alone", "molecular and morphological revision of New World theraphosids", "CITES paperwork only", "hobby nickname votes"], "molecular and morphological revision of New World theraphosids", 3),
+  q("Tliltocatl was split from Brachypelma largely on…", ["silk color and web style alone", "a molecular and morphological revision", "CITES trade paperwork and permits", "votes on popular hobby nicknames"], "a molecular and morphological revision", 3),
   // v0.0.16 deep-cut bank (nature_life_part_a)
   ...NATURE_LIFE_PART_A,
 ];
