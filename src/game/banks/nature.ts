@@ -30,9 +30,9 @@ export const NATURE_BANK: TriviaQ[] = [
   q("Which bird is flightless?", ["Albatross", "Penguin", "Swallow", "Hawk"], "Penguin", 2),
 
   q("Who formalized binomial nomenclature for living things?", ["Darwin", "Linnaeus", "Mendel", "Wallace"], "Linnaeus", 3, "Carl Linnaeus published Systema Naturae; the 10th edition (1758) is the zoological starting point."),
-  q("The axolotl is native to…", ["The Amazon", "Lakes of Mexico", "The Nile", "Tasmania"], "Lakes of Mexico", 3, "Wild axolotls survive in remnant canals of Xochimilco, in the Valley of Mexico."),
+  q("The axolotl is native to…", ["Rivers of the Amazon", "Lakes of Mexico", "Marshes of the Nile", "Lakes of Tasmania"], "Lakes of Mexico", 3, "Wild axolotls survive in remnant canals of Xochimilco, in the Valley of Mexico."),
   q("How many living elephant species are generally recognized?", ["One", "Two", "Three", "Five"], "Three", 3, "African savanna, African forest, and Asian elephants are the three living species."),
   q("Sharks and rays have skeletons made mostly of…", ["Bone", "Cartilage", "Chitin", "Keratin"], "Cartilage", 3, "They are cartilaginous fishes (Chondrichthyes)."),
-  q("A keystone species is one that…", ["Is always the largest", "Has an outsized effect on its ecosystem", "Never migrates", "Lives only in captivity"], "Has an outsized effect on its ecosystem", 3),
+  q("A keystone species is one that…", ["Is the largest animal in its ecosystem", "Has an outsized effect on its ecosystem", "Never leaves its home range", "Is the most common species around"], "Has an outsized effect on its ecosystem", 3),
   q("The taiga is also called the…", ["Tropical rainforest", "Boreal forest", "Chaparral", "Salt marsh"], "Boreal forest", 3),
 ];

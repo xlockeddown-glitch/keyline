@@ -77,7 +77,7 @@ export const MATH_BANK: TriviaQ[] = [
   q("Which of these is prime?", ["9", "15", "21", "23"], "23", 2),
   q("Which of these is composite?", ["2", "3", "11", "27"], "27", 2),
   q("The volume of a 2\u00d73\u00d74 box is\u2026", ["9", "12", "18", "24"], "24", 2),
-  q("An isosceles triangle has\u2026", ["no equal sides", "at least two equal sides", "all angles 90\u00b0", "four sides"], "at least two equal sides", 2),
+  q("An isosceles triangle has\u2026", ["no equal sides or angles", "at least two equal sides", "all three angles at 90°", "four sides of equal length"], "at least two equal sides", 2),
   q("Complementary angles add to\u2026", ["45\u00b0", "90\u00b0", "180\u00b0", "360\u00b0"], "90\u00b0", 2),
   q("Supplementary angles add to\u2026", ["90\u00b0", "180\u00b0", "270\u00b0", "360\u00b0"], "180\u00b0", 2),
   q("Cube root of 27 is\u2026", ["3", "6", "9", "13.5"], "3", 2),

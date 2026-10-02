@@ -1457,7 +1457,7 @@ export const GENERAL_BANK: Partial<Record<TriviaCat, TriviaQ[]>> = {
     q("Bunny chow is most associated with which place?", ["the Nordic north", "Australia", "Philadelphia", "South Africa"], "South Africa", 1),
     q("Naan is most associated with which place?", ["the Balkans / Turkey", "Sweden", "South Asia", "Germany"], "South Asia", 1),
     q("Tikka masala is most associated with which place?", ["Turkey / Germany", "the Nordic north", "Britain / South Asia", "Canada"], "Britain / South Asia", 1),
-    q("Vindaloo is most associated with which place?", ["Punjab / northern India", "Bengal / eastern India", "Goa / Portugal-India", "Sri Lanka / Ceylon"], "Goa / Portugal-India", 1),
+    q("Vindaloo is most associated with which place?", ["Punjab / northern India", "Bengal / eastern India", "Goa / Portugal-India", "Bangladesh / Dhaka"], "Goa / Portugal-India", 1),
     q("Dim sum is most associated with which place?", ["Denmark", "China", "Belgium", "Greece"], "China", 1),
     q("Ramen is most associated with which place?", ["Detroit", "the Carolinas", "Japan", "South Asia"], "Japan", 1),
     q("Udon is most associated with which place?", ["the American South", "Japan", "several Latin countries", "Brazil"], "Japan", 1),
