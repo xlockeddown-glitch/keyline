@@ -148,11 +148,18 @@ test("white matches spawn only on walkable ways (Detroit around the Lodge / I-75
   const walk = walkables("detroit");
   const fw = freeways("detroit");
   const center = { lat: 42.3375, lng: -83.0615 };
+  // Seeded so a failure reproduces.
+  const real = Math.random;
+  let seed = 0x5eed;
+  Math.random = () => ((seed = (Math.imul(seed, 1103515245) + 12345) >>> 0) / 2 ** 32);
   const drops = [...Array.from({ length: 400 }, () => randomOnStreet(g, center, 20, 900)), ...spreadOnGraph(g, [center], 40, 60)];
+  Math.random = real;
   for (const p of drops) {
     // On a walkable way (within the graph's 12 m decimation slop on curves), and never on freeway-only geometry.
     assert.ok(freewayGap(p, walk) < 10, `drop ${p.lat},${p.lng} is off every walkable way (${freewayGap(p, walk).toFixed(1)} m; freeway ${freewayGap(p, fw).toFixed(1)} m)`);
-    assert.ok(!(freewayGap(p, fw) < 3 && freewayGap(p, walk) > 3), `drop on a freeway at ${p.lat},${p.lng}`);
+    // Freeway-only: on a freeway centerline and clear of every walkable way, bridges over it included
+    // (a footbridge across the Lodge sits ~3 m off its mapped line once the graph decimates it).
+    assert.ok(!(freewayGap(p, fw) < 3 && freewayGap(p, walk) > 6), `drop on a freeway at ${p.lat},${p.lng}`);
   }
 });
 
