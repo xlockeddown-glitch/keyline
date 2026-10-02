@@ -172,8 +172,8 @@ export function RoutePuzzle({
       </p>
       <div className={`rp-map${shown ? ` is-${shown.grade}` : ""}`}>
         <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`Map of ${city}: start, finish and ${map.stops.length} stops`}>
-          {shown && shown.grade !== "shortest" ? <polyline className="rp-best" points={line(map.best, true)} /> : null}
           <polyline className={`rp-line${full ? " is-full" : ""}`} points={line(order, full)} />
+          {shown && shown.grade !== "shortest" ? <polyline className="rp-best" points={line(map.best, true)} /> : null}
           <rect className="rp-end" x={s0.x - 4.6} y={s0.y - 4.6} width={9.2} height={9.2} rx={1.4} />
           <text className="rp-label" x={s0.x} y={s0.y}>
             S
