@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.32";
+export const APP_VERSION = "0.0.33";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k32a";
+export const PUBLISH_STAMP = "k33a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -32,3 +32,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.30: Where am I? perfect-round bonus (+1 white flat on 5/5); Temple and Tucson clue pools rebuilt from verified places (28 and 32 clues, real coordinates, unverified marks kept out of clues); 69 weak or dated clues rewritten across cities (k30a).
 // 0.0.31: Fix Leaflet appendChild crash (aborted routes no longer draw a stale path on a removed map); Temple map: 7 nonexistent marks retired (3 replaced by real Jones Park and Santa Fe Plaza), Woodson Field fixed; saves migrate retired ids (k31a).
 // 0.0.32: Walk pathing — foot-only routing (the car-profile OSRM fallback sent walks down the Lodge Freeway), one walkable-way rule (no motorways, trunks, ramps, foot=no) for the street graph, server fetch and match placement; Detroit street bake redone off the freeways; matches collect from the closest curb (k32a).
+// 0.0.33: Match sorter ride game shares the 2–6 min band with Where am I? (picked per ride, ~50/50) — sort tumbling matches into the six tier boxes, colors plus rank pips, tap/drag/keys 1–6, +1 white on 26/26; Tucson: Congress/Granada stop and Five Points moved to their real spots, Sosa Avenue retired for the real Sosa–Carrillo–Frémont House (k33a).
