@@ -5,7 +5,7 @@ export const NATURE_LIFE_PART_F: TriviaQ[] = [
   q("A moray is a…", ["shark of the open gyre only", "bony eel-shaped fish of reefs and rocks", "mammal", "crustacean"], "bony eel-shaped fish of reefs and rocks", 1),
   q("Parrotfish teeth are fused into a…", ["silk comb", "beak for scraping algae and coral", "hammer cephalofoil", "sting of a ray always"], "beak for scraping algae and coral", 2),
   q("Coral bleaching is when corals…", ["turn into sharks", "expel their symbiotic algae under stress", "become tarantulas", "freeze into icebergs as a rule"], "expel their symbiotic algae under stress", 2),
-  q("A cleaner station on a reef is where…", ["sharks go to molt silk", "small fishes or shrimp pick parasites off clients", "tarantulas nest", "cacti bloom"], "small fishes or shrimp pick parasites off clients", 2),
+  q("A cleaner station on a reef is where…", ["sharks gather to lay their eggs", "small fish or shrimp clean other fish", "sea turtles come ashore to nest", "corals spawn all at once"], "small fish or shrimp clean other fish", 2),
   q("The Sargasso Sea is named for…", ["a shark genus only", "floating sargassum seaweed", "a tarantula family", "a desert of Peru"], "floating sargassum seaweed", 2),
   q("An atoll, in the tropical ocean, is typically a…", ["mountain of granite only", "ring of coral around a lagoon", "shark tooth", "book lung"], "ring of coral around a lagoon", 1),
   q("A gyre is a…", ["type of dorsal fin", "large rotating ocean current system", "tarantula molt", "coral polyp"], "large rotating ocean current system", 2),
