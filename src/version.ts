@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.31";
+export const APP_VERSION = "0.0.32";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k31a";
+export const PUBLISH_STAMP = "k32a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -31,3 +31,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.29: Where am I? ride game for 2–6 min rides (clues from shipped city lore); history cleanup — 17 duplicate cards dropped (history and general.ts), odd only/as distractors fixed in 164 cards (k29a).
 // 0.0.30: Where am I? perfect-round bonus (+1 white flat on 5/5); Temple and Tucson clue pools rebuilt from verified places (28 and 32 clues, real coordinates, unverified marks kept out of clues); 69 weak or dated clues rewritten across cities (k30a).
 // 0.0.31: Fix Leaflet appendChild crash (aborted routes no longer draw a stale path on a removed map); Temple map: 7 nonexistent marks retired (3 replaced by real Jones Park and Santa Fe Plaza), Woodson Field fixed; saves migrate retired ids (k31a).
+// 0.0.32: Walk pathing — foot-only routing (the car-profile OSRM fallback sent walks down the Lodge Freeway), one walkable-way rule (no motorways, trunks, ramps, foot=no) for the street graph, server fetch and match placement; Detroit street bake redone off the freeways; matches collect from the closest curb (k32a).

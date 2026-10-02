@@ -485,8 +485,11 @@ export function GameMap() {
           pos: () => ({ ...pos.current }),
           graph: () => graphRef.current,
           route: () => routeRef.current,
+          walkTo: (lat: number, lng: number) => setDestination(lat, lng),
           place: (lat: number, lng: number) => {
             const g = graphRef.current;
+            routeRef.current = null;
+            waypoint.current = null;
             if (g) placeOnStreet(g, lat, lng);
             mapRef.current?.setView([pos.current.lat, pos.current.lng], mapRef.current.getZoom());
           },
