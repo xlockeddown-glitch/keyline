@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.38";
+export const APP_VERSION = "0.0.39";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k38a";
+export const PUBLISH_STAMP = "k39a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -38,3 +38,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.36: Route puzzle ride game for 6 min+ rides (fares cap at 14:00, so that's every long ride) — a little map of real places in the city ahead, tap the stops in the shortest order from S to F, three maps a round, letters/shapes/dashes so colour is never the only cue, tap or keys; 3/3 shortest pays the perfect +1 white (k36a).
 // 0.0.37: character art — the Lynx is its own animal (ear tufts, bobbed black-tipped tail, cheek ruff, stockier build, spotted tawny fur) instead of a recoloured fox; the Tabby's walk coat was olive green while it idled in brown, now brown throughout; every character keeps facing left/right when it stops (side idle sheets); qa:sprites fails shared silhouettes, walk/idle coat mismatches and missing side idles (k37a).
 // 0.0.38: the Turtle walks in the brown hooded coat it idles in (it walked as a bare green shell); qa:sprites checks the coat on every walk facing and the shop icon at a tighter 3.2 limit (raccoon 5.5), so a shell-vs-coat mismatch fails (k38a).
+// 0.0.39: trivia answers no longer give themselves away by length — 1302 cards where the correct answer was clearly the longest choice (40%+ or 12+ characters longer than every wrong choice) got parallel, plausible wrong choices or a trimmed answer; trivia:lint flags any new one and a test keeps the answer-is-longest rate near chance (42.5% → 32.3%, cap 35%) (k39a).
