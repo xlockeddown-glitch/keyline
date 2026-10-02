@@ -121,7 +121,7 @@ h3 {
   background-size:200% 200%
 }
 .scout-marker[data-scout=turtle]{
-  background-image:url(/sprites/scouts/turtle-walk.png?v=k24a)
+  background-image:url(/sprites/scouts/turtle-walk.png?v=k38a)
 }
 .scout-marker[data-scout=turtle].is-idle{
   background-image:url(/sprites/scouts/turtle-idle.png?v=k8);
@@ -1229,7 +1229,7 @@ h3 {
   background-image: url("/sprites/scouts/cat-idle-side.png?v=k37a");
 }
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k37a");
+  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k38a");
 }
 .scout-marker[data-scout="owl"].is-idle.is-side {
   background-image: url("/sprites/scouts/owl-idle-side.png?v=k37a");
