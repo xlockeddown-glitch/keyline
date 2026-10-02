@@ -12,6 +12,10 @@ test("retired marks are off the map and every replacement is a live place in the
   assert.equal(livePoiId("sf-depot"), "sf-depot");
   assert.equal(livePoiId("cannon-pk"), "jones-pk-t");
   assert.equal(livePoiId("keefer-pk"), null);
+  assert.equal(livePoiId("sosa-ave"), "sosa-carrillo");
+  const tuc = migratePoiIds({ atlas: { "sosa-ave": true } as Record<string, true>, vaults: { "sosa-ave": { state: "cooling" } } });
+  assert.equal(tuc.atlas!["sosa-carrillo"], true);
+  assert.deepEqual(Object.keys(tuc.vaults!), ["sosa-carrillo"]);
 });
 
 test("an old save naming retired marks loads cleanly: progress moves or stays, nothing dangles", () => {
