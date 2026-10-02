@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
 """Deterministic scout idle/walk sheet QA: holes, magenta, alpha, identity,
 plus per-frame registration (walk drift, floor line per facing, idle jumps,
-idle-to-walk floor match, pixels touching a cell edge)."""
+idle-to-walk floor match, pixels touching a cell edge), and since 0.0.37:
+  * distinct silhouettes — two characters whose alpha masks overlap too much fail (a recolour is not a character);
+  * one palette — a character's walk and idle coats must be the same colour (the Tabby walked in green, idled in brown);
+  * side idles — the stand-still-facing-left/right sheets sit on the walk floor and don't jump.
+KEYLINE_SPRITE_OVERRIDE="name=path,..." swaps sheets in for the self-tests."""
 from __future__ import annotations
 
+import itertools
 import json
+import math
+import os
 import sys
 from hashlib import md5
 from pathlib import Path
@@ -33,7 +40,22 @@ SHEETS = {
     "sloth-walk": (SCOUTS / "sloth-walk.png", (384, 384)),
     "turtle-idle": (SCOUTS / "turtle-idle.png", (256, 256)),
     "turtle-walk": (SCOUTS / "turtle-walk.png", (384, 384)),
+    # Side idles: 2x2 @ 96 — row 0 faces left, row 1 faces right.
+    "raccoon-idle-side": (SPR / "player-idle-side.png", (192, 192)),
+    "cat-idle-side": (SCOUTS / "cat-idle-side.png", (192, 192)),
+    "corgi-idle-side": (SCOUTS / "corgi-idle-side.png", (192, 192)),
+    "fox-idle-side": (SCOUTS / "fox-idle-side.png", (192, 192)),
+    "lynx-idle-side": (SCOUTS / "lynx-idle-side.png", (192, 192)),
+    "owl-idle-side": (SCOUTS / "owl-idle-side.png", (192, 192)),
+    "sloth-idle-side": (SCOUTS / "sloth-idle-side.png", (192, 192)),
+    "turtle-idle-side": (SCOUTS / "turtle-idle-side.png", (192, 192)),
 }
+for _pair in filter(None, os.environ.get("KEYLINE_SPRITE_OVERRIDE", "").split(",")):
+    _name, _path = _pair.split("=", 1)
+    SHEETS[_name] = ((ROOT / _path).resolve(), SHEETS[_name][1])
+
+SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]
+KINDS = ["idle", "walk", "idle-side"]
 
 MAX_SPECKS = 8
 MAX_MAGENTA = 0
@@ -158,6 +180,141 @@ def registration(scout: str, idle_path: Path, walk_path: Path) -> tuple[dict, li
     return {"scout": scout, "walkRows": rows, "idleHeadDrift": round(max(iheads) - min(iheads), 1), "idleFloor96": round(idle_floor, 1), "walkFloor": round(walk_floor, 1)}, fails
 
 
+# ── 0.0.37 checks ────────────────────────────────────────────────────────
+
+# Distinct characters top out around 0.78 overlap (fox/lynx after the lynx rework, cat/corgi 0.73);
+# a recolour is 1.0. Fail at this overlap, warn a little below it.
+MAX_SHAPE_IOU = 0.85
+WARN_SHAPE_IOU = 0.80
+# Coat colour shift between the walk and idle torso, as CIE ΔH* (hue difference scaled by chroma).
+# Consistent characters sit at ≤ 4.1; the green-walking Tabby was 7.4.
+MAX_COAT_DH = 5.5
+MAX_SIDE_FLOOR = 1
+MAX_SIDE_HEAD_DRIFT = 1.5
+
+
+def mask(path: Path) -> list[int]:
+    return list(Image.open(path).convert("RGBA").getchannel("A").point(lambda v: 1 if v >= 128 else 0).tobytes())
+
+
+def iou(a: list[int], b: list[int]) -> float:
+    inter = sum(1 for x, y in zip(a, b) if x and y)
+    union = sum(1 for x, y in zip(a, b) if x or y)
+    return inter / union if union else 1.0
+
+
+def shape_check() -> tuple[list[dict], list[str], list[str]]:
+    rows, fails, warns = [], [], []
+    for kind in KINDS:
+        masks = {s: mask(SHEETS[f"{s}-{kind}"][0]) for s in SCOUT_IDS if SHEETS[f"{s}-{kind}"][0].exists()}
+        for a, b in itertools.combinations(sorted(masks), 2):
+            if len(masks[a]) != len(masks[b]):
+                continue
+            v = iou(masks[a], masks[b])
+            rows.append({"kind": kind, "pair": [a, b], "iou": round(v, 3)})
+            if v >= MAX_SHAPE_IOU:
+                fails.append(f"{a}/{b} {kind}: same silhouette (overlap {v:.2f} ≥ {MAX_SHAPE_IOU}) — a recolour, not its own character")
+            elif v >= WARN_SHAPE_IOU:
+                warns.append(f"{a}/{b} {kind}: silhouettes close (overlap {v:.2f})")
+    return rows, fails, warns
+
+
+def _lab(r: int, g: int, b: int) -> tuple[float, float, float]:
+    def lin(u: int) -> float:
+        x = u / 255
+        return ((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92
+    R, G, B = lin(r), lin(g), lin(b)
+    X = (0.4124 * R + 0.3576 * G + 0.1805 * B) / 0.95047
+    Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
+    Z = (0.0193 * R + 0.1192 * G + 0.9505 * B) / 1.08883
+    f = lambda t: t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116
+    fx, fy, fz = f(X), f(Y), f(Z)
+    return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
+
+
+def torso_lab(frames: list[Image.Image]) -> tuple[float, float, float]:
+    """Mean Lab of the torso (45–75% down the figure, middle 40% across): that's the coat."""
+    acc = [0.0, 0.0, 0.0]
+    n = 0
+    for f in frames:
+        x0, y0, x1, y1 = solid_bbox(f)
+        w, h = x1 - x0, y1 - y0
+        px = f.load()
+        for y in range(int(y0 + h * 0.45), int(y0 + h * 0.75)):
+            for x in range(int(x0 + w * 0.3), int(x1 - w * 0.3)):
+                r, g, b, a = px[x, y]
+                if a < 200:
+                    continue
+                L, A, B = _lab(r, g, b)
+                acc[0] += L
+                acc[1] += A
+                acc[2] += B
+                n += 1
+    return (acc[0] / n, acc[1] / n, acc[2] / n) if n else (0.0, 0.0, 0.0)
+
+
+def delta_h(p: tuple[float, float, float], q: tuple[float, float, float]) -> float:
+    c1, c2 = math.hypot(p[1], p[2]), math.hypot(q[1], q[2])
+    h1, h2 = math.atan2(p[2], p[1]), math.atan2(q[2], q[1])
+    dh = (h2 - h1 + math.pi) % (2 * math.pi) - math.pi
+    return abs(2 * math.sqrt(c1 * c2) * math.sin(dh / 2))
+
+
+def palette_check() -> tuple[list[dict], list[str]]:
+    rows, fails = [], []
+    for s in SCOUT_IDS:
+        ip, wp, sp = (SHEETS[f"{s}-{k}"][0] for k in KINDS)
+        if not (ip.exists() and wp.exists()):
+            continue
+        idle = [f for row in cells(Image.open(ip).convert("RGBA"), 2) for f in row]
+        walk = cells(Image.open(wp).convert("RGBA"), 4)
+        front = delta_h(torso_lab(idle), torso_lab(walk[0]))
+        rec = {"scout": s, "coatDeltaH": round(front, 2)}
+        if front > MAX_COAT_DH:
+            fails.append(f"{s}: walk and idle coats differ in colour (ΔH {front:.1f} > {MAX_COAT_DH}) — one palette per character")
+        if sp.exists():
+            side = cells(Image.open(sp).convert("RGBA"), 2)
+            dl = delta_h(torso_lab(side[0]), torso_lab(walk[1]))
+            dr = delta_h(torso_lab(side[1]), torso_lab(walk[2]))
+            rec["sideDeltaH"] = [round(dl, 2), round(dr, 2)]
+            for face, d in (("left", dl), ("right", dr)):
+                if d > MAX_COAT_DH:
+                    fails.append(f"{s}: side idle ({face}) coat differs from the walk (ΔH {d:.1f})")
+        rows.append(rec)
+    return rows, fails
+
+
+def side_idle_check() -> tuple[list[dict], list[str]]:
+    rows, fails = [], []
+    for s in SCOUT_IDS:
+        sp, wp = SHEETS[f"{s}-idle-side"][0], SHEETS[f"{s}-walk"][0]
+        if not sp.exists():
+            fails.append(f"{s}: no side idle sheet (stopping while walking left/right snaps to the front)")
+            continue
+        side = cells(Image.open(sp).convert("RGBA"), 2)
+        walk = cells(Image.open(wp).convert("RGBA"), 4)
+        rec = {"scout": s, "rows": []}
+        for r, walk_row, face in ((0, 1, "left"), (1, 2, "right")):
+            feet = [solid_bbox(f)[3] for f in side[r]]
+            wfeet = sorted(solid_bbox(f)[3] for f in walk[walk_row])
+            floor = wfeet[len(wfeet) // 2]
+            heads = [head_cx(f) for f in side[r]]
+            edges = sum(edge_touch(f) for f in side[r])
+            rec["rows"].append({"face": face, "feet": feet, "walkFloor": floor, "headDrift": round(max(heads) - min(heads), 1)})
+            if max(abs(f - floor) for f in feet) > MAX_SIDE_FLOOR:
+                fails.append(f"{s}-idle-side {face}: floor {feet} vs walk floor {floor} (hop on stop)")
+            if max(heads) - min(heads) > MAX_SIDE_HEAD_DRIFT:
+                fails.append(f"{s}-idle-side {face}: head jumps {max(heads) - min(heads):.1f}px")
+            if edges:
+                fails.append(f"{s}-idle-side {face}: {edges}px touch the cell edge (cut off)")
+            # It must actually face that way: the walk row's profile, not the front idle.
+            hx = sum(head_cx(f) for f in walk[walk_row]) / 4
+            if abs(sum(heads) / len(heads) - hx) > MAX_WALK_HEAD_DRIFT + 1:
+                fails.append(f"{s}-idle-side {face}: head sits at {sum(heads) / len(heads):.0f}, walk profile at {hx:.0f} — not the {face} profile")
+        rows.append(rec)
+    return rows, fails
+
+
 def silhouette(path: Path) -> str:
     im = Image.open(path).convert("RGBA")
     return md5(im.getchannel("A").point(lambda v: 255 if v >= 128 else 0).tobytes()).hexdigest()
@@ -166,7 +323,7 @@ def silhouette(path: Path) -> str:
 def inspect(name: str, path: Path, size: tuple[int, int]) -> dict:
     failures: list[str] = []
     if not path.exists():
-        return {"name": name, "file": str(path.relative_to(ROOT)), "ok": False, "failures": ["missing"]}
+        return {"name": name, "file": str(path), "ok": False, "failures": ["missing"]}
     raw = path.read_bytes()
     im = Image.open(path).convert("RGBA")
     digest = md5(raw).hexdigest()
@@ -192,7 +349,7 @@ def inspect(name: str, path: Path, size: tuple[int, int]) -> dict:
         failures.append(f"sheet {opaque / (w * h):.0%} opaque — leftover background?")
     return {
         "name": name,
-        "file": str(path.relative_to(ROOT)),
+        "file": str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path),
         "md5": digest,
         "size": list(im.size),
         "magenta": mag,
@@ -217,7 +374,7 @@ def main() -> int:
         if len(names) > 1:
             failures.append(f"duplicate sheet {digest[:8]}: {', '.join(names)}")
     frames = []
-    scouts = sorted({n.rsplit("-", 1)[0] for n in SHEETS})
+    scouts = SCOUT_IDS
     for scout in scouts:
         ip, wp = SHEETS[f"{scout}-idle"][0], SHEETS[f"{scout}-walk"][0]
         if not (ip.exists() and wp.exists()):
@@ -225,16 +382,24 @@ def main() -> int:
         rep, fails = registration(scout, ip, wp)
         frames.append(rep)
         failures.extend(fails)
-    # Same alpha mask on two scouts = a recolour, not a distinct character (warning only).
-    warnings = []
-    by_shape: dict[str, list[str]] = {}
-    for name, (path, _) in SHEETS.items():
-        if path.exists():
-            by_shape.setdefault(silhouette(path), []).append(name)
-    for names in by_shape.values():
-        if len(names) > 1:
-            warnings.append(f"same silhouette (recolour): {', '.join(names)}")
-    verdict = {"ok": not failures, "sheets": reports, "frames": frames, "failures": failures, "warnings": warnings}
+    warnings: list[str] = []
+    shapes, shape_fails, shape_warns = shape_check()
+    failures.extend(shape_fails)
+    warnings.extend(shape_warns)
+    palettes, palette_fails = palette_check()
+    failures.extend(palette_fails)
+    sides, side_fails = side_idle_check()
+    failures.extend(side_fails)
+    verdict = {
+        "ok": not failures,
+        "sheets": reports,
+        "frames": frames,
+        "shapes": sorted(shapes, key=lambda r: -r["iou"])[:6],
+        "palettes": palettes,
+        "sideIdles": sides,
+        "failures": failures,
+        "warnings": warnings,
+    }
     print(json.dumps(verdict, indent=2))
     return 0 if not failures else 1
 
