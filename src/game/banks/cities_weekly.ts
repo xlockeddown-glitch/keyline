@@ -9,7 +9,7 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
       q("Lady Bird Lake was formerly called…", ["Lake Travis", "Town Lake", "Stillhouse Hollow", "Lake Buchanan"], "Town Lake", 1),
     ],
     food: [
-      q("Migas on an Austin breakfast plate usually means…", ["only a kolache of prune", "eggs scrambled with tortilla strips (and toppings)", "only ceviche", "only oatmeal of Scotland"], "eggs scrambled with tortilla strips (and toppings)", 2),
+      q("Migas on an Austin breakfast plate usually means…", ["a prune kolache with sweet glaze", "eggs scrambled with tortilla strips", "ceviche of lime-cured shrimp", "Scottish oatmeal with brown sugar"], "eggs scrambled with tortilla strips", 2),
       q("Umami is the taste quality often described as…", ["only sour", "savory", "only bitter", "only sweet"], "savory", 1),
     ],
     nature: [
@@ -23,9 +23,9 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
   temple: {
     local: [
       q("The Central Texas State Fair is staged mainly in…", ["Dallas Fair Park", "Belton (near Temple)", "the Houston Astrodome", "El Paso"], "Belton (near Temple)", 2),
-      q("Baylor Scott & White Medical Center–Temple is a…", ["naval shipyard", "major teaching hospital of Central Texas", "MLB ballpark", "state capitol annex"], "major teaching hospital of Central Texas", 2),
+      q("Baylor Scott & White Medical Center–Temple is a…", ["naval shipyard on the Gulf coast", "major teaching hospital of Central Texas", "minor-league ballpark for the region", "state capitol annex for Bell County"], "major teaching hospital of Central Texas", 2),
       q("Temple, Texas began as a…", ["Spanish mission of 1690", "Gulf, Colorado and Santa Fe Railway town", "oil boom camp of Spindletop only", "Republic of Texas capital"], "Gulf, Colorado and Santa Fe Railway town", 2),
-      q("Temple is named for Bernard Moore Temple, a…", ["Texas governor", "chief engineer of the Gulf, Colorado and Santa Fe Railway", "Alamo defender", "cotton baron of Galveston only"], "chief engineer of the Gulf, Colorado and Santa Fe Railway", 3),
+      q("Temple is named for Bernard Moore Temple, a…", ["Texas governor of the 1850s", "chief engineer of the Santa Fe railroad", "defender of the Alamo in 1836", "cotton baron and Galveston banker"], "chief engineer of the Santa Fe railroad", 3),
     ],
     political: [
       q("Temple belongs to which U.S. state?", ["Oklahoma", "Texas", "Louisiana", "New Mexico"], "Texas", 1),
@@ -55,12 +55,12 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
       q("Alcatraz Island sits in…", ["Lake Tahoe", "San Francisco Bay", "the Sacramento River delta only", "Monterey Canyon as an island"], "San Francisco Bay", 1),
     ],
     food: [
-      q("A sourdough starter is chiefly…", ["instant yeast packets only", "a living fermented culture of flour and water", "baking powder dissolved in milk", "food coloring for crust"], "a living fermented culture of flour and water", 2),
+      q("A sourdough starter is chiefly…", ["dried instant yeast and warm water", "a living fermented culture of flour and water", "baking powder and soda dissolved in milk", "malt syrup brushed on for a darker crust"], "a living fermented culture of flour and water", 2),
     ],
   },
   nyc: {
     political: [
-      q("New York City's five boroughs are each…", ["independent U.S. states", "counties (with quirks) inside the city", "Canadian provinces", "only ZIP codes with no law"], "counties (with quirks) inside the city", 3),
+      q("New York City's five boroughs are each…", ["independent cities with mayors", "counties of New York State", "Canadian provinces", "ZIP code areas with no government"], "counties of New York State", 3),
     ],
     local: [
       q("The Hudson River forms much of Manhattan's…", ["eastern shore only", "western edge", "only Central Park lake", "only Brooklyn's oceanfront"], "western edge", 1),
