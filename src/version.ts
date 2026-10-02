@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.35";
+export const APP_VERSION = "0.0.36";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k35a";
+export const PUBLISH_STAMP = "k36a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -35,3 +35,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.33: Match sorter ride game shares the 2–6 min band with Where am I? (picked per ride, ~50/50) — sort tumbling matches into the six tier boxes, colors plus rank pips, tap/drag/keys 1–6, +1 white on 26/26; Tucson: Congress/Granada stop and Five Points moved to their real spots, Sosa Avenue retired for the real Sosa–Carrillo–Frémont House (k33a).
 // 0.0.34: Friday weekly trivia audit + 24 new cards (Temple/Austin/Tucson/London gaps + thin political/non-math topics); bank weekly_20261002 (k34a).
 // 0.0.35: ride game variety — 2–6 min rides deal Where am I? or Match sorter at random, weighted against this save's recent rides (never 3 in a row); the dealt game is stored on the ride (k35a).
+// 0.0.36: Route puzzle ride game for 6 min+ rides (fares cap at 14:00, so that's every long ride) — a little map of real places in the city ahead, tap the stops in the shortest order from S to F, three maps a round, letters/shapes/dashes so colour is never the only cue, tap or keys; 3/3 shortest pays the perfect +1 white (k36a).
