@@ -4,7 +4,9 @@ plus per-frame registration (walk drift, floor line per facing, idle jumps,
 idle-to-walk floor match, pixels touching a cell edge), and since 0.0.37:
   * distinct silhouettes — two characters whose alpha masks overlap too much fail (a recolour is not a character);
   * one palette — a character's walk and idle coats must be the same colour (the Tabby walked in green, idled in brown);
-  * side idles — the stand-still-facing-left/right sheets sit on the walk floor and don't jump.
+  * side idles — the stand-still-facing-left/right sheets sit on the walk floor and don't jump;
+and since 0.0.38 the coat check is per facing (front, left, right) and covers the shop icon, with a
+tighter limit (the Turtle walked in a bare shell at ΔH 3.6–4.1 and slipped under the old 5.5).
 KEYLINE_SPRITE_OVERRIDE="name=path,..." swaps sheets in for the self-tests."""
 from __future__ import annotations
 
@@ -50,9 +52,14 @@ SHEETS = {
     "sloth-idle-side": (SCOUTS / "sloth-idle-side.png", (192, 192)),
     "turtle-idle-side": (SCOUTS / "turtle-idle-side.png", (192, 192)),
 }
+# Shop icons (one 96 px idle-style portrait each); checked against the idle coat, not inspected as sheets.
+ICONS = {s: SCOUTS / f"{s}.png" for s in ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]}
 for _pair in filter(None, os.environ.get("KEYLINE_SPRITE_OVERRIDE", "").split(",")):
     _name, _path = _pair.split("=", 1)
-    SHEETS[_name] = ((ROOT / _path).resolve(), SHEETS[_name][1])
+    if _name.endswith("-icon"):
+        ICONS[_name[:-5]] = (ROOT / _path).resolve()
+    else:
+        SHEETS[_name] = ((ROOT / _path).resolve(), SHEETS[_name][1])
 
 SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]
 KINDS = ["idle", "walk", "idle-side"]
@@ -186,9 +193,14 @@ def registration(scout: str, idle_path: Path, walk_path: Path) -> tuple[dict, li
 # a recolour is 1.0. Fail at this overlap, warn a little below it.
 MAX_SHAPE_IOU = 0.85
 WARN_SHAPE_IOU = 0.80
-# Coat colour shift between the walk and idle torso, as CIE ΔH* (hue difference scaled by chroma).
-# Consistent characters sit at ≤ 4.1; the green-walking Tabby was 7.4.
-MAX_COAT_DH = 5.5
+# Coat colour shift between the idle torso and each walk facing (front, left, right) and the shop icon,
+# as CIE ΔH* (hue difference scaled by chroma). Consistent coats sit at ≤ 2.8 (lynx sides 2.76, turtle 2.1
+# after 0.0.38, everyone else ≤ 1.8); the 0.0.37 shell-walking Turtle was 3.6–4.1 and the 0.0.36
+# olive Tabby 6.5–7.1. The back view is reported but not gated: tails and hoods fill the torso there.
+MAX_COAT_DH = 3.2
+# Per-character allowance. The Raccoon's grey coat has so little chroma that its mean hue swings with
+# the lighting of each pose (3.9–4.1 on art that matches by eye), so it keeps the pre-0.0.38 limit.
+COAT_DH_LIMIT = {"raccoon": 5.5}
 MAX_SIDE_FLOOR = 1
 MAX_SIDE_HEAD_DRIFT = 1.5
 
@@ -266,19 +278,29 @@ def palette_check() -> tuple[list[dict], list[str]]:
         ip, wp, sp = (SHEETS[f"{s}-{k}"][0] for k in KINDS)
         if not (ip.exists() and wp.exists()):
             continue
+        limit = COAT_DH_LIMIT.get(s, MAX_COAT_DH)
         idle = [f for row in cells(Image.open(ip).convert("RGBA"), 2) for f in row]
         walk = cells(Image.open(wp).convert("RGBA"), 4)
-        front = delta_h(torso_lab(idle), torso_lab(walk[0]))
-        rec = {"scout": s, "coatDeltaH": round(front, 2)}
-        if front > MAX_COAT_DH:
-            fails.append(f"{s}: walk and idle coats differ in colour (ΔH {front:.1f} > {MAX_COAT_DH}) — one palette per character")
+        ref = torso_lab(idle)
+        facing = {name: delta_h(ref, torso_lab(walk[r])) for name, r in (("front", 0), ("left", 1), ("right", 2), ("back", 3))}
+        rec = {"scout": s, "coatLimit": limit, "coatDeltaH": round(facing["front"], 2),
+               "coatDeltaHByFacing": {k: round(v, 2) for k, v in facing.items()}}
+        for name in ("front", "left", "right"):
+            if facing[name] > limit:
+                fails.append(f"{s}: walk and idle coats differ in colour (walking {name}, ΔH {facing[name]:.1f} > {limit}) — one outfit per character")
+        icon = ICONS.get(s)
+        if icon and icon.exists():
+            d = delta_h(ref, torso_lab([Image.open(icon).convert("RGBA")]))
+            rec["iconDeltaH"] = round(d, 2)
+            if d > limit:
+                fails.append(f"{s}: shop icon coat differs from the idle (ΔH {d:.1f} > {limit})")
         if sp.exists():
             side = cells(Image.open(sp).convert("RGBA"), 2)
             dl = delta_h(torso_lab(side[0]), torso_lab(walk[1]))
             dr = delta_h(torso_lab(side[1]), torso_lab(walk[2]))
             rec["sideDeltaH"] = [round(dl, 2), round(dr, 2)]
             for face, d in (("left", dl), ("right", dr)):
-                if d > MAX_COAT_DH:
+                if d > limit:
                     fails.append(f"{s}: side idle ({face}) coat differs from the walk (ΔH {d:.1f})")
         rows.append(rec)
     return rows, fails
