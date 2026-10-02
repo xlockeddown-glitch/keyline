@@ -1,3 +1,4 @@
+import { isWalkableWay, WALK_HIGHWAY_RE, WALK_OVERPASS_FILTERS, type WayTags } from "./walkable.ts";
 import { dest, distM, metersPerDegLng, yawToTarget } from "./geo.ts";
 import { getOsmWays } from "./streetApi.ts";
 import type { Poi, Tier } from "./types";
@@ -33,17 +34,14 @@ const CELL = 80;
 const MERGE = 1e-5;
 const MIN_SEG = 2.2;
 const DECIMATE = 12;
-const HIGHWAY =
-  "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|pedestrian|footway|path|steps|cycleway|service|track|bridleway|corridor";
 const HIGHWAY_DRIVE =
   "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service";
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
-/** Indoor corridors cut through buildings. Walking may use a path, alley, or road. */
-const WALK_SKIP = new Set(["corridor"]);
-const OSRM_FOOT = [
-  "https://routing.openstreetmap.de/routed-foot/route/v1/foot",
-  "https://router.project-osrm.org/route/v1/foot",
-];
+/**
+ * Foot routers only. router.project-osrm.org serves the car profile whatever the URL says, so it
+ * must never back up a walk — that's how walks ended up down the Lodge Freeway trench (0.0.31).
+ */
+export const OSRM_FOOT = ["https://routing.openstreetmap.de/routed-foot/route/v1/foot"];
 const OVERPASS = [
   "https://overpass.openstreetmap.fr/api/interpreter",
   "https://overpass-api.de/api/interpreter",
@@ -204,7 +202,7 @@ export function ingestLine(g: StreetGraph, raw: Pt[], arterial = false) {
 
 type OsmWay = {
   geometry?: { lat: number; lon: number }[];
-  tags?: { highway?: string };
+  tags?: WayTags;
   arterial?: boolean;
 };
 
@@ -213,7 +211,8 @@ export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
     const geom = way.geometry;
     if (!geom || geom.length < 2) continue;
     const hw = way.tags?.highway ?? "";
-    if (!drive && WALK_SKIP.has(hw)) continue;
+    // Tagged ways must be walkable; untagged lines come pre-filtered (server fetch, baked foot routes).
+    if (!drive && way.tags && !isWalkableWay(way.tags)) continue;
     if (drive && hw && !ARTERIAL.has(hw) && !HIGHWAY_DRIVE.split("|").includes(hw)) continue;
     const arterial = way.arterial ?? ARTERIAL.has(hw);
     ingestLine(
@@ -622,8 +621,9 @@ export function graphCovers(g: StreetGraph, lat: number, lng: number, margin = 4
 
 function overpassQuery(lat: number, lng: number, radius: number, drive = false) {
   const r = Math.round(radius);
-  const hw = drive ? HIGHWAY_DRIVE : HIGHWAY;
-  return `[out:json][timeout:25];way["highway"~"^(${hw})$"]["area"!="yes"]["access"!="private"]["access"!="no"](around:${r},${lat.toFixed(5)},${lng.toFixed(5)});out tags geom;`;
+  const at = `(around:${r},${lat.toFixed(5)},${lng.toFixed(5)})`;
+  if (drive) return `[out:json][timeout:25];way["highway"~"^(${HIGHWAY_DRIVE})$"]["area"!="yes"]["access"!="private"]["access"!="no"]${at};out tags geom;`;
+  return `[out:json][timeout:25];way["highway"~"^(${WALK_HIGHWAY_RE})$"]${WALK_OVERPASS_FILTERS}${at};out tags geom;`;
 }
 
 function mergeAbort(signal: AbortSignal | undefined, ms: number) {
@@ -891,6 +891,26 @@ export function finishPath(path: Pt[] | null, from: Pt, to: Pt, opts?: { cutBuil
   return tidy.length >= 2 ? tidy : null;
 }
 
+/** A match is in hand within this many meters of the walker. */
+export const MATCH_GRAB_M = 22;
+
+/**
+ * Can the walker pick this match up? Within MATCH_GRAB_M, yes. A match a little way off the walkable
+ * network (an old save that put it on a freeway, a curb across a wide road) also counts once the walker
+ * stands at the closest walkable spot to it — walks end there, so they must be able to collect there.
+ */
+export function canGrabMatch(g: StreetGraph | null, walker: Pt, match: Pt): boolean {
+  const d = distM(walker.lat, walker.lng, match.lat, match.lng);
+  if (d <= MATCH_GRAB_M) return true;
+  if (!g || !g.segs.length || d > 70) return false;
+  const curb = nearest(g, match.lat, match.lng, 70);
+  if (!curb) return false;
+  return distM(walker.lat, walker.lng, curb.lat, curb.lng) <= 8;
+}
+
+/** How far an online walk may stray from the walkable graph before the graph route wins. */
+export const WALK_HUG_M = 26;
+
 export function routeHugsGraph(g: StreetGraph, path: Pt[], maxOff = 32): boolean {
   if (!g.segs.length || path.length < 2) return false;
   for (let i = 0; i < path.length - 1; i++) {
@@ -916,12 +936,26 @@ export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
   // Aborted (map torn down, city changed): no fallback path. The caller's map may be gone.
   if (signal?.aborted) return null;
+  return pickWalk(g, online, snappedFrom, snappedTo);
+}
+
+/**
+ * Choose between the online foot route and the walk graph. The graph only holds walkable ways, so an
+ * online route that strays off it (a freeway, a ramp, a gap in the data) loses to the graph's route,
+ * and only routes that hug the graph get stitched into it.
+ */
+export function pickWalk(g: StreetGraph | null, online: Pt[] | null, from: Pt, to: Pt): Pt[] | null {
+  const local = g ? routeOnGraph(g, from, to) : null;
   if (online && online.length >= 2) {
-    if (g) ingestLine(g, online);
-    return tidyPath(online);
+    if (!g || !g.segs.length) return tidyPath(online);
+    if (routeHugsGraph(g, online, WALK_HUG_M)) {
+      ingestLine(g, online);
+      return tidyPath(online);
+    }
+    // No graph route (outside what's loaded): the foot router is all we have.
+    return local ?? tidyPath(online);
   }
-  if (g) return routeOnGraph(g, snappedFrom, snappedTo);
-  return null;
+  return local;
 }
 
 export async function routeDrive(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {

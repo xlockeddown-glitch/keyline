@@ -8,6 +8,7 @@ import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
+  canGrabMatch,
   bootstrapDrive,
   bootstrapStreets,
   canCutBuildings,
@@ -477,6 +478,20 @@ export function GameMap() {
       }).addTo(map);
 
       mapRef.current = map;
+      if (import.meta.env.DEV) {
+        // Dev/QA only: lets smoke scripts stand the walker at a spot and read the walk graph.
+        (window as unknown as { __keylineMap?: unknown }).__keylineMap = {
+          map: () => mapRef.current,
+          pos: () => ({ ...pos.current }),
+          graph: () => graphRef.current,
+          route: () => routeRef.current,
+          place: (lat: number, lng: number) => {
+            const g = graphRef.current;
+            if (g) placeOnStreet(g, lat, lng);
+            mapRef.current?.setView([pos.current.lat, pos.current.lng], mapRef.current.getZoom());
+          },
+        };
+      }
       paintWard(L, map);
       map.on("dragstart", () => {
         follow.current = false;
@@ -823,8 +838,7 @@ export function GameMap() {
       void setDestination(k.lat, k.lng);
       return;
     }
-    const d = distM(pos.current.lat, pos.current.lng, k.lat, k.lng);
-    if (d > 22) {
+    if (!canGrabMatch(graphRef.current, pos.current, k)) {
       void setDestination(k.lat, k.lng);
       return;
     }
@@ -1150,8 +1164,7 @@ export function GameMap() {
       }
       for (const k of st.mapKeys) {
         if (seated) break;
-        const d = distM(pos.current.lat, pos.current.lng, k.lat, k.lng);
-        if (d < 22) {
+        if (canGrabMatch(foot, pos.current, k)) {
           st.collectKey(k.id);
           const L = Lref.current;
           const map = mapRef.current;

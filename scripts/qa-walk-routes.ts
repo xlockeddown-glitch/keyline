@@ -1,0 +1,23 @@
+// Live check: the online foot router's answers for the freeway cases in paths.test.ts stay off freeways.
+// node --experimental-strip-types scripts/qa-walk-routes.ts
+import { readFileSync } from "node:fs";
+import { osrmRoute } from "../src/game/streets.ts";
+import { isFreeway, isWalkableWay } from "../src/game/walkable.ts";
+import { freewayRun } from "../src/game/pathCheck.ts";
+
+const src = readFileSync(new URL("../src/game/paths.test.ts", import.meta.url), "utf8");
+const cases = [...src.matchAll(/city: "(\w+)", name: "([^"]+)", from: \{ lat: ([\d.-]+), lng: ([\d.-]+) \}, to: \{ lat: ([\d.-]+), lng: ([\d.-]+) \}/g)];
+let bad = 0;
+for (const m of cases) {
+  const [, city, name, a, b, c, d] = m;
+  const f = JSON.parse(readFileSync(new URL(`../src/game/fixtures/paths-${city}.json`, import.meta.url), "utf8"));
+  const P = (w: { line: number[] }) => { const o = []; for (let i = 0; i + 1 < w.line.length; i += 2) o.push({ lat: w.line[i]!, lng: w.line[i + 1]! }); return o; };
+  const fw = f.ways.filter((w: { tags: object }) => isFreeway(w.tags)).map(P);
+  const walk = f.ways.filter((w: { tags: object }) => isWalkableWay(w.tags)).map(P);
+  const path = await osrmRoute({ lat: +a!, lng: +b! }, { lat: +c!, lng: +d! });
+  if (!path) { console.log("NO ROUTE", city, name); continue; }
+  const r = freewayRun(path, fw, 6, 25, walk, 4);
+  if (r.run >= 20) bad++;
+  console.log(r.run >= 20 ? "FAIL" : "ok  ", city.padEnd(8), name, `freeway ride ${r.run.toFixed(0)} m`, r.at ? `near ${r.at.lat.toFixed(5)},${r.at.lng.toFixed(5)}` : "");
+}
+process.exit(bad ? 1 : 0);

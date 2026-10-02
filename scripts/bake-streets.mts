@@ -1,11 +1,15 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { CITIES } from "../src/game/data.ts";
 
-const OSRM = "https://routing.openstreetmap.de/routed-foot/route/v1/driving";
+// Foot profile only. Never router.project-osrm.org — it answers every profile with car routes
+// (that's how detroit.json came to run down the Lodge and Fisher freeways before 0.0.32).
+const OSRM = "https://routing.openstreetmap.de/routed-foot/route/v1/foot";
+const FORCE = new Set(process.argv.slice(2));
 
 async function route(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const url = `${OSRM}/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
-  const res = await fetch(url);
+  await new Promise((r) => setTimeout(r, 200));
+  const res = await fetch(url, { headers: { "User-Agent": "keyline-bake/1.0" } });
   if (!res.ok) return null;
   const j = (await res.json()) as { routes?: { geometry?: { coordinates?: [number, number][] } }[] };
   const coords = j.routes?.[0]?.geometry?.coordinates;
@@ -20,7 +24,8 @@ async function route(a: { lat: number; lng: number }, b: { lat: number; lng: num
 async function bake() {
   mkdirSync("public/streets", { recursive: true });
   for (const city of Object.values(CITIES)) {
-    if (existsSync(`public/streets/${city.id}.json`)) {
+    if (FORCE.size && !FORCE.has(city.id)) continue;
+    if (!FORCE.has(city.id) && existsSync(`public/streets/${city.id}.json`)) {
       console.log(city.id, "skip");
       continue;
     }

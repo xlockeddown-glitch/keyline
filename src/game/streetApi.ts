@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { isWalkableWay, WALK_HIGHWAY_RE, type WayTags } from "./walkable.ts";
 
-const HIGHWAY =
-  "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|pedestrian|footway|path|steps|cycleway|service|track|bridleway";
 const DRIVE = new Set([
   "primary",
   "primary_link",
@@ -15,8 +14,6 @@ const DRIVE = new Set([
   "living_street",
   "service",
 ]);
-/** Indoor corridors cut through buildings. Paths, alleys, and roads all stay walkable. */
-const WALK_SKIP = new Set(["corridor"]);
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
 
 const OVERPASS = [
@@ -36,13 +33,14 @@ const Input = z.object({
 async function postOverpass(url: string, query: string) {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    // Some Overpass mirrors 403 requests without a User-Agent (server-side fetch sends none by default).
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "keyline/1.0 (+https://github.com/xlockeddown-glitch/keyline)" },
     body: `data=${encodeURIComponent(query)}`,
     signal: AbortSignal.timeout(18000),
   });
   if (!res.ok) throw new Error(`overpass ${res.status}`);
   return (await res.json()) as {
-    elements?: { tags?: { highway?: string }; geometry?: { lat: number; lon: number }[] }[];
+    elements?: { tags?: WayTags & { highway?: string }; geometry?: { lat: number; lon: number }[] }[];
   };
 }
 
@@ -74,10 +72,11 @@ export const getOsmWays = createServerFn({ method: "POST" })
   .validator((u) => Input.parse(u))
   .handler(async ({ data }) => {
     const { lat, lng, radius } = data;
-    const key = `walk2:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
+    const key = `walk3:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
     const hit = cache.get(key);
     if (hit) return hit;
-    const q = `[out:json][timeout:25];way["highway"~"^(${HIGHWAY})$"]["area"!="yes"]["access"!="private"]["access"!="no"](around:${Math.round(radius)},${lat.toFixed(5)},${lng.toFixed(5)});out tags geom;`;
+    // Walkable and drivable ways together; drive rows keep the old access rule, walk rows use isWalkableWay.
+    const q = `[out:json][timeout:25];way["highway"~"^(${WALK_HIGHWAY_RE})$"]["area"!="yes"]["motorroad"!="yes"](around:${Math.round(radius)},${lat.toFixed(5)},${lng.toFixed(5)});out tags geom;`;
     let last: Error | null = null;
     for (const url of OVERPASS) {
       try {
@@ -88,8 +87,9 @@ export const getOsmWays = createServerFn({ method: "POST" })
           const hw = el.tags?.highway ?? "";
           const packed = packLine(el.geometry ?? []);
           if (packed.length < 4) continue;
-          if (!WALK_SKIP.has(hw)) lines.push(packed);
-          if (DRIVE.has(hw)) drive.push({ line: packed, arterial: ARTERIAL.has(hw) });
+          if (isWalkableWay(el.tags)) lines.push(packed);
+          const acc = el.tags?.access ?? "";
+          if (DRIVE.has(hw) && acc !== "no" && acc !== "private") drive.push({ line: packed, arterial: ARTERIAL.has(hw) });
         }
         const payload = { lines, drive };
         cache.set(key, payload);
