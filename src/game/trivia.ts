@@ -39,6 +39,12 @@ import {
   WEEKLY_POLITICAL,
   WEEKLY_SCIENCE,
 } from "@/game/banks/weekly_20260922";
+import {
+  WEEKLY_HISTORY_20261002,
+  WEEKLY_NATURE_20261002,
+  WEEKLY_POLITICAL_20261002,
+  WEEKLY_SCIENCE_20261002,
+} from "@/game/banks/weekly_20261002";
 import type { CityId, Poi, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 
 export const TRIVIA_CATS: { id: TriviaCat; label: string; blurb: string }[] = [
@@ -347,13 +353,13 @@ function mergeCat(a: TriviaQ[], b: TriviaQ[]): TriviaQ[] {
 const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	sports: mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []),
 	local: mergeCat(CORE_GENERAL.local ?? [], GENERAL_BANK.local ?? []),
-	political: mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL),
+	political: mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002),
 	food: mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []),
 	arts: mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []),
 	math: mergeCat(MATH_BANK, MATH_MORE).map(rescoreMath),
-	science: mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE),
-	history: mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY),
-	nature: mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE),
+	science: mergeCat(mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE), WEEKLY_SCIENCE_20261002),
+	history: mergeCat(mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY), WEEKLY_HISTORY_20261002),
+	nature: mergeCat(mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE), WEEKLY_NATURE_20261002),
 	games: GAMES_BANK,
 	celebrity: CELEBRITY_BANK,
 };
