@@ -175,10 +175,13 @@ test("no room for a blue: it comes as three whites", () => {
   assert.deepEqual(some.add, { white: 9, blue: 1, green: 0 });
 });
 
-test("selector: Lamplighter under two minutes and past six; Where am I? and Match sorter share two to six", () => {
+test("selector: Lamplighter under two minutes; Where am I? and Match sorter share two to six; Route puzzle from six on", () => {
   const band = ["where-am-i", "match-sorter"];
-  for (const m of [0.8, 1.9, 6, 10, 14]) {
+  for (const m of [0.8, 1.9]) {
     for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.equal(pickRideGame(m * MIN, undefined, seed), "lamplighter", `${m}m`);
+  }
+  for (const m of [6, 10, 14, 20]) {
+    for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.equal(pickRideGame(m * MIN, undefined, seed), "route-puzzle", `${m}m`);
   }
   for (const m of [2, 3, 4, 5.9]) {
     for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.ok(band.includes(pickRideGame(m * MIN, undefined, seed)), `${m}m`);

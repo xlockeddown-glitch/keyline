@@ -125,7 +125,11 @@ export const RIDE_GAME_NAME: Record<RideGameId, string> = {
   "route-puzzle": "Route puzzle",
 };
 
-/** Short trips get quick reflex games, long trips get thinkers. */
+/**
+ * Short trips get quick reflex games, long trips get thinkers. Fares top out at 14:00 exactly, so
+ * the route band runs open-ended: a capped cross-country ride is a long ride, and it gets Route
+ * puzzle (with time for several rounds) rather than dropping back to Lamplighter.
+ */
 export const RIDE_GAME_BANDS: { underMs: number; games: RideGameId[] }[] = [
   { underMs: 2 * 60_000, games: ["lamplighter"] },
   { underMs: 6 * 60_000, games: ["where-am-i", "match-sorter"] },
@@ -133,7 +137,9 @@ export const RIDE_GAME_BANDS: { underMs: number; games: RideGameId[] }[] = [
 ];
 
 /** Games that are built. Lamplighter fills any band whose games aren't ready yet. */
-export const READY_RIDE_GAMES: readonly RideGameId[] = ["lamplighter", "where-am-i", "match-sorter"];
+export const READY_RIDE_GAMES: readonly RideGameId[] = ["lamplighter", "where-am-i", "match-sorter", "route-puzzle"];
+/** What was built before 0.0.36. Rides boarded before 0.0.35 stored no game; they keep the pick they had. */
+export const LEGACY_READY_GAMES: readonly RideGameId[] = ["lamplighter", "where-am-i", "match-sorter"];
 
 /**
  * The game a ride gets. Bands share their games evenly; which one is a hash of the ride seed
@@ -204,7 +210,7 @@ export function loadRideHistory(raw: unknown): RideGameId[] {
  */
 export function rideGameFor(j: { departAt: number; arriveAt: number; rideGame?: RideGameId }): RideGameId {
   if (j.rideGame && READY_RIDE_GAMES.includes(j.rideGame)) return j.rideGame;
-  return pickRideGame(j.arriveAt - j.departAt, READY_RIDE_GAMES, j.departAt);
+  return pickRideGame(j.arriveAt - j.departAt, LEGACY_READY_GAMES, j.departAt);
 }
 
 /** Where am I? rounds: up to 75s, and none under 30s. */
@@ -250,9 +256,21 @@ export function sorterRoundMs(remainingMs: number): number | null {
   return remainingMs - ARRIVAL_BUFFER_MS >= SORT_ROUND_MS ? SORT_ROUND_MS : null;
 }
 
+/** Route puzzle rounds: three maps in up to two minutes, and none under a minute. */
+export const ROUTE_ROUND_MAX_MS = 120_000;
+export const ROUTE_ROUND_MIN_MS = 60_000;
+
+/** Route puzzle round length for the time left, or null when the platform is too close. */
+export function routeRoundMs(remainingMs: number): number | null {
+  const room = Math.floor(remainingMs - ARRIVAL_BUFFER_MS);
+  if (room < ROUTE_ROUND_MIN_MS) return null;
+  return Math.min(ROUTE_ROUND_MAX_MS, room);
+}
+
 /** Round length for this ride's game. */
 export function rideRoundMs(game: RideGameId, remainingMs: number): number | null {
   if (game === "where-am-i") return whereRoundMs(remainingMs);
+  if (game === "route-puzzle") return routeRoundMs(remainingMs);
   if (game === "match-sorter") return sorterRoundMs(remainingMs);
   return lampRoundMs(remainingMs);
 }

@@ -19,6 +19,8 @@ import { AudioDock } from "./AudioDock";
 import { Lamplighter } from "./Lamplighter";
 import { WhereAmI } from "./WhereAmI";
 import { MatchSorter } from "./MatchSorter";
+import { RoutePuzzle } from "./RoutePuzzle";
+import { routeOutcome, routeRound, routeVerdict, type RoutePuzzleMap, type RouteTally } from "@/game/routePuzzle";
 import { sortOutcome, sortVerdict, type SortTally } from "@/game/matchSorter";
 import { whereOutcome, whereRound, whereVerdict, type WhereClue, type WhereTally } from "@/game/whereAmI";
 
@@ -46,6 +48,7 @@ const GAME_PITCH: Partial<Record<RideGameId, string>> = {
   lamplighter: "light the street lamps as they pass",
   "where-am-i": "name the place from a clue about the city ahead",
   "match-sorter": "sort tumbling matches into their tier boxes",
+  "route-puzzle": "plot the shortest trip between real places in the city ahead",
 };
 
 export function RideScreen() {
@@ -55,7 +58,7 @@ export function RideScreen() {
   const finishRideRound = useGame((s) => s.finishRideRound);
   const dropRideRound = useGame((s) => s.dropRideRound);
   const [, beat] = useState(0);
-  const [round, setRound] = useState<{ ms: number; seed: number; clues?: WhereClue[]; game?: RideGameId } | null>(null);
+  const [round, setRound] = useState<{ ms: number; seed: number; clues?: WhereClue[]; maps?: RoutePuzzleMap[]; game?: RideGameId } | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
@@ -95,6 +98,12 @@ export function RideScreen() {
       setRound({ ms, seed: journey.departAt, clues });
       return;
     }
+    if (game === "route-puzzle") {
+      const maps = routeRound(to.pois, journey.departAt, n);
+      if (!maps.length) return;
+      setRound({ ms, seed: journey.departAt, maps, game });
+      return;
+    }
     setRound({ ms, seed: journey.departAt + (journey.game?.rounds ?? 0) * 7919 + (journey.forfeits ?? 0), game });
   };
   const settle = (outcome: RideOutcome, verdict: string, sub?: string) => {
@@ -112,6 +121,10 @@ export function RideScreen() {
     const outcome = sortOutcome(tally);
     const sub = perfectLine(outcome) ?? (tally.streak >= 6 ? `Best run: ${tally.streak} in a row.` : undefined);
     settle(outcome, sortVerdict(tally), sub);
+  };
+  const doneRoute = (tally: RouteTally) => {
+    const outcome = routeOutcome(tally);
+    settle(outcome, routeVerdict(tally, to.name), perfectLine(outcome));
   };
   const quit = () => {
     dropRideRound();
@@ -137,6 +150,8 @@ export function RideScreen() {
 
         {round?.clues ? (
           <WhereAmI city={to.name} clues={round.clues} roundMs={round.ms} onDone={doneWhere} onQuit={quit} />
+        ) : round?.maps ? (
+          <RoutePuzzle city={to.name} maps={round.maps} roundMs={round.ms} onDone={doneRoute} onQuit={quit} />
         ) : round?.game === "match-sorter" ? (
           <MatchSorter roundMs={round.ms} seed={round.seed} onDone={doneSort} onQuit={quit} />
         ) : round ? (
