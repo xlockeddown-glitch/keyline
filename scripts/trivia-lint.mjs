@@ -11,13 +11,15 @@
  *   number-leak      a numeric answer is written in a non-arithmetic prompt ("current 14-team format")
  * Warnings (review list, exit 0):
  *   near-duplicate   prompts match once case/punctuation/ellipsis are ignored
- *   length-giveaway  the answer is far longer than every wrong choice
+ *   length-giveaway  the answer is clearly the longest choice: over 40% longer than every wrong choice
+ *                    (and at least 4 characters longer), or more than 12 characters longer
  *   absolute-tells   every wrong choice says only/always/never and the answer does not
  *   above-choice     "all/none of the above" style choices
  *
  *   node scripts/trivia-lint.mjs            # summary + errors
  *   node scripts/trivia-lint.mjs --warn     # also list warnings
  *   node scripts/trivia-lint.mjs --json     # machine-readable
+ *   node scripts/trivia-lint.mjs --length   # length-giveaway cards + how often the answer is the longest choice
  */
 import { fileURLToPath } from "node:url";
 import { loadQuestions } from "./trivia-audit.mjs";
@@ -112,11 +114,33 @@ export function specialistEasy(item) {
   return item.diff < 3 && SPECIALIST_RE.test(String(item.q)) && /tarantula|spider|\bsling|hobby|urticating|instar|exuvium|Theraphos|fossorial|pinktoe|baboon/i.test(`${item.q} ${item.choices.join(" ")}`);
 }
 
+/** Length tell: answer over 40% longer than the longest wrong choice (by 4+ characters), or 12+ characters longer. */
+export const LENGTH_RATIO = 1.4;
+export const LENGTH_MIN_GAP = 4;
+export const LENGTH_MAX_GAP = 12;
 export function lengthGiveaway(item) {
   const a = String(item.answer).length;
   const others = item.choices.filter((c) => c !== item.answer).map((c) => String(c).length);
   if (!others.length) return false;
-  return a >= 24 && a >= Math.max(...others) * 1.7;
+  const m = Math.max(...others);
+  return a - m > LENGTH_MAX_GAP || (a > m * LENGTH_RATIO && a - m >= LENGTH_MIN_GAP);
+}
+
+/**
+ * How often the answer is the longest choice. Only cards with one strictly longest choice count
+ * (ties carry no signal); with 4 choices, chance is 25%.
+ */
+export function longestAnswerRate(items) {
+  let cards = 0;
+  let answerLongest = 0;
+  for (const it of items) {
+    const lens = it.choices.map((c) => String(c).length);
+    const top = Math.max(...lens);
+    if (lens.filter((n) => n === top).length !== 1) continue;
+    cards += 1;
+    if (String(it.answer).length === top) answerLongest += 1;
+  }
+  return { cards, answerLongest, rate: cards ? answerLongest / cards : 0 };
 }
 
 const ABS_RE = /\b(only|always|never)\b/i;
@@ -141,7 +165,7 @@ export function lintTrivia(items) {
     if (nt) push(errors, "numeric-twin", it, `Choices ${JSON.stringify(nt[0])} and ${JSON.stringify(nt[1])} are the same value.`);
     if (specialistEasy(it)) push(errors, "specialist-easy", it, `Hobbyist tarantula card at difficulty ${it.diff}; raise to 3 or rewrite for a general audience.`);
     if (numberLeak(it)) push(errors, "number-leak", it, `Answer ${JSON.stringify(it.answer)} is already written in the prompt.`);
-    if (lengthGiveaway(it)) push(warnings, "length-giveaway", it, `Answer is much longer than every wrong choice.`);
+    if (lengthGiveaway(it)) push(warnings, "length-giveaway", it, `Answer is clearly the longest choice — lengthen the wrong choices or trim the answer.`);
     if (absoluteTells(it)) push(warnings, "absolute-tells", it, `Every wrong choice says only/always/never.`);
     if (choices.some((c) => /\b(all|none) of the above\b/i.test(c))) push(warnings, "above-choice", it, `"of the above" choice breaks under shuffling.`);
     const k = normPrompt(it.q);
@@ -199,6 +223,13 @@ if (isMain()) {
   const args = new Set(process.argv.slice(2));
   const items = loadQuestions();
   const { errors, warnings } = lintTrivia(items);
+  if (args.has("--length")) {
+    const flagged = warnings.filter((w) => w.kind === "length-giveaway");
+    const r = longestAnswerRate(items);
+    console.log(`Length giveaways: ${flagged.length} · answer is the longest choice on ${(r.rate * 100).toFixed(1)}% of ${r.cards} cards with one longest choice (chance 25%)`);
+    for (const w of flagged) console.log(`  ${w.where}  ${w.q}`);
+    process.exit(0);
+  }
   if (args.has("--json")) {
     console.log(JSON.stringify({ cards: items.length, errors, warnings }, null, 2));
   } else {
