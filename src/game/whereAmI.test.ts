@@ -174,8 +174,8 @@ test("Where am I? rounds fit 30–75s and end before the platform", () => {
     const ms = whereRoundMs(left)!;
     assert.ok(ms + ARRIVAL_BUFFER_MS <= left);
   }
-  assert.equal(rideRoundMs(pickRideGame(4 * MIN), 4 * MIN), WHERE_ROUND_MAX_MS);
-  assert.equal(rideRoundMs(pickRideGame(90_000), 90_000), 60_000);
+  assert.equal(rideRoundMs("where-am-i", 4 * MIN), WHERE_ROUND_MAX_MS);
+  assert.equal(rideRoundMs(pickRideGame(90_000, undefined, 12345), 90_000), 60_000);
 });
 
 test("Temple and Tucson carry NYC-sized clue pools; noClue marks never show up as clues or decoys", () => {

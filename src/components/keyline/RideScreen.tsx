@@ -8,7 +8,7 @@ import {
   lampOutcome,
   lampVerdict,
   perfectLine,
-  pickRideGame,
+  rideGameFor,
   rideReward,
   rideRoundMs,
   type LampTally,
@@ -18,6 +18,8 @@ import {
 import { AudioDock } from "./AudioDock";
 import { Lamplighter } from "./Lamplighter";
 import { WhereAmI } from "./WhereAmI";
+import { MatchSorter } from "./MatchSorter";
+import { sortOutcome, sortVerdict, type SortTally } from "@/game/matchSorter";
 import { whereOutcome, whereRound, whereVerdict, type WhereClue, type WhereTally } from "@/game/whereAmI";
 
 function lootLine(j: { grantedWhite?: number; grantedBlue?: number; grantedGreen?: number }) {
@@ -43,6 +45,7 @@ type Result = { verdict: string; sub?: string; outcome: RideOutcome; add: { whit
 const GAME_PITCH: Partial<Record<RideGameId, string>> = {
   lamplighter: "light the street lamps as they pass",
   "where-am-i": "name the place from a clue about the city ahead",
+  "match-sorter": "sort tumbling matches into their tier boxes",
 };
 
 export function RideScreen() {
@@ -52,7 +55,7 @@ export function RideScreen() {
   const finishRideRound = useGame((s) => s.finishRideRound);
   const dropRideRound = useGame((s) => s.dropRideRound);
   const [, beat] = useState(0);
-  const [round, setRound] = useState<{ ms: number; seed: number; clues?: WhereClue[] } | null>(null);
+  const [round, setRound] = useState<{ ms: number; seed: number; clues?: WhereClue[]; game?: RideGameId } | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
@@ -77,7 +80,7 @@ export function RideScreen() {
   const left = Math.max(0, journey.arriveAt - Date.now());
   const total = Math.max(1, journey.arriveAt - journey.departAt);
   const gone = 1 - left / total;
-  const game = pickRideGame(total);
+  const game = rideGameFor(journey);
   const canPlay = rideRoundMs(game, left) != null;
   const forRide = rideReward(total, journeyOutcome(journey));
 
@@ -92,7 +95,7 @@ export function RideScreen() {
       setRound({ ms, seed: journey.departAt, clues });
       return;
     }
-    setRound({ ms, seed: journey.departAt + (journey.game?.rounds ?? 0) * 7919 + (journey.forfeits ?? 0) });
+    setRound({ ms, seed: journey.departAt + (journey.game?.rounds ?? 0) * 7919 + (journey.forfeits ?? 0), game });
   };
   const settle = (outcome: RideOutcome, verdict: string, sub?: string) => {
     const add = finishRideRound(outcome);
@@ -104,6 +107,11 @@ export function RideScreen() {
   const doneWhere = (tally: WhereTally) => {
     const outcome = whereOutcome(tally);
     settle(outcome, whereVerdict(tally, to.name), perfectLine(outcome));
+  };
+  const doneSort = (tally: SortTally) => {
+    const outcome = sortOutcome(tally);
+    const sub = perfectLine(outcome) ?? (tally.streak >= 6 ? `Best run: ${tally.streak} in a row.` : undefined);
+    settle(outcome, sortVerdict(tally), sub);
   };
   const quit = () => {
     dropRideRound();
@@ -129,6 +137,8 @@ export function RideScreen() {
 
         {round?.clues ? (
           <WhereAmI city={to.name} clues={round.clues} roundMs={round.ms} onDone={doneWhere} onQuit={quit} />
+        ) : round?.game === "match-sorter" ? (
+          <MatchSorter roundMs={round.ms} seed={round.seed} onDone={doneSort} onQuit={quit} />
         ) : round ? (
           <Lamplighter roundMs={round.ms} seed={round.seed} onDone={done} onQuit={quit} />
         ) : result ? (

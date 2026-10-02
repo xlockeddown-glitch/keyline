@@ -131,13 +131,23 @@ export const RIDE_GAME_BANDS: { underMs: number; games: RideGameId[] }[] = [
 ];
 
 /** Games that are built. Lamplighter fills any band whose games aren't ready yet. */
-export const READY_RIDE_GAMES: readonly RideGameId[] = ["lamplighter", "where-am-i"];
+export const READY_RIDE_GAMES: readonly RideGameId[] = ["lamplighter", "where-am-i", "match-sorter"];
 
+/**
+ * The game a ride gets. Bands share their games evenly; which one is a hash of the ride seed
+ * (the departure time), so a reload, the store and the screen all agree.
+ */
 export function pickRideGame(rideMs: number, ready: readonly RideGameId[] = READY_RIDE_GAMES, seed = 0): RideGameId {
   const band = RIDE_GAME_BANDS.find((b) => rideMs < b.underMs) ?? RIDE_GAME_BANDS[RIDE_GAME_BANDS.length - 1]!;
   const open = band.games.filter((g) => ready.includes(g));
   if (!open.length) return "lamplighter";
-  return open[Math.abs(Math.floor(seed)) % open.length]!;
+  if (open.length === 1) return open[0]!;
+  return open[Math.floor(seededRng(Math.floor(seed) ^ 0x2545f491)() * open.length)]!;
+}
+
+/** The game this journey gets: its length picks the band, its departure picks within it. */
+export function rideGameFor(j: { departAt: number; arriveAt: number }): RideGameId {
+  return pickRideGame(j.arriveAt - j.departAt, READY_RIDE_GAMES, j.departAt);
 }
 
 /** Where am I? rounds: up to 75s, and none under 30s. */
@@ -151,9 +161,43 @@ export function whereRoundMs(remainingMs: number): number | null {
   return Math.min(WHERE_ROUND_MAX_MS, room);
 }
 
+// ── Match sorter timing (rules live in matchSorter.ts) ──────────────────
+
+/** Wave shape: how many matches, how far apart they drop, and how long one takes to fall. */
+export const SORT_WAVES: readonly { count: number; gapMs: number; fallMs: number }[] = [
+  { count: 5, gapMs: 1_250, fallMs: 6_200 },
+  { count: 6, gapMs: 1_050, fallMs: 5_400 },
+  { count: 7, gapMs: 900, fallMs: 4_700 },
+  { count: 8, gapMs: 780, fallMs: 4_100 },
+];
+export const SORT_FIRST_MS = 1_200;
+/** Breather after the last drop of a wave before the next wave starts dropping. */
+export const SORT_WAVE_PAUSE_MS = 2_200;
+export const SORT_TOTAL = SORT_WAVES.reduce((n, w) => n + w.count, 0);
+
+function sortEnd() {
+  let at = SORT_FIRST_MS;
+  let end = 0;
+  for (const w of SORT_WAVES) {
+    at += (w.count - 1) * w.gapMs;
+    end = Math.max(end, at + w.fallMs);
+    at += SORT_WAVE_PAUSE_MS;
+  }
+  return end;
+}
+/** Round length: the last match's fall plus a beat. Fixed, so every seed fits the same window. */
+export const SORT_ROUND_MS = sortEnd() + 600;
+
+/** Match sorter round length, or null when the platform is too close for the full round. */
+export function sorterRoundMs(remainingMs: number): number | null {
+  return remainingMs - ARRIVAL_BUFFER_MS >= SORT_ROUND_MS ? SORT_ROUND_MS : null;
+}
+
 /** Round length for this ride's game. */
 export function rideRoundMs(game: RideGameId, remainingMs: number): number | null {
-  return game === "where-am-i" ? whereRoundMs(remainingMs) : lampRoundMs(remainingMs);
+  if (game === "where-am-i") return whereRoundMs(remainingMs);
+  if (game === "match-sorter") return sorterRoundMs(remainingMs);
+  return lampRoundMs(remainingMs);
 }
 
 // ── Lamplighter ─────────────────────────────────────────────────────────

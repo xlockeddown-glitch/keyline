@@ -2452,3 +2452,178 @@ h3 {
     transition: none;
   }
 }
+/* Match sorter — the carriage window again; matches tumble down it into six tier boxes.
+   Each match and box carries its rank as 1–6 ticks, and boxes name the tier, so colour is never the only cue. */
+.ms-game {
+  touch-action: none;
+}
+.ms-box.tier-white,.ms-match.tier-white,.ms-ghost.tier-white { --tone: var(--lamp-white, #eef2f7); }
+.ms-box.tier-blue,.ms-match.tier-blue,.ms-ghost.tier-blue { --tone: var(--lamp-blue, #3f9dff); }
+.ms-box.tier-green,.ms-match.tier-green,.ms-ghost.tier-green { --tone: var(--lamp-green, #2fd37a); }
+.ms-box.tier-amber,.ms-match.tier-amber,.ms-ghost.tier-amber { --tone: var(--lamp-amber, #ffa91a); }
+.ms-box.tier-red,.ms-match.tier-red,.ms-ghost.tier-red { --tone: var(--lamp-red, #ff4b3e); }
+.ms-box.tier-violet,.ms-match.tier-violet,.ms-ghost.tier-violet { --tone: var(--lamp-violet, #b56cff); }
+.ms-chute {
+  position: relative;
+  margin-top: 0.6rem;
+  height: clamp(11rem, 36vh, 15rem);
+  overflow: hidden;
+  border-radius: 14px;
+  border: 6px solid #2a2622;
+  outline: 1px solid color-mix(in oklab, var(--color-vault-amber) 40%, transparent);
+  background:
+    radial-gradient(120% 80% at 50% 120%, #1b1f2a, transparent 70%),
+    linear-gradient(#0b0d14, #141824 70%, #1a1712);
+  transition: outline-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ms-chute.is-hit {
+  outline-color: var(--color-vault-amber);
+  box-shadow: 0 0 24px -6px color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
+}
+.ms-chute.is-stray {
+  outline-color: color-mix(in oklab, #ff4b3e 70%, transparent);
+}
+.ms-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9%;
+  background: linear-gradient(#17140f, #0d0b08);
+  border-top: 1px solid #2c2620;
+  pointer-events: none;
+}
+.ms-match {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 44px;
+  min-height: 52px;
+  padding: 4px 0 3px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.ms-match .match-head {
+  box-shadow: 0 0 9px 1px color-mix(in oklab, var(--tone) 70%, transparent);
+}
+.ms-match.is-picked {
+  border-color: var(--color-vault-amber);
+  background: color-mix(in oklab, var(--color-vault-amber) 14%, transparent);
+}
+.ms-match.is-dragging {
+  opacity: 0.35;
+}
+.ms-glyph {
+  width: 20px;
+  height: 26px;
+  --glow: var(--tone);
+}
+.ms-pips {
+  display: inline-flex;
+  gap: 2px;
+}
+.ms-pips i {
+  display: block;
+  width: 3px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--tone, var(--color-fg-muted));
+  box-shadow: 0 0 0 0.5px rgba(12, 10, 8, 0.7);
+}
+.ms-boxes {
+  margin-top: 0.6rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+@media (min-width: 560px) {
+  .ms-boxes {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+.ms-box {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.45rem;
+  row-gap: 0.25rem;
+  min-height: 56px;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+  color: var(--color-fg);
+  border-radius: 10px;
+  border: 1px solid #3b342b;
+  border-bottom: 3px solid var(--tone);
+  background: color-mix(in oklab, #15130f 88%, var(--tone) 8%);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s, border-color 0.12s, transform 0.08s;
+}
+.ms-box .wh-key {
+  grid-row: 1 / span 2;
+}
+.ms-box-name {
+  font-size: 0.82rem;
+  line-height: 1.1;
+}
+.ms-box .ms-pips {
+  grid-column: 2;
+}
+.ms-swatch {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--tone);
+  box-shadow: 0 0 6px color-mix(in oklab, var(--tone) 70%, transparent);
+}
+.ms-box:hover,
+.ms-box:focus-visible {
+  border-color: color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
+  border-bottom-color: var(--tone);
+  outline: none;
+}
+.ms-box:active {
+  transform: translateY(1px);
+}
+.ms-box.is-hit {
+  background: color-mix(in oklab, var(--color-vault-amber) 22%, #15130f);
+  border-color: var(--color-vault-amber);
+}
+.ms-box.is-wrong {
+  background: color-mix(in oklab, #ff4b3e 18%, #15130f);
+  border-color: color-mix(in oklab, #ff4b3e 70%, transparent);
+}
+.ms-box.is-answer {
+  border-color: var(--color-vault-amber);
+  border-style: dashed;
+}
+.ms-ghost {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -60%) rotate(-12deg);
+  pointer-events: none;
+}
+.ms-ghost .ms-glyph {
+  width: 26px;
+  height: 34px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms-match {
+    transform: translateX(-50%) !important;
+  }
+}
