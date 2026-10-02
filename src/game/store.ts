@@ -31,7 +31,7 @@ import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
-import { forfeitRound, markRound, openRound, pickRideGame, rideRoundMs, type RideOutcome } from "./rideGames";
+import { forfeitRound, markRound, openRound, rideGameFor, rideRoundMs, type RideOutcome } from "./rideGames";
 import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
@@ -1669,7 +1669,7 @@ export const useGame = create<GameState>((set, get) => ({
     const j = get().journey;
     if (!j) return null;
     const now = Date.now();
-    const ms = rideRoundMs(pickRideGame(j.arriveAt - j.departAt), j.arriveAt - now);
+    const ms = rideRoundMs(rideGameFor(j), j.arriveAt - now);
     if (ms == null) return null;
     set({ journey: openRound(j, now) });
     saveNow(get);

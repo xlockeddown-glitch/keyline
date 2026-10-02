@@ -17,6 +17,7 @@ import {
   markRound,
   openRound,
   pickRideGame,
+  rideGameFor,
   rideReward,
   rideValue,
   type RideOutcome,
@@ -174,18 +175,39 @@ test("no room for a blue: it comes as three whites", () => {
   assert.deepEqual(some.add, { white: 9, blue: 1, green: 0 });
 });
 
-test("selector: Lamplighter under two minutes and past six; Where am I? owns two to six", () => {
-  for (const m of [0.8, 1.9, 6, 10, 14]) assert.equal(pickRideGame(m * MIN), "lamplighter", `${m}m`);
-  for (const m of [2, 3, 4, 5.9]) assert.equal(pickRideGame(m * MIN), "where-am-i", `${m}m`);
-  for (const seed of [0, 1, 2, 3]) assert.equal(pickRideGame(4 * MIN, undefined, seed), "where-am-i", "match sorter not built yet");
-  assert.equal(pickRideGame(48_000), "lamplighter");
-  assert.equal(pickRideGame(2 * MIN - 1), "lamplighter");
-  assert.equal(pickRideGame(6 * MIN - 1), "where-am-i");
-  assert.equal(pickRideGame(3 * MIN, ["lamplighter", "where-am-i", "match-sorter"], 0), "where-am-i");
-  assert.equal(pickRideGame(3 * MIN, ["lamplighter", "where-am-i", "match-sorter"], 1), "match-sorter");
+test("selector: Lamplighter under two minutes and past six; Where am I? and Match sorter share two to six", () => {
+  const band = ["where-am-i", "match-sorter"];
+  for (const m of [0.8, 1.9, 6, 10, 14]) {
+    for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.equal(pickRideGame(m * MIN, undefined, seed), "lamplighter", `${m}m`);
+  }
+  for (const m of [2, 3, 4, 5.9]) {
+    for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.ok(band.includes(pickRideGame(m * MIN, undefined, seed)), `${m}m`);
+  }
+  assert.equal(pickRideGame(2 * MIN - 1, undefined, 5), "lamplighter");
+  assert.ok(band.includes(pickRideGame(6 * MIN - 1, undefined, 5)));
+  // Only built games are dealt: with the sorter held back, the band is all Where am I?.
+  for (const seed of [0, 1, 2, 3, 4]) assert.equal(pickRideGame(4 * MIN, ["lamplighter", "where-am-i"], seed), "where-am-i");
   assert.equal(pickRideGame(9 * MIN, ["lamplighter", "route-puzzle"]), "route-puzzle");
   assert.equal(pickRideGame(90_000, ["lamplighter", "route-puzzle"]), "lamplighter");
   assert.equal(pickRideGame(6 * MIN, ["lamplighter", "where-am-i"]), "lamplighter", "six minutes is long");
+});
+
+test("selector: the 2–6 min band splits about 50/50 across ride seeds, and a seed always gets the same game", () => {
+  let sorter = 0;
+  const n = 4000;
+  const t0 = 1_790_000_000_000; // departure times in ms, like real rides
+  for (let i = 0; i < n; i++) {
+    const seed = t0 + i * 1_337;
+    const g = pickRideGame(4 * MIN, undefined, seed);
+    if (g === "match-sorter") sorter++;
+    assert.equal(pickRideGame(4 * MIN, undefined, seed), g, "deterministic");
+    assert.equal(rideGameFor({ departAt: seed, arriveAt: seed + 4 * MIN }), g, "journey helper agrees");
+  }
+  const share = sorter / n;
+  assert.ok(share > 0.45 && share < 0.55, `sorter share ${share}`);
+  // Consecutive millisecond departures don't alternate in lockstep.
+  const run = Array.from({ length: 64 }, (_, i) => pickRideGame(3 * MIN, undefined, t0 + i));
+  assert.ok(new Set(run).size === 2);
 });
 
 test("rounds fit the ride and end before arrival", () => {
