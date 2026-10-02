@@ -137,9 +137,9 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 		], "River"),
 		q("What does GPS actually measure to find your position?", [
 			"Radio time delay from satellites",
-			"Earth's magnetic field",
-			"Cell tower names",
-			"Star angles"
+			"Earth's magnetic field strength",
+			"Cell tower names and signal bars",
+			"Star angles above the horizon"
 		], "Radio time delay from satellites"),
 		q("Which meridian is used as the prime meridian for modern maps?", [
 			"Paris",
@@ -180,10 +180,10 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 			"Copper"
 		], "Cast iron"),
 		q("A 'borough' is a kind of…", [
-			"River",
+			"Navigable river",
 			"Administrative district",
-			"Courthouse",
-			"Park"
+			"County courthouse",
+			"Market square"
 		], "Administrative district"),
 		q("Which branch of the U.S. government writes federal statutes?", [
 			"Executive",
@@ -198,16 +198,16 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 			"Twelve"
 		], "Ten"),
 		q("A city's 'grid' plan in the US is often credited to which 1811 plan?", [
-			"Chicago",
-			"Philadelphia",
+			"Burnham Plan of Chicago",
+			"Holme's Plan of Philadelphia",
 			"Commissioners' Plan of New York",
-			"L'Enfant's D.C."
+			"L'Enfant Plan of Washington"
 		], "Commissioners' Plan of New York"),
 		q("In the UK, the House of Commons is the…", [
-			"Upper house",
+			"Appointed upper house",
 			"Elected lower house",
 			"Royal court",
-			"City council"
+			"London city council"
 		], "Elected lower house", 2),
 		q("How many justices sit on the U.S. Supreme Court?", [
 			"7",
@@ -230,10 +230,10 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 			"Spin"
 		], "Pressure", 1),
 		q("Sourdough rises because of…", [
-			"Baking powder",
+			"Baking powder and soda",
 			"Wild yeast and bacteria",
-			"Eggs",
-			"Steam"
+			"Whipped egg whites",
+			"Steam from the oven"
 		], "Wild yeast and bacteria", 2),
 		q("Umami was identified as a fifth taste in which country?", [
 			"France",
@@ -260,9 +260,9 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 			"the Philippines"
 		], "Mexico", 2),
 		q("Fish and chips in Britain are classically fried in…", [
-			"Olive oil only",
+			"Extra-virgin olive oil",
 			"Beef dripping or oil",
-			"Butter",
+			"Clarified butter",
 			"Lard and honey"
 		], "Beef dripping or oil", 3),
 		q("A 'mother sauce' in French cooking is one of Escoffier's set of…", [
@@ -322,11 +322,11 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 			"Tone poem"
 		], "Ballet", 1),
 		q("The Globe theatre is tied to which playwright?", [
-			"Marlowe",
-			"Shakespeare",
-			"Jonson",
-			"Shaw"
-		], "Shakespeare", 1),
+			"Christopher Marlowe",
+			"William Shakespeare",
+			"Ben Jonson",
+			"George Bernard Shaw"
+		], "William Shakespeare", 1),
 		q("A 'still life' painting typically depicts…", [
 			"Battles",
 			"Portraits of nobles",
@@ -389,10 +389,10 @@ const TEXAS_LOCAL = [
 		"Around Dallas only"
 	], "North–south"),
 	q("The Hill Country is best described as…", [
-		"A desert basin",
+		"A desert basin near El Paso",
 		"Limestone hills west of Austin",
-		"A salt flat",
-		"The Piney Woods"
+		"Salt flats along the Gulf",
+		"Pine forests of East Texas"
 	], "Limestone hills west of Austin"),
 	q("What is the capital of Texas?", [
 		"Houston",
@@ -407,9 +407,9 @@ const TEXAS_LOCAL = [
 		"El Paso"
 	], "Houston", 1),
 	q("The Alamo stands in which Texas city?", [
-		"Austin",
+		"Corpus Christi",
 		"San Antonio",
-		"Goliad",
+		"Fort Worth",
 		"Houston"
 	], "San Antonio", 1),
 	q("Texas is nicknamed the…", [
@@ -517,22 +517,22 @@ const TEXAS_SPORTS = [
 		"Horned Frogs"
 	], "Aggies"),
 	q("The Dallas Cowboys play in which metro?", [
-		"Austin",
-		"Houston",
+		"Austin–Round Rock",
+		"Greater Houston",
 		"Dallas–Fort Worth",
 		"San Antonio"
 	], "Dallas–Fort Worth"),
 	q("Austin FC plays which sport?", [
-		"NFL football",
+		"Arena League football",
 		"Major League Soccer",
-		"MLB baseball",
+		"Minor League baseball",
 		"NHL hockey"
 	], "Major League Soccer"),
 	q("The Houston Astros play in which league?", [
-		"NFL",
-		"NBA",
+		"National League (MLB)",
+		"Western Conference (NBA)",
 		"American League (MLB)",
-		"MLS"
+		"Eastern Conference (MLS)"
 	], "American League (MLB)"),
 	q("Formula 1's United States Grand Prix is run at…", [
 		"COTA in Austin",
@@ -555,8 +555,8 @@ const TEXAS_POLITICAL = [
 		"Appointed by the governor"
 	], "Bicameral — House and Senate"),
 	q("Texas does not levy a state tax on…", [
-		"Sales",
-		"Property",
+		"Retail sales",
+		"Real property",
 		"Personal income",
 		"Gasoline"
 	], "Personal income"),
@@ -587,10 +587,10 @@ const TEXAS_FOOD = [
 		"Cumin"
 	], "Beans", 2),
 	q("A kolache in Central Texas is most often a…", [
-		"Smoked rib",
+		"Smoked rib with barbecue sauce",
 		"Yeast pastry, often with sausage",
-		"Corn tortilla",
-		"Frito pie"
+		"Corn tortilla, often with beans",
+		"Frito pie, often with chili"
 	], "Yeast pastry, often with sausage", 2),
 	q("The breakfast taco is a staple of which Texas region?", [
 		"Panhandle only",
@@ -607,10 +607,10 @@ const TEXAS_FOOD = [
 ];
 const TEXAS_ARTS = [
 	q("Austin City Limits began as a…", [
-		"Film festival",
+		"Local film festival in Austin",
 		"PBS music television series",
-		"Rodeo",
-		"Newspaper"
+		"Rodeo held at the fairgrounds",
+		"Weekly music newspaper"
 	], "PBS music television series", 2),
 	q("SXSW is a festival based in…", [
 		"Dallas",
@@ -635,10 +635,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 	austin: {
 		local: [
 			q("The Texas Capitol is clad in which local stone?", [
-				"Limestone",
+				"Cream limestone",
 				"Sunset Red granite",
-				"Marble",
-				"Sandstone"
+				"White Georgia marble",
+				"Brown sandstone"
 			], "Sunset Red granite"),
 			q("How many stories is the UT Tower?", [
 				"14",
@@ -653,10 +653,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"It freezes in winter"
 			], "70°F"),
 			q("Which animals pour out from under Congress Avenue Bridge at dusk in summer?", [
-				"Chimney swifts",
+				"Chimney swift flocks",
 				"Mexican free-tailed bats",
-				"Grackles",
-				"Cave swallows"
+				"Great-tailed grackles",
+				"Purple martin flocks"
 			], "Mexican free-tailed bats"),
 			q("What was Lady Bird Lake called before 2007?", [
 				"Lake Austin",
@@ -685,10 +685,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		sports: [
 			q("Darrell K Royal–Texas Memorial Stadium is home to which team?", [
-				"Texas A&M Aggies",
+				"Texas A&M Aggies football",
 				"Texas Longhorns football",
-				"Austin FC",
-				"Dallas Cowboys"
+				"Austin FC soccer",
+				"Texas State Bobcats football"
 			], "Texas Longhorns football"),
 			q("The UT mascot is a longhorn steer named…", [
 				"Reveille",
@@ -711,10 +711,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		political: [
 			q("The Texas State Capitol houses the…", [
-				"U.S. Congress",
+				"U.S. Congress's Texas field offices",
 				"Texas Legislature and governor's offices",
-				"Supreme Court only",
-				"City of Austin council"
+				"Texas Supreme Court and its clerks",
+				"Austin City Council and the mayor"
 			], "Texas Legislature and governor's offices"),
 			q("The LBJ Presidential Library sits on the campus of…", [
 				"Texas A&M",
@@ -755,9 +755,9 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Cronut"
 			], "Breakfast taco", 1),
 			q("Barton Springs sits in a park also famous for…", [
-				"Ski jumps",
+				"Ski jumps on the limestone bluffs",
 				"Zilker's wide lawn and food events",
-				"A Formula 1 paddock",
+				"A Formula 1 paddock and grandstand",
 				"The capitol cafeteria"
 			], "Zilker's wide lawn and food events", 2)
 		],
@@ -769,10 +769,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Soul Train"
 			], "Austin City Limits", 2),
 			q("The Paramount Theatre on Congress is a…", [
-				"Ballpark",
+				"Minor-league ballpark",
 				"Historic movie and stage house",
-				"City hall annex",
-				"Recording studio only"
+				"City hall annex for council",
+				"Recording studio for radio"
 			], "Historic movie and stage house", 2),
 			q("The Blanton Museum of Art sits on the campus of…", [
 				"Texas State",
@@ -893,10 +893,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Empanadas only"
 			], "Kolaches", 2),
 			q("A 'meat-and-three' plate in this part of Texas is closest to…", [
-				"Sushi omakase",
+				"A sushi omakase tasting",
 				"A diner plate with sides",
-				"Tapas",
-				"Dim sum"
+				"Spanish tapas small plates",
+				"A dim sum cart selection"
 			], "A diner plate with sides", 1),
 			q("Scott & White's hometown tables are a short hop from which barbecue belt?", [
 				"Lockhart / Central Texas",
@@ -1012,10 +1012,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			], "City Hall Park"),
 			q("Each NYC borough is also a…", [
 				"U.S. state",
-				"County (with a naming quirk for Manhattan/Queens)",
+				"County",
 				"Federal district",
 				"Parish"
-			], "County (with a naming quirk for Manhattan/Queens)", 3)
+			], "County", 3)
 		],
 		food: [
 			q("A New York bagel is classically…", [
@@ -1037,10 +1037,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Tofu"
 			], "Dense cream cheese", 2),
 			q("The hot dog cart is a sidewalk fixture of…", [
-				"Only Coney Island",
+				"Coney Island's boardwalk",
 				"Manhattan and the boroughs",
-				"Albany only",
-				"Jersey City only"
+				"Albany's state capitol",
+				"Jersey City's waterfront"
 			], "Manhattan and the boroughs", 1)
 		],
 		arts: [
@@ -1073,10 +1073,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 	sf: {
 		local: [
 			q("The Golden Gate Bridge is painted which color?", [
-				"Gold",
+				"Golden yellow",
 				"International Orange",
-				"Navy gray",
-				"Red oxide"
+				"Battleship gray",
+				"Steel blue-gray"
 			], "International Orange"),
 			q("Alcatraz Island sits in which body of water?", [
 				"Pacific south of Pacifica",
@@ -1085,10 +1085,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"The Sacramento River"
 			], "San Francisco Bay"),
 			q("San Francisco's cable cars are a…", [
-				"Bus franchise",
+				"City-run electric trolleybus line",
 				"Moving national historic landmark",
-				"BART line",
-				"Ferry"
+				"Branch line of the BART subway",
+				"Ferry route across the bay"
 			], "Moving national historic landmark"),
 			q("The city's roughly square core is often nicknamed…", [
 				"The Loop",
@@ -1163,10 +1163,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Dot-com boom"
 			], "Gold Rush", 2),
 			q("Cioppino is a…", [
-				"Sourdough starter",
+				"Sourdough starter from the wharf",
 				"Seafood stew from the wharf",
-				"Chocolate bar",
-				"Burrito style"
+				"Chocolate bar from Ghirardelli",
+				"Burrito style from the Mission"
 			], "Seafood stew from the wharf", 2),
 			q("A foil-wrapped stuffed burrito style is named for which San Francisco neighborhood?", [
 				"Sea Cliff",
@@ -1175,11 +1175,11 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"the Marina only"
 			], "the Mission", 1),
 			q("Fortune cookies in the U.S. are most tied to which city's Chinese restaurants?", [
-				"Boston",
-				"San Francisco (and Los Angeles lore)",
+				"New York City",
+				"San Francisco",
 				"Miami",
 				"Atlanta"
-			], "San Francisco (and Los Angeles lore)", 3)
+			], "San Francisco", 3)
 		],
 		arts: [
 			q("The Fillmore is a historic…", [
@@ -1255,16 +1255,16 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Rowing"
 			], "Cricket"),
 			q("The London Marathon traditionally finishes near…", [
-				"Wembley",
+				"Wembley Stadium gates",
 				"The Mall / Buckingham",
-				"Greenwich only",
-				"Heathrow"
+				"Greenwich Park",
+				"Tower Bridge"
 			], "The Mall / Buckingham"),
 			q("Arsenal, Chelsea, and Tottenham are clubs in which league system?", [
-				"NFL",
+				"American football",
 				"English football",
-				"NBA",
-				"NHL"
+				"Scottish football",
+				"Welsh rugby union"
 			], "English football")
 		],
 		political: [
@@ -1295,10 +1295,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		food: [
 			q("Fish and chips are classically served with…", [
-				"Gravy only",
+				"Brown gravy and cheese",
 				"Mushy peas and salt/vinegar",
-				"Maple syrup",
-				"Ranch"
+				"Maple syrup and butter",
+				"Ranch and hot sauce"
 			], "Mushy peas and salt/vinegar", 1),
 			q("Afternoon tea as a meal is associated with…", [
 				"Scotland only",
@@ -1333,10 +1333,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Soho Square"
 			], "Trafalgar Square", 2),
 			q("Tate Modern is housed in a former…", [
-				"Palace",
+				"Royal palace",
 				"Power station",
-				"Abbey",
-				"Prison"
+				"Medieval abbey",
+				"Victorian prison"
 			], "Power station", 2),
 			q("Shakespeare's Globe originally stood on which river?", [
 				"Seine",
@@ -1439,10 +1439,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Sicilian sheet only"
 			], "Deep-dish", 1),
 			q("An Italian beef sandwich is a Chicago staple served…", [
-				"Dry only",
+				"Always served dry",
 				"Often dipped in jus",
-				"With maple",
-				"On a bagel"
+				"Glazed with maple",
+				"Toasted on a bagel"
 			], "Often dipped in jus", 2),
 			q("A Chicago hot dog is classically dressed without…", [
 				"Mustard",
@@ -1471,16 +1471,16 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Jackson Park only"
 			], "Millennium Park", 1),
 			q("Second City is a famous Chicago…", [
-				"Opera",
+				"Opera and ballet company",
 				"Improvisational comedy theatre",
-				"Symphony hall",
-				"Blues label only"
+				"Classical symphony hall",
+				"Independent blues record label"
 			], "Improvisational comedy theatre", 2),
 			q("Chicago is a historic capital of which music?", [
-				"Grime",
+				"Grime and UK garage",
 				"Electric blues and house",
-				"Fado",
-				"Mariachi only"
+				"Fado and flamenco",
+				"Mariachi and ranchera"
 			], "Electric blues and house", 2)
 		]
 	},
@@ -1517,10 +1517,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Sun Records"
 			], "Motown", 1),
 			q("The Guardian Building's style is often called…", [
-				"Federalist",
+				"Federal / Greek Revival",
 				"Mayan Revival / Art Deco",
-				"Brutalist",
-				"Prairie only"
+				"Brutalist / Modernist",
+				"Prairie School"
 			], "Mayan Revival / Art Deco", 3)
 		],
 		sports: [
@@ -1589,10 +1589,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Nacho cheese"
 			], "Chili, mustard, and onions", 1),
 			q("Detroit-style pizza is known for…", [
-				"A thin cracker crust",
+				"A thin cracker crust cut in squares",
 				"A square pan, caramelized cheese edges",
-				"Deep-dish pie tin",
-				"A bagel crust"
+				"A deep round pie tin with chunky sauce",
+				"A large, foldable thin slice"
 			], "A square pan, caramelized cheese edges", 2),
 			q("Vernors is a ginger ale born in…", [
 				"Cleveland",
@@ -1627,23 +1627,23 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Disco only"
 			], "Techno", 2),
 			q("The Fox Theatre in Detroit opened as a…", [
-				"Courthouse",
+				"1920s courthouse",
 				"1920s movie palace",
-				"Auto plant",
-				"Ballpark"
+				"1920s auto showroom",
+				"1920s hotel ballroom"
 			], "1920s movie palace", 2)
 		]
 	},
 	tucson: {
 		local: [
-			q("Tucson's O'odham name Cuk Ṣon refers to…", ["A river fork", "Black base, at the foot of a hill", "White house", "Dry lake"], "Black base, at the foot of a hill", 2),
+			q("Tucson's O'odham name Cuk Ṣon refers to…", ["A fork in the Santa Cruz River", "Black base, at the foot of a hill", "White house on the hill", "Dry lake at the base of the hill"], "Black base, at the foot of a hill", 2),
 			q("Sentinel Peak is better known in town as…", ["A Mountain", "B Mountain", "Picacho", "Tumamoc only"], "A Mountain", 1),
 			q("Hotel Congress is tied to the 1934 capture of…", ["Billy the Kid", "John Dillinger", "Pretty Boy Floyd", "Machine Gun Kelly"], "John Dillinger", 2),
 			q("The University of Arizona's oldest building still in use as a symbol is…", ["Old Main", "Bear Down Gym only", "McKale", "Gammage"], "Old Main", 1),
-			q("San Xavier del Bac is a mission south of Tucson called the…", ["White Dove of the Desert", "Red Wall", "Desert Cross", "Saguaro Chapel"], "White Dove of the Desert", 2),
-			q("El Presidio was Tucson's…", ["Railroad depot", "Spanish fortified settlement", "Copper mine", "Airfield"], "Spanish fortified settlement", 2),
-			q("Fourth Avenue in Tucson is known for…", ["The airport","Independent shops, streetcar, and a mile of local storefronts","The copper smelter","The capitol"], "Independent shops, streetcar, and a mile of local storefronts", 1),
-			q("Barrio Viejo is…", ["A north-side mall","Adobe neighborhoods south of downtown","The UA stadium","A mine camp"], "Adobe neighborhoods south of downtown", 2)
+			q("San Xavier del Bac is a mission south of Tucson called the…", ["White Dove of the Desert", "Red Wall of the Mountains", "Cross of the Sonoran Desert", "Saguaro Chapel of the Santa Cruz"], "White Dove of the Desert", 2),
+			q("El Presidio was Tucson's…", ["Railroad depot of the 1880s", "Spanish fortified settlement", "Copper mine on the edge of town", "Airfield for the Army Air Forces"], "Spanish fortified settlement", 2),
+			q("Fourth Avenue in Tucson is known for…", ["The airport and its rental lots","Independent shops and a streetcar line","The old copper smelter and rail yard","The state capitol and its offices"], "Independent shops and a streetcar line", 1),
+			q("Barrio Viejo is…", ["A shopping mall on the north side","Adobe neighborhoods south of downtown","The UA football stadium district","An old mining camp in the foothills"], "Adobe neighborhoods south of downtown", 2)
 		],
 		sports: [
 			q("Arizona Stadium in Tucson is home to which football team?", ["Arizona State", "Arizona Wildcats", "Phoenix Cardinals", "Northern Arizona"], "Arizona Wildcats", 1),
@@ -1659,12 +1659,12 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		food: [
 			q("A Sonoran hot dog is typically…", ["Plain with mustard only", "Bacon-wrapped, with beans, onion, and salsa", "Chicago-style with celery salt", "Smothered in chili and cheddar only"], "Bacon-wrapped, with beans, onion, and salsa", 1),
-			q("El Charro Café in Tucson claims a long run as a…", ["Steakhouse", "Mexican restaurant", "Pizzeria", "Brewery"], "Mexican restaurant", 2),
+			q("El Charro Café in Tucson claims a long run as a…", ["Cowboy steakhouse", "Mexican restaurant", "Italian pizzeria", "Craft brewery"], "Mexican restaurant", 2),
 			q("Prickly pear in Tucson cooking usually means a…", ["Pine nut", "Cactus fruit", "Chile variety", "Date"], "Cactus fruit", 1),
-			q("A Tucson cheese crisp is basically a…", ["Fried dough round", "Open-faced toasted tortilla with melted cheese", "Chimichanga", "Corn cake"], "Open-faced toasted tortilla with melted cheese", 2)
+			q("A Tucson cheese crisp is basically a…", ["Fried dough round topped with honey", "Open-faced tortilla with melted cheese", "Deep-fried burrito (chimichanga)", "Sweet corn cake baked in husks"], "Open-faced tortilla with melted cheese", 2)
 		],
 		arts: [
-			q("The Tucson Gem and Mineral Show is a winter event famous for…", ["Rodeo stock", "Rocks, gems, and dealers from around the world", "Film premieres", "Hot-air balloons only"], "Rocks, gems, and dealers from around the world", 2),
+			q("The Tucson Gem and Mineral Show is a winter event famous for…", ["Rodeo stock and bull riders", "Rocks, gems, and dealers worldwide", "Film premieres and red carpets", "Hot-air balloons over the desert"], "Rocks, gems, and dealers worldwide", 2),
 			q("The Fox Tucson Theatre opened as a…", ["Courthouse", "1920s movie palace", "Mission chapel", "Train depot"], "1920s movie palace", 2),
 			q("Mariachi music is a living tradition in which Arizona city?", ["Flagstaff", "Tucson", "Page", "Show Low"], "Tucson", 2),
 			q("The Rialto Theatre sits on which downtown Tucson street?", ["Speedway", "Congress", "Broadway only west of I-10", "Oracle"], "Congress", 2)

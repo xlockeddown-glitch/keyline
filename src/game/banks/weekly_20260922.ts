@@ -6,9 +6,9 @@ import { SCIENCE_LIFE_PART_A } from "./science_life_part_a";
 
 /** Weekly topic trivia (2026-09-22 + 2026-09-25). Wired via trivia.ts WEEKLY_* merges. */
 export const WEEKLY_NATURE: TriviaQ[] = [
-  q("A boxfish's body is protected by…", ["only soft skin like a tuna", "a rigid bony carapace of hexagonal plates", "feathers", "book lungs of a tarantula"], "a rigid bony carapace of hexagonal plates", 3),
+  q("A boxfish's body is protected by…", ["soft scaleless skin like a catfish", "a rigid bony carapace of hexagonal plates", "overlapping scales like a tarpon's", "venomous spines like a lionfish's"], "a rigid bony carapace of hexagonal plates", 3),
   q("Photosynthesis in green plants mainly happens in the…", ["mitochondria", "chloroplasts", "ribosomes", "vacuoles only"], "chloroplasts", 1),
-  q("A biome is best described as…", ["a single tree species", "a large-scale ecological community shaped by climate", "a virus particle", "a tectonic plate"], "a large-scale ecological community shaped by climate", 2),
+  q("A biome is best described as…", ["a single tree species and its pests", "a large community shaped by climate", "a virus particle and its host cell", "a tectonic plate and its fault lines"], "a large community shaped by climate", 2),
   // v0.0.15 specialty deep-cuts (from orphan part files)
   q("Urticating setae types I–VI are classified by…", ["color under UV light", "structure and how they embed", "length in SI base units", "venom content per hair"], "structure and how they embed", 3),
   q("A spermatheca in a female tarantula stores…", ["silk only", "sperm after mating", "book-lung air", "urticating hairs"], "sperm after mating", 3),
@@ -57,8 +57,8 @@ export const WEEKLY_SCIENCE: TriviaQ[] = [
 ];
 
 export const WEEKLY_POLITICAL: TriviaQ[] = [
-  q("Soft power refers to influence through…", ["only tanks and tariffs", "culture, values, and diplomacy (not just force)", "only blockades", "only currency devaluation"], "culture, values, and diplomacy (not just force)", 2),
+  q("Soft power refers to influence through…", ["only tanks and tariffs", "culture, values, and diplomacy", "only blockades", "only currency devaluation"], "culture, values, and diplomacy", 2),
   q("How many justices normally sit on the U.S. Supreme Court?", ["7", "9", "11", "13"], "9", 1),
   q("The Bill of Rights is the first…", ["ten amendments to the U.S. Constitution", "ten articles of confederation only", "ten Supreme Court opinions", "ten federal statutes of 1789 only"], "ten amendments to the U.S. Constitution", 1),
-  q("A filibuster is a tactic mainly used to…", ["speed a bill to a vote with no debate", "delay or block legislative action through prolonged debate or procedure", "appoint cabinet secretaries", "redraw state borders"], "delay or block legislative action through prolonged debate or procedure", 2),
+  q("A filibuster is a tactic mainly used to…", ["speed a bill to a vote with no debate", "delay or block a bill through prolonged debate", "appoint cabinet secretaries without a vote", "redraw congressional district borders"], "delay or block a bill through prolonged debate", 2),
 ];

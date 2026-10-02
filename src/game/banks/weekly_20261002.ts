@@ -10,15 +10,15 @@ import type { CityId, TriviaCat, TriviaQ } from "../types";
 export const CITY_WEEKLY_20261002: Partial<Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>>> = {
   temple: {
     local: [
-      q("Temple's Cultural Activities Center is mainly a…", ["municipal landfill", "arts and performance campus for Central Texas", "naval shipyard", "MLB spring-training complex"], "arts and performance campus for Central Texas", 2),
-      q("Which private university in neighboring Belton is often tied to Temple's metro life?", ["University of Mary Hardin-Baylor", "Rice University", "SMU", "Texas Tech"], "University of Mary Hardin-Baylor", 2),
+      q("Temple's Cultural Activities Center is mainly a…", ["municipal recycling campus", "arts and performance campus", "naval training campus", "MLB spring-training complex"], "arts and performance campus", 2),
+      q("Which private university in neighboring Belton is often tied to Temple's metro life?", ["University of Mary Hardin-Baylor", "Southwestern University", "Texas Christian University", "Southern Methodist University"], "University of Mary Hardin-Baylor", 2),
     ],
     sports: [
       q("University of Mary Hardin-Baylor's teams are the…", ["Crusaders", "Longhorns", "Aggies", "Horned Frogs"], "Crusaders", 2),
     ],
     food: [
       q("A Central Texas plate lunch often features chicken-fried steak with…", ["cream gravy", "marinara only", "hollandaise only", "soy glaze only"], "cream gravy", 1),
-      q("In the Temple–Waco corridor, a sausage kolache is typically a…", ["pastry wrapped around a link of sausage", "bowl of gumbo", "lobster roll", "deep-dish pizza slice"], "pastry wrapped around a link of sausage", 1),
+      q("In the Temple–Waco corridor, a sausage kolache is typically a…", ["pastry wrapped around a link of sausage", "bowl of gumbo with sausage slices", "corn tortilla rolled around sausage", "biscuit split with sausage gravy"], "pastry wrapped around a link of sausage", 1),
     ],
     political: [
       q("Temple uses which common Texas city government form?", ["council–manager", "parliamentary monarchy", "county-only rule with no city hall", "federal territory governor"], "council–manager", 2),
@@ -68,7 +68,7 @@ export const CITY_WEEKLY_20261002: Partial<Record<CityId, Partial<Record<TriviaC
 /** Shared (non-city) weekly topic cards — avoid math. */
 export const WEEKLY_POLITICAL_20261002: TriviaQ[] = [
   q("A bicameral legislature has…", ["two chambers", "one chamber only", "no elected members", "only a king"], "two chambers", 1),
-  q("Separation of powers divides government into…", ["legislative, executive, and judicial branches", "only military ranks", "stock exchanges", "time zones"], "legislative, executive, and judicial branches", 1),
+  q("Separation of powers divides government into…", ["legislative, executive, and judicial branches", "army, navy, and air force branches", "federal, state, and county offices", "eastern, central, and western zones"], "legislative, executive, and judicial branches", 1),
 ];
 
 export const WEEKLY_SCIENCE_20261002: TriviaQ[] = [
