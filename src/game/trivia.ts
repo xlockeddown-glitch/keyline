@@ -1675,11 +1675,11 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The CN Tower opened in…", ["1967", "1976", "1989", "1999"], "1976", 1),
 			q("Toronto sits on which Great Lake?", ["Superior", "Michigan", "Huron", "Ontario"], "Ontario", 1),
 			q("Nathan Phillips Square sits in front of…", ["Union Station", "Toronto City Hall", "Casa Loma", "the ROM"], "Toronto City Hall", 1),
-			q("The PATH in downtown Toronto is a…", ["highway to Hamilton", "network of underground walkways", "ferry route", "subway only"], "network of underground walkways", 2),
+			q("The PATH in downtown Toronto is a…", ["highway from downtown to Hamilton", "network of underground walkways", "ferry route to the Toronto Islands", "subway line under Yonge Street"], "network of underground walkways", 2),
 			q("Casa Loma was built as a house for…", ["the lieutenant governor", "Sir Henry Pellatt", "the Eaton family only", "a railroad hotel"], "Sir Henry Pellatt", 2),
-			q("The Distillery District was once…", ["a military fort", "the Gooderham & Worts distillery", "a subway yard", "a grain elevator only"], "the Gooderham & Worts distillery", 2),
-			q("Yonge-Dundas Square is Toronto's…", ["city hall lawn", "bright downtown crossing with screens", "island ferry dock", "university quad"], "bright downtown crossing with screens", 1),
-			q("Kensington Market is known for…", ["the airport", "independent shops in a tight west-of-Spadina grid", "the legislature", "a ski hill"], "independent shops in a tight west-of-Spadina grid", 1),
+			q("The Distillery District was once…", ["the Fort York military garrison", "the Gooderham & Worts distillery", "a TTC subway maintenance yard", "a lakeside grain elevator complex"], "the Gooderham & Worts distillery", 2),
+			q("Yonge-Dundas Square is Toronto's…", ["civic square in front of city hall", "bright downtown crossing with screens", "ferry dock for the Toronto Islands", "grassy university quad on campus"], "bright downtown crossing with screens", 1),
+			q("Kensington Market is known for…", ["the airport on the Toronto Islands", "independent shops in a tight grid", "the provincial legislature building", "a ski hill on the Don Valley slopes"], "independent shops in a tight grid", 1),
 			q("The TTC is Toronto's…", ["hockey league", "transit agency", "city council", "university"], "transit agency", 1),
 			q("Downtown Toronto still runs…", ["cable cars on hills only", "streetcars in mixed traffic", "monorails on Yonge", "a funicular to Casa Loma"], "streetcars in mixed traffic", 1),
 			q("The Toronto Islands are reached from the city by…", ["a tunnel under the lake", "ferry", "the 401", "streetcar only"], "ferry", 1),
@@ -1688,7 +1688,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Toronto's Old City Hall is known for a…", ["glass pyramid", "clock tower on Queen Street", "retractable roof", "gold dome copied from Boston"], "clock tower on Queen Street", 2),
 			q("The new Toronto City Hall's curved towers were designed by…", ["Frank Gehry", "Viljo Revell", "Daniel Libeskind", "I. M. Pei"], "Viljo Revell", 2),
 			q("Bloor-Yonge is a major Toronto…", ["airport", "subway transfer", "island", "legislature"], "subway transfer", 1),
-			q("The Don River in Toronto flows toward…", ["Hudson Bay", "the harbour / Lake Ontario", "the Pacific", "Niagara Falls only"], "the harbour / Lake Ontario", 2),
+			q("The Don River in Toronto flows toward…", ["Hudson Bay via the north", "the harbour / Lake Ontario", "Lake Huron / Georgian Bay", "Lake Erie / Niagara Falls"], "the harbour / Lake Ontario", 2),
 			q("High Park is a large park on Toronto's…", ["eastern bluffs only", "west side", "island airport runway", "Queen's Park lawn"], "west side", 1),
 			q("The Royal Ontario Museum sits on which street?", ["Queen", "Bloor", "King only", "Spadina's south end"], "Bloor", 1),
 			q("The Art Gallery of Ontario faces…", ["Bloor", "Dundas", "the Gardiner", "Yonge-Dundas Square only"], "Dundas", 2),
@@ -1699,7 +1699,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Toronto Pearson is the region's…", ["island STOL strip only", "main international airport", "union bus garage", "seaplane base downtown"], "main international airport", 1),
 			q("\"The 6ix\" is a nickname for…", ["Hamilton", "Toronto", "Ottawa", "Mississauga only"], "Toronto", 1),
 			q("First Canadian Place is a downtown Toronto…", ["ballpark", "bank tower", "university college", "market hall"], "bank tower", 2),
-			q("The Scarborough Bluffs are…", ["a mountain range", "lakeside cliffs on Lake Ontario", "a PATH concourse", "a subway yard"], "lakeside cliffs on Lake Ontario", 2)
+			q("The Scarborough Bluffs are…", ["a mountain range north of the city", "lakeside cliffs on Lake Ontario", "a PATH concourse downtown", "a subway yard in the east end"], "lakeside cliffs on Lake Ontario", 2)
 		],
 		sports: [
 			q("The Toronto Maple Leafs play which sport?", ["Soccer", "Hockey", "Basketball", "Lacrosse only"], "Hockey", 1),
@@ -1715,12 +1715,12 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		food: [
 			q("A peameal bacon sandwich is a Toronto classic associated with…", ["St. Lawrence Market", "the CN Tower restaurant only", "a poutine stand in Quebec City", "Tim Hortons' first store"], "St. Lawrence Market", 2),
-			q("A butter tart is a…", ["savory meat pie", "small pastry with a buttery filling", "fried dough ring", "smoked fish"], "small pastry with a buttery filling", 1),
+			q("A butter tart is a…", ["savory meat pie from Quebec", "small pastry with a buttery filling", "fried dough ring dusted with sugar", "smoked fish on rye bread"], "small pastry with a buttery filling", 1),
 			q("Ketchup chips are a snack more common in…", ["Mexico", "Canada", "Japan only", "Brazil"], "Canada", 1),
 			q("A smoked meat sandwich in this part of the country is more Montreal; Toronto's market classic is often…", ["a lobster roll", "peameal bacon on a bun", "a Philly cheesesteak", "a chimichanga"], "peameal bacon on a bun", 2)
 		],
 		arts: [
-			q("TIFF is a Toronto…", ["hockey tournament", "international film festival", "food fair only", "boat race"], "international film festival", 1),
+			q("TIFF is a Toronto…", ["international hockey tournament", "international film festival", "international food fair", "international boat race"], "international film festival", 1),
 			q("The ROM's crystal addition was designed by…", ["Frank Gehry", "Daniel Libeskind", "Moshe Safdie", "Bjarke Ingels"], "Daniel Libeskind", 2),
 			q("The Art Gallery of Ontario's big renovation is associated with…", ["Frank Gehry", "I. M. Pei", "Zaha Hadid", "Renzo Piano"], "Frank Gehry", 2),
 			q("Massey Hall is a historic Toronto…", ["courthouse", "concert hall", "hockey rink", "market"], "concert hall", 1)
@@ -1730,20 +1730,20 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		local: [
 			q("Los Angeles City Hall opened in…", ["1901", "1928", "1955", "1971"], "1928", 1),
 			q("Walt Disney Concert Hall sits on which downtown street?", ["Sunset", "Grand Avenue", "Venice Boulevard", "Mulholland"], "Grand Avenue", 1),
-			q("Olvera Street is part of…", ["the Getty Center", "El Pueblo, the city's historic plaza", "Venice Boardwalk", "UCLA"], "El Pueblo, the city's historic plaza", 2),
-			q("Angels Flight is a…", ["helicopter tour", "short funicular on Bunker Hill", "freeway interchange", "ferry"], "short funicular on Bunker Hill", 1),
+			q("Olvera Street is part of…", ["the Getty Center on the hillside", "El Pueblo, the city's historic plaza", "the Venice Beach boardwalk strip", "the UCLA campus in Westwood"], "El Pueblo, the city's historic plaza", 2),
+			q("Angels Flight is a…", ["helicopter tour over Hollywood", "short funicular on Bunker Hill", "freeway interchange downtown", "ferry to Catalina Island"], "short funicular on Bunker Hill", 1),
 			q("The Hollywood Sign originally read…", ["HOLLYWOODLAND", "CALIFORNIA", "TCL", "MGM"], "HOLLYWOODLAND", 2),
-			q("Griffith Observatory looks out over…", ["the Salton Sea", "the Los Angeles basin", "Lake Tahoe", "Death Valley"], "the Los Angeles basin", 1),
+			q("Griffith Observatory looks out over…", ["the Salton Sea basin", "the Los Angeles basin", "the Lake Tahoe basin", "the Death Valley floor"], "the Los Angeles basin", 1),
 			q("Union Station in Los Angeles opened in…", ["1913", "1939", "1964", "1984"], "1939", 2),
-			q("The Bradbury Building is famous for its…", ["glass pyramid", "skylit Victorian court of iron and brick", "steel concert sails", "observatory dome"], "skylit Victorian court of iron and brick", 2),
-			q("El Pueblo is Los Angeles's…", ["airport code", "historic founding plaza", "NBA arena", "oil field"], "historic founding plaza", 1),
+			q("The Bradbury Building is famous for its…", ["glass pyramid over the entrance", "skylit Victorian court of iron and brick", "curving steel concert-hall sails", "copper observatory dome on the roof"], "skylit Victorian court of iron and brick", 2),
+			q("El Pueblo is Los Angeles's…", ["main airport hub", "historic founding plaza", "downtown NBA arena", "oldest oil field"], "historic founding plaza", 1),
 			q("The Hollywood Sign stands on…", ["Mount Lee", "A Mountain", "Mount Wilson's observatory dome only", "Catalina Island"], "Mount Lee", 2),
 			q("Griffith Park is one of L.A.'s…", ["smallest traffic islands", "largest municipal parks", "private studios", "ports"], "largest municipal parks", 1),
 			q("The Miracle Mile is a stretch of…", ["Sunset at the beach only", "Wilshire Boulevard", "the 405 carpool lane", "Mulholland"], "Wilshire Boulevard", 2),
 			q("Crypto.com Arena was long known as…", ["the Forum only", "Staples Center", "Dodger Stadium", "Pauley Pavilion"], "Staples Center", 1),
 			q("Much of the Los Angeles River through the city is a…", ["wild mountain gorge only", "concrete channel", "subway tunnel", "tide pool"], "concrete channel", 1),
 			q("Sunset Boulevard is a famous L.A.…", ["north-south freeway", "east-west street", "harbor channel", "subway color"], "east-west street", 1),
-			q("Koreatown is a dense neighborhood of…", ["Santa Barbara", "central Los Angeles", "Palm Springs", "Catalina"], "central Los Angeles", 1),
+			q("Koreatown is a dense neighborhood of…", ["downtown Santa Barbara", "central Los Angeles", "central Palm Springs", "Catalina Island"], "central Los Angeles", 1),
 			q("Little Tokyo sits…", ["west of Santa Monica Pier", "east of downtown L.A.", "in Anaheim", "in Burbank's airport"], "east of downtown L.A.", 1),
 			q("Bunker Hill downtown was…", ["a port island", "a ridge regraded for towers", "an oil derrick field", "a racetrack"], "a ridge regraded for towers", 2),
 			q("The 101 freeway…", ["never enters L.A.", "cuts through downtown Los Angeles", "is only in San Francisco", "is a subway"], "cuts through downtown Los Angeles", 1),
@@ -1761,7 +1761,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Los Angeles Lakers play basketball at…", ["Dodger Stadium", "Crypto.com Arena", "the Coliseum only", "SoFi Stadium"], "Crypto.com Arena", 1),
 			q("Dodger Stadium sits in…", ["Pasadena", "Chavez Ravine", "Inglewood", "Long Beach"], "Chavez Ravine", 1),
 			q("The Dodgers moved from Brooklyn to Los Angeles in…", ["1947", "1958", "1962", "1978"], "1958", 1),
-			q("The Los Angeles Memorial Coliseum has hosted the Olympics how many times so far (through 2028's count of three)?", ["never", "once", "twice already, with a third scheduled", "five times"], "twice already, with a third scheduled", 2)
+			q("The Los Angeles Memorial Coliseum has hosted the Olympics how many times so far (through 2028's count of three)?", ["never, with a first planned", "once, with a second planned", "twice, with a third planned", "three times already"], "twice, with a third planned", 2)
 		],
 		political: [
 			q("California's state capital is…", ["Los Angeles", "San Francisco", "Sacramento", "San Diego"], "Sacramento", 1),
@@ -1770,30 +1770,30 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("California has two U.S. senators. The state's Pacific border is with the…", ["Gulf of Mexico", "Pacific Ocean", "Atlantic", "Great Lakes"], "Pacific Ocean", 1)
 		],
 		food: [
-			q("A French dip sandwich is claimed (with a fight) by which L.A. counter?", ["In-N-Out", "Philippe the Original", "Pink's", "Canter's only"], "Philippe the Original", 2),
-			q("Korean barbecue is a living strip in L.A. along…", ["Western in Koreatown, among other streets", "only the Santa Monica Pier", "Mulholland", "the Hollywood Sign"], "Western in Koreatown, among other streets", 2),
-			q("A California burrito typically includes…", ["lobster only", "french fries inside the burrito", "peameal bacon", "deep-dish cheese"], "french fries inside the burrito", 2),
-			q("Grand Central Market downtown is a…", ["stock exchange", "food hall of counters under Broadway", "fish pier only", "winery"], "food hall of counters under Broadway", 1)
+			q("A French dip sandwich is claimed (with a fight) by which L.A. counter?", ["In-N-Out Burger", "Philippe the Original", "Pink's Hot Dogs", "Canter's Deli on Fairfax"], "Philippe the Original", 2),
+			q("Korean barbecue is a living strip in L.A. along…", ["Western Avenue in Koreatown", "the Santa Monica Pier", "Mulholland Drive", "the Hollywood Sign"], "Western Avenue in Koreatown", 2),
+			q("A California burrito typically includes…", ["lobster tail inside the burrito", "french fries inside the burrito", "peameal bacon inside the burrito", "macaroni inside the burrito"], "french fries inside the burrito", 2),
+			q("Grand Central Market downtown is a…", ["stock exchange floor on Broadway", "food hall of counters under Broadway", "fish pier on the waterfront", "urban winery under Broadway"], "food hall of counters under Broadway", 1)
 		],
 		arts: [
 			q("Walt Disney Concert Hall was designed by…", ["Frank Lloyd Wright", "Frank Gehry", "Thom Mayne", "Richard Meier"], "Frank Gehry", 1),
-			q("LACMA's Urban Light is a grid of…", ["neon tubes", "restored street lamps", "oil derricks", "palm trunks"], "restored street lamps", 1),
-			q("The TCL Chinese Theatre is known for…", ["a glass pyramid", "celebrity handprints in its forecourt", "a funicular", "an observatory"], "celebrity handprints in its forecourt", 1),
-			q("The Broad museum sits next to…", ["Dodger Stadium", "Walt Disney Concert Hall", "LAX", "the Getty Villa"], "Walt Disney Concert Hall", 2)
+			q("LACMA's Urban Light is a grid of…", ["neon sign tubes", "restored street lamps", "steel oil derricks", "painted palm trunks"], "restored street lamps", 1),
+			q("The TCL Chinese Theatre is known for…", ["a glass pyramid in its forecourt", "celebrity handprints in its forecourt", "a funicular up to its roof", "an observatory dome on its roof"], "celebrity handprints in its forecourt", 1),
+			q("The Broad museum sits next to…", ["Dodger Stadium in Chavez Ravine", "Walt Disney Concert Hall", "Union Station", "the Getty Villa in Malibu"], "Walt Disney Concert Hall", 2)
 		]
 	},
 	boston: {
 		local: [
 			q("Boston Common dates to…", ["1492", "1634", "1776", "1893"], "1634", 1),
-			q("Boston Common is considered the oldest…", ["university in America", "public park in the United States", "subway in the world", "ballpark still in use"], "public park in the United States", 1),
-			q("The Freedom Trail is a roughly…", ["half-mile alley", "2.5-mile path marked in red brick", "cross-state highway", "harbor ferry"], "2.5-mile path marked in red brick", 1),
+			q("Boston Common is considered the oldest…", ["university in the United States", "public park in the United States", "zoo in the United States", "ballpark in the United States"], "public park in the United States", 1),
+			q("The Freedom Trail is a roughly…", ["half-mile alley of shops", "2.5-mile path marked in red brick", "cross-state highway of 50 miles", "harbor ferry route to the islands"], "2.5-mile path marked in red brick", 1),
 			q("The Massachusetts State House sits on…", ["Bunker Hill", "Beacon Hill", "Copp's Hill only", "Breed's Hill"], "Beacon Hill", 1),
 			q("The State House's dome is famous for being…", ["glass", "gilded", "thatched", "iron only"], "gilded", 1),
-			q("Charles Bulfinch designed Boston's…", ["Fenway Park", "Massachusetts State House", "TD Garden", "the Big Dig"], "Massachusetts State House", 1),
+			q("Charles Bulfinch designed Boston's…", ["original Fenway Park", "Massachusetts State House", "Boston Public Library", "Trinity Church in Copley"], "Massachusetts State House", 1),
 			q("Paul Revere's company sheathed the State House dome in…", ["gold first", "copper", "slate", "tin"], "copper", 2),
 			q("Two lanterns in Old North Church meant the British were coming…", ["by land", "by sea", "from Canada", "at noon"], "by sea", 1),
 			q("One lantern in Old North Church meant the British were coming…", ["by sea", "by land", "by river only", "not at all"], "by land", 1),
-			q("USS Constitution is nicknamed…", ["Old Glory", "Old Ironsides", "Old North", "the Hub"], "Old Ironsides", 1),
+			q("USS Constitution is nicknamed…", ["Old Thunder", "Old Ironsides", "Old North", "the Hub"], "Old Ironsides", 1),
 			q("USS Constitution is berthed at…", ["Long Wharf only", "Charlestown Navy Yard", "the Esplanade", "South Station"], "Charlestown Navy Yard", 1),
 			q("Faneuil Hall is nicknamed the…", ["Cradle of Liberty", "Hub of the Universe only", "Athens of America only", "Old Ironsides"], "Cradle of Liberty", 1),
 			q("The Boston Tea Party took place in…", ["1765", "1773", "1775", "1789"], "1773", 1),
@@ -1802,13 +1802,13 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Green Monster is Fenway's…", ["bullpen cart", "left-field wall", "right-field pole", "press box"], "left-field wall", 1),
 			q("The Public Garden is known for…", ["a funicular", "swan boats on a lagoon", "the Green Monster", "Old Ironsides"], "swan boats on a lagoon", 1),
 			q("Boston's North End is long known as an…", ["Irish-only dock", "Italian neighborhood", "financial district", "back-bay landfill"], "Italian neighborhood", 1),
-			q("Beacon Hill is known for…", ["steel concert halls", "brick federal houses and cobbles", "oil derricks", "a concrete river"], "brick federal houses and cobbles", 1),
+			q("Beacon Hill is known for…", ["steel-and-glass concert halls", "brick federal houses and cobbles", "oil derricks along the river", "a concrete river channel"], "brick federal houses and cobbles", 1),
 			q("Boston's subway and buses are run by the…", ["MTA of New York", "MBTA, called the T", "TTC", "BART"], "MBTA, called the T", 1),
 			q("The Charles River separates Boston from…", ["Quincy only", "Cambridge", "Salem", "the Harbor Islands only"], "Cambridge", 1),
 			q("Harvard University sits in…", ["downtown Boston", "Cambridge", "Worcester", "Salem"], "Cambridge", 1),
 			q("Back Bay is largely…", ["a glacial drumlin only", "nineteenth-century filled land", "a volcanic cone", "an island ferry dock"], "nineteenth-century filled land", 2),
 			q("The Boston Massacre took place near the…", ["Fenway bleachers", "Old State House", "MIT dome", "Hatch Shell"], "Old State House", 1),
-			q("Granary Burying Ground holds the graves of…", ["only British governors", "Paul Revere, John Hancock, and Samuel Adams among others", "only Red Sox owners", "only Harvard presidents"], "Paul Revere, John Hancock, and Samuel Adams among others", 2),
+			q("Granary Burying Ground holds the graves of…", ["British royal governors and generals", "Paul Revere, John Hancock, and Samuel Adams", "early Red Sox owners and players", "Union generals from the Civil War"], "Paul Revere, John Hancock, and Samuel Adams", 2),
 			q("The Big Dig was a project that…", ["dug the subway's first tunnel in 1897", "put the central artery underground", "filled Back Bay", "moved Fenway"], "put the central artery underground", 2),
 			q("The Boston Marathon finishes on…", ["Commonwealth Avenue only", "Boylston Street", "the Esplanade track", "Storrow Drive"], "Boylston Street", 1),
 			q("Copley Square is framed by Trinity Church and the…", ["State House", "Boston Public Library", "USS Constitution", "Faneuil Hall"], "Boston Public Library", 1)
@@ -1828,18 +1828,18 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		food: [
 			q("New England clam chowder is typically…", ["tomato-red like Manhattan", "cream-based", "clear broth only", "served as a taco"], "cream-based", 1),
-			q("Boston cream pie is…", ["a deep-dish pizza", "the official dessert of Massachusetts", "a North End cannoli", "a clam cake"], "the official dessert of Massachusetts", 2),
-			q("The North End is famous for…", ["Texas brisket", "Italian pastry, including cannoli", "In-N-Out", "poutine"], "Italian pastry, including cannoli", 1),
+			q("Boston cream pie is…", ["a deep-dish pie from Chicago", "the official dessert of Massachusetts", "a cannoli from the North End", "a fried clam cake from Rhode Island"], "the official dessert of Massachusetts", 2),
+			q("The North End is famous for…", ["Texas brisket and smoked ribs", "Italian pastry, including cannoli", "California burgers and fries", "Quebec poutine and smoked meat"], "Italian pastry, including cannoli", 1),
 			q("A lobster roll is a New England sandwich of…", ["fried dough and syrup", "lobster meat on a bun", "peameal bacon", "Italian beef"], "lobster meat on a bun", 1),
 			q("Parker House rolls were created at a…", ["Fenway concession", "Boston hotel kitchen", "Cambridge lab", "Quincy shipyard"], "Boston hotel kitchen", 2),
 			q("A roast beef sandwich on the North Shore is a…", ["Texas specialty only", "local Greater Boston classic", "Montreal smoked meat", "Philly cheesesteak under another name"], "local Greater Boston classic", 2)
 		],
 		arts: [
-			q("Boston's Museum of Fine Arts sits on…", ["Beacon Hill", "Huntington Avenue", "the Common", "Long Wharf"], "Huntington Avenue", 1),
-			q("The Isabella Stewart Gardner Museum is known for a 1990…", ["roof collapse", "art theft whose empty frames still hang", "subway fire", "marathon bombing"], "art theft whose empty frames still hang", 2),
+			q("Boston's Museum of Fine Arts sits on…", ["Beacon Street", "Huntington Avenue", "Commonwealth Avenue", "Long Wharf"], "Huntington Avenue", 1),
+			q("The Isabella Stewart Gardner Museum is known for a 1990…", ["roof collapse that closed it a year", "art theft whose empty frames still hang", "subway fire beneath the galleries", "flood that damaged its courtyard"], "art theft whose empty frames still hang", 2),
 			q("Symphony Hall is home to the…", ["Boston Symphony Orchestra", "Boston Pops", "Boston Ballet's only stage", "the Bruins' practice rink"], "Boston Symphony Orchestra", 1),
 			q("Trinity Church on Copley Square is a masterpiece of…", ["Frank Gehry", "H. H. Richardson", "I. M. Pei", "Charles Bulfinch only"], "H. H. Richardson", 2),
-			q("The Hatch Shell on the Esplanade is known for…", ["the Green Monster", "July 4 Boston Pops concerts", "the Tea Party ships", "subway music only"], "July 4 Boston Pops concerts", 1)
+			q("The Hatch Shell on the Esplanade is known for…", ["the Green Monster wall", "July 4 Boston Pops concerts", "the Tea Party ships museum", "Red Sox opening day rallies"], "July 4 Boston Pops concerts", 1)
 		]
 	},
 	nola: {
@@ -1851,18 +1851,18 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Another common nickname for New Orleans is the…", ["Windy City", "Big Easy", "Hub of the Universe", "Emerald City"], "Big Easy", 1),
 			q("Jackson Square was originally called…", ["Congo Square", "Place d'Armes", "Lafayette Square", "Lee Circle"], "Place d'Armes", 2),
 			q("The Battle of New Orleans was fought in…", ["1776", "1815", "1862", "1918"], "1815", 1),
-			q("The Cabildo is where the U.S. took possession of…", ["Alaska", "Louisiana after the Purchase", "Hawaii", "Puerto Rico"], "Louisiana after the Purchase", 1),
+			q("The Cabildo is where the U.S. took possession of…", ["Alaska after the purchase", "Louisiana after the Purchase", "Hawaii after annexation", "Florida after the treaty"], "Louisiana after the Purchase", 1),
 			q("The St. Charles line is famous as the world's oldest continuously operating…", ["ferry", "streetcar line", "subway", "airport shuttle"], "streetcar line", 1),
 			q("St. Charles streetcars first ran in…", ["1718", "1835", "1900", "1984"], "1835", 2),
 			q("New Orleans cemeteries often use above-ground tombs because of the…", ["mountain rock", "high water table", "desert sand", "permafrost"], "high water table", 1),
 			q("In New Orleans, the grassy median of a boulevard is called the…", ["esplanade only", "neutral ground", "common", "plaza mayor"], "neutral ground", 2),
-			q("Tremé is often cited as one of the oldest…", ["Chinatowns in America", "African-American neighborhoods in the U.S.", "financial districts", "ski towns"], "African-American neighborhoods in the U.S.", 2),
-			q("Congo Square is remembered as a place where…", ["the Super Bowl is played", "enslaved people gathered and made music on Sundays", "the Cabildo signed a treaty", "streetcars are stored"], "enslaved people gathered and made music on Sundays", 2),
+			q("Tremé is often cited as one of the oldest…", ["Chinatowns in the U.S.", "Black neighborhoods in the U.S.", "financial districts in the U.S.", "ski towns in the U.S."], "Black neighborhoods in the U.S.", 2),
+			q("Congo Square is remembered as a place where…", ["the first Super Bowl in the city was played", "enslaved people gathered for Sunday music", "the Louisiana Purchase treaty was signed", "streetcars are stored overnight"], "enslaved people gathered for Sunday music", 2),
 			q("Hurricane Katrina struck the Gulf Coast in…", ["1992", "2005", "2012", "2020"], "2005", 1),
 			q("The Mississippi River at New Orleans flows generally…", ["north to the Great Lakes", "south toward the Gulf of Mexico", "west to Texas only", "into Lake Superior"], "south toward the Gulf of Mexico", 1),
 			q("Algiers Point sits…", ["in Baton Rouge", "across the Mississippi from the French Quarter", "on Lake Pontchartrain's north shore only", "in Mississippi state"], "across the Mississippi from the French Quarter", 2),
-			q("The Garden District is known for…", ["skyscrapers", "historic mansions and live oaks", "oil derricks", "the Superdome floor"], "historic mansions and live oaks", 1),
-			q("A Streetcar Named Desire took its title from a real…", ["ferry", "New Orleans streetcar line", "jazz club", "cemetery"], "New Orleans streetcar line", 2),
+			q("The Garden District is known for…", ["glass skyscrapers and offices", "historic mansions and live oaks", "oil derricks and refineries", "the Superdome and its arena"], "historic mansions and live oaks", 1),
+			q("A Streetcar Named Desire took its title from a real…", ["Mississippi River ferry", "New Orleans streetcar line", "Bourbon Street jazz club", "French Quarter cemetery"], "New Orleans streetcar line", 2),
 			q("Lake Pontchartrain lies generally…", ["south of the Gulf", "north of New Orleans", "in Arkansas", "west of Houston"], "north of New Orleans", 1),
 			q("The National WWII Museum is in…", ["Baton Rouge", "New Orleans", "Shreveport", "Lafayette"], "New Orleans", 1),
 			q("Marie Laveau is a historic figure associated with New Orleans…", ["baseball", "Voodoo and the cemeteries", "the Saints' front office", "streetcar engineering"], "Voodoo and the cemeteries", 2)
@@ -1870,8 +1870,8 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		sports: [
 			q("The New Orleans Saints play which sport?", ["Basketball", "Football", "Hockey", "Soccer only"], "Football", 1),
 			q("The Saints' home field is the…", ["Tiger Stadium", "Caesars Superdome", "Fenway Park", "Smoothie King Center only"], "Caesars Superdome", 1),
-			q("The New Orleans Pelicans play…", ["football", "NBA basketball", "baseball", "hockey"], "NBA basketball", 1),
-			q("The Saints won Super Bowl XLIV after the…", ["1984 World's Fair", "2005 storm years, in the 2009 season", "Louisiana Purchase", "first Mardi Gras"], "2005 storm years, in the 2009 season", 2)
+			q("The New Orleans Pelicans play…", ["NFL football", "NBA basketball", "MLB baseball", "NHL hockey"], "NBA basketball", 1),
+			q("The Saints won Super Bowl XLIV after the…", ["1984 World's Fair, in the 1985 season", "Katrina years, in the 2009 season", "2002 realignment, in the 2003 season", "1990 expansion, in the 1991 season"], "Katrina years, in the 2009 season", 2)
 		],
 		political: [
 			q("New Orleans is in which U.S. state?", ["Mississippi", "Louisiana", "Alabama", "Texas"], "Louisiana", 1),
@@ -1880,8 +1880,8 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("New Orleans sits in…", ["East Baton Rouge Parish", "Orleans Parish", "Jefferson Parish only", "St. Bernard as its only parish"], "Orleans Parish", 1)
 		],
 		food: [
-			q("Café du Monde is famous for…", ["deep-dish pizza", "beignets and café au lait", "lobster rolls", "In-N-Out"], "beignets and café au lait", 1),
-			q("A po-boy is a New Orleans…", ["cocktail", "sandwich, often on French bread", "beignet topping", "streetcar fare"], "sandwich, often on French bread", 1),
+			q("Café du Monde is famous for…", ["deep-dish pizza and beer", "beignets and café au lait", "lobster rolls and chowder", "burgers and milkshakes"], "beignets and café au lait", 1),
+			q("A po-boy is a New Orleans…", ["cocktail, often with rye whiskey", "sandwich, often on French bread", "pastry, often with powdered sugar", "streetcar fare, often paid in coins"], "sandwich, often on French bread", 1),
 			q("Red beans and rice is a New Orleans tradition especially on…", ["Friday", "Monday", "Sunday only at brunch", "Mardi Gras morning only"], "Monday", 2),
 			q("The muffuletta is a sandwich associated with…", ["Central Grocery in the French Quarter", "Café du Monde only", "the Superdome concession", "Baton Rouge cafeterias only"], "Central Grocery in the French Quarter", 2),
 			q("Gumbo is a stew closely tied to…", ["New England", "Louisiana cooking", "the Pacific Northwest", "the desert Southwest"], "Louisiana cooking", 1),
@@ -1890,8 +1890,8 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		arts: [
 			q("New Orleans is widely called a birthplace of…", ["grunge", "jazz", "bluegrass only", "disco"], "jazz", 1),
 			q("Louis Armstrong was born in…", ["Chicago", "New Orleans", "Memphis", "Kansas City"], "New Orleans", 1),
-			q("Preservation Hall exists to present…", ["opera in Latin", "traditional New Orleans jazz", "Broadway tours only", "silent films"], "traditional New Orleans jazz", 1),
-			q("A second line in New Orleans is a…", ["subway car", "parading, dancing crowd behind a brass band", "double espresso", "cemetery wall"], "parading, dancing crowd behind a brass band", 2),
+			q("Preservation Hall exists to present…", ["classical opera in Latin", "traditional New Orleans jazz", "touring Broadway musicals", "silent films with organ music"], "traditional New Orleans jazz", 1),
+			q("A second line in New Orleans is a…", ["second subway car on a train", "dancing crowd following a brass band", "double shot of espresso with milk", "second row of above-ground tombs"], "dancing crowd following a brass band", 2),
 			q("Mardi Gras in New Orleans is famous for…", ["a ski jump", "krewes, floats, and parades", "a marathon finish only", "ice palaces"], "krewes, floats, and parades", 1)
 		]
 	}
@@ -1916,15 +1916,15 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		local: [
 			q("The Hudson River separates Manhattan from…", [
 				"Brooklyn",
-				"New Jersey (and a bit of Yonkers lore)",
-				"Queens only",
-				"Staten Island only"
-			], "New Jersey (and a bit of Yonkers lore)", 2),
+				"New Jersey",
+				"Queens",
+				"Staten Island"
+			], "New Jersey", 2),
 			q("Long Island Sound lies generally…", [
-				"South of Staten Island",
+				"south of Staten Island and Brooklyn",
 				"between Connecticut and the North Shore",
-				"In New Jersey",
-				"West of the Hudson"
+				"between New Jersey and Staten Island",
+				"west of the Hudson near Newark"
 			], "between Connecticut and the North Shore", 2),
 			q("What is the capital of New York State?", [
 				"New York City",
@@ -2014,10 +2014,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Queens",
 			"the Bronx"
 		], "Manhattan", 2), q("The Public Theater is tied to which downtown NYC square?", [
-			"Times Square",
+			"Times Square / Midtown",
 			"Astor Place / the East Village",
-			"Columbus Circle",
-			"Union Square only"
+			"Columbus Circle / Upper West Side",
+			"Union Square / Flatiron"
 		], "Astor Place / the East Village", 3)]
 	},
 	sf: {
@@ -2117,15 +2117,15 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Desert winters"
 		], "The cooler crab season", 3)],
 		arts: [q("The de Young Museum sits in which park?", [
-			"Dolores",
+			"Dolores Park",
 			"Golden Gate Park",
-			"McLaren",
-			"Buena Vista"
+			"McLaren Park",
+			"Buena Vista Park"
 		], "Golden Gate Park", 2), q("Berkeley, across the bay, is home to a famous…", [
-			"Naval academy",
+			"Naval academy campus",
 			"Public university campus",
-			"F1 circuit",
-			"Mint only"
+			"Formula 1 race circuit",
+			"U.S. Mint branch"
 		], "Public university campus", 2)]
 	},
 	london: {
@@ -2137,11 +2137,11 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"The Lake District"
 			], "The Prime Meridian", 1),
 			q("The City of London is…", [
-				"The same as Greater London",
-				"A square-mile historic core with its own corporation",
-				"Westminster only",
-				"A county in Kent"
-			], "A square-mile historic core with its own corporation", 3),
+				"The same as all of Greater London",
+				"A square-mile core with its own corporation",
+				"The borough that holds Westminster",
+				"A county town in the middle of Kent"
+			], "A square-mile core with its own corporation", 3),
 			q("The River Thames flows into the…", [
 				"Irish Sea",
 				"North Sea",
@@ -2173,10 +2173,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Cardiff"
 			], "London", 2),
 			q("Hadrian's Wall was built across…", [
-				"Cornwall",
+				"southwest Cornwall",
 				"northern England",
-				"Kent",
-				"the Thames"
+				"eastern Kent",
+				"the Thames valley"
 			], "northern England", 2),
 			q("The United Kingdom's largest city is…", [
 				"Birmingham",
@@ -2214,10 +2214,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Home Office campus"
 		], "City of London", 2)],
 		food: [q("A Sunday roast is a British meal built around…", [
-			"Sushi",
+			"Fish fingers and baked beans",
 			"Roast meat and Yorkshire pudding",
-			"Paella",
-			"Pho"
+			"Paella and crusty bread",
+			"Curry and naan bread"
 		], "Roast meat and Yorkshire pudding", 1), q("Borough Market is a famous London…", [
 			"Football ground",
 			"Food market",
@@ -2225,10 +2225,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Shipyard"
 		], "Food market", 2)],
 		arts: [q("Covent Garden is known for…", [
-			"The docks",
+			"Docks, warehouses, and shipyards",
 			"Opera, market, and street performance",
-			"The law courts only",
-			"Horse guards"
+			"Law courts and barristers' inns",
+			"Horse Guards and royal parades"
 		], "Opera, market, and street performance", 2), q("The British Museum is in which part of London?", [
 			"Greenwich",
 			"Bloomsbury",
@@ -2272,7 +2272,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Chicago",
 				"Springfield",
 				"Galena",
-				"Cairo"
+				"Bloomington"
 			], "Springfield", 1),
 			q("Wisconsin lies generally to Illinois's…", [
 				"south",
@@ -2322,10 +2322,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Will"
 		], "Cook", 1)],
 		food: [q("A Chicago-style hot dog bun is typically…", [
-			"A pretzel roll",
+			"A soft pretzel roll",
 			"A poppy-seed steamed bun",
-			"A baguette",
-			"A tortilla"
+			"A toasted split-top bun",
+			"A sesame-seed brioche bun"
 		], "A poppy-seed steamed bun", 3), q("Giordano's and Lou Malnati's compete over…", [
 			"Hot dogs",
 			"Deep-dish pizza",
@@ -2353,10 +2353,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Superior"
 			], "Erie", 2),
 			q("8 Mile Road is famous as a…", [
-				"River ford",
+				"River ford on the Rouge",
 				"City-suburb boundary line",
-				"Bridge to Canada",
-				"Freeway downtown"
+				"Bridge crossing to Canada",
+				"Freeway through downtown"
 			], "City-suburb boundary line", 2),
 			q("What is the capital of Michigan?", [
 				"Detroit",
@@ -2446,10 +2446,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"New Orleans only",
 			"Philadelphia only"
 		], "Detroit", 1), q("The Heidelberg Project is a Detroit outdoor…", [
-			"Ballpark",
+			"Ballpark of the Detroit Tigers",
 			"Art environment of houses and lots",
-			"Auto plant tour",
-			"Opera"
+			"Auto plant tour of the Rouge",
+			"Opera house on Broadway Street"
 		], "Art environment of houses and lots", 3)]
 	},
 	tucson: {
@@ -2470,14 +2470,14 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Organ Pipe Cactus National Monument is in…", ["southern Arizona", "the Utah strip", "New Mexico", "Nevada"], "southern Arizona", 2),
 			q("A monsoon in the Tucson calendar is a…", ["winter snow", "summer thunderstorm season", "spring freeze", "fall hurricane landfall"], "summer thunderstorm season", 1),
 			q("The Santa Catalina Mountains rise on which side of Tucson?", ["south", "north", "due west only", "inside Mexico"], "north", 1),
-			q("Mount Lemmon is known in summer as a…", ["desert floor spa", "sky-island escape above the heat", "sand dune", "salt flat"], "sky-island escape above the heat", 2),
+			q("Mount Lemmon is known in summer as a…", ["desert floor spa below the peaks", "sky-island escape above the heat", "sand dune field near Yuma", "salt flat west of the city"], "sky-island escape above the heat", 2),
 			q("Arizona's Copper State nickname comes from…", ["pennies minted there only", "historic copper mining", "the Grand Canyon's color", "the flag's star"], "historic copper mining", 2),
 			q("The Salt River is associated with which Arizona metro?", ["Tucson only", "Phoenix", "Yuma only", "Page"], "Phoenix", 2),
 			q("Kartchner Caverns are a state park of…", ["open desert pavement", "living limestone caves", "a lava tube only", "an old rail tunnel"], "living limestone caves", 2)
 		],
 		sports: [
 			q("Arizona State University's teams are the…", ["Wildcats", "Sun Devils", "Bobcats", "Lumberjacks"], "Sun Devils", 1),
-			q("The NFL Cardinals play in which Arizona city area?", ["Tucson", "Glendale / Phoenix", "Flagstaff", "Yuma"], "Glendale / Phoenix", 1),
+			q("The NFL Cardinals play in which Arizona city area?", ["Tucson / Marana", "Glendale / Phoenix", "Flagstaff / Sedona", "Yuma / Somerton"], "Glendale / Phoenix", 1),
 			q("Spring training baseball in Arizona is called the…", ["Grapefruit League", "Cactus League", "Desert League", "Sun League"], "Cactus League", 2)
 		],
 		political: [
@@ -2486,13 +2486,13 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Arizona has how many U.S. House seats that vary by census — the state joined the Union in…", ["1848", "1863 as a state", "1912", "1959"], "1912", 2)
 		],
 		food: [
-			q("A chimichanga is often claimed (with arguments) as a fry-up from…", ["California rolls", "Arizona / border Mexican restaurants", "New England", "the Midwest only"], "Arizona / border Mexican restaurants", 2),
+			q("A chimichanga is often claimed (with arguments) as a fry-up from…", ["California taquerias in San Diego", "Arizona / border Mexican restaurants", "New England diners and clam shacks", "Midwest supper clubs and bars"], "Arizona / border Mexican restaurants", 2),
 			q("Navajo frybread is associated with…", ["New England clambakes", "Southwest Native cooking", "Cajun kitchens", "Pacific salmon pits"], "Southwest Native cooking", 2),
 			q("Prickly pear syrup is made from…", ["agave hearts only", "cactus fruit", "mesquite bark", "pine nuts"], "cactus fruit", 1)
 		],
 		arts: [
 			q("Mariachi in southern Arizona is a living…", ["Norwegian choir style", "Mexican musical tradition", "only a museum exhibit", "German band form"], "Mexican musical tradition", 1),
-			q("Western films used Arizona's…", ["pine fjords", "desert and red-rock country as sets", "skyscrapers only", "Great Lakes"], "desert and red-rock country as sets", 2)
+			q("Western films used Arizona's…", ["pine-covered fjords as sets", "desert and red-rock country as sets", "downtown skyscrapers as sets", "Great Lakes shorelines as sets"], "desert and red-rock country as sets", 2)
 		]
 	},
 	toronto: {
@@ -2500,15 +2500,15 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Ontario is Canada's…", ["smallest province", "most populous province", "only prairie province", "northern territory"], "most populous province", 1),
 			q("Niagara Falls sits on the border of Ontario and…", ["Quebec", "New York", "Michigan", "Vermont"], "New York", 1),
 			q("Ottawa is Canada's…", ["largest city", "national capital", "only port", "prairie capital"], "national capital", 1),
-			q("Lake Ontario drains toward the sea via the…", ["Mississippi", "St. Lawrence River", "Hudson only", "Mackenzie"], "St. Lawrence River", 2),
+			q("Lake Ontario drains toward the sea via the…", ["Mississippi River", "St. Lawrence River", "Hudson River", "Mackenzie River"], "St. Lawrence River", 2),
 			q("The Golden Horseshoe is a populated arc around…", ["Hudson Bay", "western Lake Ontario", "Lake Superior", "the Ottawa River only"], "western Lake Ontario", 2),
 			q("Hamilton sits at the western end of…", ["Lake Superior", "Lake Ontario", "Georgian Bay only", "the St. Lawrence Seaway's Atlantic mouth"], "Lake Ontario", 2),
-			q("The Canadian Shield is…", ["a glass floor on the CN Tower", "an ancient rock plateau covering much of Ontario and beyond", "Toronto's subway token", "a waterfall"], "an ancient rock plateau covering much of Ontario and beyond", 2),
+			q("The Canadian Shield is…", ["a glass floor on the CN Tower", "an ancient rock plateau", "Toronto's subway token", "a waterfall"], "an ancient rock plateau", 2),
 			q("Stratford, Ontario is famous for a…", ["film studio backlot", "Shakespeare festival", "auto plant only", "ski jump"], "Shakespeare festival", 2),
 			q("The Thousand Islands sit in the…", ["Niagara River only", "St. Lawrence River", "Hudson Bay", "Lake Erie"], "St. Lawrence River", 2),
-			q("Algonquin Park is a large Ontario…", ["desert", "provincial park of lakes and pine", "urban square", "island ferry"], "provincial park of lakes and pine", 1),
+			q("Algonquin Park is a large Ontario…", ["desert reserve of dunes and cacti", "provincial park of lakes and pine", "urban square of shops and cafés", "island park reached by ferry"], "provincial park of lakes and pine", 1),
 			q("The GTA in local talk means the…", ["Grand Trunk Arena", "Greater Toronto Area", "Georgian Transit Authority", "Guelph Tax Agency"], "Greater Toronto Area", 1),
-			q("Mississauga is a large city…", ["in Quebec", "immediately west of Toronto", "on Hudson Bay", "in Manitoba"], "immediately west of Toronto", 1)
+			q("Mississauga is a large city…", ["just east of Montreal, in Quebec", "immediately west of Toronto", "on the shore of Hudson Bay", "north of Winnipeg, in Manitoba"], "immediately west of Toronto", 1)
 		],
 		sports: [
 			q("The CFL Argonauts play football in…", ["Hamilton only", "Toronto", "Ottawa only", "Winnipeg only"], "Toronto", 1),
@@ -2516,14 +2516,14 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Toronto FC play which sport?", ["Hockey", "Soccer", "Baseball", "Football"], "Soccer", 1)
 		],
 		political: [
-			q("Canada is a…", ["unitary city-state", "constitutional monarchy and federation", "U.S. territory", "absolute monarchy"], "constitutional monarchy and federation", 1),
+			q("Canada is a…", ["unitary republic and city-state", "constitutional monarchy and federation", "self-governing U.S. territory", "absolute monarchy and confederacy"], "constitutional monarchy and federation", 1),
 			q("Ontario's head of government is the…", ["mayor of Toronto", "premier", "president", "governor"], "premier", 1),
-			q("Canada shares its long southern land border with…", ["Mexico", "the United States", "Greenland", "France"], "the United States", 1)
+			q("Canada shares its long southern land border with…", ["the United Mexican States", "the United States", "the Kingdom of Denmark", "the French Republic"], "the United States", 1)
 		],
 		food: [
-			q("Poutine is associated first with…", ["British Columbia only", "Quebec, and now everywhere including Toronto", "the Maritimes only", "the Prairies only"], "Quebec, and now everywhere including Toronto", 1),
+			q("Poutine is associated first with…", ["British Columbia", "Quebec", "the Maritimes", "the Prairies"], "Quebec", 1),
 			q("A butter tart is a staple of…", ["Tex-Mex", "Ontario / Canadian baking", "Cajun kitchens", "Pacific salmon pits"], "Ontario / Canadian baking", 1),
-			q("Nanaimo bars are a Canadian…", ["savory meat pie", "no-bake chocolate-and-custard square", "fried dough", "smoked fish"], "no-bake chocolate-and-custard square", 2)
+			q("Nanaimo bars are a Canadian…", ["savory pork-and-potato pie", "no-bake chocolate-and-custard square", "fried dough with maple sugar", "smoked salmon candy strip"], "no-bake chocolate-and-custard square", 2)
 		],
 		arts: [
 			q("The Group of Seven were Canadian…", ["hockey line", "landscape painters", "a folk band only", "architects of the CN Tower"], "landscape painters", 1),
@@ -2536,14 +2536,14 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Pacific Ocean lies on which side of Los Angeles?", ["east", "west", "due north only", "the Nevada line"], "west", 1),
 			q("The San Andreas is a famous California…", ["river", "fault", "freeway only", "aqueduct plant"], "fault", 1),
 			q("Santa Ana winds are…", ["wet ocean breezes", "dry offshore winds", "arctic fronts", "monsoon storms"], "dry offshore winds", 2),
-			q("The 405 is a major…", ["subway line", "freeway in the L.A. area", "hiking trail only", "ferry"], "freeway in the L.A. area", 1),
+			q("The 405 is a major…", ["subway line in the L.A. area", "freeway in the L.A. area", "hiking trail in the hills", "ferry route to Catalina"], "freeway in the L.A. area", 1),
 			q("Pasadena sits generally…", ["on the coast at Venice", "northeast of downtown L.A.", "in Orange County's far south", "on Catalina"], "northeast of downtown L.A.", 1),
 			q("Long Beach is…", ["a desert town by Palmdale", "a port city south of downtown L.A.", "in the San Fernando Valley only", "in Nevada"], "a port city south of downtown L.A.", 1),
-			q("The Getty Center sits in the…", ["Arts District", "Santa Monica Mountains / Brentwood hills", "Chavez Ravine", "the Ports of L.A. only"], "Santa Monica Mountains / Brentwood hills", 2),
+			q("The Getty Center sits in the…", ["downtown Arts District", "Santa Monica Mountains", "Chavez Ravine", "Port of Los Angeles"], "Santa Monica Mountains", 2),
 			q("Mulholland Drive runs along the…", ["Los Angeles River bed only", "Santa Monica Mountains ridgeline", "beach bike path", "the 10 freeway trench"], "Santa Monica Mountains ridgeline", 2),
 			q("Catalina Island lies off the coast of…", ["San Francisco", "Southern California", "Oregon", "Baja's far cape only"], "Southern California", 1),
 			q("The Los Angeles Aqueduct famously brought water from the…", ["Colorado's mouth at Mexico", "Owens Valley", "Great Lakes", "Sacramento Delta only"], "Owens Valley", 2),
-			q("Burbank is associated with…", ["heavy industry only", "studios and the Valley's east side", "the Port of L.A.", "Joshua Tree"], "studios and the Valley's east side", 2)
+			q("Burbank is associated with…", ["heavy industry and oil refineries", "studios and the Valley's east side", "the Port of L.A. and its docks", "Joshua Tree and the high desert"], "studios and the Valley's east side", 2)
 		],
 		sports: [
 			q("The Rams play NFL football in the L.A. area at…", ["Dodger Stadium", "SoFi Stadium", "the Rose Bowl only", "Pauley Pavilion"], "SoFi Stadium", 1),
@@ -2557,21 +2557,21 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		food: [
 			q("In-N-Out is a burger chain born in…", ["Texas", "California", "New York", "Florida"], "California", 1),
-			q("A Mission-style burrito is more San Francisco; L.A. is famous for…", ["only clam chowder", "tacos, including street and truck service", "deep-dish only", "lobster rolls"], "tacos, including street and truck service", 1),
+			q("A Mission-style burrito is more San Francisco; L.A. is famous for…", ["clam chowder in sourdough bowls", "tacos from street stands and trucks", "deep-dish pizza from local chains", "lobster rolls from seaside shacks"], "tacos from street stands and trucks", 1),
 			q("California rolls were popularized as a…", ["Texas brisket cut", "sushi roll using avocado", "New England chowder", "Chicago dog"], "sushi roll using avocado", 2)
 		],
 		arts: [
 			q("Hollywood is a district of…", ["Burbank only", "Los Angeles", "Santa Barbara", "Las Vegas"], "Los Angeles", 1),
-			q("The Oscars are associated with…", ["Sundance, Utah only", "the American film industry centered in Los Angeles", "Broadway theatre awards", "Cannes exclusively"], "the American film industry centered in Los Angeles", 1)
+			q("The Oscars are associated with…", ["the Sundance festival in Utah", "the film industry in Los Angeles", "Broadway theatre in New York", "the Cannes festival in France"], "the film industry in Los Angeles", 1)
 		]
 	},
 	boston: {
 		local: [
 			q("Cape Cod is a…", ["Vermont mountain", "Massachusetts peninsula", "Maine island only", "Rhode Island capital"], "Massachusetts peninsula", 1),
-			q("Salem, north of Boston, is famous for…", ["a gold rush", "seventeenth-century witch trials", "the first subway", "Fenway Park"], "seventeenth-century witch trials", 1),
+			q("Salem, north of Boston, is famous for…", ["a nineteenth-century gold rush", "seventeenth-century witch trials", "the nation's first subway line", "the first Red Sox ballpark"], "seventeenth-century witch trials", 1),
 			q("The Pilgrims' 1620 colony is associated with…", ["Salem", "Plymouth", "Worcester", "Springfield"], "Plymouth", 1),
 			q("The Revolutionary War's opening fights in 1775 were at…", ["Bunker Hill only", "Lexington and Concord", "Valley Forge", "Yorktown"], "Lexington and Concord", 1),
-			q("Worcester is a large city…", ["on Cape Cod", "inland in Massachusetts", "in New Hampshire", "on Nantucket"], "inland in Massachusetts", 1),
+			q("Worcester is a large city…", ["on the tip of Cape Cod", "inland in Massachusetts", "in southern New Hampshire", "on Nantucket Island"], "inland in Massachusetts", 1),
 			q("The Berkshires are in…", ["eastern Massachusetts on the Cape", "western Massachusetts", "downtown Boston", "Rhode Island only"], "western Massachusetts", 1),
 			q("Rhode Island lies generally…", ["north of Maine", "south of Massachusetts", "west of New York", "east of the Atlantic"], "south of Massachusetts", 1),
 			q("New Hampshire lies generally…", ["south of Rhode Island", "north of Massachusetts", "west of New York", "on Cape Cod"], "north of Massachusetts", 1),
@@ -2580,19 +2580,19 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Massachusetts Turnpike is nicknamed the…", ["T", "Pike", "Gardiner", "405"], "Pike", 1),
 			q("Cambridge sits across the Charles River from…", ["Salem", "Boston", "Providence", "Worcester"], "Boston", 1),
 			q("The North Shore of Massachusetts is generally…", ["south of the Cape", "the coast north of Boston", "the Berkshire hills", "Rhode Island's bay"], "the coast north of Boston", 1),
-			q("The Quabbin Reservoir is a large…", ["Boston Harbor island", "drinking-water reservoir in central Massachusetts", "Fenway pond", "Cape Cod canal lock"], "drinking-water reservoir in central Massachusetts", 2)
+			q("The Quabbin Reservoir is a large…", ["island in Boston Harbor with a fort", "drinking-water reservoir for Boston", "pond in the Back Bay Fens", "lock on the Cape Cod Canal"], "drinking-water reservoir for Boston", 2)
 		],
 		sports: [
-			q("The Basketball Hall of Fame is in…", ["Boston", "Springfield, Massachusetts", "Hartford", "Providence"], "Springfield, Massachusetts", 1),
-			q("The Head of the Charles is a famous…", ["marathon", "rowing regatta in Cambridge / Boston", "hockey series", "Fenway promotion"], "rowing regatta in Cambridge / Boston", 2)
+			q("The Basketball Hall of Fame is in…", ["Boston, Massachusetts", "Springfield, Massachusetts", "Hartford, Connecticut", "Providence, Rhode Island"], "Springfield, Massachusetts", 1),
+			q("The Head of the Charles is a famous…", ["marathon from Hopkinton to Boston", "rowing regatta in Cambridge / Boston", "college hockey series in Boston", "Fenway Park summer concert series"], "rowing regatta in Cambridge / Boston", 2)
 		],
 		political: [
 			q("Massachusetts' U.S. nick-name in civic talk is often the…", ["Bay State", "Garden State", "Pine Tree State", "Ocean State"], "Bay State", 1),
-			q("Maine was once a district of…", ["Vermont", "Massachusetts", "New York", "Canada"], "Massachusetts", 2)
+			q("Maine was once a district of…", ["New Hampshire", "Massachusetts", "New York", "Connecticut"], "Massachusetts", 2)
 		],
 		food: [
 			q("A whoopie pie is a treat associated with…", ["Texas", "New England", "Southern California", "the desert Southwest"], "New England", 1),
-			q("New England is known for…", ["Sonoran hot dogs", "clam shacks and lobster", "In-N-Out", "deep-dish only"], "clam shacks and lobster", 1)
+			q("New England is known for…", ["Sonoran hot dogs and tacos", "clam shacks and lobster", "In-N-Out burgers and fries", "deep-dish pizza and beef"], "clam shacks and lobster", 1)
 		],
 		arts: [
 			q("Orchard House in Concord was home to…", ["Emily Dickinson only", "Louisa May Alcott", "Herman Melville's whaling years", "the Boston Symphony"], "Louisa May Alcott", 2),
@@ -2610,8 +2610,8 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("The Gulf of Mexico lies generally…", ["north of Arkansas", "south of Louisiana", "west of California only", "inside Lake Pontchartrain"], "south of Louisiana", 1),
 			q("Mississippi the state lies generally…", ["west of Texas", "east of Louisiana", "north of Canada", "inside Orleans Parish"], "east of Louisiana", 1),
 			q("Texas lies generally…", ["east of Alabama", "west of Louisiana", "north of Tennessee", "inside the French Quarter"], "west of Louisiana", 1),
-			q("The Mississippi Delta, in common U.S. talk, often means country in…", ["Vermont", "northwest Mississippi (and nearby)", "Oregon", "the French Alps"], "northwest Mississippi (and nearby)", 2),
-			q("Huey P. Long was a famous…", ["New Orleans jazz drummer", "Louisiana governor and U.S. senator", "Saints quarterback", "streetcar inventor"], "Louisiana governor and U.S. senator", 2),
+			q("The Mississippi Delta, in common U.S. talk, often means country in…", ["northern Vermont", "northwest Mississippi", "eastern Oregon", "the French Alps"], "northwest Mississippi", 2),
+			q("Huey P. Long was a famous…", ["New Orleans jazz drummer and bandleader", "Louisiana governor and U.S. senator", "Saints quarterback in the 1970s", "inventor of the electric streetcar"], "Louisiana governor and U.S. senator", 2),
 			q("Louisiana joined the United States through the…", ["Treaty of Ghent only", "Louisiana Purchase", "Gadsden Purchase", "Alaska purchase"], "Louisiana Purchase", 1)
 		],
 		sports: [
@@ -2630,7 +2630,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		arts: [
 			q("Zydeco is a music closely tied to…", ["Louisiana Creole and Cajun communities", "Nashville country radio only", "Seattle grunge", "British invasion bands"], "Louisiana Creole and Cajun communities", 2),
-			q("Tennessee Williams set A Streetcar Named Desire in…", ["Chicago", "New Orleans", "Memphis", "Atlanta"], "New Orleans", 1)
+			q("Tennessee Williams set A Streetcar Named Desire in…", ["St. Louis", "New Orleans", "Memphis", "Atlanta"], "New Orleans", 1)
 		]
 	}
 };
