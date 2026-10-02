@@ -17,6 +17,8 @@ export const RETIRED_POIS: Record<string, RetiredPoi> = {
   "south-1st-green": { cityId: "temple", kind: "park", name: "South 1st Green" },
   "keefer-pk": { cityId: "temple", kind: "park", name: "Keefer Park" },
   "veterans-pk-t": { cityId: "temple", kind: "park", name: "Veterans Park — Temple" },
+  // 0.0.32: Tucson has no Sosa Avenue; the real mark is the Sosa–Carrillo–Frémont House on Granada.
+  "sosa-ave": { cityId: "tucson", kind: "landmark", name: "Sosa Avenue", replacedBy: "sosa-carrillo" },
 };
 
 /** The live id a saved id now means: its replacement, itself, or null if the mark is gone. */
