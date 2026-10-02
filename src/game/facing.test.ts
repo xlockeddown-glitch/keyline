@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { faceFromYaw, walkRow } from "./facing.ts";
+import { faceFromYaw, spriteCell, walkRow } from "./facing.ts";
 
 const deg = (d: number) => (d * Math.PI) / 180;
 // GameMap on-foot yaw: atan2(-east, north)
@@ -25,4 +25,14 @@ test("cab faces follow the same rule and wrap negative yaw", () => {
   assert.equal(faceFromYaw(deg(450)), "left");
   assert.equal(faceFromYaw(deg(170)), "down");
   assert.equal(faceFromYaw(deg(10)), "up");
+});
+
+test("stopping after walking left or right keeps the side profile; up or down shows the front idle", () => {
+  assert.deepEqual(spriteCell(true, 1, 2), { sheet: "walk", position: "66.666% 33.333%" });
+  assert.deepEqual(spriteCell(false, 1, 0), { sheet: "idle-side", position: "0% 0%" });
+  assert.deepEqual(spriteCell(false, 1, 3), { sheet: "idle-side", position: "100% 0%" });
+  assert.deepEqual(spriteCell(false, 2, 2), { sheet: "idle-side", position: "0% 100%" });
+  assert.deepEqual(spriteCell(false, walkRow(fromKeys(1, 1)), 1), { sheet: "idle-side", position: "100% 100%" }, "stopping from NE faces right");
+  assert.deepEqual(spriteCell(false, 0, 3), { sheet: "idle", position: "100% 100%" });
+  assert.deepEqual(spriteCell(false, 3, 1), { sheet: "idle", position: "100% 0%" });
 });

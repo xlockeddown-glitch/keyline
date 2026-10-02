@@ -23,3 +23,16 @@ const FACES: Record<WalkRow, Face> = { 0: "down", 1: "left", 2: "right", 3: "up"
 export function faceFromYaw(yaw: number): Face {
   return FACES[walkRow(yaw)];
 }
+
+/**
+ * Which sheet and cell a scout shows this frame. Walking uses the 4x4 walk sheet. Standing still
+ * after walking left or right uses the 2x2 side-idle sheet (row 0 left, row 1 right, two breaths),
+ * so the scout keeps facing the way it was going; standing after walking up or down uses the
+ * front idle sheet (2x2, four frames). `frame` is the 0–3 animation counter.
+ */
+export function spriteCell(moving: boolean, row: WalkRow, frame: number): { sheet: "walk" | "idle" | "idle-side"; position: string } {
+  const f = ((Math.floor(frame) % 4) + 4) % 4;
+  if (moving) return { sheet: "walk", position: `${f * 33.333}% ${row * 33.333}%` };
+  if (row === 1 || row === 2) return { sheet: "idle-side", position: `${(f % 2) * 100}% ${(row - 1) * 100}%` };
+  return { sheet: "idle", position: `${(f % 2) * 100}% ${Math.floor(f / 2) * 100}%` };
+}

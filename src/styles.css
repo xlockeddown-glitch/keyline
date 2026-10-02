@@ -114,7 +114,7 @@ h3 {
   background-size:200% 200%
 }
 .scout-marker[data-scout=cat]{
-  background-image:url(/sprites/scouts/cat-walk.png?v=k24a)
+  background-image:url(/sprites/scouts/cat-walk.png?v=k37a)
 }
 .scout-marker[data-scout=cat].is-idle{
   background-image:url(/sprites/scouts/cat-idle.png?v=k8);
@@ -1213,11 +1213,38 @@ h3 {
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="lynx"] {
-  background-image: url("/sprites/scouts/lynx-walk.png?v=k24");
+  background-image: url("/sprites/scouts/lynx-walk.png?v=k37a");
 }
 .scout-marker[data-scout="lynx"].is-idle {
-  background-image: url("/sprites/scouts/lynx-idle.png?v=k8");
+  background-image: url("/sprites/scouts/lynx-idle.png?v=k37a");
   background-size: 200% 200%;
+}
+/* 0.0.37: standing still after walking left or right keeps the side profile (2x2: row 0 left, row 1 right). */
+.scout-marker.is-idle.is-side,
+.scout-marker[data-scout="raccoon"].is-idle.is-side {
+  background-image: url("/sprites/player-idle-side.png?v=k37a");
+  background-size: 200% 200%;
+}
+.scout-marker[data-scout="cat"].is-idle.is-side {
+  background-image: url("/sprites/scouts/cat-idle-side.png?v=k37a");
+}
+.scout-marker[data-scout="turtle"].is-idle.is-side {
+  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k37a");
+}
+.scout-marker[data-scout="owl"].is-idle.is-side {
+  background-image: url("/sprites/scouts/owl-idle-side.png?v=k37a");
+}
+.scout-marker[data-scout="corgi"].is-idle.is-side {
+  background-image: url("/sprites/scouts/corgi-idle-side.png?v=k37a");
+}
+.scout-marker[data-scout="sloth"].is-idle.is-side {
+  background-image: url("/sprites/scouts/sloth-idle-side.png?v=k37a");
+}
+.scout-marker[data-scout="fox"].is-idle.is-side {
+  background-image: url("/sprites/scouts/fox-idle-side.png?v=k37a");
+}
+.scout-marker[data-scout="lynx"].is-idle.is-side {
+  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k37a");
 }
 
 .wheel-night {

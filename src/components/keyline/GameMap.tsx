@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isScoutShop, walkSpeed } from "@/game/data";
 import { seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
-import { faceFromYaw as cabFace, walkRow } from "@/game/facing";
+import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
@@ -1195,14 +1195,11 @@ export function GameMap() {
         el.dataset.scout = st.scout;
         if (st.quests.worn) el.dataset.cloth = st.quests.worn;
         else el.removeAttribute("data-cloth");
+        const cell = spriteCell(moving, row, anim.current.frame);
         el.classList.toggle("is-idle", !moving);
+        el.classList.toggle("is-side", cell.sheet === "idle-side");
         el.classList.toggle("is-seated", seated);
-        if (!seated) {
-          const col = anim.current.frame;
-          el.style.backgroundPosition = moving
-            ? `${col * 33.333}% ${row * 33.333}%`
-            : `${(col % 2) * 100}% ${Math.floor(col / 2) * 100}%`;
-        }
+        if (!seated) el.style.backgroundPosition = cell.position;
       }
       const cabEl = pawn?.querySelector(".cab-sprite") as HTMLElement | null;
       if (cabEl && seated) {
