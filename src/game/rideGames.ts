@@ -77,6 +77,8 @@ export function betterOutcome(a: RideOutcome, b: RideOutcome): RideOutcome {
 
 /** What the journey remembers about ride games. Lives on the save so a reload can't re-pay. */
 export type RideGameMark = {
+  /** The game this ride was dealt when it boarded. Missing on rides from saves before 0.0.35. */
+  rideGame?: RideGameId;
   /** Best finished round this ride. */
   game?: { kind: "played" | "won"; perf: number; rounds: number; perfect?: boolean };
   /** Set while a round is running. Still set on load means the tab closed mid-round. */
@@ -145,8 +147,63 @@ export function pickRideGame(rideMs: number, ready: readonly RideGameId[] = READ
   return open[Math.floor(seededRng(Math.floor(seed) ^ 0x2545f491)() * open.length)]!;
 }
 
-/** The game this journey gets: its length picks the band, its departure picks within it. */
-export function rideGameFor(j: { departAt: number; arriveAt: number }): RideGameId {
+/** The ready games a ride of this length can get. Lamplighter alone when none of the band's are built. */
+export function bandGames(rideMs: number, ready: readonly RideGameId[] = READY_RIDE_GAMES): RideGameId[] {
+  const band = RIDE_GAME_BANDS.find((b) => rideMs < b.underMs) ?? RIDE_GAME_BANDS[RIDE_GAME_BANDS.length - 1]!;
+  const open = band.games.filter((g) => ready.includes(g));
+  return open.length ? open : ["lamplighter"];
+}
+
+/** How many past ride games a save keeps. */
+export const RIDE_HISTORY_KEEP = 8;
+/** No game runs more than this many rides in a row (within a band that has a choice). */
+export const RIDE_MAX_RUN = 2;
+/** How fast an old ride stops counting against a game: the last ride weighs 1, the one before 0.6, … */
+const HISTORY_DECAY = 0.6;
+
+/**
+ * Deal a game from a band, weighted against what this save played lately. Works for any number
+ * of games: each one's weight is 1 / (1 + its decayed recent plays), and a game that just ran
+ * RIDE_MAX_RUN times in a row is off the table. History is read only for games in this band, so
+ * a short Lamplighter hop between two band rides doesn't reset the run.
+ */
+export function dealRideGame(open: readonly RideGameId[], history: readonly RideGameId[], rnd: () => number = Math.random): RideGameId {
+  if (open.length <= 1) return open[0] ?? "lamplighter";
+  const past = history.filter((g) => open.includes(g)).slice(-RIDE_HISTORY_KEEP).reverse(); // newest first
+  const run = past.length >= RIDE_MAX_RUN && past.slice(0, RIDE_MAX_RUN).every((g) => g === past[0]) ? past[0] : undefined;
+  const pool = open.filter((g) => g !== run);
+  const weights = pool.map((g) => 1 / (1 + past.reduce((w, h, i) => (h === g ? w + HISTORY_DECAY ** i : w), 0)));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  let r = Math.min(0.999999, Math.max(0, rnd())) * sum;
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i]!;
+    if (r < 0) return pool[i]!;
+  }
+  return pool[pool.length - 1]!;
+}
+
+/** Deal the game for a ride that's boarding now. */
+export function dealForRide(rideMs: number, history: readonly RideGameId[], rnd: () => number = Math.random): RideGameId {
+  return dealRideGame(bandGames(rideMs), history, rnd);
+}
+
+/** Append a dealt game to a save's history, keeping the last RIDE_HISTORY_KEEP. */
+export function pushRideHistory(history: readonly RideGameId[], game: RideGameId): RideGameId[] {
+  return [...history, game].slice(-RIDE_HISTORY_KEEP);
+}
+
+/** A save's ride history, cleaned: missing (pre-0.0.35 saves) or junk entries load as nothing. */
+export function loadRideHistory(raw: unknown): RideGameId[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((g): g is RideGameId => typeof g === "string" && g in RIDE_GAME_NAME).slice(-RIDE_HISTORY_KEEP);
+}
+
+/**
+ * The game this journey gets: the one dealt at boarding, stored on the ride, so a reload, the
+ * store and the screen agree. Rides boarded before 0.0.35 have none and keep the old seeded pick.
+ */
+export function rideGameFor(j: { departAt: number; arriveAt: number; rideGame?: RideGameId }): RideGameId {
+  if (j.rideGame && READY_RIDE_GAMES.includes(j.rideGame)) return j.rideGame;
   return pickRideGame(j.arriveAt - j.departAt, READY_RIDE_GAMES, j.departAt);
 }
 

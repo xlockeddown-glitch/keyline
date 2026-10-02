@@ -31,7 +31,7 @@ import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
-import { forfeitRound, markRound, openRound, rideGameFor, rideRoundMs, type RideOutcome } from "./rideGames";
+import { dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
@@ -159,6 +159,8 @@ export type GameState = {
   fares: number;
   cityVaults: number;
   journey: Journey | null;
+  /** Last few ride games dealt, oldest first; weights the next deal so games change up. */
+  rideHistory: RideGameId[];
   landAtStation: boolean;
   pressPass: number;
   loot: LootDrop | null;
@@ -403,6 +405,7 @@ function persistable(s: GameState) {
     fares: s.fares,
     cityVaults: s.cityVaults,
     journey: s.journey,
+    rideHistory: s.rideHistory,
     landAtStation: s.landAtStation,
     pressPass: s.pressPass,
   };
@@ -632,6 +635,7 @@ export const useGame = create<GameState>((set, get) => ({
   fares: saved?.fares ?? 0,
   cityVaults: saved?.cityVaults ?? 0,
   journey: saved?.journey ? forfeitRound(saved.journey) : null,
+  rideHistory: loadRideHistory(saved?.rideHistory),
   landAtStation: Boolean(saved?.landAtStation),
   pressPass: saved?.pressPass ?? 0,
   loot: null,
@@ -1649,10 +1653,12 @@ export const useGame = create<GameState>((set, get) => ({
     if (get().journey) return "You're already on a train.";
     const now = Date.now();
     const arriveAt = now + fareMs(get().cityId, to);
+    const rideGame = dealForRide(arriveAt - now, get().rideHistory ?? []);
     sfx.open();
     set({
       fares: get().fares - 1,
-      journey: { from: get().cityId, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0 },
+      journey: { from: get().cityId, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0, rideGame },
+      rideHistory: pushRideHistory(get().rideHistory ?? [], rideGame),
       screen: "ride",
       hqOpen: false,
       invOpen: false,

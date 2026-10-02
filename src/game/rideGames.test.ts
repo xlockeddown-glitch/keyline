@@ -247,3 +247,78 @@ test("accuracy decides the win; strays count against you", () => {
   assert.match(lampVerdict({ lamps: 20, hits: 20, strays: 0 }), /^20 of 20 lit\./);
   assert.match(lampVerdict({ lamps: 20, hits: 0, strays: 0 }), /dark/);
 });
+
+// ── 0.0.35: variety across rides ────────────────────────────────────────
+import { RIDE_HISTORY_KEEP, RIDE_MAX_RUN, bandGames, dealForRide, dealRideGame, loadRideHistory, pushRideHistory, seededRng, type RideGameId } from "./rideGames.ts";
+
+function simulate(open: readonly RideGameId[], rides: number, seed: number) {
+  const rnd = seededRng(seed);
+  let history: RideGameId[] = [];
+  const counts = new Map<RideGameId, number>();
+  let longest = 0;
+  let run = 0;
+  let prev: RideGameId | undefined;
+  for (let i = 0; i < rides; i++) {
+    const g = dealRideGame(open, history, rnd);
+    history = pushRideHistory(history, g);
+    counts.set(g, (counts.get(g) ?? 0) + 1);
+    run = g === prev ? run + 1 : 1;
+    prev = g;
+    longest = Math.max(longest, run);
+  }
+  return { counts, longest };
+}
+
+test("2–6 min rides: never three of the same game in a row over 1000 rides, and both land 40–60%", () => {
+  const band = bandGames(4 * MIN);
+  assert.deepEqual([...band].sort(), ["match-sorter", "where-am-i"]);
+  for (const seed of [1, 7, 42, 2026, 1_790_000_000]) {
+    const { counts, longest } = simulate(band, 1000, seed);
+    assert.ok(longest <= RIDE_MAX_RUN, `seed ${seed}: run of ${longest}`);
+    for (const g of band) {
+      const share = (counts.get(g) ?? 0) / 1000;
+      assert.ok(share >= 0.4 && share <= 0.6, `seed ${seed}: ${g} ${share}`);
+    }
+  }
+});
+
+test("the deal works for any number of games in a band", () => {
+  const three: RideGameId[] = ["where-am-i", "match-sorter", "route-puzzle"];
+  const { counts, longest } = simulate(three, 3000, 9);
+  assert.ok(longest <= RIDE_MAX_RUN);
+  for (const g of three) {
+    const share = (counts.get(g) ?? 0) / 3000;
+    assert.ok(share > 0.25 && share < 0.42, `${g} ${share}`);
+  }
+  assert.equal(dealRideGame(["lamplighter"], ["lamplighter", "lamplighter", "lamplighter"]), "lamplighter", "a one-game band has no choice");
+  assert.equal(dealRideGame(["where-am-i", "match-sorter"], ["where-am-i", "where-am-i"], () => 0), "match-sorter", "two in a row forces a change");
+  // A Lamplighter hop in between doesn't reset the run.
+  assert.equal(dealRideGame(["where-am-i", "match-sorter"], ["match-sorter", "lamplighter", "match-sorter"], () => 0), "where-am-i");
+  assert.equal(dealForRide(90_000, ["lamplighter", "lamplighter"]), "lamplighter", "short rides stay Lamplighter");
+});
+
+test("the dealt game is stored on the ride and survives a reload", () => {
+  const departAt = 1_790_000_000_000;
+  for (const rideGame of ["where-am-i", "match-sorter"] as const) {
+    const j: Journey = { from: "austin", to: "tucson", departAt, arriveAt: departAt + 4 * MIN, rideGame };
+    const reloaded = forfeitRound(JSON.parse(JSON.stringify(openRound(j, departAt + 1000))) as Journey);
+    assert.equal(rideGameFor(reloaded), rideGame);
+    assert.equal(rideGameFor(markRound(reloaded, played)), rideGame);
+  }
+  // A ride boarded before 0.0.35 has no stored game: it keeps the old seeded pick, stable on every call.
+  const old: Journey = { from: "austin", to: "tucson", departAt, arriveAt: departAt + 4 * MIN };
+  assert.equal(rideGameFor(old), pickRideGame(4 * MIN, undefined, departAt));
+  assert.equal(rideGameFor(JSON.parse(JSON.stringify(old))), rideGameFor(old));
+});
+
+test("old saves without ride history load clean", () => {
+  assert.deepEqual(loadRideHistory(undefined), []);
+  assert.deepEqual(loadRideHistory(null), []);
+  assert.deepEqual(loadRideHistory("where-am-i"), []);
+  assert.deepEqual(loadRideHistory(["where-am-i", 3, "bogus", "match-sorter"]), ["where-am-i", "match-sorter"]);
+  const long = Array.from({ length: 20 }, (_, i) => (i % 2 ? "where-am-i" : "match-sorter"));
+  assert.equal(loadRideHistory(long).length, RIDE_HISTORY_KEEP);
+  const saved = JSON.parse(JSON.stringify({ version: 2, fares: 1, journey: null })) as { rideHistory?: unknown };
+  const g = dealForRide(4 * MIN, loadRideHistory(saved.rideHistory));
+  assert.ok(["where-am-i", "match-sorter"].includes(g));
+});
