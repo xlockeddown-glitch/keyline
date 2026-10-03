@@ -28,16 +28,14 @@ export const WEEKLY_NATURE: TriviaQ[] = [
 
 export const WEEKLY_HISTORY: TriviaQ[] = [
   q("King Charles III was crowned in…", ["2020", "2021", "2023", "2025"], "2023", 2),
-  q("Magna Carta was sealed in England in…", ["1066", "1215", "1492", "1776"], "1215", 2),
   q("The Apollo 11 Moon landing took place in…", ["1965", "1969", "1972", "1981"], "1969", 1),
   // v0.0.16 deep-cut bank (history_life_part_a)
   ...HISTORY_LIFE_PART_A,
 ];
 
 export const WEEKLY_SCIENCE: TriviaQ[] = [
-  q("An exoplanet is a…", ["moon of Jupiter only", "planet orbiting a star other than the Sun", "comet in the Oort cloud only", "asteroid of the main belt only"], "planet orbiting a star other than the Sun", 2),
+  q("An exoplanet is a…", ["moon orbiting Jupiter", "planet orbiting another star", "comet in the Oort cloud", "asteroid of the main belt"], "planet orbiting another star", 2),
   q("In DNA, adenine pairs with…", ["guanine", "thymine", "cytosine", "uracil in DNA's usual pairing"], "thymine", 1),
-  q("Water's chemical formula is…", ["CO2", "H2O", "O2", "NaCl"], "H2O", 1),
   q("CRISPR-Cas systems were first characterized as…", ["a rocket fairing latch", "adaptive immune systems in bacteria and archaea", "a SI base unit of luminous intensity", "a tarantula silk gland"], "adaptive immune systems in bacteria and archaea", 3),
   // v0.0.15 specialty deep-cuts (from orphan part files)
   q("Wringing gauge blocks relies on…", ["a thin film of epoxy between faces", "flatness, finish, and molecular attraction", "magnetic clamps holding the faces", "frost from liquid oxygen on the faces"], "flatness, finish, and molecular attraction", 3),
@@ -57,8 +55,7 @@ export const WEEKLY_SCIENCE: TriviaQ[] = [
 ];
 
 export const WEEKLY_POLITICAL: TriviaQ[] = [
-  q("Soft power refers to influence through…", ["only tanks and tariffs", "culture, values, and diplomacy", "only blockades", "only currency devaluation"], "culture, values, and diplomacy", 2),
-  q("How many justices normally sit on the U.S. Supreme Court?", ["7", "9", "11", "13"], "9", 1),
+  q("Soft power refers to influence through…", ["tanks, tariffs, and sanctions", "culture, values, and diplomacy", "naval blockades of ports", "currency devaluation"], "culture, values, and diplomacy", 2),
   q("The Bill of Rights is the first…", ["ten amendments to the U.S. Constitution", "ten articles of confederation only", "ten Supreme Court opinions", "ten federal statutes of 1789 only"], "ten amendments to the U.S. Constitution", 1),
   q("A filibuster is a tactic mainly used to…", ["speed a bill to a vote with no debate", "delay or block a bill through prolonged debate", "appoint cabinet secretaries without a vote", "redraw congressional district borders"], "delay or block a bill through prolonged debate", 2),
 ];

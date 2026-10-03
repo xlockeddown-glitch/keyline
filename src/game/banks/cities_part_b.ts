@@ -26,11 +26,10 @@ sf: {
     local: [
       q("The Golden Gate Bridge's color is officially…", ["Golden State gold", "international orange", "battleship gray", "redwood forest green"], "international orange", 2),
       q("Alcatraz is in…", ["the Pacific a mile west of the Farallones", "San Francisco Bay", "Tahoe", "the Delta only"], "San Francisco Bay", 1),
-      q("Lombard Street's crooked block is on…", ["Twin Peaks only", "Russian Hill", "Bayview only", "the Sunset only"], "Russian Hill", 2),
+      q("Lombard Street's crooked block is on…", ["Twin Peaks", "Russian Hill", "Bayview", "the Sunset"], "Russian Hill", 2),
       q("The Castro is a historic…", ["financial district only", "LGBTQ+ neighborhood", "naval yard", "airport"], "LGBTQ+ neighborhood", 1),
       q("Mission District murals are concentrated on…", ["the Golden Gate's towers", "Balmy and Clarion alleys (among others)", "Alcatraz's rec yard only", "the Presidio golf greens only"], "Balmy and Clarion alleys (among others)", 3),
       q("The Presidio is a…", ["baseball park by the bay", "former Army post, now a park", "university campus and dorms", "cable-car barn and yard"], "former Army post, now a park", 2),
-      q("Coit Tower stands on…", ["Twin Peaks", "Telegraph Hill", "Mount Davidson", "Bernal Heights"], "Telegraph Hill", 2),
       q("The Embarcadero faces…", ["the ocean beach only", "the Bay", "the Santa Cruz mountains only", "Tahoe"], "the Bay", 1),
       q("Ocean Beach faces the…", ["Bay Bridge anchorage only", "Pacific", "Delta", "Carquinez"], "Pacific", 1),
       q("BART is the region's…", ["only cable-car company", "rapid-transit rail", "ferry-only system", "airport code"], "rapid-transit rail", 1),
@@ -70,7 +69,7 @@ detroit: {
     ],
     arts: [
       q("The Motown sound is built on…", ["techno, synths, and drum machines", "pop, soul, and a house band (the Funk Brothers)", "punk and garage rock from the Grande Ballroom", "Delta blues and slide guitar"], "pop, soul, and a house band (the Funk Brothers)", 2),
-      q("Detroit techno's early geography is…", ["only Berlin", "the city and its Black electronic musicians of the 1980s", "only Chicago house", "only Kraftwerk's studio in Düsseldorf as Detroit"], "the city and its Black electronic musicians of the 1980s", 3),
+      q("Detroit techno's early geography is…", ["Berlin's post-Wall club scene", "Detroit's Black electronic musicians", "Chicago's house-music DJs", "Kraftwerk's studio in Düsseldorf"], "Detroit's Black electronic musicians", 3),
     ],
     sports: [
       q("The Lions play downtown at…", ["Comerica as football", "Ford Field", "Little Caesars as football only", "the old Silverdome still"], "Ford Field", 1),
@@ -82,7 +81,7 @@ la: {
       q("Los Angeles is in which county of the same name, plus it sprawls into…", ["the Bay Area's peninsula counties", "a basin and valleys of Southern California", "the farm towns of the Central Valley", "the high desert around Death Valley"], "a basin and valleys of Southern California", 1),
       q("Hollywood is a…", ["separate city of Orange County", "district of Los Angeles", "neighborhood of Burbank", "part of Santa Monica only"], "district of Los Angeles", 1),
       q("The Hollywood Sign is mounted on…", ["Palos Verdes", "Mount Lee / the Hollywood Hills", "Catalina", "downtown's Bunker Hill only"], "Mount Lee / the Hollywood Hills", 2),
-      q("Griffith Observatory looks over…", ["only Catalina as its view", "the basin and the Hollywood Sign", "only Palm Springs", "only San Diego"], "the basin and the Hollywood Sign", 1),
+      q("Griffith Observatory looks over…", ["Catalina Island and the harbor", "the basin and the Hollywood Sign", "Palm Springs and the desert", "San Diego Bay and the Navy yards"], "the basin and the Hollywood Sign", 1),
       q("Wilshire Boulevard runs…", ["in a loop around the 405 freeway", "from downtown west to Santa Monica", "south through Orange County", "north–south across the Valley"], "from downtown west to Santa Monica", 2),
       q("Sunset Boulevard runs…", ["the length of Long Beach's shoreline", "from downtown through Hollywood to the coast", "as a freeway through Pasadena", "east from Hollywood to Palm Springs"], "from downtown through Hollywood to the coast", 2),
       q("The 405 is a…", ["subway line under Wilshire", "freeway through the Westside", "concrete-lined river channel", "main east–west LAX runway"], "freeway through the Westside", 1),
@@ -98,7 +97,7 @@ la: {
     ],
     food: [
       q("The French Dip's origin story is fought over by…", ["two stands in Austin", "Philippe's and Cole's in L.A.", "two shacks in New Orleans", "two carts in Portland"], "Philippe's and Cole's in L.A.", 3),
-      q("A California burrito often includes…", ["only rice as a Mission clone", "fries", "only spaghetti", "only cole slaw"], "fries", 2),
+      q("A California burrito often includes…", ["kimchi", "fries", "spaghetti", "cole slaw"], "fries", 2),
       q("In-N-Out Burger was born in…", ["Fresno, in the Central Valley", "Baldwin Park, near Los Angeles", "San Diego, near the border", "Sacramento, the state capital"], "Baldwin Park, near Los Angeles", 2),
     ],
     arts: [
@@ -106,7 +105,6 @@ la: {
       q("LACMA is on…", ["the Venice boardwalk", "Wilshire's Miracle Mile", "Catalina", "Pasadena's Rose Bowl"], "Wilshire's Miracle Mile", 2),
     ],
     sports: [
-      q("Dodger Stadium sits in…", ["Inglewood", "Chavez Ravine", "Pasadena", "Long Beach"], "Chavez Ravine", 2),
       q("SoFi Stadium is in…", ["downtown L.A.", "Inglewood", "Pasadena", "Anaheim"], "Inglewood", 2),
     ],
   }

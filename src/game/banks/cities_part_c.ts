@@ -9,9 +9,8 @@ nyc: {
       q("The High Line is a…", ["subway line", "park on an old rail viaduct", "bridge to New Jersey", "airport"], "park on an old rail viaduct", 1),
       q("One World Trade Center's height in feet nods to…", ["1492", "1776", "1865", "2001"], "1776", 2),
       q("Central Park was designed by…", ["L'Enfant", "Olmsted and Vaux", "Burnham only", "Moses"], "Olmsted and Vaux", 2),
-      q("The Brooklyn Bridge opened in…", ["1776", "1811", "1883", "1931"], "1883", 2),
       q("The subway's first IRT line opened in…", ["1863", "1904", "1932", "1950"], "1904", 3),
-      q("Broadway as a street runs the length of…", ["only the Theater District as a three-block street", "Manhattan (and beyond)", "only Brooklyn", "only Staten Island"], "Manhattan (and beyond)", 2),
+      q("Broadway as a street runs the length of…", ["a three-block Theater District strip", "Manhattan (and beyond)", "Brooklyn", "Staten Island"], "Manhattan (and beyond)", 2),
       q("Ellis Island is in…", ["the Hudson at Albany", "New York Harbor", "Long Island Sound", "Jamaica Bay"], "New York Harbor", 2),
       q("The Apollo Theater is in…", ["Greenwich Village", "Harlem", "DUMBO", "Riverdale"], "Harlem", 1),
       q("Wall Street is in…", ["Midtown only", "Lower Manhattan", "the Bronx", "Queens"], "Lower Manhattan", 1),
@@ -25,7 +24,7 @@ nyc: {
     ],
     food: [
       q("A New York slice is typically…", ["deep-dish pizza baked like a pie", "wide, foldable, thin-crust pizza", "square pan pizza with crispy edges", "bagel topped with sauce and cheese"], "wide, foldable, thin-crust pizza", 1),
-      q("A chopped cheese is a sandwich of…", ["only Staten Island diners", "Upper Manhattan / the Bronx bodegas", "only Long Island diners", "only New Jersey diners"], "Upper Manhattan / the Bronx bodegas", 3),
+      q("A chopped cheese is a sandwich of…", ["Staten Island Italian delis", "Upper Manhattan / the Bronx bodegas", "Long Island roadside diners", "New Jersey Turnpike diners"], "Upper Manhattan / the Bronx bodegas", 3),
     ],
   },
 london: {
@@ -34,7 +33,7 @@ london: {
       q("The Tube is London's…", ["double-decker bus", "underground railway", "airport rail shuttle", "Thames river taxi"], "underground railway", 1),
       q("Big Ben is properly the…", ["whole Palace of Westminster", "Great Bell in the Elizabeth Tower", "bascule span of Tower Bridge", "clock of the Royal Exchange"], "Great Bell in the Elizabeth Tower", 2),
       q("Tower Bridge is not the same as the…", ["Shard skyscraper", "Tower of London", "London Eye wheel", "Gherkin"], "Tower of London", 1),
-      q("The Tower of London has long housed the…", ["Bank of England gold only", "Crown Jewels (among other uses)", "BBC archives only", "Wimbledon trophies only"], "Crown Jewels (among other uses)", 1),
+      q("The Tower of London has long housed the…", ["Bank of England gold", "Crown Jewels", "BBC archives", "Wimbledon trophies"], "Crown Jewels", 1),
       q("Westminster Abbey is a…", ["official residence of the PM", "church of coronations and burials", "football ground in west London", "covered market by the river"], "church of coronations and burials", 1),
       q("The London Eye stands on the…", ["in Hyde Park", "South Bank", "at Greenwich", "in the City's square mile as a parish wheel"], "South Bank", 2),
       q("Greenwich is famed for the…", ["ravens of the Tower of London", "Prime Meridian and Royal Observatory", "Wembley Stadium and its arch", "Heathrow's original terminals"], "Prime Meridian and Royal Observatory", 1),
@@ -44,8 +43,7 @@ london: {
       q("The Shard is a…", ["suspension bridge", "skyscraper", "covered market", "royal palace"], "skyscraper", 1),
     ],
     arts: [
-      q("The West End is London's…", ["finance square mile only", "theatre district", "docklands only", "airport"], "theatre district", 1),
-      q("Tate Modern is in a former…", ["palace", "power station", "cathedral", "prison only"], "power station", 2),
+      q("The West End is London's…", ["Square Mile finance hub", "theatre district", "Docklands port area", "airport zone"], "theatre district", 1),
       q("The British Museum is in…", ["Greenwich", "Bloomsbury", "South Kensington only", "the City's guildhall"], "Bloomsbury", 2),
     ],
     food: [
@@ -56,9 +54,9 @@ london: {
 tucson: {
     local: [
       q("Tucson sits in which desert?", ["the Mojave", "the Sonoran", "the Great Basin only", "the Chihuahuan"], "the Sonoran", 1),
-      q("Saguaro National Park flanks Tucson on the…", ["only the north as a single unit", "east and west", "only the south as a park of organ pipe", "only the city center"], "east and west", 2),
+      q("Saguaro National Park flanks Tucson on the…", ["north side, as one unit", "east and west", "south side, by Organ Pipe", "city center"], "east and west", 2),
       q("The University of Arizona is in…", ["Phoenix", "Tucson", "Flagstaff", "Yuma"], "Tucson", 1),
-      q("Tucson's historic core includes…", ["only the airport", "the Presidio and downtown", "only Kitt Peak as downtown", "only Nogales"], "the Presidio and downtown", 2),
+      q("Tucson's historic core includes…", ["Tucson International Airport", "the Presidio and downtown", "the Kitt Peak observatories", "the Nogales border crossing"], "the Presidio and downtown", 2),
       q("Fourth Avenue is a…", ["interstate frontage road", "district of shops and the street fair", "dry riverbed with a bike path", "historic copper mine site"], "district of shops and the street fair", 2),
       q("The Santa Cruz River through Tucson is often…", ["a year-round barge canal", "dry at the surface", "a Great Lake", "tidal"], "dry at the surface", 2),
       q("Mount Lemmon is in the…", ["Grand Canyon", "Santa Catalinas", "White Mountains of N.H.", "Rockies of Colorado only"], "Santa Catalinas", 2),
@@ -72,9 +70,9 @@ tucson: {
 
     ],
     food: [
-      q("Tucson is a UNESCO City of…", ["Music only", "Gastronomy", "Literature only", "Film only"], "Gastronomy", 2),
+      q("Tucson is a UNESCO City of…", ["Music", "Gastronomy", "Literature", "Film"], "Gastronomy", 2),
       q("Sonoran hot dogs are wrapped in…", ["sauerkraut and spicy brown mustard", "bacon, then piled with beans and toppings", "Cincinnati chili and shredded cheese", "a flour tortilla with green chile"], "bacon, then piled with beans and toppings", 2),
-      q("White Sonora wheat and mesquite are part of…", ["New England baking only", "the Borderlands food story", "Pacific Northwest salmon only", "Cajun roux only"], "the Borderlands food story", 3),
+      q("White Sonora wheat and mesquite are part of…", ["New England baking", "the Borderlands food story", "Pacific Northwest salmon", "Cajun roux"], "the Borderlands food story", 3),
     ],
     nature: [
       q("A saguaro is a…", ["conifer tree of the northern taiga", "tall columnar cactus of the Sonoran Desert", "giant kelp of the Pacific coast", "mangrove of the Gulf of California"], "tall columnar cactus of the Sonoran Desert", 1),

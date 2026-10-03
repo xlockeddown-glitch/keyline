@@ -38,7 +38,6 @@ export const HISTORY_BANK: TriviaQ[] = [
   q("Alaska became a U.S. state in\u2026", ["1867", "1945", "1959", "1963"], "1959", 2),
   q("Prohibition in the U.S. was the\u2026", ["16th Amendment era", "18th Amendment era", "19th Amendment era", "14th Amendment era"], "18th Amendment era", 2),
   q("The 13th Amendment abolished\u2026", ["alcohol", "slavery", "poll taxes", "the draft"], "slavery", 1),
-  q("The Renaissance is associated first with\u2026", ["England", "Italy", "Russia", "Japan"], "Italy", 1),
   q("The printing press in Europe is tied to\u2026", ["Newton", "Gutenberg", "Galileo", "Watt"], "Gutenberg", 2),
   q("Martin Luther's 95 Theses are a start of the\u2026", ["Crusades", "Reformation", "Enlightenment", "Industrial Revolution"], "Reformation", 2),
   q("The Black Death in Europe peaked in the\u2026", ["1100s", "1340s", "1500s", "1700s"], "1340s", 2),

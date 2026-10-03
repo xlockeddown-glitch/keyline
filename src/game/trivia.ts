@@ -153,12 +153,6 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 			"360",
 			"24"
 		], "360"),
-		q("Tides are caused primarily by the gravity of the…", [
-			"Sun",
-			"Moon",
-			"Jupiter",
-			"Earth's core"
-		], "Moon")
 	],
 	political: [
 		q("How many voting members sit in the U.S. House of Representatives?", [
@@ -394,12 +388,7 @@ const TEXAS_LOCAL = [
 		"Salt flats along the Gulf",
 		"Pine forests of East Texas"
 	], "Limestone hills west of Austin"),
-	q("What is the capital of Texas?", [
-		"Houston",
-		"Dallas",
-		"Austin",
-		"San Antonio"
-	], "Austin"),
+	q("The Texas State Capitol in Austin is faced with which stone?", ["Sunset Red granite", "white Indiana limestone", "Vermont gray marble", "pink Hill Country sandstone"], "Sunset Red granite", 2),
 	q("The largest city in Texas by population is…", [
 		"Dallas",
 		"Austin",
@@ -593,10 +582,10 @@ const TEXAS_FOOD = [
 		"Frito pie, often with chili"
 	], "Yeast pastry, often with sausage", 2),
 	q("The breakfast taco is a staple of which Texas region?", [
-		"Panhandle only",
+		"Panhandle",
 		"Central and South Texas",
-		"East Texas piney woods only",
-		"El Paso only"
+		"East Texas piney woods",
+		"El Paso"
 	], "Central and South Texas", 1),
 	q("Pecan is the state tree of Texas and also a famous…", [
 		"Pie filling",
@@ -906,12 +895,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			], "Lockhart / Central Texas", 3)
 		],
 		arts: [
-			q("The Santa Fe Depot in Temple also houses a…", [
-				"Opera house",
-				"Railroad museum",
-				"Film studio",
-				"Ballet school"
-			], "Railroad museum", 1),
+			q("Temple's railroad museum was founded in 1973 under which earlier name?", ["Railroad and Pioneer Museum", "Santa Fe Heritage Hall", "Bell County Rail Center", "Harvey House Museum"], "Railroad and Pioneer Museum", 3),
 			q("Temple College sits in a city named for a…", [
 				"Spanish mission",
 				"Railroad engineer",
@@ -1301,10 +1285,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Ranch and hot sauce"
 			], "Mushy peas and salt/vinegar", 1),
 			q("Afternoon tea as a meal is associated with…", [
-				"Scotland only",
+				"France",
 				"Britain",
-				"Ireland only",
-				"Wales only"
+				"Italy",
+				"Spain"
 			], "Britain", 1),
 			q("A Cornish pasty is a…", [
 				"Soup",
@@ -1320,12 +1304,6 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			], "Britain", 2)
 		],
 		arts: [
-			q("The West End is London's…", [
-				"Financial core",
-				"Theatre district",
-				"Ship yard",
-				"Hill of palaces only"
-			], "Theatre district", 1),
 			q("The National Gallery sits on which square?", [
 				"Piccadilly Circus",
 				"Trafalgar Square",
@@ -1655,7 +1633,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Tucson is the seat of which Arizona county?", ["Maricopa", "Pima", "Pinal", "Santa Cruz"], "Pima", 1),
 			q("Arizona's state capital is…", ["Tucson", "Phoenix", "Flagstaff", "Yuma"], "Phoenix", 1),
 			q("Tucson's chief executive is the…", ["Governor", "Mayor", "County supervisor only", "Tribal chair"], "Mayor", 1),
-			q("Arizona has how many U.S. senators?", ["One", "Two", "Nine", "Fifteen"], "Two", 1)
+			q("After the 2020 census, Arizona holds how many U.S. House seats?", ["Five", "Nine", "Twelve", "Fifteen"], "Nine", 2)
 		],
 		food: [
 			q("A Sonoran hot dog is typically…", ["Plain with mustard only", "Bacon-wrapped, with beans, onion, and salsa", "Chicago-style with celery salt", "Smothered in chili and cheddar only"], "Bacon-wrapped, with beans, onion, and salsa", 1),
@@ -1696,7 +1674,6 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Fort York in Toronto dates to fighting in…", ["the American Civil War", "the War of 1812", "World War I", "the Fenian"], "the War of 1812", 2),
 			q("Union Station is Toronto's main…", ["subway-only stop", "intercity rail hall", "ferry terminal", "streetcar barn"], "intercity rail hall", 1),
 			q("Billy Bishop Airport sits on…", ["the mainland at Pearson", "the Toronto Islands", "Hamilton harbour only", "Lake Simcoe"], "the Toronto Islands", 2),
-			q("Toronto Pearson is the region's…", ["island STOL strip only", "main international airport", "union bus garage", "seaplane base downtown"], "main international airport", 1),
 			q("\"The 6ix\" is a nickname for…", ["Hamilton", "Toronto", "Ottawa", "Mississauga only"], "Toronto", 1),
 			q("First Canadian Place is a downtown Toronto…", ["ballpark", "bank tower", "university college", "market hall"], "bank tower", 2),
 			q("The Scarborough Bluffs are…", ["a mountain range north of the city", "lakeside cliffs on Lake Ontario", "a PATH concourse downtown", "a subway yard in the east end"], "lakeside cliffs on Lake Ontario", 2)
@@ -1753,7 +1730,6 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("L.A. City Hall's 1928 tower long acted as a…", ["port lighthouse", "city height limit", "oil derrick", "subway vent"], "city height limit", 2),
 			q("Grand Central Market downtown opened in…", ["1826", "1917", "1964", "2003"], "1917", 2),
 			q("The Farmers Market at Third and Fairfax dates to…", ["1884", "1934", "1968", "1994"], "1934", 2),
-			q("Dodger Stadium sits in…", ["Inglewood", "Chavez Ravine", "Pasadena's arroyo only", "Long Beach"], "Chavez Ravine", 1),
 			q("The Arts District is generally…", ["west of the 405 at the beach", "east of Alameda downtown", "on Catalina", "in the Palisades only"], "east of Alameda downtown", 2),
 			q("The Bradbury Building downtown dates to…", ["1798", "1893", "1928", "2003"], "1893", 2)
 		],
@@ -1846,7 +1822,6 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		local: [
 			q("New Orleans was founded in…", ["1607", "1718", "1803", "1865"], "1718", 1),
 			q("Jean-Baptiste Le Moyne de Bienville is credited with founding…", ["Baton Rouge", "New Orleans", "Mobile only", "Natchez only"], "New Orleans", 1),
-			q("The French Quarter is also called the…", ["Garden District", "Vieux Carré", "Warehouse District", "Bywater only"], "Vieux Carré", 1),
 			q("New Orleans is nicknamed the Crescent City because of…", ["a moon festival", "the bend of the Mississippi", "a cathedral spire", "Lake Pontchartrain's shape only"], "the bend of the Mississippi", 1),
 			q("Another common nickname for New Orleans is the…", ["Windy City", "Big Easy", "Hub of the Universe", "Emerald City"], "Big Easy", 1),
 			q("Jackson Square was originally called…", ["Congo Square", "Place d'Armes", "Lafayette Square", "Lee Circle"], "Place d'Armes", 2),
@@ -1926,12 +1901,6 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"between New Jersey and Staten Island",
 				"west of the Hudson near Newark"
 			], "between Connecticut and the North Shore", 2),
-			q("What is the capital of New York State?", [
-				"New York City",
-				"Albany",
-				"Buffalo",
-				"Syracuse"
-			], "Albany", 1),
 			q("Niagara Falls sits on the border of New York and…", [
 				"Pennsylvania",
 				"Canada (Ontario)",
@@ -2034,12 +2003,6 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Far south at San Jose",
 				"Open ocean"
 			], "East", 1),
-			q("What is the capital of California?", [
-				"Los Angeles",
-				"San Francisco",
-				"Sacramento",
-				"San Diego"
-			], "Sacramento", 1),
 			q("Yosemite National Park is in which U.S. state?", [
 				"Nevada",
 				"California",
@@ -2094,12 +2057,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Hockey",
 			"Soccer"
 		], "Baseball", 2)],
-		political: [q("California has how many U.S. senators?", [
-			"One",
-			"Two",
-			"Four",
-			"Fifty-two"
-		], "Two", 1), q("Silicon Valley is primarily in which region relative to SF?", [
+		political: [q("After the 2020 census, California holds how many U.S. House seats?", ["Thirty-eight", "Forty-five", "Fifty-two", "Sixty"], "Fifty-two", 2), q("Silicon Valley is primarily in which region relative to SF?", [
 			"North toward wine country only",
 			"South along the Peninsula",
 			"East of Tahoe",
@@ -2250,12 +2208,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Southeast",
 				"Due west only"
 			], "Southeast", 2),
-			q("What is the capital of Illinois?", [
-				"Chicago",
-				"Springfield",
-				"Peoria",
-				"Rockford"
-			], "Springfield", 1),
+			q("Illinois's official state slogan, stamped on its license plates, is the Land of…", ["Lincoln", "Lakes", "Liberty", "Corn"], "Lincoln", 1),
 			q("Chicago sits on which Great Lake?", [
 				"Superior",
 				"Michigan",
@@ -2310,12 +2263,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Blackhawks",
 			"Fire only"
 		], "Bears", 1)],
-		political: [q("Illinois has how many U.S. senators?", [
-			"One",
-			"Two",
-			"Eighteen",
-			"Twenty"
-		], "Two", 1), q("Chicago is in which county?", [
+		political: [q("After the 2020 census, Illinois holds how many U.S. House seats?", ["Eleven", "Seventeen", "Twenty-two", "Twenty-seven"], "Seventeen", 2), q("Chicago is in which county?", [
 			"Lake",
 			"Cook",
 			"DuPage",
@@ -2358,12 +2306,6 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Bridge crossing to Canada",
 				"Freeway through downtown"
 			], "City-suburb boundary line", 2),
-			q("What is the capital of Michigan?", [
-				"Detroit",
-				"Lansing",
-				"Ann Arbor",
-				"Grand Rapids"
-			], "Lansing", 1),
 			q("Michigan is split into a Lower Peninsula and an…", [
 				"Island chain only",
 				"Upper Peninsula",
@@ -2441,10 +2383,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			"Toledo"
 		], "Detroit", 2)],
 		arts: [q("Aretha Franklin is closely associated with which city?", [
-			"Memphis only",
+			"Memphis",
 			"Detroit",
-			"New Orleans only",
-			"Philadelphia only"
+			"New Orleans",
+			"Philadelphia"
 		], "Detroit", 1), q("The Heidelberg Project is a Detroit outdoor…", [
 			"Ballpark of the Detroit Tigers",
 			"Art environment of houses and lots",
@@ -2459,14 +2401,14 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Phoenix is Arizona's…", ["second city after Tucson", "capital and largest city", "only university town", "port"], "capital and largest city", 1),
 			q("The Colorado River in Arizona is famous for carving…", ["Carlsbad Caverns", "the Grand Canyon", "Monument Valley only", "Lake Tahoe"], "the Grand Canyon", 1),
 			q("Tohono O'odham lands neighbor Tucson to the…", ["far north at Page", "west and south", "only the New Mexico line", "the Utah border"], "west and south", 2),
-			q("Saguaro National Park is split into districts on which sides of Tucson?", ["North and south only", "East and west", "Only downtown", "Only on the reservation"], "East and west", 2),
+			q("Saguaro National Park is split into districts on which sides of Tucson?", ["North and south", "East and west", "Downtown", "On the reservation"], "East and west", 2),
 			q("Arizona became a U.S. state in…", ["1848", "1863", "1912", "1959"], "1912", 2),
 			q("The Arizona-Sonora Desert Museum sits west of Tucson near…", ["Tucson Mountain Park", "the airport only", "Old Main", "Reid Park"], "Tucson Mountain Park", 2),
 			q("Picacho Peak is a landmark on the road between Tucson and…", ["Yuma", "Phoenix", "Flagstaff", "Nogales only"], "Phoenix", 2),
 			q("Bisbee, southeast of Tucson, is an old…", ["ski town", "copper mining town", "port", "state capital"], "copper mining town", 2),
 			q("Nogales sits on Arizona's border with…", ["New Mexico", "Mexico", "California", "Utah"], "Mexico", 1),
 			q("The Gila River is a major Arizona tributary of the…", ["Rio Grande", "Colorado River", "Mississippi", "Pecos"], "Colorado River", 2),
-			q("Flagstaff sits near which volcano-field mountain?", ["Mount Baldy only", "the San Francisco Peaks", "the Superstitions only", "Mount Graham only"], "the San Francisco Peaks", 2),
+			q("Flagstaff sits near which volcano-field mountain?", ["Mount Baldy", "the San Francisco Peaks", "the Superstitions", "Mount Graham"], "the San Francisco Peaks", 2),
 			q("Organ Pipe Cactus National Monument is in…", ["southern Arizona", "the Utah strip", "New Mexico", "Nevada"], "southern Arizona", 2),
 			q("A monsoon in the Tucson calendar is a…", ["winter snow", "summer thunderstorm season", "spring freeze", "fall hurricane landfall"], "summer thunderstorm season", 1),
 			q("The Santa Catalina Mountains rise on which side of Tucson?", ["south", "north", "due west only", "inside Mexico"], "north", 1),
@@ -2481,9 +2423,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Spring training baseball in Arizona is called the…", ["Grapefruit League", "Cactus League", "Desert League", "Sun League"], "Cactus League", 2)
 		],
 		political: [
-			q("Arizona's capital is…", ["Tucson", "Phoenix", "Prescott still", "Flagstaff"], "Phoenix", 1),
 			q("Arizona shares an international border with…", ["Canada", "Mexico", "both oceans", "Texas only"], "Mexico", 1),
-			q("Arizona has how many U.S. House seats that vary by census — the state joined the Union in…", ["1848", "1863 as a state", "1912", "1959"], "1912", 2)
 		],
 		food: [
 			q("A chimichanga is often claimed (with arguments) as a fry-up from…", ["California taquerias in San Diego", "Arizona / border Mexican restaurants", "New England diners and clam shacks", "Midwest supper clubs and bars"], "Arizona / border Mexican restaurants", 2),
@@ -2511,8 +2451,8 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Mississauga is a large city…", ["just east of Montreal, in Quebec", "immediately west of Toronto", "on the shore of Hudson Bay", "north of Winnipeg, in Manitoba"], "immediately west of Toronto", 1)
 		],
 		sports: [
-			q("The CFL Argonauts play football in…", ["Hamilton only", "Toronto", "Ottawa only", "Winnipeg only"], "Toronto", 1),
-			q("Canada's national winter sport is…", ["lacrosse only", "ice hockey", "curling only", "skiing only"], "ice hockey", 1),
+			q("The CFL Argonauts play football in…", ["Hamilton", "Toronto", "Ottawa", "Winnipeg"], "Toronto", 1),
+			q("Canada's national winter sport is…", ["lacrosse", "ice hockey", "curling", "skiing"], "ice hockey", 1),
 			q("The Toronto FC play which sport?", ["Hockey", "Soccer", "Baseball", "Football"], "Soccer", 1)
 		],
 		political: [
@@ -2534,7 +2474,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		local: [
 			q("California's nickname is the…", ["Sunshine State", "Golden State", "Silver State", "Evergreen State"], "Golden State", 1),
 			q("The Pacific Ocean lies on which side of Los Angeles?", ["east", "west", "due north only", "the Nevada line"], "west", 1),
-			q("The San Andreas is a famous California…", ["river", "fault", "freeway only", "aqueduct plant"], "fault", 1),
+			q("The San Andreas Fault marks the boundary between the Pacific Plate and the…", ["Nazca Plate", "Cocos Plate", "North American Plate", "Juan de Fuca Plate"], "North American Plate", 2),
 			q("Santa Ana winds are…", ["wet ocean breezes", "dry offshore winds", "arctic fronts", "monsoon storms"], "dry offshore winds", 2),
 			q("The 405 is a major…", ["subway line in the L.A. area", "freeway in the L.A. area", "hiking trail in the hills", "ferry route to Catalina"], "freeway in the L.A. area", 1),
 			q("Pasadena sits generally…", ["on the coast at Venice", "northeast of downtown L.A.", "in Orange County's far south", "on Catalina"], "northeast of downtown L.A.", 1),
@@ -2551,7 +2491,6 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("USC's teams are the…", ["Bruins", "Trojans", "Bears", "Sun Devils"], "Trojans", 1)
 		],
 		political: [
-			q("California's capital is…", ["Los Angeles", "Sacramento", "San Diego", "San Jose"], "Sacramento", 1),
 			q("California borders Mexico to the…", ["north", "south", "east only at Nevada", "west on the Pacific as a land border"], "south", 1),
 			q("Los Angeles County is among the…", ["smallest U.S. counties", "most populous U.S. counties", "only independent cities", "Canadian districts"], "most populous U.S. counties", 1)
 		],
@@ -2698,13 +2637,15 @@ function localWeights(tier?: Tier): [number, number, number] {
 		3
 	];
 }
+/** Last-resort card when a pool is empty: reuse the shipped math card rather than a second copy of it. */
+const FALLBACK_Q: TriviaQ = MATH_MORE.find((x) => x.q === "How many degrees in a right angle?") ?? MATH_MORE[0];
 function fresh(list: TriviaQ[], avoid: Set<string>): TriviaQ[] {
 	const open = list.filter((x) => !isSeen(x, avoid));
 	return open.length ? open : list;
 }
 function drawPrefer(list: TriviaQ[], prefer: TriviaDiff, avoid: Set<string>, strict = false): TriviaQ {
 	if (!list.length) {
-		return q("How many degrees in a right angle?", ["45", "90", "180", "360"], "90", 1);
+		return FALLBACK_Q;
 	}
 	const pool = fresh(list, avoid);
 	const exact = pool.filter((x) => (x.diff ?? 2) === prefer);
@@ -2933,7 +2874,7 @@ export function pickTrivia(
 	const restQs = [...cityPool, ...globalPool].filter((x) => !allowed.has(effectiveRarity(x)));
 	const again = oldestSeen([...bins.flatMap((b) => b.qs), ...restQs], recencyRank(avoid));
 	if (again) return again;
-	return q("How many degrees in a right angle?", ["45", "90", "180", "360"], "90", 1);
+	return FALLBACK_Q;
 }
 
 /** Distinct cards (near-duplicates merged) a lamp of each tier can draw, per category, for one city. */

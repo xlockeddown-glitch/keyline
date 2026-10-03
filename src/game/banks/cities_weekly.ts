@@ -10,7 +10,7 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
     ],
     food: [
       q("Migas on an Austin breakfast plate usually means…", ["a prune kolache with sweet glaze", "eggs scrambled with tortilla strips", "ceviche of lime-cured shrimp", "Scottish oatmeal with brown sugar"], "eggs scrambled with tortilla strips", 2),
-      q("Umami is the taste quality often described as…", ["only sour", "savory", "only bitter", "only sweet"], "savory", 1),
+      q("Umami is the taste quality often described as…", ["sour", "savory", "bitter", "sweet"], "savory", 1),
     ],
     nature: [
       q("Barton Springs' cold clear water comes mainly from…", ["desalination plants on the Gulf", "the Edwards Aquifer", "Lake Michigan diversion", "the Red River only"], "the Edwards Aquifer", 2),
@@ -49,7 +49,7 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
   },
   sf: {
     political: [
-      q("San Francisco City Hall's dome is a landmark of the…", ["only Sunset dunes", "Civic Center", "only Alcatraz yard", "only Twin Peaks summit as City Hall"], "Civic Center", 2),
+      q("San Francisco City Hall's dome is a landmark of the…", ["Sunset dunes", "Civic Center", "Alcatraz yard", "Twin Peaks summit"], "Civic Center", 2),
     ],
     local: [
       q("Alcatraz Island sits in…", ["Lake Tahoe", "San Francisco Bay", "the Sacramento River delta only", "Monterey Canyon as an island"], "San Francisco Bay", 1),
@@ -63,10 +63,9 @@ export const CITY_WEEKLY: Partial<Record<CityId, Partial<Record<TriviaCat, Trivi
       q("New York City's five boroughs are each…", ["independent cities with mayors", "counties of New York State", "Canadian provinces", "ZIP code areas with no government"], "counties of New York State", 3),
     ],
     local: [
-      q("The Hudson River forms much of Manhattan's…", ["eastern shore only", "western edge", "only Central Park lake", "only Brooklyn's oceanfront"], "western edge", 1),
+      q("The Hudson River forms much of Manhattan's…", ["eastern shore", "western edge", "Central Park lake", "Brooklyn's oceanfront"], "western edge", 1),
     ],
     arts: [
-      q("The Mona Lisa hangs in the…", ["British Museum", "Louvre", "Uffizi only as its permanent home", "Met's armor hall"], "Louvre", 1),
     ],
   },
   chicago: {

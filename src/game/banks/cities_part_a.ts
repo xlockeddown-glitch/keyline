@@ -5,7 +5,7 @@ export const CITY_EXTRA_PART_A: Partial<Record<CityId, Partial<Record<TriviaCat,
 austin: {
     local: [
       q("Sixth Street is Austin's famous…", ["river dam", "entertainment strip", "airport runway", "capitol lawn"], "entertainment strip", 1),
-      q("The Drag in Austin is along…", ["Congress Avenue only", "Guadalupe Street by UT", "MoPac only", "Burnet Road only"], "Guadalupe Street by UT", 2),
+      q("The Drag in Austin is along…", ["Congress Avenue downtown", "Guadalupe Street by UT", "South Lamar near Zilker", "Burnet Road up north"], "Guadalupe Street by UT", 2),
       q("Rainey Street is a…", ["museum and arts campus", "bungalow-bar district", "rail freight yard", "historic state cemetery"], "bungalow-bar district", 2),
       q("Zilker Park hosts…", ["South by Southwest's main indoor halls", "the Austin City Limits Music Festival", "the State Fair of Texas each autumn", "the Houston Livestock Show and Rodeo"], "the Austin City Limits Music Festival", 2),
       q("Mount Bonnell looks over…", ["the Gulf coast near Corpus Christi", "Lake Austin and the western hills", "the Red River on the Oklahoma line", "Caddo Lake in East Texas"], "Lake Austin and the western hills", 1),
@@ -55,7 +55,6 @@ chicago: {
 toronto: {
     local: [
       q("The CN Tower was built as a…", ["domed stadium for the Blue Jays", "communications and observation tower", "shopping mall and office tower", "home for Ontario's parliament"], "communications and observation tower", 1),
-      q("Toronto sits on which Great Lake?", ["Superior", "Michigan", "Huron", "Ontario"], "Ontario", 1),
       q("The PATH is Toronto's…", ["downtown subway loop", "downtown underground walkway", "airport rail link to Pearson", "ferry service to Niagara"], "downtown underground walkway", 2),
       q("Yonge Street is a…", ["subway maintenance yard", "long north–south main street", "lakeshore drive in Muskoka", "east–west highway in Ottawa"], "long north–south main street", 2),
       q("Queen's Park is the site of…", ["Parliament in Ottawa", "Ontario's legislature", "the CN Tower", "Casa Loma only"], "Ontario's legislature", 2),
@@ -69,7 +68,7 @@ toronto: {
     ],
     food: [
       q("A peameal bacon sandwich is a…", ["Montreal smoked meat", "Toronto St. Lawrence classic", "poutine of Quebec", "beaver tail"], "Toronto St. Lawrence classic", 2),
-      q("Toronto's Chinatown and Kensington are…", ["only suburbs of Mississauga as these names", "adjacent downtown food and shop districts", "only Ottawa", "only Niagara"], "adjacent downtown food and shop districts", 2),
+      q("Toronto's Chinatown and Kensington are…", ["Mississauga suburban districts", "adjacent downtown market districts", "Ottawa's market neighbourhoods", "Niagara Falls tourist strips"], "adjacent downtown market districts", 2),
     ],
     sports: [
       q("The Maple Leafs play hockey at…", ["Rogers Centre as hockey only", "Scotiabank Arena", "BMO Field", "the Gardens still"], "Scotiabank Arena", 1),
@@ -103,7 +102,7 @@ boston: {
     ],
     arts: [
       q("The Boston Symphony plays in…", ["Fenway", "Symphony Hall", "Faneuil as a concert hall of this name", "the State House"], "Symphony Hall", 1),
-      q("The MFA is the…", ["only Isabella Stewart Gardner", "Museum of Fine Arts, Boston", "only Harvard's Fogg", "only the ICA"], "Museum of Fine Arts, Boston", 2),
+      q("The MFA is the…", ["Isabella Stewart Gardner", "Museum of Fine Arts, Boston", "Harvard's Fogg", "the ICA"], "Museum of Fine Arts, Boston", 2),
     ],
     sports: [
       q("The Celtics play at…", ["Fenway", "TD Garden", "Gillette", "Harvard Stadium"], "TD Garden", 1),

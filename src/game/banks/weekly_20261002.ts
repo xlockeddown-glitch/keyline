@@ -17,7 +17,7 @@ export const CITY_WEEKLY_20261002: Partial<Record<CityId, Partial<Record<TriviaC
       q("University of Mary Hardin-Baylor's teams are the…", ["Crusaders", "Longhorns", "Aggies", "Horned Frogs"], "Crusaders", 2),
     ],
     food: [
-      q("A Central Texas plate lunch often features chicken-fried steak with…", ["cream gravy", "marinara only", "hollandaise only", "soy glaze only"], "cream gravy", 1),
+      q("A Central Texas plate lunch often features chicken-fried steak with…", ["cream gravy", "marinara", "hollandaise", "soy glaze"], "cream gravy", 1),
       q("In the Temple–Waco corridor, a sausage kolache is typically a…", ["pastry wrapped around a link of sausage", "bowl of gumbo with sausage slices", "corn tortilla rolled around sausage", "biscuit split with sausage gravy"], "pastry wrapped around a link of sausage", 1),
     ],
     political: [
@@ -25,7 +25,7 @@ export const CITY_WEEKLY_20261002: Partial<Record<CityId, Partial<Record<TriviaC
     ],
     nature: [
       q("Belton Lake near Temple was built chiefly on which river?", ["the Leon River", "the Rio Grande", "the Mississippi", "the Colorado of California"], "the Leon River", 2),
-      q("Live oaks and pecan trees are common shade trees of…", ["Central Texas towns like Temple", "only Arctic tundra settlements", "only the Olympic rainforest as natives of Temple", "only Hawaiian lava fields"], "Central Texas towns like Temple", 1),
+      q("Live oaks and pecan trees are common shade trees of…", ["Central Texas towns like Temple", "Arctic tundra settlements", "the Olympic rainforest", "Hawaiian lava fields"], "Central Texas towns like Temple", 1),
     ],
   },
   austin: {
@@ -33,7 +33,6 @@ export const CITY_WEEKLY_20261002: Partial<Record<CityId, Partial<Record<TriviaC
       q("Each summer evening, crowds watch Mexican free-tailed bats emerge from under…", ["the Congress Avenue Bridge", "the Golden Gate Bridge", "Tower Bridge", "the Brooklyn Bridge"], "the Congress Avenue Bridge", 1),
     ],
     political: [
-      q("Austin is the county seat of…", ["Travis County", "Harris County", "Dallas County", "Bexar County"], "Travis County", 1),
       q("The Texas Legislature that meets in Austin is…", ["bicameral (House and Senate)", "a single chamber only", "the U.S. Congress relocated", "a city council of 150"], "bicameral (House and Senate)", 2),
     ],
     arts: [
@@ -51,7 +50,7 @@ export const CITY_WEEKLY_20261002: Partial<Record<CityId, Partial<Record<TriviaC
       q("Arizona Wildcats basketball plays on campus at…", ["McKale Center", "Madison Square Garden", "Cameron Indoor only", "The Forum in Inglewood"], "McKale Center", 2),
     ],
     food: [
-      q("A Sonoran hot dog is typically served in a…", ["soft bolillo-style bun", "pretzel only", "lettuce wrap only", "croissant only"], "soft bolillo-style bun", 2),
+      q("A Sonoran hot dog is typically served in a…", ["soft bolillo-style bun", "salted pretzel roll", "crisp lettuce wrap", "buttery croissant"], "soft bolillo-style bun", 2),
     ],
     nature: [
       q("Arizona's state tree, common around Tucson, is the…", ["palo verde", "sugar maple", "coast redwood", "white birch"], "palo verde", 2),
@@ -76,9 +75,8 @@ export const WEEKLY_SCIENCE_20261002: TriviaQ[] = [
 ];
 
 export const WEEKLY_HISTORY_20261002: TriviaQ[] = [
-  q("The United Nations was founded in…", ["1945", "1918", "1865", "2001"], "1945", 1),
 ];
 
 export const WEEKLY_NATURE_20261002: TriviaQ[] = [
-  q("Migration in birds often means seasonal travel between…", ["breeding and wintering grounds", "only different floors of one nest", "only aquarium tanks", "only city subway lines"], "breeding and wintering grounds", 1),
+  q("Migration in birds often means seasonal travel between…", ["breeding and wintering grounds", "different floors of one nest", "aquarium tanks", "city subway lines"], "breeding and wintering grounds", 1),
 ];

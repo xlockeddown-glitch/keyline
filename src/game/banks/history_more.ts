@@ -43,7 +43,6 @@ export const HISTORY_MORE: TriviaQ[] = [
   q("The Holy Roman Empire was centered in…", ["Spain and Portugal", "German-speaking Europe", "England and Wales", "Russia and Ukraine"], "German-speaking Europe", 2),
   q("The Domesday Book is a survey of…", ["France under Louis XIV", "England under William I", "Spain under Philip II", "Russia under Peter"], "England under William I", 3),
   q("In 1215, King John sealed the Magna Carta at…", ["Runnymede", "Hastings", "Agincourt", "Windsor Castle"], "Runnymede", 2),
-  q("The Hundred Years' War was between…", ["Spain and Portugal", "England and France", "Ottomans and Hungary", "Genoa and Venice"], "England and France", 2),
   q("Joan of Arc fought in…", ["the Hundred Years' War", "the Reconquista", "the First Crusade", "the Wars of the Roses"], "the Hundred Years' War", 2),
   q("The Wars of the Roses were English civil wars of the…", ["11th century", "15th century", "17th century", "19th century"], "15th century", 3),
   q("Henry VIII broke with Rome over…", ["the Spanish Armada's invasion", "his marriage and the English church", "the Glorious Revolution of 1688", "trade with the American colonies"], "his marriage and the English church", 2),
