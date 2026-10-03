@@ -55,6 +55,16 @@ export function VaultModal() {
   }, [openVault?.question, openVault?.deadline]);
 
   const quiz = openVault?.question ?? null;
+  const isOpen = Boolean(openVault);
+
+  // 0.0.52: phones hide the map's +/- zoom while the lamp card is open — the card fills the screen there and the
+  // zoom (a Leaflet control above the overlay) sat on its top-left corner, over the lamp. CSS keys off this class.
+  useEffect(() => {
+    if (!isOpen) return;
+    const root = document.documentElement;
+    root.classList.add("lamp-card-open");
+    return () => root.classList.remove("lamp-card-open");
+  }, [isOpen]);
 
   useEffect(() => {
     if (!quiz) return;
@@ -99,140 +109,145 @@ export function VaultModal() {
 
   return (
     <div className={`vault-night tier-${poi.tier} absolute inset-0 z-[800] flex items-end justify-center p-3 sm:items-center`}>
-      <div className="plate w-full max-w-lg p-5 sm:p-6">
-        <div className="flex items-start gap-4">
-          <div className={`vault-hero vault-pin tier-${poi.tier}${series?.kind === "stack" ? " is-stack" : series ? " is-run" : ""}`}>
-            {series?.kind === "stack" ? (
-              <span className="stack-lamp">
-                <i className="lantern-cap" />
-                <i className="stack-globe a">
-                  <i className="lantern-glass" />
-                </i>
-                <i className="stack-globe b">
-                  <i className="lantern-glass" />
-                </i>
-                <i className="lantern-post" />
-              </span>
-            ) : (
-              <span className="lantern lantern-hero">
-                <i className="lantern-cap" />
-                <i className="lantern-frame">
-                  <i className="lantern-glass" />
-                </i>
-                <i className="lantern-post" />
-              </span>
-            )}
+      <div className="plate lamp-card w-full max-w-lg">
+        <div className="lamp-card-body px-5 pt-5 sm:px-6 sm:pt-6">
+          <div className="flex items-start gap-4">
+            <div className={`vault-hero vault-pin tier-${poi.tier}${series?.kind === "stack" ? " is-stack" : series ? " is-run" : ""}`}>
+              {series?.kind === "stack" ? (
+                <span className="stack-lamp">
+                  <i className="lantern-cap" />
+                  <i className="stack-globe a">
+                    <i className="lantern-glass" />
+                  </i>
+                  <i className="stack-globe b">
+                    <i className="lantern-glass" />
+                  </i>
+                  <i className="lantern-post" />
+                </span>
+              ) : (
+                <span className="lantern lantern-hero">
+                  <i className="lantern-cap" />
+                  <i className="lantern-frame">
+                    <i className="lantern-glass" />
+                  </i>
+                  <i className="lantern-post" />
+                </span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="kicker">
+                {openVault.spark
+                  ? `Spark · earn a ${TIER_LABEL[poi.tier]} match`
+                  : series
+                  ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
+                  : `${TIER_LABEL[poi.tier]} lamp · ${KIND_LABEL[poi.kind]}`}
+                {catMeta ? ` · ${catMeta.label}` : ""}
+              </p>
+              <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
+              {!quiz ? (
+                <>
+                  <p className="mt-2 text-sm text-pretty text-fg-muted">{poi.lore}</p>
+                  {ground ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{ground}</p> : null}
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+                    {openVault.spark ? (
+                      <>
+                        No match spent. A right answer is a spare <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]}
+                      </>
+                    ) : (
+                      <>
+                        Spends one <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]} match
+                        {series ? ` · pays a ${TIER_LABEL[series.pay].toLowerCase()} if you clear` : ""}
+                      </>
+                    )}
+                  </p>
+                </>
+              ) : null}
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="kicker">
-              {openVault.spark
-                ? `Spark · earn a ${TIER_LABEL[poi.tier]} match`
-                : series
-                ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
-                : `${TIER_LABEL[poi.tier]} lamp · ${KIND_LABEL[poi.kind]}`}
-              {catMeta ? ` · ${catMeta.label}` : ""}
-            </p>
-            <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
-            {!quiz ? (
-              <>
-                <p className="mt-2 text-sm text-pretty text-fg-muted">{poi.lore}</p>
-                {ground ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{ground}</p> : null}
-                <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-                  {openVault.spark ? (
-                    <>
-                      No match spent. A right answer is a spare <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]}
-                    </>
-                  ) : (
-                    <>
-                      Spends one <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]} match
-                      {series ? ` · pays a ${TIER_LABEL[series.pay].toLowerCase()} if you clear` : ""}
-                    </>
-                  )}
-                </p>
-              </>
-            ) : null}
-          </div>
-        </div>
 
-        {!quiz ? (
-          <div className="mt-5">
-            <p className="kicker">Choose a field</p>
-            <p className="mt-1 text-sm text-fg-muted">
-              {series
-                ? "One field for all trivia cards — they get harder as you go."
-                : "Six this lamp. They rotate. The trivia cards prefer the ground you're on."}
-            </p>
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {offered.map((id) => {
-                const c = TRIVIA_CATS.find((x) => x.id === id);
-                if (!c) return null;
-                const Icon = CAT_ICON[c.id];
-                return (
+          {!quiz ? (
+            <div className="mt-5">
+              <p className="kicker">Choose a field</p>
+              <p className="mt-1 text-sm text-fg-muted">
+                {series
+                  ? "One field for all trivia cards — they get harder as you go."
+                  : "Six this lamp. They rotate. The trivia cards prefer the ground you're on."}
+              </p>
+              <div className="field-grid mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {offered.map((id) => {
+                  const c = TRIVIA_CATS.find((x) => x.id === id);
+                  if (!c) return null;
+                  const Icon = CAT_ICON[c.id];
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className="field-card"
+                      title={c.blurb}
+                      onClick={() => pickCategory(c.id, performance.now())}
+                    >
+                      <span className="field-stamp">
+                        <Icon className="size-4" strokeWidth={1.75} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="font-display block text-lg leading-none">{c.label}</span>
+                        <span className="field-blurb mt-1 block text-xs text-fg-subtle">{c.blurb}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="plate-quiz mt-4">
+              <div className={`wick ${wickClass}`} aria-hidden>
+                <i style={{ width: `${frac * 100}%` }} />
+              </div>
+              <p className="plate-meta">
+                {series ? <span>Trivia card {(openVault.run?.step ?? 0) + 1} of {steps}</span> : null}
+                <span>{DIFF_LABEL[quiz.diff]}</span>
+                <span className={`grade is-${grade.toLowerCase()}`}>{grade}</span>
+                <span className="tabular-nums">{(left / 1000).toFixed(1)}s</span>
+                <span className="text-fg-subtle">×{DIFF_MULT[quiz.diff]}</span>
+              </p>
+              {series ? (
+                <div className="mt-2 flex gap-1.5" aria-hidden>
+                  {Array.from({ length: steps }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 flex-1 rounded-full ${i <= (openVault.run?.step ?? 0) ? "bg-accent" : "bg-bg-subtle"}`}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              <p className="plate-q">{quiz.q}</p>
+              <div className="plate-choices">
+                {quiz.choices.map((c, i) => (
                   <button
-                    key={c.id}
+                    key={c}
                     type="button"
-                    className="field-card"
-                    onClick={() => pickCategory(c.id, performance.now())}
+                    className="plate-choice"
+                    onClick={() => {
+                      sfx.ui();
+                      answer(c, performance.now());
+                    }}
                   >
-                    <span className="field-stamp">
-                      <Icon className="size-4" strokeWidth={1.75} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="font-display block text-lg leading-none">{c.label}</span>
-                      <span className="mt-1 block text-xs text-fg-subtle">{c.blurb}</span>
-                    </span>
+                    <span className="plate-letter">{LETTERS[i]}</span>
+                    <span className="min-w-0 text-pretty">{c}</span>
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="plate-quiz mt-4">
-            <div className={`wick ${wickClass}`} aria-hidden>
-              <i style={{ width: `${frac * 100}%` }} />
-            </div>
-            <p className="plate-meta">
-              {series ? <span>Trivia card {(openVault.run?.step ?? 0) + 1} of {steps}</span> : null}
-              <span>{DIFF_LABEL[quiz.diff]}</span>
-              <span className={`grade is-${grade.toLowerCase()}`}>{grade}</span>
-              <span className="tabular-nums">{(left / 1000).toFixed(1)}s</span>
-              <span className="text-fg-subtle">×{DIFF_MULT[quiz.diff]}</span>
-            </p>
-            {series ? (
-              <div className="mt-2 flex gap-1.5" aria-hidden>
-                {Array.from({ length: steps }, (_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1.5 flex-1 rounded-full ${i <= (openVault.run?.step ?? 0) ? "bg-accent" : "bg-bg-subtle"}`}
-                  />
                 ))}
               </div>
-            ) : null}
-
-            <p className="plate-q">{quiz.q}</p>
-            <div className="plate-choices">
-              {quiz.choices.map((c, i) => (
-                <button
-                  key={c}
-                  type="button"
-                  className="plate-choice"
-                  onClick={() => {
-                    sfx.ui();
-                    answer(c, performance.now());
-                  }}
-                >
-                  <span className="plate-letter">{LETTERS[i]}</span>
-                  <span className="min-w-0 text-pretty">{c}</span>
-                </button>
-              ))}
+              <p className="mt-2 text-xs text-fg-subtle">A–D or 1–4</p>
             </div>
-            <p className="mt-2 text-xs text-fg-subtle">A–D or 1–4</p>
-          </div>
-        )}
-
-        <button type="button" className="btn btn-ghost mt-4 w-full" onClick={closeVault}>
-          {series && openVault.run?.spent ? `Forfeit ${series.name}` : "Leave lamp"}
-        </button>
+          )}
+        </div>
+        {/* 0.0.52: the leave/forfeit action sits in a footer that never scrolls, so it is on screen on short phones. */}
+        <div className="lamp-card-foot px-5 pt-4 pb-5 sm:px-6 sm:pb-6">
+          <button type="button" className="btn btn-ghost w-full" onClick={closeVault}>
+            {series && openVault.run?.spent ? `Forfeit ${series.name}` : "Leave lamp"}
+          </button>
+        </div>
       </div>
     </div>
   );

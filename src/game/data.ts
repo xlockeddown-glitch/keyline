@@ -3047,6 +3047,9 @@ const nashville: City = {
   region: "Tennessee",
   blurb: "Music City. Neon on Lower Broad, a mother church of country, the Cumberland at the foot of the hill.",
   spawn: { lat: 36.1605, lng: -86.7772 },
+  // 0.0.52: walks start on Broadway in front of Robert's Western World, so a new walker's first card is a lamp —
+  // from the spawn curb the Lower Broad Tailor (outfitter) was the nearest place.
+  start: { lat: 36.1607, lng: -86.7779 },
   pois: [
     poi({
       id: "nash-ryman",

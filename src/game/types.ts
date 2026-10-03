@@ -97,6 +97,8 @@ export type City = {
   region: string;
   blurb: string;
   spawn: { lat: number; lng: number };
+  /** 0.0.52: where a new walk starts when it isn't the spawn anchor (spawn still seeds the Daily Lantern Run, night-market and street bakes). */
+  start?: { lat: number; lng: number };
   pois: Poi[];
 };
 

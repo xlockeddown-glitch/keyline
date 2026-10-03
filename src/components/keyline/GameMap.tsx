@@ -590,7 +590,7 @@ export function GameMap() {
   useEffect(() => {
     const city = CITIES[cityId];
     const land = useGame.getState().landAtStation;
-    const dock = land ? fareDesk(city) : city.spawn;
+    const dock = land ? fareDesk(city) : (city.start ?? city.spawn);
     if (land) useGame.setState({ landAtStation: false });
     pos.current = { lat: dock.lat, lng: dock.lng, yaw: 0, speed: 0, stamina: 1 };
     waypoint.current = null;
