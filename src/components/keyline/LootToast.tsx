@@ -51,7 +51,7 @@ export function LootToast() {
                     <span className="text-fg-muted">
                       {" "}
                       · {loot.market.street} · +{loot.market.coin.toLocaleString()} coin
-                      {Object.values(loot.keys).some(Boolean) ? ", matches doubled" : ""}
+                      {loot.market.matches ? ` + ${loot.market.matches} match${loot.market.matches === 1 ? "" : "es"}` : ""}
                     </span>
                   </p>
                 ) : null}

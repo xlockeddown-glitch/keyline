@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { streetDrop } from "./streets";
-import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketPay, onMarket, pointOnMarket } from "./nightMarket";
+import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { pickTrivia, shuffled, DIFF_MULT, ASKED_KEEP } from "./trivia";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
@@ -106,6 +106,8 @@ type OpenVault = {
   deadline: number;
   run?: { step: number; steps: number; grades: LootDrop["grade"][]; spent: boolean };
   spark?: boolean;
+  /** Wall clock (Date.now) when this trivia card was dealt — `startedAt` is performance.now(). The night market open then is the one that pays. */
+  dealtAt?: number;
 };
 
 type FireworksShow = { kind: "mini" | "grand"; id: number };
@@ -777,14 +779,20 @@ export const useGame = create<GameState>((set, get) => ({
     const k = get().mapKeys.find((x) => x.id === id);
     if (!k) return;
     const mult = marketMult(get().cityId, Date.now(), { kind: "match", lat: k.lat, lng: k.lng });
+    // A street match always lands (as before); the market's second one respects the pocket cap and pays coin if it's full.
     const add = mult > 1 ? marketMatches(get().keys[k.tier], Math.max(matchCap(k.tier), get().keys[k.tier] + 1), mult) : 1;
+    const coin = mult > 1 ? marketOverflowCoin(k.tier, mult, add) : 0;
     const keys = { ...get().keys, [k.tier]: get().keys[k.tier] + add };
     sfx.pickup();
     set({
       keys,
+      points: get().points + coin,
       mapKeys: get().mapKeys.filter((x) => x.id !== id),
       lastKeyAt: Date.now(),
-      toast: mult > 1 ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}` : `${TIER_LABEL[k.tier]} match`,
+      toast:
+        mult > 1
+          ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}${coin ? ` + ${coin} coin (pocket full)` : ""}`
+          : `${TIER_LABEL[k.tier]} match`,
     });
     scheduleSave(get);
     window.setTimeout(() => {
@@ -933,6 +941,7 @@ export const useGame = create<GameState>((set, get) => ({
         deadline: now + (spark ? 20000 : 25000) + (spark ? (get().equipped === "scholar" ? 3000 : 0) : extra),
         run: series ? { step: 0, steps: series.steps, grades: [], spent: true } : undefined,
         spark,
+        dealtAt: Date.now(),
       },
     });
     if (series) scheduleSave(get);
@@ -978,15 +987,19 @@ export const useGame = create<GameState>((set, get) => ({
       }
       const have = get().keys[poi.tier] ?? 0;
       const cap = matchCap(poi.tier);
-      const sparkMult = marketMult(city.id, ov.startedAt, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng });
+      const sparkMult = marketMult(city.id, ov.dealtAt ?? Date.now(), { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng });
       const sparkAdd = marketMatches(have, cap, sparkMult);
-      const sparkTag = sparkMult > 1 ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} match${sparkAdd === 1 ? "" : "es"} from the wick.` : null;
+      const sparkCoin = sparkMult > 1 && have < cap ? marketOverflowCoin(poi.tier, sparkMult, sparkAdd) : 0;
+      const sparkTag =
+        sparkMult > 1
+          ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} match${sparkAdd === 1 ? "" : "es"} from the wick${sparkCoin ? ` + ${sparkCoin} coin (pocket full)` : ""}.`
+          : null;
       const spun = foldWheel(get, poi.tier);
       const boost = rollBoosts(get, true, elapsed, ov.category);
       const questHit = cleared(get, answered(get, true, elapsed <= 3000), poi);
       if (have >= cap) {
         sfx.correct();
-        const paid = payBoosts(get().keys, get().points + 12, boost);
+        const paid = payBoosts(get().keys, get().points + 12 * sparkMult, boost);
         set({
           ...used,
           ...bumpStreak(get),
@@ -1001,14 +1014,17 @@ export const useGame = create<GameState>((set, get) => ({
           loot: null,
           miss: null,
           ...spun,
-          toast: paid.boosts.length
-            ? `Pocket full. The spark paid in coin. ${paid.boosts.join(" · ")}.`
-            : "Pocket full. The spark paid in coin.",
+          toast: [
+            sparkMult > 1 ? `Pocket full. The spark paid ${12 * sparkMult} coin. ${MARKET_TAG}.` : "Pocket full. The spark paid in coin.",
+            paid.boosts.length ? `${paid.boosts.join(" · ")}.` : null,
+          ]
+            .filter(Boolean)
+            .join(" "),
           quests: questHit.quests,
         });
       } else {
         sfx.correct();
-        const paid = payBoosts({ ...get().keys, [poi.tier]: have + sparkAdd }, get().points, boost);
+        const paid = payBoosts({ ...get().keys, [poi.tier]: have + sparkAdd }, get().points + sparkCoin, boost);
         set({
           ...used,
           keys: paid.keys,
@@ -1097,6 +1113,7 @@ export const useGame = create<GameState>((set, get) => ({
             startedAt: now,
             deadline: now + 25000 + extra,
             run: { step: step + 1, steps, grades, spent: true },
+            dealtAt: Date.now(),
           },
         });
         postClear(series.cost);
@@ -1126,7 +1143,7 @@ export const useGame = create<GameState>((set, get) => ({
       if (grades.every((g) => g === "perfect")) baseKeys[series.bonus] = 1;
       else if (get().equipped === "lucky" && Math.random() < 0.15) baseKeys.blue = 1;
       const spot = seriesLive(get(), series.kind);
-      const seriesMarket = marketAt(city.id, ov.startedAt);
+      const seriesMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
       const sMult = spot && onMarket(seriesMarket, { kind: "series", lat: spot.lat, lng: spot.lng }) ? MARKET_MULT : 1;
       const sPay = marketPay(seriesCoin, baseKeys, sMult);
       const points = sPay.coin;
@@ -1147,7 +1164,7 @@ export const useGame = create<GameState>((set, get) => ({
         vellum,
         schematic,
         ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
-        market: sMult > 1 && seriesMarket ? { street: seriesMarket.street.name, mult: sMult, coin: sPay.extraCoin } : undefined,
+        market: sMult > 1 && seriesMarket ? { street: seriesMarket.street.name, mult: sMult, coin: sPay.extraCoin, matches: sPay.extraMatches } : undefined,
       };
       let nextKeys = { ...get().keys };
       for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) nextKeys[t] += n;
@@ -1244,7 +1261,7 @@ export const useGame = create<GameState>((set, get) => ({
       diffMult: DIFF_MULT[diff],
       loot: wornPerk(get().scout).loot ?? 1,
     });
-    const lampMarket = marketAt(city.id, ov.startedAt);
+    const lampMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
     const lampMult = onMarket(lampMarket, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }) ? MARKET_MULT : 1;
     const brass =
       1 +
@@ -1274,7 +1291,7 @@ export const useGame = create<GameState>((set, get) => ({
       vellum,
       schematic,
       ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
-      market: lampMult > 1 && lampMarket ? { street: lampMarket.street.name, mult: lampMult, coin: lampPay.extraCoin } : undefined,
+      market: lampMult > 1 && lampMarket ? { street: lampMarket.street.name, mult: lampMult, coin: lampPay.extraCoin, matches: lampPay.extraMatches } : undefined,
     };
     let nextKeys = { ...keys };
     for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) {

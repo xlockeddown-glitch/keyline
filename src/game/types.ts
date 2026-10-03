@@ -137,7 +137,7 @@ export type LootDrop = {
   ingredient?: { id: string; name: string };
   boosts?: string[];
   /** Night market (0.0.46): this reward was earned on the market street and paid ×mult; `coin` is what the market added. */
-  market?: { street: string; mult: number; coin: number };
+  market?: { street: string; mult: number; coin: number; matches: number };
 };
 
 export type MissFlash = {

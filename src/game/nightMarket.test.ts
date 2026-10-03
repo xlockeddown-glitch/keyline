@@ -27,6 +27,7 @@ import {
   marketIndex,
   marketMatches,
   marketMult,
+  marketOverflowCoin,
   marketPay,
   marketSeed,
   marketStreets,
@@ -241,13 +242,17 @@ test("doubling: trivia-card coin and bonus matches on the market street pay ×2;
   assert.equal(MARKET_MULT, 2);
   assert.equal(MARKET_TAG, "Night market ×2");
   const pay = marketPay(243, { blue: 1, white: 1 }, 2);
-  assert.deepEqual(pay, { coin: 486, keys: { blue: 2, white: 2 }, extraCoin: 243 });
-  assert.deepEqual(marketPay(243, { blue: 1 }, 1), { coin: 243, keys: { blue: 1 }, extraCoin: 0 });
+  assert.deepEqual(pay, { coin: 486, keys: { blue: 2, white: 2 }, extraCoin: 243, extraMatches: 2 });
+  assert.deepEqual(marketPay(243, { blue: 1 }, 1), { coin: 243, keys: { blue: 1 }, extraCoin: 0, extraMatches: 0 });
   assert.deepEqual(doubleKeys({}, 2), {});
   // Sparks and street matches: two, but never past the pocket cap, and never fewer than one.
   assert.equal(marketMatches(0, 15, 2), 2);
   assert.equal(marketMatches(14, 15, 2), 1);
   assert.equal(marketMatches(3, 15, 1), 1);
+  // …and a market match the pocket can't hold pays its ladder value in coin.
+  assert.equal(marketOverflowCoin("white", 2, 1), 30);
+  assert.equal(marketOverflowCoin("blue", 2, 2), 0);
+  assert.equal(marketOverflowCoin("green", 1, 1), 0);
 });
 
 test("doubling: on-street test — baked lamps, measured blanks/series/matches, and only during that hour", () => {
@@ -306,6 +311,9 @@ test("doubling scope: Daily Lantern Run, print shop prices, the bank and the loc
     const body = src.slice(start, end);
     assert.ok(!/market/i.test(body), `${fn} must not read the night market`);
   }
+  // The store's lamp clocks are performance.now(); the market must read the wall clock (UTC hour).
+  assert.ok(!/market\w*\([^)]*startedAt/.test(src), "market timed off performance.now()");
+  assert.ok(/marketAt\(city\.id, ov\.dealtAt \?\? Date\.now\(\)\)/.test(src));
   // Leaderboard clears: one postClear per trivia card, market or not.
   const from = src.indexOf("const lampMarket");
   const lampBody = src.slice(from, src.indexOf("closeVault: () => {", from));

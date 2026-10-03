@@ -1455,7 +1455,7 @@ export function GameMap() {
   }, []);
 
   useEffect(() => {
-    const id = window.setInterval(paintMarket, 20_000);
+    const id = window.setInterval(paintMarket, 5_000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

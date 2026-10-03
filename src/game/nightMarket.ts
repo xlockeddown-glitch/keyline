@@ -10,6 +10,7 @@
 import { distM, metersPerDegLng } from "./geo.ts";
 import { isFreeway, isWalkableWay, type WayTags } from "./walkable.ts";
 import { MARKET_STREETS } from "./marketStreets.ts";
+import { TIER_VALUE } from "./rewards.ts";
 import type { CityId, Poi, Tier } from "./types";
 
 export const MARKET_HOUR_MS = 60 * 60_000;
@@ -453,12 +454,21 @@ export const MARKET_TAG = `Night market ×${MARKET_MULT}`;
 /** Coin and bonus matches a lamp or series pays, after the market. `extra` is what the market added. */
 export function marketPay(coin: number, keys: Partial<Record<Tier, number>>, mult: number) {
   const paidKeys = doubleKeys(keys, mult);
-  return { coin: coin * mult, keys: paidKeys, extraCoin: coin * (mult - 1) };
+  const base = Object.values(keys).reduce((t: number, n) => t + (n ?? 0), 0);
+  return { coin: coin * mult, keys: paidKeys, extraCoin: coin * (mult - 1), extraMatches: base * (mult - 1) };
 }
 
 /** Matches a spark (or a street pick-up) adds: `mult` of them, but never past the pocket cap (at least 1). */
 export function marketMatches(have: number, cap: number, mult: number): number {
   return Math.max(1, Math.min(mult, cap - have));
+}
+
+/**
+ * A market match that won't fit the pocket pays its ladder value in coin instead (as a full pocket does for the
+ * Lantern Run and a spark), so the ×2 is never lost to the cap. `added` is what marketMatches let in.
+ */
+export function marketOverflowCoin(tier: Tier, mult: number, added: number): number {
+  return Math.max(0, mult - added) * TIER_VALUE[tier];
 }
 
 /** Closest point on the market street to a walker (where the HUD line walks you). */

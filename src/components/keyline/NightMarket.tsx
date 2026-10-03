@@ -4,11 +4,11 @@ import { useGame } from "@/game/store";
 import { MARKET_TAG, marketAt, marketLeft, nextMarket, type NightMarket } from "@/game/nightMarket";
 import type { CityId } from "@/game/types";
 
-/** The market open in this city right now; re-reads every 15 s so the clock and the hour flip stay live. */
+/** The market open in this city right now; re-reads every 5 s (same beat as the map sign) so the clock and the hour flip stay live. */
 export function useMarket(cityId: CityId): { market: NightMarket | null; now: number } {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 15_000);
+    const id = window.setInterval(() => setNow(Date.now()), 5_000);
     return () => window.clearInterval(id);
   }, []);
   return { market: marketAt(cityId, now), now };
