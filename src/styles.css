@@ -1132,9 +1132,13 @@ h3 {
   color:var(--color-fg);
   transition:border-color .15s, transform .15s cubic-bezier(.22,1,.36,1), background .15s
 }
-.field-card:hover{
-  border-color:var(--color-border-strong);
-  background:color-mix(in oklab, var(--color-bg-subtle) 70%, var(--glow) 8%)
+/* 0.0.52: hover only where there is a real pointer — iOS Safari leaves :hover stuck on whatever sits under the last
+   tap, which lit up a trivia choice on the next card before it was touched. */
+@media (hover:hover){
+  .field-card:hover{
+    border-color:var(--color-border-strong);
+    background:color-mix(in oklab, var(--color-bg-subtle) 70%, var(--glow) 8%)
+  }
 }
 .field-card:active{
   transform:scale(.98)
@@ -1212,9 +1216,15 @@ h3 {
   font-weight:500;
   transition:border-color .15s, transform .15s cubic-bezier(.22,1,.36,1), background .15s
 }
-.plate-choice:hover{
-  border-color:var(--color-border-strong);
-  background:color-mix(in oklab, var(--color-bg-subtle) 78%, var(--glow) 10%)
+@media (hover:hover){
+  .plate-choice:hover{
+    border-color:var(--color-border-strong);
+    background:color-mix(in oklab, var(--color-bg-subtle) 78%, var(--glow) 10%)
+  }
+}
+.plate-choice,
+.field-card{
+  -webkit-tap-highlight-color:transparent
 }
 .plate-choice:active{
   transform:scale(.98)
@@ -2346,8 +2356,10 @@ h3 {
   cursor: pointer;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
-.ride-pick-opt:hover {
-  border-color: color-mix(in oklab, var(--color-fg) 40%, transparent);
+@media (hover: hover) {
+  .ride-pick-opt:hover {
+    border-color: color-mix(in oklab, var(--color-fg) 40%, transparent);
+  }
 }
 .ride-pick-opt.is-on {
   border: 2px solid var(--color-fg);
@@ -2677,10 +2689,15 @@ h3 {
   -webkit-tap-highlight-color: transparent;
   transition: background 0.12s, border-color 0.12s, opacity 0.12s;
 }
-.wh-choice:not(:disabled):hover,
 .wh-choice:focus-visible {
   border-color: color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
   outline: none;
+}
+@media (hover: hover) {
+  .wh-choice:not(:disabled):hover {
+    border-color: color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
+    outline: none;
+  }
 }
 .wh-choice:disabled {
   cursor: default;
@@ -2938,11 +2955,17 @@ h3 {
   background: var(--tone);
   box-shadow: 0 0 6px color-mix(in oklab, var(--tone) 70%, transparent);
 }
-.ms-box:hover,
 .ms-box:focus-visible {
   border-color: color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
   border-bottom-color: var(--tone);
   outline: none;
+}
+@media (hover: hover) {
+  .ms-box:hover {
+    border-color: color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
+    border-bottom-color: var(--tone);
+    outline: none;
+  }
 }
 .ms-box:active {
   transform: translateY(1px);

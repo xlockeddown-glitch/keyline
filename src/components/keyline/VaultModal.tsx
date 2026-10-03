@@ -7,6 +7,7 @@ import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/trivia";
 import { placeLine } from "@/game/place";
 import type { TriviaCat } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
+import { choiceButtons, dropStaleFocus } from "@/game/choiceMarkup";
 
 const CAT_ICON: Record<TriviaCat, typeof Trophy> = {
   sports: Trophy,
@@ -21,8 +22,6 @@ const CAT_ICON: Record<TriviaCat, typeof Trophy> = {
   games: Gamepad2,
   celebrity: Star,
 };
-
-const LETTERS = ["A", "B", "C", "D"] as const;
 
 export function VaultModal() {
   const openVault = useGame((s) => s.openVault);
@@ -65,6 +64,11 @@ export function VaultModal() {
     root.classList.add("lamp-card-open");
     return () => root.classList.remove("lamp-card-open");
   }, [isOpen]);
+
+  // 0.0.52: no button starts a card focused — iOS kept the last tap's focus/hover on whatever sat under it.
+  useEffect(() => {
+    if (isOpen) dropStaleFocus(document);
+  }, [isOpen, quiz]);
 
   useEffect(() => {
     if (!quiz) return;
@@ -223,18 +227,19 @@ export function VaultModal() {
 
               <p className="plate-q">{quiz.q}</p>
               <div className="plate-choices">
-                {quiz.choices.map((c, i) => (
+                {/* Before the answer every choice is the same button; only its text differs (choiceMarkup.ts). */}
+                {choiceButtons(quiz.id, quiz.choices).map((b) => (
                   <button
-                    key={c}
+                    key={b.key}
                     type="button"
-                    className="plate-choice"
+                    className={b.className}
                     onClick={() => {
                       sfx.ui();
-                      answer(c, performance.now());
+                      answer(b.text, performance.now());
                     }}
                   >
-                    <span className="plate-letter">{LETTERS[i]}</span>
-                    <span className="min-w-0 text-pretty">{c}</span>
+                    <span className="plate-letter">{b.letter}</span>
+                    <span className="min-w-0 text-pretty">{b.text}</span>
                   </button>
                 ))}
               </div>
