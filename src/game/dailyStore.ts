@@ -1,6 +1,7 @@
 /**
- * Client side of the Daily Lantern Run: the walker's progress today, the route toggle, and the
- * server calls that time a signed-in run. Guests run on the local clock and post nothing.
+ * Client side of the Daily Lantern Run: the walker's progress today in each city, the route toggle,
+ * and the server calls that time a signed-in run. Guests run on the local clock and post nothing.
+ * 0.0.44: one run per city per UTC day — each city keeps its own progress, clock and reward.
  */
 import { create } from "zustand";
 import { canLightDaily, checkSplits, dailyRoute, utcDay, type DailyRoute } from "./dailyRun";
@@ -8,7 +9,9 @@ import { lightDailyLamp, startDailyRun, type DailyState } from "./dailyApi";
 import { useGame } from "./store";
 import type { CityId, Tier } from "./types";
 
-const KEY = "keyline-daily-v1";
+const KEY = "keyline-daily-v2";
+/** 0.0.43 kept a single run (one a day, any city); it loads as that city's entry. */
+const LEGACY_KEY = "keyline-daily-v1";
 
 export type ServerMode = "pending" | "ok" | "guest" | "off";
 
@@ -40,8 +43,11 @@ export type DailyFinish = {
   refused: boolean;
 };
 
+/** Each city's run (the latest one per city; a finished run stays until that city's next day starts). */
+export type DailyRuns = Partial<Record<CityId, DailyProgress>>;
+
 type DailyStore = {
-  progress: DailyProgress | null;
+  runs: DailyRuns;
   /** Route drawn on the map and lamps armed. */
   show: boolean;
   panel: boolean;
@@ -54,24 +60,42 @@ type DailyStore = {
   check: (pos: { lat: number; lng: number }, seated: boolean, curbOf?: (lat: number, lng: number) => { lat: number; lng: number } | null) => number | null;
 };
 
-function load(): DailyProgress | null {
+const isProgress = (p: unknown): p is DailyProgress =>
+  Boolean(p) && typeof (p as DailyProgress).day === "string" && typeof (p as DailyProgress).city === "string";
+
+/** The 0.0.43 single-run save, if any (also read by the game store to carry over its paid day). */
+export function loadLegacyDaily(): DailyProgress | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    const p = JSON.parse(raw) as DailyProgress;
-    if (!p || typeof p.day !== "string" || typeof p.city !== "string") return null;
-    return p;
+    const raw = localStorage.getItem(LEGACY_KEY);
+    const p = raw ? (JSON.parse(raw) as unknown) : null;
+    return isProgress(p) ? p : null;
   } catch {
     return null;
   }
 }
 
-function save(p: DailyProgress | null) {
+function load(): DailyRuns {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const obj = JSON.parse(raw) as Record<string, unknown>;
+      const out: DailyRuns = {};
+      for (const [city, p] of Object.entries(obj ?? {})) if (isProgress(p) && p.city === city) out[p.city] = p;
+      return out;
+    }
+    const legacy = loadLegacyDaily();
+    return legacy ? { [legacy.city]: legacy } : {};
+  } catch {
+    return {};
+  }
+}
+
+function save(runs: DailyRuns) {
   if (typeof window === "undefined") return;
   try {
-    if (p) localStorage.setItem(KEY, JSON.stringify(p));
-    else localStorage.removeItem(KEY);
+    localStorage.setItem(KEY, JSON.stringify(runs));
   } catch {
     /* private mode */
   }
@@ -83,7 +107,8 @@ export function todayRoute(cityId: CityId): DailyRoute {
 }
 
 /** The run that counts for this city right now, or null if none is under way here today. */
-export function activeProgress(p: DailyProgress | null, cityId: CityId): DailyProgress | null {
+export function activeProgress(runs: DailyRuns, cityId: CityId): DailyProgress | null {
+  const p = runs[cityId];
   if (!p) return null;
   const day = utcDay();
   if (p.city !== cityId) return null;
@@ -112,19 +137,24 @@ function toast(msg: string, ms = 2200) {
 }
 
 export const useDaily = create<DailyStore>((set, get) => {
-  const patch = (fn: (p: DailyProgress) => DailyProgress) => {
-    const cur = get().progress;
-    if (!cur) return;
-    const next = fn(cur);
-    set({ progress: next });
-    save(next);
+  const put = (p: DailyProgress) => {
+    const runs = { ...get().runs, [p.city]: p };
+    set({ runs });
+    save(runs);
   };
 
-  const applyServer = (res: DailyState) => {
-    patch((p) => {
+  /** Patch one city's run — answers land on the run they belong to, whichever city the walker is in now. */
+  const patch = (city: CityId, day: string, fn: (p: DailyProgress) => DailyProgress) => {
+    const cur = get().runs[city];
+    if (!cur || cur.day !== day) return;
+    put(fn(cur));
+  };
+
+  const applyServer = (city: CityId, day: string) => (res: DailyState) => {
+    patch(city, day, (p) => {
       if (res.status === "open") return { ...p, server: "ok", note: res.reason ?? null };
       if (res.status === "done") return { ...p, server: "ok", serverMs: res.timeMs, rank: res.rank, note: null };
-      return { ...p, server: "off", note: res.reason ?? (res.status === "void" ? "Today's run was voided." : null) };
+      return { ...p, server: "off", note: res.reason ?? (res.status === "void" ? "Today's run here was voided." : null) };
     });
     if (res.reason) toast(res.reason);
     const f = get().finish;
@@ -132,12 +162,12 @@ export const useDaily = create<DailyStore>((set, get) => {
     if (res.status === "done" && typeof window !== "undefined") window.dispatchEvent(new Event("keyline-daily"));
   };
 
-  const serverFail = (err: unknown) => {
-    patch((p) => ({ ...p, server: isUnauthorized(err) ? "guest" : "off", note: isUnauthorized(err) ? null : "The run clock didn't answer. This run stays local." }));
+  const serverFail = (city: CityId, day: string) => (err: unknown) => {
+    patch(city, day, (p) => ({ ...p, server: isUnauthorized(err) ? "guest" : "off", note: isUnauthorized(err) ? null : "The run clock didn't answer. This run stays local." }));
   };
 
   return {
-    progress: load(),
+    runs: load(),
     show: false,
     panel: false,
     finish: null,
@@ -149,12 +179,10 @@ export const useDaily = create<DailyStore>((set, get) => {
       const st = useGame.getState();
       if (!get().show) return null;
       const cityId = st.cityId;
-      let p = activeProgress(get().progress, cityId);
+      let p = activeProgress(get().runs, cityId);
       const day = utcDay();
       if (!p) {
-        const prior = get().progress;
-        // One run a day: a run already started today in another city holds the day.
-        if (prior && prior.day === day && prior.startedAt) return null;
+        // One run per city per day: a run in another city never blocks this one.
         p = { day, city: cityId, lit: 0, startedAt: null, splits: [], spots: [], timeMs: null, server: "pending", serverMs: null, rank: null, note: null };
       }
       if (p.lit >= 5) return null;
@@ -172,14 +200,11 @@ export const useDaily = create<DailyStore>((set, get) => {
       const at = { lat: pos.lat, lng: pos.lng };
       if (p.lit === 0) {
         const next: DailyProgress = { ...p, lit: 1, startedAt: now, splits: [], spots: [at] };
-        set({ progress: next });
-        save(next);
+        put(next);
         toast(`Lantern Run · lamp 1 lit · ${lamp.name}. The clock is running.`);
         void queue(() => startDailyRun({ data: { city: p.city, lat: at.lat, lng: at.lng } }))
-          .then((res) => {
-            applyServer(res);
-          })
-          .catch(serverFail);
+          .then(applyServer(p.city, p.day))
+          .catch(serverFail(p.city, p.day));
         return 0;
       }
       const split = now - (p.startedAt ?? now);
@@ -188,16 +213,16 @@ export const useDaily = create<DailyStore>((set, get) => {
       const finished = index === route.lamps.length - 1;
       const spots = [...(p.spots ?? []), at];
       const next: DailyProgress = { ...p, lit: index + 1, splits, spots, timeMs: finished ? split : null };
-      set({ progress: next });
-      save(next);
+      put(next);
       if (p.server === "ok" || p.server === "pending") {
-        void queue(() => lightDailyLamp({ data: { index, clientMs: split, lat: at.lat, lng: at.lng } }))
-          .then(applyServer)
-          .catch(serverFail);
+        void queue(() => lightDailyLamp({ data: { city: p.city, index, clientMs: split, lat: at.lat, lng: at.lng } }))
+          .then(applyServer(p.city, p.day))
+          .catch(serverFail(p.city, p.day));
       }
       if (finished) {
         const ok = checkSplits(route, splits, spots.length === route.lamps.length ? spots : undefined).ok;
-        const reward = ok ? st.payDailyRun(p.day) : null;
+        // Each city's finish pays its own reward, once per city per UTC day.
+        const reward = ok ? st.payDailyRun(p.day, p.city) : null;
         set({ finish: { day: p.day, city: p.city, timeMs: split, splits, reward, refused: !ok } });
         useGame.setState({ fireworks: { kind: "mini", id: Date.now() } });
       } else {

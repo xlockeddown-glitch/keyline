@@ -126,7 +126,7 @@ export function GameMap() {
   const dailyPins = useRef<Marker[]>([]);
   const dailyKey = useRef("");
   const dailyShow = useDaily((s) => s.show);
-  const dailyLit = useDaily((s) => activeProgress(s.progress, cityId)?.lit ?? 0);
+  const dailyLit = useDaily((s) => activeProgress(s.runs, cityId)?.lit ?? 0);
 
   function strokeColor() {
     if (typeof document === "undefined") return "#c4a35a";
@@ -370,7 +370,7 @@ export function GameMap() {
       return;
     }
     const cid = useGame.getState().cityId;
-    const prog = activeProgress(ds.progress, cid);
+    const prog = activeProgress(ds.runs, cid);
     const route = prog ? dailyRoute(prog.city, prog.day) : todayRoute(cid);
     const lit = prog?.lit ?? 0;
     const key = `${route.city}|${route.day}|${g ? g.segs.length > 0 : false}`;
@@ -401,7 +401,7 @@ export function GameMap() {
       legs[i]?.remove();
       const line = L.polyline(
         path.map((p) => [p.lat, p.lng] as [number, number]),
-        { weight: 5, opacity: 0.9, className: `daily-route${i < (activeProgress(useDaily.getState().progress, cid)?.lit ?? 0) - 1 ? " is-walked" : ""}`, interactive: false, dashArray: "2 9" },
+        { weight: 5, opacity: 0.9, className: `daily-route${i < (activeProgress(useDaily.getState().runs, cid)?.lit ?? 0) - 1 ? " is-walked" : ""}`, interactive: false, dashArray: "2 9" },
       ).addTo(map);
       legs[i] = line;
       dailyLines.current = legs.filter((x): x is Polyline => Boolean(x));

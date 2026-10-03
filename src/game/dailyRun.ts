@@ -1,5 +1,6 @@
 /**
  * Daily Lantern Run (0.0.43): one shared five-lamp route per city per UTC day.
+ * 0.0.44: one run per walker per city per UTC day — each city's run is its own entry and pays its own reward.
  * Pure — the client, the server functions (dailyApi.ts) and the tests all use these rules,
  * so the route a player walks is the route the server checks.
  */
@@ -24,7 +25,7 @@ export const DAILY_REACH_M = 170;
 export const DAILY_MAX_MS = 2 * 60 * 60_000;
 /** Network slack the server allows when it times a leg between two requests. */
 export const DAILY_JITTER_MS = 1500;
-/** Impossible legs before the day's entry is voided. */
+/** Impossible legs before that city's entry for the day is voided. */
 export const DAILY_STRIKES = 3;
 
 /** How close to the curb point nearest a lamp counts as standing at it. */
@@ -215,16 +216,19 @@ export type StartDecision =
   | { kind: "new" }
   | { kind: "resume"; row: RunRow }
   | { kind: "done"; row: RunRow }
-  | { kind: "taken"; city: CityId }
   | { kind: "void" }
   | { kind: "far" };
 
-/** One run per walker per UTC day: the first lamp 1 locks the day (and its city); the clock never resets. */
+/**
+ * One run per walker per city per UTC day: lamp 1 locks that city's entry for the day; its clock never
+ * resets. `existing` is this walker's row for the route's own day and city — a run in another city is
+ * a separate entry and never blocks this one.
+ */
 export function startDecision(route: DailyRoute, existing: RunRow | null, at: { lat: number; lng: number }, now: number): StartDecision {
+  if (existing && (existing.city !== route.city || existing.day !== route.day)) existing = null;
   if (existing) {
     if (existing.voided) return { kind: "void" };
     if (existing.timeMs != null) return { kind: "done", row: existing };
-    if (existing.city !== route.city) return { kind: "taken", city: existing.city };
     if (now - existing.startedAt > DAILY_MAX_MS) return { kind: "void" };
     return { kind: "resume", row: existing };
   }
@@ -290,13 +294,41 @@ export function rankDaily(rows: DailyEntry[], floorMs: number, limit = 25): Dail
     .map((r, i) => ({ userId: r.userId, name: r.name, timeMs: r.timeMs, rank: i + 1 }));
 }
 
-/** Finishing pays once per UTC day: 2 white + 1 blue (150 coin on the white=30 ladder). */
+/** Finishing pays once per city per UTC day: 2 white + 1 blue (150 coin on the white=30 ladder). */
 export const DAILY_REWARD: Partial<Record<Tier, number>> = { white: 2, blue: 1 };
 
 export function dailyRewardValue(): number {
   let n = 0;
   for (const [t, c] of Object.entries(DAILY_REWARD) as [Tier, number][]) n += TIER_VALUE[t] * c;
   return n;
+}
+
+/** The save's record of a paid finish: one key per city per UTC day. */
+export function dailyPaidKey(day: string, city: CityId): string {
+  return `${day}|${city}`;
+}
+
+/** Paid keys kept in the save (oldest drop first) — plenty for twelve cities over a couple of days. */
+export const DAILY_PAID_KEEP = 48;
+
+export function isDailyPaid(paid: readonly string[], day: string, city: CityId): boolean {
+  return paid.includes(dailyPaidKey(day, city));
+}
+
+/** Mark a city's finish paid for the day; null if that city already paid today (once per city per day). */
+export function markDailyPaid(paid: readonly string[], day: string, city: CityId): string[] | null {
+  if (!day || isDailyPaid(paid, day, city)) return null;
+  return [...paid, dailyPaidKey(day, city)].slice(-DAILY_PAID_KEEP);
+}
+
+/**
+ * Saves from 0.0.43 kept one `dailyPaidDay` (one reward a day, any city). Carry it over as that day's
+ * paid city when the old local run says which city it was; otherwise it can't be tied to a city.
+ */
+export function legacyDailyPaid(paidDay: unknown, legacyRun: { day?: unknown; city?: unknown; timeMs?: unknown } | null): string[] {
+  if (typeof paidDay !== "string" || !paidDay) return [];
+  if (!legacyRun || legacyRun.day !== paidDay || typeof legacyRun.city !== "string" || legacyRun.timeMs == null) return [];
+  return [dailyPaidKey(paidDay, legacyRun.city as CityId)];
 }
 
 /** Credit the reward; a match that won't fit the pocket pays its ladder value in coin instead. */

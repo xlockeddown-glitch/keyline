@@ -4,7 +4,7 @@ import { SignInGate } from "@/lib/auth/gates";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 import { CITIES, TIER_LABEL } from "@/game/data";
 import { formatDist } from "@/game/geo";
-import { DAILY_REWARD, dailyRewardValue, dailyRoute, formatRunTime, legMeters, utcDay, type DailyStanding } from "@/game/dailyRun";
+import { DAILY_REWARD, dailyRewardValue, dailyRoute, formatRunTime, isDailyPaid, legMeters, utcDay, type DailyStanding } from "@/game/dailyRun";
 import { fetchDailyBoard, fetchDailyMine, type DailyState } from "@/game/dailyApi";
 import { activeProgress, todayRoute, useDaily, type DailyProgress } from "@/game/dailyStore";
 import { standingName } from "@/game/standingName";
@@ -35,7 +35,7 @@ const REWARD_LINE = (Object.entries(DAILY_REWARD) as [Tier, number][]).map(([t, 
 export function DailyHudLine() {
   const cityId = useGame((s) => s.cityId);
   const show = useDaily((s) => s.show);
-  const prog = useDaily((s) => activeProgress(s.progress, cityId));
+  const prog = useDaily((s) => activeProgress(s.runs, cityId));
   const setPanel = useDaily((s) => s.setPanel);
   const running = Boolean(prog?.startedAt && prog.timeMs == null);
   useTick(running);
@@ -58,7 +58,7 @@ export function DailyHudLine() {
 export function DailyKitButton() {
   const setPanel = useDaily((s) => s.setPanel);
   const cityId = useGame((s) => s.cityId);
-  const prog = useDaily((s) => activeProgress(s.progress, cityId));
+  const prog = useDaily((s) => activeProgress(s.runs, cityId));
   const done = prog?.timeMs != null;
   return (
     <button
@@ -115,7 +115,7 @@ export function DailyBoard({ city, day }: { city: CityId; day?: string }) {
       return;
     }
     let alive = true;
-    fetchDailyMine()
+    fetchDailyMine({ data: { city } })
       .then((m) => {
         if (alive) setMine(m);
       })
@@ -125,7 +125,7 @@ export function DailyBoard({ city, day }: { city: CityId; day?: string }) {
     return () => {
       alive = false;
     };
-  }, [user, isPending, tick]);
+  }, [user, isPending, city, tick]);
 
   const cityName = CITIES[city]?.name ?? city;
   const onBoard = Boolean(user && rows?.some((r) => r.userId === user.id));
@@ -164,14 +164,15 @@ export function DailyBoard({ city, day }: { city: CityId; day?: string }) {
           })}
         </ol>
       )}
-      {user && mine && mine.status === "done" && !onBoard ? (
+      {user && mine && mine.status === "done" && mine.city === city && !onBoard ? (
         <p className="mt-3 text-sm text-fg-muted">
           You · {formatRunTime(mine.timeMs)}
           {mine.rank ? <> · <span className="tabular-nums">#{mine.rank}</span></> : null}
-          {mine.city && mine.city !== city ? <> · in {CITIES[mine.city].name}</> : null}
         </p>
       ) : null}
-      {user && mine && mine.status === "void" ? <p className="mt-3 text-sm text-fg-muted">Today&apos;s run was voided. Back tomorrow.</p> : null}
+      {user && mine && mine.status === "void" && mine.city === city ? (
+        <p className="mt-3 text-sm text-fg-muted">Today&apos;s {cityName} run was voided. Back tomorrow, or run another city today.</p>
+      ) : null}
       <div className="mt-4 border-t border-border pt-3">
         <SignInGate
           fallback={
@@ -182,7 +183,7 @@ export function DailyBoard({ city, day }: { city: CityId; day?: string }) {
           }
         >
           <p className="text-sm text-fg-muted">
-            Times post under <span className="text-fg">{standingName(user?.displayName)}</span> · one run a day, timed by the server
+            Times post under <span className="text-fg">{standingName(user?.displayName)}</span> · one run per city a day, timed by the server
           </p>
         </SignInGate>
       </div>
@@ -196,9 +197,9 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
   const show = useDaily((s) => s.show);
   const setShow = useDaily((s) => s.setShow);
   const cityId = useGame((s) => s.cityId);
-  const all = useDaily((s) => s.progress);
-  const prog = activeProgress(all, cityId);
-  const paidDay = useGame((s) => s.dailyPaidDay);
+  const runs = useDaily((s) => s.runs);
+  const prog = activeProgress(runs, cityId);
+  const paid = useGame((s) => s.dailyPaid);
   const running = Boolean(prog?.startedAt && prog.timeMs == null);
   useTick(open && running);
 
@@ -216,7 +217,6 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
   const lit = prog?.lit ?? 0;
   const next = route.lamps[lit];
   const t = elapsed(prog);
-  const elsewhere = all && all.day === utcDay() && all.startedAt && all.city !== cityId ? all : null;
   const done = prog?.timeMs != null;
   let total = 0;
   for (let i = 1; i < route.lamps.length; i++) total += legMeters(route, i);
@@ -255,9 +255,7 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
           <p className="mt-2 text-xs text-fg-subtle tabular-nums">About {formatDist(total)} lamp to lamp, more by street.</p>
 
           <div className="daily-status mt-4">
-            {elsewhere ? (
-              <p className="text-sm text-fg-muted">Today&apos;s run is under way in {CITIES[elsewhere.city].name}. One run a day — finish it there.</p>
-            ) : done ? (
+            {done ? (
               <p className="text-sm">
                 Finished in <span className="font-display text-lg tabular-nums">{formatRunTime(prog?.serverMs ?? prog?.timeMs)}</span>
                 {prog?.rank ? <span className="text-fg-muted"> · #{prog.rank} today</span> : null}
@@ -278,13 +276,13 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
                 <QtyChip key={tier} item={tier} n={n} />
               ))}
               <span>
-                {REWARD_LINE} · {dailyRewardValue()} coin value · once a day{paidDay === route.day ? " · paid today" : ""}
+                {REWARD_LINE} · {dailyRewardValue()} coin value · once per city a day{isDailyPaid(paid, route.day, route.city) ? " · paid here today" : ""}
               </span>
             </p>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {!done && !elsewhere ? (
+            {!done ? (
               show ? (
                 next ? (
                   <button
@@ -337,7 +335,7 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
 export function DailyFinishCard() {
   const finish = useDaily((s) => s.finish);
   const close = useDaily((s) => s.closeFinish);
-  const prog = useDaily((s) => s.progress);
+  const prog = useDaily((s) => (finish ? s.runs[finish.city] : undefined));
   if (!finish) return null;
   const route = dailyRoute(finish.city, finish.day);
   const official = prog && prog.day === finish.day && prog.city === finish.city ? prog : null;
@@ -390,7 +388,7 @@ export function DailyFinishCard() {
                 ) : null}
               </>
             ) : (
-              <p className="text-sm text-fg-muted">Today&apos;s reward is already paid.</p>
+              <p className="text-sm text-fg-muted">Today&apos;s {CITIES[finish.city].name} reward is already paid.</p>
             )}
           </div>
           <div className="mt-5 border-t border-border pt-4">

@@ -38,6 +38,7 @@ type DbRow = {
   voided: boolean;
 };
 
+const cityName = (c: CityId) => CITIES[c]?.name ?? c;
 const ms = (v: string | Date) => (v instanceof Date ? v.getTime() : Date.parse(v));
 const nums = (v: unknown): number[] => {
   const arr = typeof v === "string" ? (JSON.parse(v) as unknown) : v;
@@ -62,7 +63,7 @@ function toRun(r: DbRow): RunRow {
 }
 
 export type DailyState = {
-  status: "open" | "done" | "void" | "taken" | "far" | "none";
+  status: "open" | "done" | "void" | "far" | "none";
   day: string;
   city: CityId | null;
   lit: number;
@@ -73,9 +74,10 @@ export type DailyState = {
   serverNow: number;
 };
 
-async function rowFor(userId: string, day: string): Promise<DbRow | null> {
+/** This walker's entry for one city on one UTC day (the primary key since 0.0.44: day + user + city). */
+async function rowFor(userId: string, day: string, city: CityId): Promise<DbRow | null> {
   const sql = await getSql();
-  const rows = await sql<DbRow>`select * from daily_runs where day = ${day} and user_id = ${userId} limit 1`;
+  const rows = await sql<DbRow>`select * from daily_runs where day = ${day} and user_id = ${userId} and city = ${city} limit 1`;
   return rows[0] ?? null;
 }
 
@@ -127,12 +129,13 @@ export const fetchDailyBoard = createServerFn({ method: "GET" })
     }
   });
 
-/** The signed-in walker's run today, if any. */
+/** The signed-in walker's run today in this city, if any. */
 export const fetchDailyMine = createServerFn({ method: "GET" })
+  .validator((u: unknown) => z.object({ city: CitySchema }).parse(u))
   .middleware([authMiddleware])
-  .handler(async ({ context }): Promise<DailyState> => {
+  .handler(async ({ context, data }): Promise<DailyState> => {
     const day = utcDay();
-    const r = await rowFor(context.userId, day);
+    const r = await rowFor(context.userId, day, data.city);
     if (!r) return stateOf(null, day, "none");
     const row = toRun(r);
     if (row.voided) return stateOf(row, day, "void");
@@ -140,7 +143,7 @@ export const fetchDailyMine = createServerFn({ method: "GET" })
     return stateOf(row, day, "open");
   });
 
-/** Lamp 1: starts (or resumes) today's one run on the server clock. */
+/** Lamp 1: starts (or resumes) today's run in this city on the server clock. Other cities' runs are their own entries. */
 export const startDailyRun = createServerFn({ method: "POST" })
   .validator((u: unknown) => z.object({ city: CitySchema, ...AtSchema }).parse(u))
   .middleware([authMiddleware])
@@ -148,12 +151,11 @@ export const startDailyRun = createServerFn({ method: "POST" })
     const day = utcDay();
     const route = dailyRoute(data.city, day);
     const sql = await getSql();
-    const had = await rowFor(context.userId, day);
+    const had = await rowFor(context.userId, day, data.city);
     const now = Date.now();
     const d = startDecision(route, had ? toRun(had) : null, data, now);
     if (d.kind === "far") return stateOf(null, day, "far", null, "Stand at lamp 1 to start the clock.");
-    if (d.kind === "void") return stateOf(had ? toRun(had) : null, day, "void", null, "Today's run was voided.");
-    if (d.kind === "taken") return stateOf(had ? toRun(had) : null, day, "taken", null, `Today's run is already under way in ${CITIES[d.city]?.name ?? d.city}.`);
+    if (d.kind === "void") return stateOf(had ? toRun(had) : null, day, "void", null, `Today's ${cityName(data.city)} run was voided.`);
     if (d.kind === "done") return stateOf(d.row, day, "done", await rankOf(day, d.row.city, context.userId));
     if (d.kind === "resume") return stateOf(d.row, day, "open");
     const people = await sql<{ name: string | null }>`select name from "user" where id = ${context.userId} limit 1`;
@@ -162,31 +164,34 @@ export const startDailyRun = createServerFn({ method: "POST" })
     await sql`
       insert into daily_runs (day, user_id, city, display_name, started_at, last_at, last_lat, last_lng, lit)
       values (${day}, ${context.userId}, ${data.city}, ${name}, ${at}, ${at}, ${data.lat}, ${data.lng}, 1)
-      on conflict (day, user_id) do nothing
+      on conflict (day, user_id, city) do nothing
     `;
-    const fresh = await rowFor(context.userId, day);
+    const fresh = await rowFor(context.userId, day, data.city);
     if (!fresh) throw new Error("daily run did not save");
     const row = toRun(fresh);
-    return stateOf(row, day, row.city === data.city ? "open" : "taken");
+    if (row.voided) return stateOf(row, day, "void", null, `Today's ${cityName(data.city)} run was voided.`);
+    if (row.timeMs != null) return stateOf(row, day, "done", await rankOf(day, row.city, context.userId));
+    return stateOf(row, day, "open");
   });
 
-/** Lamps 2..5. The server times each leg itself and refuses legs no walker could make. */
+/** Lamps 2..5 of this city's open run. The server times each leg itself and refuses legs no walker could make. */
 export const lightDailyLamp = createServerFn({ method: "POST" })
   .validator((u: unknown) =>
-    z.object({ index: z.number().int().min(1).max(4), clientMs: z.number().finite().min(0), ...AtSchema }).parse(u),
+    z.object({ city: CitySchema, index: z.number().int().min(1).max(4), clientMs: z.number().finite().min(0), ...AtSchema }).parse(u),
   )
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<DailyState> => {
     const sql = await getSql();
+    // The open run in this city (a run begun before midnight UTC keeps its own day's route).
     const open = await sql<DbRow>`
       select * from daily_runs
-      where user_id = ${context.userId} and time_ms is null and not voided
+      where user_id = ${context.userId} and city = ${data.city} and time_ms is null and not voided
       order by started_at desc
       limit 1
     `;
     const day = utcDay();
     if (!open[0]) {
-      const today = await rowFor(context.userId, day);
+      const today = await rowFor(context.userId, day, data.city);
       if (today && toRun(today).timeMs != null) return stateOf(toRun(today), day, "done", await rankOf(day, toRun(today).city, context.userId));
       return stateOf(null, day, "none", null, "Light lamp 1 first.");
     }
@@ -196,15 +201,15 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
     const d = lightDecision(route, row, data.index, data, data.clientMs, now);
     if (d.kind === "already") return stateOf(row, row.day, "open");
     if (d.kind === "expire") {
-      await sql`update daily_runs set voided = true where day = ${row.day} and user_id = ${context.userId}`;
-      return stateOf(row, row.day, "void", null, "Two hours passed. Today's run expired.");
+      await sql`update daily_runs set voided = true where day = ${row.day} and user_id = ${context.userId} and city = ${row.city}`;
+      return stateOf(row, row.day, "void", null, `Two hours passed. Today's ${cityName(row.city)} run expired.`);
     }
     if (d.kind === "reject") {
       if (d.strike) {
         const strikes = row.strikes + 1;
         const voided = strikes >= DAILY_STRIKES;
-        await sql`update daily_runs set strikes = ${strikes}, voided = ${voided} where day = ${row.day} and user_id = ${context.userId}`;
-        if (voided) return stateOf(row, row.day, "void", null, "Too many impossible legs. Today's run was voided.");
+        await sql`update daily_runs set strikes = ${strikes}, voided = ${voided} where day = ${row.day} and user_id = ${context.userId} and city = ${row.city}`;
+        if (voided) return stateOf(row, row.day, "void", null, `Too many impossible legs. Today's ${cityName(row.city)} run was voided.`);
       }
       const why = d.reason === "too-fast" ? "Faster than any walker. That lamp didn't count." : d.reason === "far" ? "Not at the lamp yet." : "Lamps light in order.";
       return stateOf(row, row.day, "open", null, why);
@@ -221,7 +226,7 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
         client_splits = ${JSON.stringify(next.clientSplits)}::jsonb,
         finished_at = ${finishedAt},
         time_ms = ${next.timeMs}
-      where day = ${row.day} and user_id = ${context.userId} and lit = ${row.lit} and time_ms is null and not voided
+      where day = ${row.day} and user_id = ${context.userId} and city = ${row.city} and lit = ${row.lit} and time_ms is null and not voided
       returning lit
     `;
     if (!updated.length) return stateOf(row, row.day, "open");
