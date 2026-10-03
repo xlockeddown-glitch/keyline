@@ -13,6 +13,8 @@ neck is deliberately short (a chibi neck: about a head's height) so the head sta
 lantern hangs from the right hand like the rest of the cast. Walk is a gentle lope: long, easy strides, a soft
 bob, the neck swaying a little less than the body.
 
+v2 (k51h, after review): head 18% larger and a shorter side-view snout so it reads less llama-like.
+
 Writes giraffe-walk.png, giraffe-idle.png, giraffe.png, giraffe-idle-side.png; `--coats` also writes the four
 print-shop coats. Deterministic. Then `npm run qa:sprites`."""
 from __future__ import annotations
@@ -50,6 +52,19 @@ pg.MAT.update({
 
 FLOOR = 88.0
 CX = 48.0
+# v2 (k51h): the head group is drawn 18% larger about the chin / top of the neck, for a rounder, penguin-like
+# head-to-body ratio; the ossicone tips still clear the top of the cell by ~5 px.
+HEAD_SCALE = 1.18
+
+
+def grow(xf, px, py, k=HEAD_SCALE):
+    """world -> local for a group drawn k times larger about (px,py) after xf."""
+
+    def f(X, Y):
+        lx, ly = xf(X, Y)
+        return px + (lx - px) / k, py + (ly - py) / k
+
+    return f
 
 
 def limb(x0, y0, x1, y1, r, mat, z, name, xf=None, **kw):
@@ -133,7 +148,7 @@ def front(phase: int, blink: bool = False, breath: float = 0.0, idle: bool = Fal
     bob = breath if idle else [0.0, -1.2, 0.0, -1.2][phase]
     B = rot_xf(CX, 50.0, tilt, 0.0, bob)
     N = rot_xf(CX, 50.0, tilt * 0.55, 0.0, bob)
-    H = rot_xf(CX, 50.0, tilt * 0.4, 0.0, bob)
+    H = grow(rot_xf(CX, 50.0, tilt * 0.4, 0.0, bob), CX, 31.0)
     P: list[Part] = []
     lift = (0, 0) if idle else [(0, 1.8), (0, 0.8), (1.8, 0), (0.8, 0)][phase]
     legs_front(P, lift)
@@ -159,7 +174,7 @@ def side(phase: int, blink: bool = False, breath: float = 0.0, idle: bool = Fals
     bob = breath if idle else [0.0, -1.2, 0.0, -1.2][phase]
     B = rot_xf(50.0, 52.0, tilt, 0.0, bob)
     N = rot_xf(50.0, 52.0, tilt * 0.55, 0.0, bob)
-    H = rot_xf(50.0, 52.0, tilt * 0.4, 0.0, bob)
+    H = grow(rot_xf(50.0, 52.0, tilt * 0.4, 0.0, bob), 45.0, 29.0)
     P: list[Part] = []
     # long easy strides: (near hoof x, lift), (far hoof x, lift)
     strides = [((43.0, 0.0), (57.0, 1.4)), ((47.0, 0.0), (53.0, 1.8)), ((57.0, 0.0), (43.0, 1.4)), ((53.0, 0.0), (47.0, 1.8))]
@@ -195,7 +210,7 @@ def side(phase: int, blink: bool = False, breath: float = 0.0, idle: bool = Fals
     P.append(Part("neck", neck, "fur", 26, xf=N))
     spots(P, [(45.0, 42.4, 2.2, 1.8, 20), (48.6, 36.6, 1.9, 1.6, -10), (44.0, 33.6, 1.5, 1.3, 0), (49.0, 44.6, 1.4, 1.2, 0)], "spot", 26.2, N, neck)
     # head in profile, muzzle forward
-    head = Ell(42.4, 21.0, 10.8, 9.8)
+    head = Ell(42.6, 21.0, 10.8, 10.0)
     P.append(Part("ossfar", Poly([(45.4, 14.0), (47.8, 14.0), (49.2, 10.0), (47.2, 10.0)], Ell(47.4, 12.0, 1.4, 2.6)), "spot", 28.4, xf=H))
     P.append(Part("knobfar", Ell(48.4, 9.8, 1.8, 1.6), "cocoa", 28.45, xf=H))
     P.append(Part("ear", Ell(53.0, 16.6, 4.8, 2.1, -26.0), "fur", 28.5, xf=H))
@@ -204,9 +219,9 @@ def side(phase: int, blink: bool = False, breath: float = 0.0, idle: bool = Fals
     P.append(Part("oss", Poly([(41.2, 14.0), (43.8, 14.0), (44.2, 9.8), (42.0, 9.8)], Ell(42.8, 12.0, 1.4, 2.6)), "fur", 30.1, xf=H))
     P.append(Part("knob", Ell(43.1, 9.4, 2.0, 1.8), "cocoa", 30.15, xf=H))
     spots(P, [(47.6, 18.0, 1.8, 1.4, 20), (45.0, 14.6, 1.4, 1.0, 0), (49.6, 23.4, 1.4, 1.1, 0)], "spot", 30.2, H, head)
-    P.append(Part("muzzle", Ell(33.4, 25.4, 7.2, 5.2, -8.0), "cream", 31, xf=H, edge=0.0))
-    P.append(Part("nostril", Ell(29.0, 24.0, 0.8, 0.6), "cocoa", 31.5, xf=H, decal=True, flat=1.0))
-    P.append(Part("smile", Poly([(29.8, 27.8), (32.6, 28.3), (32.4, 29.0), (29.6, 28.5)]), "cocoa", 31.5, xf=H, decal=True, flat=1.0, alpha=0.7))
+    P.append(Part("muzzle", Ell(35.6, 25.2, 6.0, 5.0, -6.0), "cream", 31, xf=H, edge=0.0))
+    P.append(Part("nostril", Ell(31.4, 23.8, 0.8, 0.6), "cocoa", 31.5, xf=H, decal=True, flat=1.0))
+    P.append(Part("smile", Poly([(32.0, 27.8), (34.6, 28.2), (34.4, 28.9), (31.8, 28.5)]), "cocoa", 31.5, xf=H, decal=True, flat=1.0, alpha=0.7))
     if blink:
         P.append(Part("lid", Ell(39.6, 19.8, 2.0, 0.7), "eye", 31.2, xf=H, decal=True, flat=1.0))
     else:
@@ -222,7 +237,7 @@ def back(phase: int) -> list[Part]:
     bob = [0.0, -1.2, 0.0, -1.2][phase]
     B = rot_xf(CX, 50.0, tilt, 0.0, bob)
     N = rot_xf(CX, 50.0, tilt * 0.55, 0.0, bob)
-    H = rot_xf(CX, 50.0, tilt * 0.4, 0.0, bob)
+    H = grow(rot_xf(CX, 50.0, tilt * 0.4, 0.0, bob), CX, 31.0)
     P: list[Part] = []
     lift = [(1.8, 0), (0.8, 0), (0, 1.8), (0, 0.8)][phase]
     legs_front(P, lift, back=True)

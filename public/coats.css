@@ -97,15 +97,15 @@
 .scout-marker[data-scout="turtle"][data-coat="plum"]{background-image:url("/sprites/coats/turtle-plum-walk.png?v=k45a")}
 .scout-marker[data-scout="turtle"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/turtle-plum-idle.png?v=k45a");background-size:200% 200%}
 .scout-marker[data-scout="turtle"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/turtle-plum-idle-side.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="oilskin"]{background-image:url("/sprites/coats/giraffe-oilskin-walk.png?v=k51g")}
-.scout-marker[data-scout="giraffe"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/giraffe-oilskin-idle.png?v=k51g");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-oilskin-idle-side.png?v=k51g");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="bottle"]{background-image:url("/sprites/coats/giraffe-bottle-walk.png?v=k51g")}
-.scout-marker[data-scout="giraffe"][data-coat="bottle"].is-idle{background-image:url("/sprites/coats/giraffe-bottle-idle.png?v=k51g");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="bottle"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-bottle-idle-side.png?v=k51g");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="oxblood"]{background-image:url("/sprites/coats/giraffe-oxblood-walk.png?v=k51g")}
-.scout-marker[data-scout="giraffe"][data-coat="oxblood"].is-idle{background-image:url("/sprites/coats/giraffe-oxblood-idle.png?v=k51g");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="oxblood"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-oxblood-idle-side.png?v=k51g");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="plum"]{background-image:url("/sprites/coats/giraffe-plum-walk.png?v=k51g")}
-.scout-marker[data-scout="giraffe"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/giraffe-plum-idle.png?v=k51g");background-size:200% 200%}
-.scout-marker[data-scout="giraffe"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-plum-idle-side.png?v=k51g");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="oilskin"]{background-image:url("/sprites/coats/giraffe-oilskin-walk.png?v=k51h")}
+.scout-marker[data-scout="giraffe"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/giraffe-oilskin-idle.png?v=k51h");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-oilskin-idle-side.png?v=k51h");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="bottle"]{background-image:url("/sprites/coats/giraffe-bottle-walk.png?v=k51h")}
+.scout-marker[data-scout="giraffe"][data-coat="bottle"].is-idle{background-image:url("/sprites/coats/giraffe-bottle-idle.png?v=k51h");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="bottle"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-bottle-idle-side.png?v=k51h");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="oxblood"]{background-image:url("/sprites/coats/giraffe-oxblood-walk.png?v=k51h")}
+.scout-marker[data-scout="giraffe"][data-coat="oxblood"].is-idle{background-image:url("/sprites/coats/giraffe-oxblood-idle.png?v=k51h");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="oxblood"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-oxblood-idle-side.png?v=k51h");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="plum"]{background-image:url("/sprites/coats/giraffe-plum-walk.png?v=k51h")}
+.scout-marker[data-scout="giraffe"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/giraffe-plum-idle.png?v=k51h");background-size:200% 200%}
+.scout-marker[data-scout="giraffe"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-plum-idle-side.png?v=k51h");background-size:200% 200%}

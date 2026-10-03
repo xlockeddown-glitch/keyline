@@ -1298,14 +1298,14 @@ h3 {
 }
 /* 0.0.51: The Giraffe (scripts/draw-giraffe.py). */
 .scout-marker[data-scout="giraffe"] {
-  background-image: url("/sprites/scouts/giraffe-walk.png?v=k51g");
+  background-image: url("/sprites/scouts/giraffe-walk.png?v=k51h");
 }
 .scout-marker[data-scout="giraffe"].is-idle {
-  background-image: url("/sprites/scouts/giraffe-idle.png?v=k51g");
+  background-image: url("/sprites/scouts/giraffe-idle.png?v=k51h");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-idle-side.png?v=k51g");
+  background-image: url("/sprites/scouts/giraffe-idle-side.png?v=k51h");
 }
 
 .wheel-night {
