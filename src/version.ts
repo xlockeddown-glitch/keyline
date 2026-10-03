@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.40";
+export const APP_VERSION = "0.0.41";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k40a";
+export const PUBLISH_STAMP = "k41a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -40,3 +40,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.38: the Turtle walks in the brown hooded coat it idles in (it walked as a bare green shell); qa:sprites checks the coat on every walk facing and the shop icon at a tighter 3.2 limit (raccoon 5.5), so a shell-vs-coat mismatch fails (k38a).
 // 0.0.39: trivia answers no longer give themselves away by length — 1302 cards where the correct answer was clearly the longest choice (40%+ or 12+ characters longer than every wrong choice) got parallel, plausible wrong choices or a trimmed answer; trivia:lint flags any new one and a test keeps the answer-is-longest rate near chance (42.5% → 32.3%, cap 35%) (k39a).
 // 0.0.40: trivia duplicates cleared — 3 unwired copy banks (133 cards) removed, the remaining duplicate groups kept-best or rewritten into new verified cards; 129 absolute-tell cards (every wrong choice said only/always/never) given plain distractors; +55 verified Temple cards (Santa Fe depot and Harvey House, Scott & White, Belton Lake, McLane, local sports and notables) across history/sports/arts/nature/science, Temple 90 → 145; trivia:lint 324 → 0 warnings (k40a).
+// 0.0.41: ride game picker — on a train ride the player picks the mini-game: every game whose minimum round fits the time left (Lamplighter 15 s, Where am I? and Match sorter ~34 s, Route puzzle 2 min) is listed with an icon and a one-liner, the varied 0.0.35 deal is pre-selected as Suggested, the pick is stored on the ride, and after a round the player can go again or switch games (the ride pays its best round; pay never depends on the game; Lamplighter's all-lit no-stray round now earns the same +1 perfect bonus as the others). Reverses the 0.0.35 'no swap button' call. City-local card check: no Austin cards in Detroit's block; a test guards cards naming another city (k41a).

@@ -145,8 +145,11 @@ test("perfect round: 5/5 pays the base strong win plus one flat white; 4/5 is un
   assert.deepEqual(whereOutcome({ asked: 4, right: 4, total: 4 }), { kind: "won", perf: 1 });
   assert.match(perfectLine(whereOutcome({ asked: 5, right: 5, total: 5 })) ?? "", /Perfect round: \+1 white/);
   assert.equal(perfectLine(whereOutcome({ asked: 5, right: 4, total: 5 })), undefined);
-  // Lamplighter never sets the flag, so its pay is untouched.
-  assert.equal("perfect" in lampOutcome({ lamps: 20, hits: 20, strays: 0 }), false);
+  // 0.0.41: any game can be picked on any ride, so Lamplighter's clean sheet (every lamp, no strays)
+  // earns the same flat bonus; a single miss or stray does not.
+  assert.equal(lampOutcome({ lamps: 20, hits: 20, strays: 0 }).kind === "won" && "perfect" in lampOutcome({ lamps: 20, hits: 20, strays: 0 }), true);
+  assert.equal("perfect" in lampOutcome({ lamps: 20, hits: 20, strays: 1 }), false);
+  assert.equal("perfect" in lampOutcome({ lamps: 20, hits: 19, strays: 0 }), false);
 });
 
 test("perfect round is remembered on the journey and survives a worse later round", () => {
