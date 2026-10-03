@@ -178,6 +178,8 @@ def main() -> None:
 
 # Sheet URLs carry the stamp the art last changed in, like the base sheets in styles.css.
 ART_STAMP = "k45a"
+# Characters whose base art changed since: their coat sheets carry the newer stamp (0.0.49: the Lynx redraw).
+ART_STAMP_BY = {"lynx": "k49a"}
 
 
 def write_css() -> None:
@@ -189,7 +191,7 @@ def write_css() -> None:
     for scout in qa.SCOUT_IDS:
         for coat in PALETTE:
             base = f'.scout-marker[data-scout="{scout}"][data-coat="{coat}"]'
-            url = lambda kind: f'url("/sprites/coats/{scout}-{coat}-{kind}.png?v={ART_STAMP}")'
+            url = lambda kind: f'url("/sprites/coats/{scout}-{coat}-{kind}.png?v={ART_STAMP_BY.get(scout, ART_STAMP)}")'
             lines.append(f"{base}{{background-image:{url('walk')}}}")
             lines.append(f"{base}.is-idle{{background-image:{url('idle')};background-size:200% 200%}}")
             lines.append(f"{base}.is-idle.is-side{{background-image:{url('idle-side')};background-size:200% 200%}}")

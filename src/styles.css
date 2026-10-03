@@ -1263,10 +1263,10 @@ h3 {
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="lynx"] {
-  background-image: url("/sprites/scouts/lynx-walk.png?v=k37a");
+  background-image: url("/sprites/scouts/lynx-walk.png?v=k49a");
 }
 .scout-marker[data-scout="lynx"].is-idle {
-  background-image: url("/sprites/scouts/lynx-idle.png?v=k37a");
+  background-image: url("/sprites/scouts/lynx-idle.png?v=k49a");
   background-size: 200% 200%;
 }
 /* 0.0.37: standing still after walking left or right keeps the side profile (2x2: row 0 left, row 1 right). */
@@ -1294,7 +1294,7 @@ h3 {
   background-image: url("/sprites/scouts/fox-idle-side.png?v=k37a");
 }
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k37a");
+  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k49a");
 }
 
 .wheel-night {

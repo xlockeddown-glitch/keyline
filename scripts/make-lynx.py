@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""0.0.37: the Lynx gets its own body instead of a recoloured fox.
+"""Superseded in 0.0.49 by scripts/draw-lynx.py (the Lynx redrawn on the Tabby body); kept for its helpers
+(lantern_box, in_box), which make-coat-variants.py and make-turtle-coat.py import. Do not rerun.
+
+0.0.37: the Lynx gets its own body instead of a recoloured fox.
 
 Built from the fox sheets so it keeps the house style, pose timing and floor line, then reshaped:
   * ear tufts: a dark tuft rises from each ear tip;
