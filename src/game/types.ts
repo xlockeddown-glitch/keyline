@@ -84,8 +84,7 @@ export type Poi = {
   kind: PoiKind;
   tier: Tier;
   lore: string;
-  quiz?: TriviaSeed;
-  quizzes?: TriviaSeed[];
+  /** 0.0.53: door quizzes moved to doorQuizzes.ts (server-only); a Poi no longer carries cards or answers. */
   printShop?: boolean;
   /** Keep out of Where am I? (clue and decoy): unverified or game-made marks. */
   noClue?: boolean;

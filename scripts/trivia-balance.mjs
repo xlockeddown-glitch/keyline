@@ -535,7 +535,7 @@ export function mathDrawFlags(draw, quotas) {
       key: "math",
       share: draw.mathFirstShare,
       limit: cap.maxDrawShare,
-      detail: `lamps offer Math ${(draw.offeredShare * 100).toFixed(1)}% of the time (max ${(cap.maxDrawShare * 100).toFixed(0)}%) — lower MATH_OFFER_KEEP in src/game/trivia.ts`,
+      detail: `lamps offer Math ${(draw.offeredShare * 100).toFixed(1)}% of the time (max ${(cap.maxDrawShare * 100).toFixed(0)}%) — lower MATH_OFFER_KEEP in src/game/triviaMeta.ts`,
     },
   ];
 }

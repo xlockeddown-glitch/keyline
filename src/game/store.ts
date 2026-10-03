@@ -2,15 +2,15 @@ import { create } from "zustand";
 import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { streetDrop } from "./streets";
 import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
-import { pickTrivia, shuffled, DIFF_MULT, ASKED_KEEP } from "./trivia";
+import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
+import { dealTrivia, gradeTrivia } from "./triviaApi";
+import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard } from "./triviaSchema";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
-import { reportCorrect } from "./rolls";
 import { legacyDailyPaid, markDailyPaid, payDaily } from "./dailyRun";
 import { markFriendPaid, payFriend } from "./friendTicket";
 import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type PlateEvent, type PlateRollMap } from "./telemetry";
-import { reportPlate } from "./reportPlate";
 import { fetchRetune } from "./retuneJob";
 import { setQuarantine, setRetune } from "./rarity";
 import type {
@@ -26,7 +26,6 @@ import type {
   StreetRun,
   Tier,
   TriviaCat,
-  TriviaDiff,
   VaultRuntime,
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
@@ -99,10 +98,20 @@ type Hud = {
   aimDeg: number;
 };
 
+/** 0.0.53: a dealt card as the browser holds it — prompt and shuffled choices, no answer (the server grades). */
+export type DealtCard = PublicCard;
+
+/** The server's grade of the open card, as `settleAnswer` applies it. */
+type Graded = { correct: boolean; elapsed: number; answer: string; fact?: string; credited: boolean };
+
 type OpenVault = {
   poiId: string;
   startedAt: number;
-  question: ReturnType<typeof shuffled> | null;
+  question: DealtCard | null;
+  /** Signed pending-card token from the server deal; sent back with the answer. */
+  token?: string;
+  /** A server round trip is under way: dealing the card, or grading the answer. */
+  pending?: "deal" | "grade";
   category: TriviaCat | null;
   deadline: number;
   run?: { step: number; steps: number; grades: LootDrop["grade"][]; spent: boolean };
@@ -198,6 +207,8 @@ export type GameState = {
   closeShop: () => void;
   pickCategory: (cat: TriviaCat, now: number) => void;
   answer: (choice: string, now: number) => void;
+  /** Apply a server-graded answer to the open card (rewards, streak, seen memory). Internal to the lamp flow. */
+  settleAnswer: (out: Graded, now: number) => void;
   closeVault: () => void;
   claimCrate: () => void;
   claimPulse: () => void;
@@ -567,14 +578,53 @@ function foldWheel(get: () => GameState, tier: Tier): { correctByTier: Record<Ti
   return { correctByTier, wheel: held };
 }
 
-function postClear(tier: Tier) {
-  void reportCorrect({ data: { tier } })
-    .then(() => {
-      if (typeof window !== "undefined") window.dispatchEvent(new Event("keyline-rolls"));
-    })
-    .catch(() => {
-      /* signed out, or the rolls are down — local count still stands */
-    });
+const DEAL_FAIL = "The lamp can't reach the card office. Check your connection and try again — no match spent.";
+const SEEN_ID = /^[A-Za-z0-9_:.~-]{1,80}$/;
+
+/**
+ * 0.0.53: ask the server for a trivia card (triviaApi.dealTrivia). It picks from its own bank with this save's
+ * seen ids (anti-repeat), the lamp's tier and topics, the Run/Stack step, and returns the prompt and shuffled
+ * choices with a signed token — never the answer. Null when the server can't be reached (nothing is spent).
+ */
+async function dealCard(
+  _set: (p: Partial<GameState>) => void,
+  get: () => GameState,
+  poiId: string,
+  cat: TriviaCat,
+  step: number,
+): Promise<{ card: DealtCard; token: string; windowMs: number } | null> {
+  const st = get();
+  const city = CITIES[st.cityId];
+  const series = seriesOf(poiId);
+  const named = series ? null : city.pois.find((p) => p.id === poiId);
+  const blank = series || named ? undefined : st.blanks.find((p) => p.id === poiId);
+  if (!series && !named && !blank) return null;
+  const spark = Boolean(st.openVault?.spark);
+  const scholar = st.equipped === "scholar" ? 3000 : 0;
+  const extra = scholar + (st.pressPass > 0 ? 5000 : 0) + (wornPerk(st.scout).vaultMs ?? 0);
+  const windowMs = spark ? 20000 + scholar : step > 0 ? 25000 + scholar : 25000 + extra;
+  const input: DealInput = {
+    city: st.cityId,
+    cat,
+    poiId,
+    blank: blank ? { name: blank.name.slice(0, 120), kind: blank.kind, tier: blank.tier } : undefined,
+    step: series ? step : undefined,
+    spark: spark || undefined,
+    windowMs,
+    seen: (st.seenIds ?? []).filter((x) => SEEN_ID.test(x)).slice(-SEEN_MAX),
+    saveId: st.saveId,
+  };
+  try {
+    const r = await dealTrivia({ data: input });
+    return r.ok ? { card: r.card, token: r.token, windowMs: r.windowMs } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 0.0.53: the server writes the rolls clear when it grades a right answer; the board just refreshes. */
+function postClear(_tier: Tier) {
+  if (typeof window !== "undefined") window.setTimeout(() => window.dispatchEvent(new Event("keyline-rolls")), 50);
 }
 
 function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boolean) {
@@ -592,11 +642,8 @@ function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boo
     rarity: q?.rarity,
     difficulty: q?.diff ?? null,
   });
-  if (event) {
-    void reportPlate({ data: event }).catch(() => {
-      /* signed out — local ring still stands */
-    });
-  }
+  // 0.0.53: the server records a signed-in walker's plate event itself when it grades the card.
+  void event;
   return { plates, plateAgg, plateRoll };
 }
 
@@ -919,14 +966,10 @@ export const useGame = create<GameState>((set, get) => ({
     });
     return null;
   },
-  pickCategory: (cat, now) => {
+  pickCategory: (cat, _now) => {
     const ov = get().openVault;
-    if (!ov || ov.question) return;
-    const city = CITIES[get().cityId];
+    if (!ov || ov.question || ov.pending) return;
     const series = seriesOf(ov.poiId);
-    const poi = series ? seriesPoi(series) : allPois(city, get().blanks).find((p) => p.id === ov.poiId);
-    const extra = (get().equipped === "scholar" ? 3000 : 0) + (get().pressPass > 0 ? 5000 : 0) + (wornPerk(get().scout).vaultMs ?? 0);
-    const want: TriviaDiff | undefined = series ? series.diffs[ov.run?.step ?? 0] : undefined;
     if (series) {
       if (get().keys[series.cost] < 1) {
         set({ toast: `Need a ${TIER_LABEL[series.cost]} match.`, openVault: null });
@@ -934,36 +977,81 @@ export const useGame = create<GameState>((set, get) => ({
       }
     }
     sfx.ui();
-    const spark = Boolean(ov.spark);
-    const keys = series && !spark ? { ...get().keys, [series.cost]: get().keys[series.cost] - 1 } : get().keys;
-    const pressPass = !spark && extra >= 5000 && get().pressPass > 0 ? get().pressPass - 1 : get().pressPass;
-    set({
-      keys,
-      pressPass,
-      openVault: {
-        poiId: ov.poiId,
-        category: cat,
-        question: shuffled(pickTrivia(city.id, cat, poi, poi?.tier, [...get().seenIds, ...get().asked], want)),
-        startedAt: now,
-        deadline: now + (spark ? 20000 : 25000) + (spark ? (get().equipped === "scholar" ? 3000 : 0) : extra),
-        run: series ? { step: 0, steps: series.steps, grades: [], spent: true } : undefined,
-        spark,
-        dealtAt: Date.now(),
-      },
+    set({ openVault: { ...ov, category: cat, pending: "deal" } });
+    void dealCard(set, get, ov.poiId, cat, 0).then((dealt) => {
+      const cur = get().openVault;
+      if (!cur || cur.poiId !== ov.poiId || cur.pending !== "deal") return;
+      if (!dealt) {
+        set({ openVault: { ...cur, category: null, pending: undefined } });
+        flashToast(set, get, DEAL_FAIL, 3200);
+        return;
+      }
+      const spark = Boolean(cur.spark);
+      const extra = (get().equipped === "scholar" ? 3000 : 0) + (get().pressPass > 0 ? 5000 : 0) + (wornPerk(get().scout).vaultMs ?? 0);
+      const keys = series && !spark ? { ...get().keys, [series.cost]: get().keys[series.cost] - 1 } : get().keys;
+      const pressPass = !spark && extra >= 5000 && get().pressPass > 0 ? get().pressPass - 1 : get().pressPass;
+      // The wick starts when the card arrives, so the round trip never eats into the player's time.
+      const shown = performance.now();
+      set({
+        keys,
+        pressPass,
+        openVault: {
+          poiId: cur.poiId,
+          category: cat,
+          question: dealt.card,
+          token: dealt.token,
+          startedAt: shown,
+          deadline: shown + dealt.windowMs,
+          run: series ? { step: 0, steps: series.steps, grades: [], spent: true } : undefined,
+          spark,
+          dealtAt: Date.now(),
+        },
+      });
+      if (series) scheduleSave(get);
     });
-    if (series) scheduleSave(get);
   },
   answer: (choice, now) => {
+    const ov = get().openVault;
+    if (!ov?.question || ov.pending) return;
+    const token = ov.token;
+    const timeout = choice === "__timeout__";
+    const clientMs = Math.max(0, now - ov.startedAt);
+    if (!token) return;
+    set({ openVault: { ...ov, pending: "grade" } });
+    const lost = () => {
+      const cur = get().openVault;
+      if (!cur || cur.token !== token) return;
+      if (timeout || performance.now() >= cur.deadline) {
+        // The wick is out and the lamp can't be reached: a miss (never a reward without the server's grade).
+        set({ openVault: { ...cur, pending: undefined } });
+        get().settleAnswer({ correct: false, elapsed: clientMs, answer: "The lamp lost its line — no answer this time.", credited: false }, performance.now());
+        return;
+      }
+      set({ openVault: { ...cur, pending: undefined } });
+      flashToast(set, get, "The lamp lost its line. Tap your answer again.", 2600);
+    };
+    void gradeTrivia({ data: { token, choice: timeout ? null : choice, clientMs } })
+      .then((res: GradeResult) => {
+        const cur = get().openVault;
+        if (!cur || cur.token !== token) return;
+        if (!res.ok) return lost();
+        set({ openVault: { ...cur, pending: undefined } });
+        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, answer: res.answer, fact: res.fact, credited: res.credited }, performance.now());
+      })
+      .catch(() => lost());
+  },
+  settleAnswer: (out, now) => {
     const ov = get().openVault;
     if (!ov?.question) return;
     const city = CITIES[get().cityId];
     const series = seriesOf(ov.poiId);
     const poi = series ? seriesPoi(series) : allPois(city, get().blanks).find((p) => p.id === ov.poiId);
     if (!poi) return;
-    const elapsed = now - ov.startedAt;
-    const correct = choice === ov.question.answer;
+    // 0.0.53: right/wrong and the answer time come from the server's grade (gradeTrivia), not the client.
+    const elapsed = out.elapsed;
+    const correct = out.correct;
     const { asked, seenIds } = markSeen(get().asked, get().seenIds, ov.question);
-    const logged = logPlate(get, ov, now, correct);
+    const logged = logPlate(get, ov, ov.startedAt + elapsed, correct);
 
     if (ov.spark) {
       const spark = sparksNow(get);
@@ -985,7 +1073,7 @@ export const useGame = create<GameState>((set, get) => ({
           ...logged,
           openVault: null,
           loot: null,
-          miss: { answer: ov.question.answer, fact: ov.question.fact },
+          miss: { answer: out.answer, fact: out.fact },
           toast: "The spark dies.",
           quests: answered(get, false, false),
         });
@@ -1081,7 +1169,7 @@ export const useGame = create<GameState>((set, get) => ({
           ...logged,
           openVault: null,
           loot: null,
-          miss: { answer: ov.question.answer, fact: ov.question.fact },
+          miss: { answer: out.answer, fact: out.fact },
           ...seriesPatch(series.kind, coolSeries(get(), series)),
           toast: `${series.name} breaks on trivia card ${step + 1}.`,
           quests: answered(get, false, false),
@@ -1093,9 +1181,7 @@ export const useGame = create<GameState>((set, get) => ({
       if (elapsed <= 3000) grade = "perfect";
       else if (elapsed <= 10000) grade = "great";
       const grades = [...(ov.run?.grades ?? []), grade];
-      const extra = get().equipped === "scholar" ? 3000 : 0;
       if (step + 1 < steps && ov.category) {
-        const want = series.diffs[step + 1];
         if (grade === "perfect") sfx.perfect();
         else sfx.correct();
         const spun = foldWheel(get, series.cost);
@@ -1116,12 +1202,35 @@ export const useGame = create<GameState>((set, get) => ({
           openVault: {
             poiId: series.id,
             category: ov.category,
-            question: shuffled(pickTrivia(city.id, ov.category, poi, poi.tier, [...seenIds, ...asked], want)),
+            question: null,
+            pending: "deal",
             startedAt: now,
-            deadline: now + 25000 + extra,
+            deadline: now,
             run: { step: step + 1, steps, grades, spent: true },
-            dealtAt: Date.now(),
           },
+        });
+        const nextCat = ov.category;
+        void dealCard(set, get, series.id, nextCat, step + 1).then((dealt) => {
+          const cur = get().openVault;
+          if (!cur || cur.poiId !== series.id || cur.pending !== "deal") return;
+          if (!dealt) {
+            // Can't reach the lamp for the next card: the run breaks like a walk-away, with a clear message.
+            set({ openVault: null, ...seriesPatch(series.kind, coolSeries(get(), series)), toast: `${series.name}: ${DEAL_FAIL}` });
+            scheduleSave(get);
+            return;
+          }
+          const shown = performance.now();
+          set({
+            openVault: {
+              ...cur,
+              pending: undefined,
+              question: dealt.card,
+              token: dealt.token,
+              startedAt: shown,
+              deadline: shown + dealt.windowMs,
+              dealtAt: Date.now(),
+            },
+          });
         });
         postClear(series.cost);
         scheduleSave(get);
@@ -1242,7 +1351,7 @@ export const useGame = create<GameState>((set, get) => ({
         ...logged,
         openVault: null,
         loot: null,
-        miss: { answer: ov.question.answer, fact: ov.question.fact },
+        miss: { answer: out.answer, fact: out.fact },
         toast: null,
         quests: answered(get, false, false),
       });
@@ -1387,6 +1496,8 @@ export const useGame = create<GameState>((set, get) => ({
   },
   closeVault: () => {
     const ov = get().openVault;
+    // 0.0.53: an answer is with the server — the lamp stays until it's graded.
+    if (ov?.pending === "grade") return;
     const series = ov ? seriesOf(ov.poiId) : null;
     // A trivia card that was shown and walked away from counts as seen, so closing is not a reroll.
     if (ov?.question) set(markSeen(get().asked, get().seenIds, ov.question));

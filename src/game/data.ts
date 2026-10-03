@@ -20,11 +20,6 @@ const austin: City = {
       kind: "civic",
       tier: "violet",
       lore: "Sunset Red granite, taller than the U.S. Capitol. The Goddess of Liberty stands on the dome with a gilded star.",
-      quiz: {
-        q: "The Texas Capitol is clad in which local stone?",
-        choices: ["Limestone", "Sunset Red granite", "Marble", "Sandstone"],
-        answer: "Sunset Red granite",
-      },
     }),
     poi({
       id: "gov-mansion",
@@ -43,11 +38,6 @@ const austin: City = {
       kind: "campus",
       tier: "amber",
       lore: "The Main Building's tower is the university's clock and weather vane. It turns burnt orange after a Longhorn win.",
-      quiz: {
-        q: "How many stories is the UT Tower?",
-        choices: ["14", "21", "27", "33"],
-        answer: "27",
-      },
     }),
     poi({
       id: "dk-royal",
@@ -66,11 +56,6 @@ const austin: City = {
       kind: "water",
       tier: "amber",
       lore: "A limestone-bottom spring pool that holds near 70°F all year. Austin's original public bath.",
-      quiz: {
-        q: "Barton Springs stays near what temperature year-round?",
-        choices: ["55°F", "70°F", "85°F", "It freezes in winter"],
-        answer: "70°F",
-      },
     }),
     poi({
       id: "zilker",
@@ -89,11 +74,6 @@ const austin: City = {
       kind: "landmark",
       tier: "amber",
       lore: "Under the deck lives the largest urban bat colony on Earth. They lift off at dusk over Lady Bird Lake.",
-      quiz: {
-        q: "Which animals pour out from under this bridge at dusk in summer?",
-        choices: ["Chimney swifts", "Mexican free-tailed bats", "Grackles", "Cave swallows"],
-        answer: "Mexican free-tailed bats",
-      },
     }),
     poi({
       id: "lady-bird",
@@ -103,11 +83,6 @@ const austin: City = {
       kind: "water",
       tier: "white",
       lore: "A reservoir of the Colorado, renamed in 2007 for Lady Bird Johnson. Boardwalk, rowers, skyline.",
-      quiz: {
-        q: "What was Lady Bird Lake called before 2007?",
-        choices: ["Lake Austin", "Town Lake", "Lake Travis", "Colorado Bend"],
-        answer: "Town Lake",
-      },
     }),
     poi({
       id: "blanton",
@@ -171,11 +146,6 @@ const austin: City = {
       kind: "food",
       tier: "green",
       lore: "The line starts before dawn. Brisket that made a whole city argue about smoke.",
-      quiz: {
-        q: "Franklin Barbecue is most famous for which smoked meat?",
-        choices: ["Turkey", "Beef brisket", "Sausage", "Pork ribs"],
-        answer: "Beef brisket",
-      },
     }),
     poi({
       id: "acl-live",
@@ -305,11 +275,6 @@ const temple: City = {
       kind: "station",
       tier: "amber",
       lore: "Jarvis Hunt's 1911 brick station, now a heritage collection of trains and town history. Amtrak's Texas Eagle stops at the platform.",
-      quiz: {
-        q: "Temple, Texas was named for a railroad civil engineer. Who?",
-        choices: ["Jay Gould", "Bernard Moore Temple", "Leland Stanford", "Cyrus K. Holliday"],
-        answer: "Bernard Moore Temple",
-      },
     }),
     poi({
       id: "city-hall-temple",
@@ -337,11 +302,6 @@ const temple: City = {
       kind: "campus",
       tier: "red",
       lore: "Founded 1897 as Temple Sanitarium by two surgeons. Now a Level I trauma hospital and teaching campus on South 31st Street.",
-      quiz: {
-        q: "Scott & White began in Temple in which year?",
-        choices: ["1845", "1876", "1897", "1918"],
-        answer: "1897",
-      },
     }),
     poi({
       id: "tam-med",
@@ -444,11 +404,6 @@ const temple: City = {
       kind: "park",
       tier: "amber",
       lore: "On the Leon River below Belton Lake Dam. Bottomland trails, a different county seat a few miles west.",
-      quiz: {
-        q: "Temple sits in which Texas county, whose seat is Belton?",
-        choices: ["McLennan", "Bell", "Williamson", "Falls"],
-        answer: "Bell",
-      },
     }),
     poi({
       id: "draughon",
@@ -486,11 +441,6 @@ const nyc: City = {
       kind: "landmark",
       tier: "violet",
       lore: "102 floors, 1931. Built in 13 months at the bottom of the Depression.",
-      quiz: {
-        q: "How many floors does the Empire State Building have?",
-        choices: ["86", "100", "102", "110"],
-        answer: "102",
-      },
     }),
     poi({
       id: "nypl",
@@ -510,11 +460,6 @@ const nyc: City = {
       kind: "station",
       tier: "amber",
       lore: "A celestial ceiling, a whispering gallery, and the clock that still runs the commute.",
-      quiz: {
-        q: "Grand Central's main concourse ceiling depicts…",
-        choices: ["The Hudson Valley", "A Mediterranean zodiac", "Locomotives", "Manhattan 1903"],
-        answer: "A Mediterranean zodiac",
-      },
     }),
     poi({
       id: "rock-center",
@@ -814,11 +759,6 @@ const sf: City = {
       kind: "park",
       tier: "red",
       lore: "The old airfield under the bridge. International Orange against the headlands.",
-      quiz: {
-        q: "The Golden Gate Bridge is painted which color?",
-        choices: ["Gold", "International Orange", "Navy gray", "Red oxide"],
-        answer: "International Orange",
-      },
     }),
     poi({
       id: "deyoung",
@@ -928,11 +868,6 @@ const london: City = {
       kind: "civic",
       tier: "violet",
       lore: "The tower is Elizabeth; the bell is Big Ben. People still get this wrong on purpose.",
-      quiz: {
-        q: "What is 'Big Ben' actually the name of?",
-        choices: ["The clock face", "The tower", "The Great Bell", "The Houses of Parliament"],
-        answer: "The Great Bell",
-      },
     }),
     poi({
       id: "westminster-abbey",
@@ -969,11 +904,6 @@ const london: City = {
       kind: "landmark",
       tier: "amber",
       lore: "William's white keep, the Crown Jewels, and ravens under contract.",
-      quiz: {
-        q: "Legend says the kingdom falls if which birds leave the Tower?",
-        choices: ["Pigeons", "Ravens", "Swans", "Falcons"],
-        answer: "Ravens",
-      },
     }),
     poi({
       id: "tower-bridge",
@@ -1120,11 +1050,6 @@ const chicago: City = {
       kind: "landmark",
       tier: "amber",
       lore: "Anish Kapoor's bean. The city folded on stainless steel.",
-      quiz: {
-        q: "Cloud Gate in Millennium Park was designed by whom?",
-        choices: ["Frank Gehry", "Anish Kapoor", "Jaume Plensa", "Alexander Calder"],
-        answer: "Anish Kapoor",
-      },
     }),
     poi({
       id: "art-institute",
@@ -1143,11 +1068,6 @@ const chicago: City = {
       kind: "landmark",
       tier: "amber",
       lore: "Sears, then Willis. The skydeck still hangs you over Wacker.",
-      quiz: {
-        q: "Willis Tower was originally named…",
-        choices: ["Hancock Center", "Sears Tower", "Standard Oil Building", "Marina City"],
-        answer: "Sears Tower",
-      },
     }),
     poi({
       id: "navy-pier",
@@ -1303,11 +1223,6 @@ const detroit: City = {
       kind: "park",
       tier: "white",
       lore: "The city's old parade ground, rebuilt as a park. Woodward, Michigan, and Monroe meet here.",
-      quiz: {
-        q: "Campus Martius sits at the downtown hub of which Detroit avenue?",
-        choices: ["Gratiot", "Woodward", "Jefferson only", "8 Mile"],
-        answer: "Woodward",
-      },
     }),
     poi({
       id: "guardian",
@@ -1335,11 +1250,6 @@ const detroit: City = {
       kind: "civic",
       tier: "green",
       lore: "Riverfront hardscape. The fist, the fountain, Canada across the water.",
-      quiz: {
-        q: "The giant bronze fist downtown commemorates which boxer?",
-        choices: ["Joe Frazier", "Joe Louis", "Sugar Ray Robinson", "Thomas Hearns"],
-        answer: "Joe Louis",
-      },
     }),
     poi({
       id: "rencen",
@@ -1403,11 +1313,6 @@ const detroit: City = {
       kind: "museum",
       tier: "red",
       lore: "Rivera's Detroit Industry murals. A palace of art on Woodward's cultural mile.",
-      quiz: {
-        q: "Diego Rivera's Detroit Industry murals are in which museum?",
-        choices: ["MoMA", "the Detroit Institute of Arts", "the Louvre", "the Art Institute of Chicago"],
-        answer: "the Detroit Institute of Arts",
-      },
     }),
     poi({
       id: "motown",
@@ -1491,11 +1396,6 @@ const tucson: City = {
       kind: "park",
       tier: "blue",
       lore: "The city's first square. Adobe, a Spanish fort's footprint, and the Santa Catalinas on the north sky.",
-      quiz: {
-        q: "Tucson's name comes from an O'odham phrase referring to which landform?",
-        choices: ["A dry lake", "The black base of a hill", "A copper mine", "A cottonwood bosque"],
-        answer: "The black base of a hill",
-      },
     }),
     poi({
       id: "pima-courthouse",
@@ -1505,11 +1405,6 @@ const tucson: City = {
       kind: "civic",
       tier: "amber",
       lore: "Pink Moorish and Spanish Revival downtown, crowned with a tiled dome. Designed by Roy Place, finished in 1929.",
-      quiz: {
-        q: "The historic Pima County Courthouse is famous for which color of stucco?",
-        choices: ["White", "Pink", "Terra-cotta red", "Sand"],
-        answer: "Pink",
-      },
     }),
     poi({
       id: "tma",
@@ -1528,11 +1423,6 @@ const tucson: City = {
       kind: "landmark",
       tier: "blue",
       lore: "1919, across from the depot. A fire here in 1934 flushed Dillinger's gang out of their rooms.",
-      quiz: {
-        q: "A 1934 fire at Hotel Congress helped capture which outlaw's gang?",
-        choices: ["Bonnie and Clyde", "John Dillinger", "Pretty Boy Floyd", "Al Capone"],
-        answer: "John Dillinger",
-      },
     }),
     poi({
       id: "rialto-tucson",
@@ -1579,11 +1469,6 @@ const tucson: City = {
       kind: "campus",
       tier: "red",
       lore: "The campus's first building, finished in 1891 before statehood. A wraparound veranda looks east down the grassy mall.",
-      quiz: {
-        q: "The University of Arizona was founded in which year?",
-        choices: ["1862", "1885", "1912", "1929"],
-        answer: "1885",
-      },
     }),
     poi({
       id: "arizona-stadium",
@@ -1620,11 +1505,6 @@ const tucson: City = {
       kind: "park",
       tier: "amber",
       lore: "A Mountain. A basaltic lookout with a white A. The O'odham name is why the city is Tucson.",
-      quiz: {
-        q: "The white letter on Sentinel Peak in Tucson stands for…",
-        choices: ["Arizona", "the University of Arizona", "the Arizona Rangers", "Ajo"],
-        answer: "the University of Arizona",
-      },
     }),
     poi({
       id: "fourth-ave",
@@ -1661,11 +1541,6 @@ const tucson: City = {
       kind: "civic",
       tier: "red",
       lore: "The White Dove of the Desert, built 1783–1797. A working parish church on Tohono O'odham land south of the city.",
-      quiz: {
-        q: "Mission San Xavier del Bac is often called the…",
-        choices: ["Pink Dome of the Valley", "White Dove of the Desert", "Copper Bell of the Mines", "Red Wall of the Canyon"],
-        answer: "White Dove of the Desert",
-      },
     }),
     poi({
       id: "main-gate",
@@ -1694,11 +1569,6 @@ const toronto: City = {
       kind: "landmark",
       tier: "violet",
       lore: "553 metres of concrete and a glass floor. Opened 1976 as a CN communications mast.",
-      quiz: {
-        q: "The CN Tower opened to the public in which year?",
-        choices: ["1967", "1976", "1989", "1999"],
-        answer: "1976",
-      },
     }),
     poi({
       id: "nps",
@@ -1708,11 +1578,6 @@ const toronto: City = {
       kind: "civic",
       tier: "amber",
       lore: "The city's front yard. Viljo Revell's two towers and a pool that becomes a rink.",
-      quiz: {
-        q: "Toronto City Hall's ceremonial square is named for which mayor?",
-        choices: ["Mel Lastman", "Nathan Phillips", "Rob Ford", "David Miller"],
-        answer: "Nathan Phillips",
-      },
     }),
     poi({
       id: "union-to",
@@ -1749,11 +1614,6 @@ const toronto: City = {
       kind: "museum",
       tier: "amber",
       lore: "Dinosaurs, a crystal on Bloor, and a century of collecting. Libeskind's 2007 glass-and-aluminum prism juts over the sidewalk.",
-      quiz: {
-        q: "The crystal addition on the Royal Ontario Museum was designed by…",
-        choices: ["Frank Gehry", "Daniel Libeskind", "Zaha Hadid", "I. M. Pei"],
-        answer: "Daniel Libeskind",
-      },
     }),
     poi({
       id: "ago",
@@ -1808,11 +1668,6 @@ const toronto: City = {
       kind: "civic",
       tier: "green",
       lore: "The Ontario Legislative Building in pink sandstone. The province sits here, not Ottawa.",
-      quiz: {
-        q: "Queen's Park is the seat of which legislature?",
-        choices: ["Parliament of Canada", "Ontario Legislative Assembly", "Toronto City Council only", "the Senate"],
-        answer: "Ontario Legislative Assembly",
-      },
     }),
     poi({
       id: "uoft-uc",
@@ -1906,11 +1761,6 @@ const la: City = {
       kind: "civic",
       tier: "amber",
       lore: "The 1928 tower that was the city's height limit for decades. Free observation on a clear day.",
-      quiz: {
-        q: "Los Angeles City Hall opened in which year?",
-        choices: ["1913", "1928", "1955", "1971"],
-        answer: "1928",
-      },
     }),
     poi({
       id: "disney-hall",
@@ -1920,11 +1770,6 @@ const la: City = {
       kind: "theatre",
       tier: "red",
       lore: "Gehry's steel on Grand Avenue. The Philharmonic's house, opened 2003.",
-      quiz: {
-        q: "Walt Disney Concert Hall was designed by…",
-        choices: ["Frank Lloyd Wright", "Frank Gehry", "I. M. Pei", "Thom Mayne"],
-        answer: "Frank Gehry",
-      },
     }),
     poi({
       id: "union-la",
@@ -2016,11 +1861,6 @@ const la: City = {
       kind: "stadium",
       tier: "red",
       lore: "Chavez Ravine, 1962. The view of the palm line from the top deck.",
-      quiz: {
-        q: "The Dodgers moved from Brooklyn to Los Angeles in…",
-        choices: ["1947", "1958", "1962", "1974"],
-        answer: "1958",
-      },
     }),
     poi({
       id: "lacma",
@@ -2039,11 +1879,6 @@ const la: City = {
       kind: "landmark",
       tier: "red",
       lore: "1935, a deco dome over the basin. The Hollywood Sign sits in the same park.",
-      quiz: {
-        q: "Griffith Observatory opened in which year?",
-        choices: ["1915", "1935", "1955", "1969"],
-        answer: "1935",
-      },
     }),
     poi({
       id: "tcl-chinese",
@@ -2126,11 +1961,6 @@ const boston: City = {
       kind: "park",
       tier: "amber",
       lore: "1634. The oldest public park in the country. A red line starts here.",
-      quiz: {
-        q: "Boston Common is considered the oldest public park in the U.S. It dates to…",
-        choices: ["1492", "1634", "1776", "1893"],
-        answer: "1634",
-      },
     }),
     poi({
       id: "ma-state-house",
@@ -2140,11 +1970,6 @@ const boston: City = {
       kind: "civic",
       tier: "red",
       lore: "Bulfinch's gold dome on Beacon Hill. The General Court still sits under it.",
-      quiz: {
-        q: "The Massachusetts State House was designed by…",
-        choices: ["H. H. Richardson", "Charles Bulfinch", "I. M. Pei", "Frederick Law Olmsted"],
-        answer: "Charles Bulfinch",
-      },
     }),
     poi({
       id: "faneuil",
@@ -2154,11 +1979,6 @@ const boston: City = {
       kind: "civic",
       tier: "amber",
       lore: "The Cradle of Liberty. A meeting hall over a market, still arguing upstairs.",
-      quiz: {
-        q: "Faneuil Hall is nicknamed the…",
-        choices: ["Cradle of Liberty", "Hub of the Universe", "Athens of America only", "Old Ironsides"],
-        answer: "Cradle of Liberty",
-      },
     }),
     poi({
       id: "quincy-mkt",
@@ -2177,11 +1997,6 @@ const boston: City = {
       kind: "civic",
       tier: "amber",
       lore: "Christ Church, 1723. Two lanterns in the steeple: the British by sea.",
-      quiz: {
-        q: "Two lanterns in Old North Church meant the British were coming…",
-        choices: ["by land", "by sea", "from Canada", "at dawn only"],
-        answer: "by sea",
-      },
     }),
     poi({
       id: "revere-house",
@@ -2200,11 +2015,6 @@ const boston: City = {
       kind: "landmark",
       tier: "red",
       lore: "Old Ironsides. A 1797 frigate still afloat in Charlestown Navy Yard.",
-      quiz: {
-        q: "USS Constitution is nicknamed…",
-        choices: ["Old Glory", "Old Ironsides", "Old North", "the Hub"],
-        answer: "Old Ironsides",
-      },
     }),
     poi({
       id: "bunker-hill",
@@ -2223,11 +2033,6 @@ const boston: City = {
       kind: "stadium",
       tier: "red",
       lore: "1912. The Green Monster in left, the oldest big-league park still in use.",
-      quiz: {
-        q: "Fenway Park opened in…",
-        choices: ["1894", "1912", "1934", "1967"],
-        answer: "1912",
-      },
     }),
     poi({
       id: "td-garden",
@@ -2357,11 +2162,6 @@ const nola: City = {
       kind: "park",
       tier: "amber",
       lore: "The old Place d'Armes. Jackson on a horse, the cathedral behind him, the river at your back.",
-      quiz: {
-        q: "Jackson Square was renamed for the victor of which battle?",
-        choices: ["Gettysburg", "the Battle of New Orleans", "Yorktown", "San Jacinto"],
-        answer: "the Battle of New Orleans",
-      },
     }),
     poi({
       id: "nola-cathedral",
@@ -2371,11 +2171,6 @@ const nola: City = {
       kind: "civic",
       tier: "red",
       lore: "Three spires on the square. The oldest Catholic cathedral in continuous use in the country.",
-      quiz: {
-        q: "St. Louis Cathedral faces which New Orleans square?",
-        choices: ["Lafayette Square", "Jackson Square", "Congo Square", "Lee Circle"],
-        answer: "Jackson Square",
-      },
     }),
     poi({
       id: "nola-cabildo",
@@ -2385,11 +2180,6 @@ const nola: City = {
       kind: "civic",
       tier: "amber",
       lore: "Spanish colonial stone next to the cathedral. The Louisiana Purchase was transferred here.",
-      quiz: {
-        q: "The Cabildo is where the United States took possession of…",
-        choices: ["Texas", "Louisiana (the Purchase)", "Florida only", "the Oregon Country"],
-        answer: "Louisiana (the Purchase)",
-      },
     }),
     poi({
       id: "nola-du-monde",
@@ -2417,11 +2207,6 @@ const nola: City = {
       kind: "theatre",
       tier: "amber",
       lore: "St. Peter Street. A small room that kept traditional jazz alive after the brass almost left.",
-      quiz: {
-        q: "Preservation Hall in the French Quarter is devoted to…",
-        choices: ["opera", "traditional New Orleans jazz", "ballet", "silent film"],
-        answer: "traditional New Orleans jazz",
-      },
     }),
     poi({
       id: "nola-congo",
@@ -2458,11 +2243,6 @@ const nola: City = {
       kind: "stadium",
       tier: "red",
       lore: "The Saints' house. A white lid on Poydras that sheltered thousands of evacuees during Katrina in 2005.",
-      quiz: {
-        q: "The New Orleans Saints play football at the…",
-        choices: ["Smoothie King Center only", "Caesars Superdome", "Tiger Stadium", "the French Market"],
-        answer: "Caesars Superdome",
-      },
     }),
     poi({
       id: "nola-ww2",
@@ -2472,11 +2252,6 @@ const nola: City = {
       kind: "museum",
       tier: "red",
       lore: "Andrew Higgins built the boats here. The museum grew from a D-Day house into the national one.",
-      quiz: {
-        q: "The National WWII Museum in New Orleans grew from a museum about…",
-        choices: ["the Civil War", "D-Day", "the War of 1812", "Vietnam"],
-        answer: "D-Day",
-      },
     }),
     poi({
       id: "nola-ogden",
@@ -2588,11 +2363,6 @@ const seattle: City = {
       kind: "landmark",
       tier: "violet",
       lore: "A 605-foot tower in the Seattle Center, built for the 1962 World's Fair. The saucer turns slowly over the city.",
-      quiz: {
-        q: "The Space Needle was built for a World's Fair in…",
-        choices: ["1909", "1962", "1974", "1990"],
-        answer: "1962",
-      },
     }),
     poi({
       id: "sea-pike",
@@ -2602,11 +2372,6 @@ const seattle: City = {
       kind: "food",
       tier: "amber",
       lore: "Open since 1907 above Elliott Bay. Fish fly at the stall under the clock, and the farmers set up on the arcade.",
-      quiz: {
-        q: "Pike Place Market opened in…",
-        choices: ["1851", "1907", "1962", "1971"],
-        answer: "1907",
-      },
     }),
     poi({
       id: "sea-library",
@@ -2635,11 +2400,6 @@ const seattle: City = {
       kind: "park",
       tier: "red",
       lore: "Where the city began. Rebuilt in brick and stone after the Great Fire of 1889, with an iron pergola on the square.",
-      quiz: {
-        q: "Pioneer Square was rebuilt in brick and stone after the great fire of…",
-        choices: ["1871", "1889", "1906", "1932"],
-        answer: "1889",
-      },
     }),
     poi({
       id: "sea-smith",
@@ -2649,11 +2409,6 @@ const seattle: City = {
       kind: "landmark",
       tier: "amber",
       lore: "Finished in 1914 for a typewriter magnate. For decades the tallest office tower on the West Coast.",
-      quiz: {
-        q: "Smith Tower was built for Lyman Cornelius Smith, a maker of…",
-        choices: ["typewriters", "railcars", "timber", "steamships"],
-        answer: "typewriters",
-      },
     }),
     poi({
       id: "sea-sam",
@@ -2708,11 +2463,6 @@ const seattle: City = {
       kind: "museum",
       tier: "amber",
       lore: "Frank Gehry's crumpled metal skin at the Seattle Center. Paul Allen founded it; the monorail runs through.",
-      quiz: {
-        q: "The Museum of Pop Culture building was designed by…",
-        choices: ["Frank Gehry", "I. M. Pei", "Zaha Hadid", "Rem Koolhaas"],
-        answer: "Frank Gehry",
-      },
     }),
     poi({
       id: "sea-chihuly",
@@ -2740,11 +2490,6 @@ const seattle: City = {
       kind: "stadium",
       tier: "red",
       lore: "The Seahawks and the Sounders share this roofed bowl south of Pioneer Square. It is known for its noise.",
-      quiz: {
-        q: "Lumen Field is home to the Seattle Seahawks and the…",
-        choices: ["Sounders", "Mariners", "Kraken", "Storm"],
-        answer: "Sounders",
-      },
     }),
     poi({
       id: "sea-tmobile",
@@ -2827,11 +2572,6 @@ const denver: City = {
       kind: "civic",
       tier: "violet",
       lore: "A dome sheathed in real gold leaf, a tribute to the state's gold rush. A step on the west side is marked one mile above sea level.",
-      quiz: {
-        q: "The Colorado State Capitol's dome is covered in…",
-        choices: ["copper sheeting", "gold leaf", "red tile", "white marble"],
-        answer: "gold leaf",
-      },
     }),
     poi({
       id: "den-union",
@@ -2860,11 +2600,6 @@ const denver: City = {
       kind: "museum",
       tier: "amber",
       lore: "Gio Ponti's castle-like tower and Daniel Libeskind's titanium shards face each other across 13th Avenue.",
-      quiz: {
-        q: "The Denver Art Museum's angular Hamilton Building was designed by…",
-        choices: ["Frank Gehry", "Daniel Libeskind", "Renzo Piano", "Michael Graves"],
-        answer: "Daniel Libeskind",
-      },
     }),
     poi({
       id: "den-civic",
@@ -2892,11 +2627,6 @@ const denver: City = {
       kind: "civic",
       tier: "red",
       lore: "A U.S. Mint branch striking coins since 1906. Its coins carry a small D.",
-      quiz: {
-        q: "Coins struck at the Denver Mint carry which mint mark?",
-        choices: ["D", "M", "C", "S"],
-        answer: "D",
-      },
     }),
     poi({
       id: "den-larimer",
@@ -2915,11 +2645,6 @@ const denver: City = {
       kind: "stadium",
       tier: "red",
       lore: "The Rockies' ballpark in LoDo. One row of upper-deck seats is purple: it sits a mile above sea level.",
-      quiz: {
-        q: "At Coors Field, a row of purple seats marks…",
-        choices: ["the longest home run", "one mile above sea level", "the 1995 opening day", "the Rockies' retired numbers"],
-        answer: "one mile above sea level",
-      },
     }),
     poi({
       id: "den-ball",
@@ -3059,11 +2784,6 @@ const nashville: City = {
       kind: "theatre",
       tier: "violet",
       lore: "Built in 1892 as the Union Gospel Tabernacle. The Grand Ole Opry played here from 1943 to 1974; it is still the Mother Church of Country Music.",
-      quiz: {
-        q: "The Ryman Auditorium was built in 1892 as the…",
-        choices: ["Union Gospel Tabernacle", "Tennessee State Armory", "Cumberland Opera House", "Nashville Union Depot"],
-        answer: "Union Gospel Tabernacle",
-      },
     }),
     poi({
       id: "nash-capitol",
@@ -3073,11 +2793,6 @@ const nashville: City = {
       kind: "civic",
       tier: "red",
       lore: "William Strickland's Greek Revival capitol on the city's high hill. The architect is buried in its walls.",
-      quiz: {
-        q: "The architect of the Tennessee State Capitol is entombed…",
-        choices: ["under Fort Nashborough", "in its own walls", "at the Ryman", "in the Hermitage garden"],
-        answer: "in its own walls",
-      },
     }),
     poi({
       id: "nash-cmhof",
@@ -3087,11 +2802,6 @@ const nashville: City = {
       kind: "museum",
       tier: "amber",
       lore: "The museum of country music, with Hatch Show Print's poster shop running inside.",
-      quiz: {
-        q: "Which letterpress poster shop operates inside the Country Music Hall of Fame?",
-        choices: ["Hatch Show Print", "Globe Poster", "Triangle Poster", "Sun Studio Print"],
-        answer: "Hatch Show Print",
-      },
     }),
     poi({
       id: "nash-bridgestone",
@@ -3147,11 +2857,6 @@ const nashville: City = {
       kind: "stadium",
       tier: "red",
       lore: "The Titans' stadium across the Cumberland from downtown, opened in 1999.",
-      quiz: {
-        q: "Nissan Stadium, across the river from downtown, is home to the…",
-        choices: ["Tennessee Titans", "Memphis Grizzlies", "Nashville Predators", "Atlanta Falcons"],
-        answer: "Tennessee Titans",
-      },
     }),
     poi({
       id: "nash-fort",
@@ -3251,11 +2956,6 @@ const nashville: City = {
       kind: "landmark",
       tier: "red",
       lore: "The twin-spired tower everyone calls the Batman Building, the tallest in Tennessee.",
-      quiz: {
-        q: "Nashville's twin-spired AT&T Building is nicknamed the…",
-        choices: ["Batman Building", "Tuning Fork", "Guitar Tower", "Rabbit Ears"],
-        answer: "Batman Building",
-      },
     }),
     poi({
       id: "nash-warmemorial",
@@ -3440,20 +3140,6 @@ const TUCSON_MARKS: Poi[] = [
     kind: "museum",
     tier: "amber",
     lore: "A desert field of retired wings. B-52s on the gravel, the boneyard next door.",
-    quizzes: [
-      {
-        q: "Pima Air & Space Museum is in which city?",
-        choices: ["Phoenix", "Tucson", "Albuquerque", "El Paso"],
-        answer: "Tucson",
-        diff: 1,
-      },
-      {
-        q: "The military aircraft storage yard next to Pima Air & Space is…",
-        choices: ["AMARG, the boneyard", "JPL", "Cape Canaveral's only hangar", "O'Hare's cargo lot"],
-        answer: "AMARG, the boneyard",
-        diff: 2,
-      },
-    ],
   }),
   poi({
     id: "raytheon-tucson",
@@ -3463,26 +3149,6 @@ const TUCSON_MARKS: Poi[] = [
     kind: "landmark",
     tier: "red",
     lore: "The south side's big guided-weapons plant by the airport, opened by Howard Hughes in 1951. It changed hands in 1997.",
-    quizzes: [
-      {
-        q: "Raytheon Missiles & Defense's big desert plant is in…",
-        choices: ["Tucson", "Flagstaff", "Yuma", "Page"],
-        answer: "Tucson",
-        diff: 1,
-      },
-      {
-        q: "The Patriot system, long built by Raytheon, is a…",
-        choices: ["surface-to-air missile system", "aircraft carrier class", "infantry rifle", "weather satellite"],
-        answer: "surface-to-air missile system",
-        diff: 1,
-      },
-      {
-        q: "RTX, Raytheon's parent, is primarily a…",
-        choices: ["retail grocer", "aerospace and defense company", "desert utility", "national park service"],
-        answer: "aerospace and defense company",
-        diff: 2,
-      },
-    ],
   }),
 ];
 

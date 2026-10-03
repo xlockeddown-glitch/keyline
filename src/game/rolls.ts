@@ -33,7 +33,6 @@ const CITY_IDS = [
   "nashville",
 ] as const;
 
-const TierSchema = z.enum(ROLL_TIERS);
 const KindSchema = z.enum(["cards", "speed", "accuracy"]);
 const CitySchema = z.enum(CITY_IDS);
 
@@ -167,27 +166,8 @@ export const fetchMe = createServerFn({ method: "GET" })
     return mine;
   });
 
-export const reportCorrect = createServerFn({ method: "POST" })
-  .validator((u: unknown) => z.object({ tier: TierSchema }).parse(u))
-  .middleware([authMiddleware])
-  .handler(async ({ context, data }) => {
-    const sql = await getSql();
-    const people = await sql<{ name: string | null }>`
-      select name from "user" where id = ${context.userId} limit 1
-    `;
-    const name = publicName(people[0]?.name);
-    const tier = data.tier;
-    await sql`
-      insert into vault_clears (user_id, display_name, tier, correct, updated_at)
-      values (${context.userId}, ${name}, ${tier}, 1, now())
-      on conflict (user_id, tier)
-      do update set
-        correct = vault_clears.correct + 1,
-        display_name = excluded.display_name,
-        updated_at = now()
-    `;
-    return { ok: true as const };
-  });
+// 0.0.53: there is no client-callable "report a clear" any more — the server adds the +1 to vault_clears itself
+// when it grades a right trivia answer (triviaService.grade), so the rolls can't be padded from the browser.
 
 type EventAggRow = {
   user_id: string;

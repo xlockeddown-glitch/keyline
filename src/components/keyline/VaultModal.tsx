@@ -3,7 +3,7 @@ import { Calculator, FlaskConical, Gamepad2, Landmark, Leaf, MapPinned, Palette,
 import { CITIES, KIND_LABEL, TIER_LABEL, allPois, seriesOf, seriesPoi } from "@/game/data";
 import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
-import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/trivia";
+import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
 import { placeLine } from "@/game/place";
 import type { TriviaCat } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
@@ -169,7 +169,12 @@ export function VaultModal() {
             </div>
           </div>
 
-          {!quiz ? (
+          {!quiz && openVault.pending === "deal" ? (
+            <div className="mt-5" aria-live="polite" data-testid="lamp-dealing">
+              <p className="kicker">Lighting the card</p>
+              <p className="mt-1 text-sm text-fg-muted">The card office is pulling a trivia card for this lamp…</p>
+            </div>
+          ) : !quiz ? (
             <div className="mt-5">
               <p className="kicker">Choose a field</p>
               <p className="mt-1 text-sm text-fg-muted">
@@ -233,6 +238,7 @@ export function VaultModal() {
                     key={b.key}
                     type="button"
                     className={b.className}
+                    disabled={openVault.pending === "grade"}
                     onClick={() => {
                       sfx.ui();
                       answer(b.text, performance.now());
@@ -243,13 +249,15 @@ export function VaultModal() {
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-fg-subtle">A–D or 1–4</p>
+              <p className="mt-2 text-xs text-fg-subtle" aria-live="polite">
+                {openVault.pending === "grade" ? "Checking your answer…" : "A–D or 1–4"}
+              </p>
             </div>
           )}
         </div>
         {/* 0.0.52: the leave/forfeit action sits in a footer that never scrolls, so it is on screen on short phones. */}
         <div className="lamp-card-foot px-5 pt-4 pb-5 sm:px-6 sm:pb-6">
-          <button type="button" className="btn btn-ghost w-full" onClick={closeVault}>
+          <button type="button" className="btn btn-ghost w-full" onClick={closeVault} disabled={openVault.pending === "grade"}>
             {series && openVault.run?.spent ? `Forfeit ${series.name}` : "Leave lamp"}
           </button>
         </div>

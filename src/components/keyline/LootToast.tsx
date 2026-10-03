@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useGame } from "@/game/store";
 import type { Tier } from "@/game/types";
-import { DIFF_LABEL } from "@/game/trivia";
+import { DIFF_LABEL } from "@/game/triviaMeta";
 import { ItemIcon, QtyChip } from "./ItemIcon";
 
 export function LootToast() {
