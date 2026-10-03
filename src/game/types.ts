@@ -114,6 +114,8 @@ export type MapKey = {
 
 export type CharmId = "scholar" | "sprinter" | "lantern" | "lucky";
 
+/** `lynx` is the Super Legendary slot. Since 0.0.49 it is drawn and named as the Penguin; the id stays so owned
+ *  hires, worn scouts and print-shop coats in existing saves carry over unchanged. */
 export type ScoutId = "raccoon" | "cat" | "turtle" | "owl" | "corgi" | "sloth" | "fox" | "lynx";
 
 export type ScoutPerk = {

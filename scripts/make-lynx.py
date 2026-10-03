@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""0.0.37: the Lynx gets its own body instead of a recoloured fox.
+"""Superseded in 0.0.49: the `lynx` slot is the Penguin, drawn by scripts/draw-penguin.py. Kept for its helpers
+(lantern_box, in_box), which make-coat-variants.py and make-turtle-coat.py import. Do not rerun — it would
+overwrite the Penguin sheets with the old fox-based lynx.
+
+0.0.37: the Lynx gets its own body instead of a recoloured fox.
 
 Built from the fox sheets so it keeps the house style, pose timing and floor line, then reshaped:
   * ear tufts: a dark tuft rises from each ear tip;

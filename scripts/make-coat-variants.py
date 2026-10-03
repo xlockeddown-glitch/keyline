@@ -53,6 +53,10 @@ AB_RADIUS_BY = {"turtle": 14.0}
 # softened a little so the new colour reads as one coat over the shell, not camouflage.
 L_KEEP = {"turtle": 0.7}
 GRID = {"idle": 2, "walk": 4, "idle-side": 2}
+# Padding of the lantern box the coat stays out of (make-lynx.lantern_box). The 0.0.49 Penguin holds its lantern
+# right at the sleeve tip, so the default box would swallow the sleeve and the front of the coat; its lantern has
+# no coat-coloured pixels to protect, so a tight box (just the glow) is enough.
+LANTERN_PAD = {"lynx": 2}
 
 
 def coat_ref(frames: list[Image.Image], radius: float = 8.0):
@@ -87,7 +91,7 @@ def coat_mask(scout: str, f: Image.Image, ref) -> set[tuple[int, int]]:
         return set()
     x0, y0, x1, y1 = bb
     w, h = x1 - x0, y1 - y0
-    lb = _lynx.lantern_box(f, 6)
+    lb = _lynx.lantern_box(f, LANTERN_PAD.get(scout, 6))
     px = f.load()
     coat: set[tuple[int, int]] = set()
     for y in range(int(y0 + h * HEAD[scout]), int(y1 - h * FOOT)):
@@ -178,6 +182,8 @@ def main() -> None:
 
 # Sheet URLs carry the stamp the art last changed in, like the base sheets in styles.css.
 ART_STAMP = "k45a"
+# Characters whose base art changed since: their coat sheets carry the newer stamp (0.0.49: the Lynx slot is the Penguin).
+ART_STAMP_BY = {"lynx": "k49p"}
 
 
 def write_css() -> None:
@@ -189,7 +195,7 @@ def write_css() -> None:
     for scout in qa.SCOUT_IDS:
         for coat in PALETTE:
             base = f'.scout-marker[data-scout="{scout}"][data-coat="{coat}"]'
-            url = lambda kind: f'url("/sprites/coats/{scout}-{coat}-{kind}.png?v={ART_STAMP}")'
+            url = lambda kind: f'url("/sprites/coats/{scout}-{coat}-{kind}.png?v={ART_STAMP_BY.get(scout, ART_STAMP)}")'
             lines.append(f"{base}{{background-image:{url('walk')}}}")
             lines.append(f"{base}.is-idle{{background-image:{url('idle')};background-size:200% 200%}}")
             lines.append(f"{base}.is-idle.is-side{{background-image:{url('idle-side')};background-size:200% 200%}}")

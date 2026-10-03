@@ -49,18 +49,18 @@
 .scout-marker[data-scout="fox"][data-coat="plum"]{background-image:url("/sprites/coats/fox-plum-walk.png?v=k45a")}
 .scout-marker[data-scout="fox"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/fox-plum-idle.png?v=k45a");background-size:200% 200%}
 .scout-marker[data-scout="fox"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/fox-plum-idle-side.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="oilskin"]{background-image:url("/sprites/coats/lynx-oilskin-walk.png?v=k45a")}
-.scout-marker[data-scout="lynx"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/lynx-oilskin-idle.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/lynx-oilskin-idle-side.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="bottle"]{background-image:url("/sprites/coats/lynx-bottle-walk.png?v=k45a")}
-.scout-marker[data-scout="lynx"][data-coat="bottle"].is-idle{background-image:url("/sprites/coats/lynx-bottle-idle.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="bottle"].is-idle.is-side{background-image:url("/sprites/coats/lynx-bottle-idle-side.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="oxblood"]{background-image:url("/sprites/coats/lynx-oxblood-walk.png?v=k45a")}
-.scout-marker[data-scout="lynx"][data-coat="oxblood"].is-idle{background-image:url("/sprites/coats/lynx-oxblood-idle.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="oxblood"].is-idle.is-side{background-image:url("/sprites/coats/lynx-oxblood-idle-side.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="plum"]{background-image:url("/sprites/coats/lynx-plum-walk.png?v=k45a")}
-.scout-marker[data-scout="lynx"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/lynx-plum-idle.png?v=k45a");background-size:200% 200%}
-.scout-marker[data-scout="lynx"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/lynx-plum-idle-side.png?v=k45a");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="oilskin"]{background-image:url("/sprites/coats/lynx-oilskin-walk.png?v=k49p")}
+.scout-marker[data-scout="lynx"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/lynx-oilskin-idle.png?v=k49p");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/lynx-oilskin-idle-side.png?v=k49p");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="bottle"]{background-image:url("/sprites/coats/lynx-bottle-walk.png?v=k49p")}
+.scout-marker[data-scout="lynx"][data-coat="bottle"].is-idle{background-image:url("/sprites/coats/lynx-bottle-idle.png?v=k49p");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="bottle"].is-idle.is-side{background-image:url("/sprites/coats/lynx-bottle-idle-side.png?v=k49p");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="oxblood"]{background-image:url("/sprites/coats/lynx-oxblood-walk.png?v=k49p")}
+.scout-marker[data-scout="lynx"][data-coat="oxblood"].is-idle{background-image:url("/sprites/coats/lynx-oxblood-idle.png?v=k49p");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="oxblood"].is-idle.is-side{background-image:url("/sprites/coats/lynx-oxblood-idle-side.png?v=k49p");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="plum"]{background-image:url("/sprites/coats/lynx-plum-walk.png?v=k49p")}
+.scout-marker[data-scout="lynx"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/lynx-plum-idle.png?v=k49p");background-size:200% 200%}
+.scout-marker[data-scout="lynx"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/lynx-plum-idle-side.png?v=k49p");background-size:200% 200%}
 .scout-marker[data-scout="owl"][data-coat="oilskin"]{background-image:url("/sprites/coats/owl-oilskin-walk.png?v=k45a")}
 .scout-marker[data-scout="owl"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/owl-oilskin-idle.png?v=k45a");background-size:200% 200%}
 .scout-marker[data-scout="owl"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/owl-oilskin-idle-side.png?v=k45a");background-size:200% 200%}

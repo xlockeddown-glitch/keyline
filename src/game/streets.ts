@@ -853,7 +853,7 @@ export function pathLength(path: Pt[]): number {
   return n;
 }
 
-/** Super Legendary (lynx) may cut. Default scouts never cut buildings. */
+/** Super Legendary (id `lynx`, shown as the Penguin since 0.0.49) may cut. Default scouts never cut buildings. */
 export function canCutBuildings(scout?: string | null): boolean {
   return scout === "lynx";
 }

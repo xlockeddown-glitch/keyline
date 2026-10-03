@@ -4063,8 +4063,8 @@ export const SCOUTS: Record<
   },
   lynx: {
     id: "lynx",
-    name: "The last coat",
-    blurb: "Ten times the Fox. Walks through the block.",
+    name: "The Penguin",
+    blurb: "Ten times the Fox. Waddles straight through the block, scarf first.",
     coins: superLegendaryCost(),
     walk: "/sprites/scouts/lynx-walk.png",
     idle: "/sprites/scouts/lynx-idle.png",

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""One-shot repair: fill 1px dropout specks and mint a distinct lynx from the fox sheets."""
+"""One-shot repair: fill 1px dropout specks and mint a distinct lynx from the fox sheets.
+(Historical — do not rerun since 0.0.49: the lynx sheets are the Penguin from scripts/draw-penguin.py.)"""
 from __future__ import annotations
 
 import colorsys

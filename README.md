@@ -28,7 +28,7 @@ Open the **Journal** from the kit. Tabs: **Places**, **Supplies**, **Progress**,
 - **Cafe** — white-match drip only while that tab is focused.
 - **News kiosk** — city-tagged trivia packs.
 - **Satchel** — named lamps listed; unnamed ones collapse to one count line (no "Undiscovered lamp" spam).
-- **Super Legendary** — the last coat at the outfitter, ten times the Fox. Hireable. That coat may cut the block. Default coats keep the curb.
+- **Super Legendary** — the Penguin, the last coat at the outfitter, ten times the Fox. Hireable. That coat may cut the block. Default coats keep the curb.
 
 The **Leaderboard** lists first name and last initial only — Ryan G., not the whole name.
 
