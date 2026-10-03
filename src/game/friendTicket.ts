@@ -1,5 +1,4 @@
 import { TIER_VALUE } from "./rewards.ts";
-import { matchCap } from "./ticket.ts";
 import type { Tier } from "./types";
 
 /**
@@ -138,17 +137,21 @@ export function rewardDecision(p: { correct: boolean; late: boolean; senderRewar
 }
 
 export function rewardLine(why: RewardWhy | null, from: string): string {
-  if (why == null) return `+1 White match for you and ${from}.`;
+  // Names are "First L." — don't double the stop.
+  if (why == null) return `+1 White match for you and ${from}${from.endsWith(".") ? "" : "."}`;
   if (why === "pair-cap") return `Right! You two already shared a white today, so this one is for bragging rights.`;
   if (why === "sender-cap") return `Right! ${from} has had their three friend-ticket whites today, so no match this time.`;
   if (why === "late") return "The wick burned out before the answer landed.";
   return "Not this time.";
 }
 
-/** Land `n` friend-ticket whites in a save; a full pocket pays the white's ladder value in coin (as the Daily run does). */
-export function payFriend(keys: Record<Tier, number>, points: number, n: number) {
+/**
+ * Land `n` friend-ticket whites in a save; a full pocket pays the white's ladder value in coin (as the Daily
+ * run does). `cap` is the white pocket (ticket.ts matchCap), passed in so the /t page never loads the city data.
+ */
+export function payFriend(keys: Record<Tier, number>, points: number, n: number, cap: number) {
   const next = { ...keys };
-  const room = Math.max(0, matchCap(FRIEND_REWARD) - (next[FRIEND_REWARD] ?? 0));
+  const room = Math.max(0, cap - (next[FRIEND_REWARD] ?? 0));
   const fit = Math.min(room, Math.max(0, n));
   next[FRIEND_REWARD] = (next[FRIEND_REWARD] ?? 0) + fit;
   const coins = (Math.max(0, n) - fit) * TIER_VALUE[FRIEND_REWARD];

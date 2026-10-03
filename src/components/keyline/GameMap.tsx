@@ -43,6 +43,7 @@ import { VaultModal } from "./VaultModal";
 import { HqPanel } from "./HqPanel";
 import { ScoutShop } from "./ScoutShop";
 import { LootToast } from "./LootToast";
+import { FriendTickets } from "./FriendTickets";
 import { MysteryWheel } from "./MysteryWheel";
 import { Satchel } from "./Satchel";
 import { Fireworks } from "./Fireworks";
@@ -1545,6 +1546,7 @@ export function GameMap() {
         }}
       />
       <LootToast />
+      <FriendTickets />
       <MysteryWheel />
       <VaultModal />
       <Satchel />

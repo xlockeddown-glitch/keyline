@@ -8,6 +8,7 @@ import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
 import { reportCorrect } from "./rolls";
 import { legacyDailyPaid, markDailyPaid, payDaily } from "./dailyRun";
+import { markFriendPaid, payFriend } from "./friendTicket";
 import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type PlateEvent, type PlateRollMap } from "./telemetry";
 import { reportPlate } from "./reportPlate";
 import { fetchRetune } from "./retuneJob";
@@ -151,6 +152,8 @@ export type GameState = {
   sparkLamps: string[];
   /** Daily Lantern Run finishes already paid, as `day|city` keys (once per city per UTC day). */
   dailyPaid: string[];
+  /** Friend-ticket whites already landed in this save ("s:<token>" sent, "f:<token>" answered), 0.0.50. */
+  friendPaid: string[];
   charmDay: string;
   charmTopics: TriviaCat[];
   blanks: Poi[];
@@ -200,6 +203,8 @@ export type GameState = {
   claimPulse: () => void;
   /** Pay the Daily Lantern Run finish once per UTC day. Returns what landed, or null if already paid. */
   payDailyRun: (day: string, city: CityId) => { added: Partial<Record<Tier, number>>; coins: number } | null;
+  /** Land server-confirmed friend-ticket whites (each id once per save). Returns the ids newly paid. */
+  payFriendTickets: (ids: string[]) => { fresh: string[]; added: number; coins: number };
   bankUp: (tier: Tier) => void;
   bankDown: (tier: Tier) => void;
   craft: (id: CharmId) => void;
@@ -422,6 +427,7 @@ function persistable(s: GameState) {
     sparkN: s.sparkN,
     sparkLamps: s.sparkLamps,
     dailyPaid: s.dailyPaid,
+    friendPaid: s.friendPaid,
     charmDay: s.charmDay,
     charmTopics: s.charmTopics,
     blanks: s.blanks,
@@ -666,6 +672,7 @@ export const useGame = create<GameState>((set, get) => ({
   dailyPaid: Array.isArray(saved?.dailyPaid)
     ? saved.dailyPaid.filter((k): k is string => typeof k === "string")
     : legacyDailyPaid((saved as { dailyPaidDay?: unknown } | null | undefined)?.dailyPaidDay, legacyDailyRun()),
+  friendPaid: Array.isArray(saved?.friendPaid) ? saved.friendPaid.filter((k): k is string => typeof k === "string") : [],
   charmDay: typeof saved?.charmDay === "string" ? saved.charmDay : "",
   charmTopics: Array.isArray(saved?.charmTopics) ? saved.charmTopics : [],
   blanks: Array.isArray(saved?.blanks) ? saved.blanks : [],
@@ -1444,6 +1451,15 @@ export const useGame = create<GameState>((set, get) => ({
     set({ dailyPaid: marked, keys: paid.keys, points: paid.points });
     scheduleSave(get);
     return { added: paid.added, coins: paid.coins };
+  },
+  payFriendTickets: (ids) => {
+    const marked = markFriendPaid(get().friendPaid, ids);
+    if (!marked.fresh.length) return { fresh: [], added: 0, coins: 0 };
+    const paid = payFriend(get().keys, get().points, marked.fresh.length, matchCap("white"));
+    sfx.pickup();
+    set({ friendPaid: marked.paid, keys: paid.keys, points: paid.points });
+    scheduleSave(get);
+    return { fresh: marked.fresh, added: paid.added, coins: paid.coins };
   },
   bankUp: (tier) => {
     const spec = bankUpSpec(tier);

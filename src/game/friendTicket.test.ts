@@ -17,9 +17,11 @@ import {
   pairKey,
   payFriend,
   rewardDecision,
+  rewardLine,
   utcDay,
   type TicketRow,
 } from "./friendTicket.ts";
+import { matchCap } from "./ticket.ts";
 
 const T0 = Date.UTC(2026, 9, 3, 18, 0, 0);
 const row = (p: Partial<TicketRow> = {}): TicketRow => ({
@@ -117,10 +119,10 @@ test("dealt order is a permutation of the card's four choices", () => {
 
 test("payFriend: +1 white; a full white pocket pays 30 coin instead", () => {
   const keys = { white: 1, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
-  assert.deepEqual(payFriend(keys, 100, 1), { keys: { ...keys, white: 2 }, points: 100, added: 1, coins: 0 });
+  assert.deepEqual(payFriend(keys, 100, 1, matchCap("white")), { keys: { ...keys, white: 2 }, points: 100, added: 1, coins: 0 });
   const full = { ...keys, white: 4 };
-  assert.deepEqual(payFriend(full, 100, 1), { keys: full, points: 130, added: 0, coins: 30 });
-  assert.deepEqual(payFriend({ ...keys, white: 3 }, 0, 2), { keys: { ...keys, white: 4 }, points: 30, added: 1, coins: 30 });
+  assert.deepEqual(payFriend(full, 100, 1, matchCap("white")), { keys: full, points: 130, added: 0, coins: 30 });
+  assert.deepEqual(payFriend({ ...keys, white: 3 }, 0, 2, matchCap("white")), { keys: { ...keys, white: 4 }, points: 30, added: 1, coins: 30 });
 });
 
 test("markFriendPaid: a reward lands in a save once, however often the news repeats", () => {
@@ -129,4 +131,11 @@ test("markFriendPaid: a reward lands in a save once, however often the news repe
   const b = markFriendPaid(a.paid, ["s:x", "s:z"]);
   assert.deepEqual(b.fresh, ["s:z"]);
   assert.deepEqual(b.paid, ["s:x", "f:y", "s:z"]);
+});
+
+test("result lines: First L. names don't get a doubled full stop", () => {
+  assert.equal(rewardLine(null, "Ryan G."), "+1 White match for you and Ryan G.");
+  assert.equal(rewardLine(null, "Cher"), "+1 White match for you and Cher.");
+  assert.match(rewardLine("pair-cap", "Ryan G."), /already shared a white today/);
+  assert.match(rewardLine("sender-cap", "Ryan G."), /three friend-ticket whites today/);
 });
