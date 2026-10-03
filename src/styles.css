@@ -2848,3 +2848,105 @@ h3 {
     transform: translateX(-50%) !important;
   }
 }
+
+/* 0.0.43 Daily Lantern Run */
+.daily-hud {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-fg-muted);
+  text-align: left;
+}
+.daily-hud:hover {
+  color: var(--color-fg);
+}
+.daily-route {
+  stroke: #f2d48a;
+  filter: drop-shadow(0 0 4px rgb(242 212 138 / 0.65));
+  stroke-linecap: round;
+}
+.daily-route.is-walked {
+  stroke: var(--color-fg-subtle);
+  filter: none;
+  opacity: 0.55;
+}
+.daily-pin {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px 999px 999px 4px;
+  transform: rotate(-45deg);
+  background: var(--color-bg-elevated);
+  border: 2px solid #f2d48a;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.5);
+}
+.daily-pin span {
+  transform: rotate(45deg);
+  font: 700 13px/1 var(--font-sans);
+  color: #f2d48a;
+}
+.daily-pin.is-next {
+  background: #f2d48a;
+  box-shadow: 0 0 0 4px rgb(242 212 138 / 0.28), 0 4px 10px rgb(0 0 0 / 0.5);
+}
+.daily-pin.is-next span {
+  color: var(--color-accent-fg);
+}
+.daily-pin.is-lit {
+  border-color: var(--color-ok);
+  background: color-mix(in oklab, var(--color-ok) 30%, var(--color-bg-elevated));
+}
+.daily-pin.is-lit span {
+  color: var(--color-fg);
+}
+.daily-list {
+  display: grid;
+  gap: 6px;
+}
+.daily-stop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-bg-subtle) 50%, transparent);
+}
+.daily-stop.is-next {
+  border-color: color-mix(in oklab, #f2d48a 55%, var(--color-border));
+}
+.daily-stop.is-lit {
+  opacity: 0.8;
+}
+.daily-num {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1.5px solid #f2d48a;
+  color: #f2d48a;
+  font-weight: 700;
+  font-size: 13px;
+}
+.daily-stop.is-lit .daily-num {
+  border-color: var(--color-ok);
+  color: var(--color-fg);
+  background: color-mix(in oklab, var(--color-ok) 30%, transparent);
+}
+.daily-stop.is-next .daily-num {
+  background: #f2d48a;
+  color: var(--color-accent-fg);
+}
+.daily-status {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-bg-subtle) 35%, transparent);
+}

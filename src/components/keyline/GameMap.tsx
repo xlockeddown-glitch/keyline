@@ -48,6 +48,9 @@ import { Satchel } from "./Satchel";
 import { Fireworks } from "./Fireworks";
 import { Timetable } from "./Timetable";
 import { Tutorial } from "./Tutorial";
+import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
+import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
+import { DAILY_REACH_M, dailyRoute } from "@/game/dailyRun";
 
 type LModule = typeof import("leaflet");
 
@@ -119,6 +122,11 @@ export function GameMap() {
   const [boardOpen, setBoardOpen] = useState(false);
   const [runOn, setRunOn] = useState(false);
   const autoSprint = useRef(false);
+  const dailyLines = useRef<Polyline[]>([]);
+  const dailyPins = useRef<Marker[]>([]);
+  const dailyKey = useRef("");
+  const dailyShow = useDaily((s) => s.show);
+  const dailyLit = useDaily((s) => activeProgress(s.progress, cityId)?.lit ?? 0);
 
   function strokeColor() {
     if (typeof document === "undefined") return "#c4a35a";
@@ -343,6 +351,72 @@ export function GameMap() {
     ).addTo(map);
   }
 
+  function clearDaily() {
+    for (const l of dailyLines.current) l.remove();
+    for (const m of dailyPins.current) m.remove();
+    dailyLines.current = [];
+    dailyPins.current = [];
+    dailyKey.current = "";
+  }
+
+  /** Daily Lantern Run: the five lamps, numbered, and the foot route between them. */
+  function paintDaily() {
+    const L = Lref.current;
+    const map = mapRef.current;
+    const g = graphRef.current;
+    const ds = useDaily.getState();
+    if (!L || !map || !ds.show) {
+      clearDaily();
+      return;
+    }
+    const cid = useGame.getState().cityId;
+    const prog = activeProgress(ds.progress, cid);
+    const route = prog ? dailyRoute(prog.city, prog.day) : todayRoute(cid);
+    const lit = prog?.lit ?? 0;
+    const key = `${route.city}|${route.day}|${g ? g.segs.length > 0 : false}`;
+    for (const m of dailyPins.current) m.remove();
+    dailyPins.current = route.lamps.map((lamp, i) =>
+      L.marker([lamp.lat, lamp.lng], {
+        icon: L.divIcon({
+          className: "",
+          html: `<div class="daily-pin${i < lit ? " is-lit" : i === lit ? " is-next" : ""}" title="Lantern Run lamp ${i + 1}: ${lamp.name.replace(/"/g, "&quot;")}"><span>${i + 1}</span></div>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 44],
+        }),
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 700,
+      }).addTo(map),
+    );
+    for (let i = 0; i < dailyLines.current.length; i++) {
+      dailyLines.current[i]!.getElement()?.classList.toggle("is-walked", i < lit - 1);
+    }
+    if (dailyKey.current === key) return;
+    for (const l of dailyLines.current) l.remove();
+    dailyLines.current = [];
+    dailyKey.current = key;
+    const legs: (Polyline | null)[] = [];
+    const draw = (i: number, path: Pt[] | null) => {
+      if (mapRef.current !== map || dailyKey.current !== key || !path || path.length < 2) return;
+      legs[i]?.remove();
+      const line = L.polyline(
+        path.map((p) => [p.lat, p.lng] as [number, number]),
+        { weight: 5, opacity: 0.9, className: `daily-route${i < (activeProgress(useDaily.getState().progress, cid)?.lit ?? 0) - 1 ? " is-walked" : ""}`, interactive: false, dashArray: "2 9" },
+      ).addTo(map);
+      legs[i] = line;
+      dailyLines.current = legs.filter((x): x is Polyline => Boolean(x));
+    };
+    const signal = abortRef.current?.signal;
+    for (let i = 1; i < route.lamps.length; i++) {
+      const a = route.lamps[i - 1]!;
+      const b = route.lamps[i]!;
+      const local = g ? routeOnGraph(g, a, b) : null;
+      draw(i - 1, local);
+      // Foot router first (never a car profile); the walk graph wins if it strays off walkable ways.
+      void routeWalk(g, a, b, signal).then((path) => draw(i - 1, path));
+    }
+  }
+
   function snapKeys(g: StreetGraph) {
     if (snapping.current) return;
     const keys = useGame.getState().mapKeys;
@@ -486,6 +560,7 @@ export function GameMap() {
           graph: () => graphRef.current,
           route: () => routeRef.current,
           walkTo: (lat: number, lng: number) => setDestination(lat, lng),
+          daily: () => useDaily.getState(),
           place: (lat: number, lng: number) => {
             const g = graphRef.current;
             routeRef.current = null;
@@ -564,6 +639,9 @@ export function GameMap() {
       waypointMarker.current = null;
       vaultMarkers.current.clear();
       keyMarkers.current.clear();
+      dailyLines.current = [];
+      dailyPins.current = [];
+      dailyKey.current = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityId]);
@@ -1233,6 +1311,11 @@ export function GameMap() {
           }
           if (fresh.length) st.stampPlaces(fresh);
         }
+        useDaily.getState().check({ lat: pos.current.lat, lng: pos.current.lng }, seated, (lat, lng) => {
+          const g = graphRef.current;
+          const c = g ? nearest(g, lat, lng, DAILY_REACH_M) : null;
+          return c ? { lat: c.lat, lng: c.lng } : null;
+        });
         const desk = fareDesk(city);
         let aimLat = nearestPoi.lat;
         let aimLng = nearestPoi.lng;
@@ -1285,6 +1368,11 @@ export function GameMap() {
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    paintDaily();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dailyShow, dailyLit, streets, cityId]);
 
   function retryStreets() {
     const city = CITIES[cityId];
@@ -1371,6 +1459,12 @@ export function GameMap() {
       <HqPanel />
       <ScoutShop />
       <Fireworks />
+      <DailyRunPanel
+        onWalk={(lat, lng) => {
+          void setDestination(lat, lng, true);
+        }}
+      />
+      <DailyFinishCard />
       {boardOpen ? (
         <Timetable
           onClose={() => setBoardOpen(false)}

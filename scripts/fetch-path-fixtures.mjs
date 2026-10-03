@@ -6,6 +6,10 @@ const AREAS = {
   nyc: { lat: 40.7430, lng: -73.9730, r: 900 },
   austin: { lat: 30.2645, lng: -97.7345, r: 900 },
   la: { lat: 34.0560, lng: -118.2500, r: 1500 },
+  // 0.0.43 Daily Lantern Run: every daily-eligible lamp (≤1600 m of spawn) plus a walking margin.
+  "daily-detroit": { lat: 42.3314, lng: -83.0466, r: 1900 },
+  "daily-austin": { lat: 30.2681, lng: -97.7418, r: 1900 },
+  "daily-nyc": { lat: 40.758, lng: -73.9855, r: 1900 },
 };
 const URLS = ["https://overpass.openstreetmap.fr/api/interpreter", "https://overpass-api.de/api/interpreter"];
 const KEEP = ["highway", "name", "ref", "foot", "access", "motorroad", "area", "sidewalk", "bridge", "tunnel", "layer"];

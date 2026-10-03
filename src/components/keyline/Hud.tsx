@@ -10,6 +10,7 @@ import type { Tier } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
 import { TouchPad } from "./TouchPad";
 import { AudioDock } from "./AudioDock";
+import { DailyHudLine, DailyKitButton } from "./DailyRun";
 
 type Props = {
   onVector: (x: number, y: number) => void;
@@ -165,10 +166,12 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
               {ticketHint(cityVaults)}
             </p>
           )}
+          <DailyHudLine />
         </div>
 
         <div className="flex items-center gap-2">
           <AudioDock />
+          <DailyKitButton />
           <button
             type="button"
             className="hud-plate is-kit pointer-events-auto"

@@ -6,6 +6,7 @@ import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
 import { reportCorrect } from "./rolls";
+import { payDaily } from "./dailyRun";
 import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type PlateEvent, type PlateRollMap } from "./telemetry";
 import { reportPlate } from "./reportPlate";
 import { fetchRetune } from "./retuneJob";
@@ -142,6 +143,8 @@ export type GameState = {
   sparkDay: string;
   sparkN: number;
   sparkLamps: string[];
+  /** UTC day the Daily Lantern Run last paid out (once a day). */
+  dailyPaidDay: string;
   charmDay: string;
   charmTopics: TriviaCat[];
   blanks: Poi[];
@@ -189,6 +192,8 @@ export type GameState = {
   closeVault: () => void;
   claimCrate: () => void;
   claimPulse: () => void;
+  /** Pay the Daily Lantern Run finish once per UTC day. Returns what landed, or null if already paid. */
+  payDailyRun: (day: string) => { added: Partial<Record<Tier, number>>; coins: number } | null;
   bankUp: (tier: Tier) => void;
   bankDown: (tier: Tier) => void;
   craft: (id: CharmId) => void;
@@ -395,6 +400,7 @@ function persistable(s: GameState) {
     sparkDay: s.sparkDay,
     sparkN: s.sparkN,
     sparkLamps: s.sparkLamps,
+    dailyPaidDay: s.dailyPaidDay,
     charmDay: s.charmDay,
     charmTopics: s.charmTopics,
     blanks: s.blanks,
@@ -623,6 +629,7 @@ export const useGame = create<GameState>((set, get) => ({
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
   sparkLamps: saved?.sparkLamps ?? [],
+  dailyPaidDay: typeof saved?.dailyPaidDay === "string" ? saved.dailyPaidDay : "",
   charmDay: typeof saved?.charmDay === "string" ? saved.charmDay : "",
   charmTopics: Array.isArray(saved?.charmTopics) ? saved.charmTopics : [],
   blanks: Array.isArray(saved?.blanks) ? saved.blanks : [],
@@ -1356,6 +1363,14 @@ export const useGame = create<GameState>((set, get) => ({
     window.setTimeout(() => {
       if (get().toast?.includes("City Pulse")) set({ toast: null });
     }, 2200);
+  },
+  payDailyRun: (day) => {
+    if (!day || get().dailyPaidDay === day) return null;
+    const paid = payDaily(get().keys, get().points);
+    sfx.pickup();
+    set({ dailyPaidDay: day, keys: paid.keys, points: paid.points });
+    scheduleSave(get);
+    return { added: paid.added, coins: paid.coins };
   },
   bankUp: (tier) => {
     const spec = bankUpSpec(tier);
