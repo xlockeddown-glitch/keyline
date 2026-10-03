@@ -3041,3 +3041,26 @@ export function rarityCensus() {
 	}
 	return { total: seen.size, buckets, downfills: rarityStats.downfills, fallbacks: rarityStats.fallbacks };
 }
+
+/**
+ * Every card a lamp can deal (banks, city and region sets, place topics), for server lookups by id
+ * (friend tickets, 0.0.50). Door quizzes on named lamps live in data.ts and are added by friendCards.ts.
+ */
+export function everyCard(): TriviaQ[] {
+	const out: TriviaQ[] = [];
+	const add = (list: TriviaQ[] | undefined) => {
+		if (list) out.push(...list);
+	};
+	for (const cat of ALL_CATS) {
+		add(GENERAL[cat]);
+		for (const c of Object.values(CITY)) add(c[cat]);
+		for (const c of Object.values(CITY_EXTRA)) add(c[cat]);
+		for (const c of Object.values(REGION)) add(c[cat]);
+	}
+	for (const topic of Object.values(PLACE)) {
+		if (!topic) continue;
+		for (const list of Object.values(topic)) add(list ?? undefined);
+	}
+	out.push(FALLBACK_Q);
+	return out;
+}
