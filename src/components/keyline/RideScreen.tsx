@@ -48,7 +48,7 @@ function matchList(r: { white: number; blue: number; green?: number }) {
   return bits.join(" · ");
 }
 
-type Result = { verdict: string; sub?: string; outcome: RideOutcome; add: { white: number; blue: number; green: number } };
+type Result = { verdict: string; sub?: string; outcome: RideOutcome; add: { white: number; blue: number; green: number; owed: number } };
 
 /** Each game's icon. Shapes differ, so the picker never leans on colour alone. */
 const GAME_ICON: Record<RideGameId, LucideIcon> = {
@@ -245,9 +245,11 @@ export function RideScreen() {
             <p className="ride-result-sub">
               {result.add.white || result.add.blue || result.add.green
                 ? `${matchList(result.add)} into your pocket now.`
-                : (journey.game?.rounds ?? 0) > 1
-                  ? "Your best round already counted. Only the best pays."
-                  : "Pocket’s full. Spend some at a lamp."}
+                : result.add.owed > 0
+                  ? "Pocket’s full. Spend some at a lamp."
+                  : (journey.game?.rounds ?? 0) > 1
+                    ? "Your best round already counted. Only the best pays."
+                    : "This round pays the same as the seat, and that’s already in your pocket."}
             </p>
             <div className="ride-result-actions">
               {canPlay ? (
@@ -278,8 +280,10 @@ export function RideScreen() {
                 onSelect={chooseGame}
                 onPlay={play}
               />
-            ) : journey.game ? null : (
-              <p className="ride-play-sub text-xs text-fg-subtle">Too close to the platform for a round.</p>
+            ) : (
+              <p className="ride-play-sub text-xs text-fg-subtle">
+                {journey.game ? "Too close to the platform for another round. Your best round stands." : "Too close to the platform for a round."}
+              </p>
             )}
             {cutLine(journey) ? <p className="ride-play-sub text-xs text-fg-subtle">{cutLine(journey)}</p> : null}
           </div>

@@ -221,7 +221,7 @@ export type GameState = {
    */
   startRideRound: (game?: RideGameId) => number | null;
   /** Bank a finished round (best outcome only) and pay what it newly earns. */
-  finishRideRound: (outcome: RideOutcome) => { white: number; blue: number; green: number };
+  finishRideRound: (outcome: RideOutcome) => { white: number; blue: number; green: number; owed: number };
   /** The player pressed Stop mid-round: forfeit it. Idle pay still stands. */
   dropRideRound: () => void;
 };
@@ -1700,13 +1700,16 @@ export const useGame = create<GameState>((set, get) => ({
   },
   finishRideRound: (outcome) => {
     const j = get().journey;
-    if (!j) return { white: 0, blue: 0, green: 0 };
+    if (!j) return { white: 0, blue: 0, green: 0, owed: 0 };
     const before = get().keys;
+    const granted = (x: GameState["journey"]) => (x?.grantedWhite ?? 0) + (x?.grantedBlue ?? 0) + (x?.grantedGreen ?? 0);
     set({ journey: markRound(j, outcome) });
     get().tickJourney();
     const after = get().keys;
     saveNow(get);
     return {
+      /** Matches the round newly settled, pocketed or not. 0 = it pays no more than the ride already had. */
+      owed: Math.max(0, granted(get().journey) - granted(j)),
       white: Math.max(0, (after.white ?? 0) - (before.white ?? 0)),
       blue: Math.max(0, (after.blue ?? 0) - (before.blue ?? 0)),
       green: Math.max(0, (after.green ?? 0) - (before.green ?? 0)),
