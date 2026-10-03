@@ -2950,3 +2950,148 @@ h3 {
   border: 1px solid var(--color-border);
   background: color-mix(in oklab, var(--color-bg-subtle) 35%, transparent);
 }
+
+/* 0.0.46 Night markets — paper-lantern orange (not the Lantern Run's gold), dotted core + label so colour is never the only cue */
+.market-glow {
+  stroke: #ff8a4c;
+  filter: blur(4px);
+  animation: market-breathe 2.6s ease-in-out infinite;
+}
+.market-line {
+  stroke: #ffd2a8;
+  filter: drop-shadow(0 0 3px rgb(255 138 76 / 0.9));
+}
+@keyframes market-breathe {
+  0%,
+  100% {
+    stroke-opacity: 0.38;
+  }
+  50% {
+    stroke-opacity: 0.68;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-glow {
+    animation: none;
+  }
+}
+.market-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -100%) translateY(-10px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 10px;
+  background: color-mix(in oklab, #ff8a4c 18%, var(--color-bg-elevated));
+  border: 1.5px solid #ff8a4c;
+  box-shadow: 0 0 0 3px rgb(255 138 76 / 0.2), 0 0 18px rgb(255 138 76 / 0.55), 0 4px 10px rgb(0 0 0 / 0.5);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.market-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%) rotate(45deg);
+  background: inherit;
+  border-right: 1.5px solid #ff8a4c;
+  border-bottom: 1.5px solid #ff8a4c;
+}
+.market-pin-copy {
+  display: grid;
+  line-height: 1.15;
+}
+.market-pin-copy b {
+  font: 700 12px/1.1 var(--font-sans);
+  color: #ffd2a8;
+  letter-spacing: 0.02em;
+}
+.market-pin-copy em {
+  font: 600 12px/1.15 var(--font-sans);
+  font-style: normal;
+  color: var(--color-fg);
+}
+.market-pin-copy small {
+  font: 500 10px/1.2 var(--font-sans);
+  color: var(--color-fg-muted);
+}
+.market-lantern {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 16px;
+  height: 20px;
+  border-radius: 45% 45% 40% 40% / 50% 50% 40% 40%;
+  background: radial-gradient(circle at 50% 45%, #fff1d6 0 18%, #ffb070 40%, #e2582a 78%);
+  box-shadow: 0 0 10px rgb(255 138 76 / 0.85);
+}
+.market-lantern::before,
+.market-lantern::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  height: 3px;
+  border-radius: 1px;
+  background: #3a2418;
+}
+.market-lantern::before {
+  top: -2px;
+}
+.market-lantern::after {
+  bottom: -2px;
+}
+.market-hud {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-fg-muted);
+  text-align: left;
+}
+.market-hud > :last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.market-hud:hover {
+  color: var(--color-fg);
+}
+.market-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: #ff8a4c;
+  box-shadow: 0 0 6px #ff8a4c;
+}
+.market-x {
+  color: #ffb27e;
+}
+.market-tag {
+  font-size: 12px;
+}
+.market-tag-x {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #1a0f08;
+  background: #ff9a5e;
+  box-shadow: 0 0 10px rgb(255 138 76 / 0.6);
+}
+.market-row {
+  border-color: #ff8a4c;
+  background: color-mix(in oklab, #ff8a4c 9%, transparent);
+}
+.market-row .market-lantern {
+  margin: 0 10px 0 10px;
+}

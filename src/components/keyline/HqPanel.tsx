@@ -19,6 +19,8 @@ import { RollsBoard } from "./RollsBoard";
 import { DailyBoard } from "./DailyRun";
 import { ScoutRoster } from "./ScoutShop";
 import { PrintShop } from "./PrintShop";
+import { MarketJournalRow, useMarket } from "./NightMarket";
+import { MARKET_TAG } from "@/game/nightMarket";
 
 const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
 
@@ -71,6 +73,7 @@ export function HqPanel() {
   const crateDay = claimed ? Math.max(1, crateStreak) : nextCrateStreak(lastCrateDay, crateStreak, today);
   const loot = crateLoot(crateDay);
   const pulseReady = pulseDue(lastPulseDay, today);
+  const { market } = useMarket(cityId);
 
   useEffect(() => {
     if (hqOpen && pulseReady) setTab("Progress");
@@ -125,6 +128,7 @@ export function HqPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {tab === "Places" ? (
             <ul className="grid gap-2">
+              <MarketJournalRow />
               {city.pois.map((p) => {
                 const known = Boolean(atlas[p.id]);
                 return (
@@ -134,6 +138,7 @@ export function HqPanel() {
                       <p className="kicker">
                         {p.kind === "shop" ? "Outfitter" : `${TIER_LABEL[p.tier]} · ${KIND_LABEL[p.kind]}`}
                         {p.printShop ? " · Print" : ""}
+                        {market?.street.lamps.includes(p.id) ? <span className="market-x"> · {MARKET_TAG}</span> : null}
                       </p>
                       <p className="hq-row-title">{known ? p.name : p.kind === "shop" ? "Undiscovered outfitter" : "Undiscovered lamp"}</p>
                       <p className="hq-row-sub">

@@ -51,6 +51,7 @@ import { Tutorial } from "./Tutorial";
 import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
+import { MARKET_TAG, closestOnStreet, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
 
 type LModule = typeof import("leaflet");
 
@@ -138,6 +139,8 @@ export function GameMap() {
   const dailyKey = useRef("");
   const dailyShow = useDaily((s) => s.show);
   const dailyLit = useDaily((s) => activeProgress(s.runs, cityId)?.lit ?? 0);
+  const marketLayers = useRef<(Polyline | Marker)[]>([]);
+  const marketKey = useRef("");
 
   function strokeColor() {
     if (typeof document === "undefined") return "#c4a35a";
@@ -428,6 +431,71 @@ export function GameMap() {
     }
   }
 
+  function clearMarket() {
+    for (const l of marketLayers.current) l.remove();
+    marketLayers.current = [];
+    marketKey.current = "";
+  }
+
+  /** Night market: a warm glow along the market street and a ×2 lantern sign at its middle. Repaints on the hour. */
+  function paintMarket() {
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    const cid = useGame.getState().cityId;
+    const now = Date.now();
+    const m = marketAt(cid, now);
+    const key = m ? `${cid}|${m.hour}` : "";
+    const sign = marketLayers.current.find((l): l is Marker => l instanceof L.Marker);
+    if (marketKey.current === key) {
+      const el = sign?.getElement()?.querySelector(".market-pin-left");
+      if (el && m) el.textContent = marketLeft(m, now);
+      return;
+    }
+    clearMarket();
+    if (!m) return;
+    marketKey.current = key;
+    const lines = m.street.lines.map((ln) => {
+      const pts: [number, number][] = [];
+      for (let i = 0; i + 1 < ln.length; i += 2) pts.push([ln[i]!, ln[i + 1]!]);
+      return pts;
+    });
+    const glow = L.polyline(lines, { weight: 18, opacity: 0.5, className: "market-glow", interactive: false, lineCap: "round", lineJoin: "round" }).addTo(map);
+    const core = L.polyline(lines, { weight: 4, opacity: 0.95, className: "market-line", interactive: false, dashArray: "1 10", lineCap: "round" }).addTo(map);
+    const at = marketAnchor(m.street);
+    const safe = m.street.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    const pin = L.marker([at.lat, at.lng], {
+      icon: L.divIcon({
+        className: "",
+        html: `<div class="market-pin" data-testid="market-pin" title="${safe}: lamps, trivia cards and matches pay double this hour"><i class="market-lantern" aria-hidden="true"></i><span class="market-pin-copy"><b>${MARKET_TAG}</b><em>${safe}</em><small class="market-pin-left">${marketLeft(m, now)}</small></span></div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      }),
+      interactive: false,
+      keyboard: false,
+      zIndexOffset: 650,
+    }).addTo(map);
+    marketLayers.current = [glow, core, pin];
+  }
+
+  function walkToMarket() {
+    const s = useGame.getState();
+    if (s.hud.seated) {
+      flash("Park at the curb. The door is on foot.");
+      return;
+    }
+    const m = marketAt(s.cityId, Date.now());
+    if (!m) return;
+    const p = closestOnStreet(m.street, pos.current.lat, pos.current.lng);
+    if (p.dist <= 25) {
+      flash(`You're on ${m.street.name}. ${MARKET_TAG} on its lamps and matches.`);
+      return;
+    }
+    void setDestination(p.lat, p.lng);
+    mapRef.current?.panTo([p.lat, p.lng]);
+    flash(`Night market on ${m.street.name}. ${MARKET_TAG}.`);
+  }
+
   function snapKeys(g: StreetGraph) {
     if (snapping.current) return;
     const keys = useGame.getState().mapKeys;
@@ -572,6 +640,7 @@ export function GameMap() {
           route: () => routeRef.current,
           walkTo: (lat: number, lng: number) => setDestination(lat, lng),
           daily: () => useDaily.getState(),
+          market: () => marketAt(useGame.getState().cityId, Date.now()),
           place: (lat: number, lng: number) => {
             const g = graphRef.current;
             routeRef.current = null;
@@ -605,6 +674,7 @@ export function GameMap() {
       }).addTo(map);
 
       rebuildPins(L, map);
+      paintMarket();
     });
 
     void bootstrapStreets(city.id, dock.lat, dock.lng, city.pois, abort.signal)
@@ -653,6 +723,8 @@ export function GameMap() {
       dailyLines.current = [];
       dailyPins.current = [];
       dailyKey.current = "";
+      marketLayers.current = [];
+      marketKey.current = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityId]);
@@ -1383,6 +1455,12 @@ export function GameMap() {
   }, []);
 
   useEffect(() => {
+    const id = window.setInterval(paintMarket, 20_000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     paintDaily();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyShow, dailyLit, streets, cityId]);
@@ -1441,6 +1519,7 @@ export function GameMap() {
           autoSprint.current = next;
           setRunOn(next);
         }}
+        onMarket={walkToMarket}
         onDesk={() => {
           const s = useGame.getState();
           if (s.hud.seated) {

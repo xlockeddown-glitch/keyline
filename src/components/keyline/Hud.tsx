@@ -11,6 +11,8 @@ import { ItemIcon } from "./ItemIcon";
 import { TouchPad } from "./TouchPad";
 import { AudioDock } from "./AudioDock";
 import { DailyHudLine, DailyKitButton } from "./DailyRun";
+import { MarketHudLine, useMarket } from "./NightMarket";
+import { MARKET_TAG, onMarket } from "@/game/nightMarket";
 
 type Props = {
   onVector: (x: number, y: number) => void;
@@ -20,6 +22,7 @@ type Props = {
   onAutoSprint: () => void;
   onTimetable: () => void;
   onDesk: () => void;
+  onMarket: () => void;
 };
 
 function rangePips(dist: number, reachM: number) {
@@ -29,7 +32,7 @@ function rangePips(dist: number, reachM: number) {
   return 1;
 }
 
-export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onTimetable, onDesk }: Props) {
+export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onTimetable, onDesk, onMarket: onMarketWalk }: Props) {
   const keys = useGame((s) => s.keys);
   const points = useGame((s) => s.points);
   const hud = useGame((s) => s.hud);
@@ -80,6 +83,12 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
   const cityVaults = useGame((s) => s.cityVaults);
   const belt = TIERS.filter((t) => t === "white" || t === "blue" || t === "green" || keys[t] > 0 || needTier === t);
   const pips = nearest ? rangePips(hud.nearestDist, reachM) : 0;
+  const { market } = useMarket(cityId);
+  const marketHere = Boolean(
+    nearest &&
+      !isScoutShop(nearest) &&
+      onMarket(market, seriesNear ? { kind: "series", lat: nearest.lat, lng: nearest.lng } : { kind: "lamp", poiId: nearest.id, lat: nearest.lat, lng: nearest.lng }),
+  );
 
   const atDesk = Boolean(nearest && isFareDesk(nearest) && inReach && !hud.seated);
   const canPunch = atDesk && fares > 0;
@@ -167,6 +176,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             </p>
           )}
           <DailyHudLine />
+          <MarketHudLine onWalk={onMarketWalk} />
         </div>
 
         <div className="flex items-center gap-2">
@@ -282,6 +292,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
                         : isFareDesk(nearest)
                         ? `Train station · ${KIND_LABEL[nearest.kind]}`
                         : `${TIER_LABEL[nearest.tier]} · ${KIND_LABEL[nearest.kind]}`}
+                    {marketHere ? <span className="market-x" data-testid="market-lamp"> · {MARKET_TAG}</span> : null}
                   </p>
                   <span className="range-pips" aria-hidden>
                     {Array.from({ length: 4 }, (_, i) => (

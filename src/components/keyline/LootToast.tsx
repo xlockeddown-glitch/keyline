@@ -45,6 +45,16 @@ export function LootToast() {
                   ))}
                 </div>
                 <p className="font-display mt-1 text-3xl tabular-nums">+{loot.points.toLocaleString()}</p>
+                {loot.market ? (
+                  <p className="market-tag mt-1" data-testid="market-reward">
+                    <span className="market-tag-x">Night market ×{loot.market.mult}</span>
+                    <span className="text-fg-muted">
+                      {" "}
+                      · {loot.market.street} · +{loot.market.coin.toLocaleString()} coin
+                      {Object.values(loot.keys).some(Boolean) ? ", matches doubled" : ""}
+                    </span>
+                  </p>
+                ) : null}
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   <QtyChip item="brass" n={loot.brass} />
                   <QtyChip item="ink" n={loot.ink} />

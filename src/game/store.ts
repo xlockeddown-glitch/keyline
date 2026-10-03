@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { streetDrop } from "./streets";
+import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { pickTrivia, shuffled, DIFF_MULT, ASKED_KEEP } from "./trivia";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
@@ -300,6 +301,14 @@ function placeKey(cityId: CityId, tier: Tier): MapKey {
     lng: p.lng,
     tier,
   };
+}
+
+/** While a night market is open, every other new street match drops along the market street. */
+function marketKey(cityId: CityId, tier: Tier, now: number): MapKey | null {
+  const m = marketAt(cityId, now);
+  if (!m || Math.random() < 0.5) return null;
+  const p = pointOnMarket(m.street);
+  return { id: `k-${cityId}-m${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`, lat: p.lat, lng: p.lng, tier };
 }
 
 function seriesLive(s: GameState, kind: SeriesKind): StreetRun | null {
@@ -767,13 +776,15 @@ export const useGame = create<GameState>((set, get) => ({
   collectKey: (id) => {
     const k = get().mapKeys.find((x) => x.id === id);
     if (!k) return;
-    const keys = { ...get().keys, [k.tier]: get().keys[k.tier] + 1 };
+    const mult = marketMult(get().cityId, Date.now(), { kind: "match", lat: k.lat, lng: k.lng });
+    const add = mult > 1 ? marketMatches(get().keys[k.tier], Math.max(matchCap(k.tier), get().keys[k.tier] + 1), mult) : 1;
+    const keys = { ...get().keys, [k.tier]: get().keys[k.tier] + add };
     sfx.pickup();
     set({
       keys,
       mapKeys: get().mapKeys.filter((x) => x.id !== id),
       lastKeyAt: Date.now(),
-      toast: `${TIER_LABEL[k.tier]} match`,
+      toast: mult > 1 ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}` : `${TIER_LABEL[k.tier]} match`,
     });
     scheduleSave(get);
     window.setTimeout(() => {
@@ -789,7 +800,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (get().mapKeys.length >= cap) return;
     if (now - get().lastKeyAt < interval) return;
     set({
-      mapKeys: [...get().mapKeys, placeKey(get().cityId, streetKeyTier(playMin))],
+      mapKeys: [...get().mapKeys, marketKey(get().cityId, streetKeyTier(playMin), now) ?? placeKey(get().cityId, streetKeyTier(playMin))],
       lastKeyAt: now,
     });
     scheduleSave(get);
@@ -967,6 +978,9 @@ export const useGame = create<GameState>((set, get) => ({
       }
       const have = get().keys[poi.tier] ?? 0;
       const cap = matchCap(poi.tier);
+      const sparkMult = marketMult(city.id, ov.startedAt, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng });
+      const sparkAdd = marketMatches(have, cap, sparkMult);
+      const sparkTag = sparkMult > 1 ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} match${sparkAdd === 1 ? "" : "es"} from the wick.` : null;
       const spun = foldWheel(get, poi.tier);
       const boost = rollBoosts(get, true, elapsed, ov.category);
       const questHit = cleared(get, answered(get, true, elapsed <= 3000), poi);
@@ -994,7 +1008,7 @@ export const useGame = create<GameState>((set, get) => ({
         });
       } else {
         sfx.correct();
-        const paid = payBoosts({ ...get().keys, [poi.tier]: have + 1 }, get().points, boost);
+        const paid = payBoosts({ ...get().keys, [poi.tier]: have + sparkAdd }, get().points, boost);
         set({
           ...used,
           keys: paid.keys,
@@ -1010,9 +1024,10 @@ export const useGame = create<GameState>((set, get) => ({
           miss: null,
           ...spun,
           toast: [
-            paid.boosts.length
+            sparkTag ?? (paid.boosts.length
               ? `A ${TIER_LABEL[poi.tier]} match from the wick. ${paid.boosts.join(" · ")}.`
-              : `A ${TIER_LABEL[poi.tier]} match from the wick.`,
+              : `A ${TIER_LABEL[poi.tier]} match from the wick.`),
+            sparkTag && paid.boosts.length ? `${paid.boosts.join(" · ")}.` : null,
             questHit.line,
           ]
             .filter(Boolean)
@@ -1101,15 +1116,21 @@ export const useGame = create<GameState>((set, get) => ({
       const bumped = bumpStreak(get);
       const streak = bumped.streak;
       const bonus = 1 + Math.min(0.4, streak * 0.05);
-      const points = rewardPoints(series.pay, {
+      const seriesCoin = rewardPoints(series.pay, {
         mult,
         bonus,
         loot: wornPerk(get().scout).loot ?? 1,
         series: true,
       });
-      const extraKeys: Partial<Record<Tier, number>> = { [series.pay]: 1 };
-      if (grades.every((g) => g === "perfect")) extraKeys[series.bonus] = 1;
-      else if (get().equipped === "lucky" && Math.random() < 0.15) extraKeys.blue = 1;
+      const baseKeys: Partial<Record<Tier, number>> = { [series.pay]: 1 };
+      if (grades.every((g) => g === "perfect")) baseKeys[series.bonus] = 1;
+      else if (get().equipped === "lucky" && Math.random() < 0.15) baseKeys.blue = 1;
+      const spot = seriesLive(get(), series.kind);
+      const seriesMarket = marketAt(city.id, ov.startedAt);
+      const sMult = spot && onMarket(seriesMarket, { kind: "series", lat: spot.lat, lng: spot.lng }) ? MARKET_MULT : 1;
+      const sPay = marketPay(seriesCoin, baseKeys, sMult);
+      const points = sPay.coin;
+      const extraKeys: Partial<Record<Tier, number>> = sPay.keys;
       const brass = series.kind === "stack" ? 6 : 4;
       const ink = series.kind === "stack" ? 4 : 3;
       const vellum = series.kind === "stack" ? 3 : 2;
@@ -1126,6 +1147,7 @@ export const useGame = create<GameState>((set, get) => ({
         vellum,
         schematic,
         ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
+        market: sMult > 1 && seriesMarket ? { street: seriesMarket.street.name, mult: sMult, coin: sPay.extraCoin } : undefined,
       };
       let nextKeys = { ...get().keys };
       for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) nextKeys[t] += n;
@@ -1146,9 +1168,9 @@ export const useGame = create<GameState>((set, get) => ({
       else sfx.correct();
       const bonusHit = Boolean(extraKeys[series.bonus]);
       const spun = foldWheel(get, series.cost);
-      const clearLine = bonusHit
+      const clearLine = (bonusHit
         ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
-        : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`;
+        : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`) + (sMult > 1 ? ` ${MARKET_TAG}.` : "");
       const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
       const questHit = cleared(get, answered(get, true, grade === "perfect"), { id: series.id, tier: series.cost });
       set({
@@ -1216,12 +1238,14 @@ export const useGame = create<GameState>((set, get) => ({
     const bonus = 1 + Math.min(0.4, streak * 0.05);
     const diff = ov.question.diff ?? 2;
     const tip = clothCoin(get().quests.worn, get().cityId, poi.tier);
-    const points = rewardPoints(poi.tier, {
+    const lampCoin = rewardPoints(poi.tier, {
       mult,
       bonus,
       diffMult: DIFF_MULT[diff],
       loot: wornPerk(get().scout).loot ?? 1,
-    }) + tip;
+    });
+    const lampMarket = marketAt(city.id, ov.startedAt);
+    const lampMult = onMarket(lampMarket, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }) ? MARKET_MULT : 1;
     const brass =
       1 +
       (poi.tier === "green" || poi.tier === "amber" ? 2 : 0) +
@@ -1232,9 +1256,13 @@ export const useGame = create<GameState>((set, get) => ({
     const schematic = poi.tier === "amber" || poi.tier === "red" || poi.tier === "violet" || (poi.tier !== "white" && Math.random() < 0.08);
     const ing = rollIngredient(get().cityId, poi);
     const pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
-    const extraKeys: Partial<Record<Tier, number>> = {};
-    if (get().equipped === "lucky" && Math.random() < 0.15) extraKeys[poi.tier] = 1;
-    if (grade === "perfect" && Math.random() < 0.1) extraKeys.blue = (extraKeys.blue ?? 0) + 1;
+    const baseKeys: Partial<Record<Tier, number>> = {};
+    if (get().equipped === "lucky" && Math.random() < 0.15) baseKeys[poi.tier] = 1;
+    if (grade === "perfect" && Math.random() < 0.1) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
+    // Night market: the trivia card's coin and its bonus matches double; the cloth tip and boosts don't.
+    const lampPay = marketPay(lampCoin, baseKeys, lampMult);
+    const points = lampPay.coin + tip;
+    const extraKeys: Partial<Record<Tier, number>> = lampPay.keys;
 
     const loot: LootDrop = {
       points,
@@ -1246,6 +1274,7 @@ export const useGame = create<GameState>((set, get) => ({
       vellum,
       schematic,
       ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
+      market: lampMult > 1 && lampMarket ? { street: lampMarket.street.name, mult: lampMult, coin: lampPay.extraCoin } : undefined,
     };
     let nextKeys = { ...keys };
     for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) {
