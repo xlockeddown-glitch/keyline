@@ -283,7 +283,7 @@ export const NATURE_LIFE: TriviaQ[] = [
   q("Sharks as apex predators help…", ["pollinate kelp flowers", "structure marine food webs", "build coral skeletons", "fix nitrogen on land"], "structure marine food webs", 2),
   q("A marine protected area can help sharks by…", ["feeding them bait in a zone", "reducing fishing mortality in a zone", "draining shallow lagoons in a zone", "adding dams to river mouths"], "reducing fishing mortality in a zone", 1),
   q("Bycatch of sharks happens in…", ["only catch-and-release fly rods of trout", "nets and longlines aimed at other species", "only butterfly nets", "only lobster pots of the desert"], "nets and longlines aimed at other species", 2),
-  q("A lek still is not how sharks…", ["breathe", "typically mate", "swim", "sense electricity"], "typically mate", 3),
+  q("Shark eggs are fertilized…", ["externally, in open water", "internally, inside the female", "externally, in a gravel nest", "inside a floating egg case"], "internally, inside the female", 3),
   q("Male sharks have…", ["udder", "claspers", "antlers", "spinnerets"], "claspers", 2),
   q("The spiral valve is a…", ["stiff fin on a shark's back", "coil inside a shark's intestine", "eyelid that protects a whale's eye", "spiral scale pattern on a carp"], "coil inside a shark's intestine", 3),
   q("Nictitating membranes in some sharks…", ["make electricity to stun prey", "protect the eye during a bite", "filter plankton from the water", "store oil for buoyancy"], "protect the eye during a bite", 2),
