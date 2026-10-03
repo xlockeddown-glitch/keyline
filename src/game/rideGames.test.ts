@@ -327,3 +327,26 @@ test("old saves without ride history load clean", () => {
   const g = dealForRide(4 * MIN, loadRideHistory(saved.rideHistory));
   assert.ok(["where-am-i", "match-sorter"].includes(g));
 });
+
+// ── 0.0.42: Stop vs tab closed ──────────────────────────────────────────
+import { cutLine } from "./rideGames.ts";
+
+test("pressing Stop and closing the tab read differently on the ride screen", () => {
+  const open = openRound(ride(8 * MIN), 30_000);
+  const stopped = forfeitRound(open, "stopped");
+  assert.equal(stopped.lastCut, "stopped");
+  assert.match(cutLine(stopped) ?? "", /You stopped that round/);
+  assert.doesNotMatch(cutLine(stopped) ?? "", /tab/);
+  // Tab closed: the save loads with the round still open, and the loader forfeits it.
+  const closed = forfeitRound(JSON.parse(JSON.stringify(open)) as Journey);
+  assert.equal(closed.lastCut, "closed");
+  assert.match(cutLine(closed) ?? "", /tab closed/);
+  // Stopped, then reloaded: nothing open, the stop wording stays.
+  assert.equal(forfeitRound(JSON.parse(JSON.stringify(stopped)) as Journey).lastCut, "stopped");
+  // A finished round stands: no line. Nothing cut: no line.
+  assert.equal(cutLine(markRound(stopped, played)), undefined);
+  assert.equal(cutLine(ride(8 * MIN)), undefined);
+  // Saves from before 0.0.42 don't say which: neutral wording.
+  const old = { ...ride(8 * MIN), forfeits: 1 } as Journey;
+  assert.equal(cutLine(old), "That round didn't finish. The seat still pays.");
+});

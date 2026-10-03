@@ -86,6 +86,8 @@ export type RideGameMark = {
   /** Set while a round is running. Still set on load means the tab closed mid-round. */
   roundAt?: number;
   forfeits?: number;
+  /** How the last unfinished round ended (0.0.42): the player pressed Stop, or the tab closed. Missing on older saves. */
+  lastCut?: "stopped" | "closed";
 };
 
 export function journeyOutcome(j: RideGameMark): RideOutcome {
@@ -111,9 +113,17 @@ export function openRound<J extends RideGameMark>(j: J, now: number): J {
 }
 
 /** A round still open when the save loads was cut off: forfeit it. Idle pay and earlier bests stand. */
-export function forfeitRound<J extends RideGameMark>(j: J): J {
+export function forfeitRound<J extends RideGameMark>(j: J, why: "stopped" | "closed" = "closed"): J {
   if (j.roundAt == null) return j;
-  return { ...j, roundAt: undefined, forfeits: (j.forfeits ?? 0) + 1 };
+  return { ...j, roundAt: undefined, forfeits: (j.forfeits ?? 0) + 1, lastCut: why };
+}
+
+/** Ride-screen line for an unfinished round, or undefined when a finished round already stands. */
+export function cutLine(j: RideGameMark): string | undefined {
+  if (!j.forfeits || j.game) return undefined;
+  if (j.lastCut === "stopped") return "You stopped that round, so it doesn't count. Play another, or skip it: the seat still pays.";
+  if (j.lastCut === "closed") return "Lost that round when the tab closed. The seat still pays.";
+  return "That round didn't finish. The seat still pays.";
 }
 
 // ── Which game a trip gets ──────────────────────────────────────────────

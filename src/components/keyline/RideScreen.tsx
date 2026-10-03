@@ -6,6 +6,7 @@ import { Boxes, Check, Lamp, MapPin, Route, type LucideIcon } from "lucide-react
 import {
   RIDE_GAME_NAME,
   RIDE_GAME_PITCH,
+  cutLine,
   journeyOutcome,
   lampOutcome,
   lampVerdict,
@@ -280,9 +281,7 @@ export function RideScreen() {
             ) : journey.game ? null : (
               <p className="ride-play-sub text-xs text-fg-subtle">Too close to the platform for a round.</p>
             )}
-            {journey.forfeits && !journey.game ? (
-              <p className="ride-play-sub text-xs text-fg-subtle">Lost that round when the tab closed. The seat still pays.</p>
-            ) : null}
+            {cutLine(journey) ? <p className="ride-play-sub text-xs text-fg-subtle">{cutLine(journey)}</p> : null}
           </div>
         )}
 

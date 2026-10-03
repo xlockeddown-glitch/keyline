@@ -222,7 +222,7 @@ export type GameState = {
   startRideRound: (game?: RideGameId) => number | null;
   /** Bank a finished round (best outcome only) and pay what it newly earns. */
   finishRideRound: (outcome: RideOutcome) => { white: number; blue: number; green: number };
-  /** Walk away mid-round: forfeit it. Idle pay still stands. */
+  /** The player pressed Stop mid-round: forfeit it. Idle pay still stands. */
   dropRideRound: () => void;
 };
 
@@ -1715,7 +1715,7 @@ export const useGame = create<GameState>((set, get) => ({
   dropRideRound: () => {
     const j = get().journey;
     if (!j || j.roundAt == null) return;
-    set({ journey: forfeitRound(j) });
+    set({ journey: forfeitRound(j, "stopped") });
     saveNow(get);
   },
   tickJourney: () => {
