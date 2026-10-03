@@ -35,8 +35,10 @@ async function enterGame(page) {
   });
   await page.goto(base.replace(/\/$/, "") + "/", { waitUntil: "domcontentloaded" });
   await page.waitForSelector(".book-ver", { timeout: 120000 });
+  // The server-rendered matchbook is disabled until the client hydrates; a cold dev server can take a while.
+  await page.waitForSelector(".matchbook:not([disabled])", { timeout: 120000 });
   await page.waitForTimeout(800);
-  await page.click(".matchbook");
+  await page.click(".matchbook", { timeout: 60000 });
   await page.waitForTimeout(1200);
   const guest = page.getByRole("button", { name: "Continue as guest" });
   if (await guest.count()) await guest.click();
