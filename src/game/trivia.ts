@@ -2940,7 +2940,7 @@ export function offerCats(poiId: string, vaultsOpened: number, n = 6, poi?: Poi)
 }
 
 /** Share of lamps that keep a Math offer. See offerCats; trivia:quotas checks the result. */
-export const MATH_OFFER_KEEP = 0.4;
+export const MATH_OFFER_KEEP = 0.45;
 
 function keepsMath(seed: string): boolean {
 	let h = 0x811c9dc5;
