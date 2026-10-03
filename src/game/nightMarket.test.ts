@@ -221,7 +221,7 @@ test("baked market streets: every city has a list, every street walkable, never 
 });
 
 test("baked market streets agree with the offline OSM snapshots (reachable on foot from spawn)", () => {
-  for (const [city, file] of [["detroit", "paths-daily-detroit"], ["austin", "paths-daily-austin"], ["nyc", "paths-daily-nyc"]] as [CityId, string][]) {
+  for (const [city, file] of [["detroit", "paths-daily-detroit"], ["austin", "paths-daily-austin"], ["nyc", "paths-daily-nyc"], ["seattle", "paths-daily-seattle"], ["denver", "paths-daily-denver"], ["nashville", "paths-daily-nashville"]] as [CityId, string][]) {
     const fx = JSON.parse(readFileSync(new URL(`./fixtures/${file}.json`, import.meta.url), "utf8")) as { ways: OsmWay[] };
     const { comp, root } = spawnComponent(fx.ways, CITIES[city].spawn);
     let checked = 0;

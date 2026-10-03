@@ -24,7 +24,7 @@ for (const m of cases) {
 }
 // 0.0.43 Daily Lantern Run: today's route legs (spawn → lamp 1 → … → lamp 5) from the online foot router.
 const day = utcDay();
-for (const city of ["detroit", "austin", "nyc"] as const) {
+for (const city of ["detroit", "austin", "nyc", "seattle", "denver", "nashville"] as const) {
   const f = JSON.parse(readFileSync(new URL(`../src/game/fixtures/paths-daily-${city}.json`, import.meta.url), "utf8"));
   const P = (w: { line: number[] }) => { const o = []; for (let i = 0; i + 1 < w.line.length; i += 2) o.push({ lat: w.line[i]!, lng: w.line[i + 1]! }); return o; };
   const fw = f.ways.filter((w: { tags: object }) => isFreeway(w.tags)).map(P);

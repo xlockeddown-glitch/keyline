@@ -48,6 +48,16 @@ const CASES: { city: string; name: string; from: Pt; to: Pt }[] = [
   { city: "austin", name: "E 11th & Red River → E 12th & Chicon side (I-35)", from: { lat: 30.2712, lng: -97.7362 }, to: { lat: 30.2705, lng: -97.7305 } },
   { city: "la", name: "Union Station → City Hall (101)", from: { lat: 34.056, lng: -118.2365 }, to: { lat: 34.0537, lng: -118.2428 } },
   { city: "la", name: "Bunker Hill → Temple-Beaudry (110)", from: { lat: 34.056, lng: -118.25 }, to: { lat: 34.06, lng: -118.266 } },
+  // 0.0.48 (k48a): the new cities' freeways — I-5 through downtown Seattle, I-25 west of the Platte, Nashville's I-40 loop and I-24.
+  { city: "seattle", name: "Westlake, 4th & Pine → Pine & Bellevue, Capitol Hill (over I-5)", from: { lat: 47.6112, lng: -122.3372 }, to: { lat: 47.615, lng: -122.3255 } },
+  { city: "seattle", name: "King Street Station → S Jackson & 12th, Little Saigon (under I-5)", from: { lat: 47.5985, lng: -122.3297 }, to: { lat: 47.5992, lng: -122.317 } },
+  { city: "seattle", name: "2nd & James → 9th & Jefferson, Harborview (over I-5)", from: { lat: 47.6025, lng: -122.333 }, to: { lat: 47.604, lng: -122.3235 } },
+  { city: "denver", name: "Union Station → W 23rd Ave, Jefferson Park (over I-25)", from: { lat: 39.753, lng: -105.0005 }, to: { lat: 39.7505, lng: -105.0195 } },
+  { city: "denver", name: "Auraria, Tivoli → Empower Field at Mile High (across I-25)", from: { lat: 39.7452, lng: -105.0058 }, to: { lat: 39.744, lng: -105.019 } },
+  { city: "denver", name: "Commons Park → Lower Highland (across I-25)", from: { lat: 39.7575, lng: -105.0055 }, to: { lat: 39.76, lng: -105.013 } },
+  { city: "nashville", name: "Union Station → Music Row roundabout (over the I-40 loop)", from: { lat: 36.1572, lng: -86.7847 }, to: { lat: 36.1525, lng: -86.7925 } },
+  { city: "nashville", name: "Charlotte Ave & 7th → Charlotte Ave west of the loop (I-40)", from: { lat: 36.164, lng: -86.786 }, to: { lat: 36.16, lng: -86.7985 } },
+  { city: "nashville", name: "Nissan Stadium → East Nashville (across I-24)", from: { lat: 36.1665, lng: -86.7714 }, to: { lat: 36.169, lng: -86.762 } },
 ];
 
 test("walkable rule: freeways, ramps, and foot=no never walk; streets and sidewalks do", () => {
@@ -132,7 +142,7 @@ test("an online route down the Lodge trench loses to the walk graph", () => {
 });
 
 test("baked city streets don't ride freeways", () => {
-  for (const city of ["detroit", "nyc", "austin"]) {
+  for (const city of ["detroit", "nyc", "austin", "seattle", "denver", "nashville"]) {
     const baked = JSON.parse(readFileSync(new URL(`../../public/streets/${city}.json`, import.meta.url), "utf8")) as { lines: number[][] };
     for (const l of baked.lines) {
       const path: Pt[] = [];

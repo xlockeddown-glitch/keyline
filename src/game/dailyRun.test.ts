@@ -103,7 +103,7 @@ function dailyFixture(city: CityId) {
   return { g, fw: f.ways.filter((w) => isFreeway(w.tags)).map(pts), walk: f.ways.filter((w) => isWalkableWay(w.tags)).map(pts) };
 }
 
-for (const city of ["detroit", "austin", "nyc"] as const) {
+for (const city of ["detroit", "austin", "nyc", "seattle", "denver", "nashville"] as const) {
   test(`daily route is walkable by street, off freeways: ${city} (30 days)`, () => {
     const { g, fw, walk } = dailyFixture(city);
     assert.ok(fw.length > 5, `${city} snapshot has freeways to avoid`);
