@@ -33,6 +33,7 @@ import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
 import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
+import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
@@ -123,6 +124,8 @@ export type GameState = {
   equipped: CharmId | null;
   scouts: ScoutId[];
   scout: ScoutId;
+  /** 0.0.45 print shop: cosmetic coats and lantern skins (owned, paid so far, worn). Purely visual. */
+  wardrobe: Wardrobe;
   atlas: Record<string, true>;
   survey: Record<string, true>;
   vaults: Record<string, VaultRuntime>;
@@ -205,6 +208,12 @@ export type GameState = {
   printPattern: () => void;
   buyScout: (id: ScoutId) => void;
   wearScout: (id: ScoutId) => void;
+  /** Print shop: pay what the pocket can toward a coat or lantern skin; the last match makes it yours and puts it on. */
+  payCosmetic: (id: CosmeticId) => void;
+  /** Put an owned coat / lantern skin on, or take the slot off with null. */
+  wearCosmetic: (slot: CosmeticSlot, id: CosmeticId | null) => void;
+  /** Take the merged wardrobe back from the server (signed-in sync). */
+  adoptWardrobe: (w: Wardrobe) => void;
   buyKiosk: (id: KioskId) => void;
   startContract: () => void;
   toggleHq: (v?: boolean) => void;
@@ -380,6 +389,7 @@ function persistable(s: GameState) {
     equipped: s.equipped,
     scouts: s.scouts,
     scout: s.scout,
+    wardrobe: s.wardrobe,
     atlas: s.atlas,
     survey: s.survey,
     vaults: s.vaults,
@@ -618,6 +628,7 @@ export const useGame = create<GameState>((set, get) => ({
   equipped: saved?.equipped ?? null,
   scouts: saved?.scouts?.length ? saved.scouts : ["raccoon"],
   scout: saved?.scout ?? "raccoon",
+  wardrobe: cleanWardrobe(saved?.wardrobe),
   atlas: saved?.atlas ?? {},
   survey: saved?.survey ?? {},
   vaults: saved?.vaults ?? {},
@@ -1544,6 +1555,40 @@ export const useGame = create<GameState>((set, get) => ({
     set({ scout: id, toast: s.perk.label });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 1600);
+  },
+  payCosmetic: (id) => {
+    const c = cosmetic(id);
+    if (!c) return;
+    const res = payIn(get().wardrobe, get().keys, id, Date.now());
+    if (!res) {
+      if (!get().wardrobe.owned.includes(id)) flashToast(set, get, `The print shop takes ${priceLine(c.price)} for the ${c.name}.`, 1800);
+      return;
+    }
+    if (res.done) sfx.craft();
+    else sfx.pickup();
+    set({ wardrobe: res.wardrobe, keys: res.keys });
+    flashToast(
+      set,
+      get,
+      res.done ? `${c.name} printed. Wearing it.` : `Paid ${priceLine(res.took)} toward the ${c.name}. ${priceLine(res.left)} to go.`,
+      res.done ? 2200 : 2000,
+    );
+    saveNow(get);
+  },
+  wearCosmetic: (slot, id) => {
+    const next = wear(get().wardrobe, slot, id, Date.now());
+    if (!next) return;
+    sfx.ui();
+    set({ wardrobe: next });
+    const name = id ? cosmetic(id)?.name : null;
+    flashToast(set, get, name ? `Wearing the ${name}.` : slot === "coat" ? "Back in the field coat." : "Lamps back to brass.", 1400);
+    saveNow(get);
+  },
+  adoptWardrobe: (w) => {
+    const next = cleanWardrobe(w);
+    if (JSON.stringify(next) === JSON.stringify(get().wardrobe)) return;
+    set({ wardrobe: next });
+    saveNow(get);
   },
   buyKiosk: (id) => {
     const item = KIOSK[id];

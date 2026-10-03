@@ -1,0 +1,92 @@
+/* Print shop wardrobe (v0.0.45 / k45a): lantern skins + the print-shop counter. Purely visual.
+   A skin re-cases the lamp's metal — brass cap, frame rim, post and foot — in another metal. The glass, wick,
+   bloom and rank pips are untouched: they carry the tier hue (lantern-art.css, 0.0.17), so a skin never hides
+   what a lamp costs. One root attribute (<html data-lantern="…">) skins every lamp on the page: street lamps,
+   the Run and the Stack, the vault hero and the title lamp. Any element with data-lantern re-scopes its own
+   lamps (the print-shop swatches), because the metal travels as inherited custom properties.
+   Loaded after lantern-art.css; selectors match its specificity, so source order wins. */
+
+[data-lantern="brass"]{
+  --skin-cap-hi:#e0c788; --skin-cap-mid:#c9a35e; --skin-cap-lo:#8a6a38; --skin-cap-shadow:#5a4528;
+  --skin-rim:#8a7348; --skin-post-dk:#3a3224; --skin-post-lt:#6a5738; --skin-foot:#5a4a32;
+}
+[data-lantern="copper"]{
+  --skin-cap-hi:#f2b898; --skin-cap-mid:#c8754e; --skin-cap-lo:#7a3f26; --skin-cap-shadow:#4a2616;
+  --skin-rim:#9a5a3a; --skin-post-dk:#3a2218; --skin-post-lt:#7a4630; --skin-foot:#5a3220;
+}
+[data-lantern="iron"]{
+  --skin-cap-hi:#8e9196; --skin-cap-mid:#55585e; --skin-cap-lo:#2a2c30; --skin-cap-shadow:#141517;
+  --skin-rim:#4f5257; --skin-post-dk:#1c1e21; --skin-post-lt:#43474c; --skin-foot:#2e3135;
+}
+[data-lantern="verdigris"]{
+  --skin-cap-hi:#b0d8c6; --skin-cap-mid:#5f9e88; --skin-cap-lo:#2f5e4f; --skin-cap-shadow:#1f3a31;
+  --skin-rim:#4f7f6e; --skin-post-dk:#1f3a31; --skin-post-lt:#447866; --skin-foot:#2c5246;
+}
+[data-lantern="nickel"]{
+  --skin-cap-hi:#f4f6f8; --skin-cap-mid:#c4c9cf; --skin-cap-lo:#7d848c; --skin-cap-shadow:#4a4f55;
+  --skin-rim:#9aa1a8; --skin-post-dk:#3a3e43; --skin-post-lt:#80868e; --skin-foot:#5a6066;
+}
+
+[data-lantern] .lantern-cap,
+[data-lantern] .stack-lamp .lantern-cap{
+  background:linear-gradient(180deg,var(--skin-cap-hi) 0%,var(--skin-cap-mid) 42%,var(--skin-cap-lo) 100%);
+  box-shadow:0 1px 0 var(--skin-cap-shadow)
+}
+[data-lantern] .lantern-frame,
+[data-lantern] .stack-globe{
+  border-color:var(--skin-rim)
+}
+[data-lantern] .lantern-post,
+[data-lantern] .stack-lamp .lantern-post{
+  background:linear-gradient(90deg,var(--skin-post-dk),var(--skin-post-lt),var(--skin-post-dk))
+}
+[data-lantern] .lantern-post::after,
+[data-lantern] .stack-lamp .lantern-post::after{
+  background:linear-gradient(180deg,var(--skin-foot),var(--skin-post-dk))
+}
+
+/* Print-shop swatch: a real street-lamp marker (same markup as the map) at catalogue size. */
+.skin-swatch{
+  display:grid;
+  place-items:center;
+  width:56px;
+  height:56px;
+  flex-shrink:0;
+  overflow:hidden;
+  background:var(--color-bg-elevated);
+  border:1px solid var(--color-border);
+  border-radius:8px
+}
+.skin-swatch .vault-pin{
+  transform:scale(1.15);
+  transform-origin:50% 60%
+}
+.coat-chip{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:2px;
+  margin-right:6px;
+  vertical-align:-1px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.5)
+}
+.paid-bar{
+  position:relative;
+  height:4px;
+  border-radius:2px;
+  background:color-mix(in oklab, var(--color-border) 80%, transparent);
+  overflow:hidden
+}
+.paid-bar > i{
+  position:absolute;
+  inset:0 auto 0 0;
+  background:var(--lamp-amber, #ffa91a)
+}
+/* Outfitter counter tabs (Hire / Print shop): the Journal's chip tabs without the HQ plate's brass header. */
+.shop-tabs{
+  display:flex;
+  flex-shrink:0;
+  gap:6px;
+  border-bottom:1px solid var(--color-border);
+  padding:10px 20px 12px
+}

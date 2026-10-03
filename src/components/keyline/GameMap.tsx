@@ -78,6 +78,17 @@ type Cab = {
   hailAlong: number;
 };
 
+/** 0.0.45 print-shop coat on the walker: public/coats.css swaps walk, idle and side-idle sheets by data-coat. */
+function coatAttr(coat: string | null) {
+  return coat ? ` data-coat="${coat}"` : "";
+}
+
+function setCoat(el: HTMLElement, coat: string | null) {
+  if (coat) {
+    if (el.dataset.coat !== coat) el.dataset.coat = coat;
+  } else if (el.hasAttribute("data-coat")) el.removeAttribute("data-coat");
+}
+
 export function GameMap() {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LMap | null>(null);
@@ -582,7 +593,7 @@ export function GameMap() {
 
       const icon = L.divIcon({
         className: "",
-        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}" data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
+        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}"${coatAttr(useGame.getState().wardrobe.coat)} data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
         iconSize: [56, 56],
         iconAnchor: [28, 30],
       });
@@ -1273,6 +1284,7 @@ export function GameMap() {
         el.dataset.scout = st.scout;
         if (st.quests.worn) el.dataset.cloth = st.quests.worn;
         else el.removeAttribute("data-cloth");
+        setCoat(el, st.wardrobe.coat);
         const cell = spriteCell(moving, row, anim.current.frame);
         el.classList.toggle("is-idle", !moving);
         el.classList.toggle("is-side", cell.sheet === "idle-side");
@@ -1347,9 +1359,10 @@ export function GameMap() {
 
   useEffect(() => {
     const unsub = useGame.subscribe((s, p) => {
-      if (s.scout !== p.scout || s.quests.worn !== p.quests.worn) {
+      if (s.scout !== p.scout || s.quests.worn !== p.quests.worn || s.wardrobe.coat !== p.wardrobe.coat) {
         const el = playerMarker.current?.getElement()?.querySelector(".scout-marker") as HTMLElement | null;
         if (el) el.dataset.scout = s.scout;
+        if (el) setCoat(el, s.wardrobe.coat);
         if (el && s.quests.worn) el.dataset.cloth = s.quests.worn;
         else el?.removeAttribute("data-cloth");
         if (s.scout !== p.scout) startBed(s.scout);

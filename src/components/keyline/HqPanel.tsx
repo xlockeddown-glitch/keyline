@@ -18,6 +18,7 @@ import { AuthChip } from "./AuthChip";
 import { RollsBoard } from "./RollsBoard";
 import { DailyBoard } from "./DailyRun";
 import { ScoutRoster } from "./ScoutShop";
+import { PrintShop } from "./PrintShop";
 
 const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
 
@@ -221,6 +222,11 @@ export function HqPanel() {
                 Coats are hired at {cityShop(cityId)?.name ?? "the outfitter"} — the brass awning on the street. You can still change here.
               </p>
               <ScoutRoster hire={false} />
+              <p className="kicker mt-2">Wardrobe</p>
+              <p className="text-sm text-fg-muted">
+                Coats and lantern skins are printed at {cityShop(cityId)?.name ?? "the outfitter"} for white and blue matches. What you own, you can put on or take off here.
+              </p>
+              <PrintShop counter={false} />
               <p className="kicker mt-2">Charms</p>
               {quests.patterns > 0 && !quests.cloths.includes("night-glass") ? (
                 <div className="hq-row">

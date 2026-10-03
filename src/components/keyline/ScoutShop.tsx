@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { X } from "lucide-react";
 import { SCOUT_LIST, SUPER_LEGENDARY_ID, SUPER_LEGENDARY_LABEL, cityShop } from "@/game/data";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
+import { PrintShop } from "./PrintShop";
 
 export function ScoutRoster({ hire }: { hire: boolean }) {
   const points = useGame((s) => s.points);
@@ -78,6 +80,7 @@ export function ScoutShop() {
   const closeShop = useGame((s) => s.closeShop);
   const cityId = useGame((s) => s.cityId);
   const shop = cityShop(cityId);
+  const [tab, setTab] = useState<"hire" | "print">("hire");
   if (!shopOpen || !shop) return null;
 
   return (
@@ -93,9 +96,29 @@ export function ScoutShop() {
             <X className="size-4" />
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          <ScoutRoster hire />
+        <div className="shop-tabs" role="tablist" aria-label="Outfitter counters">
+          {(
+            [
+              ["hire", "Hire"],
+              ["print", "Print shop"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className={`hq-tab${tab === id ? " is-on" : ""}`}
+              onClick={() => {
+                sfx.ui();
+                setTab(id);
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{tab === "hire" ? <ScoutRoster hire /> : <PrintShop counter />}</div>
       </div>
     </div>
   );
