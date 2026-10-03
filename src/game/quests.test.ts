@@ -51,7 +51,7 @@ describe("quests", () => {
     let q = freshQuests("austin");
     q = noteClear(q, { cityId: "austin", poiId: "tx-capitol", tier: "red" });
     assert.equal(claimLong(q, "redbook", 0), null);
-    for (const id of ["temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola"] as const) {
+    for (const id of ["temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville"] as const) {
       q = noteClear(q, { cityId: id, poiId: "x", tier: "red" });
     }
     const paid = claimLong(q, "redbook", 0);

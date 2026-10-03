@@ -31,7 +31,7 @@ export function CitySelect() {
           <ArrowLeft className="size-4" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="kicker">Twelve cities</p>
+          <p className="kicker">Fifteen cities</p>
           <h1 className="font-display text-3xl leading-none">Pick a city</h1>
         </div>
         <AudioDock />

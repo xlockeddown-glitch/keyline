@@ -283,11 +283,12 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             className={`sight pointer-events-auto ${armed ? "is-armed" : ""} ${inReach && !haveKey && !recasting && !isScoutShop(nearest) ? "is-need" : ""}`}
             onClick={onInteract}
             disabled={!nearest}
+            data-testid="hud-sight"
           >
             {nearest ? (
               <>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="kicker">
+                <div className="flex min-w-0 items-center justify-between gap-3">
+                  <p className="kicker min-w-0 truncate">
                     {seriesNear
                       ? `${seriesNear.name} · ${seriesNear.steps} trivia cards`
                       : isScoutShop(nearest)
@@ -303,8 +304,8 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
                     ))}
                   </span>
                 </div>
-                <p className="font-display mt-1 truncate text-xl leading-tight">{nearest.name}</p>
-                <p className="mt-1 text-xs text-fg-muted">{cue}</p>
+                <p className="sight-name font-display mt-1 truncate text-xl leading-tight">{nearest.name}</p>
+                <p className="sight-cue mt-1 text-xs text-fg-muted">{cue}</p>
               </>
             ) : (
               <p className="text-sm text-fg-muted">{cue}</p>

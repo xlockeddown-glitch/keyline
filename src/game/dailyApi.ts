@@ -17,7 +17,7 @@ import {
   type RunRow,
 } from "./dailyRun";
 
-const CITY_IDS = ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola"] as const;
+const CITY_IDS = ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville"] as const;
 const CitySchema = z.enum(CITY_IDS);
 const AtSchema = { lat: z.number().finite().min(-90).max(90), lng: z.number().finite().min(-180).max(180) };
 

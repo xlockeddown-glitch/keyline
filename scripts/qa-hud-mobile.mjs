@@ -3,6 +3,9 @@
  * HUD layout smoke (0.0.47): load the game as a guest on a running dev/preview server and check the top HUD at
  * common phone sizes, phone landscape, a tablet and desktop — the status plate must be >= 200 px wide, not under
  * the top buttons or the map zoom, and desktop keeps the plate beside the button row.
+ * 0.0.48: the bottom-right lamp card (at the Detroit spawn: 'Campus Martius Park / At the lamp · E or tap') and the
+ * E button stay fully on screen on portrait phones (360–430 px) and desktop, the card keeps 120 px+, and the lamp
+ * name stays inside the card.
  *
  *   node scripts/qa-hud-mobile.mjs http://127.0.0.1:8080 [/workspace/screenshots/prefix-]
  *
@@ -55,6 +58,10 @@ const measure = (page) =>
       row: r(document.querySelector(".hud-kits")),
       kits: [...document.querySelectorAll(".hud-kits .hud-plate.is-kit")].map(r),
       zoom: r(document.querySelector(".leaflet-control-zoom")),
+      sight: r(document.querySelector('[data-testid="hud-sight"]')),
+      sightName: r(document.querySelector('[data-testid="hud-sight"] .sight-name')),
+      sightText: document.querySelector('[data-testid="hud-sight"]')?.textContent ?? "",
+      act: r(document.querySelector(".hud-dock .act-btn")),
       overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     };
   });
@@ -70,7 +77,10 @@ try {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(600);
     const m = await measure(page);
-    rows.push({ size: `${w}x${h}`, statusWidth: Math.round(m.status?.width ?? 0), statusTop: Math.round(m.status?.top ?? 0) });
+    rows.push({ size: `${w}x${h}`, statusWidth: Math.round(m.status?.width ?? 0), statusTop: Math.round(m.status?.top ?? 0), sightLeft: Math.round(m.sight?.left ?? -1), sightRight: Math.round((m.sight?.left ?? 0) + (m.sight?.width ?? 0)), sightWidth: Math.round(m.sight?.width ?? 0), sight: m.sightText.replace(/\s+/g, " ").trim().slice(0, 60) });
+    // The lamp card check (0.0.48) covers portrait phones 360–430 px; phone landscape keeps the 0.0.47 checks only.
+    if (w > 480) delete m.sight;
+    else if (!/At the lamp/.test(m.sightText)) problems.push(`${w}x${h}: lamp card is not showing a lamp in reach ("${m.sightText.trim().slice(0, 40)}")`);
     problems.push(...hudLayoutProblems(m));
     if (shotPrefix) await page.screenshot({ path: `${shotPrefix}${w}x${h}.png` });
   }
@@ -79,7 +89,7 @@ try {
   const desk = await deskCtx.newPage();
   await enterGame(desk);
   const m = await measure(desk);
-  rows.push({ size: `${DESKTOP[0]}x${DESKTOP[1]}`, statusWidth: Math.round(m.status?.width ?? 0), statusTop: Math.round(m.status?.top ?? 0) });
+  rows.push({ size: `${DESKTOP[0]}x${DESKTOP[1]}`, statusWidth: Math.round(m.status?.width ?? 0), statusTop: Math.round(m.status?.top ?? 0), sightRight: Math.round((m.sight?.left ?? 0) + (m.sight?.width ?? 0)), sightWidth: Math.round(m.sight?.width ?? 0) });
   problems.push(...hudLayoutProblems(m, { desktop: true }));
   if (shotPrefix) await desk.screenshot({ path: `${shotPrefix}${DESKTOP[0]}x${DESKTOP[1]}.png` });
   await deskCtx.close();

@@ -14,6 +14,9 @@ const CITY_IDS: CityId[] = [
   "la",
   "boston",
   "nola",
+  "seattle",
+  "denver",
+  "nashville",
 ];
 
 const CITY_NAME: Record<CityId, string> = {
@@ -29,6 +32,9 @@ const CITY_NAME: Record<CityId, string> = {
   la: "Los Angeles",
   boston: "Boston",
   nola: "New Orleans",
+  seattle: "Seattle",
+  denver: "Denver",
+  nashville: "Nashville",
 };
 
 export type ClothId = "road-dust" | "red-book" | "night-glass" | `scarf-${CityId}`;

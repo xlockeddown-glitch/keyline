@@ -28,6 +28,9 @@ const CITY_IDS = [
   "la",
   "boston",
   "nola",
+  "seattle",
+  "denver",
+  "nashville",
 ] as const;
 
 const TierSchema = z.enum(ROLL_TIERS);

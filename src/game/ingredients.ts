@@ -14,6 +14,9 @@ export type IngredientId =
   | "film"
   | "brick"
   | "cypress"
+  | "cedar"
+  | "silver"
+  | "string"
   | "granite"
   | "limestone"
   | "creekstone"
@@ -42,6 +45,9 @@ export const INGREDIENTS: Record<IngredientId, Ingredient> = {
   film: { id: "film", name: "Film", cityId: "la", blurb: "Los Angeles press stock. Green vaults and up." },
   brick: { id: "brick", name: "Brick", cityId: "boston", blurb: "Boston press stock. Green vaults and up." },
   cypress: { id: "cypress", name: "Cypress", cityId: "nola", blurb: "New Orleans press stock. Green vaults and up." },
+  cedar: { id: "cedar", name: "Cedar", cityId: "seattle", blurb: "Seattle press stock. Green vaults and up." },
+  silver: { id: "silver", name: "Silver", cityId: "denver", blurb: "Denver press stock. Green vaults and up." },
+  string: { id: "string", name: "Fiddle string", cityId: "nashville", blurb: "Nashville press stock. Green vaults and up." },
   granite: { id: "granite", name: "Pink granite", cityId: "austin", blurb: "Capitol ward. Amber vaults and up." },
   limestone: { id: "limestone", name: "Limestone", cityId: "austin", blurb: "Barton Springs. Amber vaults and up." },
   creekstone: { id: "creekstone", name: "Creek stone", cityId: "temple", blurb: "Miller Springs. Amber vaults and up." },
@@ -64,6 +70,9 @@ const CITY_STAPLE: Record<CityId, IngredientId> = {
   la: "film",
   boston: "brick",
   nola: "cypress",
+  seattle: "cedar",
+  denver: "silver",
+  nashville: "string",
 };
 
 /** Named wards. Only amber, red, and violet vaults drop these. */

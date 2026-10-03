@@ -308,7 +308,7 @@ export function dailyPaidKey(day: string, city: CityId): string {
   return `${day}|${city}`;
 }
 
-/** Paid keys kept in the save (oldest drop first) — plenty for twelve cities over a couple of days. */
+/** Paid keys kept in the save (oldest drop first) — plenty for fifteen cities over a couple of days. */
 export const DAILY_PAID_KEEP = 48;
 
 export function isDailyPaid(paid: readonly string[], day: string, city: CityId): boolean {

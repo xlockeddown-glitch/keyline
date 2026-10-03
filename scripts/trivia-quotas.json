@@ -1,7 +1,7 @@
 {
   "version": 1,
   "topics": ["sports", "food", "arts", "local", "political", "math", "science", "history", "nature", "games", "celebrity"],
-  "cityIds": ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola"],
+  "cityIds": ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville"],
   "cats": ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity"],
   "placeTopics": [
     "defense", "aerospace", "art", "history", "natural-history", "science", "library", "campus",

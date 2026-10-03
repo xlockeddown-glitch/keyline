@@ -17,6 +17,9 @@ const CITIES = [
   "la",
   "boston",
   "nola",
+  "seattle",
+  "denver",
+  "nashville",
 ] as const;
 
 const TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
