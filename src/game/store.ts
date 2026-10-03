@@ -1211,7 +1211,8 @@ export const useGame = create<GameState>((set, get) => ({
         loot,
         miss: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
-        toast: [paid.boosts.length ? `${clearLine} ${paid.boosts.join(" · ")}.` : clearLine, ingLine, questHit.line].filter(Boolean).join(" "),
+        // Boost labels ride on loot.boosts (their own line in the reward pop); not repeated in the toast.
+        toast: [clearLine, ingLine, questHit.line].filter(Boolean).join(" "),
         quests: questHit.quests,
         tutorial: Math.max(get().tutorial, 2),
       });
@@ -1340,7 +1341,6 @@ export const useGame = create<GameState>((set, get) => ({
     if (grade === "perfect") sfx.perfect();
     else sfx.correct();
     const spun = foldWheel(get, poi.tier);
-    const boostLine = paid.boosts.length ? paid.boosts.join(" · ") : null;
     const wornCloth = get().quests.worn;
     const clothLine = tip > 0 && wornCloth ? `${clothName(wornCloth)} +${tip}.` : null;
     const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
@@ -1370,7 +1370,8 @@ export const useGame = create<GameState>((set, get) => ({
       openVault: null,
       loot,
       miss: null,
-      toast: [contractToast, fareToast, surveyHit?.message, boostLine, clothLine, ingLine, questHit.line].filter(Boolean).join(" ") || null,
+      // Boost labels ride on loot.boosts (their own line in the reward pop); not repeated in the toast.
+      toast: [contractToast, fareToast, surveyHit?.message, clothLine, ingLine, questHit.line].filter(Boolean).join(" ") || null,
       quests: questHit.quests,
       tutorial: Math.max(get().tutorial, 2),
     });

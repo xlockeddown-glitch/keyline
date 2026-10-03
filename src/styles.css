@@ -708,6 +708,26 @@ h3 {
   gap:8px;
   padding:8px 12px
 }
+/* 0.0.47 phone HUD: the top button row shrinks to 40 px squares so all six fit beside the map zoom at 360 px;
+   the status plate (Hud.tsx .hud-status) stacks under it at full width. sm and up unchanged. */
+@media (width<640px){
+  .hud-kits{
+    gap:6px
+  }
+  .hud-kits > div{
+    gap:6px
+  }
+  .hud-kits .hud-plate.is-kit{
+    width:40px;
+    height:40px;
+    padding:0;
+    gap:0;
+    justify-content:center
+  }
+  .hud-status{
+    padding:8px 12px
+  }
+}
 .hud-plate.is-on{
   border-color:var(--color-accent);
   color:var(--color-accent)

@@ -122,8 +122,11 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[500] flex flex-col justify-between p-3 sm:p-4">
-      <div className="flex items-start justify-between gap-2 pl-12">
-        <div className="hud-plate pointer-events-none min-w-0">
+      {/* Phones (<640px): the button row sits on top and the status plate stacks under it at full width
+          (side by side, the button row left the plate ~30 px). 640–1023px (phone landscape, tablets): side by side,
+          the buttons drop their labels. lg and up (desktop): unchanged. */}
+      <div className="hud-top flex flex-col-reverse items-stretch gap-2 pl-12 sm:flex-row sm:items-start sm:justify-between">
+        <div className="hud-plate hud-status pointer-events-none min-w-0" data-testid="hud-status">
           <div className="flex items-start gap-3">
             <div className="hud-compass" title={fares > 0 ? `Toward ${hud.deskName}` : "Toward your waypoint"} aria-hidden>
               <i style={{ transform: `rotate(${hud.aimDeg}deg)` }} />
@@ -179,7 +182,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
           <MarketHudLine onWalk={onMarketWalk} />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="hud-kits flex shrink-0 items-center gap-2 self-end sm:self-auto">
           <AudioDock />
           <DailyKitButton />
           <button
@@ -189,7 +192,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             aria-label="How to play"
           >
             <CircleHelp className="size-4 text-fg-muted" strokeWidth={1.75} />
-            <span className="hidden sm:block">
+            <span className="hidden lg:block">
               <span className="kicker">Help</span>
               <span className="block text-xs text-fg-muted">?</span>
             </span>
@@ -208,7 +211,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
                 </span>
               ) : null}
             </span>
-            <span className="hidden sm:block">
+            <span className="hidden lg:block">
               <span className="kicker">Satchel</span>
               <span className="block text-xs text-fg-muted">I</span>
             </span>
@@ -220,7 +223,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             aria-label={pulseReady ? "Open Journal, City Pulse waiting" : "Open Journal"}
           >
             <BookOpen className="size-4 text-fg-muted" strokeWidth={1.75} />
-            <span className="kicker hidden sm:inline">Journal</span>
+            <span className="kicker hidden lg:inline">Journal</span>
             {pulseReady ? <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" aria-hidden /> : null}
           </button>
         </div>

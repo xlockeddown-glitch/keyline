@@ -71,7 +71,7 @@ export function DailyKitButton() {
       aria-label="Daily Lantern Run"
     >
       <Flame className="size-4 text-accent" strokeWidth={1.75} />
-      <span className="kicker hidden sm:inline">Daily</span>
+      <span className="kicker hidden lg:inline">Daily</span>
       {!done ? <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" aria-hidden /> : null}
     </button>
   );

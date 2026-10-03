@@ -63,6 +63,7 @@ Do not publish until this list is green:
    - `node scripts/browser-smoke.mjs http://127.0.0.1:8080/ /workspace/screenshots/app-builder-preview.png`
    - `npm run build && npm run preview:restart`
    - `node scripts/browser-smoke.mjs http://127.0.0.1:8081/ /workspace/screenshots/app-builder-built.png --baseline /workspace/screenshots/app-builder-preview.json`
+   - `npm run qa:hud-mobile -- http://127.0.0.1:8080` — the top HUD plate is 200 px+ wide and clear of the top buttons at 360/390/414/430 px phones, phone landscape, a tablet and desktop
 7. Publish in Grok from the **existing** live app, then push the same commit to GitHub.
 
 ### Where to publish (live app)
