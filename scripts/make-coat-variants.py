@@ -179,7 +179,7 @@ def main() -> None:
 # Sheet URLs carry the stamp the art last changed in, like the base sheets in styles.css.
 ART_STAMP = "k45a"
 # Characters whose base art changed since: their coat sheets carry the newer stamp (0.0.49: the Lynx redraw).
-ART_STAMP_BY = {"lynx": "k49a"}
+ART_STAMP_BY = {"lynx": "k49b"}
 
 
 def write_css() -> None:

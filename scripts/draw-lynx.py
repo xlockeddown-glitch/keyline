@@ -37,18 +37,22 @@ _lab = _load("labfns", "fix-cat-coat.py")
 _old = _load("lynx37", "make-lynx.py")
 cv = _load("coatvars", "make-coat-variants.py")
 side = _load("sideidle", "make-side-idle.py")
+head = _load("lynxhead", "lynx-head.py")
 to_lab, from_lab, hue = _lab.to_lab, _lab.from_lab, _lab.hue
 lantern_box, in_box = _old.lantern_box, _old.in_box
 
 # Palette (sRGB). Fur targets are Lab so the painted shading survives.
-FUR_H, FUR_C_K, FUR_L_K = 70.0, 0.48, 0.72  # tawny buff hue, chroma kept, lightness contrast kept
-COAT_L, COAT_C, COAT_H, COAT_L_K = 22.0, 2.0, 250.0, 0.95  # charcoal field coat (the old Lynx's colour)
+FUR_H, FUR_C_K, FUR_L_K = 64.0, 0.80, 0.80  # golden tawny hue, chroma kept, lightness contrast kept
+FUR_L_SHIFT = -3.0
+# Own coat: a tan trench (pass 2, after Ryan's reference) — far lighter and cooler than the Tabby's brown.
+COAT_L, COAT_C, COAT_H, COAT_L_K = 63.0, 26.0, 74.0, 0.9
+HEAD_U = 12.0  # head unit at the 96 px walk cell (half the crown width); idle scales by 128/96
 TUFT = (26, 20, 17, 255)
 TUFT_HI = (64, 52, 44, 255)
 EAR_RIM = (48, 38, 32, 255)
 EAR_IN = (232, 222, 204, 255)
-SPOT = (88, 66, 46, 255)
-SPOT_DK = (60, 44, 32, 255)
+SPOT = (74, 46, 24, 255)
+SPOT_DK = (52, 32, 18, 255)
 RUFF = (236, 228, 212, 255)
 RUFF_MID = (214, 204, 186, 255)
 RUFF_SH = (176, 164, 146, 255)
@@ -227,7 +231,7 @@ class Frame:
                     continue
                 L, A, B = lab_of(p)
                 if (x, y) in self.coat:
-                    nl = max(5.0, min(70.0, COAT_L + (L - self.ref["L"]) * COAT_L_K))
+                    nl = max(8.0, min(84.0, COAT_L + (L - self.ref["L"]) * COAT_L_K))
                     t = math.radians(COAT_H)
                     self.px[x, y] = (*from_lab(nl, COAT_C * math.cos(t), COAT_C * math.sin(t)), p[3])
                     continue
@@ -235,14 +239,14 @@ class Frame:
                 if k in ("fur", "cream", None) and self.neck < y < self.boot and (
                     self.coat_around(x, y) >= 5 or (self.coat_around(x, y) >= 3 and L < 45 and k != "cream")
                 ):
-                    nl = max(5.0, min(70.0, COAT_L + (L - self.ref["L"]) * COAT_L_K * 0.8))
+                    nl = max(8.0, min(84.0, COAT_L + (L - self.ref["L"]) * COAT_L_K * 0.8))
                     t = math.radians(COAT_H)
                     self.px[x, y] = (*from_lab(nl, COAT_C * math.cos(t), COAT_C * math.sin(t)), p[3])
                     continue
                 if k == "fur":
                     on_head = y < self.neck
                     kk = 0.85 if on_head else FUR_L_K
-                    nl = max(18.0, min(86.0, Lm + (L - Lm) * kk + 5))
+                    nl = max(18.0, min(86.0, Lm + (L - Lm) * kk + FUR_L_SHIFT))
                     C = math.hypot(A, B) * FUR_C_K
                     t = math.radians(FUR_H + (hue(A, B) - 55) * 0.2)
                     self.px[x, y] = (*from_lab(nl, C * math.cos(t), C * math.sin(t)), p[3])
@@ -265,125 +269,55 @@ class Frame:
     def coat_around(self, x, y) -> int:
         return sum((x + i, y + j) in self.coat for i in (-1, 0, 1) for j in (-1, 0, 1) if i or j)
 
-    # ── 3. ears: black rims and tufts ───────────────────────────────────
-    def ear_tips(self):
-        x0, y0, x1, y1 = self.bb
-        cols = []
-        for x in range(self.W):
-            for y in range(y0, self.neck):
-                if self.solid(x, y):
-                    cols.append((x, y))
-                    break
-        if not cols:
-            return []
-        xs = [x for x, _ in cols]
-        mid = (min(xs) + max(xs)) / 2
-        l = min((c for c in cols if c[0] < mid), key=lambda c: (c[1], -c[0]), default=None)
-        r = min((c for c in cols if c[0] >= mid), key=lambda c: (c[1], c[0]), default=None)
-        tips = [t for t in (l, r) if t]
-        if len(tips) == 2 and abs(tips[0][1] - tips[1][1]) > 5 * self.s:
-            tips = [min(tips, key=lambda c: c[1])]
-        return tips
+    # ── 3. the head: lifted off and repainted per facing (scripts/lynx-head.py) ──
+    def old_head(self):
+        """Top, chin and centre of the tabby's head in this frame (what gets replaced)."""
+        pts = [(x, y) for y in range(self.chin + 1) for x in range(self.W)
+               if self.px[x, y][3] >= 128 and (x, y) not in self.coat and not in_box(x, y, self.lamp)]
+        xs = [p[0] for p in pts]
+        return min(p[1] for p in pts), self.chin, sum(xs) / len(xs), pts
 
-    def ears(self):
-        tips = self.ear_tips()
-        x0, _, x1, _ = self.bb
-        cx = (x0 + x1) / 2
-        rim = max(2, round(2.5 * self.s))
-        for tx, ty in tips:
-            # black-rim the top of the ear: the first `rim` solid pixels down each column near the tip
-            for x in range(tx - round(3 * self.s), tx + round(3 * self.s) + 1):
-                n = 0
-                for y in range(ty, ty + round(7 * self.s)):
-                    if self.solid(x, y) and not in_box(x, y, self.lamp):
-                        depth = y - ty
-                        if depth <= rim + abs(x - tx) * 0.2 and n < rim:
-                            self.px[x, y] = EAR_RIM if n else TUFT
-                            n += 1
-                    elif n:
-                        break
-            lean = 1 if tx > cx else -1
-            if self.view in ("left", "right") and len(tips) == 1:
-                lean = 1 if self.view == "left" else -1
-            # a tapered tuft: two pixels wide at the ear tip, one at the top, flicking outwards
-            n = max(4, round(5 * self.s))
-            for i in range(1, n + 1):
-                yy = ty - i
-                if yy < 2:
-                    break
-                xx = tx + (lean if i > n * 0.6 else 0)
-                if 1 <= xx < self.W - 1:
-                    self.px[xx, yy] = TUFT
-                    if i <= n * 0.5 and 1 <= xx + lean < self.W - 1:
-                        self.px[xx + lean, yy] = TUFT_HI if i == 1 else TUFT
-                    if self.s > 1.2 and i <= n * 0.3 and 1 <= xx - lean < self.W - 1:
-                        self.px[xx - lean, yy] = TUFT_HI
-
-    # ── 4. facial ruff ──────────────────────────────────────────────────
-    def ruff(self):
-        x0, y0, x1, y1 = self.bb
-        top, neck = y0, self.neck
-        h = neck - top
-        ya, yb = top + int(h * 0.56), neck + max(1, round(1.5 * self.s))
-        sides = {"front": "lr", "back": "lr", "left": "r", "right": "l"}[self.view]
-        reach = 3.6 * self.s
-        span = max(1, yb - ya)
-        for sd in sides:
-            d = -1 if sd == "l" else 1
-            for y in range(ya, yb + 1):
-                t = (y - ya) / span
-                row = [x for x in range(self.W) if self.solid(x, y) and not in_box(x, y, self.lamp)
-                       and (y < neck or (x, y) not in self.coat or True)]
-                if not row:
+    def paint_head(self, hx: float, hy: float, U: float):
+        _, _, _, pts = self.old_head()
+        for p in pts:
+            self.px[p] = (0, 0, 0, 0)
+        layer, idx, _ = head.head_layer(self.W, self.view, hx, hy, U)
+        self.f.alpha_composite(layer)
+        self.px = self.f.load()
+        # soft outline where the new head meets the street (not where it overlaps the coat)
+        W = self.W
+        for y in range(1, W - 1):
+            for x in range(1, W - 1):
+                k = idx[y, x]
+                if not k:
                     continue
-                # edge of the head on this side (rows at/below the neck use the head edge of the row above)
-                hx = [x for x in row if abs(x - (x0 + x1) / 2) < (x1 - x0) * 0.5]
-                if not hx:
-                    continue
-                edge = min(hx) if sd == "l" else max(hx)
-                if y >= neck:
-                    edge = self._ruff_edge.get(sd, edge)
-                else:
-                    self._ruff_edge = getattr(self, "_ruff_edge", {})
-                    self._ruff_edge[sd] = edge
-                # profile: grows down the cheek, then pointed locks hang at the jaw
-                out = reach * (0.35 + 0.9 * t) if t < 0.72 else reach * (1.0 - (t - 0.72) * 2.2)
-                lock = ((y - ya) // max(2, round(2 * self.s))) % 2
-                out = int(round(out + (0.8 * self.s if lock else -0.2)))
-                start = -max(1, round(1.5 * self.s))  # paint back over the cheek edge too
-                for i in range(start, out + 1):
-                    x = edge + d * i
-                    if not (1 <= x < self.W - 1):
-                        continue
-                    if i <= 0 and kind(self.px[x, y]) not in ("fur", "cream"):
-                        continue
-                    if i > 0 and self.solid(x, y) and (x, y) not in self.coat and kind(self.px[x, y]) is None:
-                        continue  # don't paint over sleeves, bag, boots
-                    col = RUFF if i < out - 1 else (RUFF_MID if i < out else RUFF_SH)
-                    self.px[x, y] = col
-                # the bar: a dark stroke slanting down-out through the middle of the ruff
-                by = ya + int(span * 0.42)
-                if by <= y <= by + max(1, round(self.s)):
-                    for i in range(-1, max(1, out - 1)):
-                        if (i + (y - by)) % 1 == 0 and 0 <= i <= out * 0.75:
-                            x = edge + d * (i + (y - by))
-                            if 1 <= x < self.W - 1 and self.solid(x, y):
-                                self.px[x, y] = RUFF_BAR
-        if self.view == "front":
-            # a pale bib under the chin
-            pass
+                if any(self.px[x + i, y + j][3] < 64 for i, j in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                    if k in (head.FUR, head.FUR_LT, head.FUR_SH, head.FUR_DK):
+                        self.px[x, y] = head.PAL[head.OUTLINE] + (254,)
+                    elif k == head.WHITE:
+                        self.px[x, y] = head.PAL[head.WHITE_SH] + (254,)
 
     # ── 5. bobbed tail ──────────────────────────────────────────────────
     def stub(self):
-        if not self.tail_at:
-            return
-        sd, edge, ay = self.tail_at
-        d = -1 if sd == "l" else 1
+        """A short spotted bobtail with a black tip. Side and three-quarter poses: at the hip where the tabby's
+        tail left, tucked behind the body. Back view: centred on the rump, over the coat hem."""
         s = self.s
-        cx, cy = edge + d * 1.4 * s, ay - 1.6 * s
-        rw, rh = 3.6 * s, 3.2 * s
-        tip = (d * 0.75, -0.66)
-        base = from_lab(66, 22 * math.cos(math.radians(FUR_H)), 22 * math.sin(math.radians(FUR_H)))
+        if self.view == "back":
+            xs = [x for x, y in self.coat]
+            if not xs:
+                return
+            cx = (min(xs) + max(xs)) / 2
+            mid = [y for x, y in self.coat if abs(x - cx) < 3 * s]
+            cy = max(mid) - 4.0 * s
+            rw, rh, d, tip, behind = 3.8 * s, 4.2 * s, 1, (0.0, 1.0), False
+        elif self.tail_at:
+            sd, edge, ay = self.tail_at
+            d = -1 if sd == "l" else 1
+            cx, cy = edge + d * 2.6 * s, ay - 3.0 * s
+            rw, rh, tip, behind = 4.6 * s, 3.6 * s, (d * 0.72, -0.70), True
+        else:
+            return
+        base = from_lab(60, 44 * math.cos(math.radians(FUR_H)), 44 * math.sin(math.radians(FUR_H)))
         fur = (*base, 255)
         for y in range(int(cy - rh - 1), int(cy + rh + 2)):
             for x in range(int(cx - rw - 1), int(cx + rw + 2)):
@@ -393,22 +327,21 @@ class Frame:
                 dd = u * u + v * v
                 if dd > 1.0:
                     continue
-                if self.px[x, y][3] >= 128 and (u * d) < 0.15:
+                if behind and self.px[x, y][3] >= 128 and (u * d) < 0.2:
                     continue  # tucked behind the body on its root side
                 along = u * tip[0] + v * tip[1]
-                if along > 0.5:
+                if along > 0.48:
                     col = TIP
-                elif dd > 0.68:
-                    col = shade(fur, 0.66)
-                elif v > 0.35:
-                    col = shade(fur, 0.86)
+                elif dd > 0.70:
+                    col = shade(fur, 0.62)
+                elif v < -0.3:
+                    col = shade(fur, 1.12)
                 else:
-                    col = shade(fur, 1.06)
+                    col = fur
                 self.px[x, y] = col
-        # two spots on the bob
-        for (u, v) in ((-0.15, 0.25), (0.25, 0.05)):
+        for (u, v) in ((-0.35, 0.10), (0.15, -0.20), (0.05, 0.35), (-0.10, -0.45)):
             x, y = int(round(cx + u * rw * d)), int(round(cy + v * rh))
-            if 1 <= x < self.W - 1 and self.px[x, y][:3] != TIP[:3]:
+            if 1 <= x < self.W - 1 and self.px[x, y][:3] not in (TIP[:3],) and self.px[x, y][3] >= 128:
                 self.px[x, y] = SPOT
 
     # ── 6. bigger paws ──────────────────────────────────────────────────
@@ -493,7 +426,7 @@ class Frame:
         if p[3] < 200 or c in self.coat:
             return False
         L, A, B = lab_of(p)
-        return abs(hue(A, B) - FUR_H) < 22 and 14 <= math.hypot(A, B) <= 34 and 38 <= L <= 76
+        return abs(hue(A, B) - FUR_H) < 22 and 18 <= math.hypot(A, B) <= 60 and 34 <= L <= 78
 
     def clear_border(self):
         for i in range(self.W):
@@ -504,7 +437,7 @@ class Frame:
 # A lynx is a bigger, rangier cat: the figure is scaled about its feet (floor line and centre stay put),
 # broader than it is taller, before anything is painted on. Colours are snapped back to the cat sheet's
 # own palette afterwards, so the resample doesn't blur the painted pixels.
-SCALE_X, SCALE_Y = 1.14, 1.08
+SCALE_X, SCALE_Y = 1.14, 1.03
 
 
 def grow(f: Image.Image, ref, view: str):
@@ -541,7 +474,7 @@ def grow(f: Image.Image, ref, view: str):
     return img, coat
 
 
-def make_frame(f: Image.Image, ref, view: str, seed: int) -> Image.Image:
+def prepare(f: Image.Image, ref, view: str, seed: int) -> Frame:
     g, coat = grow(f, ref, view)
     fr = Frame(g, ref, view, coat)
     fr.drop_tail()
@@ -549,11 +482,27 @@ def make_frame(f: Image.Image, ref, view: str, seed: int) -> Image.Image:
     fr.paws()
     fr.boots()
     fr.spots(seed)
-    fr.ruff()
-    fr.ears()
-    fr.stub()
-    fr.clear_border()
-    return fr.f
+    return fr
+
+
+def finish(frames: list[Frame], view: str) -> list[Image.Image]:
+    """Repaint the head on one facing's frames. Size is fixed per sheet; the eye line follows each frame's
+    own head bob (old head top) so the walk keeps its timing, and never lets a tuft leave the cell."""
+    s = frames[0].s
+    U = HEAD_U * s
+    olds = [fr.old_head() for fr in frames]
+    tops = sorted(o[0] for o in olds)
+    chins = sorted(o[1] for o in olds)
+    top_m, chin_m = tops[len(tops) // 2], chins[len(chins) // 2]
+    out = []
+    for fr, (top, chin, cx, _) in zip(frames, olds):
+        hy = top + (chin_m - top_m) * 0.5 + 0.2 * U
+        hy = max(hy, 2.5 + 2.22 * U)
+        fr.paint_head(cx, hy, U)
+        fr.stub()
+        fr.clear_border()
+        out.append(fr.f)
+    return out
 
 
 def main() -> None:
@@ -564,15 +513,16 @@ def main() -> None:
     C = 96
     for r, view in enumerate(["front", "left", "right", "back"]):
         ref = cv.coat_ref(wg[r], 8.0)
-        for c in range(4):
-            walk.alpha_composite(make_frame(wg[r][c], ref, view, 0x1F9A + r), (c * C, r * C))
+        frames = finish([prepare(wg[r][c], ref, view, 0x1F9A + r) for c in range(4)], view)
+        for c, f in enumerate(frames):
+            walk.alpha_composite(f, (c * C, r * C))
     walk.save(SCOUTS / "lynx-walk.png", optimize=True)
     I = 128
     ref = cv.coat_ref([f for row in ig for f in row], 8.0)
     idle = Image.new("RGBA", cat_idle.size, (0, 0, 0, 0))
-    for r in range(2):
-        for c in range(2):
-            idle.alpha_composite(make_frame(ig[r][c], ref, "front", 0x1F9A + 9), (c * I, r * I))
+    frames = finish([prepare(ig[r][c], ref, "front", 0x1F9A + 9) for r in range(2) for c in range(2)], "front")
+    for i, f in enumerate(frames):
+        idle.alpha_composite(f, ((i % 2) * I, (i // 2) * I))
     idle.save(SCOUTS / "lynx-idle.png", optimize=True)
     idle.crop((0, 0, I, I)).resize((C, C), Image.BOX).save(SCOUTS / "lynx.png", optimize=True)
     side.build(SCOUTS / "lynx-walk.png", SCOUTS / "lynx-idle-side.png")
