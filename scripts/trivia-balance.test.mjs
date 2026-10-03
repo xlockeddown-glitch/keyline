@@ -10,7 +10,10 @@ import {
   flagInventory,
   formatReport,
   keyPathByLine,
+  loadCatalog,
   loadQuotas,
+  mathDrawFlags,
+  measureMathDraw,
   matchNiche,
 } from "./trivia-balance.mjs";
 
@@ -159,6 +162,64 @@ test("python quota helper clamps specialty diffs", async () => {
       "-c",
       "from trivia_quota import clamp_diff, is_specialty, check_bulk\nassert is_specialty('Urticating hairs are', 'bristles')\nassert clamp_diff('Urticating hairs are', 'bristles', 1)==3\nflags=check_bulk([('nature','Urticating hairs %d' % i,'x','bristles',1) for i in range(20)], 'general')\nassert flags\nprint('ok')",
     ],
+    { encoding: "utf8", cwd: here },
+  );
+  assert.match(out, /ok/);
+});
+
+// ── 0.0.42: math cap ──────────────────────────────────────────────────
+const mathRow = (i) => ({ topic: "math", niche: null, bank: "math_more", specialty: false, rarity: "white", q: `m${i}` });
+const foodRow = (i) => ({ topic: "food", niche: null, bank: "general", specialty: false, rarity: "green", q: `f${i}` });
+
+test("math cap: over-share is a warning while the count holds; any growth past the baseline is an error", () => {
+  const cap = { ...Q, mathCap: { maxDeckShare: 0.2, deckBaseline: 3, maxDrawShare: 0.2 } };
+  const held = flagInventory([...Array.from({ length: 3 }, (_, i) => mathRow(i)), ...Array.from({ length: 7 }, (_, i) => foodRow(i))], cap);
+  assert.ok(held.some((f) => f.kind === "math-over-share" && f.level === "warn"));
+  assert.equal(held.some((f) => f.level === "error" && f.key === "math"), false);
+  const grew = flagInventory([...Array.from({ length: 4 }, (_, i) => mathRow(i)), ...Array.from({ length: 7 }, (_, i) => foodRow(i))], cap);
+  assert.ok(grew.some((f) => f.kind === "math-cap" && f.level === "error"));
+  const under = flagInventory([mathRow(0), ...Array.from({ length: 9 }, (_, i) => foodRow(i))], cap);
+  assert.equal(under.some((f) => f.key === "math"), false, "under 20%: no math flag");
+  assert.equal(Q.mathCap.maxDeckShare, 0.2);
+});
+
+test("math cap: weekly/bulk batches with math are blocked while math is over 20%", () => {
+  const rows = [];
+  for (const cat of ["local", "food", "arts", "political", "sports"]) for (let i = 0; i < 4; i++) rows.push({ cat, q: `${cat} q ${i}`, answer: "ok", diff: 2 });
+  rows.push({ cat: "math", q: "What is 7 × 8?", answer: "56", diff: 1 });
+  assert.ok(checkGeneratorBatch(rows, Q, { bank: "weekly", mathShare: 0.257 }).some((f) => f.kind === "gen-math-cap"));
+  assert.equal(checkGeneratorBatch(rows, Q, { bank: "weekly", mathShare: 0.19 }).length, 0, "under the cap math may grow again");
+  assert.equal(checkGeneratorBatch(rows.slice(0, -1), Q, { bank: "weekly", mathShare: 0.257 }).length, 0, "no math in the batch: no flag");
+});
+
+test("math cap: the live deck holds at or under its baseline", () => {
+  const catalog = loadCatalog();
+  const math = catalog.filter((r) => r.topic === "math").length;
+  assert.ok(math <= Q.mathCap.deckBaseline, `math ${math} > baseline ${Q.mathCap.deckBaseline}`);
+  assert.equal(flagInventory(catalog, Q).some((f) => f.kind === "math-cap"), false);
+});
+
+test("math draw: lamps offer Math at most 20% of the time, and it is still offered", async () => {
+  const draw = await measureMathDraw({ perCity: 200 });
+  assert.ok(draw.offeredShare <= Q.mathCap.maxDrawShare, `offered ${draw.offeredShare}`);
+  assert.ok(draw.offeredShare >= 0.1, `math still reachable: ${draw.offeredShare}`);
+  assert.ok(draw.randomPickShare <= draw.offeredShare);
+  assert.deepEqual(mathDrawFlags(draw, Q), []);
+  assert.equal(mathDrawFlags({ ...draw, offeredShare: 0.3, mathFirstShare: 0.3 }, Q)[0]?.kind, "math-draw");
+  const { loadGame } = await import("./trivia-repeats.mjs");
+  const G = await loadGame();
+  const poi = G.allPois(G.CITIES.austin).find((p) => p.tier);
+  for (let i = 0; i < 20; i++) assert.deepEqual(G.offerCats(poi.id, i, 6, poi), G.offerCats(poi.id, i, 6, poi), "offers are stable per lamp visit");
+});
+
+test("python generator helper blocks math while over the cap", async () => {
+  const { execFileSync } = await import("node:child_process");
+  const { dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const out = execFileSync(
+    "python3",
+    ["-c", "from trivia_quota import check_bulk\nrows=[('math','What is %d+1?' % i,'x',str(i+1),1) for i in range(2)]+[(c,'%s q %d' % (c,i),'x','y',2) for c in ('food','arts','local','sports') for i in range(4)]\nassert any('math' in f for f in check_bulk(rows,'weekly',math_share=0.257))\nassert not check_bulk(rows,'weekly',math_share=0.19)\nprint('ok')"],
     { encoding: "utf8", cwd: here },
   );
   assert.match(out, /ok/);

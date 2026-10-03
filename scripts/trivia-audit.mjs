@@ -1198,7 +1198,7 @@ if (isMain()) {
       let fail = r.errors.length > 0;
       if (wantBalance) {
         const { runBalance } = await import("./trivia-balance.mjs");
-        const bal = runBalance({ json, warn: args.has("--warn"), check: true });
+        const bal = await runBalance({ json, warn: args.has("--warn"), check: true });
         if (bal.fail) fail = true;
       }
       process.exit(fail ? 1 : 0);

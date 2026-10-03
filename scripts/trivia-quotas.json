@@ -45,6 +45,12 @@
     "deepCutMinDiff": 3,
     "deepCutMaxEasyShare": 0.25
   },
+  "mathCap": {
+    "note": "0.0.42: math was 25.7% of trivia cards (2374 of 9239). While the deck share is above maxDeckShare, the math count may not grow past deckBaseline and generator batches may not add math. maxDrawShare caps how often lamps offer Math (src/game/trivia.ts offerCats).",
+    "maxDeckShare": 0.2,
+    "deckBaseline": 2374,
+    "maxDrawShare": 0.2
+  },
   "easyRarities": ["white", "blue"],
   "deepRarities": ["red", "violet"]
 }

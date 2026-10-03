@@ -308,6 +308,24 @@ export function flagInventory(catalog, quotas) {
       });
     }
   }
+  const cap = quotas.mathCap;
+  if (cap && total) {
+    const math = byTopic.math ?? 0;
+    const share = math / total;
+    if (share > cap.maxDeckShare) {
+      const grew = math > cap.deckBaseline;
+      flags.push({
+        level: grew ? "error" : "warn",
+        kind: grew ? "math-cap" : "math-over-share",
+        key: "math",
+        share,
+        limit: cap.maxDeckShare,
+        detail: grew
+          ? `math grew to ${math} trivia cards (cap ${cap.deckBaseline}) while it is ${(share * 100).toFixed(1)}% of the deck (max ${(cap.maxDeckShare * 100).toFixed(0)}%) — no new math cards until it is under the cap`
+          : `math is ${(share * 100).toFixed(1)}% of trivia cards (target ${(cap.maxDeckShare * 100).toFixed(0)}%) — new math cards are blocked; grow other topics`,
+      });
+    }
+  }
   const specialty = catalog.filter((r) => r.specialty);
   if (specialty.length >= 20) {
     const easy = specialty.filter((r) => quotas.easyRarities.includes(r.rarity)).length / specialty.length;
@@ -334,7 +352,18 @@ export function flagInventory(catalog, quotas) {
   return flags;
 }
 
-export function checkGeneratorBatch(rows, quotas, { bank = "general" } = {}) {
+/** Math's share of the current deck, for the generator cap. */
+export function deckMathShare(catalog) {
+  if (!catalog.length) return 0;
+  return catalog.filter((r) => r.topic === "math").length / catalog.length;
+}
+
+/**
+ * Bulk/weekly generator quotas. Pass `mathShare` (deckMathShare of the live catalog) to apply the
+ * math cap: while math is over mathCap.maxDeckShare, a batch with any math card is rejected.
+ * Leave it out and the cap uses the live deck.
+ */
+export function checkGeneratorBatch(rows, quotas, { bank = "general", mathShare } = {}) {
   const flags = [];
   const g = quotas.generator;
   const niches = compileNichePatterns(quotas);
@@ -359,6 +388,20 @@ export function checkGeneratorBatch(rows, quotas, { bank = "general" } = {}) {
     }
     const topic = quotas.topics.includes(cat) ? cat : "local";
     topicCount[topic] = (topicCount[topic] ?? 0) + 1;
+  }
+  const cap = quotas.mathCap;
+  if (cap && topicCount.math) {
+    const live = mathShare ?? deckMathShare(loadCatalog(ROOT, quotas));
+    if (live > cap.maxDeckShare) {
+      flags.push({
+        level: "error",
+        kind: "gen-math-cap",
+        key: "math",
+        share: live,
+        limit: cap.maxDeckShare,
+        detail: `bulk ${bank} adds ${topicCount.math} math trivia cards while math is ${(live * 100).toFixed(1)}% of the deck (cap ${(cap.maxDeckShare * 100).toFixed(0)}%) — drop them or grow other topics first`,
+      });
+    }
   }
   const specShare = specialty / total;
   if (!quotas.deepCutBanks.includes(bank) && specShare > g.bulkMaxSpecialtyShare) {
@@ -440,6 +483,12 @@ export function formatReport(report) {
   dump("By scope", report.byScope);
   lines.push("");
   lines.push(`Specialty trivia cards: ${report.specialty}`);
+  if (report.mathDraw) {
+    const d = report.mathDraw;
+    lines.push(
+      `Math draw (${d.lamps} lamps): offered ${pct(d.offeredShare)} · random picker gets ${pct(d.randomPickShare)} math · always-Math player ${pct(d.mathFirstShare)}`,
+    );
+  }
   if (!report.flags.length) {
     lines.push("Flags: none");
   } else {
@@ -451,10 +500,54 @@ export function formatReport(report) {
   return lines.join("\n");
 }
 
-export function runBalance({ root = ROOT, json = false, warn = false, check = false } = {}) {
+/**
+ * How often players actually meet math, from the real offer code: lamps across every city, the
+ * share that offer Math, and the math share for a random picker and for a player who picks Math
+ * every time it is offered (the ceiling). Deterministic.
+ */
+export async function measureMathDraw({ perCity = 400, seed = 42 } = {}) {
+  const { loadGame, seeded } = await import("./trivia-repeats.mjs");
+  const G = await loadGame();
+  const rnd = seeded(seed);
+  let lamps = 0;
+  let offered = 0;
+  let randomMath = 0;
+  for (const cityId of Object.keys(G.CITIES)) {
+    const pois = G.allPois(G.CITIES[cityId]).filter((x) => x.tier);
+    for (let i = 0; i < perCity; i++) {
+      const poi = pois[Math.floor(rnd() * pois.length)];
+      const offer = G.offerCats(poi.id, i, 6, poi);
+      lamps += 1;
+      if (offer.includes("math")) offered += 1;
+      if (offer[Math.floor(rnd() * offer.length)] === "math") randomMath += 1;
+    }
+  }
+  return { lamps, offeredShare: offered / lamps, randomPickShare: randomMath / lamps, mathFirstShare: offered / lamps };
+}
+
+export function mathDrawFlags(draw, quotas) {
+  const cap = quotas.mathCap;
+  if (!cap || draw.mathFirstShare <= cap.maxDrawShare) return [];
+  return [
+    {
+      level: "error",
+      kind: "math-draw",
+      key: "math",
+      share: draw.mathFirstShare,
+      limit: cap.maxDrawShare,
+      detail: `lamps offer Math ${(draw.offeredShare * 100).toFixed(1)}% of the time (max ${(cap.maxDrawShare * 100).toFixed(0)}%) — lower MATH_OFFER_KEEP in src/game/trivia.ts`,
+    },
+  ];
+}
+
+export async function runBalance({ root = ROOT, json = false, warn = false, check = false } = {}) {
   const quotas = loadQuotas(root);
   const catalog = loadCatalog(root, quotas);
   const report = buildReport(catalog, quotas);
+  if (check && quotas.mathCap) {
+    report.mathDraw = await measureMathDraw();
+    report.flags.push(...mathDrawFlags(report.mathDraw, quotas));
+  }
   mkdirSync(dirname(REPORT_PATH), { recursive: true });
   writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2));
   if (json) console.log(JSON.stringify(report, null, 2));
@@ -472,7 +565,7 @@ function isMain() {
 
 if (isMain()) {
   const args = new Set(process.argv.slice(2));
-  const { fail } = runBalance({
+  const { fail } = await runBalance({
     json: args.has("--json"),
     warn: args.has("--warn"),
     check: args.has("--check") || args.has("--quotas"),

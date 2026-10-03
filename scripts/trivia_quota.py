@@ -64,7 +64,25 @@ def _row_fields(row: Any) -> tuple[str, str, str, int]:
     raise TypeError(f"unknown trivia row: {type(row)}")
 
 
-def check_bulk(rows: Iterable[Any], bank: str = "general", quotas: dict[str, Any] | None = None) -> list[str]:
+def deck_math_share() -> float:
+    """Math's share of the live deck, from trivia-balance.mjs (the same catalog trivia:quotas reads)."""
+    import subprocess
+
+    root = Path(__file__).resolve().parent.parent
+    out = subprocess.run(
+        ["node", str(root / "scripts" / "trivia-balance.mjs"), "--json"],
+        cwd=root, capture_output=True, text=True, check=True,
+    ).stdout
+    report = json.loads(out[out.index("{"):])
+    return float((report.get("byTopic") or {}).get("math", {}).get("share", 0.0))
+
+
+def check_bulk(
+    rows: Iterable[Any],
+    bank: str = "general",
+    quotas: dict[str, Any] | None = None,
+    math_share: float | None = None,
+) -> list[str]:
     quotas = quotas or load_quotas()
     g = quotas["generator"]
     topics = set(quotas.get("topics") or [])
@@ -88,6 +106,14 @@ def check_bulk(rows: Iterable[Any], bank: str = "general", quotas: dict[str, Any
         topic = cat if cat in topics else "local"
         topic_count[topic] = topic_count.get(topic, 0) + 1
     flags: list[str] = []
+    cap = quotas.get("mathCap")
+    if cap and topic_count.get("math"):
+        live = deck_math_share() if math_share is None else math_share
+        if live > float(cap["maxDeckShare"]):
+            flags.append(
+                f"bulk {bank} adds {topic_count['math']} math trivia cards while math is {live:.1%} of the deck"
+                f" (cap {float(cap['maxDeckShare']):.0%}) — drop them or grow other topics first"
+            )
     spec_share = specialty / total
     if not deep_bank and spec_share > g["bulkMaxSpecialtyShare"]:
         flags.append(

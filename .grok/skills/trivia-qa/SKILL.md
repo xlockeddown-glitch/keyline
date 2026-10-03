@@ -69,3 +69,17 @@ the audit report.
 Re-run the audit. If it flags math, fix the number. If it flags a fact,
 open the cited Wikipedia URL (and a second source) and correct the plate
 or the distractors.
+
+## Weekly growth: math cap (0.0.42)
+
+Math is capped at **20% of the deck** (`mathCap` in `scripts/trivia-quotas.json`).
+While math is over that share:
+
+- Add **no new math cards**. `trivia:quotas` fails if the math count grows
+  past `mathCap.deckBaseline` (2374), and `checkGeneratorBatch` /
+  `trivia_quota.check_bulk` reject any batch that carries math.
+- Grow the other topics instead; the share falls as they grow. Don't delete
+  math cards to get there.
+- `trivia:quotas` also measures how often lamps offer Math
+  (`MATH_OFFER_KEEP` in `src/game/trivia.ts`) and fails above
+  `mathCap.maxDrawShare` (20%).

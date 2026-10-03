@@ -2930,10 +2930,25 @@ export function offerCats(poiId: string, vaultsOpened: number, n = 6, poi?: Poi)
 		arr[i] = arr[j]!;
 		arr[j] = a;
 	}
-	if (!poi) return arr.slice(0, n);
-	const pin = pinCats(poi);
-	const rest = arr.filter((c) => !pin.includes(c));
-	return [...pin, ...rest].slice(0, n);
+	const order = poi ? [...pinCats(poi), ...arr.filter((c) => !pinCats(poi).includes(c))] : arr;
+	// 0.0.42: Math is about a quarter of the deck, and left alone it sat on ~44% of lamps. A lamp
+	// keeps its Math offer only MATH_OFFER_KEEP of the time (same seed, so the offer never flickers);
+	// the next field slides in. Math then comes up on under 20% of lamps, so even a player who picks
+	// it every time it's offered gets under 20% math. No cards are removed.
+	const drop = !keepsMath(seed);
+	return (drop ? order.filter((c) => c !== "math") : order).slice(0, n);
+}
+
+/** Share of lamps that keep a Math offer. See offerCats; trivia:quotas checks the result. */
+export const MATH_OFFER_KEEP = 0.4;
+
+function keepsMath(seed: string): boolean {
+	let h = 0x811c9dc5;
+	const s = `${seed}#math`;
+	for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+	h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+	h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+	return ((h ^ (h >>> 16)) >>> 0) / 4294967296 < MATH_OFFER_KEEP;
 }
 
 export function bankSize() {
