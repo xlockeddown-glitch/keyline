@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { CITIES } from "./data.ts";
 import { fareDesk, fareMs, formatEta, isFareDesk, lampCoolMs, sparkState, transitLoot } from "./ticket.ts";
 
-test("four night marks, and a violet lamp sleeps six hours", () => {
+test("seven night marks, and a violet lamp sleeps six hours", () => {
   const ids = Object.values(CITIES).flatMap((c) => c.pois.filter((p) => p.tier === "violet").map((p) => p.id));
-  assert.deepEqual(ids.sort(), ["big-ben", "cn-tower", "esb", "tx-capitol"]);
+  assert.deepEqual(ids.sort(), ["big-ben", "cn-tower", "den-capitol", "esb", "nash-ryman", "sea-needle", "tx-capitol"]);
   assert.equal(lampCoolMs("violet"), 6 * 60 * 60_000);
   assert.equal(lampCoolMs("red"), 400_000);
 });
