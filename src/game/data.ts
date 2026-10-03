@@ -3031,9 +3031,9 @@ const denver: City = {
     }),
     poi({
       id: "den-tivoli",
-      name: "Tivoli Brewery Company (building)",
-      lat: 39.74585,
-      lng: -105.00459,
+      name: "Tivoli Brewery",
+      lat: 39.74524,
+      lng: -105.00581,
       kind: "food",
       tier: "blue",
       lore: "An old brewery hall on the Auraria campus, now a student union with beer back in the taps.",
@@ -3565,7 +3565,7 @@ const SEATTLE_MARKS: Poi[] = [
   poi({ id: "sea-starbucks", name: "Starbucks — 1912 Pike Place", lat: 47.61001, lng: -122.34258, kind: "food", tier: "blue", lore: "The chain's oldest store still pouring. It opened in 1971 a block away and moved here in 1976." }),
   poi({ id: "sea-steinbrueck", name: "Victor Steinbrueck Park", lat: 47.61017, lng: -122.34387, kind: "park", tier: "white", lore: "The lawn past the market's north end, named for the architect who helped save it from demolition." }),
   poi({ id: "sea-paramount", name: "Paramount Theatre", lat: 47.61325, lng: -122.3314, kind: "theatre", tier: "blue", lore: "A 1928 movie palace on Pine Street. Touring Broadway shows play under the gilt." }),
-  poi({ id: "sea-5th", name: "5th Avenue Theatre", lat: 47.60917, lng: -122.33398, kind: "theatre", tier: "blue", lore: "A 1926 theater whose lobby copies the halls of Beijing's Forbidden City. Musicals now." }),
+  poi({ id: "sea-5th", name: "5th Avenue Theatre", lat: 47.60917, lng: -122.334, kind: "theatre", tier: "blue", lore: "A 1926 theater whose lobby copies the halls of Beijing's Forbidden City. Musicals now." }),
   poi({ id: "sea-moore", name: "Moore Theatre", lat: 47.61173, lng: -122.34143, kind: "theatre", tier: "blue", lore: "Opened in 1907, the oldest theater still working in the city. Second Avenue and Virginia." }),
   poi({ id: "sea-courthouse", name: "King County Courthouse", lat: 47.60264, lng: -122.33053, kind: "civic", tier: "white", lore: "Third Avenue's county courthouse, a block from City Hall." }),
   poi({ id: "sea-union", name: "Union Station", lat: 47.59861, lng: -122.32854, kind: "landmark", tier: "white", lore: "Opened in 1911 across the street from King Street Station. Trains are gone; Sound Transit works inside." }),
@@ -3607,7 +3607,7 @@ const NASHVILLE_MARKS: Poi[] = [
   poi({ id: "nash-dpc", name: "Downtown Presbyterian Church", lat: 36.16309, lng: -86.77983, kind: "civic", tier: "blue", lore: "A rare Egyptian Revival church by William Strickland, finished in 1851." }),
   poi({ id: "nash-roberts", name: "Robert's Western World", lat: 36.16099, lng: -86.77808, kind: "food", tier: "white", lore: "A Lower Broad honky-tonk, once a boot store, playing traditional country all day." }),
   poi({ id: "nash-lc", name: "L&C Tower", lat: 36.16336, lng: -86.77909, kind: "landmark", tier: "blue", lore: "Life & Casualty's 1957 tower, once the tallest building in the Southeast." }),
-  poi({ id: "nash-acme", name: "Acme Farm Supply Building", lat: 36.16196, lng: -86.77449, kind: "food", tier: "white", lore: "An old farm-supply warehouse at First and Broadway, now four floors of music and a roof deck." }),
+  poi({ id: "nash-acme", name: "Acme Feed & Seed", lat: 36.16196, lng: -86.77449, kind: "food", tier: "white", lore: "An old farm-supply warehouse at First and Broadway, now four floors of music and a roof deck." }),
   poi({ id: "nash-legplaza", name: "Legislative Plaza", lat: 36.16439, lng: -86.78318, kind: "park", tier: "white", lore: "The open plaza between the Capitol hill and War Memorial." }),
   poi({ id: "nash-polk", name: "Tomb of James K. Polk", lat: 36.16657, lng: -86.78392, kind: "landmark", tier: "blue", lore: "The eleventh president and his wife Sarah rest on the Capitol grounds." }),
   poi({ id: "nash-courthouse", name: "Metro Courthouse", lat: 36.16742, lng: -86.77833, kind: "civic", tier: "white", lore: "The 1937 Davidson County Courthouse on Public Square, home of the Metro mayor and council." }),
@@ -3615,9 +3615,9 @@ const NASHVILLE_MARKS: Poi[] = [
   poi({ id: "nash-musicians", name: "Musicians Hall of Fame", lat: 36.16771, lng: -86.78268, kind: "museum", tier: "blue", lore: "Honors the session players behind the hits, in the old Municipal Auditorium." }),
   poi({ id: "nash-stmary", name: "St. Mary of the Seven Sorrows", lat: 36.1659, lng: -86.7814, kind: "civic", tier: "white", lore: "Nashville's oldest standing church, dedicated in 1847." }),
   poi({ id: "nash-humefogg", name: "Hume-Fogg High School", lat: 36.15957, lng: -86.78175, kind: "campus", tier: "white", lore: "A Tudor Gothic school on Broadway, on the site of the city's first public school." }),
-  poi({ id: "nash-arcade", name: "The Arcade", lat: 36.16407, lng: -86.78065, kind: "landmark", tier: "white", lore: "A 1903 two-level covered shopping street between Fourth and Fifth avenues." }),
+  poi({ id: "nash-arcade", name: "The Arcade", lat: 36.16427, lng: -86.78014, kind: "landmark", tier: "white", lore: "A 1903 two-level covered shopping street between Fourth and Fifth avenues." }),
   poi({ id: "nash-riverpark", name: "Riverfront Park", lat: 36.16301, lng: -86.7736, kind: "park", tier: "white", lore: "The lawn and steps along the Cumberland at the foot of Broadway." }),
-  poi({ id: "nash-tpac", name: "Tennessee Performing Arts Center", lat: 36.16461, lng: -86.78164, kind: "theatre", tier: "blue", lore: "Three halls under the state office tower: touring Broadway, opera and ballet." }),
+  poi({ id: "nash-tpac", name: "Tennessee Performing Arts Center", lat: 36.16438, lng: -86.78215, kind: "theatre", tier: "blue", lore: "Three halls under the state office tower: touring Broadway, opera and ballet." }),
 ];
 
 export const CITIES: Record<CityId, City> = {

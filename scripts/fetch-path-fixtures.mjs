@@ -10,6 +10,13 @@ const AREAS = {
   "daily-detroit": { lat: 42.3314, lng: -83.0466, r: 1900 },
   "daily-austin": { lat: 30.2681, lng: -97.7418, r: 1900 },
   "daily-nyc": { lat: 40.758, lng: -73.9855, r: 1900 },
+  // 0.0.48 (k48a): I-5 through downtown Seattle, I-25 west of the Platte in Denver, the I-40 loop and I-24 in Nashville.
+  seattle: { lat: 47.6055, lng: -122.3265, r: 1300 },
+  denver: { lat: 39.7495, lng: -105.0105, r: 1500 },
+  nashville: { lat: 36.1610, lng: -86.7790, r: 1900 },
+  "daily-seattle": { lat: 47.6105, lng: -122.3378, r: 1900 },
+  "daily-denver": { lat: 39.7476, lng: -104.9946, r: 1900 },
+  "daily-nashville": { lat: 36.1605, lng: -86.7772, r: 1900 },
 };
 const URLS = ["https://overpass.openstreetmap.fr/api/interpreter", "https://overpass-api.de/api/interpreter"];
 const KEEP = ["highway", "name", "ref", "foot", "access", "motorroad", "area", "sidewalk", "bridge", "tunnel", "layer"];
@@ -28,7 +35,7 @@ for (const [id, a] of Object.entries(AREAS)) {
   if (!json) { console.error(id, "FAILED"); continue; }
   const ways = [];
   for (const el of json.elements ?? []) {
-    if (!el.geometry || el.geometry.length < 2) continue;
+    if (!el.geometry || el.geometry.length < 2 || el.geometry.some((p) => !p)) continue; // a null point: the way was clipped
     const tags = {};
     for (const k of KEEP) if (el.tags?.[k] != null) tags[k] = el.tags[k];
     const line = [];

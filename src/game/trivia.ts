@@ -1869,7 +1869,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("A second line in New Orleans is a…", ["second subway car on a train", "dancing crowd following a brass band", "double shot of espresso with milk", "second row of above-ground tombs"], "dancing crowd following a brass band", 2),
 			q("Mardi Gras in New Orleans is famous for…", ["a ski jump", "krewes, floats, and parades", "a marathon finish only", "ice palaces"], "krewes, floats, and parades", 1)
 		]
-	}
+	},
+	seattle: {},
+	denver: {},
+	nashville: {}
 };
 stampCityRecord(CITY);
 const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
@@ -2571,7 +2574,10 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Zydeco is a music closely tied to…", ["Louisiana Creole and Cajun communities", "Nashville country radio only", "Seattle grunge", "British invasion bands"], "Louisiana Creole and Cajun communities", 2),
 			q("Tennessee Williams set A Streetcar Named Desire in…", ["St. Louis", "New Orleans", "Memphis", "Atlanta"], "New Orleans", 1)
 		]
-	}
+	},
+	seattle: {},
+	denver: {},
+	nashville: {}
 };
 stampCityRecord(REGION);
 function draw(list: TriviaQ[]): TriviaQ | null {
@@ -2800,6 +2806,43 @@ const HOME: Record<CityId, string[]> = {
 		"mississippi",
 		"crescent",
 		"vieux"
+	],
+	seattle: [
+		"seattle",
+		"washington state",
+		"puget sound",
+		"elliott bay",
+		"pike place",
+		"space needle",
+		"seahawks",
+		"mariners",
+		"sounders",
+		"kraken",
+		"king county"
+	],
+	denver: [
+		"denver",
+		"mile high",
+		"colorado rockies",
+		"broncos",
+		"nuggets",
+		"avalanche",
+		"lodo",
+		"larimer",
+		"south platte",
+		"red rocks"
+	],
+	nashville: [
+		"nashville",
+		"tennessee",
+		"music city",
+		"ryman",
+		"grand ole opry",
+		"titans",
+		"predators",
+		"cumberland",
+		"honky-tonk",
+		"lower broad"
 	]
 };
 function aboutPlace(item: TriviaQ, cityId: CityId): boolean {
