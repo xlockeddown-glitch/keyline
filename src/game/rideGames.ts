@@ -77,8 +77,10 @@ export function betterOutcome(a: RideOutcome, b: RideOutcome): RideOutcome {
 
 /** What the journey remembers about ride games. Lives on the save so a reload can't re-pay. */
 export type RideGameMark = {
-  /** The game this ride was dealt when it boarded. Missing on rides from saves before 0.0.35. */
+  /** The game this ride was dealt when it boarded: the picker's "Suggested". Missing on rides from saves before 0.0.35. */
   rideGame?: RideGameId;
+  /** The game the player picked (0.0.41). Missing until they choose; the suggestion stands in. */
+  chosenGame?: RideGameId;
   /** Best finished round this ride. */
   game?: { kind: "played" | "won"; perf: number; rounds: number; perfect?: boolean };
   /** Set while a round is running. Still set on load means the tab closed mid-round. */
@@ -208,9 +210,18 @@ export function loadRideHistory(raw: unknown): RideGameId[] {
  * The game this journey gets: the one dealt at boarding, stored on the ride, so a reload, the
  * store and the screen agree. Rides boarded before 0.0.35 have none and keep the old seeded pick.
  */
-export function rideGameFor(j: { departAt: number; arriveAt: number; rideGame?: RideGameId }): RideGameId {
+export function suggestedRideGame(j: { departAt: number; arriveAt: number; rideGame?: RideGameId }): RideGameId {
   if (j.rideGame && READY_RIDE_GAMES.includes(j.rideGame)) return j.rideGame;
   return pickRideGame(j.arriveAt - j.departAt, LEGACY_READY_GAMES, j.departAt);
+}
+
+/**
+ * The game this ride is on: the player's pick when they made one (0.0.41), otherwise the
+ * suggestion dealt at boarding. Both live on the save, so a reload and every screen agree.
+ */
+export function rideGameFor(j: { departAt: number; arriveAt: number; rideGame?: RideGameId; chosenGame?: RideGameId }): RideGameId {
+  if (j.chosenGame && READY_RIDE_GAMES.includes(j.chosenGame)) return j.chosenGame;
+  return suggestedRideGame(j);
 }
 
 /** Where am I? rounds: up to 75s, and none under 30s. */
@@ -349,9 +360,17 @@ export function lampAccuracy(t: Pick<LampTally, "lamps" | "hits" | "strays">) {
   return shots > 0 ? Math.min(1, t.hits / shots) : 0;
 }
 
+/** Every lamp lit and no stray taps. Earns the flat perfect-round bonus, like the other games' clean sheets. */
+export function lampPerfect(t: Pick<LampTally, "lamps" | "hits" | "strays">) {
+  return t.lamps > 0 && t.hits >= t.lamps && t.strays === 0;
+}
+
 export function lampOutcome(t: Pick<LampTally, "lamps" | "hits" | "strays">): RideOutcome {
   const acc = lampAccuracy(t);
-  if (t.lamps > 0 && acc >= WIN_ACC) return { kind: "won", perf: clamp01((acc - WIN_ACC) / (1 - WIN_ACC)) };
+  if (t.lamps > 0 && acc >= WIN_ACC) {
+    const perf = clamp01((acc - WIN_ACC) / (1 - WIN_ACC));
+    return lampPerfect(t) ? { kind: "won", perf, perfect: true } : { kind: "won", perf };
+  }
   return { kind: "played" };
 }
 
@@ -364,4 +383,75 @@ export function lampVerdict(t: Pick<LampTally, "lamps" | "hits" | "strays">) {
   if (acc >= WIN_ACC) return `${of} Good enough to get paid.`;
   if (t.hits === 0) return `${of} The street stayed dark. The seat still pays.`;
   return `${of} Bit jumpy. You still get the carriage rate.`;
+}
+
+// ── 0.0.41: the player picks the game ───────────────────────────────────
+
+/** Picker order: quickest round first. */
+export const RIDE_GAME_ORDER: readonly RideGameId[] = ["lamplighter", "where-am-i", "match-sorter", "route-puzzle"];
+
+/** Where am I? needs room for its five clues before the picker offers it. */
+export const WHERE_PICK_MIN_MS = 34_000;
+
+/**
+ * The shortest round each game needs before the picker offers it, not counting the arrival
+ * buffer. Lamplighter scales down to 15 s; Where am I? and Match sorter need about 34 s (the
+ * sorter's four waves are fixed); Route puzzle needs its full two minutes for three maps.
+ */
+export const RIDE_GAME_MIN_MS: Record<RideGameId, number> = {
+  lamplighter: ROUND_MIN_MS,
+  "where-am-i": WHERE_PICK_MIN_MS,
+  "match-sorter": SORT_ROUND_MS,
+  "route-puzzle": ROUTE_ROUND_MAX_MS,
+};
+
+/** True when a full round of this game still fits before the platform. */
+export function rideGameFits(game: RideGameId, remainingMs: number): boolean {
+  if (!(game in RIDE_GAME_MIN_MS)) return false;
+  if (remainingMs - ARRIVAL_BUFFER_MS < RIDE_GAME_MIN_MS[game]) return false;
+  return rideRoundMs(game, remainingMs) != null;
+}
+
+/** Every built game that fits the time left, in picker order. Long rides list them all. */
+export function ridePickerGames(remainingMs: number, ready: readonly RideGameId[] = READY_RIDE_GAMES): RideGameId[] {
+  return RIDE_GAME_ORDER.filter((g) => ready.includes(g) && rideGameFits(g, remainingMs));
+}
+
+/**
+ * What the picker highlights: the player's last pick when it still fits, else the suggestion,
+ * else the first game that fits. Null when nothing fits (the seat still pays idle).
+ */
+export function pickerDefault(
+  j: { departAt: number; arriveAt: number; rideGame?: RideGameId; chosenGame?: RideGameId },
+  remainingMs: number,
+): RideGameId | null {
+  const open = ridePickerGames(remainingMs);
+  if (!open.length) return null;
+  const chosen = j.chosenGame && READY_RIDE_GAMES.includes(j.chosenGame) ? j.chosenGame : undefined;
+  if (chosen && open.includes(chosen)) return chosen;
+  const suggested = suggestedRideGame(j);
+  if (open.includes(suggested)) return suggested;
+  return open[0]!;
+}
+
+/** Store the player's pick on the ride. Unknown ids are ignored. */
+export function chooseRideGame<J extends RideGameMark>(j: J, game: RideGameId): J {
+  if (!READY_RIDE_GAMES.includes(game)) return j;
+  return { ...j, chosenGame: game };
+}
+
+/** One-line pitch per game, shown on the picker. */
+export const RIDE_GAME_PITCH: Record<RideGameId, string> = {
+  lamplighter: "Tap as each street lamp passes the window.",
+  "where-am-i": "Name the place from a clue about the city ahead.",
+  "match-sorter": "Sort tumbling matches into their tier boxes.",
+  "route-puzzle": "Plot the shortest trip between real places ahead.",
+};
+
+/** Rough round length for the picker label. */
+export function rideGameLength(game: RideGameId, remainingMs: number): string {
+  const ms = rideRoundMs(game, remainingMs);
+  if (ms == null) return "";
+  const s = Math.round(ms / 1000);
+  return s >= 90 ? `${Math.round(s / 60)} min` : `${s} s`;
 }

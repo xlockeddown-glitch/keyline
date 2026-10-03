@@ -31,7 +31,7 @@ import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
-import { dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
+import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
@@ -213,8 +213,13 @@ export type GameState = {
   clearFireworks: () => void;
   boardFare: (to: CityId) => string | null;
   tickJourney: () => void;
-  /** Start a ride-game round. Returns its length, or null if the train is too close to the platform. */
-  startRideRound: () => number | null;
+  /** Pick this ride's game (0.0.41). Stored on the ride so a reload and every screen agree. */
+  chooseRideGame: (game: RideGameId) => void;
+  /**
+   * Start a ride-game round of `game` (default: the ride's current game) and store it as the pick.
+   * Returns its length, or null if that game no longer fits before the platform.
+   */
+  startRideRound: (game?: RideGameId) => number | null;
   /** Bank a finished round (best outcome only) and pay what it newly earns. */
   finishRideRound: (outcome: RideOutcome) => { white: number; blue: number; green: number };
   /** Walk away mid-round: forfeit it. Idle pay still stands. */
@@ -1671,13 +1676,25 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
     return null;
   },
-  startRideRound: () => {
+  chooseRideGame: (game) => {
+    const j = get().journey;
+    if (!j || j.roundAt != null || j.chosenGame === game) return;
+    set({ journey: chooseRideGame(j, game) });
+    saveNow(get);
+  },
+  startRideRound: (pick) => {
     const j = get().journey;
     if (!j) return null;
     const now = Date.now();
-    const ms = rideRoundMs(rideGameFor(j), j.arriveAt - now);
+    const game = pick ?? rideGameFor(j);
+    if (!rideGameFits(game, j.arriveAt - now)) return null;
+    const ms = rideRoundMs(game, j.arriveAt - now);
     if (ms == null) return null;
-    set({ journey: openRound(j, now) });
+    // The ride's history entry follows what was actually played, so the next suggestion varies
+    // against the player's picks. Rides from before 0.0.35 never pushed an entry; leave theirs alone.
+    const hist = get().rideHistory ?? [];
+    const history = j.rideGame && hist.length && hist[hist.length - 1] !== game ? [...hist.slice(0, -1), game] : hist;
+    set({ journey: openRound(chooseRideGame(j, game), now), rideHistory: history });
     saveNow(get);
     return ms;
   },

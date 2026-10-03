@@ -241,7 +241,9 @@ test("tapping lights the lamp in the frame, not a lit one or a far one", () => {
 });
 
 test("accuracy decides the win; strays count against you", () => {
-  assert.deepEqual(lampOutcome({ lamps: 20, hits: 20, strays: 0 }), won(1));
+  assert.deepEqual(lampOutcome({ lamps: 20, hits: 20, strays: 0 }), { kind: "won", perf: 1, perfect: true }, "a clean sheet is perfect (0.0.41)");
+  const nearly = lampOutcome({ lamps: 20, hits: 19, strays: 0 });
+  assert.ok(nearly.kind === "won" && !nearly.perfect && Math.abs(nearly.perf - 0.875) < 1e-9, "one miss: a win, not perfect");
   assert.deepEqual(lampOutcome({ lamps: 20, hits: 12, strays: 0 }), won(0));
   assert.deepEqual(lampOutcome({ lamps: 20, hits: 11, strays: 0 }), played);
   assert.deepEqual(lampOutcome({ lamps: 20, hits: 20, strays: 20 }), played);
