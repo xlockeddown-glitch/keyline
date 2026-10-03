@@ -42,7 +42,7 @@ On the ride, **Play while you ride** opens a mini-game (Lamplighter for now: tap
 
 TypeScript and Vite. The live game is [keyline.grok.me](https://keyline.grok.me/). The version is on the title screen, under the tagline. Source: [github.com/xlockeddown-glitch/keyline](https://github.com/xlockeddown-glitch/keyline).
 
-Trivia cards: `npm run trivia:audit` checks structure (and `--facts` for volatile lookups). `npm run trivia:balance` inventories mix by topic/bank/city/rarity. `npm run trivia:quotas` fails if that mix breaks the caps in `scripts/trivia-quotas.json` (new bulk stays general/city-shared; deep cuts mainly red/violet). `--warn` reports without failing. `npm run trivia:retune` promotes/demotes from play signals.
+Trivia cards live on the server (0.0.53): a lamp asks `dealTrivia` for one card (prompt + shuffled choices, a signed token, no answer) and `gradeTrivia` grades the chosen text on the server clock before revealing the answer. Door quizzes for named lamps are in `src/game/doorQuizzes.ts` (server-only), not `data.ts`. Trivia cards: `npm run trivia:audit` checks structure (and `--facts` for volatile lookups). `npm run trivia:balance` inventories mix by topic/bank/city/rarity. `npm run trivia:quotas` fails if that mix breaks the caps in `scripts/trivia-quotas.json` (new bulk stays general/city-shared; deep cuts mainly red/violet). `--warn` reports without failing. `npm run trivia:retune` promotes/demotes from play signals.
 
 A Friday morning job grows the pool: accuracy pass on existing cards, then 5–25 new city-tagged cards from quota gaps, then publish from the live app only.
 
@@ -59,12 +59,13 @@ Do not publish until this list is green:
 3. `npm run trivia:quotas` — required when trivia cards change; skip only if cards did not move
 4. `npm run trivia:audit` — when cards or generators moved
 5. `npm run qa:sprites`
-6. Smoke the running app **and** the production build. The smoke must report `/sheet-k07d.css` HTTP 200 `text/css` (not an HTML 404).
+6. `npm run build && npm run qa:no-answers` — the built browser bundle (`.vercel/output/static`) carries no trivia answers: no card prompt from the server bank, none of the known unique answers, no `answer:"…"` / `correctIndex` / card-literal keys. Trivia is dealt and graded on the server since 0.0.53 (`src/game/triviaApi.ts`); never import `trivia.ts`, `banks/*`, `doorQuizzes.ts`, `triviaBank.ts` or `triviaService.ts` from client code.
+7. Smoke the running app **and** the production build. The smoke must report `/sheet-k07d.css` HTTP 200 `text/css` (not an HTML 404).
    - `node scripts/browser-smoke.mjs http://127.0.0.1:8080/ /workspace/screenshots/app-builder-preview.png`
    - `npm run build && npm run preview:restart`
    - `node scripts/browser-smoke.mjs http://127.0.0.1:8081/ /workspace/screenshots/app-builder-built.png --baseline /workspace/screenshots/app-builder-preview.json`
    - `npm run qa:hud-mobile -- http://127.0.0.1:8080` — the top HUD plate is 200 px+ wide and clear of the top buttons at 360/390/414/430 px phones, phone landscape, a tablet and desktop
-7. Publish in Grok from the **existing** live app, then push the same commit to GitHub.
+8. Publish in Grok from the **existing** live app, then push the same commit to GitHub.
 
 ### Where to publish (live app)
 
