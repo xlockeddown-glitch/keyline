@@ -3,7 +3,6 @@
  * server calls that time a signed-in run. Guests run on the local clock and post nothing.
  */
 import { create } from "zustand";
-import { interactRadius } from "./data";
 import { canLightDaily, checkSplits, dailyRoute, utcDay, type DailyRoute } from "./dailyRun";
 import { lightDailyLamp, startDailyRun, type DailyState } from "./dailyApi";
 import { useGame } from "./store";
@@ -22,6 +21,8 @@ export type DailyProgress = {
   startedAt: number | null;
   /** Local ms after lamp 1 for lamps 2..5. */
   splits: number[];
+  /** Where each lamp was lit from (lamps 1..lit). */
+  spots: { lat: number; lng: number }[];
   timeMs: number | null;
   server: ServerMode;
   serverMs: number | null;
@@ -154,13 +155,12 @@ export const useDaily = create<DailyStore>((set, get) => {
         const prior = get().progress;
         // One run a day: a run already started today in another city holds the day.
         if (prior && prior.day === day && prior.startedAt) return null;
-        p = { day, city: cityId, lit: 0, startedAt: null, splits: [], timeMs: null, server: "pending", serverMs: null, rank: null, note: null };
+        p = { day, city: cityId, lit: 0, startedAt: null, splits: [], spots: [], timeMs: null, server: "pending", serverMs: null, rank: null, note: null };
       }
       if (p.lit >= 5) return null;
       const route = dailyRoute(p.city, p.day);
       const lamp = route.lamps[p.lit]!;
-      const reachM = interactRadius(st.equipped === "lantern");
-      if (!canLightDaily(pos, lamp, curbOf ? curbOf(lamp.lat, lamp.lng) : null, reachM)) return null;
+      if (!canLightDaily(pos, lamp, curbOf ? curbOf(lamp.lat, lamp.lng) : null)) return null;
       if (seated) {
         if (Date.now() - get().seatedWarnAt > 5000) {
           set({ seatedWarnAt: Date.now() });
@@ -171,7 +171,7 @@ export const useDaily = create<DailyStore>((set, get) => {
       const now = Date.now();
       const at = { lat: pos.lat, lng: pos.lng };
       if (p.lit === 0) {
-        const next: DailyProgress = { ...p, lit: 1, startedAt: now, splits: [] };
+        const next: DailyProgress = { ...p, lit: 1, startedAt: now, splits: [], spots: [at] };
         set({ progress: next });
         save(next);
         toast(`Lantern Run · lamp 1 lit · ${lamp.name}. The clock is running.`);
@@ -186,7 +186,8 @@ export const useDaily = create<DailyStore>((set, get) => {
       const index = p.lit;
       const splits = [...p.splits, split];
       const finished = index === route.lamps.length - 1;
-      const next: DailyProgress = { ...p, lit: index + 1, splits, timeMs: finished ? split : null };
+      const spots = [...(p.spots ?? []), at];
+      const next: DailyProgress = { ...p, lit: index + 1, splits, spots, timeMs: finished ? split : null };
       set({ progress: next });
       save(next);
       if (p.server === "ok" || p.server === "pending") {
@@ -195,7 +196,7 @@ export const useDaily = create<DailyStore>((set, get) => {
           .catch(serverFail);
       }
       if (finished) {
-        const ok = checkSplits(route, splits).ok;
+        const ok = checkSplits(route, splits, spots.length === route.lamps.length ? spots : undefined).ok;
         const reward = ok ? st.payDailyRun(p.day) : null;
         set({ finish: { day: p.day, city: p.city, timeMs: split, splits, reward, refused: !ok } });
         useGame.setState({ fireworks: { kind: "mini", id: Date.now() } });

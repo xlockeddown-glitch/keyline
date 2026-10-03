@@ -182,7 +182,7 @@ export function DailyBoard({ city, day }: { city: CityId; day?: string }) {
           }
         >
           <p className="text-sm text-fg-muted">
-            Times post under <span className="text-fg">{standingName(user?.displayName)}</span>. One run a day, timed by the server.
+            Times post under <span className="text-fg">{standingName(user?.displayName)}</span> · one run a day, timed by the server
           </p>
         </SignInGate>
       </div>

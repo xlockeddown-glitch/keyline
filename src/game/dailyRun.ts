@@ -12,10 +12,14 @@ import type { CityId, Poi, Tier } from "./types";
 export const DAILY_LAMPS = 5;
 /** Lamps come from the city's named marks within this walk of spawn, so the run stays downtown. */
 export const DAILY_RADIUS_M = 1600;
-/** Two route lamps never sit closer than this. */
-export const DAILY_MIN_SEP_M = 180;
-/** A lamp lights within the lantern-charm reach (200 m) — the server allows a little GPS-style slack on top. */
-export const DAILY_REACH_M = 260;
+/** Two route lamps never sit closer than this, so every leg is a real walk. */
+export const DAILY_MIN_SEP_M = 400;
+/** A route lamp lights when the walker is this close (the lantern charm doesn't stretch it). */
+export const DAILY_LIGHT_M = 80;
+/** …or at the curb nearest a set-back lamp, if that curb is within this of the lamp. */
+export const DAILY_CURB_MAX_M = 150;
+/** The server accepts a light reported this close to the lamp (curb limit plus slack). */
+export const DAILY_REACH_M = 170;
 /** A run must finish within two hours of lighting lamp 1, or it expires. */
 export const DAILY_MAX_MS = 2 * 60 * 60_000;
 /** Network slack the server allows when it times a leg between two requests. */
@@ -27,17 +31,16 @@ export const DAILY_STRIKES = 3;
 export const DAILY_CURB_M = 12;
 
 /**
- * Can the walker light this route lamp? Within the usual reach, yes. A lamp set back from the street
- * (a plaza, a park interior) also lights from the closest walkable spot to it — walks end there.
+ * Can the walker light this route lamp? Within DAILY_LIGHT_M, yes. A lamp set back from the street
+ * (a plaza, a stadium) also lights from the closest walkable spot to it — walks end there.
  */
 export function canLightDaily(
   walker: { lat: number; lng: number },
   lamp: { lat: number; lng: number },
   curb: { lat: number; lng: number } | null,
-  reachM: number,
 ): boolean {
-  if (distM(walker.lat, walker.lng, lamp.lat, lamp.lng) <= reachM) return true;
-  if (!curb || distM(curb.lat, curb.lng, lamp.lat, lamp.lng) > DAILY_REACH_M) return false;
+  if (distM(walker.lat, walker.lng, lamp.lat, lamp.lng) <= DAILY_LIGHT_M) return true;
+  if (!curb || distM(curb.lat, curb.lng, lamp.lat, lamp.lng) > DAILY_CURB_MAX_M) return false;
   return distM(walker.lat, walker.lng, curb.lat, curb.lng) <= DAILY_CURB_M;
 }
 
@@ -142,12 +145,23 @@ export function legMeters(route: DailyRoute, i: number): number {
   return distM(a.lat, a.lng, b.lat, b.lng);
 }
 
+/** Milliseconds to cover `m` meters at the top sprint, less 10%. */
+export function floorForMeters(m: number): number {
+  return Math.floor(((Math.max(0, m) / dailyTopSpeed()) * 1000) * 0.9);
+}
+
 /**
- * Fewest milliseconds leg `i` can take: straight-line distance (no street is shorter) at the top
- * sprint, less 10%. Any honest walk takes longer — streets bend and sprint stamina runs out.
+ * Fewest milliseconds leg `i` can take wherever in reach the two lights happened: the straight line
+ * between the lamps less a full reach at each end, at the top sprint. Honest walks take far longer —
+ * streets bend and sprint stamina runs out.
  */
 export function legFloorMs(route: DailyRoute, i: number): number {
-  return Math.floor(((legMeters(route, i) / dailyTopSpeed()) * 1000) * 0.9);
+  return floorForMeters(legMeters(route, i) - 2 * DAILY_REACH_M);
+}
+
+/** Floor between the two spots the walker actually lit from: no street is shorter than the straight line. */
+export function spotFloorMs(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  return floorForMeters(distM(a.lat, a.lng, b.lat, b.lng));
 }
 
 export function runFloorMs(route: DailyRoute): number {
@@ -159,16 +173,19 @@ export function runFloorMs(route: DailyRoute): number {
 export type Verdict = { ok: true } | { ok: false; reason: "order" | "too-fast" | "expired" | "far" | "bad" };
 
 /**
- * Client splits: ms after lamp 1 at which lamps 2..5 lit (strictly rising). Checks each leg and the
- * total against the floors and the two-hour limit.
+ * Client splits: ms after lamp 1 at which lamps 2..5 lit (strictly rising), with the spots each lamp
+ * lit from (lamps 1..5) when known. Checks each leg and the total against the floors and the two-hour limit.
  */
-export function checkSplits(route: DailyRoute, splits: number[]): Verdict {
+export function checkSplits(route: DailyRoute, splits: number[], spots?: { lat: number; lng: number }[]): Verdict {
   if (!Array.isArray(splits) || splits.length !== route.lamps.length - 1) return { ok: false, reason: "bad" };
   let prev = 0;
   for (let i = 0; i < splits.length; i++) {
     const s = splits[i]!;
     if (!Number.isFinite(s) || s <= prev) return { ok: false, reason: "order" };
-    if (s - prev < legFloorMs(route, i + 1)) return { ok: false, reason: "too-fast" };
+    const a = spots?.[i];
+    const b = spots?.[i + 1];
+    const floor = Math.max(legFloorMs(route, i + 1), a && b ? spotFloorMs(a, b) : 0);
+    if (s - prev < floor) return { ok: false, reason: "too-fast" };
     prev = s;
   }
   if (prev > DAILY_MAX_MS) return { ok: false, reason: "expired" };
@@ -189,6 +206,9 @@ export type RunRow = {
   timeMs: number | null;
   voided: boolean;
   strikes: number;
+  /** Where the last lamp was lit from. */
+  lastLat: number;
+  lastLng: number;
 };
 
 export type StartDecision =
@@ -237,7 +257,7 @@ export function lightDecision(
   if (now - row.startedAt > DAILY_MAX_MS) return { kind: "expire" };
   const lamp = route.lamps[index]!;
   if (distM(at.lat, at.lng, lamp.lat, lamp.lng) > DAILY_REACH_M) return { kind: "reject", reason: "far", strike: false };
-  const floor = legFloorMs(route, index);
+  const floor = Math.max(legFloorMs(route, index), spotFloorMs({ lat: row.lastLat, lng: row.lastLng }, at));
   const serverLeg = now - row.lastAt;
   const prevClient = index > 1 ? (row.clientSplits[index - 2] ?? 0) : 0;
   if (serverLeg + DAILY_JITTER_MS < floor) return { kind: "reject", reason: "too-fast", strike: true };
@@ -249,7 +269,7 @@ export function lightDecision(
   return {
     kind: "lit",
     finished,
-    row: { ...row, lit: index + 1, lastAt: now, splits, clientSplits: [...row.clientSplits, clientSplit], timeMs: finished ? elapsed : null },
+    row: { ...row, lit: index + 1, lastAt: now, lastLat: at.lat, lastLng: at.lng, splits, clientSplits: [...row.clientSplits, clientSplit], timeMs: finished ? elapsed : null },
   };
 }
 

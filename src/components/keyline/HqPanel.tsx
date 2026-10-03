@@ -16,6 +16,7 @@ import type { CharmId } from "@/game/types";
 import { CostIcons, ItemIcon } from "./ItemIcon";
 import { AuthChip } from "./AuthChip";
 import { RollsBoard } from "./RollsBoard";
+import { DailyBoard } from "./DailyRun";
 import { ScoutRoster } from "./ScoutShop";
 
 const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
@@ -270,7 +271,14 @@ export function HqPanel() {
             </div>
           ) : null}
 
-          {tab === "Leaderboard" ? <RollsBoard /> : null}
+          {tab === "Leaderboard" ? (
+            <>
+              <DailyBoard city={cityId} />
+              <div className="mt-5 border-t border-border pt-4">
+                <RollsBoard />
+              </div>
+            </>
+          ) : null}
 
           {tab === "Progress" ? (
             <div className="grid gap-4 text-sm">

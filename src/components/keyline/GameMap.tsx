@@ -50,7 +50,7 @@ import { Timetable } from "./Timetable";
 import { Tutorial } from "./Tutorial";
 import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
-import { DAILY_REACH_M, dailyRoute } from "@/game/dailyRun";
+import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
 
 type LModule = typeof import("leaflet");
 
@@ -1313,7 +1313,7 @@ export function GameMap() {
         }
         useDaily.getState().check({ lat: pos.current.lat, lng: pos.current.lng }, seated, (lat, lng) => {
           const g = graphRef.current;
-          const c = g ? nearest(g, lat, lng, DAILY_REACH_M) : null;
+          const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
           return c ? { lat: c.lat, lng: c.lng } : null;
         });
         const desk = fareDesk(city);

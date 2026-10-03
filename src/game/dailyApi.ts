@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import type { CityId } from "./types";
+import { CITIES } from "./data";
 import { standingName } from "./standingName";
 import {
   DAILY_STRIKES,
@@ -27,6 +28,8 @@ type DbRow = {
   display_name: string;
   started_at: string | Date;
   last_at: string | Date;
+  last_lat: number;
+  last_lng: number;
   lit: number;
   splits: unknown;
   client_splits: unknown;
@@ -53,6 +56,8 @@ function toRun(r: DbRow): RunRow {
     timeMs: r.time_ms == null ? null : Number(r.time_ms),
     voided: Boolean(r.voided),
     strikes: Number(r.strikes) || 0,
+    lastLat: Number(r.last_lat),
+    lastLng: Number(r.last_lng),
   };
 }
 
@@ -148,15 +153,15 @@ export const startDailyRun = createServerFn({ method: "POST" })
     const d = startDecision(route, had ? toRun(had) : null, data, now);
     if (d.kind === "far") return stateOf(null, day, "far", null, "Stand at lamp 1 to start the clock.");
     if (d.kind === "void") return stateOf(had ? toRun(had) : null, day, "void", null, "Today's run was voided.");
-    if (d.kind === "taken") return stateOf(had ? toRun(had) : null, day, "taken", null, `Today's run is already under way in ${d.city}.`);
+    if (d.kind === "taken") return stateOf(had ? toRun(had) : null, day, "taken", null, `Today's run is already under way in ${CITIES[d.city]?.name ?? d.city}.`);
     if (d.kind === "done") return stateOf(d.row, day, "done", await rankOf(day, d.row.city, context.userId));
     if (d.kind === "resume") return stateOf(d.row, day, "open");
     const people = await sql<{ name: string | null }>`select name from "user" where id = ${context.userId} limit 1`;
     const name = standingName(people[0]?.name);
     const at = new Date(now).toISOString();
     await sql`
-      insert into daily_runs (day, user_id, city, display_name, started_at, last_at, lit)
-      values (${day}, ${context.userId}, ${data.city}, ${name}, ${at}, ${at}, 1)
+      insert into daily_runs (day, user_id, city, display_name, started_at, last_at, last_lat, last_lng, lit)
+      values (${day}, ${context.userId}, ${data.city}, ${name}, ${at}, ${at}, ${data.lat}, ${data.lng}, 1)
       on conflict (day, user_id) do nothing
     `;
     const fresh = await rowFor(context.userId, day);
@@ -210,6 +215,8 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
       update daily_runs set
         lit = ${next.lit},
         last_at = ${new Date(now).toISOString()},
+        last_lat = ${next.lastLat},
+        last_lng = ${next.lastLng},
         splits = ${JSON.stringify(next.splits)}::jsonb,
         client_splits = ${JSON.stringify(next.clientSplits)}::jsonb,
         finished_at = ${finishedAt},

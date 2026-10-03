@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { CITIES, interactRadius } from "./data.ts";
+import { CITIES } from "./data.ts";
 import { distM } from "./geo.ts";
 import { createGraph, ingestOsmWays, nearest, pathLength, pullToStreet, routeOnGraph, type Pt } from "./streets.ts";
 import { isFreeway, isWalkableWay } from "./walkable.ts";
@@ -12,6 +12,9 @@ import {
   DAILY_JITTER_MS,
   DAILY_LAMPS,
   DAILY_MAX_MS,
+  DAILY_CURB_MAX_M,
+  DAILY_LIGHT_M,
+  DAILY_MIN_SEP_M,
   DAILY_REACH_M,
   DAILY_REWARD,
   canLightDaily,
@@ -28,6 +31,7 @@ import {
   payDaily,
   rankDaily,
   runFloorMs,
+  spotFloorMs,
   startDecision,
   utcDay,
   type RunRow,
@@ -99,7 +103,6 @@ for (const city of ["detroit", "austin", "nyc"] as const) {
   test(`daily route is walkable by street, off freeways: ${city} (30 days)`, () => {
     const { g, fw, walk } = dailyFixture(city);
     assert.ok(fw.length > 5, `${city} snapshot has freeways to avoid`);
-    const reach = interactRadius(false);
     for (const day of days(30)) {
       const r = dailyRoute(city, day);
       const stops: Pt[] = [CITIES[city].spawn, ...r.lamps];
@@ -113,8 +116,8 @@ for (const city of ["detroit", "austin", "nyc"] as const) {
         const label = `${city} ${day} leg to lamp ${i}`;
         assert.ok(path && path.length >= 2, `${label}: no street walk`);
         const end = path![path!.length - 1]!;
-        const curb = nearest(g, b.lat, b.lng, DAILY_REACH_M);
-        assert.ok(canLightDaily(end, b, curb ? { lat: curb.lat, lng: curb.lng } : null, reach), `${label}: walk ends ${distM(end.lat, end.lng, b.lat, b.lng).toFixed(0)} m off, can't light`);
+        const curb = nearest(g, b.lat, b.lng, DAILY_CURB_MAX_M);
+        assert.ok(canLightDaily(end, b, curb ? { lat: curb.lat, lng: curb.lng } : null), `${label}: walk ends ${distM(end.lat, end.lng, b.lat, b.lng).toFixed(0)} m off, can't light`);
         const ride = freewayRun(path!, fw, 6, 25, walk, 4);
         assert.ok(ride.run < 20, `${label}: rides a freeway ${ride.run.toFixed(0)} m near ${ride.at?.lat},${ride.at?.lng}`);
         // A street walk is never shorter than the straight line the time floor uses.
@@ -125,17 +128,35 @@ for (const city of ["detroit", "austin", "nyc"] as const) {
   });
 }
 
-test("lighting: within reach, or at the curb nearest a set-back lamp — never from across the block", () => {
+test("lighting: within 80 m, or at the curb nearest a set-back lamp — never from across the block", () => {
   const lamp = { lat: 42.33, lng: -83.05 };
-  const curb = { lat: 42.3318, lng: -83.05 }; // ~200 m north
-  assert.ok(canLightDaily({ lat: 42.3305, lng: -83.05 }, lamp, null, 140));
-  assert.ok(canLightDaily({ lat: 42.33185, lng: -83.05 }, lamp, curb, 140));
-  assert.ok(!canLightDaily({ lat: 42.3325, lng: -83.05 }, lamp, curb, 140));
-  assert.ok(!canLightDaily({ lat: 42.3345, lng: -83.05 }, lamp, { lat: 42.3345, lng: -83.05 }, 140), "curb too far from the lamp");
+  const curb = { lat: 42.331, lng: -83.05 }; // ~111 m north
+  assert.equal(DAILY_LIGHT_M, 80);
+  assert.ok(canLightDaily({ lat: 42.3306, lng: -83.05 }, lamp, null));
+  assert.ok(!canLightDaily({ lat: 42.3009, lng: -83.05 }, lamp, null));
+  assert.ok(canLightDaily({ lat: 42.33105, lng: -83.05 }, lamp, curb), "at the curb");
+  assert.ok(!canLightDaily({ lat: 42.3313, lng: -83.05 }, lamp, curb), "past the curb");
+  assert.ok(!canLightDaily({ lat: 42.332, lng: -83.05 }, lamp, { lat: 42.332, lng: -83.05 }), "curb too far from the lamp");
+  assert.ok(DAILY_REACH_M >= DAILY_CURB_MAX_M, "the server accepts every spot the client can light from");
+});
+
+test("daily route: lamps sit at least 400 m apart, so every leg is a walk", () => {
+  for (const city of ALL) {
+    for (const day of days(30)) {
+      const r = dailyRoute(city, day);
+      for (let i = 0; i < r.lamps.length; i++)
+        for (let j = i + 1; j < r.lamps.length; j++) {
+          const a = r.lamps[i]!;
+          const b = r.lamps[j]!;
+          assert.ok(distM(a.lat, a.lng, b.lat, b.lng) >= DAILY_MIN_SEP_M, `${city} ${day}: ${a.name} / ${b.name}`);
+        }
+    }
+  }
 });
 
 function row(over: Partial<RunRow> = {}): RunRow {
-  return { city: "detroit", day: "2026-10-02", lit: 1, startedAt: 1_000_000, lastAt: 1_000_000, splits: [], clientSplits: [], timeMs: null, voided: false, strikes: 0, ...over };
+  const lamp1 = dailyRoute(over.city ?? "detroit", over.day ?? "2026-10-02").lamps[0]!;
+  return { city: "detroit", day: "2026-10-02", lit: 1, startedAt: 1_000_000, lastAt: 1_000_000, splits: [], clientSplits: [], timeMs: null, voided: false, strikes: 0, lastLat: lamp1.lat, lastLng: lamp1.lng, ...over };
 }
 
 test("time floors: straight line at the best coat's full sprint, under any honest walk", () => {
@@ -164,6 +185,11 @@ test("leaderboard validation: honest splits pass, impossible ones fail", () => {
   oneFast[1] = oneFast[0]! + 1;
   assert.equal(checkSplits(r, oneFast).ok, false, "one impossible leg sinks the run");
   assert.deepEqual(checkSplits(r, honest.map((x) => x + DAILY_MAX_MS)), { ok: false, reason: "expired" });
+  // With the spots each lamp lit from, the floor is the real straight line between them.
+  const spots = r.lamps.map((l) => ({ lat: l.lat, lng: l.lng }));
+  assert.deepEqual(checkSplits(r, honest, spots), { ok: true });
+  const geoOnly = [1, 2, 3, 4].map((i) => legFloorMs(r, i) + 5).reduce<number[]>((acc, x) => [...acc, (acc[acc.length - 1] ?? 0) + x], []);
+  assert.equal(checkSplits(r, geoOnly, spots).ok, false, "fast for the lamps actually walked between");
 });
 
 test("one run per walker per day: lamp 1 locks the day and its city; the clock never resets", () => {
@@ -206,10 +232,14 @@ test("server leg timing: in order, at the lamp, and no faster than the floor", (
   }
   assert.equal(cur.lit, 5);
   assert.equal(cur.timeMs, now - start, "the ranked time is the server clock");
-  assert.equal(lightDecision(r, row({ startedAt: 0, lastAt: 0 }), 1, r.lamps[1]!, 1e6, DAILY_MAX_MS + 1).kind, "expire");
+  assert.equal(lightDecision(r, row({ city: "nyc", startedAt: 0, lastAt: 0 }), 1, r.lamps[1]!, 1e6, DAILY_MAX_MS + 1).kind, "expire");
   // Jitter allowance: a leg the server saw a little short still counts.
-  const tight = lightDecision(r, row({ city: "nyc", startedAt: 0, lastAt: 0 }), 1, r.lamps[1]!, legFloorMs(r, 1), Math.max(0, legFloorMs(r, 1) - DAILY_JITTER_MS + 1));
+  const need = spotFloorMs(r.lamps[0]!, r.lamps[1]!);
+  const tight = lightDecision(r, row({ city: "nyc", startedAt: 0, lastAt: 0 }), 1, r.lamps[1]!, need, Math.max(0, need - DAILY_JITTER_MS + 1));
   assert.equal(tight.kind, "lit");
+  // Lighting from the near edge of reach can't buy more than the reach: the geometric floor still holds.
+  const lamp0 = r.lamps[0]!;
+  assert.ok(legFloorMs(r, 1) <= spotFloorMs(lamp0, r.lamps[1]!));
 });
 
 test("daily board: fastest first, one entry per walker, impossible times never rank, names First L.", () => {
