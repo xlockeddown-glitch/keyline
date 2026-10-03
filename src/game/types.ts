@@ -116,7 +116,7 @@ export type CharmId = "scholar" | "sprinter" | "lantern" | "lucky";
 
 /** `lynx` is the Super Legendary slot. Since 0.0.49 it is drawn and named as the Penguin; the id stays so owned
  *  hires, worn scouts and print-shop coats in existing saves carry over unchanged. */
-export type ScoutId = "raccoon" | "cat" | "turtle" | "owl" | "corgi" | "sloth" | "fox" | "lynx";
+export type ScoutId = "raccoon" | "cat" | "turtle" | "owl" | "corgi" | "sloth" | "fox" | "lynx" | "giraffe";
 
 export type ScoutPerk = {
   label: string;
@@ -125,6 +125,9 @@ export type ScoutPerk = {
   reach?: number;
   stamina?: number;
   pace?: number;
+  /** 0.0.51 Giraffe: multiplies the radius at which walking past a place names it in the atlas ("Visited ·").
+   *  Client-side naming only — it never widens the open/fare/vault reach and nothing on the server reads it. */
+  sight?: number;
 };
 
 export type LootDrop = {

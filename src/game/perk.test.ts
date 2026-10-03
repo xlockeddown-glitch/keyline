@@ -19,6 +19,23 @@ describe("scout perks stay small and scale with the hire", () => {
     assert.equal(p.loot ?? 1, 1);
     assert.equal(p.pace ?? 1, 1);
     assert.equal(p.reach ?? 1, 1);
+    assert.equal(p.sight ?? 1, 1);
+  });
+
+  it("the Giraffe (0.0.51) only names places from a little farther — no coin, time, pace or reach", () => {
+    const g = SCOUTS.giraffe;
+    assert.equal(g.name, "The Giraffe");
+    assert.ok(g.coins > SCOUTS.sloth.coins && g.coins < SCOUTS.fox.coins);
+    assert.equal(g.perk.sight, 1.2);
+    assert.equal(g.perk.vaultMs ?? 0, 0);
+    assert.equal(g.perk.loot ?? 1, 1);
+    assert.equal(g.perk.pace ?? 1, 1);
+    assert.equal(g.perk.reach ?? 1, 1);
+    for (const s of SCOUT_LIST) {
+      assert.ok((s.perk.sight ?? 1) <= 1.25, s.id);
+      if (s.id !== "giraffe") assert.equal(s.perk.sight ?? 1, 1, s.id);
+    }
+    assert.equal(canCutBuildings("giraffe"), false);
   });
 
   it("lamp time never jumps more than a second", () => {

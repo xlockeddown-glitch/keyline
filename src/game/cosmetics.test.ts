@@ -139,7 +139,7 @@ test("art wiring: the coat palette, the generated coat CSS and the lantern-skin 
   assert.deepEqual(Object.keys(palette).sort(), Object.keys(COATS).sort());
   for (const [id, c] of Object.entries(COATS)) assert.equal(palette[id]!.name, c.name);
   const coatsCss = read("../../public/coats.css");
-  for (const scout of ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]) {
+  for (const scout of ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"]) {
     for (const coat of Object.keys(COATS)) {
       for (const [sel, kind] of [["", "walk"], [".is-idle", "idle"], [".is-idle.is-side", "idle-side"]] as const) {
         const rule = `.scout-marker[data-scout="${scout}"][data-coat="${coat}"]${sel}{background-image:url("/sprites/coats/${scout}-${coat}-${kind}.png`;

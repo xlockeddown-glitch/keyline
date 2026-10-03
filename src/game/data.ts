@@ -4049,6 +4049,21 @@ export const SCOUTS: Record<
     bed: "The long way",
     perk: { label: "+0.75 s on every lamp", vaultMs: 750 },
   },
+  giraffe: {
+    id: "giraffe",
+    name: "The Giraffe",
+    blurb: "Sees over the rooftops. Names the next block before you reach it.",
+    coins: 42000,
+    walk: "/sprites/scouts/giraffe-walk.png",
+    idle: "/sprites/scouts/giraffe-idle.png",
+    icon: "/sprites/scouts/giraffe.png",
+    gait: 1.04,
+    bed: "Over the rooftops",
+    // 0.0.51: between the Sloth (24,000) and the Fox (88,000). A lookout perk, not a coin or timer one: places
+    // get their atlas name from 20% farther off (140 m → 168 m, 200 m → 240 m with the Lantern charm). Opening
+    // reach, lamp time, pace and coin stay as the Raccoon's, so nothing the server checks moves.
+    perk: { label: "Names places from a little farther", sight: 1.2 },
+  },
   fox: {
     id: "fox",
     name: "The Fox",

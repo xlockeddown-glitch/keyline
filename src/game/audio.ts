@@ -201,6 +201,25 @@ const BEDS: Record<ScoutId, Bed> = {
     melody: true,
     pad: true,
   },
+  // 0.0.51 Giraffe: an easy loping 6-ish swing, major and airy, high root — a walk with its head above the roofs.
+  giraffe: {
+    bpm: 72,
+    root: 53,
+    scale: [0, 2, 4, 5, 7, 9],
+    chords: [
+      [0, 4, 7, 11],
+      [9, 12, 16, 19],
+      [5, 9, 12, 16],
+      [7, 11, 14, 17],
+    ],
+    swing: 0.22,
+    cutoff: 3000,
+    vinyl: 0.018,
+    kit: "soft",
+    hats: 3,
+    melody: true,
+    pad: true,
+  },
   lynx: {
     bpm: 64,
     root: 49,
@@ -222,6 +241,7 @@ const BEDS: Record<ScoutId, Bed> = {
 };
 
 export const BED_NAME: Record<ScoutId, string> = {
+  giraffe: "Over the rooftops",
   raccoon: "Lantern dust",
   cat: "Quiet step",
   turtle: "Shell tide",

@@ -14,10 +14,10 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
-  assert.equal(verdict.sheets.length, 24);
-  // 0.0.45: 8 characters × 4 print-shop coats × walk / idle / side idle.
-  assert.equal(verdict.coatSheets, 96);
-  assert.equal(verdict.coats.length, 32);
+  assert.equal(verdict.sheets.length, 27);
+  // 0.0.45: every character × 4 print-shop coats × walk / idle / side idle (9 characters since the 0.0.51 Giraffe).
+  assert.equal(verdict.coatSheets, 108);
+  assert.equal(verdict.coats.length, 36);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });

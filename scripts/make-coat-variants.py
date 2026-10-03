@@ -44,7 +44,8 @@ _lynx = _load("lynx", "make-lynx.py")
 to_lab, from_lab = _coat.to_lab, _coat.from_lab
 
 # Head line per character (fraction of the figure height); the coat starts below it.
-HEAD = {"raccoon": 0.30, "cat": 0.33, "corgi": 0.33, "fox": 0.33, "lynx": 0.33, "owl": 0.36, "sloth": 0.30, "turtle": 0.30}
+HEAD = {"raccoon": 0.30, "cat": 0.33, "corgi": 0.33, "fox": 0.33, "lynx": 0.33, "owl": 0.36, "sloth": 0.30, "turtle": 0.30, "giraffe": 0.40}
+# (0.0.51 Giraffe: ossicones, head and neck take the top ~40% of the figure; the coat starts at the collar.)
 FOOT = 0.08
 AB_RADIUS = 9.0
 # The Turtle's coat over the shell keeps the scute pattern in warmer and cooler browns; it needs a wider net.
@@ -56,7 +57,7 @@ GRID = {"idle": 2, "walk": 4, "idle-side": 2}
 # Padding of the lantern box the coat stays out of (make-lynx.lantern_box). The 0.0.49 Penguin holds its lantern
 # right at the sleeve tip, so the default box would swallow the sleeve and the front of the coat; its lantern has
 # no coat-coloured pixels to protect, so a tight box (just the glow) is enough.
-LANTERN_PAD = {"lynx": 2}
+LANTERN_PAD = {"lynx": 2, "giraffe": 2}  # 0.0.51: the Giraffe holds it at the sleeve tip too
 
 
 def coat_ref(frames: list[Image.Image], radius: float = 8.0):
@@ -183,7 +184,7 @@ def main() -> None:
 # Sheet URLs carry the stamp the art last changed in, like the base sheets in styles.css.
 ART_STAMP = "k45a"
 # Characters whose base art changed since: their coat sheets carry the newer stamp (0.0.49: the Lynx slot is the Penguin).
-ART_STAMP_BY = {"lynx": "k49p"}
+ART_STAMP_BY = {"lynx": "k49p", "giraffe": "k51g"}
 
 
 def write_css() -> None:

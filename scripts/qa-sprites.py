@@ -50,6 +50,8 @@ SHEETS = {
     "sloth-walk": (SCOUTS / "sloth-walk.png", (384, 384)),
     "turtle-idle": (SCOUTS / "turtle-idle.png", (256, 256)),
     "turtle-walk": (SCOUTS / "turtle-walk.png", (384, 384)),
+    "giraffe-idle": (SCOUTS / "giraffe-idle.png", (256, 256)),
+    "giraffe-walk": (SCOUTS / "giraffe-walk.png", (384, 384)),
     # Side idles: 2x2 @ 96 — row 0 faces left, row 1 faces right.
     "raccoon-idle-side": (SPR / "player-idle-side.png", (192, 192)),
     "cat-idle-side": (SCOUTS / "cat-idle-side.png", (192, 192)),
@@ -59,10 +61,11 @@ SHEETS = {
     "owl-idle-side": (SCOUTS / "owl-idle-side.png", (192, 192)),
     "sloth-idle-side": (SCOUTS / "sloth-idle-side.png", (192, 192)),
     "turtle-idle-side": (SCOUTS / "turtle-idle-side.png", (192, 192)),
+    "giraffe-idle-side": (SCOUTS / "giraffe-idle-side.png", (192, 192)),
 }
 # Shop icons (one 96 px idle-style portrait each); checked against the idle coat, not inspected as sheets.
-ICONS = {s: SCOUTS / f"{s}.png" for s in ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]}
-SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]
+SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"]  # 0.0.51: + the Giraffe
+ICONS = {s: SCOUTS / f"{s}.png" for s in SCOUT_IDS}
 KINDS = ["idle", "walk", "idle-side"]
 
 # 0.0.45 print-shop coats: one recoloured walk / idle / side-idle set per character per coat.

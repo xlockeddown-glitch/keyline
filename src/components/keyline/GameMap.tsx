@@ -1387,7 +1387,8 @@ export function GameMap() {
         } else if (seated) {
           distAcc.current = 0;
         }
-        const reachM = interactRadius(st.equipped === "lantern");
+        // The Giraffe (0.0.51) sees over the rooftops: places get their atlas name from a little farther off.
+        const reachM = interactRadius(st.equipped === "lantern") * (SCOUTS[st.scout]?.perk.sight ?? 1);
         const fresh: string[] = [];
         if (!seated) {
           for (const p of allPois(city, st.blanks)) {

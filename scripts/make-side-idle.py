@@ -17,7 +17,7 @@ CELL = 96
 
 WALKS = {
     "raccoon": (SPR / "player-walk.png", SPR / "player-idle-side.png"),
-    **{s: (SCOUTS / f"{s}-walk.png", SCOUTS / f"{s}-idle-side.png") for s in ["cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]},
+    **{s: (SCOUTS / f"{s}-walk.png", SCOUTS / f"{s}-idle-side.png") for s in ["cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"]},
 }
 
 
