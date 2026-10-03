@@ -91,6 +91,7 @@ export const RATE = {
   peek: { limit: 30, windowMs: 60_000 },
   play: { limit: 20, windowMs: 60_000 },
   news: { limit: 20, windowMs: 60_000 },
+  ack: { limit: 20, windowMs: 60_000 },
 } as const;
 
 /** Fixed-window counter. True while the bucket is under its limit for this window. */
