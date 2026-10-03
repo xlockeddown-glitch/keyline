@@ -21,11 +21,14 @@ import { isMainModule, projectRoot } from "./with-app-env.mjs";
 
 /** Unique correct answers (each was checked to appear nowhere in UI copy, lore or the map data). */
 export const KNOWN_ANSWERS = [
-  "Sunset Red granite",
   "Mexican free-tailed bats",
   "AMARG, the boneyard",
   "surface-to-air missile system",
   "aerospace and defense company",
+  "Mrs. O'Leary's cow",
+  "workplace safety laws",
+  "collapse of Lehman Brothers",
+  "LEO broadband satellite network",
 ];
 
 const KEY_PATTERNS = [
@@ -75,14 +78,16 @@ export function clientDir(root, argv = []) {
   return null;
 }
 
-/** Every prompt the server can deal: the banks, city/region/place sets and the door quizzes. */
-export async function bankPrompts() {
+/** Every card the server can deal: the banks, city/region/place sets and the door quizzes. */
+export async function bankCards() {
   register("./ts-resolve-hooks.mjs", import.meta.url);
   const { everyCard } = await import("../src/game/trivia.ts");
   const { DOOR_QUIZZES } = await import("../src/game/doorQuizzes.ts");
-  const out = new Set(everyCard().map((c) => c.q));
-  for (const seeds of Object.values(DOOR_QUIZZES)) for (const s of seeds) out.add(s.q);
-  return [...out];
+  return [...everyCard(), ...Object.values(DOOR_QUIZZES).flat()];
+}
+
+export async function bankPrompts() {
+  return [...new Set((await bankCards()).map((c) => c.q))];
 }
 
 async function main() {
@@ -92,7 +97,14 @@ async function main() {
     console.error("[no-answers] no build output found (.vercel/output/static, dist/, .output/public) — run npm run build first");
     process.exit(2);
   }
-  const prompts = (await bankPrompts()).filter((p) => p.length >= MIN_PROMPT);
+  const cards = await bankCards();
+  const prompts = [...new Set(cards.map((c) => c.q))].filter((p) => p.length >= MIN_PROMPT);
+  const answers = new Set(cards.map((c) => c.answer));
+  const stale = KNOWN_ANSWERS.filter((a) => !answers.has(a));
+  if (stale.length) {
+    console.error(`[no-answers] KNOWN_ANSWERS no longer in the bank (pick new ones): ${stale.join(", ")}`);
+    process.exit(1);
+  }
   // Self-check: the detector must catch a card if one were there, or a clean result means nothing.
   const probe = scanText(`{q:${JSON.stringify(prompts[0])},choices:["a","b","c","d"],answer:"a"}`, { prompts: [prompts[0]] });
   if (probe.length < 2) {

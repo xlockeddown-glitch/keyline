@@ -102,7 +102,7 @@ type Hud = {
 export type DealtCard = PublicCard;
 
 /** The server's grade of the open card, as `settleAnswer` applies it. */
-type Graded = { correct: boolean; elapsed: number; answer: string; fact?: string; credited: boolean };
+type Graded = { correct: boolean; elapsed: number; reveal: string; fact?: string; credited: boolean };
 
 type OpenVault = {
   poiId: string;
@@ -1024,7 +1024,7 @@ export const useGame = create<GameState>((set, get) => ({
       if (timeout || performance.now() >= cur.deadline) {
         // The wick is out and the lamp can't be reached: a miss (never a reward without the server's grade).
         set({ openVault: { ...cur, pending: undefined } });
-        get().settleAnswer({ correct: false, elapsed: clientMs, answer: "The lamp lost its line — no answer this time.", credited: false }, performance.now());
+        get().settleAnswer({ correct: false, elapsed: clientMs, reveal: "The lamp lost its line — no answer this time.", credited: false }, performance.now());
         return;
       }
       set({ openVault: { ...cur, pending: undefined } });
@@ -1036,7 +1036,7 @@ export const useGame = create<GameState>((set, get) => ({
         if (!cur || cur.token !== token) return;
         if (!res.ok) return lost();
         set({ openVault: { ...cur, pending: undefined } });
-        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, answer: res.answer, fact: res.fact, credited: res.credited }, performance.now());
+        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited }, performance.now());
       })
       .catch(() => lost());
   },
@@ -1073,7 +1073,7 @@ export const useGame = create<GameState>((set, get) => ({
           ...logged,
           openVault: null,
           loot: null,
-          miss: { answer: out.answer, fact: out.fact },
+          miss: { answer: out.reveal, fact: out.fact },
           toast: "The spark dies.",
           quests: answered(get, false, false),
         });
@@ -1169,7 +1169,7 @@ export const useGame = create<GameState>((set, get) => ({
           ...logged,
           openVault: null,
           loot: null,
-          miss: { answer: out.answer, fact: out.fact },
+          miss: { answer: out.reveal, fact: out.fact },
           ...seriesPatch(series.kind, coolSeries(get(), series)),
           toast: `${series.name} breaks on trivia card ${step + 1}.`,
           quests: answered(get, false, false),
@@ -1351,7 +1351,7 @@ export const useGame = create<GameState>((set, get) => ({
         ...logged,
         openVault: null,
         loot: null,
-        miss: { answer: out.answer, fact: out.fact },
+        miss: { answer: out.reveal, fact: out.fact },
         toast: null,
         quests: answered(get, false, false),
       });
