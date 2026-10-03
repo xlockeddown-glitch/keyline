@@ -7,6 +7,12 @@ idle-to-walk floor match, pixels touching a cell edge), and since 0.0.37:
   * side idles — the stand-still-facing-left/right sheets sit on the walk floor and don't jump;
 and since 0.0.38 the coat check is per facing (front, left, right) and covers the shop icon, with a
 tighter limit (the Turtle walked in a bare shell at ΔH 3.6–4.1 and slipped under the old 5.5).
+Since 0.0.45 it also checks every print-shop coat variant (public/sprites/coats/<scout>-<coat>-<kind>.png):
+  * same sheet hygiene as the base sheets (size, magenta, specks, corners, leftover background);
+  * the alpha channel is the base sheet's, byte for byte — a coat is a recolour, never a new silhouette;
+  * every pose shows the coat: idle, walk front/left/right and both side idles each move the torso colour
+    off the character's own coat (ΔE) and onto the catalogue hue (scripts/coat-variants.json);
+  * one coat per outfit: walk facings and side idles match the idle coat (ΔH), like the base sheets.
 KEYLINE_SPRITE_OVERRIDE="name=path,..." swaps sheets in for the self-tests."""
 from __future__ import annotations
 
@@ -15,9 +21,11 @@ import json
 import math
 import os
 import sys
+from functools import lru_cache
 from hashlib import md5
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,15 +62,24 @@ SHEETS = {
 }
 # Shop icons (one 96 px idle-style portrait each); checked against the idle coat, not inspected as sheets.
 ICONS = {s: SCOUTS / f"{s}.png" for s in ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]}
+SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]
+KINDS = ["idle", "walk", "idle-side"]
+
+# 0.0.45 print-shop coats: one recoloured walk / idle / side-idle set per character per coat.
+COATS = json.loads((ROOT / "scripts" / "coat-variants.json").read_text())["coats"]
+COAT_DIR = SPR / "coats"
+VARIANTS = {
+    f"{s}-{c}-{k}": (COAT_DIR / f"{s}-{c}-{k}.png", SHEETS[f"{s}-{k}"][1]) for s in SCOUT_IDS for c in COATS for k in KINDS
+}
+
 for _pair in filter(None, os.environ.get("KEYLINE_SPRITE_OVERRIDE", "").split(",")):
     _name, _path = _pair.split("=", 1)
     if _name.endswith("-icon"):
         ICONS[_name[:-5]] = (ROOT / _path).resolve()
+    elif _name in VARIANTS:
+        VARIANTS[_name] = ((ROOT / _path).resolve(), VARIANTS[_name][1])
     else:
         SHEETS[_name] = ((ROOT / _path).resolve(), SHEETS[_name][1])
-
-SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle"]
-KINDS = ["idle", "walk", "idle-side"]
 
 MAX_SPECKS = 8
 MAX_MAGENTA = 0
@@ -70,38 +87,24 @@ MAX_CORNER_A = 16
 
 
 def speck_count(im: Image.Image) -> int:
-    w, h = im.size
-    px = im.load()
-    n = 0
-    for y in range(1, h - 1):
-        for x in range(1, w - 1):
-            if px[x, y][3] >= 16:
-                continue
-            enclosed = True
-            for dy in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    if dx == 0 and dy == 0:
-                        continue
-                    if px[x + dx, y + dy][3] < 200:
-                        enclosed = False
-                        break
-                if not enclosed:
-                    break
-            if enclosed:
-                n += 1
-    return n
+    """Transparent pixels (alpha < 16) whose eight neighbours are all solid (alpha ≥ 200): dropout holes."""
+    al = np.asarray(im.getchannel("A"), dtype=np.uint8)
+    if al.shape[0] < 3 or al.shape[1] < 3:
+        return 0
+    solid = al >= 200
+    h, w = al.shape
+    enclosed = np.ones((h - 2, w - 2), dtype=bool)
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if dx or dy:
+                enclosed &= solid[1 + dy : h - 1 + dy, 1 + dx : w - 1 + dx]
+    return int(((al[1:-1, 1:-1] < 16) & enclosed).sum())
 
 
 def magenta_count(im: Image.Image) -> int:
-    w, h = im.size
-    px = im.load()
-    n = 0
-    for y in range(h):
-        for x in range(w):
-            r, g, b, a = px[x, y]
-            if a > 200 and r > 200 and b > 200 and g < 90:
-                n += 1
-    return n
+    px = np.asarray(im, dtype=np.uint8)
+    r, g, b, a = (px[..., i].astype(int) for i in range(4))
+    return int(((a > 200) & (r > 200) & (b > 200) & (g < 90)).sum())
 
 
 def corner_alpha(im: Image.Image) -> int:
@@ -231,6 +234,7 @@ def shape_check() -> tuple[list[dict], list[str], list[str]]:
     return rows, fails, warns
 
 
+@lru_cache(maxsize=None)
 def _lab(r: int, g: int, b: int) -> tuple[float, float, float]:
     def lin(u: int) -> float:
         x = u / 255
@@ -337,6 +341,108 @@ def side_idle_check() -> tuple[list[dict], list[str]]:
     return rows, fails
 
 
+# ── 0.0.45 coat variants ─────────────────────────────────────────────────
+
+# "Coat pixels" in a variant are the pixels whose colour differs from the base sheet (alpha never does).
+# Every pose must show the coat: the torso box's colour moves at least this far (CIE ΔE76) off the
+# character's own coat, and at least this share of the torso box is repainted coat. (Open-fronted coats
+# like the Fox's and Lynx's show a fur chest in the walk front, so neither number can ask for the whole box.)
+MIN_COAT_SHIFT = 8.0
+MIN_COAT_SHARE = 0.25
+# The repainted pixels land on the catalogue hue (scripts/coat-variants.json)…
+MAX_TARGET_HUE = 20.0
+# …and are one coat across poses: each walk facing against the idle, each side idle against its walk
+# facing, as CIE ΔH* of the mean coat colour (variant coats carry 3–10× the chroma of the grey base coats,
+# so a variant gets its own limit rather than the base sheets' 3.2).
+MAX_VARIANT_DH = 4.0
+
+
+def _hue_deg(lab: tuple[float, float, float]) -> float:
+    return math.degrees(math.atan2(lab[2], lab[1])) % 360
+
+
+def _hue_gap(a: float, b: float) -> float:
+    return abs((a - b + 180) % 360 - 180)
+
+
+def coat_pixels(var: list[Image.Image], base: list[Image.Image]) -> tuple[tuple[float, float, float], float]:
+    """Mean Lab of the repainted pixels across frames, and the repainted share of the torso box."""
+    acc, n, box_n, box_hit = [0.0, 0.0, 0.0], 0, 0, 0
+    for v, b in zip(var, base):
+        vp, bp = np.asarray(v, dtype=np.uint8), np.asarray(b, dtype=np.uint8)
+        x0, y0, x1, y1 = solid_bbox(b)
+        w, h = x1 - x0, y1 - y0
+        solid = vp[..., 3] >= 200
+        hit = solid & (vp[..., :3] != bp[..., :3]).any(axis=-1)
+        ys, xs = np.mgrid[0 : v.height, 0 : v.width]
+        box = (ys >= y0 + h * 0.45) & (ys < y0 + h * 0.75) & (xs >= x0 + w * 0.3) & (xs < x1 - w * 0.3) & solid
+        box_n += int(box.sum())
+        box_hit += int((box & hit).sum())
+        for (r, g, bb), k in zip(*np.unique(vp[hit][:, :3], axis=0, return_counts=True)):
+            L, A, B = _lab(int(r), int(g), int(bb))
+            acc[0] += L * int(k)
+            acc[1] += A * int(k)
+            acc[2] += B * int(k)
+            n += int(k)
+    lab = (acc[0] / n, acc[1] / n, acc[2] / n) if n else (0.0, 0.0, 0.0)
+    return lab, (box_hit / box_n if box_n else 0.0)
+
+
+def coat_variant_check() -> tuple[list[dict], list[dict], list[str]]:
+    reports, rows, fails = [], [], []
+    for name, (path, size) in VARIANTS.items():
+        rep = inspect(name, path, size)
+        reports.append(rep)
+        fails.extend(f"{name}: {m}" for m in rep["failures"])
+    for s in SCOUT_IDS:
+        base = {k: SHEETS[f"{s}-{k}"][0] for k in KINDS}
+        if not all(p.exists() for p in base.values()):
+            continue
+        bgrid = {k: cells(Image.open(base[k]).convert("RGBA"), 4 if k == "walk" else 2) for k in KINDS}
+        for c, tgt in COATS.items():
+            paths = {k: VARIANTS[f"{s}-{c}-{k}"][0] for k in KINDS}
+            if not all(p.exists() for p in paths.values()):
+                fails.append(f"{s}-{c}: missing coat sheet(s) {[k for k, p in paths.items() if not p.exists()]}")
+                continue
+            same_shape = True
+            for k in KINDS:
+                a = Image.open(paths[k]).convert("RGBA").getchannel("A").tobytes()
+                b = Image.open(base[k]).convert("RGBA").getchannel("A").tobytes()
+                if a != b:
+                    same_shape = False
+                    fails.append(f"{s}-{c}-{k}: silhouette differs from the {s}'s own {k} sheet — a coat is a recolour, not a new shape")
+            if not same_shape:
+                continue
+            vgrid = {k: cells(Image.open(paths[k]).convert("RGBA"), 4 if k == "walk" else 2) for k in KINDS}
+            poses = {
+                "idle": ([f for r in vgrid["idle"] for f in r], [f for r in bgrid["idle"] for f in r]),
+                "walk front": (vgrid["walk"][0], bgrid["walk"][0]),
+                "walk left": (vgrid["walk"][1], bgrid["walk"][1]),
+                "walk right": (vgrid["walk"][2], bgrid["walk"][2]),
+                "side left": (vgrid["idle-side"][0], bgrid["idle-side"][0]),
+                "side right": (vgrid["idle-side"][1], bgrid["idle-side"][1]),
+            }
+            coat = {}
+            rec = {"scout": s, "coat": c, "shift": {}, "share": {}, "hueGap": {}, "deltaH": {}}
+            for p, (v, bf) in poses.items():
+                shift = math.dist(torso_lab(v), torso_lab(bf))
+                lab, share = coat_pixels(v, bf)
+                coat[p] = lab
+                gap = _hue_gap(_hue_deg(lab), tgt["h"])
+                rec["shift"][p], rec["share"][p], rec["hueGap"][p] = round(shift, 1), round(share, 2), round(gap, 1)
+                if shift < MIN_COAT_SHIFT or share < MIN_COAT_SHARE:
+                    fails.append(f"{s}-{c}: {p} doesn't show the coat (torso ΔE {shift:.1f}, {share:.0%} repainted; need {MIN_COAT_SHIFT} and {MIN_COAT_SHARE:.0%})")
+                elif gap > MAX_TARGET_HUE:
+                    fails.append(f"{s}-{c}: {p} coat hue is {gap:.0f}° off {tgt['name']}")
+            for p, ref in (("walk front", "idle"), ("walk left", "idle"), ("walk right", "idle"), ("side left", "walk left"), ("side right", "walk right")):
+                d = delta_h(coat[ref], coat[p])
+                rec["deltaH"][p] = round(d, 2)
+                if d > MAX_VARIANT_DH:
+                    fails.append(f"{s}-{c}: {p} coat differs from the {ref} (ΔH {d:.1f} > {MAX_VARIANT_DH}) — one coat per outfit")
+            rows.append(rec)
+    return reports, rows, fails
+
+
 def silhouette(path: Path) -> str:
     im = Image.open(path).convert("RGBA")
     return md5(im.getchannel("A").point(lambda v: 255 if v >= 128 else 0).tobytes()).hexdigest()
@@ -360,13 +466,8 @@ def inspect(name: str, path: Path, size: tuple[int, int]) -> dict:
     corner = corner_alpha(im)
     if corner > MAX_CORNER_A:
         failures.append(f"opaque corner alpha {corner}")
-    opaque = 0
     w, h = im.size
-    px = im.load()
-    for y in range(h):
-        for x in range(w):
-            if px[x, y][3] > 200:
-                opaque += 1
+    opaque = int((np.asarray(im.getchannel("A")) > 200).sum())
     if opaque / (w * h) > 0.88:
         failures.append(f"sheet {opaque / (w * h):.0%} opaque — leftover background?")
     return {
@@ -412,6 +513,8 @@ def main() -> int:
     failures.extend(palette_fails)
     sides, side_fails = side_idle_check()
     failures.extend(side_fails)
+    coat_sheets, coat_rows, coat_fails = coat_variant_check()
+    failures.extend(coat_fails)
     verdict = {
         "ok": not failures,
         "sheets": reports,
@@ -419,6 +522,8 @@ def main() -> int:
         "shapes": sorted(shapes, key=lambda r: -r["iou"])[:6],
         "palettes": palettes,
         "sideIdles": sides,
+        "coatSheets": len(coat_sheets),
+        "coats": coat_rows,
         "failures": failures,
         "warnings": warnings,
     }

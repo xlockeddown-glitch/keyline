@@ -1,0 +1,9 @@
+{
+  "_doc": "0.0.45 print-shop coats. Lab targets for scripts/make-coat-variants.py and the qa:sprites variant check. Ids must match COATS in src/game/cosmetics.ts.",
+  "coats": {
+    "oilskin": { "name": "Oilskin Slicker", "L": 54, "C": 46, "h": 84 },
+    "bottle": { "name": "Bottle-Green Duster", "L": 34, "C": 30, "h": 152 },
+    "oxblood": { "name": "Oxblood Greatcoat", "L": 30, "C": 36, "h": 30 },
+    "plum": { "name": "Plum Frock Coat", "L": 30, "C": 30, "h": 330 }
+  }
+}

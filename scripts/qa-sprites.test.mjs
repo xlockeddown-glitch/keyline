@@ -15,6 +15,9 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
   assert.equal(verdict.sheets.length, 24);
+  // 0.0.45: 8 characters × 4 print-shop coats × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 96);
+  assert.equal(verdict.coats.length, 32);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -81,4 +84,46 @@ test("qa:sprites fails a character with no side idle", () => {
   const { status, verdict } = runWith("owl-idle-side=scripts/fixtures/does-not-exist.png");
   assert.equal(status, 1);
   assert.ok(verdict.failures.some((f) => /^owl: no side idle sheet/.test(f)));
+});
+
+// ── 0.0.45 print-shop coats ──
+
+test("qa:sprites checks every coat variant in every pose: repainted, on its catalogue hue, one coat per outfit", () => {
+  const { verdict } = runWith("");
+  const coats = new Set(verdict.coats.map((r) => r.coat));
+  assert.deepEqual([...coats].sort(), ["bottle", "oilskin", "oxblood", "plum"]);
+  for (const r of verdict.coats) {
+    for (const pose of ["idle", "walk front", "walk left", "walk right", "side left", "side right"]) {
+      assert.ok(r.shift[pose] >= 8, `${r.scout}-${r.coat} ${pose} shift ${r.shift[pose]}`);
+      assert.ok(r.share[pose] >= 0.25, `${r.scout}-${r.coat} ${pose} share ${r.share[pose]}`);
+      assert.ok(r.hueGap[pose] <= 20, `${r.scout}-${r.coat} ${pose} hue`);
+    }
+  }
+});
+
+test("qa:sprites fails a coat whose walk sheet is still the character's own coat (the coat must show in every pose)", () => {
+  const { status, verdict } = runWith("fox-plum-walk=public/sprites/scouts/fox-walk.png");
+  assert.equal(status, 1);
+  for (const pose of ["walk front", "walk left", "walk right"]) {
+    assert.ok(verdict.failures.some((f) => f.startsWith(`fox-plum: ${pose} doesn't show the coat`)), verdict.failures.join("\n"));
+  }
+  assert.ok(verdict.failures.every((f) => f.startsWith("fox-plum")), verdict.failures.join("\n"));
+});
+
+test("qa:sprites fails a coat with a side idle left in the old coat", () => {
+  const { status, verdict } = runWith("owl-oxblood-idle-side=public/sprites/scouts/owl-idle-side.png");
+  assert.equal(status, 1);
+  assert.ok(verdict.failures.some((f) => f.startsWith("owl-oxblood: side left doesn't show the coat")), verdict.failures.join("\n"));
+});
+
+test("qa:sprites fails a coat sheet with a different silhouette from the character", () => {
+  const { status, verdict } = runWith("cat-oxblood-idle=public/sprites/coats/corgi-oxblood-idle.png");
+  assert.equal(status, 1);
+  assert.ok(verdict.failures.some((f) => /^cat-oxblood-idle: silhouette differs/.test(f)), verdict.failures.join("\n"));
+});
+
+test("qa:sprites fails an outfit whose walk is a different coat from its idle", () => {
+  const { status, verdict } = runWith("cat-oxblood-walk=public/sprites/coats/cat-plum-walk.png");
+  assert.equal(status, 1);
+  assert.ok(verdict.failures.some((f) => /^cat-oxblood: walk (front|left|right) coat hue is \d+° off Oxblood Greatcoat/.test(f)), verdict.failures.join("\n"));
 });
