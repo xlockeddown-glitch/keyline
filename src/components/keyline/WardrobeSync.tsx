@@ -19,7 +19,7 @@ function applyLantern(id: string | null) {
 export function WardrobeSync() {
   const user = useCurrentUser();
   const { isPending } = useCurrentUserState();
-  const userId = !isPending && user && !user.isDevFallback ? user.id : null;
+  const userId = !isPending && user ? user.id : null;
   const synced = useRef<Wardrobe | null>(null);
 
   useEffect(() => {
