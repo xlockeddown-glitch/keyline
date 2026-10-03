@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """0.0.49 (art WIP, awaiting approval): the Lynx redrawn on the Tabby's hand-painted body.
 
+Pass 2 (k49b, after Ryan's review and reference): the head is no longer the tabby's face recoloured — it is
+lifted off and repainted per facing by scripts/lynx-head.py (wide head, flared white-tipped ruffs with a dark
+bar, white muzzle and chin, black lip line, tall wide-set ears with long black tufts, forehead stripes);
+the fur is a warmer golden tawny with bolder spots, the bobtail is bigger, spotted and also shows (centred)
+from the back, and the Lynx's own coat is a tan trench. The notes below describe pass 1; where they talk
+about ears, ruff and face, lynx-head.py now does that work.
+
 The 0.0.37 lynx was the fox run through filters (stretched columns, a fox muzzle, speckle). This one starts
 from the cat sheets (a feline face, the same painterly shading, timing and floor line as the house art) and
 paints the lynx on top, pose by pose:
