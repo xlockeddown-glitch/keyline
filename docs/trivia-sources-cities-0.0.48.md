@@ -217,6 +217,81 @@ Door cards on the new lamps (`quiz` in `src/game/data.ts`) are listed at the end
 | S206 | Wikipedia, "Kansas Pacific Railway" — https://en.wikipedia.org/wiki/Kansas_Pacific_Railway |
 | S207 | Wikipedia, "Commons Park" — https://en.wikipedia.org/wiki/Commons_Park |
 | S208 | Wikipedia, "Colorado Gold Rush" — https://en.wikipedia.org/wiki/Pike%27s_Peak_gold_rush |
+| S209 | Wikipedia, "Nashville, Tennessee" — https://en.wikipedia.org/wiki/Nashville,_Tennessee |
+| S210 | Wikipedia, "Fort Nashborough" — https://en.wikipedia.org/wiki/Fort_Nashborough |
+| S211 | Wikipedia, "Tennessee" — https://en.wikipedia.org/wiki/Tennessee |
+| S212 | Wikipedia, "James Robertson (explorer)" — https://en.wikipedia.org/wiki/James_Robertson_(explorer) |
+| S213 | Wikipedia, "Ryman Auditorium" — https://en.wikipedia.org/wiki/Ryman_Auditorium |
+| S214 | Wikipedia, "Grand Ole Opry" — https://en.wikipedia.org/wiki/Grand_Ole_Opry |
+| S215 | Wikipedia, "Grand Ole Opry House" — https://en.wikipedia.org/wiki/Grand_Ole_Opry |
+| S216 | Wikipedia, "WSM (AM)" — https://en.wikipedia.org/wiki/WSM_(AM) |
+| S217 | Wikipedia, "Opryland USA" — https://en.wikipedia.org/wiki/Opryland_USA |
+| S218 | Wikipedia, "Gaylord Opryland Resort & Convention Center" — https://en.wikipedia.org/wiki/Gaylord_Opryland_Resort_%26_Convention_Center |
+| S219 | Wikipedia, "Broadway (Nashville)" — https://en.wikipedia.org/wiki/Broadway_(Nashville,_Tennessee) |
+| S220 | Wikipedia, "Tootsie's Orchid Lounge" — https://en.wikipedia.org/wiki/Tootsie%27s_Orchid_Lounge |
+| S221 | Wikipedia, "Ernest Tubb Record Shop" — https://en.wikipedia.org/wiki/Ernest_Tubb_Record_Shop |
+| S222 | Wikipedia, "Music Row" — https://en.wikipedia.org/wiki/Music_Row |
+| S223 | Wikipedia, "RCA Studio B" — https://en.wikipedia.org/wiki/RCA_Studio_B |
+| S224 | Wikipedia, "Nashville sound" — https://en.wikipedia.org/wiki/Nashville_sound |
+| S225 | Wikipedia, "Nashville Sounds" — https://en.wikipedia.org/wiki/Nashville_Sounds |
+| S226 | Wikipedia, "Country Music Hall of Fame and Museum" — https://en.wikipedia.org/wiki/Country_Music_Hall_of_Fame_and_Museum |
+| S227 | Wikipedia, "Hatch Show Print" — https://en.wikipedia.org/wiki/Hatch_Show_Print |
+| S228 | Wikipedia, "Johnny Cash Museum" — https://en.wikipedia.org/wiki/Johnny_Cash_Museum |
+| S229 | Wikipedia, "Musicians Hall of Fame and Museum" — https://en.wikipedia.org/wiki/Musicians_Hall_of_Fame_and_Museum |
+| S230 | Wikipedia, "National Museum of African American Music" — https://en.wikipedia.org/wiki/National_Museum_of_African_American_Music |
+| S231 | Wikipedia, "The Bluebird Cafe" — https://en.wikipedia.org/wiki/Bluebird_Caf%C3%A9 |
+| S232 | Wikipedia, "Station Inn" — https://en.wikipedia.org/wiki/Station_Inn |
+| S233 | Wikipedia, "Tennessee State Capitol" — https://en.wikipedia.org/wiki/Tennessee_State_Capitol |
+| S234 | Wikipedia, "William Strickland (architect)" — https://en.wikipedia.org/wiki/William_Strickland_(architect) |
+| S235 | Wikipedia, "Bicentennial Capitol Mall State Park" — https://en.wikipedia.org/wiki/Bicentennial_Capitol_Mall_State_Park |
+| S236 | Wikipedia, "Tennessee State Museum" — https://en.wikipedia.org/wiki/Tennessee_State_Museum |
+| S237 | Wikipedia, "Parthenon (Nashville)" — https://en.wikipedia.org/wiki/Parthenon_(Nashville) |
+| S238 | Wikipedia, "Centennial Park (Nashville)" — https://en.wikipedia.org/wiki/Centennial_Park_(Nashville) |
+| S239 | Wikipedia, "Vanderbilt University" — https://en.wikipedia.org/wiki/Vanderbilt_University |
+| S240 | Wikipedia, "Fisk University" — https://en.wikipedia.org/wiki/Fisk_University |
+| S241 | Wikipedia, "Fisk Jubilee Singers" — https://en.wikipedia.org/wiki/Fisk_Jubilee_Singers |
+| S242 | Wikipedia, "Tennessee State University" — https://en.wikipedia.org/wiki/Tennessee_State_University |
+| S243 | Wikipedia, "Belmont University" — https://en.wikipedia.org/wiki/Belmont_University |
+| S244 | Wikipedia, "Diane Nash" — https://en.wikipedia.org/wiki/Diane_Nash |
+| S245 | Wikipedia, "Nashville sit-ins" — https://en.wikipedia.org/wiki/Nashville_sit-ins |
+| S246 | Wikipedia, "Jefferson Street (Nashville)" — https://en.wikipedia.org/wiki/Jefferson_Street_(Nashville) |
+| S247 | Wikipedia, "The Hermitage (Nashville, Tennessee)" — https://en.wikipedia.org/wiki/The_Hermitage_(Nashville,_Tennessee) |
+| S248 | Wikipedia, "Andrew Jackson" — https://en.wikipedia.org/wiki/Andrew_Jackson |
+| S249 | Wikipedia, "James K. Polk" — https://en.wikipedia.org/wiki/James_K._Polk |
+| S250 | Wikipedia, "Polk Place" — https://en.wikipedia.org/wiki/Polk_Place |
+| S251 | Wikipedia, "Belle Meade Plantation" — https://en.wikipedia.org/wiki/Belle_Meade_Plantation |
+| S252 | Wikipedia, "Hermitage Hotel" — https://en.wikipedia.org/wiki/Hermitage_Hotel |
+| S253 | Wikipedia, "Battle of Nashville" — https://en.wikipedia.org/wiki/Battle_of_Nashville |
+| S254 | Wikipedia, "Fort Negley" — https://en.wikipedia.org/wiki/Fort_Negley |
+| S255 | Wikipedia, "Tennessee Titans" — https://en.wikipedia.org/wiki/Tennessee_Titans |
+| S256 | Wikipedia, "Music City Miracle" — https://en.wikipedia.org/wiki/Music_City_Miracle |
+| S257 | Wikipedia, "Nissan Stadium (Nashville)" — https://en.wikipedia.org/wiki/Nissan_Stadium_(Nashville) |
+| S258 | Wikipedia, "Nashville Predators" — https://en.wikipedia.org/wiki/Nashville_Predators |
+| S259 | Wikipedia, "Bridgestone Arena" — https://en.wikipedia.org/wiki/Bridgestone_Arena |
+| S260 | Wikipedia, "Geodis Park" — https://en.wikipedia.org/wiki/Geodis_Park |
+| S261 | Wikipedia, "First Horizon Park" — https://en.wikipedia.org/wiki/First_Horizon_Park |
+| S262 | Wikipedia, "Hot chicken" — https://en.wikipedia.org/wiki/Hot_chicken |
+| S263 | Wikipedia, "Prince's Hot Chicken Shack" — https://en.wikipedia.org/wiki/Prince%27s_Hot_Chicken_Shack |
+| S264 | Wikipedia, "Hattie B's" — https://en.wikipedia.org/wiki/Hattie_B%27s_Hot_Chicken |
+| S265 | Wikipedia, "Goo Goo Cluster" — https://en.wikipedia.org/wiki/Goo_Goo_Cluster |
+| S266 | Wikipedia, "Meat and three" — https://en.wikipedia.org/wiki/Meat_and_three |
+| S267 | Wikipedia, "Loveless Cafe" — https://en.wikipedia.org/wiki/Loveless_Cafe |
+| S268 | Wikipedia, "Maxwell House" — https://en.wikipedia.org/wiki/Maxwell_House |
+| S269 | Wikipedia, "Cheekwood Estate and Gardens" — https://en.wikipedia.org/wiki/Cheekwood_Botanical_Garden_and_Museum_of_Art |
+| S270 | Wikipedia, "Cumberland River" — https://en.wikipedia.org/wiki/Cumberland_River |
+| S271 | Wikipedia, "Percy Priest Lake" — https://en.wikipedia.org/wiki/Percy_Priest_Lake |
+| S272 | Wikipedia, "Natchez Trace Parkway" — https://en.wikipedia.org/wiki/Natchez_Trace_Parkway |
+| S273 | Wikipedia, "Schermerhorn Symphony Center" — https://en.wikipedia.org/wiki/Schermerhorn_Symphony_Center |
+| S274 | Wikipedia, "Frist Art Museum" — https://en.wikipedia.org/wiki/Frist_Art_Museum |
+| S275 | Wikipedia, "Batman Building" — https://en.wikipedia.org/wiki/333_Commerce |
+| S276 | Wikipedia, "Union Station (Nashville)" — https://en.wikipedia.org/wiki/Union_Station_(Nashville) |
+| S277 | Wikipedia, "John Seigenthaler Pedestrian Bridge" — https://en.wikipedia.org/wiki/John_Seigenthaler_Pedestrian_Bridge |
+| S278 | Wikipedia, "Nashville International Airport" — https://en.wikipedia.org/wiki/Nashville_International_Airport |
+| S279 | Wikipedia, "The Tennessean" — https://en.wikipedia.org/wiki/The_Tennessean |
+| S280 | Wikipedia, "Country Music Association" — https://en.wikipedia.org/wiki/Country_Music_Association |
+| S281 | Wikipedia, "Tennessee Waltz" — https://en.wikipedia.org/wiki/Tennessee_Waltz |
+| S282 | Wikipedia, "Lane Motor Museum" — https://en.wikipedia.org/wiki/Lane_Motor_Museum |
+| S283 | Wikipedia, "Pioneer Square, Seattle" — https://en.wikipedia.org/wiki/Pioneer_Square,_Seattle |
 
 ## Seattle (157 cards)
 
@@ -535,3 +610,188 @@ Door cards on the new lamps (`quiz` in `src/game/data.ts`) are listed at the end
 | The ten-county Denver metro area is home to about… | 3.1 million people | S115 |
 | Leadville sits between Colorado's two tallest peaks, Mount Elbert and… | Mount Massive | S199 |
 | The Denver Firefighters Museum's home, Fire Station No. 1, was built in… | 1909 | S190 |
+
+## Nashville (160 cards)
+
+| Card | Answer | Source |
+| --- | --- | --- |
+| Nashville's best-known nickname is… | Music City | S209 |
+| Because of its many colleges, Nashville is sometimes called the Athens of the… | South | S209 |
+| Nashville is named for Francis Nash, a general in the… | Continental Army | S209 |
+| Nashville was founded in 1779, when its land was still part of… | North Carolina | S209 |
+| Nashville sits on which river? | Cumberland River | S209 |
+| In 1862 Nashville became the first Confederate state capital to be… | taken by Union forces | S209 |
+| Since 1963 Nashville has shared a consolidated government with… | Davidson County | S209 |
+| How many members sit on Nashville's Metro Council? | 40 | S209 |
+| Nashville became the capital of Tennessee in… | 1843 | S210 |
+| Nashville was incorporated as a city in… | 1806 | S209 |
+| At the 2020 census, Nashville's population was about… | 689,000 | S209 |
+| Tennessee's nickname is the… | Volunteer State | S211 |
+| Tennessee joined the Union as the 16th state in… | 1796 | S211 |
+| Fort Nashborough, the 1779 stockade, was founded by James Robertson and… | John Donelson | S210 |
+| Fort Nashborough stood in a salt-spring area known as the… | French Lick | S210 |
+| Nashville co-founder James Robertson was an early companion of… | Daniel Boone | S212 |
+| The Ryman Auditorium is nicknamed the Mother Church of… | Country Music | S213 |
+| Thomas Ryman, who built the tabernacle, owned saloons and a fleet of… | riverboats | S213 |
+| The Grand Ole Opry called the Ryman home from 1943 until… | 1974 | S213 |
+| In 2022 the Ryman was named a landmark by which hall of fame? | Rock & Roll Hall of Fame | S213 |
+| The Grand Ole Opry is broadcast on which radio station? | WSM | S214 |
+| The Grand Ole Opry began in 1925 under the name… | WSM Barn Dance | S214 |
+| Announcer George D. Hay started the Grand Ole Opry in… | 1925 | S214 |
+| The Grand Ole Opry is the longest-running what in U.S. history? | radio broadcast | S214 |
+| A six-foot circle cut from the Ryman's stage is set into the Opry House stage. It is made of… | oak | S215 |
+| In May 2010 the Grand Ole Opry House was damaged by… | a flood | S215 |
+| WSM's call letters come from the motto… | We Shield Millions | S216 |
+| WSM radio was started in 1925 by a company that sold… | life insurance | S216 |
+| WSM broadcasts at which AM frequency? | 650 kHz | S216 |
+| The Opryland USA theme park operated from 1972 until… | 1997 | S217 |
+| Gaylord Opryland Resort was formerly called the… | Opryland Hotel | S218 |
+| Lower Broadway's historic district is nicknamed Honky Tonk… | Highway | S219 |
+| Tootsie's Orchid Lounge stands just behind the… | Ryman Auditorium | S220 |
+| From 1947 to 2022, the Ernest Tubb Record Shop sat on… | Broadway | S221 |
+| The Ernest Tubb Record Shop hosted which late-night show after the Opry? | Midnite Jamboree | S221 |
+| Music Row is centered on 16th and 17th Avenues… | South | S222 |
+| Dolly Parton's 1973 song about the music business district is… | Down on Music Row | S222 |
+| RCA Studio B was established in 1957 by Steve Sholes and… | Chet Atkins | S223 |
+| About how many songs did Elvis Presley record at RCA Studio B? | more than 200 | S223 |
+| RCA Studio B helped create the polished country style called the… | Nashville Sound | S223 |
+| The Nashville sound replaced rough honky-tonk with smooth… | strings and choruses | S224 |
+| The Nashville Sounds baseball team is named for… | the Nashville sound | S225 |
+| The Country Music Hall of Fame and Museum was chartered in… | 1964 | S226 |
+| The Country Music Hall of Fame's front windows resemble… | piano keys | S226 |
+| Seen from above, the Country Music Hall of Fame building forms a… | bass clef | S226 |
+| The arch of the Country Music Hall of Fame suggests the tailfin of a 1959… | Cadillac | S226 |
+| Hatch Show Print was founded in… | 1879 | S227 |
+| Hatch Show Print is known for concert posters made by… | letterpress | S227 |
+| Johnny Cash was often called the Man in… | Black | S228 |
+| The Johnny Cash Museum opened in… | 2013 | S228 |
+| The Johnny Cash Museum shows a stone wall from Cash's lake house in… | Hendersonville | S228 |
+| The Musicians Hall of Fame mostly honors… | session musicians | S229 |
+| The National Museum of African American Music opened in… | 2021 | S230 |
+| NMAAM sits at Fifth and Broadway rather than on historically Black… | Jefferson Street | S230 |
+| The Bluebird Cafe seats about… | 90 people | S231 |
+| In 2004 a label boss signed which 14-year-old after a Bluebird Cafe set? | Taylor Swift | S231 |
+| Which star got a record deal in 1988 after filling in at the Bluebird Cafe? | Garth Brooks | S231 |
+| The Bluebird Cafe is in which neighborhood? | Green Hills | S231 |
+| The Station Inn near Music Row is best known for… | bluegrass | S232 |
+| Tennessee's State Capitol was designed by architect… | William Strickland | S233 |
+| Which president is buried on the Tennessee State Capitol grounds? | James K. Polk | S233 |
+| The Capitol's tower is modeled on the Choragic Monument of… | Lysicrates | S233 |
+| Tennessee's Capitol is one of 11 state capitols without a… | dome | S233 |
+| The Tennessee State Capitol was built in which style? | Greek Revival | S233 |
+| William Strickland trained as a student of… | Benjamin Latrobe | S234 |
+| Bicentennial Capitol Mall is modeled on the… | National Mall | S235 |
+| The buried creek that runs through Bicentennial Mall is… | French Lick Creek | S235 |
+| Bicentennial Mall is the most visited of Tennessee's… | state parks | S235 |
+| The Tennessee State Museum's new building opened in… | 2018 | S236 |
+| Nashville's Parthenon is a full-scale replica of a temple in… | Athens | S237 |
+| The Parthenon was first built for the Tennessee Centennial Exposition in… | 1897 | S237 |
+| The statue of Athena inside the Parthenon stands about… | 42 feet tall | S237 |
+| The Parthenon's Athena statue was re-created in 1990 by… | Alan LeQuire | S237 |
+| Before the 1897 exposition, the Centennial Park site was used as a… | racetrack | S238 |
+| Centennial Park sits across West End Avenue from… | Vanderbilt University | S238 |
+| The Parthenon was rebuilt in steel and concrete between 1925 and… | 1931 | S238 |
+| Vandy's founding $1 million gift came from shipping and railroad magnate… | Cornelius Vanderbilt | S239 |
+| Vanderbilt University was founded in… | 1873 | S239 |
+| Vanderbilt is the only private school in which athletic conference? | Southeastern Conference | S239 |
+| Fisk University was founded in… | 1866 | S240 |
+| The Fisk Jubilee Singers first toured in 1871 to raise money for… | their college | S241 |
+| In 1873 the Fisk Jubilee Singers performed for… | Queen Victoria | S241 |
+| The Library of Congress honored the Fisk Jubilee Singers' 1909 recording of… | Swing Low, Sweet Chariot | S241 |
+| Tennessee State University, a historically Black school, was founded in… | 1912 | S242 |
+| Belmont University grew out of a women's college founded in… | 1890 | S243 |
+| Diane Nash chaired which group during the 1960 sit-ins? | Nashville Student Movement | S244 |
+| The 1960 Nashville sit-ins targeted segregated… | lunch counters | S245 |
+| During the sit-ins, whose home was bombed on April 19, 1960? | Z. Alexander Looby | S245 |
+| After a 1960 march to City Hall, which mayor agreed the lunch counters should be desegregated? | Ben West | S245 |
+| Diane Nash received the Presidential Medal of Freedom in… | 2022 | S244 |
+| Jefferson Street declined after which highway was built across it in 1968? | Interstate 40 | S246 |
+| The Hermitage was the home of which president? | Andrew Jackson | S247 |
+| Andrew Jackson was which U.S. president? | 7th | S248 |
+| James K. Polk, buried in Nashville, was which U.S. president? | 11th | S249 |
+| Polk Place, the Polks' Nashville home, was demolished in… | 1901 | S250 |
+| Belle Meade Plantation became famous for breeding… | thoroughbred racehorses | S251 |
+| The name Belle Meade means… | beautiful meadow | S251 |
+| Belle Meade's most celebrated stallion was… | Iroquois | S251 |
+| The Hermitage Hotel was named for… | Andrew Jackson's estate | S252 |
+| The Hermitage Hotel opened in… | 1910 | S252 |
+| The Hermitage Hotel is Tennessee's only remaining commercial building in which style? | Beaux-Arts | S252 |
+| The Battle of Nashville in December 1864 was won by Union general… | George H. Thomas | S253 |
+| Fort Negley was the largest inland fort built during the… | Civil War | S254 |
+| The Tennessee Titans were originally the… | Houston Oilers | S255 |
+| The Oilers became the Titans in… | 1999 | S255 |
+| While their Nashville stadium was built, the Oilers' 1997 home games were played in… | Memphis | S255 |
+| The Titans lost Super Bowl XXXIV to the… | St. Louis Rams | S255 |
+| In the Music City Miracle, Frank Wycheck lateraled to… | Kevin Dyson | S256 |
+| The Music City Miracle beat which team? | Buffalo Bills | S256 |
+| Nissan Stadium's first name was… | Adelphia Coliseum | S257 |
+| Nissan Stadium sits on which bank of the Cumberland River? | east | S257 |
+| Which college bowl game is played at Nissan Stadium each December? | Music City Bowl | S257 |
+| The Predators' logo is a… | saber-toothed cat | S258 |
+| The Smilodon skeleton behind the Predators' logo was found… | beneath downtown | S258 |
+| Predators fans sometimes throw what onto the ice? | a catfish | S258 |
+| The Predators reached their first Stanley Cup Final in… | 2017 | S258 |
+| The Predators play home games at… | Bridgestone Arena | S258 |
+| Bridgestone Arena was completed in… | 1996 | S259 |
+| Nashville SC's Geodis Park opened in… | 2022 | S260 |
+| Geodis Park was built at the historic Nashville… | Fairgrounds | S260 |
+| The Nashville Sounds are the Triple-A affiliate of the… | Milwaukee Brewers | S225 |
+| First Horizon Park was built on the site of which historic ballpark? | Sulphur Dell | S225 |
+| First Horizon Park opened in… | 2015 | S261 |
+| Tennessee State University's Tigers play football at… | Nissan Stadium | S257 |
+| Nashville hot chicken gets its heat mainly from… | cayenne pepper | S262 |
+| Nashville hot chicken is traditionally served on white bread with… | pickle chips | S262 |
+| Which restaurant is credited with popularizing hot chicken? | Prince's Hot Chicken Shack | S263 |
+| Prince's Hot Chicken Shack was started in… | 1945 | S263 |
+| Hattie B's Hot Chicken was founded by a father and son both named… | Nick Bishop | S264 |
+| Nashville's Standard Candy Company created its famous cluster bar in… | 1912 | S265 |
+| Howell Campbell's 1912 cluster bar is considered the first… | combination candy bar | S265 |
+| Standard Candy's classic cluster bar holds marshmallow nougat, caramel and… | roasted peanuts | S265 |
+| In a Southern meat and three, you choose one meat and three… | side dishes | S266 |
+| The Loveless Cafe is famous for its… | biscuits | S267 |
+| The Loveless Cafe sits near the northern end of the… | Natchez Trace Parkway | S267 |
+| Maxwell House coffee was named for a… | Nashville hotel | S268 |
+| Maxwell House coffee's slogan is… | Good to the last drop | S268 |
+| Maxwell House coffee was introduced in 1892 by grocer… | Joel Cheek | S268 |
+| Cheekwood, the Cheek family estate, opened as a garden and art museum in… | 1960 | S269 |
+| The Cumberland River flows into the… | Ohio River | S270 |
+| About how long is the Cumberland River? | 688 miles | S270 |
+| J. Percy Priest Lake is a reservoir on the… | Stones River | S271 |
+| The Natchez Trace Parkway runs 444 miles from Natchez, Mississippi to… | Nashville | S272 |
+| The Schermerhorn's decor includes irises, Tennessee's state… | flower | S273 |
+| In May 2010 Nashville flooded when torrential rain swelled the… | Cumberland River | S215 |
+| The Schermerhorn Symphony Center is home to the… | Nashville Symphony | S273 |
+| Schermerhorn Symphony Center opened in… | 2006 | S273 |
+| The Schermerhorn's main concert hall is named for… | Laura Turner | S273 |
+| The Frist Art Museum is housed in a historic… | post office | S274 |
+| The Batman Building is the tallest building in… | Tennessee | S275 |
+| The Batman Building was completed in… | 1994 | S275 |
+| Nashville's Union Station opened in… | 1900 | S276 |
+| Nashville's Union Station is built in which style? | Romanesque Revival | S276 |
+| The John Seigenthaler Pedestrian Bridge was formerly the… | Shelby Street Bridge | S277 |
+| Nashville International Airport's code BNA comes from its original name… | Berry Field | S278 |
+| The Tennessean's first issue was printed in… | 1907 | S279 |
+| The Country Music Association was founded in… | 1958 | S280 |
+| Each June the Country Music Association throws a big festival called… | CMA Fest | S280 |
+| Patti Page's 1950 hit about the state is… | Tennessee Waltz | S281 |
+| The Lane Motor Museum mostly collects cars from… | Europe | S282 |
+
+## Door cards on the new lamps (15 cards)
+
+| City | Card | Answer | Source |
+| --- | --- | --- | --- |
+| seattle | The Space Needle was built for a World's Fair in… | 1962 | S1 |
+| seattle | Pike Place Market opened in… | 1907 | S21 |
+| seattle | Pioneer Square was rebuilt in brick and stone after the great fire of… | 1889 | S283 |
+| seattle | Smith Tower was built for Lyman Cornelius Smith, a maker of… | typewriters | S13 |
+| seattle | The Museum of Pop Culture building was designed by… | Frank Gehry | S32 |
+| seattle | Lumen Field is home to the Seattle Seahawks and the… | Sounders | S67 |
+| denver | The Colorado State Capitol's dome is covered in… | gold leaf | S117 |
+| denver | The Denver Art Museum's angular Hamilton Building was designed by… | Daniel Libeskind | S130 |
+| denver | Coins struck at the Denver Mint carry which mint mark? | D | S133 |
+| denver | At Coors Field, a row of purple seats marks… | one mile above sea level | S134 |
+| nashville | The Ryman Auditorium was built in 1892 as the… | Union Gospel Tabernacle | S213 |
+| nashville | The architect of the Tennessee State Capitol is entombed… | in its own walls | S233 |
+| nashville | Which letterpress poster shop operates inside the Country Music Hall of Fame? | Hatch Show Print | S227 |
+| nashville | Nissan Stadium, across the river from downtown, is home to the… | Tennessee Titans | S257 |
+| nashville | Nashville's twin-spired AT&T Building is nicknamed the… | Batman Building | S275 |

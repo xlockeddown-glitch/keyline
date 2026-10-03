@@ -68,3 +68,22 @@ test("the check catches a card in the wrong block", () => {
     CITY_EXTRA.detroit.local = save;
   }
 });
+
+test("the 0.0.48 cities (Seattle, Denver, Nashville) each carry a full local deck", () => {
+  for (const cid of ["seattle", "denver", "nashville"]) {
+    assert.ok(CITIES[cid], `${cid} is a game city`);
+    const cards = Object.values(CITY_EXTRA[cid] ?? {}).flat();
+    assert.ok(cards.length >= 140, `${cid} has ${cards.length} local cards`);
+    const prompts = new Set(cards.map((c) => c.q));
+    assert.equal(prompts.size, cards.length, `${cid} has duplicate prompts`);
+    for (const c of cards) {
+      assert.ok(c.choices.includes(c.answer), `${cid}: answer missing from choices: ${c.q}`);
+      assert.doesNotMatch(c.q, /\bplates?\b/i, `${cid}: say trivia cards, not plates: ${c.q}`);
+    }
+  }
+});
+
+test("the 0.0.48 cities' cards don't ask about another city", () => {
+  const hits = foreignCards().filter((s) => /^(seattle|denver|nashville)\//.test(s));
+  assert.deepEqual(hits, []);
+});
