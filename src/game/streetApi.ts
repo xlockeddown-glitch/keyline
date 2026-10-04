@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { isWalkableWay, WALK_HIGHWAY_RE, type WayTags } from "./walkable.ts";
+import { FREEWAY_HIGHWAY_RE, isFreeway, isWalkableWay, WALK_HIGHWAY_RE, type WayTags } from "./walkable.ts";
 
 const DRIVE = new Set([
   "primary",
@@ -22,7 +22,7 @@ const OVERPASS = [
   "https://overpass.kumi.systems/api/interpreter",
 ];
 
-const cache = new Map<string, { lines: number[][]; drive: { line: number[]; arterial: boolean }[] }>();
+const cache = new Map<string, { lines: number[][]; freeways: number[][]; drive: { line: number[]; arterial: boolean }[] }>();
 
 const Input = z.object({
   lat: z.number(),
@@ -72,26 +72,30 @@ export const getOsmWays = createServerFn({ method: "POST" })
   .validator((u) => Input.parse(u))
   .handler(async ({ data }) => {
     const { lat, lng, radius } = data;
-    const key = `walk3:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
+    const key = `walk4:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
     const hit = cache.get(key);
     if (hit) return hit;
     // Walkable and drivable ways together; drive rows keep the old access rule, walk rows use isWalkableWay.
-    const q = `[out:json][timeout:25];way["highway"~"^(${WALK_HIGHWAY_RE})$"]["area"!="yes"]["motorroad"!="yes"](around:${Math.round(radius)},${lat.toFixed(5)},${lng.toFixed(5)});out tags geom;`;
+    // 0.0.52b: plus the freeway layer (motorways, trunks, ramps, feeders) so the client can keep walks off it.
+    const at = `(around:${Math.round(radius)},${lat.toFixed(5)},${lng.toFixed(5)})`;
+    const q = `[out:json][timeout:25];(way["highway"~"^(${WALK_HIGHWAY_RE})$"]["area"!="yes"]["motorroad"!="yes"]${at};way["highway"~"^(${FREEWAY_HIGHWAY_RE})$"]${at};way["motorroad"="yes"]${at};);out tags geom;`;
     let last: Error | null = null;
     for (const url of OVERPASS) {
       try {
         const json = await postOverpass(url, q);
         const lines: number[][] = [];
+        const freeways: number[][] = [];
         const drive: { line: number[]; arterial: boolean }[] = [];
         for (const el of json.elements ?? []) {
           const hw = el.tags?.highway ?? "";
           const packed = packLine(el.geometry ?? []);
           if (packed.length < 4) continue;
-          if (isWalkableWay(el.tags)) lines.push(packed);
+          if (isFreeway(el.tags)) freeways.push(packed);
+          else if (isWalkableWay(el.tags)) lines.push(packed);
           const acc = el.tags?.access ?? "";
           if (DRIVE.has(hw) && acc !== "no" && acc !== "private") drive.push({ line: packed, arterial: ARTERIAL.has(hw) });
         }
-        const payload = { lines, drive };
+        const payload = { lines, freeways, drive };
         cache.set(key, payload);
         if (cache.size > 40) {
           const first = cache.keys().next().value;

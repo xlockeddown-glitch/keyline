@@ -1,4 +1,4 @@
-import { isWalkableWay, WALK_HIGHWAY_RE, WALK_OVERPASS_FILTERS, type WayTags } from "./walkable.ts";
+import { FREEWAY_HIGHWAY_RE, isFreeway, isWalkableWay, WALK_HIGHWAY_RE, WALK_OVERPASS_FILTERS, type WayTags } from "./walkable.ts";
 import { dest, distM, metersPerDegLng, yawToTarget } from "./geo.ts";
 import { getOsmWays } from "./streetApi.ts";
 import type { Poi, Tier } from "./types";
@@ -27,7 +27,16 @@ export type StreetGraph = {
   covers: { lat: number; lng: number; r: number }[];
   comp?: Int32Array;
   compGen?: number;
+  /**
+   * 0.0.52b: freeway centerlines (motorways, trunks, ramps, feeders) near the walk graph. Never walkable — kept
+   * so steps and routes that don't come from the graph (an online route, a loose step, a door hop, a resting
+   * spot at a route's end) can be held off them.
+   */
+  fw: FwSeg[];
+  fwGrid: Map<string, number[]>;
 };
+
+type FwSeg = { ax: number; ay: number; bx: number; by: number; ux: number; uy: number; len: number };
 
 const M_PER_DEG_LAT = 111_320;
 const CELL = 80;
@@ -79,6 +88,8 @@ export function createGraph(lat: number, lng: number): StreetGraph {
     nodeIndex: new Map(),
     cell: CELL,
     covers: [],
+    fw: [],
+    fwGrid: new Map(),
   };
 }
 
@@ -204,13 +215,45 @@ type OsmWay = {
   geometry?: { lat: number; lon: number }[];
   tags?: WayTags;
   arterial?: boolean;
+  /** Pre-filtered freeway line from the server fetch: goes to the no-walk layer. */
+  noWalk?: boolean;
 };
+
+/** Add a freeway centerline to the graph's no-walk layer (never routable). */
+export function ingestFreeway(g: StreetGraph, raw: Pt[]) {
+  const pts = raw.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const a = toXY(g, pts[i]!.lat, pts[i]!.lng);
+    const b = toXY(g, pts[i + 1]!.lat, pts[i + 1]!.lng);
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 0.5) continue;
+    const id = g.fw.length;
+    g.fw.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, ux: (b.x - a.x) / len, uy: (b.y - a.y) / len, len });
+    const x0 = Math.floor(Math.min(a.x, b.x) / g.cell);
+    const x1 = Math.floor(Math.max(a.x, b.x) / g.cell);
+    const y0 = Math.floor(Math.min(a.y, b.y) / g.cell);
+    const y1 = Math.floor(Math.max(a.y, b.y) / g.cell);
+    for (let x = x0; x <= x1; x++) {
+      for (let y = y0; y <= y1; y++) {
+        const key = cellKey(x, y);
+        const list = g.fwGrid.get(key);
+        if (list) list.push(id);
+        else g.fwGrid.set(key, [id]);
+      }
+    }
+  }
+}
 
 export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
   for (const way of ways) {
     const geom = way.geometry;
     if (!geom || geom.length < 2) continue;
     const hw = way.tags?.highway ?? "";
+    if (!drive && (way.noWalk || (way.tags && isFreeway(way.tags)))) {
+      ingestFreeway(g, geom.map((p) => ({ lat: p.lat, lng: p.lon })));
+      continue;
+    }
+    if (way.noWalk) continue;
     // Tagged ways must be walkable; untagged lines come pre-filtered (server fetch, baked foot routes).
     if (!drive && way.tags && !isWalkableWay(way.tags)) continue;
     if (drive && hw && !ARTERIAL.has(hw) && !HIGHWAY_DRIVE.split("|").includes(hw)) continue;
@@ -259,6 +302,157 @@ export function nearest(g: StreetGraph, lat: number, lng: number, max = 90, only
   }
   if (best && best.dist <= max) return best;
   return best && best.dist <= max * 1.8 ? best : null;
+}
+
+/** Meters from a freeway centerline that count as standing on it (a ramp lane or two either side of the line). */
+const FW_TOL = 7;
+/** …unless a walkable way is this close: an overpass, a street under a viaduct, a sidewalk beside a feeder. */
+const FW_WALK_TOL = 5;
+/** A walk that runs this far along a freeway (not across it) is riding it. Same bar as qa:walk-routes. */
+export const FREEWAY_RIDE_M = 20;
+
+function fwNear(g: StreetGraph, x: number, y: number, tol: number, dir?: { ux: number; uy: number }, cosMax = 0): boolean {
+  const cx = Math.floor(x / g.cell);
+  const cy = Math.floor(y / g.cell);
+  for (let ix = cx - 1; ix <= cx + 1; ix++) {
+    for (let iy = cy - 1; iy <= cy + 1; iy++) {
+      const list = g.fwGrid.get(cellKey(ix, iy));
+      if (!list) continue;
+      for (const id of list) {
+        const f = g.fw[id]!;
+        if (dir && Math.abs(dir.ux * f.ux + dir.uy * f.uy) < cosMax) continue;
+        const k = Math.max(0, Math.min(f.len, (x - f.ax) * f.ux + (y - f.ay) * f.uy));
+        if (Math.hypot(x - (f.ax + f.ux * k), y - (f.ay + f.uy * k)) <= tol) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function onWalkWay(g: StreetGraph, lat: number, lng: number, tol = FW_WALK_TOL) {
+  const w = nearest(g, lat, lng, tol);
+  return Boolean(w && w.dist <= tol);
+}
+
+/** Is this spot on a freeway, ramp or feeder (and not on a walkable way that crosses or runs beside it)? */
+export function onFreeway(g: StreetGraph | null, p: Pt): boolean {
+  if (!g || !g.fw.length) return false;
+  const { x, y } = toXY(g, p.lat, p.lng);
+  if (!fwNear(g, x, y, FW_TOL)) return false;
+  return !onWalkWay(g, p.lat, p.lng);
+}
+
+/** A resting spot for the walker: unchanged unless it's on a freeway, then the closest walkable street. */
+export function offFreeway(g: StreetGraph | null, p: Pt): Pt {
+  if (!g || !onFreeway(g, p)) return p;
+  const s = nearest(g, p.lat, p.lng, 400);
+  if (s) return { lat: s.lat, lng: s.lng };
+  return onStreet(g, p.lat, p.lng);
+}
+
+/** Within a ramp's width of a freeway centerline, walkable way or not (a lot or aisle under a viaduct counts). */
+export function besideFreeway(g: StreetGraph | null, p: Pt): boolean {
+  if (!g || !g.fw.length) return false;
+  const { x, y } = toXY(g, p.lat, p.lng);
+  return fwNear(g, x, y, FW_TOL);
+}
+
+/**
+ * A walk start or resting spot that doesn't even look like it's on a freeway: when `p` (already on the walk graph)
+ * sits within a ramp's width of a freeway centerline — a parking aisle or scrap of path under the Ohio Street
+ * feeder, say — slide to the closest walkable point within `extra` m that's clear of it. Otherwise unchanged.
+ */
+export function clearOfFreeway(g: StreetGraph | null, p: Pt, extra = 40): Pt {
+  if (!g || !g.fw.length || !g.segs.length) return p;
+  if (!besideFreeway(g, p)) return p;
+  return nearestClear(g, p, extra) ?? p;
+}
+
+function crossesFw(g: StreetGraph, ax: number, ay: number, bx: number, by: number): boolean {
+  const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 3));
+  for (let k = 1; k < n; k++) if (fwNear(g, ax + ((bx - ax) * k) / n, ay + ((by - ay) * k) / n, FW_TOL)) return true;
+  return false;
+}
+
+/**
+ * Closest walk-graph point within `extra` m of `p` that's clear of every freeway centerline (optionally on one
+ * component). With `sameSide`, the straight line from `p` to it may not pass under or over a freeway either.
+ */
+function nearestClear(g: StreetGraph, p: Pt, extra: number, only?: Int32Array, compId?: number, sameSide = false): Pt | null {
+  const here = toXY(g, p.lat, p.lng);
+  const cx = Math.floor(here.x / g.cell);
+  const cy = Math.floor(here.y / g.cell);
+  const ring = Math.ceil(extra / g.cell) + 1;
+  let best: { x: number; y: number; d: number } | null = null;
+  for (let ix = cx - ring; ix <= cx + ring; ix++) {
+    for (let iy = cy - ring; iy <= cy + ring; iy++) {
+      const list = g.grid.get(cellKey(ix, iy));
+      if (!list) continue;
+      for (const id of list) {
+        const seg = g.segs[id]!;
+        if (only && compId !== undefined && only[seg.a] !== compId) continue;
+        const a = toXY(g, g.nodes[seg.a]!.lat, g.nodes[seg.a]!.lng);
+        const b = toXY(g, g.nodes[seg.b]!.lat, g.nodes[seg.b]!.lng);
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        const n = Math.min(200, Math.max(1, Math.ceil(len / 2)));
+        for (let k = 0; k <= n; k++) {
+          const x = a.x + ((b.x - a.x) * k) / n;
+          const y = a.y + ((b.y - a.y) * k) / n;
+          const d = Math.hypot(x - here.x, y - here.y);
+          if (d > extra || (best && d >= best.d)) continue;
+          if (fwNear(g, x, y, FW_TOL)) continue;
+          if (sameSide && crossesFw(g, here.x, here.y, x, y)) continue;
+          best = { x, y, d };
+        }
+      }
+    }
+  }
+  if (!best) return null;
+  const m = metersPerDegLng(g.originLat);
+  return { lat: g.originLat + best.y / M_PER_DEG_LAT, lng: g.originLng + best.x / m };
+}
+
+/**
+ * Longest run (m) of `path` along a freeway in the graph's no-walk layer: near a centerline, heading the same way,
+ * and not on a walkable way. Crossing on an overpass scores ~0; following a ramp scores its length.
+ */
+export function freewayRide(g: StreetGraph | null, path: Pt[], tol = 6, angDeg = 25): number {
+  if (!g || !g.fw.length || path.length < 2) return 0;
+  const cosMax = Math.cos((angDeg * Math.PI) / 180);
+  let best = 0;
+  let cur = 0;
+  for (let i = 0; i + 1 < path.length; i++) {
+    const p0 = path[i]!;
+    const p1 = path[i + 1]!;
+    const a = toXY(g, p0.lat, p0.lng);
+    const b = toXY(g, p1.lat, p1.lng);
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 0.01) continue;
+    const dir = { ux: (b.x - a.x) / len, uy: (b.y - a.y) / len };
+    const n = Math.max(1, Math.ceil(len / 4));
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n;
+      let on = fwNear(g, a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, tol, dir, cosMax);
+      if (on && onWalkWay(g, p0.lat + (p1.lat - p0.lat) * t, p0.lng + (p1.lng - p0.lng) * t)) on = false;
+      if (on) {
+        cur += len / n;
+        if (cur > best) best = cur;
+      } else cur = 0;
+    }
+  }
+  return best;
+}
+
+/** Does the straight line a→b step onto a freeway anywhere (a door hop across a ramp, a loose step onto one)? */
+export function hopTouchesFreeway(g: StreetGraph | null, a: Pt, b: Pt): boolean {
+  if (!g || !g.fw.length) return false;
+  const span = distM(a.lat, a.lng, b.lat, b.lng);
+  const n = Math.max(1, Math.ceil(span / 3));
+  for (let k = 0; k <= n; k++) {
+    const t = k / n;
+    if (onFreeway(g, { lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t })) return true;
+  }
+  return false;
 }
 
 /** Always a point on a loaded road or path. Falls back to a random segment. */
@@ -519,14 +713,20 @@ export function constrainStep(g: StreetGraph, lat: number, lng: number, yaw: num
   let here = nearest(g, lat, lng, 80);
   if (!here) here = nearest(g, lat, lng, 240);
   if (!here) {
-    return dest(lat, lng, Math.cos(yaw) * dist, -Math.sin(yaw) * dist);
+    // Nothing loaded nearby: free steps, still never onto a freeway (the baked freeway layer covers this case).
+    const free = dest(lat, lng, Math.cos(yaw) * dist, -Math.sin(yaw) * dist);
+    return onFreeway(g, free) && !onFreeway(g, { lat, lng }) ? { lat, lng } : free;
   }
   if (Math.abs(dist) < 0.04) return { lat: here.lat, lng: here.lng };
 
   if (loose && here.dist > 16) {
+    // Off the graph (a door step, a sparse block): free steps, but never onto a freeway, ramp or feeder.
+    // Standing on one already (an old spot, a cab door), the step goes to the closest walkable street.
+    if (onFreeway(g, { lat, lng })) return { lat: here.lat, lng: here.lng };
     const proposed = dest(lat, lng, Math.cos(yaw) * dist, -Math.sin(yaw) * dist);
     const there = nearest(g, proposed.lat, proposed.lng, 22);
     if (there && there.dist < 8) return { lat: there.lat, lng: there.lng };
+    if (onFreeway(g, proposed)) return { lat, lng };
     return proposed;
   }
 
@@ -623,7 +823,8 @@ function overpassQuery(lat: number, lng: number, radius: number, drive = false) 
   const r = Math.round(radius);
   const at = `(around:${r},${lat.toFixed(5)},${lng.toFixed(5)})`;
   if (drive) return `[out:json][timeout:25];way["highway"~"^(${HIGHWAY_DRIVE})$"]["area"!="yes"]["access"!="private"]["access"!="no"]${at};out tags geom;`;
-  return `[out:json][timeout:25];way["highway"~"^(${WALK_HIGHWAY_RE})$"]${WALK_OVERPASS_FILTERS}${at};out tags geom;`;
+  // Walk ways plus the freeway layer (tagged, so ingestOsmWays sorts them).
+  return `[out:json][timeout:25];(way["highway"~"^(${WALK_HIGHWAY_RE})$"]${WALK_OVERPASS_FILTERS}${at};way["highway"~"^(${FREEWAY_HIGHWAY_RE})$"]${at};way["motorroad"="yes"]${at};);out tags geom;`;
 }
 
 function mergeAbort(signal: AbortSignal | undefined, ms: number) {
@@ -642,11 +843,11 @@ async function postOverpass(url: string, query: string, signal?: AbortSignal) {
   return (await res.json()) as { elements?: OsmWay[] };
 }
 
-function unpackLines(lines: number[][]): OsmWay[] {
+function unpackLines(lines: number[][], noWalk = false): OsmWay[] {
   return lines.map((line) => {
     const geometry: { lat: number; lon: number }[] = [];
     for (let i = 0; i + 1 < line.length; i += 2) geometry.push({ lat: line[i]!, lon: line[i + 1]! });
-    return { geometry };
+    return noWalk ? { geometry, noWalk } : { geometry };
   });
 }
 
@@ -670,7 +871,7 @@ export async function fetchStreets(
       }
     } else {
       const lines = packed?.lines;
-      if (lines?.length) return unpackLines(lines);
+      if (lines?.length) return [...unpackLines(lines), ...unpackLines(packed?.freeways ?? [], true)];
     }
     throw new Error("empty osm payload " + JSON.stringify(packed && Object.keys(packed)));
   } catch (err) {
@@ -772,6 +973,32 @@ export function routeOnGraph(g: StreetGraph, from: Pt, to: Pt): Pt[] | null {
   const any = nearest(g, to.lat, to.lng, 220);
   const b = any && (!onComp || any.dist + 28 < onComp.dist) ? any : onComp;
   if (!b) return null;
+  const direct = searchGraph(g, a, b);
+  if (direct) return direct;
+  // 0.0.52b: the start snapped onto a scrap of path the rest of the network doesn't reach (the stub footway at
+  // the foot of the Ohio Street feeder bridge). A null here used to hand the walk to an unchecked online route.
+  // Try the goal on the start's piece, then the start on the goal's piece.
+  if (onComp && onComp.seg !== b.seg) {
+    const p = searchGraph(g, a, onComp);
+    if (p) return p;
+  }
+  const goalComp = labels[g.segs[b.seg]!.a]!;
+  if (goalComp !== startComp) {
+    let a2 = nearest(g, from.lat, from.lng, 160, labels, goalComp);
+    if (a2 && a2.dist <= a.dist + 90) {
+      // …at the closest spot there clear of freeways (not the parking aisle under the Ohio Street feeder).
+      if (besideFreeway(g, a2)) {
+        const c = nearestClear(g, from, a2.dist + 60, labels, goalComp, true) ?? nearestClear(g, from, a2.dist + 60, labels, goalComp);
+        const s2 = c && nearest(g, c.lat, c.lng, 5, labels, goalComp);
+        if (s2) a2 = s2;
+      }
+      return searchGraph(g, a2, b);
+    }
+  }
+  return null;
+}
+
+function searchGraph(g: StreetGraph, a: Snap, b: Snap): Pt[] | null {
   if (a.seg === b.seg || distM(a.lat, a.lng, b.lat, b.lng) < 12) return tidyPath([a, b]);
 
   const startSeg = g.segs[a.seg]!;
@@ -873,18 +1100,28 @@ export function stuckNudge(from: Pt, to: Pt, cutBuildings = false): Pt | null {
 }
 
 /** Keep a walk on the street graph. A vault door may add one short last step off the curb. */
-export function finishPath(path: Pt[] | null, from: Pt, to: Pt, opts?: { cutBuildings?: boolean; door?: boolean }): Pt[] | null {
+export function finishPath(
+  path: Pt[] | null,
+  from: Pt,
+  to: Pt,
+  opts?: { cutBuildings?: boolean; door?: boolean; graph?: StreetGraph | null },
+): Pt[] | null {
   const cut = Boolean(opts?.cutBuildings);
   const out = path && path.length ? path.slice() : [];
   if (cut) {
-    if (!out.length) out.push({ lat: from.lat, lng: from.lng });
-    if (distM(out[0]!.lat, out[0]!.lng, from.lat, from.lng) > 8) out.unshift({ lat: from.lat, lng: from.lng });
+    // Cutting through blocks still never starts on, ends on, or cuts across a freeway, ramp or feeder.
+    const g = opts?.graph ?? null;
+    const start = offFreeway(g, from);
+    const end = offFreeway(g, to);
+    if (!out.length) out.push({ lat: start.lat, lng: start.lng });
+    if (distM(out[0]!.lat, out[0]!.lng, start.lat, start.lng) > 8 && !hopTouchesFreeway(g, start, out[0]!)) out.unshift({ lat: start.lat, lng: start.lng });
     const last = out[out.length - 1]!;
-    if (distM(last.lat, last.lng, to.lat, to.lng) > 8) out.push({ lat: to.lat, lng: to.lng });
+    if (distM(last.lat, last.lng, end.lat, end.lng) > 8 && !hopTouchesFreeway(g, last, end)) out.push({ lat: end.lat, lng: end.lng });
   } else if (opts?.door && out.length) {
     const last = out[out.length - 1]!;
     const gap = distM(last.lat, last.lng, to.lat, to.lng);
-    if (gap > 6 && gap <= 110) out.push({ lat: to.lat, lng: to.lng });
+    // The door step never lands on, or cuts across, a freeway or ramp (an old lamp left beside a feeder).
+    if (gap > 6 && gap <= 110 && !hopTouchesFreeway(opts.graph ?? null, last, to)) out.push({ lat: to.lat, lng: to.lng });
   }
   if (!out.length) return null;
   const tidy = tidyPath(out);
@@ -932,7 +1169,7 @@ export function routeHugsGraph(g: StreetGraph, path: Pt[], maxOff = 32): boolean
 /** Online route with an offline graph fallback. Resolves null once `signal` aborts, never a stale path. */
 export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220, from) : to;
-  const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
+  const snappedFrom = g ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140)) : from;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
   // Aborted (map torn down, city changed): no fallback path. The caller's map may be gone.
   if (signal?.aborted) return null;
@@ -948,12 +1185,20 @@ export function pickWalk(g: StreetGraph | null, online: Pt[] | null, from: Pt, t
   const local = g ? routeOnGraph(g, from, to) : null;
   if (online && online.length >= 2) {
     if (!g || !g.segs.length) return tidyPath(online);
-    if (routeHugsGraph(g, online, WALK_HUG_M)) {
+    // 0.0.52b: a route that rides a freeway, ramp or feeder is never used or stitched in. A ramp that runs
+    // beside a street (the Ohio Street feeder over ground-level Ohio St) passes the 26 m hug test on its own.
+    const rides = freewayRide(g, online) >= FREEWAY_RIDE_M;
+    // The foot router snaps a start to its own nearest way — the parking aisle under the Ohio Street feeder,
+    // when we asked for the street beside it. A start that close to a freeway loses to the graph's walk.
+    const start = online[0]!;
+    const parked = local && distM(start.lat, start.lng, from.lat, from.lng) > 3 && besideFreeway(g, start);
+    if (!rides && !parked && routeHugsGraph(g, online, WALK_HUG_M)) {
       ingestLine(g, online);
       return tidyPath(online);
     }
-    // No graph route (outside what's loaded): the foot router is all we have.
-    return local ?? tidyPath(online);
+    if (local) return local;
+    // No graph route (outside what's loaded): the foot router is all we have — unless it rides a freeway.
+    return rides ? null : tidyPath(online);
   }
   return local;
 }
@@ -999,8 +1244,34 @@ export async function bootstrapDrive(lat: number, lng: number, hubs: Pt[], signa
   return g;
 }
 
+/** Baked freeway layer (scripts/bake-freeways.mts): delta-packed 1e-5° integers per line. */
+export function unpackFreeways(lines: number[][]): Pt[][] {
+  return lines.map((line) => {
+    const out: Pt[] = [];
+    let la = 0;
+    let lo = 0;
+    for (let i = 0; i + 1 < line.length; i += 2) {
+      la += line[i]!;
+      lo += line[i + 1]!;
+      out.push({ lat: la / 1e5, lng: lo / 1e5 });
+    }
+    return out;
+  });
+}
+
 export async function bootstrapStreets(cityId: string, lat: number, lng: number, hubs: Pt[], signal?: AbortSignal) {
   const g = createGraph(lat, lng);
+  // 0.0.52b: the city's freeway layer ships with the build, so walks are held off ramps and feeders even when
+  // the live street fetch fails and the graph is only the baked foot routes.
+  const fw = fetch(`/streets/${cityId}-fw.json`)
+    .then(async (res) => {
+      if (!res.ok) return;
+      const packed = (await res.json()) as { lines?: number[][] };
+      for (const line of unpackFreeways(packed.lines ?? [])) ingestFreeway(g, line);
+    })
+    .catch(() => {
+      /* live fetch brings freeways too */
+    });
   try {
     const res = await fetch(`/streets/${cityId}.json`);
     if (res.ok) {
@@ -1012,6 +1283,7 @@ export async function bootstrapStreets(cityId: string, lat: number, lng: number,
   } catch {
     /* live fetch next */
   }
+  await fw;
   if (g.segs.length < 8) {
     try {
       await expandGraph(g, lat, lng, 2000, signal);

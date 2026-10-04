@@ -25,6 +25,9 @@ import {
   onStreet,
   pathLength,
   pointAlongPath,
+  offFreeway,
+  hopTouchesFreeway,
+  clearOfFreeway,
   pullToStreet,
   randomOnStreet,
   routeDrive,
@@ -234,7 +237,7 @@ export function GameMap() {
       -Math.sin(pos.current.yaw + Math.PI / 2) * 7,
     );
     const g = graphRef.current;
-    const curb = g ? pullToStreet(g, side.lat, side.lng, 40) : side;
+    const curb = g ? offFreeway(g, pullToStreet(g, side.lat, side.lng, 40)) : side;
     pos.current.lat = curb.lat;
     pos.current.lng = curb.lng;
     pos.current.speed = 0;
@@ -540,7 +543,8 @@ export function GameMap() {
 
   function placeOnStreet(g: StreetGraph, lat: number, lng: number) {
     const snapped = pullToStreet(g, lat, lng, 140);
-    const p = clearCorner(g, snapped.lat, snapped.lng);
+    // A start (spawn, station, restored spot) never rests on a freeway, ramp or feeder.
+    const p = clearOfFreeway(g, offFreeway(g, clearCorner(g, snapped.lat, snapped.lng)));
     pos.current.lat = p.lat;
     pos.current.lng = p.lng;
     const city = CITIES[useGame.getState().cityId];
@@ -780,8 +784,10 @@ export function GameMap() {
     const cut = canCutBuildings(useGame.getState().scout);
     const walkTo = seated || cut ? (seated ? snapped : target) : snapped;
     const arrive = door && !cut && !seated ? target : walkTo;
+    // The walk starts on the closest street that isn't under or beside a freeway, ramp or feeder.
+    const walkFrom = g && !seated ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140, from)) : from;
     const apply = (raw: Pt[] | null) => {
-      const path = seated ? raw : finishPath(raw, cut ? from : (g ? pullToStreet(g, from.lat, from.lng, 140, from) : from), arrive, { cutBuildings: cut, door: door && !cut && !seated });
+      const path = seated ? raw : finishPath(raw, cut ? from : walkFrom, arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
       if (!path || path.length < 2) return false;
       const here = closestOnPath(path, pos.current.lat, pos.current.lng, routeAlong.current);
       if (here.dist > 160 && distM(path[0]!.lat, path[0]!.lng, from.lat, from.lng) > 40) return false;
@@ -794,7 +800,7 @@ export function GameMap() {
       return true;
     };
 
-    const local = net ? routeOnGraph(net, from, walkTo) : null;
+    const local = net ? routeOnGraph(net, seated || cut ? from : walkFrom, walkTo) : null;
     apply(local);
 
     // The online route resolves later; by then the map may have been torn down (boarding a fare,
@@ -818,7 +824,13 @@ export function GameMap() {
       const end = route[route.length - 1]!;
       const curb = graphRef.current ? nearest(graphRef.current, end.lat, end.lng, 40) : null;
       const offStreet = !curb || curb.dist > 16;
-      const rest = routeMode.current === "drive" || !graphRef.current || offStreet ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      // Off the street (an online route's last step, a door hop): fine, unless it's a freeway or ramp.
+      const rest =
+        routeMode.current === "drive" || !graphRef.current
+          ? end
+          : offStreet
+            ? offFreeway(graphRef.current, end)
+            : clearCorner(graphRef.current, end.lat, end.lng);
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
@@ -847,7 +859,13 @@ export function GameMap() {
       const end = route[route.length - 1]!;
       const curb = graphRef.current ? nearest(graphRef.current, end.lat, end.lng, 40) : null;
       const offStreet = !curb || curb.dist > 16;
-      const rest = routeMode.current === "drive" || !graphRef.current || offStreet ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      // Off the street (an online route's last step, a door hop): fine, unless it's a freeway or ramp.
+      const rest =
+        routeMode.current === "drive" || !graphRef.current
+          ? end
+          : offStreet
+            ? offFreeway(graphRef.current, end)
+            : clearCorner(graphRef.current, end.lat, end.lng);
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
@@ -889,7 +907,8 @@ export function GameMap() {
       const wp = waypoint.current;
       if (wp) {
         const left = distM(pos.current.lat, pos.current.lng, wp.lat, wp.lng);
-        const hop = stuckNudge(pos.current, wp, canCutBuildings(useGame.getState().scout));
+        const nudge = stuckNudge(pos.current, wp, canCutBuildings(useGame.getState().scout));
+        const hop = nudge && !hopTouchesFreeway(graphRef.current, pos.current, nudge) ? nudge : null;
         if (hop) {
           pos.current.lat = hop.lat;
           pos.current.lng = hop.lng;
@@ -1252,7 +1271,7 @@ export function GameMap() {
       }
       const box = wardRef.current;
       if (box && !inWard(box, pos.current.lat, pos.current.lng)) {
-        const held = clampWard(box, pos.current.lat, pos.current.lng);
+        const held = seated ? clampWard(box, pos.current.lat, pos.current.lng) : offFreeway(foot, clampWard(box, pos.current.lat, pos.current.lng));
         pos.current.lat = held.lat;
         pos.current.lng = held.lng;
         pos.current.speed = 0;

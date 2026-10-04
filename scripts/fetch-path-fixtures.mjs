@@ -17,9 +17,11 @@ const AREAS = {
   "daily-seattle": { lat: 47.6105, lng: -122.3378, r: 1900 },
   "daily-denver": { lat: 39.7476, lng: -104.9946, r: 1900 },
   "daily-nashville": { lat: 36.1605, lng: -86.7772, r: 1900 },
+  // 0.0.52b: River West — the Ohio Street feeder (I-90/94 motorway_link) over the North Branch, down to Union Station.
+  chicago: { lat: 41.8865, lng: -87.6425, r: 1600 },
 };
 const URLS = ["https://overpass.openstreetmap.fr/api/interpreter", "https://overpass-api.de/api/interpreter"];
-const KEEP = ["highway", "name", "ref", "foot", "access", "motorroad", "area", "sidewalk", "bridge", "tunnel", "layer"];
+const KEEP = ["highway", "name", "ref", "foot", "access", "motorroad", "area", "sidewalk", "sidewalk:both", "sidewalk:left", "sidewalk:right", "bridge", "tunnel", "layer"];
 const only = process.argv[2];
 for (const [id, a] of Object.entries(AREAS)) {
   if (only && id !== only) continue;
