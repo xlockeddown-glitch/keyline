@@ -25,6 +25,7 @@ import {
   onStreet,
   pathLength,
   pointAlongPath,
+  offFreeway,
   pullToStreet,
   randomOnStreet,
   routeDrive,
@@ -781,7 +782,7 @@ export function GameMap() {
     const walkTo = seated || cut ? (seated ? snapped : target) : snapped;
     const arrive = door && !cut && !seated ? target : walkTo;
     const apply = (raw: Pt[] | null) => {
-      const path = seated ? raw : finishPath(raw, cut ? from : (g ? pullToStreet(g, from.lat, from.lng, 140, from) : from), arrive, { cutBuildings: cut, door: door && !cut && !seated });
+      const path = seated ? raw : finishPath(raw, cut ? from : (g ? pullToStreet(g, from.lat, from.lng, 140, from) : from), arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
       if (!path || path.length < 2) return false;
       const here = closestOnPath(path, pos.current.lat, pos.current.lng, routeAlong.current);
       if (here.dist > 160 && distM(path[0]!.lat, path[0]!.lng, from.lat, from.lng) > 40) return false;
@@ -818,7 +819,13 @@ export function GameMap() {
       const end = route[route.length - 1]!;
       const curb = graphRef.current ? nearest(graphRef.current, end.lat, end.lng, 40) : null;
       const offStreet = !curb || curb.dist > 16;
-      const rest = routeMode.current === "drive" || !graphRef.current || offStreet ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      // Off the street (an online route's last step, a door hop): fine, unless it's a freeway or ramp.
+      const rest =
+        routeMode.current === "drive" || !graphRef.current
+          ? end
+          : offStreet
+            ? offFreeway(graphRef.current, end)
+            : clearCorner(graphRef.current, end.lat, end.lng);
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
@@ -847,7 +854,13 @@ export function GameMap() {
       const end = route[route.length - 1]!;
       const curb = graphRef.current ? nearest(graphRef.current, end.lat, end.lng, 40) : null;
       const offStreet = !curb || curb.dist > 16;
-      const rest = routeMode.current === "drive" || !graphRef.current || offStreet ? end : clearCorner(graphRef.current, end.lat, end.lng);
+      // Off the street (an online route's last step, a door hop): fine, unless it's a freeway or ramp.
+      const rest =
+        routeMode.current === "drive" || !graphRef.current
+          ? end
+          : offStreet
+            ? offFreeway(graphRef.current, end)
+            : clearCorner(graphRef.current, end.lat, end.lng);
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
@@ -1252,7 +1265,7 @@ export function GameMap() {
       }
       const box = wardRef.current;
       if (box && !inWard(box, pos.current.lat, pos.current.lng)) {
-        const held = clampWard(box, pos.current.lat, pos.current.lng);
+        const held = seated ? clampWard(box, pos.current.lat, pos.current.lng) : offFreeway(foot, clampWard(box, pos.current.lat, pos.current.lng));
         pos.current.lat = held.lat;
         pos.current.lng = held.lng;
         pos.current.speed = 0;

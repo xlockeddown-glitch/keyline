@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { canGrabMatch, createGraph, ingestOsmWays, MATCH_GRAB_M, nearest, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, type Pt } from "./streets.ts";
-import { isFreeway, isWalkableWay } from "./walkable.ts";
+import { canGrabMatch, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, type Pt } from "./streets.ts";
+import { isExpresswayNamed, isFreeway, isWalkableWay } from "./walkable.ts";
 import { freewayGap, freewayRun } from "./pathCheck.ts";
 
 // Real OSM snapshots (scripts/fetch-path-fixtures.mjs) around freeways that walks used to ride.
@@ -58,6 +58,15 @@ const CASES: { city: string; name: string; from: Pt; to: Pt }[] = [
   { city: "nashville", name: "Union Station → Music Row roundabout (over the I-40 loop)", from: { lat: 36.1572, lng: -86.7847 }, to: { lat: 36.1525, lng: -86.7925 } },
   { city: "nashville", name: "Charlotte Ave & 7th → Charlotte Ave west of the loop (I-40)", from: { lat: 36.164, lng: -86.786 }, to: { lat: 36.16, lng: -86.7985 } },
   { city: "nashville", name: "Nissan Stadium → East Nashville (across I-24)", from: { lat: 36.1665, lng: -86.7714 }, to: { lat: 36.169, lng: -86.762 } },
+  // 0.0.52b: Ryan's River West screenshot — the walker on the Ohio Street feeder (I-90/94 motorway_link) bridge over the
+  // North Branch, walking to Union Station / the next lamp. Starts sit on the feeder itself.
+  { city: "chicago", name: "Ohio St feeder bridge → Chicago Union Station", from: { lat: 41.89246, lng: -87.642 }, to: { lat: 41.8786, lng: -87.6394 } },
+  { city: "chicago", name: "Ohio St feeder at Desplaines → Chicago Union Station", from: { lat: 41.89243, lng: -87.6448 }, to: { lat: 41.8786, lng: -87.6394 } },
+  { city: "chicago", name: "Ohio St feeder at Kingsbury → Merchandise Mart lamp", from: { lat: 41.89247, lng: -87.641 }, to: { lat: 41.8885, lng: -87.635 } },
+  { city: "chicago", name: "Ohio St feeder at Union Ave → Civic Opera House lamp", from: { lat: 41.89253, lng: -87.6459 }, to: { lat: 41.8826, lng: -87.6373 } },
+  { city: "chicago", name: "Ohio St feeder at Orleans → Chicago & Franklin lamp", from: { lat: 41.89243, lng: -87.6378 }, to: { lat: 41.8966, lng: -87.6355 } },
+  { city: "chicago", name: "River West, Grand & Halsted → Chicago & Franklin (across the North Branch)", from: { lat: 41.8912, lng: -87.6476 }, to: { lat: 41.8966, lng: -87.6355 } },
+  { city: "chicago", name: "Ontario feeder at Orleans → Ohio & Halsted, River West", from: { lat: 41.893, lng: -87.6385 }, to: { lat: 41.8922, lng: -87.6478 } },
 ];
 
 test("walkable rule: freeways, ramps, and foot=no never walk; streets and sidewalks do", () => {
@@ -80,7 +89,7 @@ test("foot routing never falls back to a car router", () => {
 });
 
 test("walk graph drops every freeway way from a raw fetch", () => {
-  for (const city of ["detroit", "nyc", "austin", "la"]) {
+  for (const city of ["detroit", "nyc", "austin", "la", "chicago"]) {
     const g = walkGraph(city);
     const fw = fixture(city).ways.filter((w) => isFreeway(w.tags));
     assert.ok(fw.length > 5, `${city} fixture has freeways`);
@@ -105,9 +114,10 @@ for (const c of CASES) {
     const fw = freeways(c.city);
     const a = pullToStreet(g, c.from.lat, c.from.lng, 140);
     const b = pullToStreet(g, c.to.lat, c.to.lng, 220, c.from);
-    // Start and end snap to walkable ways, never a freeway centerline.
-    assert.ok(freewayGap(a, fw) > 3, `start snapped onto a freeway (${freewayGap(a, fw).toFixed(1)} m)`);
-    assert.ok(freewayGap(b, fw) > 3, `end snapped onto a freeway (${freewayGap(b, fw).toFixed(1)} m)`);
+    // Start and end snap to walkable ways, never a freeway centerline (a street or lot under a viaduct is fine).
+    const walk = walkables(c.city);
+    assert.ok(freewayGap(a, fw) > 3 || freewayGap(a, walk) < 1, `start snapped onto a freeway (${freewayGap(a, fw).toFixed(1)} m)`);
+    assert.ok(freewayGap(b, fw) > 3 || freewayGap(b, walk) < 1, `end snapped onto a freeway (${freewayGap(b, fw).toFixed(1)} m)`);
     const path = routeOnGraph(g, a, b);
     assert.ok(path && path.length >= 2, "a walk exists");
     const { run, at } = ride(c.city, path!);
@@ -142,7 +152,7 @@ test("an online route down the Lodge trench loses to the walk graph", () => {
 });
 
 test("baked city streets don't ride freeways", () => {
-  for (const city of ["detroit", "nyc", "austin", "seattle", "denver", "nashville"]) {
+  for (const city of ["detroit", "nyc", "austin", "seattle", "denver", "nashville", "chicago"]) {
     const baked = JSON.parse(readFileSync(new URL(`../../public/streets/${city}.json`, import.meta.url), "utf8")) as { lines: number[][] };
     for (const l of baked.lines) {
       const path: Pt[] = [];
@@ -192,3 +202,187 @@ test("a match an old save left in the Lodge trench is collectable from the close
   const away = pullToStreet(g, curb.lat + 0.0006, curb.lng, 140);
   assert.equal(canGrabMatch(g, away, spot!.p), false);
 });
+
+// ---- 0.0.52b: the Ohio Street feeder (Chicago, River West) and the freeway no-walk layer ----
+
+/** The Ohio Street feeder (I-90/94 motorway_link) from Halsted over the North Branch to Orleans, as one line. */
+function ohioFeeder(): Pt[] {
+  const f = fixture("chicago");
+  const order = [898010482, 23810482, 1315998481, 1013537658, 1315998484, 421091628, 435551676, 26231854];
+  const out: Pt[] = [];
+  for (const id of order) {
+    const w = f.ways.find((x) => x.id === id);
+    assert.ok(w, `feeder way ${id} in the Chicago fixture`);
+    assert.equal(w!.tags.highway, "motorway_link");
+    out.push(...pts(w!));
+  }
+  return out;
+}
+const FEEDER_BRIDGE = { lat: 41.89246, lng: -87.642 };
+const UNION_STATION = { lat: 41.8786, lng: -87.6394 };
+
+test("walkable rule: expressway lanes mapped as arterials and motorroad=yes are freeways; service drives still walk", () => {
+  assert.equal(isWalkableWay({ highway: "primary", name: "Kennedy Expressway" }), false);
+  assert.equal(isFreeway({ highway: "primary", name: "Kennedy Expressway" }), true);
+  assert.equal(isFreeway({ highway: "secondary", name: "Ohio Street Feeder" }), true);
+  assert.equal(isWalkableWay({ highway: "primary", name: "Kennedy Expressway", sidewalk: "both" }), true, "a mapped sidewalk walks");
+  assert.equal(isWalkableWay({ highway: "primary", name: "Kennedy Expressway", "sidewalk:right": "separate" }), true);
+  assert.equal(isWalkableWay({ highway: "primary", name: "Kennedy Expressway", foot: "yes" }), true);
+  assert.equal(isWalkableWay({ highway: "tertiary", name: "Fisher Freeway Service Drive West" }), true);
+  assert.equal(isWalkableWay({ highway: "tertiary", name: "West Fisher Freeway" }), true, "tertiary service drive");
+  assert.equal(isWalkableWay({ highway: "secondary", name: "North Interstate 35" }), true, "I-35 frontage road");
+  assert.equal(isExpresswayNamed({ highway: "secondary", name: "John C Lodge Service Drive" }), false);
+  assert.equal(isFreeway({ highway: "primary", motorroad: "yes" }), true);
+  assert.equal(isFreeway({ highway: "primary", name: "West Ohio Street" }), false);
+  // The Chicago fixture's feeder really is tagged as a ramp — the walk filter drops it by class, not by name.
+  assert.ok(ohioFeeder().length > 10);
+});
+
+test("Chicago: the walk graph keeps the Ohio Street feeder only as a no-walk layer", () => {
+  const g = walkGraph("chicago");
+  assert.ok(g.fw.length > 200, "freeway layer loaded");
+  // On the feeder bridge deck over the river: freeway. The walk graph has nothing there.
+  assert.equal(onFreeway(g, FEEDER_BRIDGE), true);
+  assert.ok((nearest(g, FEEDER_BRIDGE.lat, FEEDER_BRIDGE.lng, 30)?.dist ?? Infinity) > 20, "no walkable way on the feeder bridge");
+  // Ground-level West Ohio Street beside the feeder, and Halsted on its bridge over it, are walkable.
+  assert.equal(onFreeway(g, { lat: 41.89229, lng: -87.6400 }), false, "West Ohio Street under the feeder");
+  assert.equal(onFreeway(g, { lat: 41.89245, lng: -87.64766 }), false, "Halsted over the feeder");
+  // The feeder itself is all freeway to the walk check.
+  assert.ok(freewayRide(g, ohioFeeder()) > 200, "riding the feeder scores as a freeway ride");
+});
+
+test("Chicago: a walker dropped on the Ohio Street feeder is moved to the closest walkable street", () => {
+  const g = walkGraph("chicago");
+  const walk = walkables("chicago");
+  for (const p of ohioFeeder()) {
+    const q = offFreeway(g, p);
+    assert.equal(onFreeway(g, q), false, `still on the feeder at ${p.lat},${p.lng}`);
+    assert.ok(freewayGap(q, walk) < 6, `moved onto a walkable way (${freewayGap(q, walk).toFixed(1)} m off)`);
+    assert.ok(distM(p, q) < 120, `moved ${distM(p, q).toFixed(0)} m`);
+  }
+  // Not on a freeway: left alone.
+  const street = { lat: 41.89229, lng: -87.64 };
+  assert.deepEqual(offFreeway(g, street), street);
+});
+
+test("Chicago: from the stub path at the foot of the feeder bridge, the walk still comes off the graph", () => {
+  const g = walkGraph("chicago");
+  // 1316013400: a two-node footway the rest of the network doesn't reach. A snap onto it used to make
+  // routeOnGraph return null, and pickWalk then took the online route unchecked.
+  const stub = { lat: 41.89222, lng: -87.64128 };
+  const path = routeOnGraph(g, stub, pullToStreet(g, UNION_STATION.lat, UNION_STATION.lng, 220, stub));
+  assert.ok(path && path.length >= 2, "a graph walk exists from the stub");
+  assert.ok(ride("chicago", path!).run < 20);
+  assert.ok(distM(path![0]!, stub) < 90, "starts near the walker");
+});
+
+test("Chicago: an online route along the Ohio Street feeder is never used or stitched in", () => {
+  const g = walkGraph("chicago");
+  const feeder = ohioFeeder();
+  const from = pullToStreet(g, feeder[0]!.lat, feeder[0]!.lng, 140);
+  const to = pullToStreet(g, feeder[feeder.length - 1]!.lat, feeder[feeder.length - 1]!.lng, 220);
+  const online = [from, ...feeder, to];
+  const before = g.segs.length;
+  const out = pickWalk(g, online, from, to);
+  assert.ok(out && out.length >= 2);
+  assert.ok(ride("chicago", out!).run < 20, "graph route chosen over the feeder");
+  assert.equal(g.segs.length, before, "feeder geometry not stitched into the walk graph");
+  // No graph route at all (two scraps of street): the feeder route is still refused.
+  const bare = createGraph(41.8925, -87.642);
+  ingestFreeway(bare, feeder);
+  ingestLine(bare, [from, { lat: from.lat - 0.0003, lng: from.lng }]);
+  ingestLine(bare, [to, { lat: to.lat - 0.0003, lng: to.lng }]);
+  assert.equal(pickWalk(bare, online, from, to), null);
+});
+
+test("Chicago: loose steps off the graph can't walk onto the feeder, and a walker on it steps off", () => {
+  const g = walkGraph("chicago");
+  // Over the river 12 m south of the feeder bridge, well clear of any walkable way (a door step, an old spot).
+  let p: Pt = { lat: 41.89235, lng: -87.642 };
+  assert.ok((nearest(g, p.lat, p.lng, 80)?.dist ?? 0) > 16, "off the graph: loose steps");
+  assert.equal(onFreeway(g, p), false);
+  for (let i = 0; i < 40; i++) {
+    p = constrainStep(g, p.lat, p.lng, 0, 1.2, true); // north, onto the bridge (0.0.52 walked straight across it)
+    assert.equal(onFreeway(g, p), false, `walked onto the feeder at ${p.lat},${p.lng}`);
+  }
+  assert.ok(p.lat < 41.8924, "held south of the feeder");
+  // Standing on the deck already: the next step goes to a walkable street.
+  const q = constrainStep(g, FEEDER_BRIDGE.lat, FEEDER_BRIDGE.lng, Math.PI / 2, 1.2, true);
+  assert.equal(onFreeway(g, q), false);
+  assert.ok((nearest(g, q.lat, q.lng, 5)?.dist ?? Infinity) < 1, "on a walkable way");
+});
+
+test("Chicago: a door step never lands on or cuts across the feeder", () => {
+  const g = walkGraph("chicago");
+  const curb = pullToStreet(g, 41.89235, -87.6407, 20); // Kingsbury sidewalk at the east foot of the feeder bridge
+  const path = [pullToStreet(g, 41.8915, -87.6399, 60), curb];
+  const lamp = { lat: 41.89245, lng: -87.6417 }; // a lamp an old save left on the feeder bridge deck
+  assert.equal(onFreeway(g, lamp), true);
+  const out = finishPath(path, path[0]!, lamp, { door: true, graph: g })!;
+  assert.ok(distM(out[out.length - 1]!, lamp) > 6, "no hop onto the feeder");
+  // A door off the curb that isn't a freeway still gets its step.
+  const door = { lat: 41.8921, lng: -87.6404 };
+  const ok = finishPath(path, path[0]!, door, { door: true, graph: g })!;
+  assert.ok(distM(ok[ok.length - 1]!, door) < 1);
+});
+
+test("every fixture city: a start dropped on any ramp or feeder snaps off it and walks off freeways", () => {
+  for (const city of ["chicago", "detroit", "nyc", "austin", "la", "seattle", "denver", "nashville"]) {
+    const f = fixture(city);
+    const g = walkGraph(city);
+    const ramps = f.ways.filter((w) => /_link$/.test(w.tags.highway ?? ""));
+    assert.ok(ramps.length > 10, `${city} has ramps`);
+    const center = pullToStreet(g, f.area.lat, f.area.lng, 220);
+    let checked = 0;
+    let rides = 0;
+    const step = Math.max(1, Math.floor(ramps.length / 14));
+    for (let i = 0; i < ramps.length; i += step) {
+      const line = pts(ramps[i]!);
+      const p = line[Math.floor(line.length / 2)]!;
+      const start = pullToStreet(g, offFreeway(g, p).lat, offFreeway(g, p).lng, 140);
+      assert.equal(onFreeway(g, start), false, `${city}: start on ramp ${ramps[i]!.id} snapped onto a freeway at ${start.lat},${start.lng}`);
+      const path = routeOnGraph(g, start, center);
+      if (!path) continue;
+      checked++;
+      const r = ride(city, path);
+      if (r.run >= 20) {
+        rides++;
+        console.log(`${city}: ramp ${ramps[i]!.id} walk rides ${r.run.toFixed(0)} m near ${r.at?.lat},${r.at?.lng}`);
+      }
+    }
+    assert.ok(checked >= 5, `${city}: ${checked} ramp starts walked`);
+    assert.equal(rides, 0, `${city}: walks from ramp starts rode a freeway`);
+  }
+});
+
+test("baked freeway layers: every city ships one, and Chicago's holds the Ohio Street feeder with no live fetch", async () => {
+  const { CITIES } = await import("./data.ts");
+  for (const id of Object.keys(CITIES)) {
+    const packed = JSON.parse(readFileSync(new URL(`../../public/streets/${id}-fw.json`, import.meta.url), "utf8")) as { lines: number[][] };
+    assert.ok(packed.lines.length > 20, `${id}-fw.json has freeway lines`);
+  }
+  // The sparse graph a failed Overpass fetch leaves: baked foot routes + the baked freeway layer only.
+  const g = createGraph(41.8827, -87.6233);
+  const baked = JSON.parse(readFileSync(new URL("../../public/streets/chicago.json", import.meta.url), "utf8")) as { lines: number[][] };
+  for (const l of baked.lines) {
+    const line: Pt[] = [];
+    for (let i = 0; i + 1 < l.length; i += 2) line.push({ lat: l[i]!, lng: l[i + 1]! });
+    ingestLine(g, line);
+  }
+  const fwBaked = JSON.parse(readFileSync(new URL("../../public/streets/chicago-fw.json", import.meta.url), "utf8")) as { lines: number[][] };
+  for (const line of unpackFreeways(fwBaked.lines)) ingestFreeway(g, line);
+  // Every point of the fixture's feeder is covered by the baked layer.
+  for (const p of ohioFeeder()) assert.equal(onFreeway(g, p), true, `baked layer misses the feeder at ${p.lat},${p.lng}`);
+  // Loose walking (the walker is far off this sparse graph) can't climb onto the feeder from beside it.
+  let p: Pt = { lat: 41.8922, lng: -87.6445 }; // ground-level Ohio St at Desplaines, 20 m south of the feeder
+  assert.ok((nearest(g, p.lat, p.lng, 80)?.dist ?? Infinity) > 16, "off the sparse graph");
+  for (let i = 0; i < 60; i++) {
+    p = constrainStep(g, p.lat, p.lng, 0, 1.2, true);
+    assert.equal(onFreeway(g, p), false, `walked onto the feeder at ${p.lat},${p.lng}`);
+  }
+});
+
+function distM(a: Pt, b: Pt) {
+  const k = 111_320;
+  return Math.hypot((a.lat - b.lat) * k, (a.lng - b.lng) * k * Math.cos((a.lat * Math.PI) / 180));
+}

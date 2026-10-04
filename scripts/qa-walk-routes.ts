@@ -42,4 +42,25 @@ for (const city of ["detroit", "austin", "nyc", "seattle", "denver", "nashville"
     console.log(res.run >= 20 ? "FAIL" : "ok  ", city.padEnd(8), name, `freeway ride ${res.run.toFixed(0)} m`, res.at ? `near ${res.at.lat.toFixed(5)},${res.at.lng.toFixed(5)}` : "");
   }
 }
+// 0.0.52b: ramp/feeder spot-check — from the middle of a few motorway/trunk ramps in every fixture city (the Ohio
+// Street feeder in Chicago among them), the online foot router's walk to the fixture's center stays off freeways.
+for (const city of ["chicago", "detroit", "nyc", "austin", "la", "seattle", "denver", "nashville"]) {
+  const f = JSON.parse(readFileSync(new URL(`../src/game/fixtures/paths-${city}.json`, import.meta.url), "utf8"));
+  const P = (w: { line: number[] }) => { const o = []; for (let i = 0; i + 1 < w.line.length; i += 2) o.push({ lat: w.line[i]!, lng: w.line[i + 1]! }); return o; };
+  const fw = f.ways.filter((w: { tags: object }) => isFreeway(w.tags)).map(P);
+  const walk = f.ways.filter((w: { tags: object }) => isWalkableWay(w.tags)).map(P);
+  const ramps = f.ways.filter((w: { tags: { highway?: string } }) => /^(motorway|trunk)_link$/.test(w.tags.highway ?? ""));
+  const pick = city === "chicago" ? [...ramps.filter((w: { id: number }) => [898010482, 1013537658, 435551676].includes(w.id)), ramps[0]] : [0, 1, 2, 3].map((k) => ramps[Math.floor(((k + 0.5) * ramps.length) / 4)]);
+  for (const w of pick) {
+    if (!w) continue;
+    const line = P(w);
+    const a = line[Math.floor(line.length / 2)]!;
+    const path = await osrmRoute(a, { lat: f.area.lat, lng: f.area.lng });
+    const name = `ramp ${w.id} (${w.tags.name ?? w.tags.ref ?? w.tags.highway}) → center`;
+    if (!path) { console.log("NO ROUTE", city, name); continue; }
+    const r = freewayRun(path, fw, 6, 25, walk, 4);
+    if (r.run >= 20) bad++;
+    console.log(r.run >= 20 ? "FAIL" : "ok  ", city.padEnd(8), name, `freeway ride ${r.run.toFixed(0)} m`, r.at ? `near ${r.at.lat.toFixed(5)},${r.at.lng.toFixed(5)}` : "");
+  }
+}
 process.exit(bad ? 1 : 0);
