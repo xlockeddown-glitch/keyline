@@ -274,6 +274,10 @@ test("Chicago: from the stub path at the foot of the feeder bridge, the walk sti
   assert.ok(path && path.length >= 2, "a graph walk exists from the stub");
   assert.ok(ride("chicago", path!).run < 20);
   assert.ok(distM(path![0]!, stub) < 90, "starts near the walker");
+  // …on Kingsbury, south of the feeder like the walker — not up the parking aisle under the deck.
+  const fw = freeways("chicago");
+  assert.ok(freewayGap(path![0]!, fw) > 7, `starts beside the feeder (${freewayGap(path![0]!, fw).toFixed(1)} m)`);
+  assert.ok(path![0]!.lat < 41.8924, "starts south of the feeder");
 });
 
 test("Chicago: an online route along the Ohio Street feeder is never used or stitched in", () => {
@@ -428,6 +432,10 @@ test("Chicago: a walk start on the parking aisle under the feeder slides clear o
   assert.ok(distM(aisle, q) <= 40, `moved ${distM(aisle, q).toFixed(0)} m`);
   const path = routeOnGraph(g, q, pullToStreet(g, UNION_STATION.lat, UNION_STATION.lng, 220, q));
   assert.ok(path && ride("chicago", path).run < 20);
+  // The foot router snaps that start back onto the aisle: the graph's walk from the clear start wins.
+  const online = [aisle, { lat: 41.8922, lng: -87.6409 }, { lat: 41.8915, lng: -87.6399 }];
+  const picked = pickWalk(g, online, q, pullToStreet(g, 41.8915, -87.6399, 60, q))!;
+  assert.ok(picked && freewayGap(picked[0]!, freeways("chicago")) > 7, "picked walk starts clear of the feeder");
   // Away from freeways, untouched.
   const street = { lat: 41.8915, lng: -87.6399 };
   const s = pullToStreet(g, street.lat, street.lng, 60);

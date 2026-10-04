@@ -350,6 +350,13 @@ export function offFreeway(g: StreetGraph | null, p: Pt): Pt {
   return onStreet(g, p.lat, p.lng);
 }
 
+/** Within a ramp's width of a freeway centerline, walkable way or not (a lot or aisle under a viaduct counts). */
+export function besideFreeway(g: StreetGraph | null, p: Pt): boolean {
+  if (!g || !g.fw.length) return false;
+  const { x, y } = toXY(g, p.lat, p.lng);
+  return fwNear(g, x, y, FW_TOL);
+}
+
 /**
  * A walk start or resting spot that doesn't even look like it's on a freeway: when `p` (already on the walk graph)
  * sits within a ramp's width of a freeway centerline — a parking aisle or scrap of path under the Ohio Street
@@ -357,8 +364,22 @@ export function offFreeway(g: StreetGraph | null, p: Pt): Pt {
  */
 export function clearOfFreeway(g: StreetGraph | null, p: Pt, extra = 40): Pt {
   if (!g || !g.fw.length || !g.segs.length) return p;
+  if (!besideFreeway(g, p)) return p;
+  return nearestClear(g, p, extra) ?? p;
+}
+
+function crossesFw(g: StreetGraph, ax: number, ay: number, bx: number, by: number): boolean {
+  const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 3));
+  for (let k = 1; k < n; k++) if (fwNear(g, ax + ((bx - ax) * k) / n, ay + ((by - ay) * k) / n, FW_TOL)) return true;
+  return false;
+}
+
+/**
+ * Closest walk-graph point within `extra` m of `p` that's clear of every freeway centerline (optionally on one
+ * component). With `sameSide`, the straight line from `p` to it may not pass under or over a freeway either.
+ */
+function nearestClear(g: StreetGraph, p: Pt, extra: number, only?: Int32Array, compId?: number, sameSide = false): Pt | null {
   const here = toXY(g, p.lat, p.lng);
-  if (!fwNear(g, here.x, here.y, FW_TOL)) return p;
   const cx = Math.floor(here.x / g.cell);
   const cy = Math.floor(here.y / g.cell);
   const ring = Math.ceil(extra / g.cell) + 1;
@@ -369,6 +390,7 @@ export function clearOfFreeway(g: StreetGraph | null, p: Pt, extra = 40): Pt {
       if (!list) continue;
       for (const id of list) {
         const seg = g.segs[id]!;
+        if (only && compId !== undefined && only[seg.a] !== compId) continue;
         const a = toXY(g, g.nodes[seg.a]!.lat, g.nodes[seg.a]!.lng);
         const b = toXY(g, g.nodes[seg.b]!.lat, g.nodes[seg.b]!.lng);
         const len = Math.hypot(b.x - a.x, b.y - a.y);
@@ -379,12 +401,13 @@ export function clearOfFreeway(g: StreetGraph | null, p: Pt, extra = 40): Pt {
           const d = Math.hypot(x - here.x, y - here.y);
           if (d > extra || (best && d >= best.d)) continue;
           if (fwNear(g, x, y, FW_TOL)) continue;
+          if (sameSide && crossesFw(g, here.x, here.y, x, y)) continue;
           best = { x, y, d };
         }
       }
     }
   }
-  if (!best) return p;
+  if (!best) return null;
   const m = metersPerDegLng(g.originLat);
   return { lat: g.originLat + best.y / M_PER_DEG_LAT, lng: g.originLng + best.x / m };
 }
@@ -961,8 +984,16 @@ export function routeOnGraph(g: StreetGraph, from: Pt, to: Pt): Pt[] | null {
   }
   const goalComp = labels[g.segs[b.seg]!.a]!;
   if (goalComp !== startComp) {
-    const a2 = nearest(g, from.lat, from.lng, 160, labels, goalComp);
-    if (a2 && a2.dist <= a.dist + 90) return searchGraph(g, a2, b);
+    let a2 = nearest(g, from.lat, from.lng, 160, labels, goalComp);
+    if (a2 && a2.dist <= a.dist + 90) {
+      // …at the closest spot there clear of freeways (not the parking aisle under the Ohio Street feeder).
+      if (besideFreeway(g, a2)) {
+        const c = nearestClear(g, from, a2.dist + 60, labels, goalComp, true) ?? nearestClear(g, from, a2.dist + 60, labels, goalComp);
+        const s2 = c && nearest(g, c.lat, c.lng, 5, labels, goalComp);
+        if (s2) a2 = s2;
+      }
+      return searchGraph(g, a2, b);
+    }
   }
   return null;
 }
@@ -1157,7 +1188,11 @@ export function pickWalk(g: StreetGraph | null, online: Pt[] | null, from: Pt, t
     // 0.0.52b: a route that rides a freeway, ramp or feeder is never used or stitched in. A ramp that runs
     // beside a street (the Ohio Street feeder over ground-level Ohio St) passes the 26 m hug test on its own.
     const rides = freewayRide(g, online) >= FREEWAY_RIDE_M;
-    if (!rides && routeHugsGraph(g, online, WALK_HUG_M)) {
+    // The foot router snaps a start to its own nearest way — the parking aisle under the Ohio Street feeder,
+    // when we asked for the street beside it. A start that close to a freeway loses to the graph's walk.
+    const start = online[0]!;
+    const parked = local && distM(start.lat, start.lng, from.lat, from.lng) > 3 && besideFreeway(g, start);
+    if (!rides && !parked && routeHugsGraph(g, online, WALK_HUG_M)) {
       ingestLine(g, online);
       return tidyPath(online);
     }
@@ -1170,7 +1205,7 @@ export function pickWalk(g: StreetGraph | null, online: Pt[] | null, from: Pt, t
 
 export async function routeDrive(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 160) : to;
-  const snappedFrom = g ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140)) : from;
+  const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
   if (g && distM(snappedTo.lat, snappedTo.lng, to.lat, to.lng) > 160) return null;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, true);
   if (signal?.aborted) return null;
