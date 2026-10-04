@@ -1,6 +1,6 @@
 import { Lock, Ticket } from "lucide-react";
 import { CITIES } from "@/game/data";
-import { PASS_POINTS, lockLine, passProgress, unlockCost } from "@/game/cityPass";
+import { PASS_POINTS, lockLine, lockShort, passProgress, unlockCost } from "@/game/cityPass";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
 
@@ -37,9 +37,9 @@ export function PassProgressRow({ compact = false }: { compact?: boolean }) {
 }
 
 /** Lock badge + what a locked city needs. Empty for an open city. */
-export function LockNote({ id }: { id: CityId }) {
+export function LockNote({ id, short = false }: { id: CityId; short?: boolean }) {
   const cities = useGame((s) => s.cities);
-  const line = lockLine(cities, id);
+  const line = short ? lockShort(cities, id) : lockLine(cities, id);
   if (!line) return null;
   return (
     <span className="mt-1 flex items-start gap-1.5 text-xs text-fg-subtle" data-testid="city-lock">

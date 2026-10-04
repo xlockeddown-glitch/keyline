@@ -153,13 +153,22 @@ export function passProgress(u: CityUnlocks, id: CityId, atlas: Record<string, t
   };
 }
 
+/** Short note for a locked city at the train station itself (the Unlock button sits beside it). */
+export function lockShort(u: CityUnlocks, id: CityId): string {
+  const cost = unlockCost(u, id);
+  if (cost === "free") return "Your free second city";
+  if (cost === "pass") return "Locked · 1 city pass";
+  if (cost === "locked") return "Locked · needs a city pass";
+  return "";
+}
+
 /** One line for a locked city: what it takes. */
 export function lockLine(u: CityUnlocks, id: CityId): string {
   const cost = unlockCost(u, id);
   if (cost === "open" || cost === "start") return "";
-  if (cost === "free") return "Locked · your second city is free. Pick it at the train station.";
+  if (cost === "free") return "Locked · Your second city is free. Pick it at the train station.";
   if (cost === "pass") return `Locked · 1 city pass (you have ${u.passes}). Unlock at the train station.`;
-  return `Locked · needs a city pass: ${PASS_POINTS} lamp points (amber 1, red 4, violet 10), every place in a city, or ${RUNS_PER_PASS} Lantern Runs in one city.`;
+  return `Locked · Needs a city pass: ${PASS_POINTS} lamp points (amber 1, red 4, violet 10), every place in a city, or ${RUNS_PER_PASS} Lantern Runs in one city.`;
 }
 
 type OldSave = {

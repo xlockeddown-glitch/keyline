@@ -53,12 +53,12 @@ export function Timetable({ onClose, onPunch }: Props) {
                   <span className="min-w-0">
                     <span className="font-display text-xl leading-none text-fg-muted">{c.name}</span>
                     <span className="mt-1 block kicker">{c.region}</span>
-                    <LockNote id={c.id} />
+                    <LockNote id={c.id} short />
                   </span>
                   {cost === "free" || cost === "pass" ? (
                     <button
                       type="button"
-                      className={`btn shrink-0 px-3 text-xs ${cost === "free" ? "btn-primary" : "btn-ghost"}`}
+                      className="btn btn-quiet shrink-0 px-3 text-xs"
                       data-testid={`unlock-${c.id}`}
                       onClick={() => {
                         sfx.ui();

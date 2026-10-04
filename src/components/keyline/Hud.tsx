@@ -92,11 +92,17 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
 
   const atDesk = Boolean(nearest && isFareDesk(nearest) && inReach && !hud.seated);
   const canPunch = atDesk && fares > 0;
+  // 0.0.55: the station desk also opens the timetable without a ticket when there's a city to unlock (free pick or a pass).
+  const freePick = useGame((s) => s.cities.freePick);
+  const passes = useGame((s) => s.cities.passes);
+  const canUnlock = atDesk && (freePick || passes > 0);
+  const canDesk = canPunch || canUnlock;
 
   let cue = hud.seated ? "Park at the curb. The door is on foot." : "Lamps mark the questions. Click the map to walk.";
   if (nearest) {
     if (hud.seated) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
     else if (canPunch) cue = `Board train · T · ${nearest.name}`;
+    else if (canUnlock) cue = `Train station · T · unlock a city (${freePick ? "free pick" : `${passes} pass${passes === 1 ? "" : "es"}`})`;
     else if (atDesk && !fares) cue = `Train station. ${ticketHint(cityVaults)}.`;
     else if (atShop) cue = `${nearest.name} · coats for hire · E`;
     else if (nearest && isScoutShop(nearest)) cue = `${formatDist(hud.nearestDist)} · brass awning, coats`;
@@ -314,11 +320,11 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
 
           <button
             type="button"
-            className={`act-btn pointer-events-auto ${canPunch ? "is-armed" : armed ? "is-armed" : ""}`}
-            onClick={canPunch ? onTimetable : onInteract}
-            aria-label={canPunch ? "Board train" : atShop ? "Open outfitter" : armed ? "Light lamp" : "Interact"}
+            className={`act-btn pointer-events-auto ${canDesk ? "is-armed" : armed ? "is-armed" : ""}`}
+            onClick={canDesk ? onTimetable : onInteract}
+            aria-label={canPunch ? "Board train" : canUnlock ? "Open timetable" : atShop ? "Open outfitter" : armed ? "Light lamp" : "Interact"}
           >
-            {canPunch ? "T" : "E"}
+            {canDesk ? "T" : "E"}
           </button>
         </div>
       )}
