@@ -6,10 +6,15 @@ import { CITIES, cityShop } from "@/game/data";
 import type { CityId } from "@/game/types";
 import { AudioDock } from "./AudioDock";
 import { FirstLoginOverlay, useEnterGate } from "./FirstLogin";
+import { LockNote, PassProgressRow } from "./CityPass";
+import { isUnlocked } from "@/game/cityPass";
 
 export function CitySelect() {
   const setScreen = useGame((s) => s.setScreen);
   const atlas = useGame((s) => s.atlas);
+  const cities = useGame((s) => s.cities);
+  // 0.0.55: a new player (no start city yet) picks any of the 15 to start; after that, locked cities show what they need.
+  const picking = !cities.start;
   const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();
 
   function enter(id: CityId) {
@@ -32,19 +37,33 @@ export function CitySelect() {
         </button>
         <div className="min-w-0 flex-1">
           <p className="kicker">Fifteen cities</p>
-          <h1 className="font-display text-3xl leading-none">Pick a city</h1>
+          <h1 className="font-display text-3xl leading-none">{picking ? "Pick your first city" : "Pick a city"}</h1>
         </div>
         <AudioDock />
       </header>
+      <div className="mx-auto max-w-3xl px-5 pb-3">
+        {picking ? (
+          <p className="text-sm text-pretty text-fg-muted" data-testid="start-picker">
+            Start anywhere. Your second city is free, picked at the train station. After that, each city takes a city pass, earned on the street.
+          </p>
+        ) : (
+          <div className="panel p-4">
+            <PassProgressRow compact />
+          </div>
+        )}
+      </div>
       <ul className="mx-auto grid max-w-3xl gap-3 px-5 pb-16 sm:grid-cols-2">
         {allCities().map((c) => {
           const found = c.pois.filter((p) => atlas[p.id]).length;
+          const locked = !picking && !isUnlocked(cities, c.id);
           return (
             <li key={c.id}>
               <button
                 type="button"
-                className="panel w-full p-5 text-left transition-colors duration-[var(--motion-fast,250ms)] hover:border-border-strong"
-                onClick={() => enter(c.id)}
+                className={`panel w-full p-5 text-left transition-colors duration-[var(--motion-fast,250ms)] ${locked ? "opacity-70" : "hover:border-border-strong"}`}
+                aria-disabled={locked || undefined}
+                data-testid={`city-${c.id}`}
+                onClick={() => (locked ? sfx.ui() : enter(c.id))}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -63,6 +82,7 @@ export function CitySelect() {
                   {cityShop(c.id) ? ` · ${cityShop(c.id)!.name}` : ""}
                   {found ? ` · ${found} visited` : ""}
                 </p>
+                {locked ? <LockNote id={c.id} /> : null}
               </button>
             </li>
           );

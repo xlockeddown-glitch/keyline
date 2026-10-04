@@ -15,6 +15,8 @@ export function TitleScreen() {
   const cityId = useGame((s) => s.cityId);
   const journey = useGame((s) => s.journey);
   const tickJourney = useGame((s) => s.tickJourney);
+  // 0.0.55: a brand-new player picks a starting city first.
+  const needsStart = useGame((s) => !s.cities.start);
   const [rollsOpen, setRollsOpen] = useState(false);
   const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();
   const city = CITIES[cityId];
@@ -27,6 +29,10 @@ export function TitleScreen() {
     if (g.journey) {
       tickJourney();
       if (useGame.getState().journey) return;
+    }
+    if (!g.cities.start) {
+      setScreen("cities");
+      return;
     }
     requestEnter(id);
   }
@@ -51,10 +57,10 @@ export function TitleScreen() {
           ))}
           <span className="matchbook-cover">
             <strong>KEYLINE</strong>
-            <span className="matchbook-strike">{rideTo ? `Train · ${rideTo}` : city.name}</span>
+            <span className="matchbook-strike">{rideTo ? `Train · ${rideTo}` : needsStart ? "Pick a city" : city.name}</span>
           </span>
         </button>
-        <p className="book-lede">{rideTo ? `On the train to ${rideTo}.` : `Tap to walk ${city.name}.`}</p>
+        <p className="book-lede">{rideTo ? `On the train to ${rideTo}.` : needsStart ? "Tap to pick your first city." : `Tap to walk ${city.name}.`}</p>
         {points > 0 ? <p className="book-coin tabular-nums">{points.toLocaleString()}</p> : null}
         <div className="book-links">
           <button type="button" className="title-more" onClick={() => setScreen("cities")}>

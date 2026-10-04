@@ -3,6 +3,8 @@ import { sfx } from "@/game/audio";
 import { fareMs, formatEta, otherWards } from "@/game/ticket";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
+import { unlockCost } from "@/game/cityPass";
+import { LockNote, PassProgressRow } from "./CityPass";
 
 type Props = { onClose: () => void; onPunch: (id: CityId) => void };
 
@@ -10,6 +12,8 @@ export function Timetable({ onClose, onPunch }: Props) {
   const cityId = useGame((s) => s.cityId);
   const fares = useGame((s) => s.fares);
   const seated = useGame((s) => s.hud.seated);
+  const cities = useGame((s) => s.cities);
+  const unlock = useGame((s) => s.unlockCity);
 
   function punch(id: CityId) {
     sfx.ui();
@@ -36,8 +40,37 @@ export function Timetable({ onClose, onPunch }: Props) {
           </button>
         </header>
         <ul className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
-          {otherWards(cityId).map((c) => {
+          <li className="border-b border-border pb-3">
+            <PassProgressRow compact />
+          </li>
+          {[...otherWards(cityId)].sort((a, b) => Number(unlockCost(cities, a.id) !== "open") - Number(unlockCost(cities, b.id) !== "open")).map((c) => {
             const eta = formatEta(fareMs(cityId, c.id));
+            const cost = unlockCost(cities, c.id);
+            if (cost !== "open") {
+              // 0.0.55: a locked city shows the lock, what it needs, and unlocks here (free second pick or a pass).
+              return (
+                <li key={c.id} className="flex items-start justify-between gap-3 border-b border-border py-3 last:border-0" data-testid={`ward-locked-${c.id}`}>
+                  <span className="min-w-0">
+                    <span className="font-display text-xl leading-none text-fg-muted">{c.name}</span>
+                    <span className="mt-1 block kicker">{c.region}</span>
+                    <LockNote id={c.id} />
+                  </span>
+                  {cost === "free" || cost === "pass" ? (
+                    <button
+                      type="button"
+                      className={`btn shrink-0 px-3 text-xs ${cost === "free" ? "btn-primary" : "btn-ghost"}`}
+                      data-testid={`unlock-${c.id}`}
+                      onClick={() => {
+                        sfx.ui();
+                        unlock(c.id);
+                      }}
+                    >
+                      {cost === "free" ? "Unlock · free" : "Unlock · 1 pass"}
+                    </button>
+                  ) : null}
+                </li>
+              );
+            }
             return (
               <li key={c.id}>
                 <button
