@@ -14,8 +14,8 @@ export const dealTrivia = createServerFn({ method: "POST" })
   .middleware([viewerMiddleware])
   .handler(async ({ context, data }): Promise<DealResult> => {
     const { triviaDeps } = await import("./triviaBank");
-    const { deal } = await import("./triviaService");
-    return deal(await triviaDeps(), { userId: context.userId }, data);
+    const { dealFor } = await import("./triviaService");
+    return dealFor(await triviaDeps(), { userId: context.userId }, data);
   });
 
 export const gradeTrivia = createServerFn({ method: "POST" })

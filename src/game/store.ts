@@ -32,6 +32,7 @@ import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
+import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
 import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
@@ -602,13 +603,30 @@ const SEEN_ID = /^[A-Za-z0-9_:.~-]{1,80}$/;
  * seen ids (anti-repeat), the lamp's tier and topics, the Run/Stack step, and returns the prompt and shuffled
  * choices with a signed token — never the answer. Null when the server can't be reached (nothing is spent).
  */
+/** 0.0.58: fold another tab's seen cards (the saved list) into this tab's before a deal. */
+function foldSavedSeen(set: (p: Partial<GameState>) => void, get: () => GameState) {
+  if (typeof window === "undefined") return;
+  let other: ReturnType<typeof savedSeen> = null;
+  try {
+    other = savedSeen(localStorage.getItem(SAVE_KEY));
+  } catch {
+    return;
+  }
+  if (!other) return;
+  const mine = get();
+  const seenIds = mergeSeen(other.seenIds, mine.seenIds ?? [], ASKED_KEEP);
+  const asked = mergeSeen(other.asked, mine.asked ?? [], ASKED_KEEP);
+  if (seenIds !== mine.seenIds || asked !== mine.asked) set({ seenIds: [...seenIds], asked: [...asked] });
+}
+
 async function dealCard(
-  _set: (p: Partial<GameState>) => void,
+  set: (p: Partial<GameState>) => void,
   get: () => GameState,
   poiId: string,
   cat: TriviaCat,
   step: number,
 ): Promise<{ card: DealtCard; token: string; windowMs: number } | null> {
+  foldSavedSeen(set, get);
   const st = get();
   const city = CITIES[st.cityId];
   const series = seriesOf(poiId);
@@ -1059,8 +1077,10 @@ export const useGame = create<GameState>((set, get) => ({
           dealtAt: Date.now(),
           held: cost ?? undefined,
         },
+        // 0.0.58: a card counts as seen the moment it's dealt (a reload or a second tab mid-card can't re-deal it).
+        ...markSeen(get().asked, get().seenIds, dealt.card),
       });
-      if (cost) saveNow(get);
+      saveNow(get);
     });
   },
   answer: (choice, now) => {
@@ -1274,6 +1294,7 @@ export const useGame = create<GameState>((set, get) => ({
           }
           const shown = performance.now();
           set({
+            ...markSeen(get().asked, get().seenIds, dealt.card),
             openVault: {
               ...cur,
               pending: undefined,
@@ -2168,8 +2189,14 @@ if (typeof window !== "undefined") {
     const keys = savedKeys(e.newValue);
     if (!keys) return;
     const cur = useGame.getState().keys;
-    if ((Object.keys(keys) as Tier[]).every((t) => cur[t] === keys[t])) return;
-    useGame.setState({ keys });
+    if (!(Object.keys(keys) as Tier[]).every((t) => cur[t] === keys[t])) useGame.setState({ keys });
+    // 0.0.58: and the cards it was dealt, so this tab doesn't deal them again.
+    const seen = savedSeen(e.newValue);
+    if (!seen) return;
+    const st = useGame.getState();
+    const seenIds = mergeSeen(seen.seenIds, st.seenIds ?? [], ASKED_KEEP);
+    const asked = mergeSeen(seen.asked, st.asked ?? [], ASKED_KEEP);
+    if (seenIds !== st.seenIds || asked !== st.asked) useGame.setState({ seenIds: [...seenIds], asked: [...asked] });
   });
   window.addEventListener("pagehide", flush);
 }

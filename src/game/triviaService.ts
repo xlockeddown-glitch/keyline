@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Sql } from "../lib/db.ts";
+import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import type { CityId, Poi, PoiKind, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade } from "./triviaSchema";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
@@ -153,7 +154,38 @@ export function avoidList(deps: Pick<TriviaDeps, "card">, seen: readonly string[
   return [...ids, ...qs];
 }
 
-export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput): DealResult {
+/**
+ * 0.0.58: the deal the API serves. A signed-in walker's anti-repeat memory is kept on the server (triviaRecent.ts):
+ * the newest few hundred cards dealt to them, on any device, merged ahead of the save's own seen list; the dealt
+ * card is noted at once, so a walk-away, a lost answer or a second tab can't bring it straight back. Guests have
+ * only the save's list (sent by the client). A database hiccup falls back to the client's list, never fails the deal.
+ */
+export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput): Promise<DealResult> {
+  let recent: string[] = [];
+  let sql: Sql | null = null;
+  if (viewer.userId && deps.sql) {
+    try {
+      sql = await deps.sql();
+      recent = await loadRecent(sql, viewer.userId);
+    } catch (e) {
+      sql = null;
+      console.warn("[trivia] recent list unavailable", e instanceof Error ? e.message : e);
+    }
+  }
+  const r = deal(deps, viewer, input, recent);
+  if (r.ok && sql && viewer.userId) {
+    try {
+      const raw = deps.card(r.card.id)?.id ?? r.card.id;
+      await noteDealt(sql, viewer.userId, raw, new Date(deps.now()));
+    } catch (e) {
+      console.warn("[trivia] recent note failed", e instanceof Error ? e.message : e);
+    }
+  }
+  return r;
+}
+
+/** Pick, seal and shuffle one card. `recent` is the server's memory for this walker (oldest first), merged before the save's list. */
+export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent: readonly string[] = []): DealResult {
   const series = deps.series(input.poiId);
   let poi: Poi | null;
   let clearTier: Tier | null;
@@ -171,7 +203,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput): DealRe
     clearTier = poi.tier;
   }
   if (input.spark) clearTier = null;
-  const plate = deps.pick(input.city, input.cat, poi, poi.tier, avoidList(deps, input.seen), want);
+  const plate = deps.pick(input.city, input.cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
   const pub = publicCardId(plate);
   const windowMs = clampWindow(input.windowMs);
   const token = sealToken(deps.secret, {
