@@ -386,3 +386,31 @@ function distM(a: Pt, b: Pt) {
   const k = 111_320;
   return Math.hypot((a.lat - b.lat) * k, (a.lng - b.lng) * k * Math.cos((a.lat * Math.PI) / 180));
 }
+
+test("every city: spawn and start sit off the baked freeway layer", async () => {
+  const { CITIES } = await import("./data.ts");
+  for (const city of Object.values(CITIES)) {
+    const g = createGraph(city.spawn.lat, city.spawn.lng);
+    const packed = JSON.parse(readFileSync(new URL(`../../public/streets/${city.id}-fw.json`, import.meta.url), "utf8")) as { lines: number[][] };
+    for (const line of unpackFreeways(packed.lines)) ingestFreeway(g, line);
+    // (Lamps and the fare desk may sit under a viaduct — New Orleans' station is under the Pontchartrain
+    // Expressway — so placeOnStreet / offFreeway handle those against the live walk graph instead.)
+    for (const [label, p] of [["spawn", city.spawn], ["start", city.start]] as const) {
+      if (!p) continue;
+      assert.equal(onFreeway(g, p), false, `${city.id} ${label} at ${p.lat},${p.lng} is on a freeway`);
+    }
+  }
+});
+
+test("Chicago: a building-cutting walk never starts, ends or hops onto the feeder", () => {
+  const g = walkGraph("chicago");
+  const curb = pullToStreet(g, 41.8915, -87.6399, 60);
+  const lamp = { lat: 41.89245, lng: -87.6417 }; // an old lamp on the feeder bridge deck
+  const out = finishPath([curb, pullToStreet(g, 41.89235, -87.6407, 20)], FEEDER_BRIDGE, lamp, { cutBuildings: true, graph: g })!;
+  assert.ok(out && out.length >= 2);
+  for (const p of out) assert.equal(onFreeway(g, p), false, `cut walk touches the feeder at ${p.lat},${p.lng}`);
+  // Off-freeway ends still get their straight hops.
+  const door = { lat: 41.8921, lng: -87.6404 };
+  const ok = finishPath([curb], { lat: 41.8912, lng: -87.6399 }, door, { cutBuildings: true, graph: g })!;
+  assert.ok(distM(ok[ok.length - 1]!, door) < 1);
+});

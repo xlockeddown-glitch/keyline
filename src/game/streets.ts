@@ -1039,10 +1039,14 @@ export function finishPath(
   const cut = Boolean(opts?.cutBuildings);
   const out = path && path.length ? path.slice() : [];
   if (cut) {
-    if (!out.length) out.push({ lat: from.lat, lng: from.lng });
-    if (distM(out[0]!.lat, out[0]!.lng, from.lat, from.lng) > 8) out.unshift({ lat: from.lat, lng: from.lng });
+    // Cutting through blocks still never starts on, ends on, or cuts across a freeway, ramp or feeder.
+    const g = opts?.graph ?? null;
+    const start = offFreeway(g, from);
+    const end = offFreeway(g, to);
+    if (!out.length) out.push({ lat: start.lat, lng: start.lng });
+    if (distM(out[0]!.lat, out[0]!.lng, start.lat, start.lng) > 8 && !hopTouchesFreeway(g, start, out[0]!)) out.unshift({ lat: start.lat, lng: start.lng });
     const last = out[out.length - 1]!;
-    if (distM(last.lat, last.lng, to.lat, to.lng) > 8) out.push({ lat: to.lat, lng: to.lng });
+    if (distM(last.lat, last.lng, end.lat, end.lng) > 8 && !hopTouchesFreeway(g, last, end)) out.push({ lat: end.lat, lng: end.lng });
   } else if (opts?.door && out.length) {
     const last = out[out.length - 1]!;
     const gap = distM(last.lat, last.lng, to.lat, to.lng);

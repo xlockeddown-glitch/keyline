@@ -26,6 +26,7 @@ import {
   pathLength,
   pointAlongPath,
   offFreeway,
+  hopTouchesFreeway,
   pullToStreet,
   randomOnStreet,
   routeDrive,
@@ -235,7 +236,7 @@ export function GameMap() {
       -Math.sin(pos.current.yaw + Math.PI / 2) * 7,
     );
     const g = graphRef.current;
-    const curb = g ? pullToStreet(g, side.lat, side.lng, 40) : side;
+    const curb = g ? offFreeway(g, pullToStreet(g, side.lat, side.lng, 40)) : side;
     pos.current.lat = curb.lat;
     pos.current.lng = curb.lng;
     pos.current.speed = 0;
@@ -541,7 +542,8 @@ export function GameMap() {
 
   function placeOnStreet(g: StreetGraph, lat: number, lng: number) {
     const snapped = pullToStreet(g, lat, lng, 140);
-    const p = clearCorner(g, snapped.lat, snapped.lng);
+    // A start (spawn, station, restored spot) never rests on a freeway, ramp or feeder.
+    const p = offFreeway(g, clearCorner(g, snapped.lat, snapped.lng));
     pos.current.lat = p.lat;
     pos.current.lng = p.lng;
     const city = CITIES[useGame.getState().cityId];
@@ -902,7 +904,8 @@ export function GameMap() {
       const wp = waypoint.current;
       if (wp) {
         const left = distM(pos.current.lat, pos.current.lng, wp.lat, wp.lng);
-        const hop = stuckNudge(pos.current, wp, canCutBuildings(useGame.getState().scout));
+        const nudge = stuckNudge(pos.current, wp, canCutBuildings(useGame.getState().scout));
+        const hop = nudge && !hopTouchesFreeway(graphRef.current, pos.current, nudge) ? nudge : null;
         if (hop) {
           pos.current.lat = hop.lat;
           pos.current.lng = hop.lng;
