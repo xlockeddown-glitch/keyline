@@ -138,3 +138,68 @@ test("link by code: refusals (bad, used, expired, already one walker)", async ()
   assert.notEqual(a.code, b.code);
   assert.deepEqual(await redeemLinkCode(d, "ryan-g2", a.code), { ok: false, reason: "bad-code" });
 });
+
+// ---- 0012: Ryan's confirmed merge, scoped to his three ids ----
+const MAIN = "MXKB6aZ6GGtB7qQ7jPKiqTnI6FKx1MYH";
+const ALIAS_A = "4JE6EuA7cNIr4G2NpZYnxImNXSb4Lxye";
+const ALIAS_B = "RQMn6dCPkYymhhtf0LexrZ02Ij0lzbDn";
+
+async function ryanDb(withMain = true) {
+  const db = new PGlite();
+  for (const n of BEFORE) await db.exec(mig(n));
+  const user = (id: string, email: string, at: string) =>
+    db.query(`insert into "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") values ($1, 'Ryan Gray', $2, false, $3, $3)`, [id, email, at]);
+  const acct = (id: string, uid: string, provider: string, accountId: string) =>
+    db.query(`insert into account (id, "accountId", "providerId", "userId", "updatedAt") values ($1, $2, $3, $4, now())`, [id, accountId, provider, uid]);
+  const sess = (id: string, uid: string) =>
+    db.query(`insert into session (id, "expiresAt", token, "updatedAt", "userId") values ($1, now() + interval '7 days', $1, now(), $2)`, [id, uid]);
+  if (withMain) {
+    await user(MAIN, "ryan@gmail.example", "2026-09-01T00:00:00Z");
+    await acct("a-main", MAIN, "grok-google", "g-sub");
+    await sess("s-main", MAIN);
+  }
+  await user(ALIAS_A, "xa@x.example", "2026-10-03T20:00:00Z");
+  await user(ALIAS_B, "xb@x.example", "2026-10-03T21:00:00Z");
+  await user("someone-else", "else@example.com", "2026-09-05T00:00:00Z");
+  await acct("a-a", ALIAS_A, "grok-x", "x-sub-a");
+  await acct("a-b", ALIAS_B, "grok-x", "x-sub-b");
+  await acct("a-else", "someone-else", "grok-x", "x-sub-else");
+  await sess("s-a", ALIAS_A);
+  await sess("s-b", ALIAS_B);
+  await sess("s-else", "someone-else");
+  for (const [uid, n] of [[MAIN, 134], [ALIAS_A, 1], [ALIAS_B, 1], ["someone-else", 3]] as const)
+    await db.query(`insert into vault_clears (user_id, display_name, tier, correct) values ($1, $2, 'blue', $3)`, [uid, uid === "someone-else" ? "Sam E." : "Ryan G.", n]);
+  await db.exec(mig("0011_player_links.sql"));
+  await db.exec(mig("0012_ryan_merge.sql"));
+  return db;
+}
+
+test("0012: Ryan's two aliases fold into MXKB…, their X identities sign in as MXKB…, nobody else is touched", async () => {
+  const db = await ryanDb();
+  assert.deepEqual(
+    (await db.query(`select alias_id, primary_id, how from player_links order by alias_id`)).rows,
+    [{ alias_id: ALIAS_A, primary_id: MAIN, how: "admin" }, { alias_id: ALIAS_B, primary_id: MAIN, how: "admin" }],
+  );
+  assert.deepEqual(
+    (await db.query(`select id, "userId" from account order by id`)).rows,
+    [{ id: "a-a", userId: MAIN }, { id: "a-b", userId: MAIN }, { id: "a-else", userId: "someone-else" }, { id: "a-main", userId: MAIN }],
+  );
+  assert.deepEqual((await db.query(`select id from session order by id`)).rows.map((r) => (r as { id: string }).id), ["s-else", "s-main"]);
+  assert.deepEqual(await board(db, "blue"), [
+    { user_id: MAIN, display_name: "Ryan G.", correct: 136 },
+    { user_id: "someone-else", display_name: "Sam E.", correct: 3 },
+  ]);
+  // Re-running is harmless.
+  await db.exec(mig("0012_ryan_merge.sql"));
+  assert.equal((await db.query(`select * from player_links`)).rows.length, 2);
+  // Nothing is deleted: the alias users and their raw rows remain.
+  assert.equal((await db.query(`select * from "user"`)).rows.length, 4);
+  assert.equal((await db.query(`select * from vault_clears`)).rows.length, 4);
+});
+
+test("0012 does nothing when the primary user isn't in this database (preview / fresh DB)", async () => {
+  const db = await ryanDb(false);
+  assert.equal((await db.query(`select * from player_links`)).rows.length, 0);
+  assert.deepEqual((await db.query(`select "userId" from account where id = 'a-a'`)).rows, [{ userId: ALIAS_A }]);
+  assert.equal((await db.query(`select * from session`)).rows.length, 3);
+});

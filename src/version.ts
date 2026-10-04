@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.54";
+export const APP_VERSION = "0.0.55";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k54a";
+export const PUBLISH_STAMP = "k55a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -57,3 +57,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.53 (k53a, cont.): Not now no longer blocks sending — the Journal (Progress tab) has a quiet "Send a friend ticket" row listing the last 3 answered cards (localStorage, kept even while the chip is snoozed), each opening the same send sheet; it ignores the chip's snooze and session cap, the server's 5-a-day cap still applies.
 // 0.0.53 (k53a, merge of 0.0.52b): freeway pathing fix — a baked per-city freeway no-walk layer (public/streets/*-fw.json); walk starts, cut-building walks, stuck nudges, cab exits and placeOnStreet slide clear of freeway centerlines, online routes that ride a freeway are refused, so Chicago's Ohio Street feeder no longer carries the walker. Plus the friend-ticket pop-up cooldown (Not now = 24 h, one unused nudge a session) and the Journal's always-there "Send a friend ticket" row.
 // 0.0.54: a gift for Halish — The Giraffe, free, with a one-time note ("Hope you get out of the hospital soon - Love Grok") and Wear it now / Close. Generic gifts table (migration 0010: gifts + gift_claims, one seeded row keyed by user id with a first-name fallback); the scout lands in the save on every device he signs into, the server claim keeps the note to once (k54a). City unlocks move to 0.0.55.
+// 0.0.55: standings duplicates — one walker, several sign-ins, one row. Signing in another way (X on a phone) made new users, so Ryan showed 3 times. Player links (migration 0011: player_links + link_codes, same-email auto-link, *_by_player views folding vault_clears / plate_events / daily_runs to the oldest user id), a "On the board twice?" link-by-code row on the Leaderboard, a deterministic broker email for X sign-ins without one (provider + account id) plus a new-identity log line, and Ryan's confirmed merge (0012: his two X users fold into MXKB…, their X identities re-pointed to it, alias sessions ended) (k55a). City unlocks move to 0.0.56.

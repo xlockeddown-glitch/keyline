@@ -40,6 +40,8 @@ import { emailAndPasswordEnabled } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
+import { brokerProfileToUser } from "./broker-profile";
+import { createHash } from "node:crypto";
 import {
   GROK_ISSUER_DEFAULT,
   PREVIEW_ALLOWED_HOSTS,
@@ -168,6 +170,9 @@ const grokOAuthPlugin = authConfigured
         // `prompt=select_account`, the user always gets the account chooser
         // and can pick (or switch) which account to sign in with.
         authorizationUrlParams: { idp, prompt: "login" },
+        // 0.0.55 (Keyline): deterministic email when the broker sends none (X), built from provider + account id
+        // only — so a returning X walker is never turned away or given a fresh identity. See ./broker-profile.
+        mapProfileToUser: (profile: Record<string, unknown>) => brokerProfileToUser(providerId, profile),
       })),
     })
   : null;
@@ -209,6 +214,19 @@ export const auth = betterAuth({
   // window and reduces auth flicker. See the `auth` skill for the full
   // flicker-prevention guidance (gate on `isPending`; SSR the session).
   session: { cookieCache: { enabled: true, maxAge: 300 } },
+
+  // 0.0.55 (Keyline): one log line per new sign-in identity (provider + short hash of its account id, never an
+  // email), so a walker who "signs in again" as a new user can be traced to the identity that actually changed.
+  databaseHooks: {
+    account: {
+      create: {
+        after: async (account) => {
+          const h = createHash("sha256").update(String(account.accountId)).digest("hex").slice(0, 10);
+          console.log(`[auth] new sign-in identity provider=${account.providerId} account#${h} user=${account.userId}`);
+        },
+      },
+    },
+  },
 
   // Local email/password — toggled only via `./email-password` (not a plugin).
   ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
