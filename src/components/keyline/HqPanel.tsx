@@ -24,6 +24,7 @@ import { MARKET_TAG } from "@/game/nightMarket";
 import { FriendJournalRow } from "./FriendTickets";
 import { PlayerLinkRow } from "./PlayerLink";
 import { PassProgressRow } from "./CityPass";
+import { useSheetOpen } from "./useSheetOpen";
 
 const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
 
@@ -82,18 +83,19 @@ export function HqPanel() {
     if (hqOpen && pulseReady) setTab("Progress");
   }, [hqOpen, pulseReady]);
 
+  useSheetOpen(hqOpen);
   if (!hqOpen) return null;
 
   return (
     <div className="absolute inset-0 z-[700] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
-      <div className="panel flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
+      <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Journal</p>
             <h2 className="font-display text-xl leading-tight">Hideout · {city.name}</h2>
             <button
               type="button"
-              className="mt-2 text-xs text-fg-subtle underline-offset-2 hover:text-fg-muted hover:underline"
+              className="hq-howto mt-1 inline-flex min-h-8 items-center text-xs text-fg-subtle underline-offset-2 hover:text-fg-muted hover:underline"
               onClick={() => {
                 sfx.ui();
                 replayTutorial();

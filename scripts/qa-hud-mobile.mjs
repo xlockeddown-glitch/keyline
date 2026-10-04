@@ -9,11 +9,18 @@
  *
  *   node scripts/qa-hud-mobile.mjs http://127.0.0.1:8080 [/workspace/screenshots/prefix-]
  *
+ * 0.0.57: the inventory sheets at 390x844, 375x667, 360x740 and 430x932 — Satchel, the four Journal tabs (top and
+ * scrolled to the bottom), the Outfitter's Hire and Print shop counters (dev server only: opened from the store)
+ * and the lamp card — checked by inventory-layout-verdict.mjs: no sideways page scroll, sheet inside the screen, no
+ * control off the side or unreachable below the fold, no overlapping buttons, no clipped button text or squashed tap
+ * targets, tab rows that fit, and nothing from the map (the +/- zoom) drawn over the sheet.
+ *
  * Exits 1 on any problem. Screenshots (optional) are written as <prefix><w>x<h>.png.
  */
 import { chromium } from "playwright";
 import { checkedOutputPath, checkedUrl } from "./browser-guard.mjs";
 import { hudLayoutProblems } from "./hud-layout-verdict.mjs";
+import { inventoryProblems, measureOpenPanel } from "./inventory-layout-verdict.mjs";
 
 const base = checkedUrl(process.argv[2] ?? "http://127.0.0.1:8080");
 const shotPrefix = process.argv[3] ? checkedOutputPath(process.argv[3] + "x.png", ["/workspace"]).slice(0, -5) : null;
@@ -27,6 +34,95 @@ const PHONES = [
   [768, 1024],
 ];
 const DESKTOP = [1280, 800];
+const INVENTORY_SIZES = [
+  [390, 844],
+  [375, 667],
+  [360, 740],
+  [430, 932],
+];
+
+/** 0.0.57: every inventory-like sheet at each phone size. Returns problem strings; screenshots like the HUD ones. */
+async function inventorySweep(page) {
+  const out = [];
+  const storeReady = await page
+    .evaluate(async () => {
+      try {
+        const { useGame } = await import("/src/game/store.ts");
+        window.__qaGame = useGame;
+        return true;
+      } catch {
+        return false;
+      }
+    })
+    .catch(() => false);
+  const closeAll = async () => {
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(200);
+    if (storeReady)
+      await page.evaluate(() => {
+        const s = window.__qaGame.getState();
+        s.toggleHq(false);
+        s.toggleInv(false);
+        s.closeShop();
+        s.closeVault();
+      });
+    await page.waitForTimeout(200);
+  };
+  const scroll = (where) =>
+    page.evaluate((where) => {
+      for (const e of document.querySelectorAll(".panel, .panel *")) {
+        const cs = getComputedStyle(e);
+        if ((cs.overflowY === "auto" || cs.overflowY === "scroll") && e.scrollHeight > e.clientHeight + 1) e.scrollTop = where === "bottom" ? e.scrollHeight : 0;
+      }
+    }, where);
+  const check = async (label, w, h, sel) => {
+    await page.waitForTimeout(400);
+    const m = await page.evaluate(measureOpenPanel, sel ?? null);
+    out.push(...inventoryProblems(`${w}x${h} ${label}`, m));
+    if (shotPrefix) await page.screenshot({ path: `${shotPrefix}inv-${label}-${w}x${h}.png` });
+  };
+  for (const [w, h] of INVENTORY_SIZES) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(500);
+    await closeAll();
+    await page.getByRole("button", { name: "Open satchel" }).first().click({ timeout: 5000 }).catch(() => {});
+    await check("satchel", w, h);
+    await closeAll();
+    for (const tab of ["Places", "Supplies", "Progress", "Leaderboard"]) {
+      if (!(await page.locator(".hq-tabs").count())) await page.locator('[aria-label^="Open Journal"]').first().click({ timeout: 5000 }).catch(() => {});
+      await page.locator(".hq-tabs [role=tab]", { hasText: tab }).first().click({ timeout: 5000 }).catch(() => {});
+      await scroll("top");
+      await check(`journal-${tab.toLowerCase()}`, w, h);
+      await scroll("bottom");
+      await check(`journal-${tab.toLowerCase()}-bottom`, w, h);
+    }
+    await closeAll();
+    if (storeReady) {
+      for (const [id, label] of [
+        ["hire", "Hire"],
+        ["print", "Print shop"],
+      ]) {
+        await page.evaluate(() => window.__qaGame.setState({ shopOpen: true }));
+        await page.waitForTimeout(250);
+        await page.locator(".shop-tabs [role=tab]", { hasText: label }).first().click({ timeout: 5000 }).catch(() => {});
+        await scroll("top");
+        await check(`outfitter-${id}`, w, h);
+        await scroll("bottom");
+        await check(`outfitter-${id}-bottom`, w, h);
+      }
+      await closeAll();
+    }
+    const act = page.locator(".hud-dock .act-btn").first();
+    if (await act.count()) {
+      await act.click({ timeout: 5000 }).catch(() => {});
+      await page.waitForTimeout(400);
+      if (await page.locator(".vault-night").count()) await check("lamp-card", w, h, ".vault-night");
+      else out.push(`${w}x${h} lamp-card: the lamp at the spawn did not open`);
+      await closeAll();
+    }
+  }
+  return out;
+}
 
 async function enterGame(page) {
   await page.addInitScript(() => {
@@ -86,6 +182,9 @@ try {
     problems.push(...hudLayoutProblems(m));
     if (shotPrefix) await page.screenshot({ path: `${shotPrefix}${w}x${h}.png` });
   }
+  const inv = await inventorySweep(page);
+  rows.push({ size: "inventory", sheets: INVENTORY_SIZES.length, problems: inv.length });
+  problems.push(...inv);
   await phoneCtx.close();
   const deskCtx = await browser.newContext({ viewport: { width: DESKTOP[0], height: DESKTOP[1] } });
   const desk = await deskCtx.newPage();

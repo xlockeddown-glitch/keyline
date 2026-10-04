@@ -68,3 +68,20 @@
   grid-template-columns:1fr 1fr;
   gap:8px
 }
+/* 0.0.57: on a phone the four Journal tabs share the row (Leaderboard was cut off at 360-390 px and the row scrolled sideways). */
+@media (width<480px){
+  .hq-tabs{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(0,1fr);
+    overflow:hidden;
+    gap:4px;
+    padding:8px 10px 10px
+  }
+  .hq-tab{
+    min-width:0;
+    padding:0 4px;
+    font-size:.8125rem;
+    letter-spacing:-.01em
+  }
+}

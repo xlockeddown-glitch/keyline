@@ -1081,6 +1081,14 @@ h3 {
   .lamp-card-open .leaflet-control-zoom{
     display:none
   }
+  /* 0.0.57: the same for every bottom sheet (Satchel, Journal, Outfitter, Timetable) — the zoom sat over their top-left corner. */
+  .sheet-open .leaflet-control-zoom{
+    display:none
+  }
+  /* 0.0.57: the page is viewport-fit=cover, so a bottom sheet's last row sat under the home indicator. */
+  .sheet-bottom{
+    padding-bottom:env(safe-area-inset-bottom, 0px)
+  }
 }
 /* 0.0.52: short phones (360x780, 390x844) — six fields as a 2x3 grid of names (the blurb is the button's title),
    so the lamp, the fields and Leave lamp all fit without scrolling. */
@@ -2135,12 +2143,12 @@ h3 {
 .keyline-user button {
   color: var(--color-fg-subtle);
 }
+/* 0.0.57: six match colours wrap into rows (3 across on a phone) instead of a sideways strip whose last chips were cut off. */
 .rolls-tiers {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 6px;
-  overflow-x: auto;
   padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch;
 }
 .rolls-tier {
   display: inline-flex;

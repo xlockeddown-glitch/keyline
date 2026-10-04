@@ -16,6 +16,7 @@ import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import type { CharmId, Tier } from "@/game/types";
 import { CostIcons, ItemIcon } from "./ItemIcon";
+import { useSheetOpen } from "./useSheetOpen";
 
 export function Satchel() {
   const invOpen = useGame((s) => s.invOpen);
@@ -39,6 +40,7 @@ export function Satchel() {
   const lamps = allPois(city, blanks);
   const have = { brass, ink, vellum, schematics };
 
+  useSheetOpen(invOpen);
   if (!invOpen) return null;
 
   function pick(id: ItemId) {
@@ -51,7 +53,7 @@ export function Satchel() {
 
   return (
     <div className="absolute inset-0 z-[720] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
-      <div className="panel flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
+      <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="flex items-center gap-3">
             <ItemIcon item="satchel" size={44} />

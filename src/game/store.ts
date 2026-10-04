@@ -31,6 +31,7 @@ import type {
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
+import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
 import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
@@ -119,6 +120,8 @@ type OpenVault = {
   spark?: boolean;
   /** Wall clock (Date.now) when this trivia card was dealt — `startedAt` is performance.now(). The night market open then is the one that pays. */
   dealtAt?: number;
+  /** 0.0.57: the match taken from the pocket when the card was dealt (refunded on a walk-away from a lamp). */
+  held?: Tier;
 };
 
 type FireworksShow = { kind: "mini" | "grand"; id: number };
@@ -693,7 +696,7 @@ const savedCity = saved?.cityId && saved.cityId in CITIES ? saved.cityId : "aust
 export const useGame = create<GameState>((set, get) => ({
   screen: "title",
   cityId: savedCity,
-  keys: { ...EMPTY_KEYS, ...saved?.keys },
+  keys: cleanKeys({ ...EMPTY_KEYS, ...saved?.keys }),
   points: saved?.points ?? 0,
   brass: saved?.brass ?? 0,
   ink: saved?.ink ?? 0,
@@ -940,6 +943,10 @@ export const useGame = create<GameState>((set, get) => ({
     const series = seriesOf(poiId);
     const poi = series ? seriesPoi(series) : allPois(city, get().blanks).find((p) => p.id === poiId);
     if (!poi) return "No lamp.";
+    // 0.0.57: one lamp at a time. An answer with the server stays; any other open card is walked away from first (its held match comes back).
+    if (get().openVault?.poiId === poiId) return null;
+    if (get().openVault?.pending === "grade") return "Finish this trivia card first.";
+    if (get().openVault) get().closeVault();
     if (isScoutShop(poi)) {
       sfx.open();
       set({
@@ -955,7 +962,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (series) {
       const live = seriesLive(get(), series.kind);
       if (!live || live.readyAt > Date.now()) return `${series.name} is recasting.`;
-      if (get().keys[series.cost] < 1) return `Need a ${TIER_LABEL[series.cost]} match.`;
+      if (!hasMatch(get().keys, series.cost)) return `Need a ${TIER_LABEL[series.cost]} match.`;
       sfx.open();
       set({
         openVault: {
@@ -977,7 +984,7 @@ export const useGame = create<GameState>((set, get) => ({
     const v = get().vaults[poiId];
     const clock = Date.now();
     if (v && v.state === "cooling" && v.coolUntil > clock) return `This lamp is dark for ${formatCool(v.coolUntil - clock)}.`;
-    if (get().keys[poi.tier] < 1) {
+    if (!hasMatch(get().keys, poi.tier)) {
       const spark = sparksNow(get);
       if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} match. Sparks are spent today.`;
       if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} match. This wick already sparked.`;
@@ -1007,11 +1014,13 @@ export const useGame = create<GameState>((set, get) => ({
     const ov = get().openVault;
     if (!ov || ov.question || ov.pending) return;
     const series = seriesOf(ov.poiId);
-    if (series) {
-      if (get().keys[series.cost] < 1) {
-        set({ toast: `Need a ${TIER_LABEL[series.cost]} match.`, openVault: null });
-        return;
-      }
+    // 0.0.57: the tier this card costs (none for a spark). Re-checked here and taken atomically when the card lands.
+    const cost: Tier | null = ov.spark ? null : series ? series.cost : (allPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
+    if (!ov.spark && !cost) return;
+    if (cost && !hasMatch(get().keys, cost)) {
+      flashToast(set, get, `Need a ${TIER_LABEL[cost]} match.`, 2400);
+      set({ openVault: null });
+      return;
     }
     sfx.ui();
     set({ openVault: { ...ov, category: cat, pending: "deal" } });
@@ -1025,7 +1034,13 @@ export const useGame = create<GameState>((set, get) => ({
       }
       const spark = Boolean(cur.spark);
       const extra = (get().equipped === "scholar" ? 3000 : 0) + (get().pressPass > 0 ? 5000 : 0) + (wornPerk(get().scout).vaultMs ?? 0);
-      const keys = series && !spark ? { ...get().keys, [series.cost]: get().keys[series.cost] - 1 } : get().keys;
+      // Check and take the match in one step: if it was spent while the card was coming (another tab, an exchange), the lamp doesn't open.
+      const keys = cost ? spendMatch(get().keys, cost) : get().keys;
+      if (!keys) {
+        set({ openVault: null });
+        flashToast(set, get, `Need a ${TIER_LABEL[cost!]} match.`, 2400);
+        return;
+      }
       const pressPass = !spark && extra >= 5000 && get().pressPass > 0 ? get().pressPass - 1 : get().pressPass;
       // The wick starts when the card arrives, so the round trip never eats into the player's time.
       const shown = performance.now();
@@ -1042,9 +1057,10 @@ export const useGame = create<GameState>((set, get) => ({
           run: series ? { step: 0, steps: series.steps, grades: [], spent: true } : undefined,
           spark,
           dealtAt: Date.now(),
+          held: cost ?? undefined,
         },
       });
-      if (series) scheduleSave(get);
+      if (cost) saveNow(get);
     });
   },
   answer: (choice, now) => {
@@ -1374,7 +1390,8 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
 
-    const keys = { ...get().keys, [poi.tier]: get().keys[poi.tier] - 1 };
+    // 0.0.57: the match left the pocket when the card was dealt (`held`); never take a second one here.
+    const keys = ov.held ? cleanKeys(get().keys) : (spendMatch(get().keys, poi.tier) ?? cleanKeys(get().keys));
     if (!correct) {
       sfx.wrong();
       const boost = rollBoosts(get, false, elapsed, ov.category);
@@ -1555,6 +1572,12 @@ export const useGame = create<GameState>((set, get) => ({
       window.setTimeout(() => {
         if (get().toast?.includes(series.name)) set({ toast: null });
       }, 2000);
+      return;
+    }
+    // A lamp walked away from before answering costs nothing: the held match goes back in the pocket.
+    if (ov?.held && !series) {
+      set({ openVault: null, keys: refundMatch(get().keys, ov.held) });
+      saveNow(get);
       return;
     }
     set({ openVault: null });
@@ -2138,6 +2161,15 @@ if (typeof window !== "undefined") {
   };
   window.addEventListener("visibilitychange", () => {
     if (document.hidden) flush();
+  });
+  // 0.0.57: another tab of this save spent or earned matches. Take its pocket so this tab's count (and what it can open) is real.
+  window.addEventListener("storage", (e) => {
+    if (e.key !== SAVE_KEY) return;
+    const keys = savedKeys(e.newValue);
+    if (!keys) return;
+    const cur = useGame.getState().keys;
+    if ((Object.keys(keys) as Tier[]).every((t) => cur[t] === keys[t])) return;
+    useGame.setState({ keys });
   });
   window.addEventListener("pagehide", flush);
 }

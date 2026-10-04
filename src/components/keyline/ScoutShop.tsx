@@ -5,6 +5,7 @@ import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
 import { PrintShop } from "./PrintShop";
+import { useSheetOpen } from "./useSheetOpen";
 
 export function ScoutRoster({ hire }: { hire: boolean }) {
   const points = useGame((s) => s.points);
@@ -81,11 +82,12 @@ export function ScoutShop() {
   const cityId = useGame((s) => s.cityId);
   const shop = cityShop(cityId);
   const [tab, setTab] = useState<"hire" | "print">("hire");
+  useSheetOpen(Boolean(shopOpen && shop));
   if (!shopOpen || !shop) return null;
 
   return (
     <div className="absolute inset-0 z-[700] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
-      <div className="panel flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
+      <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Outfitter</p>
