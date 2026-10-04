@@ -110,6 +110,7 @@ function FriendTicketPage() {
             <p className="mt-2 text-sm text-pretty text-fg-muted">
               One card, {Math.round(CARD_MS / 1000)} seconds on the wick. Get it right and you each get a White match.
             </p>
+            <p className="mt-1 text-xs text-pretty text-fg-subtle">A one-card preview: it plays even if its city isn't unlocked in your game yet.</p>
             {user ? (
               <button type="button" className="btn btn-primary title-go mt-4" onClick={() => void open()} data-testid="friend-play">
                 Play the card

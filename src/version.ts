@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.53";
+export const APP_VERSION = "0.0.55";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k53a";
+export const PUBLISH_STAMP = "k55a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -56,3 +56,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.53 (k53a, cont.): the "Send as a friend ticket" chip nudges less — it came back after every answered card (15 s each, X only hid it until the next); now X ("Not now") hides it for 24 h (localStorage, survives reload) and a session gets at most one unused nudge (sessionStorage) — sending a ticket does not use it up (game/friendOffer.ts).
 // 0.0.53 (k53a, cont.): Not now no longer blocks sending — the Journal (Progress tab) has a quiet "Send a friend ticket" row listing the last 3 answered cards (localStorage, kept even while the chip is snoozed), each opening the same send sheet; it ignores the chip's snooze and session cap, the server's 5-a-day cap still applies.
 // 0.0.53 (k53a, merge of 0.0.52b): freeway pathing fix — a baked per-city freeway no-walk layer (public/streets/*-fw.json); walk starts, cut-building walks, stuck nudges, cab exits and placeOnStreet slide clear of freeway centerlines, online routes that ride a freeway are refused, so Chicago's Ohio Street feeder no longer carries the walker. Plus the friend-ticket pop-up cooldown (Not now = 24 h, one unused nudge a session) and the Journal's always-there "Send a friend ticket" row.
+// 0.0.55 (k55a): city unlocks (game/cityPass.ts, kept in the client save like coins and matches). A new player picks a starting city out of all 15 (the login prompt still follows the pick); the second city is free, unlocked any time at the train station; city 3 onward costs a city pass. A pass comes from any one route, each counted on its own: 10 lamp points from lamps lit at amber+ (amber 1, red 4, violet 10; the remainder carries), every place in an unlocked city (the "All of <city>" goal, once per city), or 3 paid Lantern Runs in one city (once per city). Locked cities show a lock and what they need in All cities and the Timetable (which unlocks them); progress shows in the Journal's Progress tab, the Timetable and All cities. Saves from before 0.0.55 keep every city with play in it plus one free pass (goals/runs already finished count as used). Friend tickets stay a one-card preview whatever is unlocked; the server has no city gate.

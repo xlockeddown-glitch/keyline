@@ -22,6 +22,7 @@ import { PrintShop } from "./PrintShop";
 import { MarketJournalRow, useMarket } from "./NightMarket";
 import { MARKET_TAG } from "@/game/nightMarket";
 import { FriendJournalRow } from "./FriendTickets";
+import { PassProgressRow } from "./CityPass";
 
 const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
 
@@ -335,6 +336,7 @@ export function HqPanel() {
                   </p>
                 </div>
               </button>
+              <PassProgressRow />
               <FriendJournalRow />
               <QuestDesk
                 cityId={cityId}
