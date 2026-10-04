@@ -163,6 +163,8 @@ export type GameState = {
   dailyPaid: string[];
   /** Friend-ticket whites already landed in this save ("s:<token>" sent, "f:<token>" answered), 0.0.50. */
   friendPaid: string[];
+  /** 0.0.54 gifts whose note this save has shown (the server's gift_claims row is the cross-device copy). */
+  giftsSeen: string[];
   charmDay: string;
   charmTopics: TriviaCat[];
   blanks: Poi[];
@@ -227,6 +229,10 @@ export type GameState = {
   printPattern: () => void;
   buyScout: (id: ScoutId) => void;
   wearScout: (id: ScoutId) => void;
+  /** 0.0.54 gift: add a scout to the save for free (no coins). Returns true if it was newly added. */
+  grantGiftScout: (id: ScoutId) => boolean;
+  /** 0.0.54 gift: remember this gift's note was shown in this save. */
+  markGiftSeen: (giftId: string) => void;
   /** Print shop: pay what the pocket can toward a coat or lantern skin; the last match makes it yours and puts it on. */
   payCosmetic: (id: CosmeticId) => void;
   /** Put an owned coat / lantern skin on, or take the slot off with null. */
@@ -439,6 +445,7 @@ function persistable(s: GameState) {
     sparkLamps: s.sparkLamps,
     dailyPaid: s.dailyPaid,
     friendPaid: s.friendPaid,
+    giftsSeen: s.giftsSeen,
     charmDay: s.charmDay,
     charmTopics: s.charmTopics,
     blanks: s.blanks,
@@ -720,6 +727,7 @@ export const useGame = create<GameState>((set, get) => ({
     ? saved.dailyPaid.filter((k): k is string => typeof k === "string")
     : legacyDailyPaid((saved as { dailyPaidDay?: unknown } | null | undefined)?.dailyPaidDay, legacyDailyRun()),
   friendPaid: Array.isArray(saved?.friendPaid) ? saved.friendPaid.filter((k): k is string => typeof k === "string") : [],
+  giftsSeen: Array.isArray(saved?.giftsSeen) ? saved.giftsSeen.filter((k): k is string => typeof k === "string") : [],
   charmDay: typeof saved?.charmDay === "string" ? saved.charmDay : "",
   charmTopics: Array.isArray(saved?.charmTopics) ? saved.charmTopics : [],
   blanks: Array.isArray(saved?.blanks) ? saved.blanks : [],
@@ -1722,6 +1730,17 @@ export const useGame = create<GameState>((set, get) => ({
     });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 1800);
+  },
+  grantGiftScout: (id) => {
+    if (!(id in SCOUTS) || get().scouts.includes(id)) return false;
+    set({ scouts: [...get().scouts, id] });
+    saveNow(get);
+    return true;
+  },
+  markGiftSeen: (giftId) => {
+    if (get().giftsSeen.includes(giftId)) return;
+    set({ giftsSeen: [...get().giftsSeen, giftId].slice(-50) });
+    saveNow(get);
   },
   wearScout: (id) => {
     if (!get().scouts.includes(id)) return;

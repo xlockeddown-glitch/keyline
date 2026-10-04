@@ -3375,3 +3375,17 @@ h3 {
 .ft-result.is-hit{ border-color:color-mix(in oklab, var(--color-accent) 55%, var(--color-border)) }
 .plate-choice:disabled{ cursor:default; opacity:.6 }
 .plate-choice.is-picked{ opacity:1; border-color:var(--color-accent) }
+
+/* 0.0.54 gift note (GiftNote.tsx): the friend-ticket sheet, a touch above the other sheets, with the scout's portrait. */
+.gift-veil{ z-index:940 }
+.gift-art{
+  display:grid;
+  place-items:center;
+  margin-top:12px
+}
+.gift-art img{
+  width:96px;
+  height:96px;
+  object-fit:contain;
+  image-rendering:auto
+}
