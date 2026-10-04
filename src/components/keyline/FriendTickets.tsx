@@ -4,6 +4,7 @@ import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user
 import { useGame } from "@/game/store";
 import { ackFriendNews, fetchFriendNews, sendFriendTicket } from "@/game/friendApi";
 import { DAILY_TICKETS } from "@/game/friendTicket";
+import { browserStores, noteDismissed, noteIgnored, offerAllowed, readOffer } from "@/game/friendOffer";
 import { SignInActions } from "./AuthChip";
 
 /** How long the "Send as a friend ticket" chip stays up after a trivia card is answered. */
@@ -26,15 +27,30 @@ export function FriendTickets() {
       useGame.subscribe((s, p) => {
         const card = p.openVault?.question;
         // A card was answered (asked grows on every answer, never on Leave lamp) and the lamp closed.
-        if (card && !s.openVault && s.asked !== p.asked) setOffer({ id: card.id, q: card.q, at: Date.now() });
-        else if (s.openVault && !p.openVault) setOffer(null);
+        // 0.0.53: not after a "Not now" in the last 24 h, and at most one unused nudge a session (friendOffer.ts).
+        if (card && !s.openVault && s.asked !== p.asked) {
+          const { local, session } = browserStores();
+          if (offerAllowed(readOffer(local, session), Date.now())) setOffer({ id: card.id, q: card.q, at: Date.now() });
+        }
+        else if (s.openVault && !p.openVault)
+          setOffer((o) => {
+            // Walked on to the next lamp with the chip still up: that was this session's nudge.
+            if (o) noteIgnored(browserStores().session);
+            return null;
+          });
       }),
     [],
   );
 
   useEffect(() => {
     if (!offer) return;
-    const id = window.setTimeout(() => setOffer((o) => (o === offer ? null : o)), OFFER_MS);
+    const id = window.setTimeout(() => {
+      setOffer((o) => {
+        if (o !== offer) return o;
+        noteIgnored(browserStores().session);
+        return null;
+      });
+    }, OFFER_MS);
     return () => window.clearTimeout(id);
   }, [offer]);
 
@@ -55,7 +71,17 @@ export function FriendTickets() {
               <Ticket className="size-4 shrink-0" strokeWidth={1.75} aria-hidden />
               <span>Send as a friend ticket</span>
             </button>
-            <button type="button" className="ft-offer-x" aria-label="Not now" onClick={() => setOffer(null)}>
+            <button
+              type="button"
+              className="ft-offer-x"
+              aria-label="Not now"
+              data-testid="friend-offer-dismiss"
+              onClick={() => {
+                const { local, session } = browserStores();
+                noteDismissed(local, session, Date.now());
+                setOffer(null);
+              }}
+            >
               <X className="size-4" strokeWidth={1.75} aria-hidden />
             </button>
           </div>
