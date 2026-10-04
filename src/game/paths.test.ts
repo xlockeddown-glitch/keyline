@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { canGrabMatch, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, type Pt } from "./streets.ts";
+import { canGrabMatch, clearOfFreeway, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, type Pt } from "./streets.ts";
 import { isExpresswayNamed, isFreeway, isWalkableWay } from "./walkable.ts";
 import { freewayGap, freewayRun } from "./pathCheck.ts";
 
@@ -413,4 +413,23 @@ test("Chicago: a building-cutting walk never starts, ends or hops onto the feede
   const door = { lat: 41.8921, lng: -87.6404 };
   const ok = finishPath([curb], { lat: 41.8912, lng: -87.6399 }, door, { cutBuildings: true, graph: g })!;
   assert.ok(distM(ok[ok.length - 1]!, door) < 1);
+});
+
+test("Chicago: a walk start on the parking aisle under the feeder slides clear of it", () => {
+  const g = walkGraph("chicago");
+  // 1315998504: a two-node parking aisle right under the Ohio Street feeder at Kingsbury. Walks snapped onto it,
+  // so the walker looked parked on the feeder (it's walkable, so onFreeway alone lets it be).
+  const aisle = { lat: 41.89245, lng: -87.641058 };
+  assert.ok((nearest(g, aisle.lat, aisle.lng, 5)?.dist ?? Infinity) < 1, "aisle is in the walk graph");
+  assert.equal(onFreeway(g, aisle), false, "walkable, so not 'on' the freeway");
+  const q = clearOfFreeway(g, aisle);
+  assert.ok(freewayGap(q, freeways("chicago")) > 7, `still beside the feeder (${freewayGap(q, freeways("chicago")).toFixed(1)} m)`);
+  assert.ok((nearest(g, q.lat, q.lng, 5)?.dist ?? Infinity) < 0.5, "on a walkable way");
+  assert.ok(distM(aisle, q) <= 40, `moved ${distM(aisle, q).toFixed(0)} m`);
+  const path = routeOnGraph(g, q, pullToStreet(g, UNION_STATION.lat, UNION_STATION.lng, 220, q));
+  assert.ok(path && ride("chicago", path).run < 20);
+  // Away from freeways, untouched.
+  const street = { lat: 41.8915, lng: -87.6399 };
+  const s = pullToStreet(g, street.lat, street.lng, 60);
+  assert.deepEqual(clearOfFreeway(g, s), s);
 });

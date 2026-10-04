@@ -351,6 +351,45 @@ export function offFreeway(g: StreetGraph | null, p: Pt): Pt {
 }
 
 /**
+ * A walk start or resting spot that doesn't even look like it's on a freeway: when `p` (already on the walk graph)
+ * sits within a ramp's width of a freeway centerline — a parking aisle or scrap of path under the Ohio Street
+ * feeder, say — slide to the closest walkable point within `extra` m that's clear of it. Otherwise unchanged.
+ */
+export function clearOfFreeway(g: StreetGraph | null, p: Pt, extra = 40): Pt {
+  if (!g || !g.fw.length || !g.segs.length) return p;
+  const here = toXY(g, p.lat, p.lng);
+  if (!fwNear(g, here.x, here.y, FW_TOL)) return p;
+  const cx = Math.floor(here.x / g.cell);
+  const cy = Math.floor(here.y / g.cell);
+  const ring = Math.ceil(extra / g.cell) + 1;
+  let best: { x: number; y: number; d: number } | null = null;
+  for (let ix = cx - ring; ix <= cx + ring; ix++) {
+    for (let iy = cy - ring; iy <= cy + ring; iy++) {
+      const list = g.grid.get(cellKey(ix, iy));
+      if (!list) continue;
+      for (const id of list) {
+        const seg = g.segs[id]!;
+        const a = toXY(g, g.nodes[seg.a]!.lat, g.nodes[seg.a]!.lng);
+        const b = toXY(g, g.nodes[seg.b]!.lat, g.nodes[seg.b]!.lng);
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        const n = Math.min(200, Math.max(1, Math.ceil(len / 2)));
+        for (let k = 0; k <= n; k++) {
+          const x = a.x + ((b.x - a.x) * k) / n;
+          const y = a.y + ((b.y - a.y) * k) / n;
+          const d = Math.hypot(x - here.x, y - here.y);
+          if (d > extra || (best && d >= best.d)) continue;
+          if (fwNear(g, x, y, FW_TOL)) continue;
+          best = { x, y, d };
+        }
+      }
+    }
+  }
+  if (!best) return p;
+  const m = metersPerDegLng(g.originLat);
+  return { lat: g.originLat + best.y / M_PER_DEG_LAT, lng: g.originLng + best.x / m };
+}
+
+/**
  * Longest run (m) of `path` along a freeway in the graph's no-walk layer: near a centerline, heading the same way,
  * and not on a walkable way. Crossing on an overpass scores ~0; following a ramp scores its length.
  */
@@ -1099,7 +1138,7 @@ export function routeHugsGraph(g: StreetGraph, path: Pt[], maxOff = 32): boolean
 /** Online route with an offline graph fallback. Resolves null once `signal` aborts, never a stale path. */
 export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220, from) : to;
-  const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
+  const snappedFrom = g ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140)) : from;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
   // Aborted (map torn down, city changed): no fallback path. The caller's map may be gone.
   if (signal?.aborted) return null;
@@ -1131,7 +1170,7 @@ export function pickWalk(g: StreetGraph | null, online: Pt[] | null, from: Pt, t
 
 export async function routeDrive(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 160) : to;
-  const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
+  const snappedFrom = g ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140)) : from;
   if (g && distM(snappedTo.lat, snappedTo.lng, to.lat, to.lng) > 160) return null;
   const online = await osrmRoute(snappedFrom, snappedTo, signal, true);
   if (signal?.aborted) return null;

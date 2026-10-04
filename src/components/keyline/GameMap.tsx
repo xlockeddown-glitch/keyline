@@ -27,6 +27,7 @@ import {
   pointAlongPath,
   offFreeway,
   hopTouchesFreeway,
+  clearOfFreeway,
   pullToStreet,
   randomOnStreet,
   routeDrive,
@@ -543,7 +544,7 @@ export function GameMap() {
   function placeOnStreet(g: StreetGraph, lat: number, lng: number) {
     const snapped = pullToStreet(g, lat, lng, 140);
     // A start (spawn, station, restored spot) never rests on a freeway, ramp or feeder.
-    const p = offFreeway(g, clearCorner(g, snapped.lat, snapped.lng));
+    const p = clearOfFreeway(g, offFreeway(g, clearCorner(g, snapped.lat, snapped.lng)));
     pos.current.lat = p.lat;
     pos.current.lng = p.lng;
     const city = CITIES[useGame.getState().cityId];
@@ -783,8 +784,10 @@ export function GameMap() {
     const cut = canCutBuildings(useGame.getState().scout);
     const walkTo = seated || cut ? (seated ? snapped : target) : snapped;
     const arrive = door && !cut && !seated ? target : walkTo;
+    // The walk starts on the closest street that isn't under or beside a freeway, ramp or feeder.
+    const walkFrom = g && !seated ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140, from)) : from;
     const apply = (raw: Pt[] | null) => {
-      const path = seated ? raw : finishPath(raw, cut ? from : (g ? pullToStreet(g, from.lat, from.lng, 140, from) : from), arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
+      const path = seated ? raw : finishPath(raw, cut ? from : walkFrom, arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
       if (!path || path.length < 2) return false;
       const here = closestOnPath(path, pos.current.lat, pos.current.lng, routeAlong.current);
       if (here.dist > 160 && distM(path[0]!.lat, path[0]!.lng, from.lat, from.lng) > 40) return false;
@@ -797,7 +800,7 @@ export function GameMap() {
       return true;
     };
 
-    const local = net ? routeOnGraph(net, from, walkTo) : null;
+    const local = net ? routeOnGraph(net, seated || cut ? from : walkFrom, walkTo) : null;
     apply(local);
 
     // The online route resolves later; by then the map may have been torn down (boarding a fare,

@@ -1,9 +1,9 @@
 // Live check: the online foot router's answers for the freeway cases in paths.test.ts stay off freeways.
 // node --experimental-strip-types scripts/qa-walk-routes.ts
 import { readFileSync } from "node:fs";
-import { createGraph, ingestOsmWays, offFreeway, onFreeway, osrmRoute, pickWalk, pullToStreet } from "../src/game/streets.ts";
+import { clearOfFreeway, createGraph, ingestOsmWays, offFreeway, onFreeway, osrmRoute, pickWalk, pullToStreet } from "../src/game/streets.ts";
 import { isFreeway, isWalkableWay } from "../src/game/walkable.ts";
-import { freewayRun } from "../src/game/pathCheck.ts";
+import { freewayGap, freewayRun } from "../src/game/pathCheck.ts";
 import { dailyRoute, utcDay } from "../src/game/dailyRun.ts";
 import { CITIES } from "../src/game/data.ts";
 
@@ -78,16 +78,16 @@ for (const city of ["chicago", "detroit", "nyc", "austin", "la", "seattle", "den
     const [, , name, a, b, c, d] = m;
     const raw = { lat: +a!, lng: +b! };
     const off = offFreeway(g, raw);
-    const from = pullToStreet(g, off.lat, off.lng, 140);
+    const from = clearOfFreeway(g, pullToStreet(g, off.lat, off.lng, 140));
     const to = pullToStreet(g, +c!, +d!, 220, from);
     const online = await osrmRoute(from, to);
     const path = pickWalk(g, online, from, to);
-    const startBad = onFreeway(g, from);
+    const startBad = onFreeway(g, from) || freewayGap(from, fw) <= 7;
     if (!path) { console.log("NO ROUTE", "chicago ", "picked", name); continue; }
     const r = freewayRun(path, fw, 6, 25, walk, 4);
     const fail = startBad || r.run >= 20;
     if (fail) bad++;
-    console.log(fail ? "FAIL" : "ok  ", "chicago ", "picked walk:", name, `start ${startBad ? "ON FREEWAY" : "off freeway"} (moved ${Math.round(Math.hypot((raw.lat - from.lat) * 111320, (raw.lng - from.lng) * 82900))} m), freeway ride ${r.run.toFixed(0)} m`, r.at ? `near ${r.at.lat.toFixed(5)},${r.at.lng.toFixed(5)}` : "");
+    console.log(fail ? "FAIL" : "ok  ", "chicago ", "picked walk:", name, `start ${startBad ? "ON FREEWAY" : `${freewayGap(from, fw).toFixed(0)} m off freeways`} (moved ${Math.round(Math.hypot((raw.lat - from.lat) * 111320, (raw.lng - from.lng) * 82900))} m), freeway ride ${r.run.toFixed(0)} m`, r.at ? `near ${r.at.lat.toFixed(5)},${r.at.lng.toFixed(5)}` : "");
   }
 }
 process.exit(bad ? 1 : 0);
