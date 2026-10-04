@@ -4,7 +4,7 @@ import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user
 import { useGame } from "@/game/store";
 import { ackFriendNews, fetchFriendNews, sendFriendTicket } from "@/game/friendApi";
 import { DAILY_TICKETS } from "@/game/friendTicket";
-import { browserStores, noteDismissed, noteIgnored, offerAllowed, readOffer } from "@/game/friendOffer";
+import { browserStores, noteAnswered, noteDismissed, noteIgnored, offerAllowed, readOffer, readRecent, type RecentCard } from "@/game/friendOffer";
 import { SignInActions } from "./AuthChip";
 
 /** How long the "Send as a friend ticket" chip stays up after a trivia card is answered. */
@@ -12,6 +12,12 @@ const OFFER_MS = 15_000;
 const POLL_MS = 45_000;
 
 type Offer = { id: string; q: string; at: number };
+
+/** 0.0.53: the Journal's send row opens the same sheet, whatever the chip's snooze says. */
+const sheetListeners = new Set<(card: Offer) => void>();
+export function openFriendSheet(card: Offer) {
+  for (const fn of sheetListeners) fn(card);
+}
 
 /**
  * 0.0.50 friend tickets, street side: after a trivia card is answered (and the lamp closes), offer to send that
@@ -22,6 +28,15 @@ export function FriendTickets() {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [sheet, setSheet] = useState<Offer | null>(null);
 
+  useEffect(() => {
+    const fn = (card: Offer) => {
+      setOffer(null);
+      setSheet(card);
+    };
+    sheetListeners.add(fn);
+    return () => void sheetListeners.delete(fn);
+  }, []);
+
   useEffect(
     () =>
       useGame.subscribe((s, p) => {
@@ -30,6 +45,8 @@ export function FriendTickets() {
         // 0.0.53: not after a "Not now" in the last 24 h, and at most one unused nudge a session (friendOffer.ts).
         if (card && !s.openVault && s.asked !== p.asked) {
           const { local, session } = browserStores();
+          // Always kept for the Journal's "Send a friend ticket" row, even when the chip is snoozed.
+          noteAnswered(local, { id: card.id, q: card.q, at: Date.now() });
           if (offerAllowed(readOffer(local, session), Date.now())) setOffer({ id: card.id, q: card.q, at: Date.now() });
         }
         else if (s.openVault && !p.openVault)
@@ -89,6 +106,47 @@ export function FriendTickets() {
       ) : null}
       {sheet ? <FriendSheet card={sheet} onClose={() => setSheet(null)} /> : null}
     </>
+  );
+}
+
+/**
+ * 0.0.53: the always-there door. A quiet Journal row (Progress tab) listing the last few answered cards, each with
+ * a Send button that opens the friend-ticket sheet. Ignores the chip's 24 h snooze and session cap; the server's
+ * daily cap still applies (the sheet says so when it's hit).
+ */
+export function FriendJournalRow() {
+  const [recent] = useState<RecentCard[]>(() => readRecent(browserStores().local));
+  return (
+    <div className="hq-row min-w-0" data-testid="friend-journal">
+      <Ticket className="size-5 shrink-0 text-accent" strokeWidth={1.75} aria-hidden />
+      <div className="hq-row-copy">
+        <p className="hq-row-title">Send a friend ticket</p>
+        <p className="hq-row-sub">
+          {recent.length
+            ? `Your friend gets the same card and wick. Both of you get a White match if they're right. ${DAILY_TICKETS} a day.`
+            : "Answer a trivia card at a lamp and it waits here to send to a friend."}
+        </p>
+        {recent.length ? (
+          <ul className="mt-2 grid min-w-0 gap-2">
+            {recent.map((c) => (
+              <li key={c.id} className="flex min-w-0 items-center gap-2">
+                <span className="hq-row-sub min-w-0 flex-1 truncate" title={c.q}>
+                  {c.q}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-quiet shrink-0 px-3 text-xs"
+                  data-testid="friend-journal-send"
+                  onClick={() => openFriendSheet(c)}
+                >
+                  Send
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
