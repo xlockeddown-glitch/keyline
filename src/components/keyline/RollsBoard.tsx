@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Trophy, X } from "lucide-react";
 import { SignInGate } from "@/lib/auth/gates";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
+import { usePlayerId } from "./PlayerLink";
 import { CITIES, TIER_LABEL } from "@/game/data";
 import { fetchMe, fetchStandings, ROLL_TIERS, type MyPlates } from "@/game/rolls";
 import {
@@ -55,6 +56,7 @@ export function RollsOverlay({ onClose }: { onClose: () => void }) {
 
 export function RollsBoard() {
   const user = useCurrentUser();
+  const playerId = usePlayerId();
   const { isPending } = useCurrentUserState();
   const local = useGame((s) => s.correctByTier);
   const cityId = useGame((s) => s.cityId);
@@ -111,9 +113,11 @@ export function RollsBoard() {
   }, [user, isPending, tick]);
 
   const rows = board?.byTier[tier] ?? [];
-  const mine = mineFromBoard(board ?? emptyStandingBoard(), user?.id, tier);
+  // 0.0.54b: linked sign-ins share the primary's row, so "you" is the player id, not this sign-in's id.
+  const meId = playerId ?? user?.id;
+  const mine = mineFromBoard(board ?? emptyStandingBoard(), meId, tier);
   const myCards = mineCards?.byTier[tier];
-  const onBoard = Boolean(user && rows.some((r) => r.userId === user.id));
+  const onBoard = Boolean(user && rows.some((r) => r.userId === meId));
   const kindMeta = STANDING_KINDS.find((k) => k.id === kind)!;
   const cityName = CITIES[cityId]?.name ?? "this city";
 
@@ -198,7 +202,7 @@ export function RollsBoard() {
       ) : (
         <ol className="mt-4 grid gap-2">
           {rows.map((row) => (
-            <RollRow key={row.userId} kind={kind} row={row} mine={user?.id === row.userId} />
+            <RollRow key={row.userId} kind={kind} row={row} mine={meId === row.userId} />
           ))}
         </ol>
       )}

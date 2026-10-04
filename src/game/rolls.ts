@@ -4,6 +4,7 @@ import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import type { CityId, Tier } from "./types";
 import { standingName } from "./standingName";
+import { canonicalId } from "./playerLinks";
 import {
   emptyStandingBoard,
   publicStandingName,
@@ -116,7 +117,7 @@ export const fetchBoard = createServerFn({ method: "GET" }).handler(async () => 
           partition by tier
           order by correct desc, updated_at asc, user_id asc
         ) as rank
-      from vault_clears
+      from vault_clears_by_player
       where correct > 0
     )
     select user_id, display_name, tier, correct, rank
@@ -134,6 +135,8 @@ export const fetchMe = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
+    // 0.0.54b: linked sign-ins share the primary's row (player_links).
+    const me = await canonicalId(sql, context.userId);
     const rows = await sql<{
       tier: Tier;
       correct: number;
@@ -144,7 +147,7 @@ export const fetchMe = createServerFn({ method: "GET" })
         a.correct,
         (
           select count(*)::int + 1
-          from vault_clears b
+          from vault_clears_by_player b
           where b.tier = a.tier
             and (
               b.correct > a.correct
@@ -152,8 +155,8 @@ export const fetchMe = createServerFn({ method: "GET" })
               or (b.correct = a.correct and b.updated_at = a.updated_at and b.user_id < a.user_id)
             )
         ) as rank
-      from vault_clears a
-      where a.user_id = ${context.userId}
+      from vault_clears_by_player a
+      where a.user_id = ${me}
     `;
     const mine = emptyMine();
     for (const row of rows) {
@@ -211,7 +214,7 @@ async function loadEventAggs(city: CityId | null): Promise<Record<Tier, AttemptA
           count(*)::int as attempts,
           count(*) filter (where e.correct)::int as correct,
           coalesce(sum(e.latency_ms), 0)::bigint as latency_sum
-        from plate_events e
+        from plate_events_by_player e
         left join "user" u on u.id = e.user_id
         where e.city = ${city}
         group by e.user_id, e.rarity
@@ -224,7 +227,7 @@ async function loadEventAggs(city: CityId | null): Promise<Record<Tier, AttemptA
           count(*)::int as attempts,
           count(*) filter (where e.correct)::int as correct,
           coalesce(sum(e.latency_ms), 0)::bigint as latency_sum
-        from plate_events e
+        from plate_events_by_player e
         left join "user" u on u.id = e.user_id
         group by e.user_id, e.rarity
       `;
@@ -273,7 +276,7 @@ export const fetchStandings = createServerFn({ method: "GET" })
                 partition by tier
                 order by correct desc, updated_at asc, user_id asc
               ) as rank
-            from vault_clears
+            from vault_clears_by_player
             where correct > 0
           )
           select user_id, display_name, tier, correct, rank

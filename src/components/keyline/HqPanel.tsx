@@ -22,6 +22,7 @@ import { PrintShop } from "./PrintShop";
 import { MarketJournalRow, useMarket } from "./NightMarket";
 import { MARKET_TAG } from "@/game/nightMarket";
 import { FriendJournalRow } from "./FriendTickets";
+import { PlayerLinkRow } from "./PlayerLink";
 
 const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
 
@@ -288,6 +289,7 @@ export function HqPanel() {
               <DailyBoard city={cityId} />
               <div className="mt-5 border-t border-border pt-4">
                 <RollsBoard />
+                <PlayerLinkRow />
               </div>
             </>
           ) : null}

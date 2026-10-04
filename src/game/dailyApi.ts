@@ -5,6 +5,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import type { CityId } from "./types";
 import { CITIES } from "./data";
 import { standingName } from "./standingName";
+import { canonicalId } from "./playerLinks";
 import {
   DAILY_STRIKES,
   dailyRoute,
@@ -84,15 +85,17 @@ async function rowFor(userId: string, day: string, city: CityId): Promise<DbRow 
 /** Rank of a finished time on its day's city board (1-based). */
 async function rankOf(day: string, city: CityId, userId: string): Promise<number | null> {
   const board = await loadBoard(day, city, 500);
-  return board.find((r) => r.userId === userId)?.rank ?? null;
+  // 0.0.54b: the board folds linked sign-ins into the primary user id (player_links).
+  const me = await canonicalId(await getSql(), userId);
+  return board.find((r) => r.userId === me)?.rank ?? null;
 }
 
 async function loadBoard(day: string, city: CityId, limit = 25): Promise<DailyStanding[]> {
   const sql = await getSql();
   const rows = await sql<{ user_id: string; display_name: string; time_ms: number; finished_at: string | Date }>`
     select user_id, display_name, time_ms, finished_at
-    from daily_runs
-    where day = ${day} and city = ${city} and time_ms is not null and not voided
+    from daily_runs_by_player
+    where day = ${day} and city = ${city}
     order by time_ms asc, finished_at asc, user_id asc
     limit ${limit}
   `;
