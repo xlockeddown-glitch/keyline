@@ -171,3 +171,12 @@ test("a friend ticket from a locked city still opens as a one-card preview", asy
   const u = unlockCity(started("austin"), "london")!.u;
   assert.equal(unlockCost(u, "nola"), "locked");
 });
+
+test("a new player's city picker comes before the gift note", async () => {
+  const { readFileSync } = await import("node:fs");
+  const gift = readFileSync(new URL("../components/keyline/GiftNote.tsx", import.meta.url), "utf8");
+  assert.match(gift, /cities\.start/, "the gift note reads whether a start city is picked");
+  assert.match(gift, /if \(!userId \|\| !started\) return;/, "and asks for gifts only after it is");
+  const title = readFileSync(new URL("../components/keyline/TitleScreen.tsx", import.meta.url), "utf8");
+  assert.match(title, /if \(!g\.cities\.start\) \{\s*setScreen\("cities"\);/, "the title sends a new player to the picker first");
+});

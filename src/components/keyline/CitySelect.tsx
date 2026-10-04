@@ -13,7 +13,7 @@ export function CitySelect() {
   const setScreen = useGame((s) => s.setScreen);
   const atlas = useGame((s) => s.atlas);
   const cities = useGame((s) => s.cities);
-  // 0.0.55: a new player (no start city yet) picks any of the 15 to start; after that, locked cities show what they need.
+  // 0.0.56: a new player (no start city yet) picks any of the 15 to start; after that, locked cities show what they need.
   const picking = !cities.start;
   const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();
 

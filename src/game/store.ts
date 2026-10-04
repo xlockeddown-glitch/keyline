@@ -166,7 +166,7 @@ export type GameState = {
   friendPaid: string[];
   /** 0.0.54 gifts whose note this save has shown (the server's gift_claims row is the cross-device copy). */
   giftsSeen: string[];
-  /** 0.0.55 city unlocks: start city, unlocked cities, free second pick, city passes and per-route progress (cityPass.ts). */
+  /** 0.0.56 city unlocks: start city, unlocked cities, free second pick, city passes and per-route progress (cityPass.ts). */
   cities: CityUnlocks;
   charmDay: string;
   charmTopics: TriviaCat[];
@@ -200,7 +200,7 @@ export type GameState = {
   hud: Hud;
   setScreen: (s: Screen) => void;
   pickCity: (id: CityId) => void;
-  /** 0.0.55: unlock a city with the free second pick or one city pass (train station). Null on success, else why not. */
+  /** 0.0.56: unlock a city with the free second pick or one city pass (train station). Null on success, else why not. */
   unlockCity: (id: CityId) => string | null;
   setHud: (h: Partial<Hud>) => void;
   addDistance: (m: number) => void;
@@ -734,7 +734,7 @@ export const useGame = create<GameState>((set, get) => ({
     : legacyDailyPaid((saved as { dailyPaidDay?: unknown } | null | undefined)?.dailyPaidDay, legacyDailyRun()),
   friendPaid: Array.isArray(saved?.friendPaid) ? saved.friendPaid.filter((k): k is string => typeof k === "string") : [],
   giftsSeen: Array.isArray(saved?.giftsSeen) ? saved.giftsSeen.filter((k): k is string => typeof k === "string") : [],
-  // 0.0.55: no save = a new player (picks a start city); a save without unlocks is from before 0.0.55 and migrates.
+  // 0.0.56: no save = a new player (picks a start city); a save without unlocks is from before 0.0.56 and migrates.
   cities: saved ? (saved.cities ? cleanUnlocks(saved.cities) : migrateUnlocks(saved)) : freshUnlocks(),
   charmDay: typeof saved?.charmDay === "string" ? saved.charmDay : "",
   charmTopics: Array.isArray(saved?.charmTopics) ? saved.charmTopics : [],
@@ -797,7 +797,7 @@ export const useGame = create<GameState>((set, get) => ({
       get().tickJourney();
       if (get().journey) return;
     }
-    // 0.0.55: a new player's first pick is their start city; after that only unlocked cities can be entered.
+    // 0.0.56: a new player's first pick is their start city; after that only unlocked cities can be entered.
     if (!get().cities.start) set({ cities: chooseStart(get().cities, id) });
     else if (!isUnlocked(get().cities, id)) {
       flashToast(set, get, `${CITIES[id]?.name ?? "That city"} is locked. ${lockLine(get().cities, id).replace(/^Locked · /, "")}`, 3200);
@@ -1498,7 +1498,7 @@ export const useGame = create<GameState>((set, get) => ({
     const clothLine = tip > 0 && wornCloth ? `${clothName(wornCloth)} +${tip}.` : null;
     const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
     const questHit = cleared(get, answered(get, true, grade === "perfect"), poi);
-    // 0.0.55 city passes: amber+ lamp points (route a) and every place in the city (route b).
+    // 0.0.56 city passes: amber+ lamp points (route a) and every place in the city (route b).
     const lit = lampLit(get().cities, poi.tier);
     const goalsHit = goalsCheck(lit.u, get().cityId, atlas);
     const passLine = lit.earned + goalsHit.earned ? `City pass earned${lit.earned + goalsHit.earned > 1 ? ` ×${lit.earned + goalsHit.earned}` : ""}. Unlock a city at the train station.` : null;
@@ -1601,7 +1601,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (!marked) return null;
     const paid = payDaily(get().keys, get().points);
     sfx.pickup();
-    // 0.0.55: the 3rd paid Lantern Run in a city pays a city pass (route c), once per city.
+    // 0.0.56: the 3rd paid Lantern Run in a city pays a city pass (route c), once per city.
     const runs = runFinished(get().cities, city);
     set({ dailyPaid: marked, keys: paid.keys, points: paid.points, cities: runs.u });
     if (runs.earned) flashToast(set, get, `Third Lantern Run in ${CITIES[city]?.name ?? "this city"} · city pass earned.`, 3200);

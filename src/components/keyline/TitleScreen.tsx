@@ -15,7 +15,7 @@ export function TitleScreen() {
   const cityId = useGame((s) => s.cityId);
   const journey = useGame((s) => s.journey);
   const tickJourney = useGame((s) => s.tickJourney);
-  // 0.0.55: a brand-new player picks a starting city first.
+  // 0.0.56: a brand-new player picks a starting city first.
   const needsStart = useGame((s) => !s.cities.start);
   const [rollsOpen, setRollsOpen] = useState(false);
   const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();

@@ -21,10 +21,12 @@ export function GiftNote() {
   const user = useCurrentUser();
   const { isPending } = useCurrentUserState();
   const userId = !isPending && user ? user.id : null;
+  // 0.0.56: a brand-new player picks their first city before any gift note (the picker comes first, then the gift).
+  const started = useGame((s) => Boolean(s.cities.start));
   const [note, setNote] = useState<Note | null>(null);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !started) return;
     let live = true;
     void (async () => {
       let gifts: Gift[];
@@ -48,7 +50,7 @@ export function GiftNote() {
     return () => {
       live = false;
     };
-  }, [userId]);
+  }, [userId, started]);
 
   if (!note) return null;
   const scout = SCOUTS[note.scout];

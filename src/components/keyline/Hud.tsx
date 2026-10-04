@@ -92,7 +92,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
 
   const atDesk = Boolean(nearest && isFareDesk(nearest) && inReach && !hud.seated);
   const canPunch = atDesk && fares > 0;
-  // 0.0.55: the station desk also opens the timetable without a ticket when there's a city to unlock (free pick or a pass).
+  // 0.0.56: the station desk also opens the timetable without a ticket when there's a city to unlock (free pick or a pass).
   const freePick = useGame((s) => s.cities.freePick);
   const passes = useGame((s) => s.cities.passes);
   const canUnlock = atDesk && (freePick || passes > 0);

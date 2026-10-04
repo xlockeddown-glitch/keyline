@@ -3,7 +3,7 @@ import { SURVEY_GOALS, surveyHave } from "./survey.ts";
 import type { CityId, Tier } from "./types.ts";
 
 /**
- * 0.0.55 city unlocks. Lives in the client save (like coins and matches); the server never checks it, so friend
+ * 0.0.56 city unlocks. Lives in the client save (like coins and matches); the server never checks it, so friend
  * tickets and dealt cards keep working for any city.
  *
  *  - A new player picks a starting city out of all 15. The second city is free, picked any time at the train
@@ -16,7 +16,7 @@ import type { CityId, Tier } from "./types.ts";
  *    (c) Lantern Runs: 3 Daily Lantern Run finishes in a city pay one pass, once per city (later runs there don't
  *        count again; each city has its own count).
  *  - Passes bank (no cap) and are spent one per city at the train station.
- *  - Saves from before 0.0.55 keep every city they've been in or have progress in (current city, places visited,
+ *  - Saves from before 0.0.56 keep every city they've been in or have progress in (current city, places visited,
  *    Lantern Runs, circuit progress, a ride under way) plus one free pass. If they hold only one city the free
  *    second pick is still open. Goals and Lantern Runs already finished before the update are marked counted (the
  *    free pass stands in for them) so an old save doesn't land a pile of passes at once; lamp points start at 0.
@@ -182,7 +182,7 @@ type OldSave = {
 const POI_CITY: Record<string, CityId> = {};
 for (const c of CITY_LIST) for (const p of c.pois) POI_CITY[p.id] = c.id;
 
-/** Saves from before 0.0.55: every city with play in it stays open, plus one free pass. */
+/** Saves from before 0.0.56: every city with play in it stays open, plus one free pass. */
 export function migrateUnlocks(save: OldSave): CityUnlocks {
   const seen: CityId[] = [];
   const add = (x: unknown) => {

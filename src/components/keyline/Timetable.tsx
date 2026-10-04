@@ -47,7 +47,7 @@ export function Timetable({ onClose, onPunch }: Props) {
             const eta = formatEta(fareMs(cityId, c.id));
             const cost = unlockCost(cities, c.id);
             if (cost !== "open") {
-              // 0.0.55: a locked city shows the lock, what it needs, and unlocks here (free second pick or a pass).
+              // 0.0.56: a locked city shows the lock, what it needs, and unlocks here (free second pick or a pass).
               return (
                 <li key={c.id} className="flex items-start justify-between gap-3 border-b border-border py-3 last:border-0" data-testid={`ward-locked-${c.id}`}>
                   <span className="min-w-0">

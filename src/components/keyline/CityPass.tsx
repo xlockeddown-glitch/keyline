@@ -5,7 +5,7 @@ import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
 
 /**
- * 0.0.55: progress toward the next city pass, for the city the player is in (Journal Progress and the train
+ * 0.0.56: progress toward the next city pass, for the city the player is in (Journal Progress and the train
  * station). Each route counts on its own; any one of them pays a pass.
  */
 export function PassProgressRow({ compact = false }: { compact?: boolean }) {
