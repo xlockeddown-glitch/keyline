@@ -30,6 +30,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
+import { blitzDue } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { mergeSeen, savedSeen } from "./seenMemory";
@@ -161,6 +162,10 @@ export type GameState = {
   lastCrateDay: string;
   crateStreak: number;
   lastPulseDay: string;
+  /** 0.0.59 Daily Blitz: the UTC day the login run was started, and the coin it paid. */
+  lastBlitzDay: string;
+  blitzTake: number;
+  blitzOpen: boolean;
   sparkDay: string;
   sparkN: number;
   sparkLamps: string[];
@@ -223,6 +228,16 @@ export type GameState = {
   closeVault: () => void;
   claimCrate: () => void;
   claimPulse: () => void;
+  /** Open Daily Blitz if today's run hasn't started. */
+  openBlitz: () => void;
+  /** Close the blitz sheet without starting (the day stays open). */
+  dismissBlitz: () => void;
+  /** The first card landed: today's run is spent, even if they walk away. */
+  lockBlitz: () => void;
+  /** Add a cleared lantern's coin. No-op unless today's run is locked. */
+  bankBlitz: (pay: number) => void;
+  /** Remember a dealt blitz card so the next lantern doesn't repeat it. */
+  rememberCard: (id: string) => void;
   /** Pay the Daily Lantern Run finish once per UTC day. Returns what landed, or null if already paid. */
   payDailyRun: (day: string, city: CityId) => { added: Partial<Record<Tier, number>>; coins: number } | null;
   /** Land server-confirmed friend-ticket whites (each id once per save). Returns the ids newly paid. */
@@ -449,6 +464,8 @@ function persistable(s: GameState) {
     lastCrateDay: s.lastCrateDay,
     crateStreak: s.crateStreak,
     lastPulseDay: s.lastPulseDay,
+    lastBlitzDay: s.lastBlitzDay,
+    blitzTake: s.blitzTake,
     sparkDay: s.sparkDay,
     sparkN: s.sparkN,
     sparkLamps: s.sparkLamps,
@@ -747,6 +764,9 @@ export const useGame = create<GameState>((set, get) => ({
   lastCrateDay: saved?.lastCrateDay ?? "",
   crateStreak: saved?.crateStreak ?? 0,
   lastPulseDay: typeof saved?.lastPulseDay === "string" ? saved.lastPulseDay : "",
+  lastBlitzDay: typeof saved?.lastBlitzDay === "string" ? saved.lastBlitzDay : "",
+  blitzTake: typeof saved?.blitzTake === "number" && saved.blitzTake > 0 ? Math.floor(saved.blitzTake) : 0,
+  blitzOpen: false,
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
   sparkLamps: saved?.sparkLamps ?? [],
@@ -800,17 +820,8 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   setScreen: (s) => {
-    const hint =
-      s === "play" && pulseDue(get().lastPulseDay, today()) && get().screen !== "play"
-        ? "City Pulse is waiting in Journal · Progress."
-        : get().toast;
-    set({ screen: s, toast: hint });
+    set({ screen: s });
     if (s === "play") paySurvey(set, get);
-    if (hint && hint.includes("City Pulse")) {
-      window.setTimeout(() => {
-        if (get().toast?.includes("City Pulse")) set({ toast: null });
-      }, 2800);
-    }
     scheduleSave(get);
   },
   pickCity: (id) => {
@@ -1639,6 +1650,29 @@ export const useGame = create<GameState>((set, get) => ({
     window.setTimeout(() => {
       if (get().toast?.includes("City Pulse")) set({ toast: null });
     }, 2200);
+  },
+  openBlitz: () => {
+    if (!blitzDue(get().lastBlitzDay, today())) return;
+    set({ blitzOpen: true, hqOpen: false });
+  },
+  dismissBlitz: () => set({ blitzOpen: false }),
+  lockBlitz: () => {
+    const d = today();
+    if (get().lastBlitzDay === d) return;
+    set({ lastBlitzDay: d, blitzTake: 0 });
+    saveNow(get);
+  },
+  bankBlitz: (pay) => {
+    const n = Math.floor(pay);
+    if (n <= 0 || get().lastBlitzDay !== today()) return;
+    set({ points: get().points + n, blitzTake: get().blitzTake + n });
+    saveNow(get);
+  },
+  rememberCard: (id) => {
+    if (!id) return;
+    const seenIds = [...get().seenIds.filter((x) => x !== id), id].slice(-ASKED_KEEP);
+    set({ seenIds });
+    scheduleSave(get);
   },
   payDailyRun: (day, city) => {
     const marked = markDailyPaid(get().dailyPaid, day, city);

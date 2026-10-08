@@ -139,7 +139,15 @@ async function enterGame(page) {
   const guest = page.getByRole("button", { name: "Continue as guest" });
   if (await guest.count()) await guest.click();
   await page.waitForSelector('[data-testid="hud-status"]', { timeout: 120000 });
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(800);
+  // 0.0.59: Daily Blitz opens over the city. The lamp card is what's underneath.
+  const later = page.getByRole("button", { name: "Not now" });
+  if (await later.count()) await later.click();
+  await page.waitForFunction(
+    () => /At the lamp/.test(document.querySelector('[data-testid="hud-sight"]')?.textContent ?? ""),
+    { timeout: 20000 },
+  );
+  await page.waitForTimeout(400);
 }
 
 const measure = (page) =>

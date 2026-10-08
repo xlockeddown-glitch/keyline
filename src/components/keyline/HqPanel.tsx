@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityShop } from "@/game/data";
 import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
-import { PULSE_POINTS, pulseDue } from "@/game/pulse";
+import { BLITZ_FULL, blitzDue } from "@/game/dailyBlitz";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
 import { INGREDIENTS, cityStaple, type IngredientId } from "@/game/ingredients";
 import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
@@ -54,11 +54,12 @@ export function HqPanel() {
   const pressPass = useGame((s) => s.pressPass);
   const keys = useGame((s) => s.keys);
   const claimCrate = useGame((s) => s.claimCrate);
-  const claimPulse = useGame((s) => s.claimPulse);
+  const openBlitz = useGame((s) => s.openBlitz);
   const bankUp = useGame((s) => s.bankUp);
   const bankDown = useGame((s) => s.bankDown);
   const lastCrateDay = useGame((s) => s.lastCrateDay);
-  const lastPulseDay = useGame((s) => s.lastPulseDay);
+  const lastBlitzDay = useGame((s) => s.lastBlitzDay);
+  const blitzTake = useGame((s) => s.blitzTake);
   const crateStreak = useGame((s) => s.crateStreak);
   const vaultsOpened = useGame((s) => s.vaultsOpened);
   const distanceM = useGame((s) => s.distanceM);
@@ -76,12 +77,8 @@ export function HqPanel() {
   const claimed = lastCrateDay === today;
   const crateDay = claimed ? Math.max(1, crateStreak) : nextCrateStreak(lastCrateDay, crateStreak, today);
   const loot = crateLoot(crateDay);
-  const pulseReady = pulseDue(lastPulseDay, today);
+  const blitzReady = blitzDue(lastBlitzDay, today);
   const { market } = useMarket(cityId);
-
-  useEffect(() => {
-    if (hqOpen && pulseReady) setTab("Progress");
-  }, [hqOpen, pulseReady]);
 
   useSheetOpen(hqOpen);
   if (!hqOpen) return null;
@@ -304,16 +301,22 @@ export function HqPanel() {
                 <button
                   type="button"
                   className="hq-row mt-2 w-full text-left disabled:opacity-70"
-                  disabled={!pulseReady}
+                  disabled={!blitzReady}
                   onClick={() => {
                     sfx.ui();
-                    claimPulse();
+                    openBlitz();
                   }}
                 >
                   <ItemIcon item="coin" size={40} />
                   <div className="hq-row-copy">
-                    <p className="hq-row-title">{pulseReady ? "File City Pulse" : "City Pulse filed"}</p>
-                    <p className="hq-row-sub">Once a day at the desk. {PULSE_POINTS} coin. Separate from the crate streak.</p>
+                    <p className="hq-row-title">{blitzReady ? "Daily Blitz" : "Daily Blitz done"}</p>
+                    <p className="hq-row-sub">
+                      {blitzReady
+                        ? `Six lanterns, white to violet. A miss keeps the coin. Full clear ${BLITZ_FULL}.`
+                        : blitzTake > 0
+                          ? `+${blitzTake} coin today. The next ladder is tomorrow.`
+                          : "Played today. The next ladder is tomorrow."}
+                    </p>
                   </div>
                 </button>
               </div>

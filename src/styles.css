@@ -97,41 +97,42 @@ h3 {
   height:56px;
   image-rendering:pixelated;
   background-color: transparent;
-  filter:drop-shadow(0 0 7px #ede8df8c) drop-shadow(0 4px 6px #0000008c)
+  filter:drop-shadow(0 2px 1px #0000008c);
+  transform-origin:50% 90%
 }
 @supports (color:color-mix(in lab, red, red)){
   .scout-marker{
-    filter:drop-shadow(0 0 7px color-mix(in oklab, var(--color-fg) 55%, transparent)) drop-shadow(0 4px 6px #0000008c)
+    filter:drop-shadow(0 2px 1px color-mix(in oklab, var(--color-bg) 35%, #000))
   }
 }
 .scout-marker{
-  background-image:url(/sprites/player-walk.png?v=k24);
+  background-image:url(/sprites/player-walk.png?v=k60s);
   background-repeat:no-repeat;
   background-size:400% 400%
 }
 .scout-marker.is-idle{
-  background-image:url(/sprites/player-idle.png?v=k8);
+  background-image:url(/sprites/player-idle.png?v=k60s);
   background-size:200% 200%
 }
 .scout-marker[data-scout=cat]{
-  background-image:url(/sprites/scouts/cat-walk.png?v=k37a)
+  background-image:url(/sprites/scouts/cat-walk.png?v=k60s)
 }
 .scout-marker[data-scout=cat].is-idle{
-  background-image:url(/sprites/scouts/cat-idle.png?v=k8);
+  background-image:url(/sprites/scouts/cat-idle.png?v=k60s);
   background-size:200% 200%
 }
 .scout-marker[data-scout=turtle]{
-  background-image:url(/sprites/scouts/turtle-walk.png?v=k38a)
+  background-image:url(/sprites/scouts/turtle-walk.png?v=k60s)
 }
 .scout-marker[data-scout=turtle].is-idle{
-  background-image:url(/sprites/scouts/turtle-idle.png?v=k8);
+  background-image:url(/sprites/scouts/turtle-idle.png?v=k60s);
   background-size:200% 200%
 }
 .scout-marker[data-scout=owl]{
-  background-image:url(/sprites/scouts/owl-walk.png?v=k24a)
+  background-image:url(/sprites/scouts/owl-walk.png?v=k60s)
 }
 .scout-marker[data-scout=owl].is-idle{
-  background-image:url(/sprites/scouts/owl-idle.png?v=k24a);
+  background-image:url(/sprites/scouts/owl-idle.png?v=k60s);
   background-size:200% 200%
 }
 .scout-hire{
@@ -1325,70 +1326,70 @@ h3 {
 }
 
 .scout-marker[data-scout="corgi"] {
-  background-image: url("/sprites/scouts/corgi-walk.png?v=k24a");
+  background-image: url("/sprites/scouts/corgi-walk.png?v=k60s");
 }
 .scout-marker[data-scout="corgi"].is-idle {
-  background-image: url("/sprites/scouts/corgi-idle.png?v=k24a");
+  background-image: url("/sprites/scouts/corgi-idle.png?v=k60s");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="sloth"] {
-  background-image: url("/sprites/scouts/sloth-walk.png?v=k24a");
+  background-image: url("/sprites/scouts/sloth-walk.png?v=k60s");
 }
 .scout-marker[data-scout="sloth"].is-idle {
-  background-image: url("/sprites/scouts/sloth-idle.png?v=k8");
+  background-image: url("/sprites/scouts/sloth-idle.png?v=k60s");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="fox"] {
-  background-image: url("/sprites/scouts/fox-walk.png?v=k24");
+  background-image: url("/sprites/scouts/fox-walk.png?v=k60s");
 }
 .scout-marker[data-scout="fox"].is-idle {
-  background-image: url("/sprites/scouts/fox-idle.png?v=k8");
+  background-image: url("/sprites/scouts/fox-idle.png?v=k60s");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="lynx"] {
-  background-image: url("/sprites/scouts/lynx-walk.png?v=k49p");
+  background-image: url("/sprites/scouts/lynx-walk.png?v=k60s");
 }
 .scout-marker[data-scout="lynx"].is-idle {
-  background-image: url("/sprites/scouts/lynx-idle.png?v=k49p");
+  background-image: url("/sprites/scouts/lynx-idle.png?v=k60s");
   background-size: 200% 200%;
 }
 /* 0.0.37: standing still after walking left or right keeps the side profile (2x2: row 0 left, row 1 right). */
 .scout-marker.is-idle.is-side,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
-  background-image: url("/sprites/player-idle-side.png?v=k37a");
+  background-image: url("/sprites/player-idle-side.png?v=k60s");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-idle-side.png?v=k37a");
+  background-image: url("/sprites/scouts/cat-idle-side.png?v=k60s");
 }
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k38a");
+  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k60s");
 }
 .scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-idle-side.png?v=k37a");
+  background-image: url("/sprites/scouts/owl-idle-side.png?v=k60s");
 }
 .scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-idle-side.png?v=k37a");
+  background-image: url("/sprites/scouts/corgi-idle-side.png?v=k60s");
 }
 .scout-marker[data-scout="sloth"].is-idle.is-side {
-  background-image: url("/sprites/scouts/sloth-idle-side.png?v=k37a");
+  background-image: url("/sprites/scouts/sloth-idle-side.png?v=k60s");
 }
 .scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-idle-side.png?v=k37a");
+  background-image: url("/sprites/scouts/fox-idle-side.png?v=k60s");
 }
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k49p");
+  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k60s");
 }
 /* 0.0.51: The Giraffe (scripts/draw-giraffe.py). */
 .scout-marker[data-scout="giraffe"] {
-  background-image: url("/sprites/scouts/giraffe-walk.png?v=k51h");
+  background-image: url("/sprites/scouts/giraffe-walk.png?v=k60s");
 }
 .scout-marker[data-scout="giraffe"].is-idle {
-  background-image: url("/sprites/scouts/giraffe-idle.png?v=k51h");
+  background-image: url("/sprites/scouts/giraffe-idle.png?v=k60s");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-idle-side.png?v=k51h");
+  background-image: url("/sprites/scouts/giraffe-idle-side.png?v=k60s");
 }
 
 .wheel-night {
@@ -1452,6 +1453,15 @@ h3 {
 }
 .pawn.is-seated .scout-marker {
   opacity: 0;
+}
+/* The owl and the corgi fill less of the cell than the turtle, so they vanish into the map.
+   The giraffe's lookout doesn't read at the same height as the raccoon. Scale from the feet. */
+.pawn .scout-marker[data-scout="owl"],
+.pawn .scout-marker[data-scout="corgi"] {
+  transform: scale(1.28);
+}
+.pawn .scout-marker[data-scout="giraffe"] {
+  transform: scale(1.46);
 }
 .pawn .cab-sprite[hidden] {
   display: none;

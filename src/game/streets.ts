@@ -664,13 +664,14 @@ export function spreadOnGraph(g: StreetGraph, avoid: Pt[], n: number, minSep = 1
   return out;
 }
 
-function walkFromNode(g: StreetGraph, node: number, yaw: number, leftover: number, hops = 0): Pt {
+function walkFromNode(g: StreetGraph, node: number, yaw: number, leftover: number, hops = 0, fromSeg = -1): Pt {
   const here = g.nodes[node]!;
   if (leftover < 0.15 || hops > 16) return here;
   const h = headingNE(yaw);
   let bestId = -1;
   let bestDot = -Infinity;
   for (const id of g.adj[node]!) {
+    if (id === fromSeg) continue;
     const seg = g.segs[id]!;
     const dir = segDir(g, seg);
     const sign = seg.a === node ? 1 : -1;
@@ -680,6 +681,7 @@ function walkFromNode(g: StreetGraph, node: number, yaw: number, leftover: numbe
       bestId = id;
     }
   }
+  // Nothing ahead but the way we came: stop. Turning around onto it made a north hold bounce in place.
   if (bestId < 0) return here;
   const seg = g.segs[bestId]!;
   const forward = seg.a === node;
@@ -688,7 +690,7 @@ function walkFromNode(g: StreetGraph, node: number, yaw: number, leftover: numbe
     return lerpSeg(g, seg, t);
   }
   const next = forward ? seg.b : seg.a;
-  return walkFromNode(g, next, yaw, leftover - seg.length, hops + 1);
+  return walkFromNode(g, next, yaw, leftover - seg.length, hops + 1, bestId);
 }
 
 function slide(g: StreetGraph, snap: Snap, yaw: number, dist: number): Pt {
@@ -706,7 +708,7 @@ function slide(g: StreetGraph, snap: Snap, yaw: number, dist: number): Pt {
     return lerpSeg(g, seg, nt);
   }
   const node = sign > 0 ? seg.b : seg.a;
-  return walkFromNode(g, node, yaw, travel - remaining);
+  return walkFromNode(g, node, yaw, travel - remaining, 0, snap.seg);
 }
 
 export function constrainStep(g: StreetGraph, lat: number, lng: number, yaw: number, dist: number, loose = false): Pt {
@@ -799,6 +801,48 @@ export function pullToStreet(g: StreetGraph, lat: number, lng: number, max = 110
   }
   if (anywhere) return { lat: anywhere.lat, lng: anywhere.lng };
   return onStreet(g, lat, lng);
+}
+
+/** Metres of real north a held north press covers. A bounce or a slide down an east-west curb scores low. */
+function northRoom(g: StreetGraph, lat: number, lng: number, budget = 28): number {
+  const startLat = lat;
+  let p = { lat, lng };
+  let left = budget;
+  while (left > 0.4) {
+    const step = Math.min(3, left);
+    const n = constrainStep(g, p.lat, p.lng, 0, step, true);
+    const d = distM(p.lat, p.lng, n.lat, n.lng);
+    if (d < 0.35) break;
+    p = n;
+    left -= d;
+  }
+  return (p.lat - startLat) * M_PER_DEG_LAT;
+}
+
+/**
+ * A new walk should have street to the north. If the curb ahead dies in a few metres, step
+ * along the streets (at most ~110 m) to a spot where a north press actually goes north.
+ */
+export function standOpen(g: StreetGraph, lat: number, lng: number): Pt {
+  const here = { lat, lng };
+  let best = here;
+  let bestRoom = northRoom(g, lat, lng);
+  if (bestRoom >= 18) return here;
+  for (const yaw of [0, Math.PI, Math.PI / 2, -Math.PI / 2, Math.PI / 4, -Math.PI / 4, (3 * Math.PI) / 4, (-3 * Math.PI) / 4]) {
+    let p = here;
+    for (let i = 0; i < 18; i++) {
+      const n = constrainStep(g, p.lat, p.lng, yaw, 6, true);
+      if (distM(p.lat, p.lng, n.lat, n.lng) < 1.5) break;
+      p = n;
+      if (distM(here.lat, here.lng, p.lat, p.lng) > 110) break;
+      const room = northRoom(g, p.lat, p.lng);
+      if (room > bestRoom + 6) {
+        bestRoom = room;
+        best = p;
+      }
+    }
+  }
+  return best;
 }
 
 export function faceAlongStreet(g: StreetGraph, lat: number, lng: number, toward?: Pt) {

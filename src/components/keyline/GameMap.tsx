@@ -35,6 +35,7 @@ import {
   routeWalk,
   scatterStreetLamps,
   spreadOnGraph,
+  standOpen,
   stuckNudge,
   type Pt,
   type StreetGraph,
@@ -54,6 +55,7 @@ import { Fireworks } from "./Fireworks";
 import { Timetable } from "./Timetable";
 import { Tutorial } from "./Tutorial";
 import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
+import { DailyBlitz } from "./DailyBlitz";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
 import { MARKET_TAG, closestOnStreet, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
@@ -93,6 +95,30 @@ function setCoat(el: HTMLElement, coat: string | null) {
   if (coat) {
     if (el.dataset.coat !== coat) el.dataset.coat = coat;
   } else if (el.hasAttribute("data-coat")) el.removeAttribute("data-coat");
+}
+
+/** Walk, front idle and side idle for the worn coat. Side idle is only swapped in when a left or
+ *  right walk stops, so without this the first stop paints an empty frame while the sheet loads. */
+const warmedSheets = new Set<string>();
+function warmSheets(scout: string, coat: string | null) {
+  if (typeof document === "undefined") return;
+  const probe = document.createElement("div");
+  probe.className = "scout-marker";
+  probe.dataset.scout = scout;
+  if (coat) probe.dataset.coat = coat;
+  probe.style.cssText = "position:absolute;left:-9999px;top:0;width:56px;height:56px;pointer-events:none";
+  document.body.appendChild(probe);
+  for (const pose of ["", "is-idle", "is-idle is-side"]) {
+    probe.className = `scout-marker ${pose}`.trim();
+    const raw = getComputedStyle(probe).backgroundImage;
+    const m = /url\((['"]?)(.*?)\1\)/.exec(raw);
+    const url = m?.[2];
+    if (!url || url === "none" || warmedSheets.has(url)) continue;
+    warmedSheets.add(url);
+    const img = new Image();
+    img.src = url;
+  }
+  probe.remove();
 }
 
 export function GameMap() {
@@ -135,6 +161,7 @@ export function GameMap() {
   const shadeRef = useRef<Polygon | null>(null);
   const lastFence = useRef(0);
   const cityId = useGame((s) => s.cityId);
+  const scoutName = useGame((s) => SCOUTS[s.scout]?.name ?? "The walker");
   const [streets, setStreets] = useState<"loading" | "ready" | "error">("loading");
   const [boardOpen, setBoardOpen] = useState(false);
   const [runOn, setRunOn] = useState(false);
@@ -542,10 +569,12 @@ export function GameMap() {
     }
   }
 
-  function placeOnStreet(g: StreetGraph, lat: number, lng: number) {
+  function placeOnStreet(g: StreetGraph, lat: number, lng: number, openNorth = false) {
     const snapped = pullToStreet(g, lat, lng, 140);
     // A start (spawn, station, restored spot) never rests on a freeway, ramp or feeder.
-    const p = clearOfFreeway(g, offFreeway(g, clearCorner(g, snapped.lat, snapped.lng)));
+    // A fresh city stand also steps along the curb when north dies in a few metres.
+    const cleared = clearOfFreeway(g, offFreeway(g, clearCorner(g, snapped.lat, snapped.lng)));
+    const p = openNorth ? standOpen(g, cleared.lat, cleared.lng) : cleared;
     pos.current.lat = p.lat;
     pos.current.lng = p.lng;
     const city = CITIES[useGame.getState().cityId];
@@ -608,6 +637,9 @@ export function GameMap() {
     cabMarker.current?.remove();
     cabMarker.current = null;
     routeMode.current = "walk";
+    // Drop the previous city's fence before the new streets arrive. One frame of the old box
+    // clamps a Temple spawn onto Austin's edge, then the new box yanks that spot to the rim.
+    wardRef.current = null;
     useGame.getState().setHud({ seated: false });
     setStreets("loading");
     abortRef.current?.abort();
@@ -678,6 +710,7 @@ export function GameMap() {
         keyboard: false,
         zIndexOffset: 800,
       }).addTo(map);
+      warmSheets(useGame.getState().scout, useGame.getState().wardrobe.coat);
 
       rebuildPins(L, map);
       paintMarket();
@@ -688,7 +721,7 @@ export function GameMap() {
         if (cancelled) return;
         graphRef.current = g;
         bindWalkGraph(g);
-        placeOnStreet(g, pos.current.lat, pos.current.lng);
+        placeOnStreet(g, dock.lat, dock.lng, true);
         snapKeys(g);
         setStreets("ready");
         const L = Lref.current;
@@ -1042,6 +1075,7 @@ export function GameMap() {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      if (useGame.getState().blitzOpen) return;
       if (useGame.getState().openVault) {
         if (e.code === "Escape") {
           useGame.getState().closeVault();
@@ -1144,7 +1178,7 @@ export function GameMap() {
       last.current = t;
       const dt = Math.min(MAX_DT, (t - prev) / 1000);
       const st = useGame.getState();
-      if (st.openVault || st.hqOpen || st.invOpen || st.screen !== "play") return;
+      if (st.blitzOpen || st.openVault || st.hqOpen || st.invOpen || st.screen !== "play") return;
 
       const held = new Set(injected.current ?? keysHeld.current);
       const seated = Boolean(cabRef.current?.seated);
@@ -1457,6 +1491,7 @@ export function GameMap() {
         const el = playerMarker.current?.getElement()?.querySelector(".scout-marker") as HTMLElement | null;
         if (el) el.dataset.scout = s.scout;
         if (el) setCoat(el, s.wardrobe.coat);
+        warmSheets(s.scout, s.wardrobe.coat);
         if (el && s.quests.worn) el.dataset.cloth = s.quests.worn;
         else el?.removeAttribute("data-cloth");
         if (s.scout !== p.scout) startBed(s.scout);
@@ -1569,6 +1604,7 @@ export function GameMap() {
       <LootToast />
       <FriendTickets />
       <GiftNote />
+      <DailyBlitz />
       <MysteryWheel />
       <VaultModal />
       <Satchel />
@@ -1607,10 +1643,10 @@ export function GameMap() {
         <div className="pointer-events-none absolute inset-x-0 top-24 z-[700] flex justify-center px-4">
           <div className="panel pointer-events-auto max-w-sm px-4 py-3">
             {streets === "loading" ? (
-              <p className="text-sm text-fg-muted">Charting streets and paths. The raccoon stays on the grid.</p>
+              <p className="text-sm text-fg-muted">Charting streets and paths. {scoutName} stays on the grid.</p>
             ) : (
               <div className="flex flex-col gap-2">
-                <p className="text-sm text-fg-muted">Couldn't read the street map. Retry to keep the raccoon on roads.</p>
+                <p className="text-sm text-fg-muted">Couldn't read the street map. Retry, and {scoutName} stays on the roads.</p>
                 <button type="button" className="btn btn-primary" onClick={retryStreets}>
                   Retry streets
                 </button>

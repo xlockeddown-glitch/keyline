@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { canGrabMatch, clearOfFreeway, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, type Pt } from "./streets.ts";
+import { canGrabMatch, clearOfFreeway, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, standOpen, type Pt } from "./streets.ts";
 import { isExpresswayNamed, isFreeway, isWalkableWay } from "./walkable.ts";
 import { freewayGap, freewayRun } from "./pathCheck.ts";
 
@@ -297,6 +297,41 @@ test("Chicago: an online route along the Ohio Street feeder is never used or sti
   ingestLine(bare, [from, { lat: from.lat - 0.0003, lng: from.lng }]);
   ingestLine(bare, [to, { lat: to.lat - 0.0003, lng: to.lng }]);
   assert.equal(pickWalk(bare, online, from, to), null);
+});
+
+test("a north hold stops at the end of the curb instead of bouncing back", () => {
+  const g = createGraph(30.27, -97.74);
+  ingestLine(g, [
+    { lat: 30.27, lng: -97.74 },
+    { lat: 30.27025, lng: -97.74 },
+  ]);
+  const start = pullToStreet(g, 30.27002, -97.74, 40);
+  let p = start;
+  let far = 0;
+  for (let i = 0; i < 40; i++) {
+    p = constrainStep(g, p.lat, p.lng, 0, 2, true);
+    far = Math.max(far, (p.lat - start.lat) * 111_320);
+  }
+  const back = (p.lat - start.lat) * 111_320;
+  assert.ok(far > 10, `never got going (${far.toFixed(1)} m)`);
+  assert.ok(back > far - 2.5, `bounced back to ${back.toFixed(1)} m after reaching ${far.toFixed(1)} m`);
+});
+
+test("a fresh stand steps back when north dies in a few metres", () => {
+  const g = createGraph(30.27, -97.74);
+  ingestLine(g, [
+    { lat: 30.27, lng: -97.74 },
+    { lat: 30.27045, lng: -97.74 },
+  ]);
+  const end = pullToStreet(g, 30.27042, -97.74, 30);
+  const stood = standOpen(g, end.lat, end.lng);
+  const room = (q: Pt) => {
+    let p = q;
+    for (let i = 0; i < 14; i++) p = constrainStep(g, p.lat, p.lng, 0, 3, true);
+    return (p.lat - q.lat) * 111_320;
+  };
+  assert.ok(room(stood) > room(end) + 8, `stood ${room(stood).toFixed(1)} m north, the dead end only ${room(end).toFixed(1)}`);
+  assert.ok(distM(end, stood) < 75, "does not walk off to another ward");
 });
 
 test("Chicago: loose steps off the graph can't walk onto the feeder, and a walker on it steps off", () => {
