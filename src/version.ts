@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.60";
+export const APP_VERSION = "0.0.61";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k60a";
+export const PUBLISH_STAMP = "k61a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -63,3 +63,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.58: trivia repeats — the anti-repeat memory lived only in each browser save, so one walker on two devices or two tabs got the same card back within 1-17 deals. A signed-in walker now has a server recent list (migration 0013 trivia_recent, noted at deal time, newest 600, shared by linked sign-ins) merged into every deal (dealFor); tabs fold the saved seen list in before each deal and on storage events; a card counts as seen when dealt. qa:deal-repeats drives the real deal endpoint (k58a).
 // 0.0.59: Daily Blitz replaces City Pulse. On entering the city, six lanterns (white through violet, harder as they climb) pay 20, 30, 50, 80, 130, 200 coin. A miss, a timeout or a stop ends the run and keeps the coin already lit. One run per UTC day. Not now leaves it in Journal · Progress. A blitz card is a spark, so it does not clear the rolls (k59a).
 // 0.0.60: street read — a new city stand steps along the curb when north dies in a few metres (up to about a block, so Tucson's first press goes north), and holding into the end of a street stops instead of bouncing back; the worn coat's walk, idle and side-idle sheets load before the first stop so the walker doesn't blink out; the owl and the corgi stand a little larger and the giraffe stands taller, with one tight shadow instead of a bloom; the street-loading line names whoever is hired. See-through spots in coats, eyes and lantern glass are filled, and the print-shop coats match the sealed sheets (k60a, art k60s).
+// 0.0.61: Friday weekly trivia cards (2026-10-09) — accuracy pass on the 50 Oct 6 cards (all answers held up; 3 rewritten: ACL weekend two no longer says "runs", the Gears of War: E-Day studio card names the lead Xbox studio, the second tilcayo card no longer depends on its uncertain range) and 19 new verified cards in weekly_20261009 (2026 Chemistry/Literature/Peace Nobels, 2026 Stanley Cup, Super Bowl LX MVP, 2026 James Beard regional winners for Denver/Chicago/New Orleans/L.A./New York, and Tucson/Austin/Temple council and civic cards), no math (k61a).

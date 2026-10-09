@@ -60,6 +60,12 @@ import {
   WEEKLY_SCIENCE_20261006,
   WEEKLY_SPORTS_20261006,
 } from "@/game/banks/weekly_20261006";
+import {
+  WEEKLY_ARTS_20261009,
+  WEEKLY_POLITICAL_20261009,
+  WEEKLY_SCIENCE_20261009,
+  WEEKLY_SPORTS_20261009,
+} from "@/game/banks/weekly_20261009";
 import type { CityId, Poi, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 
 const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
@@ -336,13 +342,13 @@ function mergeCat(a: TriviaQ[], b: TriviaQ[]): TriviaQ[] {
 	return out;
 }
 const GENERAL: Record<TriviaCat, TriviaQ[]> = {
-	sports: mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006),
+	sports: mergeCat(mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006), WEEKLY_SPORTS_20261009),
 	local: mergeCat(mergeCat(CORE_GENERAL.local ?? [], GENERAL_BANK.local ?? []), WEEKLY_LOCAL_20261006),
-	political: mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006),
+	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009),
 	food: mergeCat(mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []), WEEKLY_FOOD_20261006),
-	arts: mergeCat(mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []), WEEKLY_ARTS_20261006),
+	arts: mergeCat(mergeCat(mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []), WEEKLY_ARTS_20261006), WEEKLY_ARTS_20261009),
 	math: mergeCat(MATH_BANK, MATH_MORE).map(rescoreMath),
-	science: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE), WEEKLY_SCIENCE_20261002), WEEKLY_SCIENCE_20261006),
+	science: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE), WEEKLY_SCIENCE_20261002), WEEKLY_SCIENCE_20261006), WEEKLY_SCIENCE_20261009),
 	history: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY), WEEKLY_HISTORY_20261002), WEEKLY_HISTORY_20261006),
 	nature: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE), WEEKLY_NATURE_20261002), WEEKLY_NATURE_20261006),
 	games: mergeCat(GAMES_BANK, WEEKLY_GAMES_20261006),

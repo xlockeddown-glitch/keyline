@@ -7,6 +7,11 @@ import type { TriviaQ } from "../types";
  * Nobels announced Oct 5–6, Emmys, Oscars, James Beard, games that shipped).
  * Chemistry, literature, peace, and economics Nobels were not yet announced.
  * Wired from trivia.ts via WEEKLY_*_20261006 merges.
+ * 2026-10-09 accuracy pass: all 50 trivia cards re-checked against public sources; none had a wrong
+ * answer. Rewritten: ACL weekend-two card (was present tense, "runs"), Gears of War: E-Day studio card
+ * (People Can Fly co-developed; now asks which Xbox studio led it), and the second tilcayo card (its range
+ * is still uncertain, so "known from Bolivia" with Peru as a wrong choice could turn out wrong). Missing
+ * source comments added.
  */
 
 export const WEEKLY_SPORTS_20261006: TriviaQ[] = [
@@ -35,7 +40,8 @@ export const WEEKLY_LOCAL_20261006: TriviaQ[] = [
   // https://www.austintexas.gov/emergency-management/news/fall-festival-season-returns-austin
   q("The 2026 Austin City Limits Music Festival at Zilker Park was which edition?", ["the 25th", "the 10th", "the 40th", "the 50th"], "the 25th", 2),
   // https://www.austintexas.gov/emergency-management/news/fall-festival-season-returns-austin
-  q("Weekend two of ACL Festival 2026 at Zilker Park runs…", ["October 9-11", "October 16-18", "November 6-8", "September 18-20"], "October 9-11", 2),
+  // https://www.aclfestival.com/25years (OCT 2-4 & Oct 9-11, 2026)
+  q("ACL Festival 2026's second weekend at Zilker Park was set for…", ["October 9-11", "October 16-18", "November 6-8", "September 18-20"], "October 9-11", 2),
   // MetLife Stadium is in East Rutherford; the 2026 final was played there.
   // https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_final
   q("MetLife Stadium, site of the 2026 World Cup final, stands in…", ["East Rutherford", "Hoboken", "Jersey City", "Newark"], "East Rutherford", 2),
@@ -64,6 +70,7 @@ export const WEEKLY_FOOD_20261006: TriviaQ[] = [
   q("The 2026 James Beard Award for Best New Restaurant went to Lei in which city?", ["New York", "Chicago", "Los Angeles", "New Orleans"], "New York", 2),
   // https://www.jamesbeard.org/stories/james-beard-award-winners-2026
   q("The 2026 James Beard Award for Outstanding Bakery went to a shop in…", ["Bozeman", "Portland", "Chicago", "Austin"], "Bozeman", 2),
+  // https://www.jamesbeard.org/stories/james-beard-award-winners-2026 (Adrian Torres, Maximo, West University Place, TX)
   q("The 2026 James Beard Emerging Chef award went to the chef of…", ["Maximo", "Quince", "Kalaya", "Providence"], "Maximo", 3),
 ];
 
@@ -103,7 +110,9 @@ export const WEEKLY_HISTORY_20261006: TriviaQ[] = [
   // https://en.wikipedia.org/wiki/United_States_Semiquincentennial
   q("The U.S. Bicentennial, the independence anniversary before 2026, was held in…", ["1976", "1876", "1926", "1826"], "1976", 2),
   // https://www.commerce.gov/freedom-250
+  // https://www.whitehouse.gov/freedom250/
   q("The White House's 2026 campaign for the 250th birthday is called…", ["Freedom 250", "Project 250", "Liberty Bell 250", "Star-Spangled 250"], "Freedom 250", 2),
+  // https://www.archives.gov/founding-docs/declaration-history
   q("In 1776 the Second Continental Congress adopted the Declaration in which city?", ["Philadelphia", "Boston", "New York", "Williamsburg"], "Philadelphia", 2),
 ];
 
@@ -115,19 +124,24 @@ export const WEEKLY_NATURE_20261006: TriviaQ[] = [
   // Evergreen river-landform gap instead: https://www.britannica.com/science/oxbow-lake
   q("An oxbow lake forms when a river…", ["cuts off a bend", "deepens a canyon", "fills a crater", "dams a glacier"], "cuts off a bend", 2),
   // Current Biology, 17 Sep 2026. https://www.dvm360.com/view/new-species-discovered-in-bolivia-is-first-cat-described-in-more-than-100-years
+  // https://www.bbc.com/news/articles/c6x2zgv9rr4ro
   q("In 2026, scientists described a new Bolivian wild cat called the…", ["tilcayo", "oncilla", "kodkod", "jaguarundi"], "tilcayo", 3),
-  q("The tilcayo, a wild cat newly described in 2026, is known from cloud forests in…", ["Bolivia", "Peru", "Ecuador", "Colombia"], "Bolivia", 2),
+  // dvm360 (above): first new living cat species formally described in more than 100 years (pampas cat, 1923).
+  q("The tilcayo, described in 2026, is the first new wild cat species formally named in more than…", ["100 years", "10 years", "25 years", "50 years"], "100 years", 2),
 ];
 
 export const WEEKLY_GAMES_20261006: TriviaQ[] = [
   // https://www.xbox.com/en-US/games/gears-of-war-eday
+  // https://news.xbox.com/en-us/2026/10/06/gears-of-war-e-day-global-launch-tips-guide/ (worldwide launch Oct 6; origin story 14 years before Gears of War)
   q("Gears of War: E-Day, released on October 6, 2026, is a prequel about…", ["Emergence Day", "Judgment Day", "Victory Day", "Armistice Day"], "Emergence Day", 2),
   // https://www.xbox.com/en-US/games/gears-of-war-eday
-  q("Which studio developed Gears of War: E-Day, released in October 2026?", ["The Coalition", "343 Industries", "id Software", "Naughty Dog"], "The Coalition", 3),
+  // https://peoplecanfly.com/partnership-announcement/ (People Can Fly co-developed with The Coalition)
+  q("Which Xbox studio led development of Gears of War: E-Day, released in October 2026?", ["The Coalition", "Halo Studios", "Rare", "Turn 10"], "The Coalition", 3),
   // https://www.bandainamcoent.com/news/ace-combat-8-wings-of-theve-takes-flight-today
   q("Ace Combat 8: Wings of Theve had its full worldwide launch in 2026 on…", ["October 2", "October 6", "October 23", "November 19"], "October 2", 2),
   // https://starwarsgalacticracer.com/news/star-wars-galactic-racer-is-out-now/
   q("Star Wars: Galactic Racer, out on October 6, 2026, was developed by…", ["Fuse Games", "The Coalition", "EA Motive", "Ubisoft"], "Fuse Games", 2),
+  // https://starwarsgalacticracer.com/news/star-wars-galactic-racer-is-out-now/
   q("Star Wars: Galactic Racer, released in October 2026, was published by…", ["Secret Mode", "Xbox Game Studios", "Electronic Arts", "Bandai Namco"], "Secret Mode", 3),
 ];
 

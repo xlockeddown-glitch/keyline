@@ -2,6 +2,7 @@ import { stampCityRecord } from "../rarity";
 import type { CityId, TriviaCat, TriviaQ } from "../types";
 import { CITY_WEEKLY } from "./cities_weekly";
 import { CITY_WEEKLY_20261002 } from "./weekly_20261002";
+import { CITY_WEEKLY_20261009 } from "./weekly_20261009";
 import { CITY_EXTRA_PART_A } from "./cities_part_a";
 import { CITY_EXTRA_PART_B } from "./cities_part_b";
 import { CITY_EXTRA_PART_C } from "./cities_part_c";
@@ -52,4 +53,5 @@ function mergeWeekly(
 
 mergeWeekly(CITY_EXTRA, CITY_WEEKLY);
 mergeWeekly(CITY_EXTRA, CITY_WEEKLY_20261002);
+mergeWeekly(CITY_EXTRA, CITY_WEEKLY_20261009);
 stampCityRecord(CITY_EXTRA);
