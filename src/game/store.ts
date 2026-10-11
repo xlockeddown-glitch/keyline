@@ -30,7 +30,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
-import { blitzDue } from "./dailyBlitz";
+import { blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { mergeSeen, savedSeen } from "./seenMemory";
@@ -96,6 +96,10 @@ type Hud = {
   stamina: number;
   night: number;
   waypoint: { lat: number; lng: number } | null;
+  /** Stops on the walk the player is building, including the one underway. */
+  routeStops: number;
+  /** At a door, with more stops waiting. */
+  routeHold: boolean;
   seated: boolean;
   deskName: string;
   deskDist: number;
@@ -162,9 +166,10 @@ export type GameState = {
   lastCrateDay: string;
   crateStreak: number;
   lastPulseDay: string;
-  /** 0.0.59 Daily Blitz: the UTC day the login run was started, and the coin it paid. */
+  /** 0.0.59 Daily Blitz: the UTC day the login run was started, the coin it paid, and the matches that fit. */
   lastBlitzDay: string;
   blitzTake: number;
+  blitzMatches: Tier[];
   blitzOpen: boolean;
   sparkDay: string;
   sparkN: number;
@@ -234,8 +239,8 @@ export type GameState = {
   dismissBlitz: () => void;
   /** The first card landed: today's run is spent, even if they walk away. */
   lockBlitz: () => void;
-  /** Add a cleared lantern's coin. No-op unless today's run is locked. */
-  bankBlitz: (pay: number) => void;
+  /** Add a cleared lantern's coin and a match of its color. No-op unless today's run is locked. */
+  bankBlitz: (pay: number, tier: Tier) => { match: boolean; overflow: number };
   /** Remember a dealt blitz card so the next lantern doesn't repeat it. */
   rememberCard: (id: string) => void;
   /** Pay the Daily Lantern Run finish once per UTC day. Returns what landed, or null if already paid. */
@@ -466,6 +471,7 @@ function persistable(s: GameState) {
     lastPulseDay: s.lastPulseDay,
     lastBlitzDay: s.lastBlitzDay,
     blitzTake: s.blitzTake,
+    blitzMatches: s.blitzMatches,
     sparkDay: s.sparkDay,
     sparkN: s.sparkN,
     sparkLamps: s.sparkLamps,
@@ -766,6 +772,7 @@ export const useGame = create<GameState>((set, get) => ({
   lastPulseDay: typeof saved?.lastPulseDay === "string" ? saved.lastPulseDay : "",
   lastBlitzDay: typeof saved?.lastBlitzDay === "string" ? saved.lastBlitzDay : "",
   blitzTake: typeof saved?.blitzTake === "number" && saved.blitzTake > 0 ? Math.floor(saved.blitzTake) : 0,
+  blitzMatches: cleanBlitzMatches(saved?.blitzMatches),
   blitzOpen: false,
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
@@ -813,6 +820,8 @@ export const useGame = create<GameState>((set, get) => ({
     stamina: 1,
     night: 0.2,
     waypoint: null,
+    routeStops: 0,
+    routeHold: false,
     seated: false,
     deskName: "",
     deskDist: 99999,
@@ -1659,14 +1668,22 @@ export const useGame = create<GameState>((set, get) => ({
   lockBlitz: () => {
     const d = today();
     if (get().lastBlitzDay === d) return;
-    set({ lastBlitzDay: d, blitzTake: 0 });
+    set({ lastBlitzDay: d, blitzTake: 0, blitzMatches: [] });
     saveNow(get);
   },
-  bankBlitz: (pay) => {
+  bankBlitz: (pay, tier) => {
     const n = Math.floor(pay);
-    if (n <= 0 || get().lastBlitzDay !== today()) return;
-    set({ points: get().points + n, blitzTake: get().blitzTake + n });
+    if (n <= 0 || get().lastBlitzDay !== today()) return { match: false, overflow: 0 };
+    const have = get().keys[tier] ?? 0;
+    const grant = blitzMatch(tier, have, matchCap(tier));
+    set({
+      points: get().points + n + grant.overflow,
+      blitzTake: get().blitzTake + n + grant.overflow,
+      keys: grant.match ? { ...get().keys, [tier]: have + 1 } : get().keys,
+      blitzMatches: grant.match ? [...get().blitzMatches, tier] : get().blitzMatches,
+    });
     saveNow(get);
+    return grant;
   },
   rememberCard: (id) => {
     if (!id) return;

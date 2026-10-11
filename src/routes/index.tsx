@@ -24,20 +24,17 @@ function Home() {
 function TitleShell() {
   const city = CITIES.austin;
   return (
-    <div className="title-night is-book">
-      <div className="book-stage">
-        <button type="button" className="matchbook" disabled>
-          {["white", "blue", "green", "amber", "red", "violet"].map((tier) => (
-            <span key={tier} className={`matchbook-stick tier-${tier}`} aria-hidden>
-              <i />
-            </span>
-          ))}
-          <span className="matchbook-cover">
-            <strong>KEYLINE</strong>
-            <span className="matchbook-strike">{city.name}</span>
-          </span>
-        </button>
-        <p className="book-lede">Tap to walk {city.name}.</p>
+    <div className="title-night is-blade">
+      <div className="blade-stage">
+        <div className="blade-mast">
+          <i className="blade-pole" aria-hidden />
+          <button type="button" className="city-blade" disabled>
+            <i className="blade-hole" aria-hidden />
+            <span className="blade-name">{city.name}</span>
+            <i className="blade-hole" aria-hidden />
+          </button>
+          <p className="blade-mark">KEYLINE</p>
+        </div>
         <div className="book-links">
           <button type="button" className="title-more" disabled>
             All cities

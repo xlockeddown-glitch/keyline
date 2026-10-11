@@ -32,10 +32,11 @@ const problems = [];
 async function page(ctx, jwt) {
   const p = await ctx.newPage();
   await p.goto(base + "/", { waitUntil: "domcontentloaded" });
-  await p.waitForSelector(".matchbook:not([disabled])", { timeout: 180000 });
+  await p.waitForSelector(".book-ver", { timeout: 180000 });
+  await p.waitForSelector(".city-blade:not([disabled])", { timeout: 180000 });
   if (jwt) await p.waitForFunction(async () => Boolean((await (await fetch("/api/auth/get-session")).json())?.user), null, { timeout: 60000, polling: 1000 });
   await p.waitForTimeout(600);
-  await p.click(".matchbook");
+  await p.click(".city-blade");
   await p.waitForTimeout(1000);
   const g = p.getByRole("button", { name: "Continue as guest" });
   if (await g.count()) await g.click();

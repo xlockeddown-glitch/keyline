@@ -68,7 +68,7 @@ export function isMaterial(id: string): id is MaterialId {
 }
 
 export function itemSrc(id: ItemId): string {
-  if (isTier(id)) return "/sprites/key.png";
+  if (isTier(id)) return `/sprites/matches/${id}.png`;
   if (isMaterial(id)) return MATERIALS[id].src;
   if (isCharm(id)) return CHARM_SRC[id];
   if (id === "crate") return "/sprites/items/crate.png";

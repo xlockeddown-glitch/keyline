@@ -1,22 +1,33 @@
 import type { Tier, TriviaCat } from "./types";
+import { TIER_VALUE } from "./rewards.ts";
 
 /**
  * Daily Blitz (0.0.59): the login coin, played. Six lanterns, white through violet.
- * Each one pays more than the last. A miss, a timeout or a walk-away ends the run
- * and keeps the coin already earned. One run per UTC day, in place of City Pulse.
+ * Each one pays more than the last, and a right answer also drops a match of that
+ * color. A full pocket pays the match's coin instead. A miss, a timeout or a
+ * walk-away ends the run and keeps what was already earned. One run per UTC day.
  */
 export const BLITZ_STEPS: { tier: Tier; pay: number; cat: TriviaCat }[] = [
   { tier: "white", pay: 20, cat: "history" },
   { tier: "blue", pay: 30, cat: "science" },
   { tier: "green", pay: 50, cat: "local" },
   { tier: "amber", pay: 80, cat: "food" },
-  { tier: "red", pay: 130, cat: "nature" },
-  { tier: "violet", pay: 200, cat: "arts" },
+  { tier: "red", pay: 200, cat: "nature" },
+  { tier: "violet", pay: 500, cat: "arts" },
 ];
 
 export const BLITZ_FULL = BLITZ_STEPS.reduce((n, s) => n + s.pay, 0);
 
 export const BLITZ_WINDOW_MS = 20_000;
+
+const TIER_LABEL: Record<Tier, string> = {
+  white: "White",
+  blue: "Blue",
+  green: "Green",
+  amber: "Amber",
+  red: "Red",
+  violet: "Violet",
+};
 
 export function blitzDue(lastDay: string, today: string) {
   return lastDay !== today;
@@ -27,10 +38,35 @@ export function blitzPoiId(step: number) {
   return `blitz-${step}`;
 }
 
-/** Coin from the first `cleared` right answers. */
+/** Coin from the first `cleared` right answers. Does not include a full-pocket substitute. */
 export function blitzBank(cleared: number) {
   const n = Math.max(0, Math.min(BLITZ_STEPS.length, Math.floor(cleared)));
   let sum = 0;
   for (let i = 0; i < n; i++) sum += BLITZ_STEPS[i]!.pay;
   return sum;
+}
+
+/** One match of the lantern's color, or its coin value when that pocket is full. */
+export function blitzMatch(tier: Tier, have: number, cap: number): { match: boolean; overflow: number } {
+  if (have < cap) return { match: true, overflow: 0 };
+  return { match: false, overflow: TIER_VALUE[tier] };
+}
+
+export function cleanBlitzMatches(raw: unknown): Tier[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((t): t is Tier => typeof t === "string" && t in TIER_LABEL).slice(0, BLITZ_STEPS.length);
+}
+
+/** "a White match" / "White and Blue matches" / "White, Blue and Green matches". */
+export function blitzMatchLine(tiers: readonly Tier[]): string {
+  if (tiers.length === 0) return "";
+  const names = tiers.map((t) => TIER_LABEL[t]);
+  if (names.length === 1) return `a ${names[0]} match`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} matches`;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} matches`;
+}
+
+export function blitzTakeLine(coin: number, tiers: readonly Tier[]): string {
+  const m = blitzMatchLine(tiers);
+  return m ? `${coin} coin and ${m}` : `${coin} coin`;
 }

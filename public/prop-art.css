@@ -1,0 +1,220 @@
+/* Painted props (k60d). Same cut-out as the scouts: a keyed plate, the lantern's
+   pane left open so the tier glass, wick and bloom still carry the color.
+   Metals are the print-shop skins. Matches are one stick, the head recoloured. */
+
+.lantern{
+  width:18px;
+  height:46px;
+  background:url("/sprites/lanterns/brass.png") center / 100% 100% no-repeat;
+  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 6px var(--glow))
+}
+.lantern-hero{
+  width:42px;
+  height:108px;
+  transform:none
+}
+.vault-pin{
+  width:20px;
+  height:50px
+}
+.vault-pin.is-run{
+  width:24px;
+  height:52px
+}
+.lantern > .lantern-cap,
+.lantern > .lantern-post{
+  display:none
+}
+.lantern > .lantern-frame{
+  left:21%;
+  top:47%;
+  width:58%;
+  height:21%;
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none
+}
+
+[data-lantern="copper"] .lantern{ background-image:url("/sprites/lanterns/copper.png") }
+[data-lantern="iron"] .lantern{ background-image:url("/sprites/lanterns/iron.png") }
+[data-lantern="verdigris"] .lantern{ background-image:url("/sprites/lanterns/verdigris.png") }
+[data-lantern="nickel"] .lantern{ background-image:url("/sprites/lanterns/nickel.png") }
+
+.skin-swatch{
+  width:64px;
+  height:88px
+}
+.skin-swatch .vault-pin{
+  transform:none
+}
+
+.match-pin{
+  width:18px;
+  height:40px;
+  background:center / contain no-repeat;
+  transform:rotate(-16deg)
+}
+.match-pin .match-head,
+.match-pin .match-stick,
+.matchbook-stick i{
+  display:none
+}
+.match-glyph{
+  object-fit:contain;
+  width:auto
+}
+.ms-glyph{
+  width:16px;
+  height:40px;
+  object-fit:contain
+}
+.match-pin.tier-white{ background-image:url("/sprites/matches/white.png") }
+.match-pin.tier-blue{ background-image:url("/sprites/matches/blue.png") }
+.match-pin.tier-green{ background-image:url("/sprites/matches/green.png") }
+.match-pin.tier-amber{ background-image:url("/sprites/matches/amber.png") }
+.match-pin.tier-red{ background-image:url("/sprites/matches/red.png") }
+.match-pin.tier-violet{ background-image:url("/sprites/matches/violet.png") }
+
+.matchbook-stick{
+  width:1.7rem;
+  background:center bottom / contain no-repeat
+}
+.matchbook-stick.tier-white{ background-image:url("/sprites/matches/white.png") }
+.matchbook-stick.tier-blue{ background-image:url("/sprites/matches/blue.png") }
+.matchbook-stick.tier-green{ background-image:url("/sprites/matches/green.png") }
+.matchbook-stick.tier-amber{ background-image:url("/sprites/matches/amber.png") }
+.matchbook-stick.tier-red{ background-image:url("/sprites/matches/red.png") }
+.matchbook-stick.tier-violet{ background-image:url("/sprites/matches/violet.png") }
+
+.shop-pin{
+  width:44px;
+  height:66px;
+  background:url("/sprites/print-shop.png") center bottom / contain no-repeat
+}
+.shop-awning,
+.shop-body{
+  display:none
+}
+
+.print-front{
+  display:grid;
+  place-items:end center;
+  height:156px;
+  overflow:hidden;
+  border-radius:10px;
+  background:linear-gradient(180deg,#10141a 0%,#1a222c 72%,#24303c 100%)
+}
+.print-front img{
+  height:148px;
+  width:auto
+}
+
+/* Title. A street blade: white on green, mixed case, fixed height. */
+.title-night.is-blade{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:
+    max(4.5rem, calc(env(safe-area-inset-top, 0px) + 3.25rem))
+    1.25rem
+    max(1.75rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem));
+  overflow:hidden;
+  background:#0c1016
+}
+.blade-stage{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:min(28rem, 100%)
+}
+.blade-mast{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  max-width:100%;
+  padding-top:1.65rem
+}
+.blade-pole{
+  position:absolute;
+  z-index:0;
+  top:0;
+  bottom:-0.2rem;
+  left:50%;
+  width:0.7rem;
+  transform:translateX(-50%);
+  border-radius:1px;
+  background:linear-gradient(90deg, #9aa1a6 0%, #e7ebed 38%, #c5cbce 62%, #8e959a 100%)
+}
+.city-blade{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0.7rem;
+  height:4.7rem;
+  width:max-content;
+  max-width:100%;
+  margin:0;
+  padding:0 0.85rem;
+  border:3px solid #f4f7f4;
+  border-radius:0.42rem;
+  background:#0c6b3c;
+  box-shadow:0 2px 0 #042615;
+  color:#f7f8f6;
+  cursor:pointer
+}
+.city-blade:active{
+  transform:translateY(1px);
+  box-shadow:0 1px 0 #042615
+}
+.blade-name{
+  font-weight:800;
+  font-size:2.45rem;
+  letter-spacing:-0.015em;
+  line-height:1;
+  text-align:center;
+  white-space:nowrap
+}
+.blade-name.is-long{
+  letter-spacing:-0.04em
+}
+.blade-hole{
+  flex:none;
+  width:0.38rem;
+  height:0.38rem;
+  border-radius:50%;
+  background:#06331c;
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / 0.28)
+}
+.blade-mark{
+  position:relative;
+  z-index:1;
+  margin:1.15rem 0 0;
+  color:#9aa3ae;
+  font-weight:600;
+  letter-spacing:0.28em;
+  line-height:1;
+  padding-left:0.28em
+}
+.blade-note{
+  margin:1.1rem 0 0;
+  color:#c5ced8;
+  font-size:0.95rem
+}
+.blade-stage .book-coin{
+  margin-top:0.85rem
+}
+.blade-stage .book-links{
+  margin-top:0.35rem
+}
+.blade-stage .book-ver{
+  margin-top:0.15rem
+}
+.blade-stage .title-more{
+  color:#9aa3ae
+}
+

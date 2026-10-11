@@ -23,6 +23,7 @@ type Props = {
   onTimetable: () => void;
   onDesk: () => void;
   onMarket: () => void;
+  onRoute: () => void;
 };
 
 function rangePips(dist: number, reachM: number) {
@@ -32,7 +33,7 @@ function rangePips(dist: number, reachM: number) {
   return 1;
 }
 
-export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onTimetable, onDesk, onMarket: onMarketWalk }: Props) {
+export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onTimetable, onDesk, onMarket: onMarketWalk, onRoute }: Props) {
   const keys = useGame((s) => s.keys);
   const points = useGame((s) => s.points);
   const hud = useGame((s) => s.hud);
@@ -98,7 +99,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
   const canUnlock = atDesk && (freePick || passes > 0);
   const canDesk = canPunch || canUnlock;
 
-  let cue = hud.seated ? "Park at the curb. The door is on foot." : "Lamps mark the questions. Click the map to walk.";
+  let cue = hud.seated ? "Park at the curb. The door is on foot." : "Lamps mark the questions. Click the map to walk, and click again to add a stop.";
   if (nearest) {
     if (hud.seated) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
     else if (canPunch) cue = `Board train · T · ${nearest.name}`;
@@ -123,7 +124,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             : `Need a ${TIER_LABEL[nearest.tier]} match`;
     }
     else if (armed) cue = "At the lamp · E or tap";
-    else cue = `${formatDist(hud.nearestDist)} · click to walk`;
+    else cue = hud.routeStops > 0 ? `${formatDist(hud.nearestDist)} · click a point to add it` : `${formatDist(hud.nearestDist)} · click to walk`;
   }
 
   return (
@@ -166,6 +167,12 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
               <span className="kicker mr-1.5">Goals</span>
               {surveyLine}
             </p>
+          ) : null}
+          {hud.routeStops > 1 ? (
+            <button type="button" className="fare-hint pointer-events-auto mt-1" onClick={onRoute}>
+              <span className="kicker mr-1.5">Route</span>
+              {hud.routeHold ? `Next stop · ${hud.routeStops - 1} left` : `${hud.routeStops} stops`}
+            </button>
           ) : null}
           {fares > 0 && !canPunch ? (
             <button type="button" className="fare-hint pointer-events-auto mt-1" onClick={onDesk}>

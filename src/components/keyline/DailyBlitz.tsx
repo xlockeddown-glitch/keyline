@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { TIER_LABEL } from "@/game/data";
-import { BLITZ_FULL, BLITZ_STEPS, BLITZ_WINDOW_MS, blitzDue, blitzPoiId } from "@/game/dailyBlitz";
+import { BLITZ_FULL, BLITZ_STEPS, BLITZ_WINDOW_MS, blitzDue, blitzPoiId, blitzTakeLine } from "@/game/dailyBlitz";
 import { choiceButtons, dropStaleFocus } from "@/game/choiceMarkup";
 import { DIFF_LABEL, TRIVIA_CATS } from "@/game/triviaMeta";
 import { dealTrivia, gradeTrivia } from "@/game/triviaApi";
@@ -24,6 +24,7 @@ export function DailyBlitz() {
   const howtoDone = useGame((s) => s.howtoDone);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
   const blitzTake = useGame((s) => s.blitzTake);
+  const blitzMatches = useGame((s) => s.blitzMatches);
   const openVault = useGame((s) => s.openVault);
   const hqOpen = useGame((s) => s.hqOpen);
   const offered = useRef(false);
@@ -36,7 +37,7 @@ export function DailyBlitz() {
   const [deadline, setDeadline] = useState(0);
   const [now, setNow] = useState(0);
   const [ending, setEnding] = useState<Ending>("left");
-  const [reveal, setReveal] = useState<{ correct: boolean; answer: string; fact?: string } | null>(null);
+  const [reveal, setReveal] = useState<{ correct: boolean; answer: string; fact?: string; match?: boolean; overflow?: number } | null>(null);
   const gen = useRef(0);
   const grading = useRef(false);
 
@@ -135,8 +136,8 @@ export function DailyBlitz() {
     }
     if (correct) {
       sfx.correct();
-      useGame.getState().bankBlitz(rung.pay);
-      setReveal({ correct: true, answer, fact });
+      const grant = useGame.getState().bankBlitz(rung.pay, rung.tier);
+      setReveal({ correct: true, answer, fact, match: grant.match, overflow: grant.overflow });
       if (step + 1 >= BLITZ_STEPS.length) {
         setEnding("clear");
         setPhase("reveal");
@@ -207,6 +208,7 @@ export function DailyBlitz() {
   const left = phase === "card" ? Math.max(0, deadline - now) : 0;
   const frac = phase === "card" ? Math.min(1, left / Math.max(1, deadline - shownAt)) : 0;
   const take = blitzTake;
+  const haul = blitzTakeLine(take, blitzMatches);
 
   return (
     <div className={`vault-night tier-${rung.tier} absolute inset-0 z-[860] flex items-end justify-center p-3 sm:items-center`}>
@@ -222,11 +224,14 @@ export function DailyBlitz() {
           <h2 id="blitz-title" className="font-display mt-1 text-3xl leading-none">
             {phase === "result" ? (ending === "clear" ? "All six lit" : "That's the run") : "Light the ladder"}
           </h2>
+          {phase === "intro" ? (
+            <p className="mt-2 text-sm tabular-nums">Full clear · {BLITZ_FULL} coin</p>
+          ) : null}
 
           {phase === "intro" ? (
             <div className="mt-4">
               <p className="text-sm text-pretty text-fg-muted">
-                Six lanterns, white through violet. Each one pays more. A miss ends it, and you keep the coin.
+                Six lanterns, white through violet. Each one pays coin and a match of that color. A miss ends it, and you keep what you lit.
               </p>
               <ol className="mt-4 grid gap-1.5">
                 {BLITZ_STEPS.map((s, i) => (
@@ -234,11 +239,10 @@ export function DailyBlitz() {
                     <span>
                       {i + 1}. {TIER_LABEL[s.tier]}
                     </span>
-                    <span className="tabular-nums text-fg-muted">+{s.pay}</span>
+                    <span className="tabular-nums text-fg-muted">+{s.pay} · match</span>
                   </li>
                 ))}
               </ol>
-              <p className="mt-3 text-sm tabular-nums">Full clear · {BLITZ_FULL} coin</p>
             </div>
           ) : null}
 
@@ -256,7 +260,9 @@ export function DailyBlitz() {
                 <span>{cat?.label}</span>
                 <span>{DIFF_LABEL[card.diff]}</span>
                 <span className="tabular-nums">{(left / 1000).toFixed(1)}s</span>
-                <span className="tabular-nums">+{rung.pay}</span>
+                <span className="tabular-nums">
+                  {take > 0 ? `${take} in · ` : ""}+{rung.pay} · match
+                </span>
               </p>
               <div className="mt-2 flex gap-1.5" aria-hidden>
                 {BLITZ_STEPS.map((s, i) => (
@@ -286,10 +292,16 @@ export function DailyBlitz() {
 
           {phase === "reveal" && reveal ? (
             <div className="mt-4">
-              <p className="text-sm">{reveal.correct ? `Right. +${rung.pay} coin.` : "Miss. The run stops here."}</p>
+              <p className="text-sm">
+                {reveal.correct
+                  ? reveal.match
+                    ? `Right. +${rung.pay} coin and a ${TIER_LABEL[rung.tier]} match.`
+                    : `Right. +${rung.pay} coin. The ${TIER_LABEL[rung.tier].toLowerCase()} pocket is full, so ${reveal.overflow} coin instead.`
+                  : "Miss. The run stops here."}
+              </p>
               <p className="plate-q mt-3">{reveal.answer}</p>
               {reveal.fact ? <p className="mt-2 text-sm text-pretty text-fg-muted">{reveal.fact}</p> : null}
-              <p className="mt-3 text-sm tabular-nums">{take} coin banked</p>
+              <p className="mt-3 text-sm tabular-nums">{haul} banked</p>
             </div>
           ) : null}
 
@@ -297,14 +309,14 @@ export function DailyBlitz() {
             <div className="mt-4">
               <p className="text-sm text-pretty text-fg-muted">
                 {ending === "clear"
-                  ? `Every lantern held. ${take} coin.`
+                  ? `Every lantern held. ${haul}.`
                   : ending === "office"
                     ? blitzDue(lastBlitzDay, new Date().toISOString().slice(0, 10))
                       ? "The card office didn't answer. Nothing was spent."
-                      : "The card office didn't answer. The coin you already lit stays; the rest waits until tomorrow."
+                      : "The card office didn't answer. What you already lit stays; the rest waits until tomorrow."
                     : ending === "left"
-                      ? `You stopped. ${take} coin stays in the pocket.`
-                      : `The ${TIER_LABEL[rung.tier].toLowerCase()} lantern went out. ${take} coin stays.`}
+                      ? `You stopped. ${haul} stays in the pocket.`
+                      : `The ${TIER_LABEL[rung.tier].toLowerCase()} lantern went out. ${haul} stays.`}
               </p>
               {reveal && !reveal.correct ? (
                 <p className="mt-3 text-sm text-pretty">
@@ -335,17 +347,17 @@ export function DailyBlitz() {
           ) : null}
           {phase === "card" || phase === "dealing" ? (
             <button type="button" className="btn btn-ghost w-full" onClick={stop} disabled={phase === "dealing" && step === 0 && !card}>
-              {take > 0 ? `Keep ${take} coin and stop` : "Stop"}
+              {take > 0 ? `Keep ${haul} and stop` : "Stop"}
             </button>
           ) : null}
           {phase === "reveal" && !reveal?.correct ? (
             <button type="button" className="btn btn-primary w-full" onClick={() => setPhase("result")}>
-              Take {take} coin
+              Take it
             </button>
           ) : null}
           {phase === "reveal" && reveal?.correct && ending === "clear" ? (
             <button type="button" className="btn btn-primary w-full" onClick={() => setPhase("result")}>
-              Take {take} coin
+              Take it
             </button>
           ) : null}
           {phase === "result" ? (

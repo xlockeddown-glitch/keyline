@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityShop } from "@/game/data";
 import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
-import { BLITZ_FULL, blitzDue } from "@/game/dailyBlitz";
+import { BLITZ_FULL, blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
 import { INGREDIENTS, cityStaple, type IngredientId } from "@/game/ingredients";
 import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
@@ -60,6 +60,7 @@ export function HqPanel() {
   const lastCrateDay = useGame((s) => s.lastCrateDay);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
   const blitzTake = useGame((s) => s.blitzTake);
+  const blitzMatches = useGame((s) => s.blitzMatches);
   const crateStreak = useGame((s) => s.crateStreak);
   const vaultsOpened = useGame((s) => s.vaultsOpened);
   const distanceM = useGame((s) => s.distanceM);
@@ -312,9 +313,9 @@ export function HqPanel() {
                     <p className="hq-row-title">{blitzReady ? "Daily Blitz" : "Daily Blitz done"}</p>
                     <p className="hq-row-sub">
                       {blitzReady
-                        ? `Six lanterns, white to violet. A miss keeps the coin. Full clear ${BLITZ_FULL}.`
-                        : blitzTake > 0
-                          ? `+${blitzTake} coin today. The next ladder is tomorrow.`
+                        ? `Six lanterns, white to violet. Coin and a match each. A miss keeps both. Full clear ${BLITZ_FULL}.`
+                        : blitzTake > 0 || blitzMatches.length > 0
+                          ? `+${blitzTakeLine(blitzTake, blitzMatches)} today. The next ladder is tomorrow.`
                           : "Played today. The next ladder is tomorrow."}
                     </p>
                   </div>

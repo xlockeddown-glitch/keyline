@@ -41,6 +41,7 @@ import {
   type StreetGraph,
 } from "@/game/streets";
 import { fareDesk, isFareDesk } from "@/game/ticket";
+import { planStop, type PlanStop } from "@/game/routePlan";
 import { clampWard, inWard, wardFrom, wardRing, type Ward } from "@/game/ward";
 import { Hud } from "./Hud";
 import { VaultModal } from "./VaultModal";
@@ -149,7 +150,14 @@ export function GameMap() {
   const keysHeld = useRef(new Set<string>());
   const injected = useRef<string[] | null>(null);
   const stick = useRef({ x: 0, y: 0 });
-  const waypoint = useRef<{ lat: number; lng: number } | null>(null);
+  const waypoint = useRef<PlanStop | null>(null);
+  /** Stops after the one being walked, in the order they were tapped. */
+  const queue = useRef<PlanStop[]>([]);
+  const queueMarkers = useRef<Marker[]>([]);
+  const planLine = useRef<Polyline | null>(null);
+  const legKey = useRef<string | null>(null);
+  const legDoor = useRef(false);
+  const routeHold = useRef(false);
   const follow = useRef(true);
   const anim = useRef({ frame: 0, acc: 0 });
   const last = useRef(0);
@@ -375,6 +383,55 @@ export function GameMap() {
     map.options.maxBoundsViscosity = 0.92;
   }
 
+  function clearQueueMarks() {
+    for (const m of queueMarkers.current) m.remove();
+    queueMarkers.current = [];
+    planLine.current?.remove();
+    planLine.current = null;
+  }
+
+  function syncRouteHud() {
+    useGame.getState().setHud({
+      routeStops: (waypoint.current ? 1 : 0) + queue.current.length,
+      routeHold: routeHold.current,
+    });
+  }
+
+  function paintQueue() {
+    clearQueueMarks();
+    const L = Lref.current;
+    const map = mapRef.current;
+    const cur = waypoint.current;
+    if (L && map && cur) placeWaypoint(L, map, cur.lat, cur.lng);
+    if (L && map && cur && queue.current.length > 0) {
+      const pts = [cur, ...queue.current];
+      planLine.current = L.polyline(
+        pts.map((p) => [p.lat, p.lng] as [number, number]),
+        { color: "#c4a35a", weight: 3, opacity: 0.75, dashArray: "1 8", interactive: false, className: "route-plan" },
+      ).addTo(map);
+      queue.current.forEach((s, i) => {
+        const marker = L.marker([s.lat, s.lng], {
+          icon: L.divIcon({
+            className: "",
+            html: `<div class="route-stop">${i + 2}</div>`,
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
+          }),
+          keyboard: false,
+          zIndexOffset: 640,
+        }).addTo(map);
+        marker.on("click", () => {
+          queue.current = queue.current.filter((q) => q !== s);
+          paintQueue();
+          const n = (waypoint.current ? 1 : 0) + queue.current.length;
+          flash(n > 1 ? `Dropped. ${n} stops left.` : "Dropped.");
+        });
+        queueMarkers.current.push(marker);
+      });
+    }
+    syncRouteHud();
+  }
+
   function clearRoute() {
     routeRef.current = null;
     routeAlong.current = 0;
@@ -385,7 +442,96 @@ export function GameMap() {
     waypoint.current = null;
     waypointMarker.current?.remove();
     waypointMarker.current = null;
-    useGame.getState().setHud({ waypoint: null });
+    queue.current = [];
+    legKey.current = null;
+    legDoor.current = false;
+    routeHold.current = false;
+    clearQueueMarks();
+    useGame.getState().setHud({ waypoint: null, routeStops: 0, routeHold: false });
+  }
+
+  /** The live stop is done. Pick up a match before moving on. A door waits until you leave it. */
+  function endLeg() {
+    const wasDrive = routeMode.current === "drive" && Boolean(cabRef.current?.seated);
+    if (wasDrive) {
+      clearRoute();
+      exitCab();
+      flash("Parked. The door is on foot.", 1800);
+      return;
+    }
+    const keyId = legKey.current;
+    if (keyId) {
+      const match = useGame.getState().mapKeys.find((k) => k.id === keyId);
+      if (match) {
+        if (canGrabMatch(graphRef.current, pos.current, match)) useGame.getState().collectKey(match.id);
+        else flash("That match is off the street.");
+        queue.current = queue.current.filter((s) => s.keyId !== keyId);
+        legKey.current = null;
+      }
+    }
+    if (legDoor.current && queue.current.length > 0) {
+      routeRef.current = null;
+      routeAlong.current = 0;
+      stuckFor.current = 0;
+      skips.current = 0;
+      routeLine.current?.remove();
+      routeLine.current = null;
+      routeHold.current = true;
+      pos.current.speed = 0;
+      flash("At the door. The rest of the route waits.");
+      syncRouteHud();
+      return;
+    }
+    const next = queue.current.shift();
+    if (!next) {
+      clearRoute();
+      return;
+    }
+    routeHold.current = false;
+    legDoor.current = Boolean(next.door);
+    legKey.current = next.keyId ?? null;
+    void setDestination(next.lat, next.lng, Boolean(next.door), true);
+  }
+
+  function noteCollected(id: string) {
+    const was = legKey.current === id;
+    queue.current = queue.current.filter((s) => s.keyId !== id);
+    if (!was) {
+      paintQueue();
+      return;
+    }
+    legKey.current = null;
+    legDoor.current = false;
+    endLeg();
+  }
+
+  /**
+   * Tap a point. With no walk going, start one. With a walk going, add the stop
+   * on the end — tap it again to take it off. Matches keep their id so picking
+   * one up drops it from the route.
+   */
+  function planWalk(lat: number, lng: number, door = false, keyId?: string) {
+    if (cabRef.current?.seated) {
+      flash("Park at the curb. The door is on foot.", 1800);
+      void setDestination(lat, lng, door);
+      return;
+    }
+    const stop: PlanStop = { lat, lng, door, keyId };
+    const decided = planStop(queue.current, waypoint.current, stop);
+    if (decided.action === "start") {
+      queue.current = [];
+      void setDestination(lat, lng, door, false, keyId);
+      return;
+    }
+    if (decided.action === "same") return;
+    if (decided.action === "full") {
+      flash("Eight stops is the route.");
+      return;
+    }
+    queue.current = decided.queue;
+    paintQueue();
+    const n = 1 + queue.current.length;
+    flash(decided.action === "drop" ? (n > 1 ? `Dropped. ${n} stops left.` : "Dropped.") : `${n} stops.`);
   }
 
   function drawRoute(L: LModule, map: LMap, path: Pt[]) {
@@ -676,13 +822,17 @@ export function GameMap() {
           pos: () => ({ ...pos.current }),
           graph: () => graphRef.current,
           route: () => routeRef.current,
+          queue: () => queue.current.map((s) => ({ ...s })),
+          waypoint: () => (waypoint.current ? { ...waypoint.current } : null),
+          hold: () => routeHold.current,
+          keys: () => useGame.getState().mapKeys.map((k) => ({ id: k.id, lat: k.lat, lng: k.lng, tier: k.tier })),
           walkTo: (lat: number, lng: number) => setDestination(lat, lng),
+          plan: (lat: number, lng: number, keyId?: string) => planWalk(lat, lng, false, keyId),
           daily: () => useDaily.getState(),
           market: () => marketAt(useGame.getState().cityId, Date.now()),
           place: (lat: number, lng: number) => {
             const g = graphRef.current;
-            routeRef.current = null;
-            waypoint.current = null;
+            clearRoute();
             if (g) placeOnStreet(g, lat, lng);
             mapRef.current?.setView([pos.current.lat, pos.current.lng], mapRef.current.getZoom());
           },
@@ -694,8 +844,8 @@ export function GameMap() {
       });
       map.on("click", (e) => {
         const t = e.originalEvent.target as HTMLElement | null;
-        if (t?.closest(".vault-pin, .match-pin, .leaflet-control")) return;
-        void setDestination(e.latlng.lat, e.latlng.lng);
+        if (t?.closest(".vault-pin, .match-pin, .route-stop, .leaflet-control")) return;
+        planWalk(e.latlng.lat, e.latlng.lng);
       });
 
       const icon = L.divIcon({
@@ -756,6 +906,11 @@ export function GameMap() {
       routeLine.current = null;
       routeRef.current = null;
       waypoint.current = null;
+      queue.current = [];
+      legKey.current = null;
+      legDoor.current = false;
+      routeHold.current = false;
+      clearQueueMarks();
       waypointMarker.current = null;
       vaultMarkers.current.clear();
       keyMarkers.current.clear();
@@ -774,16 +929,17 @@ export function GameMap() {
     waypointMarker.current = L.marker([lat, lng], {
       icon: L.divIcon({
         className: "",
-        html: `<div class="waypoint-dot"></div>`,
-        iconSize: [10, 10],
-        iconAnchor: [5, 5],
+        html: `<div class="waypoint-dot${queue.current.length ? " has-num" : ""}">${queue.current.length ? "1" : ""}</div>`,
+        iconSize: queue.current.length ? [18, 18] : [10, 10],
+        iconAnchor: queue.current.length ? [9, 9] : [5, 5],
       }),
       interactive: false,
       keyboard: false,
+      zIndexOffset: queue.current.length ? 650 : 0,
     }).addTo(map);
   }
 
-  async function setDestination(lat: number, lng: number, door = false) {
+  async function setDestination(lat: number, lng: number, door = false, keepQueue = false, keyId?: string) {
     follow.current = true;
     const L = Lref.current;
     const map = mapRef.current;
@@ -795,9 +951,15 @@ export function GameMap() {
       bumpFence();
     }
     const prior = waypoint.current;
-    if (prior && distM(prior.lat, prior.lng, target.lat, target.lng) < 14 && (routeRef.current?.length ?? 0) >= 2) {
+    if (!keepQueue && prior && distM(prior.lat, prior.lng, target.lat, target.lng) < 14 && (routeRef.current?.length ?? 0) >= 2) {
       return;
     }
+    if (!keepQueue) {
+      queue.current = [];
+      routeHold.current = false;
+      legKey.current = keyId ?? null;
+    }
+    legDoor.current = door;
     const from = { lat: pos.current.lat, lng: pos.current.lng };
     const seated = Boolean(cabRef.current?.seated);
     const net = seated ? driveRef.current : g;
@@ -807,12 +969,13 @@ export function GameMap() {
       flash("No road that way.");
       return;
     }
-    waypoint.current = target;
+    waypoint.current = { lat: target.lat, lng: target.lng, door, keyId: legKey.current ?? undefined };
     routeAlong.current = 0;
     stuckFor.current = 0;
     skips.current = 0;
     routeMode.current = seated ? "drive" : "walk";
     if (L && map) placeWaypoint(L, map, target.lat, target.lng);
+    paintQueue();
     useGame.getState().setHud({ waypoint: target });
 
     const cut = canCutBuildings(useGame.getState().scout);
@@ -868,12 +1031,7 @@ export function GameMap() {
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
-      const wasDrive = routeMode.current === "drive" && cabRef.current?.seated;
-      clearRoute();
-      if (wasDrive) {
-        exitCab();
-        flash("Parked. The door is on foot.", 1800);
-      }
+      endLeg();
       return true;
     }
 
@@ -903,12 +1061,7 @@ export function GameMap() {
       pos.current.lat = rest.lat;
       pos.current.lng = rest.lng;
       pos.current.speed = 0;
-      const wasDrive = routeMode.current === "drive" && cabRef.current?.seated;
-      clearRoute();
-      if (wasDrive) {
-        exitCab();
-        flash("Parked. The door is on foot.", 1800);
-      }
+      endLeg();
       return true;
     }
 
@@ -948,7 +1101,7 @@ export function GameMap() {
           pos.current.lng = hop.lng;
           routeAlong.current = Math.min(routeAlong.current + Math.min(18, left), total - 1);
         } else if (skips.current <= 3) {
-          void setDestination(wp.lat, wp.lng);
+          void setDestination(wp.lat, wp.lng, legDoor.current, true);
         }
       }
     }
@@ -973,7 +1126,7 @@ export function GameMap() {
           ? stationPinHtml({ cooling, fare: lit })
           : vaultPinHtml(poi, { cooling });
       const marker = L.marker([poi.lat, poi.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: shop ? [36, 42] : [32, 48], iconAnchor: shop ? [18, 40] : [16, 46] }),
+        icon: L.divIcon({ className: "", html: el, iconSize: shop ? [46, 70] : desk ? [30, 72] : [20, 50], iconAnchor: shop ? [23, 68] : desk ? [15, 70] : [10, 28] }),
         keyboard: false,
         zIndexOffset: shop ? 520 : lit ? 460 : desk ? 280 : 200,
       }).addTo(map);
@@ -992,7 +1145,7 @@ export function GameMap() {
     if (run && run.readyAt === 0) {
       const el = seriesPinHtml(SERIES.run);
       const marker = L.marker([run.lat, run.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: [38, 56], iconAnchor: [19, 54] }),
+        icon: L.divIcon({ className: "", html: el, iconSize: [24, 52], iconAnchor: [12, 30] }),
         keyboard: false,
         zIndexOffset: 420,
       }).addTo(map);
@@ -1017,8 +1170,8 @@ export function GameMap() {
         icon: L.divIcon({
           className: "",
           html: `<div class="match-pin tier-${k.tier}" title="${k.tier} match"><i class="match-head"></i><i class="match-stick"></i></div>`,
-          iconSize: [26, 26],
-          iconAnchor: [13, 13],
+          iconSize: [20, 42],
+          iconAnchor: [10, 21],
         }),
         keyboard: false,
         zIndexOffset: 300,
@@ -1040,8 +1193,7 @@ export function GameMap() {
     if (!poi) return;
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
     if (d > reach() || cabRef.current?.seated) {
-      if (cabRef.current?.seated) flash("Park at the curb. The door is on foot.", 1800);
-      void setDestination(poi.lat, poi.lng, true);
+      planWalk(poi.lat, poi.lng, true);
       return;
     }
     const err = st.tryOpen(poiId, performance.now());
@@ -1057,10 +1209,11 @@ export function GameMap() {
       return;
     }
     if (!canGrabMatch(graphRef.current, pos.current, k)) {
-      void setDestination(k.lat, k.lng);
+      planWalk(k.lat, k.lng, false, k.id);
       return;
     }
     useGame.getState().collectKey(k.id);
+    noteCollected(k.id);
     const g = graphRef.current;
     const L = Lref.current;
     const map = mapRef.current;
@@ -1227,7 +1380,7 @@ export function GameMap() {
         held.has("ArrowDown") ||
         held.has("ArrowRight");
       const manual = Boolean(injected.current) || driving || sm > 0.12;
-      if (manual && routeRef.current) clearRoute();
+      if (manual && (routeRef.current || queue.current.length > 0 || routeHold.current)) clearRoute();
       const auto = Boolean(routeRef.current && routeRef.current.length >= 2);
 
       steer = Math.max(-1, Math.min(1, steer));
@@ -1272,7 +1425,7 @@ export function GameMap() {
         if (routeMode.current !== "drive" && skips.current >= 4 && waypoint.current) {
           skips.current = 0;
           const wp = waypoint.current;
-          void setDestination(wp.lat, wp.lng);
+          void setDestination(wp.lat, wp.lng, legDoor.current, true);
         }
       } else {
         const want = throttle * max;
@@ -1310,7 +1463,18 @@ export function GameMap() {
         pos.current.lat = held.lat;
         pos.current.lng = held.lng;
         pos.current.speed = 0;
-        if (auto) clearRoute();
+        if (auto) {
+          routeRef.current = null;
+          routeLine.current?.remove();
+          routeLine.current = null;
+          if (queue.current.length > 0) {
+            // The live leg left the ward. Keep the stops still waiting.
+            legKey.current = null;
+            legDoor.current = false;
+            flash("That stop is outside the ward.");
+            endLeg();
+          } else clearRoute();
+        }
         bumpFence();
       }
       const stepped = distM(prevLat, prevLng, pos.current.lat, pos.current.lng);
@@ -1324,6 +1488,7 @@ export function GameMap() {
       if (
         waypoint.current &&
         !routeRef.current &&
+        !routeHold.current &&
         rail &&
         rail.segs.length &&
         t - lastRouteTry.current > 900
@@ -1385,6 +1550,7 @@ export function GameMap() {
         if (seated) break;
         if (canGrabMatch(foot, pos.current, k)) {
           st.collectKey(k.id);
+          noteCollected(k.id);
           const L = Lref.current;
           const map = mapRef.current;
           if (foot) snapKeys(foot);
@@ -1478,6 +1644,8 @@ export function GameMap() {
           deskName: desk.name,
           deskDist: distM(pos.current.lat, pos.current.lng, desk.lat, desk.lng),
           aimDeg: (-aimYaw * 180) / Math.PI,
+          routeStops: (waypoint.current ? 1 : 0) + queue.current.length,
+          routeHold: routeHold.current,
         });
       }
     };
@@ -1495,6 +1663,11 @@ export function GameMap() {
         if (el && s.quests.worn) el.dataset.cloth = s.quests.worn;
         else el?.removeAttribute("data-cloth");
         if (s.scout !== p.scout) startBed(s.scout);
+      }
+      if (p.openVault && !s.openVault && routeHold.current) {
+        routeHold.current = false;
+        legDoor.current = false;
+        endLeg();
       }
       if (s.fares > p.fares) {
         const desk = fareDesk(CITIES[s.cityId]);
@@ -1577,6 +1750,15 @@ export function GameMap() {
           setRunOn(next);
         }}
         onMarket={walkToMarket}
+        onRoute={() => {
+          if (routeHold.current) {
+            routeHold.current = false;
+            legDoor.current = false;
+            endLeg();
+            return;
+          }
+          clearRoute();
+        }}
         onDesk={() => {
           const s = useGame.getState();
           if (s.hud.seated) {

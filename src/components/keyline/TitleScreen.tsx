@@ -38,9 +38,10 @@ export function TitleScreen() {
   }
 
   const rideTo = journey ? CITIES[journey.to].name : null;
+  const blade = rideTo ?? (needsStart ? "Pick a city" : city.name);
 
   return (
-    <div className="title-night is-book">
+    <div className="title-night is-blade">
       <div className="title-account">
         <AuthChip />
       </div>
@@ -48,19 +49,17 @@ export function TitleScreen() {
         <AudioDock />
       </div>
 
-      <div className="book-stage">
-        <button type="button" className="matchbook" onClick={() => enter(cityId)}>
-          {["white", "blue", "green", "amber", "red", "violet"].map((tier) => (
-            <span key={tier} className={`matchbook-stick tier-${tier}`} aria-hidden>
-              <i />
-            </span>
-          ))}
-          <span className="matchbook-cover">
-            <strong>KEYLINE</strong>
-            <span className="matchbook-strike">{rideTo ? `Train · ${rideTo}` : needsStart ? "Pick a city" : city.name}</span>
-          </span>
-        </button>
-        <p className="book-lede">{rideTo ? `On the train to ${rideTo}.` : needsStart ? "Tap to pick your first city." : `Tap to walk ${city.name}.`}</p>
+      <div className="blade-stage">
+        <div className="blade-mast">
+          <i className="blade-pole" aria-hidden />
+          <button type="button" className="city-blade" onClick={() => enter(cityId)} aria-label={rideTo ? `On the train to ${rideTo}` : needsStart ? "Pick a city" : `Walk ${city.name}`}>
+            <i className="blade-hole" aria-hidden />
+            <span className={blade.length >= 12 ? "blade-name is-long" : "blade-name"}>{blade}</span>
+            <i className="blade-hole" aria-hidden />
+          </button>
+          <p className="blade-mark">KEYLINE</p>
+        </div>
+        {rideTo ? <p className="blade-note">On the train</p> : null}
         {points > 0 ? <p className="book-coin tabular-nums">{points.toLocaleString()}</p> : null}
         <div className="book-links">
           <button type="button" className="title-more" onClick={() => setScreen("cities")}>

@@ -142,6 +142,9 @@ export function PrintShop({ counter }: { counter: boolean }) {
 
   return (
     <div className="grid gap-3" data-testid="print-shop">
+      <figure className="print-front">
+        <img src="/sprites/print-shop.png" alt="" />
+      </figure>
       {counter ? (
         <div className="hq-row items-center">
           <div className="hq-row-copy">

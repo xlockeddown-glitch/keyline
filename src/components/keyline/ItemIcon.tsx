@@ -11,14 +11,15 @@ export function ItemIcon({
 }) {
   if (isTier(item)) {
     return (
-      <span
+      <img
+        src={`/sprites/matches/${item}.png`}
+        alt=""
+        width={size}
+        height={Math.round(size * 1.45)}
+        draggable={false}
         className={`match-glyph tier-${item} ${className}`}
-        style={{ width: size, height: Math.round(size * 1.25) }}
-        aria-hidden
-      >
-        <i className="match-head" />
-        <i className="match-stick" />
-      </span>
+        style={{ width: "auto", height: Math.round(size * 1.45) }}
+      />
     );
   }
   if (item === "coin") {

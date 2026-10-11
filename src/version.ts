@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.61";
+export const APP_VERSION = "0.0.62";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k61a";
+export const PUBLISH_STAMP = "k62a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -64,3 +64,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.59: Daily Blitz replaces City Pulse. On entering the city, six lanterns (white through violet, harder as they climb) pay 20, 30, 50, 80, 130, 200 coin. A miss, a timeout or a stop ends the run and keeps the coin already lit. One run per UTC day. Not now leaves it in Journal · Progress. A blitz card is a spark, so it does not clear the rolls (k59a).
 // 0.0.60: street read — a new city stand steps along the curb when north dies in a few metres (up to about a block, so Tucson's first press goes north), and holding into the end of a street stops instead of bouncing back; the worn coat's walk, idle and side-idle sheets load before the first stop so the walker doesn't blink out; the owl and the corgi stand a little larger and the giraffe stands taller, with one tight shadow instead of a bloom; the street-loading line names whoever is hired. See-through spots in coats, eyes and lantern glass are filled, and the print-shop coats match the sealed sheets (k60a, art k60s).
 // 0.0.61: Friday weekly trivia cards (2026-10-09) — accuracy pass on the 50 Oct 6 cards (all answers held up; 3 rewritten: ACL weekend two no longer says "runs", the Gears of War: E-Day studio card names the lead Xbox studio, the second tilcayo card no longer depends on its uncertain range) and 19 new verified cards in weekly_20261009 (2026 Chemistry/Literature/Peace Nobels, 2026 Stanley Cup, Super Bowl LX MVP, 2026 James Beard regional winners for Denver/Chicago/New Orleans/L.A./New York, and Tucson/Austin/Temple council and civic cards), no math (k61a).
+// 0.0.62: the title is a street blade (white on green, mixed case, the city name is the sign, KEYLINE under the post, tap to walk). Menus sit on cool ink. Street lanterns, matches and the print shop are painted in the scout ink, and the street vaults stand at the scout's height. A walk can queue up to eight stops. Daily Blitz pays 20/30/50/80/200/500 (880 for a clear) and a right answer also drops that color's match (k62a).

@@ -26,12 +26,7 @@ function Pips({ tier }: { tier: Tier }) {
 }
 
 function Glyph({ tier }: { tier: Tier }) {
-  return (
-    <span className={`match-glyph tier-${tier} ms-glyph`} aria-hidden>
-      <i className="match-head" />
-      <i className="match-stick" />
-    </span>
-  );
+  return <img src={`/sprites/matches/${tier}.png`} alt="" className="ms-glyph" draggable={false} />;
 }
 
 /**
