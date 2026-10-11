@@ -1,6 +1,4 @@
-/* Painted props (k60d). Same cut-out as the scouts: a keyed plate, the lantern's
-   pane left open so the tier glass, wick and bloom still carry the color.
-   Metals are the print-shop skins. Matches are one stick, the head recoloured. */
+
 
 .lantern{
   width:18px;
@@ -110,7 +108,6 @@
   width:auto
 }
 
-/* Title. A street blade: white on green, mixed case, fixed height. */
 .title-night.is-blade{
   display:flex;
   flex-direction:column;

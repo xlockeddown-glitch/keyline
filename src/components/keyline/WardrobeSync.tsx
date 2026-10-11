@@ -3,6 +3,7 @@ import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user
 import { mergeWardrobe, sameWardrobe, type Wardrobe } from "@/game/cosmetics";
 import { fetchWardrobe, syncWardrobe } from "@/game/wardrobeApi";
 import { useGame } from "@/game/store";
+import { visibleLantern } from "@/game/paint";
 
 /** Lantern skins re-case every lamp on the page (street, Run, Stack, vault hero, title lamp) from one root attribute. */
 function applyLantern(id: string | null) {
@@ -23,9 +24,13 @@ export function WardrobeSync() {
   const synced = useRef<Wardrobe | null>(null);
 
   useEffect(() => {
-    applyLantern(useGame.getState().wardrobe.lantern);
+    const apply = () => {
+      const s = useGame.getState();
+      applyLantern(visibleLantern(s.paints.wornVault, s.wardrobe.lantern));
+    };
+    apply();
     return useGame.subscribe((s, p) => {
-      if (s.wardrobe.lantern !== p.wardrobe.lantern) applyLantern(s.wardrobe.lantern);
+      if (s.wardrobe.lantern !== p.wardrobe.lantern || s.paints.wornVault !== p.paints.wornVault) apply();
     });
   }, []);
 

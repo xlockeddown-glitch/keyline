@@ -1,9 +1,18 @@
 {
-  "_doc": "0.0.45 print-shop coats. Lab targets for scripts/make-coat-variants.py and the qa:sprites variant check. Ids must match COATS in src/game/cosmetics.ts.",
+  "_doc": "0.0.45 print-shop coats, plus 0.0.64 vat dyes. Lab targets for scripts/make-coat-variants.py and the qa:sprites variant check. `coats` ids must match COATS in src/game/cosmetics.ts. `dyes` are mixed from vault paint (src/game/paint.ts) and are not in the print-shop catalogue.",
   "coats": {
     "oilskin": { "name": "Oilskin Slicker", "L": 54, "C": 46, "h": 84 },
     "bottle": { "name": "Bottle-Green Duster", "L": 34, "C": 30, "h": 152 },
     "oxblood": { "name": "Oxblood Greatcoat", "L": 30, "C": 36, "h": 30 },
     "plum": { "name": "Plum Frock Coat", "L": 30, "C": 30, "h": 330 }
+  },
+  "dyes": {
+    "dye-white": { "name": "Chalk coat", "L": 74, "C": 26, "h": 82 },
+    "dye-blue": { "name": "Blue coat", "L": 64, "C": 34, "h": 240 },
+    "dye-green": { "name": "Field coat", "L": 46, "C": 46, "h": 148 },
+    "dye-amber": { "name": "Amber coat", "L": 66, "C": 64, "h": 70 },
+    "dye-red": { "name": "Carmine coat", "L": 41, "C": 72, "h": 14 },
+    "dye-violet": { "name": "Night coat", "L": 46, "C": 74, "h": 290 },
+    "dye-prism": { "name": "Prism coat", "L": 62, "C": 52, "h": 192 }
   }
 }

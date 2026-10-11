@@ -37,8 +37,9 @@ import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
 import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
+import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
-import { addIngredient, cityStaple, ingredientName, rollIngredient, spendIngredient, type IngredientId } from "./ingredients";
+import { addIngredient, cityStaple, ingredientName, paintFoundLine, rollIngredient, rollVaultPaints, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
 import { chooseStart, cleanUnlocks, freshUnlocks, goalsCheck, isUnlocked, lampLit, lockLine, migrateUnlocks, runFinished, unlockCity as unlockCityPass, type CityUnlocks } from "./cityPass";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
@@ -149,6 +150,8 @@ export type GameState = {
   scout: ScoutId;
   /** 0.0.45 print shop: cosmetic coats and lantern skins (owned, paid so far, worn). Purely visual. */
   wardrobe: Wardrobe;
+  /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
+  paints: PaintBench;
   atlas: Record<string, true>;
   survey: Record<string, true>;
   vaults: Record<string, VaultRuntime>;
@@ -268,6 +271,10 @@ export type GameState = {
   wearCosmetic: (slot: CosmeticSlot, id: CosmeticId | null) => void;
   /** Take the merged wardrobe back from the server (signed-in sync). */
   adoptWardrobe: (w: Wardrobe) => void;
+  /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
+  mixPaint: (color: PaintColor, job: PaintJob) => void;
+  /** Wear a mixed paint job, or take it off with null. */
+  wearPaint: (job: PaintJob, color: PaintColor | null) => void;
   buyKiosk: (id: KioskId) => void;
   startContract: () => void;
   toggleHq: (v?: boolean) => void;
@@ -452,6 +459,7 @@ function persistable(s: GameState) {
     scouts: s.scouts,
     scout: s.scout,
     wardrobe: s.wardrobe,
+    paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
     vaults: s.vaults,
@@ -750,6 +758,7 @@ export const useGame = create<GameState>((set, get) => ({
   scouts: saved?.scouts?.length ? saved.scouts : ["raccoon"],
   scout: saved?.scout ?? "raccoon",
   wardrobe: cleanWardrobe(saved?.wardrobe),
+  paints: cleanPaint(saved?.paints),
   atlas: saved?.atlas ?? {},
   survey: saved?.survey ?? {},
   vaults: saved?.vaults ?? {},
@@ -1363,7 +1372,9 @@ export const useGame = create<GameState>((set, get) => ({
       const vellum = series.kind === "stack" ? 3 : 2;
       const schematic = grades.every((g) => g === "perfect") || Math.random() < (series.kind === "stack" ? 0.28 : 0.2);
       const ing = rollIngredient(get().cityId, { id: series.id, tier: series.cost });
-      const pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
+      const paints = rollVaultPaints(series.cost);
+      let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
+      for (const id of paints) pantry = addIngredient(pantry, id);
       const loot: LootDrop = {
         points,
         grade: grades.includes("perfect") ? "perfect" : grades.includes("great") ? "great" : "good",
@@ -1374,6 +1385,8 @@ export const useGame = create<GameState>((set, get) => ({
         vellum,
         schematic,
         ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
+        paint: paints[0] ? { id: paints[0], name: ingredientName(paints[0]) } : undefined,
+        extraPaint: paints[1] ? { id: paints[1], name: ingredientName(paints[1]) } : undefined,
         market: sMult > 1 && seriesMarket ? { street: seriesMarket.street.name, mult: sMult, coin: sPay.extraCoin, matches: sPay.extraMatches } : undefined,
       };
       let nextKeys = { ...get().keys };
@@ -1399,6 +1412,7 @@ export const useGame = create<GameState>((set, get) => ({
         ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
         : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`) + (sMult > 1 ? ` ${MARKET_TAG}.` : "");
       const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
+      const paintLine = paints.length ? paints.map((id) => paintFoundLine(id)).join(" ") : null;
       const questHit = cleared(get, answered(get, true, grade === "perfect"), { id: series.id, tier: series.cost });
       set({
         keys: paid.keys,
@@ -1422,7 +1436,7 @@ export const useGame = create<GameState>((set, get) => ({
         miss: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
         // Boost labels ride on loot.boosts (their own line in the reward pop); not repeated in the toast.
-        toast: [clearLine, ingLine, questHit.line].filter(Boolean).join(" "),
+        toast: [clearLine, paintLine, ingLine, questHit.line].filter(Boolean).join(" "),
         quests: questHit.quests,
         tutorial: Math.max(get().tutorial, 2),
       });
@@ -1484,7 +1498,9 @@ export const useGame = create<GameState>((set, get) => ({
     const vellum = poi.kind === "park" || poi.kind === "campus" ? 2 : Math.random() < 0.4 ? 1 : 0;
     const schematic = poi.tier === "amber" || poi.tier === "red" || poi.tier === "violet" || (poi.tier !== "white" && Math.random() < 0.08);
     const ing = rollIngredient(get().cityId, poi);
-    const pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
+    const paints = rollVaultPaints(poi.tier);
+    let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
+    for (const id of paints) pantry = addIngredient(pantry, id);
     const baseKeys: Partial<Record<Tier, number>> = {};
     if (get().equipped === "lucky" && Math.random() < 0.15) baseKeys[poi.tier] = 1;
     if (grade === "perfect" && Math.random() < 0.1) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
@@ -1503,6 +1519,8 @@ export const useGame = create<GameState>((set, get) => ({
       vellum,
       schematic,
       ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
+      paint: paints[0] ? { id: paints[0], name: ingredientName(paints[0]) } : undefined,
+      extraPaint: paints[1] ? { id: paints[1], name: ingredientName(paints[1]) } : undefined,
       market: lampMult > 1 && lampMarket ? { street: lampMarket.street.name, mult: lampMult, coin: lampPay.extraCoin, matches: lampPay.extraMatches } : undefined,
     };
     let nextKeys = { ...keys };
@@ -1555,6 +1573,7 @@ export const useGame = create<GameState>((set, get) => ({
     const wornCloth = get().quests.worn;
     const clothLine = tip > 0 && wornCloth ? `${clothName(wornCloth)} +${tip}.` : null;
     const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
+    const paintLine = paints.length ? paints.map((id) => paintFoundLine(id)).join(" ") : null;
     const questHit = cleared(get, answered(get, true, grade === "perfect"), poi);
     // 0.0.56 city passes: amber+ lamp points (route a) and every place in the city (route b).
     const lit = lampLit(get().cities, poi.tier);
@@ -1587,7 +1606,7 @@ export const useGame = create<GameState>((set, get) => ({
       loot,
       miss: null,
       // Boost labels ride on loot.boosts (their own line in the reward pop); not repeated in the toast.
-      toast: [passLine, contractToast, fareToast, surveyHit?.message, clothLine, ingLine, questHit.line].filter(Boolean).join(" ") || null,
+      toast: [passLine, contractToast, fareToast, surveyHit?.message, clothLine, paintLine, ingLine, questHit.line].filter(Boolean).join(" ") || null,
       quests: questHit.quests,
       tutorial: Math.max(get().tutorial, 2),
     });
@@ -1891,7 +1910,10 @@ export const useGame = create<GameState>((set, get) => ({
     }
     if (res.done) sfx.craft();
     else sfx.pickup();
-    set({ wardrobe: res.wardrobe, keys: res.keys });
+    const paints = { ...get().paints };
+    if (res.done && c.slot === "coat") paints.wornCoat = null;
+    if (res.done && c.slot === "lantern") paints.wornVault = null;
+    set({ wardrobe: res.wardrobe, keys: res.keys, paints });
     flashToast(
       set,
       get,
@@ -1901,12 +1923,50 @@ export const useGame = create<GameState>((set, get) => ({
     saveNow(get);
   },
   wearCosmetic: (slot, id) => {
+    const paints = { ...get().paints };
+    const covering = slot === "coat" ? paints.wornCoat : paints.wornVault;
     const next = wear(get().wardrobe, slot, id, Date.now());
-    if (!next) return;
+    if (!next && !covering) return;
     sfx.ui();
-    set({ wardrobe: next });
+    if (slot === "coat") paints.wornCoat = null;
+    else paints.wornVault = null;
+    set({ wardrobe: next ?? get().wardrobe, paints });
     const name = id ? cosmetic(id)?.name : null;
     flashToast(set, get, name ? `Wearing the ${name}.` : slot === "coat" ? "Back in the field coat." : "Lamps back to brass.", 1400);
+    saveNow(get);
+  },
+  mixPaint: (color, job) => {
+    const use = PAINT_USE[color];
+    const res = mixPaintJob(get().paints, get().pantry, color, job);
+    if (!res) {
+      const owned = job === "coat" ? get().paints.coats.includes(color) : get().paints.vaults.includes(color);
+      const need = use[job];
+      const have = get().pantry[`paint-${color}`] ?? 0;
+      flashToast(
+        set,
+        get,
+        owned ? `${use.name} is already mixed.` : `Need ${need} ${use.name.toLowerCase()}. You have ${have}.`,
+        1800,
+      );
+      return;
+    }
+    sfx.craft();
+    set({ paints: res.bench, pantry: res.pantry });
+    flashToast(set, get, job === "coat" ? `${use.name} on the coat.` : `Street vaults in ${use.name.toLowerCase()}.`, 1800);
+    saveNow(get);
+  },
+  wearPaint: (job, color) => {
+    const next = wearPaintJob(get().paints, job, color);
+    if (!next) return;
+    sfx.ui();
+    set({ paints: next });
+    const use = color ? PAINT_USE[color] : null;
+    flashToast(
+      set,
+      get,
+      !use ? (job === "coat" ? "Back in the field coat." : "Vaults back to brass.") : job === "coat" ? `${use.name} on the coat.` : `Street vaults in ${use.name.toLowerCase()}.`,
+      1400,
+    );
     saveNow(get);
   },
   adoptWardrobe: (w) => {

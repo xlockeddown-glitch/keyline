@@ -290,6 +290,8 @@ if __name__ == "__main__":
     if "--coats" in sys.argv:
         cv = _load("coatvars", "make-coat-variants.py")
         for coat in cv.PALETTE:
+            folder = cv.DYE_OUT if str(coat).startswith("dye-") else cv.OUT
+            folder.mkdir(parents=True, exist_ok=True)
             for kk in cv.GRID:
-                cv.save_exact(cv.variant("giraffe", kk, coat), cv.OUT / f"giraffe-{coat}-{kk}.png")
+                cv.save_exact(cv.variant("giraffe", kk, coat), folder / f"giraffe-{coat}-{kk}.png")
         print("giraffe coats written")

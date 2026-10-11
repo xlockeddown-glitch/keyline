@@ -4,7 +4,7 @@ import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityShop } from "@/game/
 import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { BLITZ_FULL, blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { MATERIAL_LIST, TIERS } from "@/game/items";
-import { INGREDIENTS, cityStaple, type IngredientId } from "@/game/ingredients";
+import { INGREDIENTS, cityStaple, isPaintId, type IngredientId } from "@/game/ingredients";
 import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
 import { BANK_DOWN, BANK_UP, TIER_ORDER, TIER_VALUE, bankDownSpec, bankUpSpec } from "@/game/rewards";
 import { matchCap } from "@/game/ticket";
@@ -170,10 +170,10 @@ export function HqPanel() {
                 ))}
               </ul>
               <p className="kicker mt-2">Press stock</p>
-              <p className="hq-row-sub">Green vaults and up drop this city's ingredient. A few landmarks drop a ward cut from amber up. Print spends one.</p>
+              <p className="hq-row-sub">Green vaults and up drop this city's ingredient. A few landmarks drop a ward cut from amber up. Print spends one. Every vault also drops a can of its own paint — rarer colours, much less often — and, about 1 in 10,000, prism from any colour. The vat is under Wardrobe.</p>
               <ul className="grid gap-2">
                 {(Object.keys(pantry) as IngredientId[])
-                  .filter((id) => (pantry[id] ?? 0) > 0)
+                  .filter((id) => (pantry[id] ?? 0) > 0 && !isPaintId(id))
                   .concat((pantry[cityStaple(cityId)] ?? 0) > 0 ? [] : [cityStaple(cityId)])
                   .filter((id, i, arr) => arr.indexOf(id) === i)
                   .map((id) => (

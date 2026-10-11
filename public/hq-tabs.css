@@ -1,4 +1,4 @@
-/* HQ tabs — high contrast chips (v0.0.12). Atlas/Print/Ledger/Standings were invisible on elevated panel. */
+
 .hq-tabs{
   display:flex;
   flex-shrink:0;
@@ -68,7 +68,7 @@
   grid-template-columns:1fr 1fr;
   gap:8px
 }
-/* 0.0.57: on a phone the four Journal tabs share the row (Leaderboard was cut off at 360-390 px and the row scrolled sideways). */
+
 @media (width<480px){
   .hq-tabs{
     display:grid;

@@ -1,16 +1,11 @@
-/* Lantern glass art pass (v0.0.13 / k13a) — hybrid visual-direction item 1.
-   Layer the globe: soot rim, tier-lit wick core, short bloom on the marker.
-   Street vault-pin + vault-hero share the same cap / frame / glass / post language.
-   Brass + soot shared; glass, wick and bloom carry the tier hue (0.0.17). No magenta. No flat yellow circle. OSM tiles untouched. */
 
-/* Brass cap — same for street, hero, stack, title */
+
 .lantern-cap,
 .stack-lamp .lantern-cap{
   background:linear-gradient(180deg,#e0c788 0%,#c9a35e 42%,#8a6a38 100%);
   box-shadow:0 1px 0 #5a4528
 }
 
-/* Soot chamber + brass rim */
 .lantern-frame,
 .stack-globe{
   background:#12100e;
@@ -18,9 +13,6 @@
   box-shadow:inset 0 0 0 1px #2a2218
 }
 
-/* Layered glass: soot rim → tier-lit pool. The tier hue fills the glass at full
-   strength; only the outer lip goes to soot (0.0.17 — 0.0.13 mixed every tier into
-   cream/brown, so blue/green/violet and white/amber all read as one warm candle). */
 .lantern-glass,
 .stack-globe .lantern-glass{
   position:relative;
@@ -36,7 +28,6 @@
     0 0 5px color-mix(in oklab, var(--glow) 80%, transparent);
 }
 
-/* Wick core — tinted by tier (hot center, tier-colored flame), not a fixed warm wick */
 .lantern-glass::before,
 .stack-globe .lantern-glass::before{
   content:"";
@@ -60,7 +51,6 @@
   z-index:1
 }
 
-/* Thin soot lip at the glass edge (was a 3px+1px inset that blacked out most of an 8×12 pane) */
 .lantern-glass::after,
 .stack-globe .lantern-glass::after{
   content:"";
@@ -72,7 +62,6 @@
   z-index:2
 }
 
-/* Short bloom on the map marker (behind the lantern body) — size + strength climb with rarity */
 .lantern::before,
 .stack-lamp::before{
   content:"";
@@ -91,7 +80,6 @@
   z-index:-1
 }
 
-/* Hero vault plate — same glass language, slightly stronger bloom */
 .lantern-hero{
   filter:drop-shadow(0 0 10px color-mix(in oklab, var(--glow) 85%, transparent))
 }
@@ -103,9 +91,6 @@
     transparent 74%)
 }
 
-/* Vault tiers (0.0.17) — lit glass hue per tier, plus two cues that don't need colour:
-   rank pips on the cap (1 white … 6 violet) and bloom that grows with rarity.
-   White is a cool, near-colourless lamp; amber is a deep saturated gold — never the brass. */
 :root{
   --lamp-white:#eef2f7;
   --lamp-blue:#3f9dff;
@@ -120,9 +105,9 @@
 .vault-pin.tier-amber,.vault-night.tier-amber{ --glow:var(--lamp-amber); --pips:4; --bloom-a:46%; --bloom-r:14px; --bloom-hr:17px }
 .vault-pin.tier-red,.vault-night.tier-red{ --glow:var(--lamp-red); --pips:5; --bloom-a:54%; --bloom-r:15px; --bloom-hr:18px }
 .vault-pin.tier-violet,.vault-night.tier-violet{ --glow:var(--lamp-violet); --pips:6; --bloom-a:62%; --bloom-r:16px; --bloom-hr:19px }
-/* The Run's halo ring follows its tier too (was fixed amber around a blue-cost lamp, 0.0.18) */
+
 .vault-pin.is-run::after{ border-color:color-mix(in oklab, var(--glow) 70%, transparent) }
-/* Match glyphs in lists / HQ / street keys carry the same lit tier hue */
+
 .match-pin.tier-white,.match-glyph.tier-white{ --glow:var(--lamp-white) }
 .match-pin.tier-blue,.match-glyph.tier-blue{ --glow:var(--lamp-blue) }
 .match-pin.tier-green,.match-glyph.tier-green{ --glow:var(--lamp-green) }
@@ -130,7 +115,6 @@
 .match-pin.tier-red,.match-glyph.tier-red{ --glow:var(--lamp-red) }
 .match-pin.tier-violet,.match-glyph.tier-violet{ --glow:var(--lamp-violet) }
 
-/* Rank pips — a row of lit ticks above the brass cap; count = tier rank */
 .vault-pin .lantern::after{
   content:"";
   position:absolute;
@@ -148,7 +132,6 @@
   opacity:.4
 }
 
-/* Brass post + soot foot */
 .lantern-post,
 .stack-lamp .lantern-post{
   background:linear-gradient(90deg,#3a3224,#6a5738,#3a3224)
@@ -158,7 +141,6 @@
   background:linear-gradient(180deg,#5a4a32,#3a3224)
 }
 
-/* Flicker keeps wick alive without flattening to a solid disc */
 @keyframes glass-flicker{
   50%{
     filter:brightness(1.18);
@@ -168,7 +150,6 @@
   }
 }
 
-/* Cooling dims soot glass + wick */
 .vault-pin.cooling .lantern-glass,
 .vault-pin.cooling .stack-globe .lantern-glass{
   filter:grayscale(.75) brightness(.7);
@@ -191,11 +172,6 @@
   }
 }
 
-/* Shop / HQ facade (v0.0.13 / k13a) — hybrid visual-direction item 2.
-   Brass awning + CSS-only hanging lamp on outfitter pin; HQ plate brass edge + small wick.
-   Same brass/soot/wick language as lantern glass. OSM tiles untouched. No magenta. */
-
-/* Outfitter — brass awning (same metal as lantern-cap), not a flat accent slab */
 .shop-awning{
   background:linear-gradient(180deg,#e0c788 0%,#c9a35e 42%,#8a6a38 100%);
   box-shadow:0 1px 0 #5a4528;
@@ -205,13 +181,11 @@
   filter:drop-shadow(0 2px 5px color-mix(in oklab, #c9a35e 45%, transparent))
 }
 
-/* Brass rim on the storefront body */
 .shop-body{
   border-color:#8a7348;
   box-shadow:inset 0 0 0 1px #2a2218
 }
 
-/* Window reads as warm glass, not flat accent fill */
 .shop-window{
   background:
     radial-gradient(ellipse 70% 60% at 50% 60%,
@@ -223,8 +197,6 @@
     0 0 5px color-mix(in oklab, var(--glow, var(--color-vault-amber)) 45%, transparent)
 }
 
-/* Hanging lamp over the awning — CSS-only (no markup): chain + brass cap + soot glass + wick.
-   Same brass/soot/wick language as lantern-glass; reuses --glow when set on .shop-pin. */
 .shop-pin{
   --glow:var(--color-vault-amber)
 }
@@ -261,7 +233,6 @@
   background-color:#12100e
 }
 
-/* HQ Ledger / desk plate — brass edge + small wick (storefront, not settings sheet) */
 .panel:has(.hq-tabs){
   border-color:#8a7348;
   box-shadow:
@@ -274,7 +245,7 @@
   border-bottom-color:#8a7348;
   padding-left:2.85rem
 }
-/* Small wick accent — desk lamp on the plate (left, clear of AuthChip) */
+
 .panel:has(.hq-tabs) > header::after{
   content:"";
   position:absolute;
@@ -295,7 +266,7 @@
   pointer-events:none;
   z-index:1
 }
-/* Brass cap nub above the wick chamber */
+
 .panel:has(.hq-tabs) > header::before{
   content:"";
   position:absolute;
@@ -310,16 +281,10 @@
   z-index:2
 }
 
-/* Title folio lamp (v0.0.13 / k13a) — hybrid visual-direction item 3.
-   Same in-world lantern markup (cap / frame / glass / post). White-tier glow.
-   Folio stays a map block (roads + scout + key), not a poster. */
-
-/* Override block-map amber inherit — white street lamp language */
 .title-lamp.tier-white{
   --glow:var(--color-vault-white)
 }
 
-/* Match street wick flicker (title lamp is not inside .vault-pin) */
 .title-lamp .lantern-glass{
   animation:2.5s ease-in-out infinite glass-flicker
 }
@@ -329,7 +294,6 @@
   }
 }
 
-/* Soft white pool on the block — lamp light, not amber wash / poster glow */
 .block-map{
   background:
     radial-gradient(9rem 7rem at 48% 38%, color-mix(in oklab, var(--color-vault-white) 16%, transparent), transparent 68%),
@@ -339,8 +303,6 @@
   background:radial-gradient(circle, color-mix(in oklab, var(--color-vault-white) 40%, transparent), transparent 70%)
 }
 
-/* Title scale already in styles.css (.title-lamp scale 1.35); bloom rides the transform.
-   Slightly taller bloom so the white wick reads at folio size without leaving map-block framing. */
 .title-lamp::before{
   width:30px;
   height:30px;

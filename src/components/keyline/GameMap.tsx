@@ -37,6 +37,7 @@ import {
   spreadOnGraph,
   standOpen,
   stuckNudge,
+  WALK_REACH_M,
   type Pt,
   type StreetGraph,
 } from "@/game/streets";
@@ -60,6 +61,8 @@ import { DailyBlitz } from "./DailyBlitz";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
 import { MARKET_TAG, closestOnStreet, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
+import { visibleCoat } from "@/game/paint";
+import { useWalkPoster } from "@/game/walkClient";
 
 type LModule = typeof import("leaflet");
 
@@ -123,6 +126,7 @@ function warmSheets(scout: string, coat: string | null) {
 }
 
 export function GameMap() {
+  useWalkPoster();
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LMap | null>(null);
   const Lref = useRef<LModule | null>(null);
@@ -142,6 +146,7 @@ export function GameMap() {
   const skips = useRef(0);
   const lastRouteTry = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const destSeq = useRef(0);
   const expandBusy = useRef(false);
   const lastExpand = useRef(0);
   const lastKeyCheck = useRef(0);
@@ -850,7 +855,7 @@ export function GameMap() {
 
       const icon = L.divIcon({
         className: "",
-        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}"${coatAttr(useGame.getState().wardrobe.coat)} data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
+        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}"${coatAttr(visibleCoat(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat))} data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
         iconSize: [56, 56],
         iconAnchor: [28, 30],
       });
@@ -860,7 +865,7 @@ export function GameMap() {
         keyboard: false,
         zIndexOffset: 800,
       }).addTo(map);
-      warmSheets(useGame.getState().scout, useGame.getState().wardrobe.coat);
+      warmSheets(useGame.getState().scout, visibleCoat(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat));
 
       rebuildPins(L, map);
       paintMarket();
@@ -954,31 +959,49 @@ export function GameMap() {
     if (!keepQueue && prior && distM(prior.lat, prior.lng, target.lat, target.lng) < 14 && (routeRef.current?.length ?? 0) >= 2) {
       return;
     }
+    const seq = ++destSeq.current;
+    const from = { lat: pos.current.lat, lng: pos.current.lng };
+    const seated = Boolean(cabRef.current?.seated);
+    const cut = canCutBuildings(useGame.getState().scout);
+    const net = seated ? driveRef.current : g;
+    let snappedRaw = net ? pullToStreet(net, target.lat, target.lng, seated ? 120 : 220, seated ? undefined : from) : target;
+    let snapped = w ? clampWard(w, snappedRaw.lat, snappedRaw.lng) : snappedRaw;
+    let snapGap = distM(snapped.lat, snapped.lng, target.lat, target.lng);
+    // The bake is downtown. A tap past its edge still has streets — load them before deciding the
+    // pin is in a field. A loaded area with nothing close (Camp Mabry, a park interior) does not.
+    if (!seated && !cut && g && snapGap > WALK_REACH_M && !graphCovers(g, target.lat, target.lng)) {
+      try {
+        await expandGraph(g, target.lat, target.lng, 1600, abortRef.current?.signal);
+      } catch {
+        /* decide with the streets already loaded */
+      }
+      if (destSeq.current !== seq || mapRef.current !== map) return;
+      snappedRaw = pullToStreet(g, target.lat, target.lng, 220, from);
+      snapped = w ? clampWard(w, snappedRaw.lat, snappedRaw.lng) : snappedRaw;
+      snapGap = distM(snapped.lat, snapped.lng, target.lat, target.lng);
+    }
+    // No street within a door-step: drawing the route would stop on a far curb and leave the pin behind.
+    if (!cut && snapGap > (seated ? 140 : WALK_REACH_M)) {
+      flash(seated ? "No road that way." : "No street that way.");
+      return;
+    }
     if (!keepQueue) {
       queue.current = [];
       routeHold.current = false;
       legKey.current = keyId ?? null;
     }
     legDoor.current = door;
-    const from = { lat: pos.current.lat, lng: pos.current.lng };
-    const seated = Boolean(cabRef.current?.seated);
-    const net = seated ? driveRef.current : g;
-    const snappedRaw = net ? pullToStreet(net, target.lat, target.lng, seated ? 120 : 220, seated ? undefined : from) : target;
-    const snapped = w ? clampWard(w, snappedRaw.lat, snappedRaw.lng) : snappedRaw;
-    if (seated && distM(snapped.lat, snapped.lng, target.lat, target.lng) > 140) {
-      flash("No road that way.");
-      return;
-    }
-    waypoint.current = { lat: target.lat, lng: target.lng, door, keyId: legKey.current ?? undefined };
+    // A plain tap stands where the route can finish. A door keeps its pin; the last step is the hop.
+    const pin = !cut && !door && !seated ? snapped : target;
+    waypoint.current = { lat: pin.lat, lng: pin.lng, door, keyId: legKey.current ?? undefined };
     routeAlong.current = 0;
     stuckFor.current = 0;
     skips.current = 0;
     routeMode.current = seated ? "drive" : "walk";
-    if (L && map) placeWaypoint(L, map, target.lat, target.lng);
+    if (L && map) placeWaypoint(L, map, pin.lat, pin.lng);
     paintQueue();
-    useGame.getState().setHud({ waypoint: target });
+    useGame.getState().setHud({ waypoint: pin });
 
-    const cut = canCutBuildings(useGame.getState().scout);
     const walkTo = seated || cut ? (seated ? snapped : target) : snapped;
     const arrive = door && !cut && !seated ? target : walkTo;
     // The walk starts on the closest street that isn't under or beside a freeway, ramp or feeder.
@@ -1004,7 +1027,7 @@ export function GameMap() {
     // switching city). Hold this map's own signal and drop the answer if the map isn't live.
     const signal = abortRef.current?.signal;
     const path = seated ? await routeDrive(net, from, snapped, signal) : await routeWalk(g, from, snapped, signal);
-    if (signal?.aborted || mapRef.current !== map) return;
+    if (signal?.aborted || mapRef.current !== map || destSeq.current !== seq) return;
     if (waypoint.current !== target) return;
     if (apply(path)) return;
     if (!routeRef.current) {
@@ -1101,7 +1124,12 @@ export function GameMap() {
           pos.current.lng = hop.lng;
           routeAlong.current = Math.min(routeAlong.current + Math.min(18, left), total - 1);
         } else if (skips.current <= 3) {
-          void setDestination(wp.lat, wp.lng, legDoor.current, true);
+          const gNow = graphRef.current;
+          const reachable = !gNow || canCutBuildings(useGame.getState().scout) || nearest(gNow, wp.lat, wp.lng, WALK_REACH_M);
+          if (!reachable) {
+            clearRoute();
+            flash("No street that way.");
+          } else void setDestination(wp.lat, wp.lng, legDoor.current, true);
         }
       }
     }
@@ -1577,7 +1605,7 @@ export function GameMap() {
         el.dataset.scout = st.scout;
         if (st.quests.worn) el.dataset.cloth = st.quests.worn;
         else el.removeAttribute("data-cloth");
-        setCoat(el, st.wardrobe.coat);
+        setCoat(el, visibleCoat(st.paints.wornCoat, st.wardrobe.coat));
         const cell = spriteCell(moving, row, anim.current.frame);
         el.classList.toggle("is-idle", !moving);
         el.classList.toggle("is-side", cell.sheet === "idle-side");
@@ -1655,11 +1683,12 @@ export function GameMap() {
 
   useEffect(() => {
     const unsub = useGame.subscribe((s, p) => {
-      if (s.scout !== p.scout || s.quests.worn !== p.quests.worn || s.wardrobe.coat !== p.wardrobe.coat) {
+      if (s.scout !== p.scout || s.quests.worn !== p.quests.worn || s.wardrobe.coat !== p.wardrobe.coat || s.paints.wornCoat !== p.paints.wornCoat) {
         const el = playerMarker.current?.getElement()?.querySelector(".scout-marker") as HTMLElement | null;
         if (el) el.dataset.scout = s.scout;
-        if (el) setCoat(el, s.wardrobe.coat);
-        warmSheets(s.scout, s.wardrobe.coat);
+        const coat = visibleCoat(s.paints.wornCoat, s.wardrobe.coat);
+        if (el) setCoat(el, coat);
+        warmSheets(s.scout, coat);
         if (el && s.quests.worn) el.dataset.cloth = s.quests.worn;
         else el?.removeAttribute("data-cloth");
         if (s.scout !== p.scout) startBed(s.scout);

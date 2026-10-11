@@ -4,7 +4,7 @@ import type { CityId, Tier } from "./types";
 export const ACCURACY_MIN = 100;
 export const SPEED_MIN = 10;
 
-export type StandingKind = "cards" | "speed" | "accuracy";
+export type StandingKind = "cards" | "speed" | "accuracy" | "distance";
 export type StandingScope = "all" | "city";
 
 export type AttemptAgg = {
@@ -23,6 +23,8 @@ export type StandingRow = {
   attempts: number;
   avgMs: number | null;
   rate: number | null;
+  /** Set on the distance board. Metres the server accepted. */
+  meters?: number;
 };
 
 export type StandingBoard = {
@@ -30,6 +32,8 @@ export type StandingBoard = {
   scope: StandingScope;
   city: CityId | null;
   byTier: Record<Tier, StandingRow[]>;
+  /** Filled only when kind is "distance". Not split by match colour. */
+  distance: StandingRow[];
 };
 
 export function emptyStandingBoard(
@@ -49,6 +53,7 @@ export function emptyStandingBoard(
       red: [],
       violet: [],
     },
+    distance: [],
   };
 }
 
@@ -122,7 +127,33 @@ export function rankAccuracy(rows: AttemptAgg[], minAttempts = ACCURACY_MIN, lim
 export function rankKind(kind: StandingKind, rows: AttemptAgg[], limit = 25): StandingRow[] {
   if (kind === "speed") return rankSpeed(rows, SPEED_MIN, limit);
   if (kind === "accuracy") return rankAccuracy(rows, ACCURACY_MIN, limit);
+  if (kind === "distance") return [];
   return rankCards(rows, limit);
+}
+
+export type DistanceAgg = {
+  userId: string;
+  name: string;
+  meters: number;
+  updatedAt: number;
+};
+
+/** Most metres on foot. Ties: who got there first, then user id. */
+export function rankDistance(rows: DistanceAgg[], limit = 25): StandingRow[] {
+  return [...rows]
+    .filter((r) => r.meters > 0)
+    .sort((a, b) => b.meters - a.meters || a.updatedAt - b.updatedAt || a.userId.localeCompare(b.userId))
+    .slice(0, limit)
+    .map((row, i) => ({
+      userId: row.userId,
+      name: publicStandingName(row.name),
+      rank: i + 1,
+      correct: 0,
+      attempts: 0,
+      avgMs: null,
+      rate: null,
+      meters: Math.floor(row.meters),
+    }));
 }
 
 export function mineFromBoard(board: StandingBoard, userId: string | null | undefined, tier: Tier): StandingRow | null {
@@ -140,14 +171,25 @@ export function formatRate(rate: number | null): string {
   return `${Math.round(rate * 100)}%`;
 }
 
+/** Board distance. Under a kilometre stays in metres so a short walk is not "0.0 km". */
+export function formatDistance(m: number | null | undefined): string {
+  if (m == null || !Number.isFinite(m) || m <= 0) return "\u2014";
+  if (m < 1000) return `${Math.round(m)} m`;
+  const km = m / 1000;
+  if (km >= 100) return `${Math.round(km).toLocaleString()} km`;
+  return `${km.toFixed(1)} km`;
+}
+
 export function standingValue(kind: StandingKind, row: StandingRow): string {
   if (kind === "speed") return formatAvg(row.avgMs);
   if (kind === "accuracy") return formatRate(row.rate);
+  if (kind === "distance") return formatDistance(row.meters);
   return row.correct.toLocaleString();
 }
 
 export const STANDING_KINDS: { id: StandingKind; label: string; blurb: string }[] = [
   { id: "cards", label: "Most cards", blurb: "Trivia cards answered correctly, by match colour." },
+  { id: "distance", label: "Distance", blurb: "Kilometres on foot. The cab doesn't count. Faster than a sprint, and the server cuts it back." },
   { id: "speed", label: "Fastest", blurb: "Lowest average answer time. Ten trivia cards to rank." },
   { id: "accuracy", label: "% correct", blurb: "Highest share answered correctly. One hundred trivia cards to rank." },
 ];

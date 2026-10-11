@@ -177,6 +177,18 @@ function stitchNode(g: StreetGraph, id: number) {
     }
   }
   if (best && best.dist < 8 && best.t > 0.02 && best.t < 0.98) splitSeg(g, best.seg, id);
+  else if (best && best.dist < 8) {
+    // Two ways that stop a few meters short of the same corner never used to join (the
+    // projection lands on an endpoint, which the middle-of-segment stitch skips). The walk
+    // then dies at the gap. Bridge it, unless that step crosses a freeway centerline.
+    // hopTouchesFreeway ignores anything within 5 m of a sidewalk, so a gap this short always
+    // looks clear — the midpoint has to miss the freeway line itself.
+    const seg = g.segs[best.seg]!;
+    const endId = best.t <= 0.5 ? seg.a : seg.b;
+    const end = g.nodes[endId]!;
+    const mid = { lat: (p.lat + end.lat) / 2, lng: (p.lng + end.lng) / 2 };
+    if (endId !== id && distM(p.lat, p.lng, end.lat, end.lng) < 8 && !besideFreeway(g, mid)) addSeg(g, id, endId);
+  }
 }
 
 function decimate(pts: Pt[]): Pt[] {
@@ -245,15 +257,26 @@ export function ingestFreeway(g: StreetGraph, raw: Pt[]) {
 }
 
 export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
+  // Freeway centerlines first. Street ingest bridges corners a few meters apart, and that
+  // check is blind until the no-walk layer exists (baked streets and live fetches both list
+  // foot ways before freeways).
+  if (!drive) {
+    for (const way of ways) {
+      const geom = way.geometry;
+      if (!geom || geom.length < 2) continue;
+      if (way.noWalk || (way.tags && isFreeway(way.tags))) {
+        ingestFreeway(
+          g,
+          geom.map((p) => ({ lat: p.lat, lng: p.lon })),
+        );
+      }
+    }
+  }
   for (const way of ways) {
     const geom = way.geometry;
     if (!geom || geom.length < 2) continue;
     const hw = way.tags?.highway ?? "";
-    if (!drive && (way.noWalk || (way.tags && isFreeway(way.tags)))) {
-      ingestFreeway(g, geom.map((p) => ({ lat: p.lat, lng: p.lon })));
-      continue;
-    }
-    if (way.noWalk) continue;
+    if (!drive && (way.noWalk || (way.tags && isFreeway(way.tags)))) continue;
     // Tagged ways must be walkable; untagged lines come pre-filtered (server fetch, baked foot routes).
     if (!drive && way.tags && !isWalkableWay(way.tags)) continue;
     if (drive && hw && !ARTERIAL.has(hw) && !HIGHWAY_DRIVE.split("|").includes(hw)) continue;
@@ -1143,7 +1166,8 @@ export function stuckNudge(from: Pt, to: Pt, cutBuildings = false): Pt | null {
   return dest(from.lat, from.lng, n * hop, e * hop);
 }
 
-/** Keep a walk on the street graph. A vault door may add one short last step off the curb. */
+/** A walk can still finish this far off the curb (the door hop). Farther, the route dies on the street and the pin stays behind. */
+export const WALK_REACH_M = 110;
 export function finishPath(
   path: Pt[] | null,
   from: Pt,
@@ -1165,7 +1189,7 @@ export function finishPath(
     const last = out[out.length - 1]!;
     const gap = distM(last.lat, last.lng, to.lat, to.lng);
     // The door step never lands on, or cuts across, a freeway or ramp (an old lamp left beside a feeder).
-    if (gap > 6 && gap <= 110 && !hopTouchesFreeway(opts.graph ?? null, last, to)) out.push({ lat: to.lat, lng: to.lng });
+    if (gap > 6 && gap <= WALK_REACH_M && !hopTouchesFreeway(opts.graph ?? null, last, to)) out.push({ lat: to.lat, lng: to.lng });
   }
   if (!out.length) return null;
   const tidy = tidyPath(out);
@@ -1306,28 +1330,25 @@ export function unpackFreeways(lines: number[][]): Pt[][] {
 export async function bootstrapStreets(cityId: string, lat: number, lng: number, hubs: Pt[], signal?: AbortSignal) {
   const g = createGraph(lat, lng);
   // 0.0.52b: the city's freeway layer ships with the build, so walks are held off ramps and feeders even when
-  // the live street fetch fails and the graph is only the baked foot routes.
-  const fw = fetch(`/streets/${cityId}-fw.json`)
+  // the live street fetch fails and the graph is only the baked foot routes. Load it before the foot graph so
+  // corner bridges can see the centerlines.
+  const fwP = fetch(`/streets/${cityId}-fw.json`)
     .then(async (res) => {
-      if (!res.ok) return;
+      if (!res.ok) return [] as Pt[][];
       const packed = (await res.json()) as { lines?: number[][] };
-      for (const line of unpackFreeways(packed.lines ?? [])) ingestFreeway(g, line);
+      return unpackFreeways(packed.lines ?? []);
     })
-    .catch(() => {
-      /* live fetch brings freeways too */
-    });
-  try {
-    const res = await fetch(`/streets/${cityId}.json`);
-    if (res.ok) {
+    .catch(() => [] as Pt[][]);
+  const streetsP = fetch(`/streets/${cityId}.json`)
+    .then(async (res) => {
+      if (!res.ok) return [] as OsmWay[];
       const packed = (await res.json()) as { lines?: number[][] };
-      if (packed.lines?.length) {
-        ingestOsmWays(g, unpackLines(packed.lines));
-      }
-    }
-  } catch {
-    /* live fetch next */
-  }
-  await fw;
+      return packed.lines?.length ? unpackLines(packed.lines) : [];
+    })
+    .catch(() => [] as OsmWay[]);
+  const [fwLines, streetWays] = await Promise.all([fwP, streetsP]);
+  for (const line of fwLines) ingestFreeway(g, line);
+  if (streetWays.length) ingestOsmWays(g, streetWays);
   if (g.segs.length < 8) {
     try {
       await expandGraph(g, lat, lng, 2000, signal);

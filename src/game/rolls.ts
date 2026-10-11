@@ -13,6 +13,7 @@ import {
   type StandingBoard,
   type StandingKind,
 } from "./standings";
+import { loadDistanceBoard } from "./walkBoard";
 
 export const ROLL_TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
 
@@ -34,7 +35,7 @@ const CITY_IDS = [
   "nashville",
 ] as const;
 
-const KindSchema = z.enum(["cards", "speed", "accuracy"]);
+const KindSchema = z.enum(["cards", "speed", "accuracy", "distance"]);
 const CitySchema = z.enum(CITY_IDS);
 
 export type BoardRow = {
@@ -257,6 +258,12 @@ export const fetchStandings = createServerFn({ method: "GET" })
     const city = data.city ?? null;
     const scope = city ? "city" : "all";
     try {
+      if (kind === "distance") {
+        const sql = await getSql();
+        const next = emptyStandingBoard("distance", scope, city);
+        next.distance = await loadDistanceBoard(sql, city);
+        return next;
+      }
       if (kind === "cards" && !city) {
         const sql = await getSql();
         const rows = await sql<{

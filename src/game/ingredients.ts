@@ -23,13 +23,57 @@ export type IngredientId =
   | "ticker"
   | "cable"
   | "salt"
-  | "bulb";
+  | "bulb"
+  | PaintId;
 
 export type Ingredient = {
   id: IngredientId;
   name: string;
   blurb: string;
   cityId?: CityId;
+};
+
+/** Vault paint. Six colours drop only from a vault of that colour. Prism can drop from any colour. */
+export const VAULT_PAINTS = ["white", "blue", "green", "amber", "red", "violet"] as const;
+export type VaultPaint = (typeof VAULT_PAINTS)[number];
+/** One can, from any vault, about 1 in 10,000 clears. */
+export const ULTRA_PAINT = "prism" as const;
+export const ULTRA_DROP_IN = 10_000;
+export const PAINT_COLORS = [...VAULT_PAINTS, ULTRA_PAINT] as const;
+export type PaintColor = (typeof PAINT_COLORS)[number];
+export type PaintId = `paint-${PaintColor}`;
+
+/**
+ * How many vaults of this colour it takes, on average, to drop one can.
+ * White is commonplace. Each step after it is much rarer than the one before,
+ * and red and violet are the cans you almost never see.
+ * Prism is not in this table — any colour can drop it, at ULTRA_DROP_IN.
+ */
+export const PAINT_DROP_IN: Record<VaultPaint, number> = {
+  white: 2,
+  blue: 5,
+  green: 15,
+  amber: 45,
+  red: 150,
+  violet: 500,
+};
+
+export function paintId(color: PaintColor): PaintId {
+  return `paint-${color}`;
+}
+
+export function isPaintId(id: string): id is PaintId {
+  return id.startsWith("paint-") && (PAINT_COLORS as readonly string[]).includes(id.slice(6));
+}
+
+const PAINT_NAME: Record<PaintColor, string> = {
+  white: "White paint",
+  blue: "Blue paint",
+  green: "Green paint",
+  amber: "Amber paint",
+  red: "Red paint",
+  violet: "Violet paint",
+  prism: "Prism paint",
 };
 
 export const INGREDIENTS: Record<IngredientId, Ingredient> = {
@@ -55,6 +99,13 @@ export const INGREDIENTS: Record<IngredientId, Ingredient> = {
   cable: { id: "cable", name: "Bridge cable", cityId: "nyc", blurb: "Brooklyn Bridge. Amber vaults and up." },
   salt: { id: "salt", name: "Bay salt", cityId: "sf", blurb: "The Ferry Building. Amber vaults and up." },
   bulb: { id: "bulb", name: "Sign bulb", cityId: "nyc", blurb: "Times Square. Amber vaults and up." },
+  "paint-white": { id: "paint-white", name: PAINT_NAME.white, blurb: `About 1 in ${PAINT_DROP_IN.white} white vaults.` },
+  "paint-blue": { id: "paint-blue", name: PAINT_NAME.blue, blurb: `About 1 in ${PAINT_DROP_IN.blue} blue vaults.` },
+  "paint-green": { id: "paint-green", name: PAINT_NAME.green, blurb: `About 1 in ${PAINT_DROP_IN.green} green vaults.` },
+  "paint-amber": { id: "paint-amber", name: PAINT_NAME.amber, blurb: `About 1 in ${PAINT_DROP_IN.amber} amber vaults.` },
+  "paint-red": { id: "paint-red", name: PAINT_NAME.red, blurb: `About 1 in ${PAINT_DROP_IN.red} red vaults.` },
+  "paint-violet": { id: "paint-violet", name: PAINT_NAME.violet, blurb: `About 1 in ${PAINT_DROP_IN.violet} violet vaults.` },
+  "paint-prism": { id: "paint-prism", name: PAINT_NAME.prism, blurb: `About 1 in ${ULTRA_DROP_IN.toLocaleString()} vaults, any colour.` },
 };
 
 const CITY_STAPLE: Record<CityId, IngredientId> = {
@@ -99,6 +150,40 @@ export function isNamedWard(poiId: string): boolean {
 
 export function cityHasWard(cityId: CityId): boolean {
   return Object.values(AREA).some((id) => INGREDIENTS[id].cityId === cityId);
+}
+
+/** A can of the vault's own colour, or nothing. `roll` is 0–1; below 1/N hits. */
+export function rollPaint(tier: Tier, roll = Math.random()): PaintId | null {
+  const n = PAINT_DROP_IN[tier];
+  if (!Number.isFinite(roll) || roll < 0 || roll >= 1 / n) return null;
+  return paintId(tier);
+}
+
+/** Prism. Any vault, about 1 in 10,000. Independent of the colour can. */
+export function rollUltraPaint(roll = Math.random()): PaintId | null {
+  if (!Number.isFinite(roll) || roll < 0 || roll >= 1 / ULTRA_DROP_IN) return null;
+  return paintId(ULTRA_PAINT);
+}
+
+/**
+ * What this clear dropped. The colour can and prism are separate rolls,
+ * so a vault can drop both — the colour of the lamp, and the ultra can.
+ */
+export function rollVaultPaints(tier: Tier, colorRoll = Math.random(), ultraRoll = Math.random()): PaintId[] {
+  const hits: PaintId[] = [];
+  const color = rollPaint(tier, colorRoll);
+  const ultra = rollUltraPaint(ultraRoll);
+  if (color) hits.push(color);
+  if (ultra) hits.push(ultra);
+  return hits;
+}
+
+/** Toast line. Red and violet say Rare. Prism says Ultra rare. */
+export function paintFoundLine(id: PaintId): string {
+  const color = id.slice(6) as PaintColor;
+  const name = INGREDIENTS[id].name;
+  if (color === "prism") return `${name}. Ultra rare.`;
+  return color === "red" || color === "violet" ? `${name}. Rare.` : `${name}.`;
 }
 
 /** One press ingredient, or null on white and blue (those already pay brass and ink). */

@@ -11,7 +11,7 @@ import {
   itemName,
   type ItemId,
 } from "@/game/items";
-import { INGREDIENTS, type IngredientId } from "@/game/ingredients";
+import { INGREDIENTS, isPaintId, type IngredientId } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import type { CharmId, Tier } from "@/game/types";
@@ -100,15 +100,32 @@ export function Satchel() {
               <p className="kicker mb-2">Press stock</p>
               <ul className="grid gap-2">
                 {(Object.entries(pantry) as [IngredientId, number][])
-                  .filter(([, n]) => n > 0)
+                  .filter(([id, n]) => n > 0 && !isPaintId(id))
                   .map(([id, n]) => (
                     <li key={id} className="flex items-baseline justify-between gap-3 text-sm">
                       <span>{INGREDIENTS[id].name}</span>
                       <span className="tabular-nums text-fg-muted">×{n}</span>
                     </li>
                   ))}
-                {Object.values(pantry).every((n) => !n) ? (
+                {Object.values(pantry).every((n) => !n) || (Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || isPaintId(id)) ? (
                   <li className="text-sm text-fg-muted">Green vaults and up. Print spends one.</li>
+                ) : null}
+              </ul>
+            </section>
+
+            <section>
+              <p className="kicker mb-2">Paint</p>
+              <ul className="grid gap-2">
+                {(Object.entries(pantry) as [IngredientId, number][])
+                  .filter(([id, n]) => n > 0 && isPaintId(id))
+                  .map(([id, n]) => (
+                    <li key={id} className="flex items-baseline justify-between gap-3 text-sm">
+                      <span>{INGREDIENTS[id].name}</span>
+                      <span className="tabular-nums text-fg-muted">×{n}</span>
+                    </li>
+                  ))}
+                {(Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || !isPaintId(id)) ? (
+                  <li className="text-sm text-fg-muted">The vault's own colour, or prism — about 1 in 10,000, from any vault. The vat is in Supplies.</li>
                 ) : null}
               </ul>
             </section>

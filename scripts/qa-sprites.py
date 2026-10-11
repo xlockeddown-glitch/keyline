@@ -68,11 +68,17 @@ SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle",
 ICONS = {s: SCOUTS / f"{s}.png" for s in SCOUT_IDS}
 KINDS = ["idle", "walk", "idle-side"]
 
-# 0.0.45 print-shop coats: one recoloured walk / idle / side-idle set per character per coat.
-COATS = json.loads((ROOT / "scripts" / "coat-variants.json").read_text())["coats"]
+# 0.0.45 print-shop coats, plus 0.0.64 vat dyes: one recoloured walk / idle / side-idle set per character.
+_palette = json.loads((ROOT / "scripts" / "coat-variants.json").read_text())
+COATS = {**_palette["coats"], **_palette.get("dyes", {})}
 COAT_DIR = SPR / "coats"
+# 0.0.64: dye sheets are not shipped (the browser mixes them). qa still reads the copies the generator writes.
+DYE_DIR = ROOT / "scripts" / "dye-sheets"
 VARIANTS = {
-    f"{s}-{c}-{k}": (COAT_DIR / f"{s}-{c}-{k}.png", SHEETS[f"{s}-{k}"][1]) for s in SCOUT_IDS for c in COATS for k in KINDS
+    f"{s}-{c}-{k}": ((DYE_DIR if str(c).startswith("dye-") else COAT_DIR) / f"{s}-{c}-{k}.png", SHEETS[f"{s}-{k}"][1])
+    for s in SCOUT_IDS
+    for c in COATS
+    for k in KINDS
 }
 
 for _pair in filter(None, os.environ.get("KEYLINE_SPRITE_OVERRIDE", "").split(",")):

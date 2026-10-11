@@ -1,10 +1,4 @@
-/* Print shop wardrobe (v0.0.45 / k45a): lantern skins + the print-shop counter. Purely visual.
-   A skin re-cases the lamp's metal — brass cap, frame rim, post and foot — in another metal. The glass, wick,
-   bloom and rank pips are untouched: they carry the tier hue (lantern-art.css, 0.0.17), so a skin never hides
-   what a lamp costs. One root attribute (<html data-lantern="…">) skins every lamp on the page: street lamps,
-   the Run and the Stack, the vault hero and the title lamp. Any element with data-lantern re-scopes its own
-   lamps (the print-shop swatches), because the metal travels as inherited custom properties.
-   Loaded after lantern-art.css; selectors match its specificity, so source order wins. */
+
 
 [data-lantern="brass"]{
   --skin-cap-hi:#e0c788; --skin-cap-mid:#c9a35e; --skin-cap-lo:#8a6a38; --skin-cap-shadow:#5a4528;
@@ -27,6 +21,36 @@
   --skin-rim:#9aa1a8; --skin-post-dk:#3a3e43; --skin-post-lt:#80868e; --skin-foot:#5a6066;
 }
 
+[data-lantern="paint-white"]{
+  --skin-cap-hi:#f4efe4; --skin-cap-mid:#e4dcc8; --skin-cap-lo:#b7ad96; --skin-cap-shadow:#7a7160;
+  --skin-rim:#a89c86; --skin-post-dk:#645c4e; --skin-post-lt:#b7ad96; --skin-foot:#7a7160;
+}
+[data-lantern="paint-blue"]{
+  --skin-cap-hi:#d5e8f6; --skin-cap-mid:#3a6d98; --skin-cap-lo:#1e4464; --skin-cap-shadow:#122c42;
+  --skin-rim:#2c5c86; --skin-post-dk:#163044; --skin-post-lt:#4a7eac; --skin-foot:#1e4464;
+}
+[data-lantern="paint-green"]{
+  --skin-cap-hi:#d7efc8; --skin-cap-mid:#2a6842; --skin-cap-lo:#173c28; --skin-cap-shadow:#0e2616;
+  --skin-rim:#245636; --skin-post-dk:#12301e; --skin-post-lt:#3a7a50; --skin-foot:#173c28;
+}
+[data-lantern="paint-amber"]{
+  --skin-cap-hi:#fff6d4; --skin-cap-mid:#f0b429; --skin-cap-lo:#8a4e10; --skin-cap-shadow:#4a2808;
+  --skin-rim:#d4a24a; --skin-post-dk:#5a3410; --skin-post-lt:#f2c56a; --skin-foot:#7a4510;
+}
+[data-lantern="paint-red"]{
+  --skin-cap-hi:#ffd8cc; --skin-cap-mid:#a82824; --skin-cap-lo:#3c0e0c; --skin-cap-shadow:#200808;
+  --skin-rim:#e0c17a; --skin-post-dk:#2e0c0a; --skin-post-lt:#c44a40; --skin-foot:#4a1210;
+}
+[data-lantern="paint-violet"]{
+  --skin-cap-hi:#f6ecff; --skin-cap-mid:#6a3498; --skin-cap-lo:#1a1028; --skin-cap-shadow:#0e0818;
+  --skin-rim:#e4c98a; --skin-post-dk:#140c22; --skin-post-lt:#9a62c4; --skin-foot:#241438;
+}
+
+[data-lantern="paint-prism"]{
+  --skin-cap-hi:#f4fbff; --skin-cap-mid:#3ec8e0; --skin-cap-lo:#241848; --skin-cap-shadow:#100818;
+  --skin-rim:#e4c98a; --skin-post-dk:#16102a; --skin-post-lt:#6a8ae0; --skin-foot:#1a1430;
+}
+
 [data-lantern] .lantern-cap,
 [data-lantern] .stack-lamp .lantern-cap{
   background:linear-gradient(180deg,var(--skin-cap-hi) 0%,var(--skin-cap-mid) 42%,var(--skin-cap-lo) 100%);
@@ -45,7 +69,45 @@
   background:linear-gradient(180deg,var(--skin-foot),var(--skin-post-dk))
 }
 
-/* Print-shop swatch: a real street-lamp marker (same markup as the map) at catalogue size. */
+[data-lantern="paint-amber"] .lantern-cap,
+[data-lantern="paint-amber"] .stack-lamp .lantern-cap{
+  background:linear-gradient(155deg,#fff8dc 0%,#ffe08a 16%,#e39a1a 48%,#6a3810 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 1px 0 #4a2808
+}
+[data-lantern="paint-red"] .lantern-cap,
+[data-lantern="paint-red"] .stack-lamp .lantern-cap{
+  background:
+    linear-gradient(180deg,transparent 0 68%,#f3e2b0 68%,#a6843c 100%),
+    linear-gradient(160deg,#ffe0d4 0%,#d04538 18%,#6a1412 58%,#240808 100%);
+  box-shadow:0 0 0 1px #c6a15a, 0 1px 0 #2a0a08
+}
+[data-lantern="paint-red"] .lantern-frame,
+[data-lantern="paint-red"] .stack-globe{
+  box-shadow:0 0 0 1px #e0c17a
+}
+[data-lantern="paint-violet"] .lantern-cap,
+[data-lantern="paint-violet"] .stack-lamp .lantern-cap{
+  background:
+    linear-gradient(180deg,transparent 0 66%,#f6e7b8 66%,#b8924a 100%),
+    linear-gradient(125deg,#fbf6ff 0%,#d2b4f4 12%,#542888 34%,#140c22 60%,#1a6872 86%,#e8d49a 100%);
+  box-shadow:0 0 0 1px #e4c98a, 0 0 8px rgba(140,80,210,.5)
+}
+[data-lantern="paint-violet"] .lantern-frame,
+[data-lantern="paint-violet"] .stack-globe{
+  box-shadow:0 0 0 1px #e4c98a, 0 0 10px rgba(120,70,190,.42)
+}
+[data-lantern="paint-prism"] .lantern-cap,
+[data-lantern="paint-prism"] .stack-lamp .lantern-cap{
+  background:
+    linear-gradient(180deg,transparent 0 66%,#f6e7b8 66%,#b8924a 100%),
+    linear-gradient(128deg,#f8fbff 0%,#7ee7ff 16%,#3a6dff 34%,#c15cff 52%,#ff5a92 68%,#ffe08a 84%,#5ee0c0 100%);
+  box-shadow:0 0 0 1px #e4c98a, 0 0 10px rgba(80,180,255,.55)
+}
+[data-lantern="paint-prism"] .lantern-frame,
+[data-lantern="paint-prism"] .stack-globe{
+  box-shadow:0 0 0 1px #e4c98a, 0 0 12px rgba(90,160,255,.45)
+}
+
 .skin-swatch{
   display:grid;
   place-items:center;
@@ -70,6 +132,119 @@
   vertical-align:-1px;
   box-shadow:0 0 0 1px rgba(0,0,0,.5)
 }
+.paint-can{
+  position:relative;
+  width:30px;
+  height:38px;
+  flex-shrink:0;
+  margin-top:2px;
+  border-radius:2px 2px 5px 5px;
+  background:var(--can, #888);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.55), inset 0 -9px 0 rgba(0,0,0,.16)
+}
+.paint-can::before{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:8px;
+  border-radius:2px 2px 0 0;
+  background:linear-gradient(180deg,#f6f1e6,#b7ad9c 72%,#8c8272);
+  box-shadow:0 1px 0 rgba(0,0,0,.4)
+}
+.paint-can::after{
+  content:"";
+  position:absolute;
+  left:5px;
+  top:14px;
+  width:3px;
+  bottom:7px;
+  border-radius:2px;
+  background:rgba(255,255,255,.28)
+}
+.paint-can.is-white{ --can:#e7dcc4 }
+.paint-can.is-blue{ --can:linear-gradient(180deg,#9ec4e2,#2c5e8c 58%,#16344e) }
+.paint-can.is-green{ --can:linear-gradient(180deg,#b7d9a4,#24663c 55%,#123222) }
+.paint-can.is-amber{
+  background:
+    linear-gradient(118deg,rgba(255,255,255,.62) 0 8%,transparent 24%),
+    linear-gradient(165deg,#fff6d0 0%,#f0b429 30%,#a86412 64%,#4a2a08 100%);
+  box-shadow:inset 0 0 0 1px rgba(90,48,8,.7), inset 0 -9px 0 rgba(0,0,0,.18)
+}
+.paint-can.is-amber::before{
+  background:linear-gradient(180deg,#fff6d4,#e0b45a 55%,#8a6424)
+}
+.paint-can.is-amber::after{
+  width:4px;
+  background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,220,140,.12))
+}
+.paint-can.is-red{
+  background:
+    linear-gradient(180deg,transparent 0 11px,#f3e2b0 11px,#c6a15a 13px,#6a4a16 14px,transparent 15px),
+    linear-gradient(115deg,rgba(255,220,200,.5) 0 8%,transparent 22%),
+    linear-gradient(168deg,#ffd4c8 0%,#d24a3c 18%,#6e1412 52%,#240808 100%);
+  box-shadow:inset 0 0 0 1px rgba(198,161,90,.85), inset 0 -9px 0 rgba(0,0,0,.3), 0 0 8px rgba(120,24,20,.28)
+}
+.paint-can.is-red::before{
+  background:linear-gradient(180deg,#fff3c8,#e0b85a 50%,#8a6230)
+}
+.paint-can.is-red::after{
+  left:6px;
+  background:linear-gradient(180deg,rgba(255,244,220,.9),rgba(255,180,160,.08))
+}
+.paint-can.is-violet{
+  background:
+    linear-gradient(180deg,transparent 0 11px,#f6e7b8 11px,#d4b46a 13px,#7a5a28 14px,transparent 15px),
+    linear-gradient(128deg,rgba(255,255,255,.72) 0 10%,transparent 22%),
+    linear-gradient(148deg,#f8f0ff 0%,#c9a0ee 14%,#4c2280 36%,#120a20 58%,#1a6a74 84%,#e8d49a 100%);
+  box-shadow:inset 0 0 0 1px rgba(212,180,106,.92), inset 0 -9px 0 rgba(0,0,0,.32), 0 0 12px rgba(110,60,180,.5)
+}
+.paint-can.is-violet::before{
+  background:linear-gradient(180deg,#fff6d0,#e8c878 42%,#8a6840)
+}
+.paint-can.is-violet::after{
+  left:7px;
+  width:2px;
+  background:linear-gradient(180deg,#fff,rgba(180,255,240,.4) 42%,transparent 72%)
+}
+.paint-can.is-prism{
+  background:
+    linear-gradient(180deg,transparent 0 10px,#f6e7b8 10px,#e4c98a 12px,#7a5a28 13px,transparent 14px),
+    linear-gradient(128deg,rgba(255,255,255,.82) 0 8%,transparent 18%),
+    linear-gradient(155deg,#f8fbff 0%,#7ee7ff 18%,#3a6dff 36%,#c15cff 54%,#ff5a92 70%,#ffe08a 86%,#5ee0c0 100%);
+  box-shadow:inset 0 0 0 1px rgba(228,201,138,.95), inset 0 -9px 0 rgba(0,0,0,.28), 0 0 14px rgba(90,170,255,.55)
+}
+.paint-can.is-prism::before{
+  background:linear-gradient(180deg,#fff6d0,#e8c878 42%,#8a6840)
+}
+.paint-can.is-prism::after{
+  left:7px;
+  width:2px;
+  background:linear-gradient(180deg,#fff,rgba(180,255,240,.55) 40%,transparent 74%)
+}
+.paint-found.is-amber{
+  color:#f3d7a2;
+  text-shadow:0 0 6px rgba(200,140,40,.4)
+}
+.paint-found.is-red,
+.paint-found.is-violet{
+  color:#f6e7c8;
+  letter-spacing:.04em
+}
+.paint-found.is-red{
+  text-shadow:0 0 8px rgba(180,40,32,.5)
+}
+.paint-found.is-violet{
+  color:#f4e8ff;
+  letter-spacing:.06em;
+  text-shadow:0 0 10px rgba(160,90,230,.75), 0 0 2px rgba(212,180,106,.85)
+}
+.paint-found.is-prism{
+  color:#f4fbff;
+  letter-spacing:.08em;
+  text-shadow:0 0 10px rgba(80,190,255,.8), 0 0 2px rgba(228,201,138,.9)
+}
 .paid-bar{
   position:relative;
   height:4px;
@@ -82,7 +257,7 @@
   inset:0 auto 0 0;
   background:var(--lamp-amber, #ffa91a)
 }
-/* Outfitter counter tabs (Hire / Print shop): the Journal's chip tabs without the HQ plate's brass header. */
+
 .shop-tabs{
   display:flex;
   flex-shrink:0;

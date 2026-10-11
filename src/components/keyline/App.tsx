@@ -3,6 +3,7 @@ import { TitleScreen } from "./TitleScreen";
 import { CitySelect } from "./CitySelect";
 import { GameMap } from "./GameMap";
 import { RideScreen } from "./RideScreen";
+import { DyeSync } from "./DyeSync";
 import { WardrobeSync } from "./WardrobeSync";
 
 export function KeylineApp() {
@@ -11,6 +12,7 @@ export function KeylineApp() {
   return (
     <>
       <WardrobeSync />
+      <DyeSync />
       {view}
     </>
   );

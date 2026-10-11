@@ -3,6 +3,7 @@ import { CATALOGUE, owing, payable, priceLine, type Cosmetic, type CosmeticSlot 
 import { vaultPinHtml } from "@/game/pins";
 import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
+import { PaintVat } from "./PaintVat";
 
 const LAMP = vaultPinHtml({ tier: "blue" });
 
@@ -58,10 +59,12 @@ export function PrintShop({ counter }: { counter: boolean }) {
   const wearCosmetic = useGame((s) => s.wearCosmetic);
   const shop = cityShop(cityId);
   const worn = (slot: CosmeticSlot) => (slot === "coat" ? wardrobe.coat : wardrobe.lantern);
+  const paints = useGame((s) => s.paints);
 
   const section = (slot: CosmeticSlot, title: string, lede: string) => {
     const items = CATALOGUE.filter((c) => c.slot === slot);
-    const stockWorn = worn(slot) === null;
+    const stockWorn =
+      slot === "coat" ? worn(slot) === null && !paints.wornCoat : worn(slot) === null && !paints.wornVault;
     return (
       <section className="grid gap-2" data-testid={`print-${slot}`}>
         <p className="kicker mt-2">{title}</p>
@@ -85,7 +88,8 @@ export function PrintShop({ counter }: { counter: boolean }) {
         </div>
         {items.map((c) => {
           const owned = wardrobe.owned.includes(c.id);
-          const wearing = worn(slot) === c.id;
+          const wearing =
+            slot === "coat" ? !paints.wornCoat && worn(slot) === c.id : !paints.wornVault && worn(slot) === c.id;
           const paid = wardrobe.paid[c.id] ?? { white: 0, blue: 0 };
           const left = owing(wardrobe, c.id);
           const take = payable(wardrobe, keys, c.id);
@@ -165,6 +169,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
       ) : null}
       {section("coat", "Coats", "Dyed and re-cut for whoever you walk as. Every character wears it, walking and standing. Looks only — no perk.")}
       {section("lantern", "Lantern skins", "Re-cases every street lamp in a new metal. The glass keeps its match colour, so a lamp's cost still reads at a glance.")}
+      <PaintVat />
     </div>
   );
 }

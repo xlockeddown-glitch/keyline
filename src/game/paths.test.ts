@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { canGrabMatch, clearOfFreeway, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, standOpen, type Pt } from "./streets.ts";
+import { canGrabMatch, clearOfFreeway, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, standOpen, WALK_REACH_M, type Pt } from "./streets.ts";
 import { isExpresswayNamed, isFreeway, isWalkableWay } from "./walkable.ts";
 import { freewayGap, freewayRun } from "./pathCheck.ts";
 
@@ -476,3 +476,64 @@ test("Chicago: a walk start on the parking aisle under the feeder slides clear o
   const s = pullToStreet(g, street.lat, street.lng, 60);
   assert.deepEqual(clearOfFreeway(g, s), s);
 });
+
+// ---- 0.0.68: a pin in a field must not grow a route that dies on a far curb ----
+
+function metersEast(lat: number, meters: number) {
+  return meters / (111_320 * Math.cos((lat * Math.PI) / 180));
+}
+
+test("corners a few meters apart join, unless that step crosses a freeway", () => {
+  const lat = 42.34;
+  const lng = -83.05;
+  const north = { lat: lat + 80 / 111_320, lng };
+  const south = { lat, lng };
+  const east = { lat: north.lat, lng: lng + metersEast(lat, 5) };
+  const further = { lat: north.lat, lng: lng + metersEast(lat, 45) };
+  const open = createGraph(lat, lng);
+  ingestLine(open, [south, north]);
+  ingestLine(open, [east, further]);
+  const joined = routeOnGraph(open, south, further);
+  assert.ok(joined && joined.length >= 2, "a 5 m corner gap should join");
+  assert.ok(distM(joined![joined!.length - 1]!, further) < 2, "the joined walk reaches the far side");
+
+  // Freeway listed after the foot ways, the way live fetches and the bake used to ingest.
+  const blocked = createGraph(lat, lng);
+  const midLng = (north.lng + east.lng) / 2;
+  ingestOsmWays(blocked, [
+    { geometry: [south, north].map((p) => ({ lat: p.lat, lon: p.lng })) },
+    { geometry: [east, further].map((p) => ({ lat: p.lat, lon: p.lng })) },
+    {
+      noWalk: true,
+      geometry: [
+        { lat: north.lat + 0.002, lon: midLng },
+        { lat: north.lat - 0.002, lon: midLng },
+      ],
+    },
+  ]);
+  const stopped = routeOnGraph(blocked, south, further);
+  assert.ok(stopped && stopped.length >= 2);
+  assert.ok(distM(stopped![stopped!.length - 1]!, further) > 30, "the join must not cross a freeway centerline");
+  assert.ok(distM(stopped![stopped!.length - 1]!, north) < 2, "it stops on its own side of the freeway");
+});
+
+test("Camp Mabry has no street within a door-step, so the west curb is not the destination", () => {
+  const packed = JSON.parse(readFileSync(new URL("../../public/streets/austin.json", import.meta.url), "utf8")) as { lines: number[][] };
+  const g = createGraph(30.2672, -97.7431);
+  for (const line of packed.lines) {
+    const pts: Pt[] = [];
+    for (let i = 0; i + 1 < line.length; i += 2) pts.push({ lat: line[i]!, lng: line[i + 1]! });
+    ingestLine(g, pts);
+  }
+  const pin = { lat: 30.3185, lng: -97.762 };
+  const from = { lat: 30.2672, lng: -97.7431 };
+  assert.equal(nearest(g, pin.lat, pin.lng, 400), null, "nothing walkable inside the base");
+  const snapped = pullToStreet(g, pin.lat, pin.lng, 220, from);
+  const gap = distM(snapped, pin);
+  assert.ok(gap > WALK_REACH_M, `snap is ${gap.toFixed(0)} m — a walk this far from the pin is the stuck route`);
+  const route = routeOnGraph(g, from, snapped);
+  assert.ok(route && route.length >= 2);
+  const end = route![route!.length - 1]!;
+  assert.ok(distM(end, pin) > WALK_REACH_M, "the route ends on the curb, not at the pin");
+});
+

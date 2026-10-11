@@ -27,8 +27,15 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public" / "sprites" / "coats"
+# Vat dyes are mixed in the browser (src/game/dyeRecolor.ts). The PNGs live here for qa:sprites only —
+# shipping them blows the publish cap.
+DYE_OUT = ROOT / "scripts" / "dye-sheets"
 warnings.filterwarnings("ignore", category=DeprecationWarning)  # Image.getdata (Pillow 12)
-PALETTE = json.loads((ROOT / "scripts" / "coat-variants.json").read_text())["coats"]
+_raw = json.loads((ROOT / "scripts" / "coat-variants.json").read_text())
+# Print-shop coats plus vat dyes. `--dyes` writes only the dyes (the print-shop sheets stay put).
+COATS = _raw["coats"]
+DYES = _raw.get("dyes", {})
+PALETTE = {**COATS, **DYES}
 
 
 def _load(name: str, file: str):
@@ -172,13 +179,17 @@ def save_exact(im: Image.Image, path: Path) -> None:
 
 
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
+    dyes_only = "--dyes" in sys.argv
+    out = DYE_OUT if dyes_only else OUT
+    targets = DYES if dyes_only else COATS
+    out.mkdir(parents=True, exist_ok=True)
     for scout in qa.SCOUT_IDS:
-        for coat in PALETTE:
+        for coat in targets:
             for kind in GRID:
-                save_exact(variant(scout, kind, coat), OUT / f"{scout}-{coat}-{kind}.png")
-    write_css()
-    print(f"wrote {len(qa.SCOUT_IDS) * len(PALETTE) * len(GRID)} sheets to {OUT.relative_to(ROOT)} and public/coats.css")
+                save_exact(variant(scout, kind, coat), out / f"{scout}-{coat}-{kind}.png")
+    if not dyes_only:
+        write_css()
+    print(f"wrote {len(qa.SCOUT_IDS) * len(targets) * len(GRID)} sheets to {out.relative_to(ROOT)}" + ("" if dyes_only else " and public/coats.css"))
 
 
 # Sheet URLs carry the stamp the art last changed in, like the base sheets in styles.css.
@@ -194,9 +205,10 @@ def write_css() -> None:
         "   frame positions come from the base rules in styles.css (one more attribute = higher specificity). */",
     ]
     for scout in qa.SCOUT_IDS:
-        for coat in PALETTE:
+        for coat in COATS:
             base = f'.scout-marker[data-scout="{scout}"][data-coat="{coat}"]'
-            url = lambda kind: f'url("/sprites/coats/{scout}-{coat}-{kind}.png?v={ART_STAMP_BY.get(scout, ART_STAMP)}")'
+            stamp = "k64p" if str(coat).startswith("dye-") else ART_STAMP_BY.get(scout, ART_STAMP)
+            url = lambda kind, stamp=stamp: f'url("/sprites/coats/{scout}-{coat}-{kind}.png?v={stamp}")'
             lines.append(f"{base}{{background-image:{url('walk')}}}")
             lines.append(f"{base}.is-idle{{background-image:{url('idle')};background-size:200% 200%}}")
             lines.append(f"{base}.is-idle.is-side{{background-image:{url('idle-side')};background-size:200% 200%}}")
