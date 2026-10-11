@@ -45,17 +45,17 @@ export type PaintId = `paint-${PaintColor}`;
 
 /**
  * How many vaults of this colour it takes, on average, to drop one can.
- * White is commonplace. Each step after it is much rarer than the one before,
- * and red and violet are the cans you almost never see.
+ * White is commonplace. Each step after it is about twice as rare.
+ * Violet is still a find — about 1 in 80 of its own lamps — not a can you never see.
  * Prism is not in this table — any colour can drop it, at ULTRA_DROP_IN.
  */
 export const PAINT_DROP_IN: Record<VaultPaint, number> = {
   white: 2,
   blue: 5,
-  green: 15,
-  amber: 45,
-  red: 150,
-  violet: 500,
+  green: 10,
+  amber: 20,
+  red: 40,
+  violet: 80,
 };
 
 export function paintId(color: PaintColor): PaintId {
@@ -175,6 +175,17 @@ export function rollVaultPaints(tier: Tier, colorRoll = Math.random(), ultraRoll
   const ultra = rollUltraPaint(ultraRoll);
   if (color) hits.push(color);
   if (ultra) hits.push(ultra);
+  return hits;
+}
+
+/**
+ * Signed-in clears use the server's list (the shadow is already in it; empty means nothing dropped).
+ * Anyone else rolls here, at the posted rate.
+ */
+export function paintsFromServer(tier: Tier, server: readonly string[] | undefined): PaintId[] {
+  if (!server) return rollVaultPaints(tier);
+  const hits: PaintId[] = [];
+  for (const id of server) if (isPaintId(id) && !hits.includes(id)) hits.push(id);
   return hits;
 }
 

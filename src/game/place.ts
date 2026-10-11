@@ -13,6 +13,8 @@ const KIND_TOPICS: Record<PoiKind, PlaceTopic[]> = {
   station: ["rail"],
   landmark: [],
   shop: [],
+  counter: [],
+  board: [],
 };
 
 const NAME_TOPICS: [RegExp, PlaceTopic[]][] = [

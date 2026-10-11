@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { CHARMS, CITIES, TIER_LABEL, allPois } from "@/game/data";
+import { CHARMS, CITIES, cityShop } from "@/game/data";
 import {
   MATERIAL_LIST,
   TIERS,
@@ -14,14 +14,14 @@ import {
 import { INGREDIENTS, isPaintId, type IngredientId } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
-import type { CharmId, Tier } from "@/game/types";
+import { vaultColorNote } from "@/game/vaultNote";
+import type { CharmId } from "@/game/types";
 import { CostIcons, ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 
 export function Satchel() {
   const invOpen = useGame((s) => s.invOpen);
   const toggleInv = useGame((s) => s.toggleInv);
-  const toggleHq = useGame((s) => s.toggleHq);
   const keys = useGame((s) => s.keys);
   const brass = useGame((s) => s.brass);
   const ink = useGame((s) => s.ink);
@@ -34,10 +34,8 @@ export function Satchel() {
   const cityId = useGame((s) => s.cityId);
   const atlas = useGame((s) => s.atlas);
   const vaults = useGame((s) => s.vaults);
-  const blanks = useGame((s) => s.blanks);
   const [sel, setSel] = useState<ItemId>("blue");
   const city = CITIES[cityId];
-  const lamps = allPois(city, blanks);
   const have = { brass, ink, vellum, schematics };
 
   useSheetOpen(invOpen);
@@ -125,7 +123,7 @@ export function Satchel() {
                     </li>
                   ))}
                 {(Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || !isPaintId(id)) ? (
-                  <li className="text-sm text-fg-muted">The vault's own colour, or prism — about 1 in 10,000, from any vault. The vat is in Supplies.</li>
+                  <li className="text-sm text-fg-muted">The vault's own colour, or prism — about 1 in 10,000, from any vault. Mix it at the outfitter.</li>
                 ) : null}
               </ul>
             </section>
@@ -169,7 +167,9 @@ export function Satchel() {
             <p className="mt-3 text-sm text-pretty text-fg-muted">{itemBlurb(sel)}</p>
 
             {isTier(sel) ? (
-              <LampList lamps={lamps} tier={sel} cityName={city.name} atlas={atlas} vaults={vaults} />
+              <p className="mt-4 text-sm text-pretty text-fg-muted">
+                {vaultColorNote(city.pois, sel, city.name, atlas, vaults, Date.now())}
+              </p>
             ) : null}
 
             {charm ? (
@@ -184,70 +184,20 @@ export function Satchel() {
                     {equipped === sel ? "Unequip" : "Equip"}
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    className="btn btn-quiet"
-                    onClick={() => {
-                      toggleInv(false);
-                      toggleHq(true);
-                    }}
-                  >
-                    Print in Journal
-                  </button>
+                  <p className="mt-4 text-sm text-fg-muted">
+                    Print this at {cityShop(cityId)?.name ?? "the outfitter"}.
+                  </p>
                 )}
               </div>
             ) : null}
 
             {isMaterial(sel) ? (
-              <p className="mt-4 text-xs text-fg-subtle">Spent at the print shop to make charms. Tab opens the Journal.</p>
+              <p className="mt-4 text-xs text-fg-subtle">Spent at the outfitter's print shop.</p>
             ) : null}
           </aside>
         </div>
       </div>
     </div>
-  );
-}
-
-function LampList({
-  lamps,
-  tier,
-  cityName,
-  atlas,
-  vaults,
-}: {
-  lamps: ReturnType<typeof allPois>;
-  tier: Tier;
-  cityName: string;
-  atlas: Record<string, unknown>;
-  vaults: Record<string, { coolUntil?: number }>;
-}) {
-  const tierLamps = lamps.filter((p) => p.tier === tier);
-  const namedLamps = tierLamps.filter((p) => Boolean(atlas[p.id]));
-  const undiscoveredCount = tierLamps.length - namedLamps.length;
-
-  return (
-    <ul className="mt-4 grid gap-1.5">
-      {tierLamps.length === 0 ? (
-        <li className="text-xs text-fg-subtle">
-          No {TIER_LABEL[tier].toLowerCase()} lamps in {cityName}.
-        </li>
-      ) : (
-        <>
-          {namedLamps.map((p) => {
-            const cool = (vaults[p.id]?.coolUntil ?? 0) > Date.now();
-            return (
-              <li key={p.id} className="text-sm text-fg">
-                <span className="text-fg-muted">{p.name}</span>
-                {cool ? <span className="ml-2 text-xs text-fg-subtle">recasting</span> : null}
-              </li>
-            );
-          })}
-          {undiscoveredCount > 0 ? (
-            <li className="text-sm text-fg-muted">{undiscoveredCount} undiscovered lamps</li>
-          ) : null}
-        </>
-      )}
-    </ul>
   );
 }
 

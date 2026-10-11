@@ -163,12 +163,12 @@ function row(over: Partial<RunRow> = {}): RunRow {
   return { city: "detroit", day: "2026-10-02", lit: 1, startedAt: 1_000_000, lastAt: 1_000_000, splits: [], clientSplits: [], timeMs: null, voided: false, strikes: 0, lastLat: lamp1.lat, lastLng: lamp1.lng, ...over };
 }
 
-test("time floors: straight line at the best coat's full sprint, under any honest walk", () => {
+test("time floors: straight line at the one walk pace, under any honest walk", () => {
   const r = dailyRoute("detroit", "2026-10-02");
-  assert.ok(dailyTopSpeed() > 92 * 1.5);
+  assert.equal(dailyTopSpeed(), 92);
   for (let i = 1; i < r.lamps.length; i++) {
     assert.ok(legFloorMs(r, i) > 0);
-    assert.ok(legFloorMs(r, i) < (legMeters(r, i) / (92 * 1.5)) * 1000, "floor is faster than a raccoon sprint");
+    assert.ok(legFloorMs(r, i) < (legMeters(r, i) / 92) * 1000, "floor is faster than the walk");
   }
   assert.equal(runFloorMs(r), [1, 2, 3, 4].reduce((n, i) => n + legFloorMs(r, i), 0));
 });

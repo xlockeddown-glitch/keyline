@@ -1,6 +1,6 @@
 /**
  * 0.0.67 vault paint. A cleared vault sometimes drops one can of its own colour —
- * white about 1 in 2, then 5, 15, 45, and red and violet much rarer (1 in 150, 1 in 500).
+ * white about 1 in 2, then 5, 10, 20, 40, and violet about 1 in 80.
  * Prism is separate: any colour, about 1 in 10,000, and one can dyes a coat.
  * The vat spends a set number of that colour — a coat for the walker, or paint on the
  * street vaults (the metal only; the glass keeps the tier). Mixed once, then worn or taken off.

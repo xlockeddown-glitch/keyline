@@ -76,6 +76,10 @@ async function db() {
   await pg.exec(migration("0002_vault_clears.sql"));
   await pg.exec(migration("0003_plate_events.sql"));
   await pg.exec(migration("0004_plate_stats.sql"));
+  await pg.exec(migration("0006_daily_runs.sql"));
+  await pg.exec(migration("0007_daily_runs_per_city.sql"));
+  await pg.exec(migration("0011_player_links.sql"));
+  await pg.exec(migration("0015_paint_finds.sql"));
   await pg.query(`insert into "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") values ('ann', 'Ann Baker', 'ann@x.test', true, now(), now())`);
   return sqlOf(pg);
 }

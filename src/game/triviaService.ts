@@ -1,6 +1,8 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Sql } from "../lib/db.ts";
 import { loadRecent, noteDealt } from "./triviaRecent.ts";
+import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
+import type { PaintId } from "./ingredients.ts";
 import type { CityId, Poi, PoiKind, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade } from "./triviaSchema";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
@@ -59,6 +61,8 @@ type TokenBody = {
   d: TriviaDiff;
   /** Tier a right answer clears on the rolls (null for sparks). */
   k: Tier | null;
+  /** 1 when this card can drop paint (a lamp, or the last card of a Run/Stack). */
+  pr?: 0 | 1;
   sv: string;
   n: string;
 };
@@ -78,6 +82,8 @@ export type TriviaDeps = {
   /** Signed-in writes; absent (or throwing) leaves the grade intact and credits nothing. */
   sql?: () => Promise<Sql>;
   rand?: () => number;
+  /** Paint rolls only. Deal shuffle keeps using `rand`, so a test can force a can without reshuffling. */
+  roll?: () => number;
   nonce?: () => string;
 };
 
@@ -203,6 +209,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     clearTier = poi.tier;
   }
   if (input.spark) clearTier = null;
+  const paintRoll = clearTier != null && (!series || (input.step ?? 0) >= series.diffs.length - 1);
   const plate = deps.pick(input.city, input.cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
   const pub = publicCardId(plate);
   const windowMs = clampWindow(input.windowMs);
@@ -216,6 +223,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     r: plate.rarity,
     d: plate.diff ?? 2,
     k: clearTier,
+    pr: paintRoll ? 1 : 0,
     sv: input.saveId,
     n: deps.nonce?.() ?? b64u(randomBytes(12)),
   });
@@ -259,6 +267,9 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   let correct = !timedOut && input.choice === card.answer && elapsedMs <= t.w + LATE_GRACE_MS;
   let replay = false;
   let credited = false;
+  let paints: PaintId[] | undefined;
+  const paintRoll = t.k != null && t.pr !== 0;
+  const eventId = `t:${t.n}`;
 
   const prior = ring.get(t.n);
   if (prior) {
@@ -270,7 +281,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   if (signedIn && !replay && deps.sql) {
     try {
       const sql = await deps.sql();
-      const id = `t:${t.n}`;
+      const id = eventId;
       const inserted = await sql<{ id: string }>`
         insert into plate_events (
           id, user_id, save_id, plate_id, shown_at, answered_at, latency_ms, correct, rarity, city, difficulty
@@ -308,10 +319,25 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
             on conflict (user_id, tier)
             do update set correct = vault_clears.correct + 1, display_name = excluded.display_name, updated_at = now()
           `;
+          if (paintRoll) {
+            try {
+              paints = await shadowPaints(sql, viewer.userId!, t.k!, eventId, deps.roll ?? Math.random);
+            } catch (e) {
+              console.warn("[trivia] paint roll failed", e instanceof Error ? e.message : e);
+            }
+          }
         }
       }
     } catch (e) {
       console.warn("[trivia] grade record failed", e instanceof Error ? e.message : e);
+    }
+  }
+  // A replayed token returns the cans the first grade already rolled, and does not roll again.
+  if (paints === undefined && replay && signedIn && paintRoll && correct && deps.sql) {
+    try {
+      paints = await paintsForEvent(await deps.sql(), eventId);
+    } catch (e) {
+      console.warn("[trivia] paint replay failed", e instanceof Error ? e.message : e);
     }
   }
   if (!prior) ringPut(t.n, { correct, elapsedMs, timedOut });
@@ -328,5 +354,6 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     clearTier: correct ? t.k : null,
     credited,
     replay,
+    ...(paints !== undefined ? { paints } : {}),
   };
 }

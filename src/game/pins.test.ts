@@ -33,7 +33,7 @@ test("The Run / The Stack markers carry their match cost", () => {
 test("every city lamp marker matches its poi tier", () => {
   for (const c of CITY_LIST) {
     for (const p of c.pois) {
-      if (p.kind === "shop" || isFareDesk(p)) continue;
+      if (p.kind === "shop" || p.kind === "counter" || p.kind === "board" || isFareDesk(p)) continue;
       assert.equal(pinTier(vaultPinHtml(p)), p.tier, `${c.id}/${p.id}`);
     }
   }

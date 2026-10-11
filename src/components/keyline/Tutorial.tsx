@@ -28,7 +28,8 @@ const STEPS = [
       "Light 3 lamps and you get a train ticket.",
       "Two green globes stacked: four questions. The bright amber ring: three.",
       "The train sign is the station. Walk there and press T to board a train to another city. Play a round on the way and the ride pays better.",
-      "The brass awning is a coat shop. Walk up and press E to hire a scout. Each coat has a small habit — a hair more time, a hair more pace. Nothing loud.",
+      "The brass awning is a coat shop. Walk up and press E to hire a scout, print, or mix paint. The street counter sells matches and holds the morning crate. The notice board posts contracts and the day's blitz. The journal only keeps the record.",
+      "The Help button lists what each colour of lamp pays: coins, paint, brass, and how often it comes back.",
     ],
   },
 ] as const;
@@ -37,7 +38,7 @@ export function Tutorial() {
   const step = useGame((s) => s.tutorial);
   const skip = useGame((s) => s.skipTutorial);
   const advance = useGame((s) => s.advanceTutorial);
-  const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen || s.shopOpen));
+  const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen || s.shopOpen || s.guideOpen || s.errandOpen));
   if (step >= STEPS.length || busy) return null;
   const card = STEPS[step]!;
   const last = step >= STEPS.length - 1;

@@ -14,7 +14,9 @@ export type PoiKind =
   | "station"
   | "campus"
   | "water"
-  | "shop";
+  | "shop"
+  | "counter"
+  | "board";
 
 export type CityId = "austin" | "temple" | "nyc" | "sf" | "london" | "chicago" | "detroit" | "tucson" | "toronto" | "la" | "boston" | "nola" | "seattle" | "denver" | "nashville";
 

@@ -189,7 +189,7 @@ export function standingValue(kind: StandingKind, row: StandingRow): string {
 
 export const STANDING_KINDS: { id: StandingKind; label: string; blurb: string }[] = [
   { id: "cards", label: "Most cards", blurb: "Trivia cards answered correctly, by match colour." },
-  { id: "distance", label: "Distance", blurb: "Kilometres on foot. The cab doesn't count. Faster than a sprint, and the server cuts it back." },
+  { id: "distance", label: "Distance", blurb: "Kilometres on foot. The cab doesn't count. Faster than a walk, and the server cuts it back." },
   { id: "speed", label: "Fastest", blurb: "Lowest average answer time. Ten trivia cards to rank." },
   { id: "accuracy", label: "% correct", blurb: "Highest share answered correctly. One hundred trivia cards to rank." },
 ];

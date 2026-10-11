@@ -15,9 +15,9 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
   assert.equal(verdict.sheets.length, 27);
-  // 0.0.45: every character × 4 print-shop coats × walk / idle / side idle (9 characters since the 0.0.51 Giraffe).
-  assert.equal(verdict.coatSheets, 108);
-  assert.equal(verdict.coats.length, 36);
+  // 9 characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 297);
+  assert.equal(verdict.coats.length, 99);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -91,7 +91,10 @@ test("qa:sprites fails a character with no side idle", () => {
 test("qa:sprites checks every coat variant in every pose: repainted, on its catalogue hue, one coat per outfit", () => {
   const { verdict } = runWith("");
   const coats = new Set(verdict.coats.map((r) => r.coat));
-  assert.deepEqual([...coats].sort(), ["bottle", "oilskin", "oxblood", "plum"]);
+  assert.deepEqual(
+    [...coats].sort(),
+    ["bottle", "dye-amber", "dye-blue", "dye-green", "dye-prism", "dye-red", "dye-violet", "dye-white", "oilskin", "oxblood", "plum"],
+  );
   for (const r of verdict.coats) {
     for (const pose of ["idle", "walk front", "walk left", "walk right", "side left", "side right"]) {
       assert.ok(r.shift[pose] >= 8, `${r.scout}-${r.coat} ${pose} shift ${r.shift[pose]}`);

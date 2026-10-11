@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.68";
+export const APP_VERSION = "0.0.75";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k68a";
+export const PUBLISH_STAMP = "k75a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -71,3 +71,10 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.66: rarer paint is a real find — white stays about 1 in 2, then 5, 15, 45, and red and violet much rarer (1 in 150, 1 in 500). Amber lacquers hotter; red is sealed carmine with a gilt band; violet is night lacquer, gilt rim, and an oil-sheen. The glass still shows the lamp's tier (k66a).
 // 0.0.67: prism paint — any vault, about 1 in 10,000, on top of that vault's own colour. One can dyes a coat. Two paint the street vaults. The glass still shows the lamp's tier (k67a).
 // 0.0.68: a walk no longer starts when the pin is off the streets — the route was drawing to a curb hundreds of meters away and leaving the mark behind (Camp Mabry, and the same hole in every city). A corner a few meters short still joins, unless that step would cross a freeway (k68a).
+// 0.0.69: a match in the field bag no longer lists the places of that colour. It counts the vaults of that colour in this city you've been to, how many of those are lit, and how many are still recasting (k69a).
+// 0.0.70: one walk pace. Shift, the Run button, and the stamina ring are gone, and no coat walks faster than another. The circle at the bottom left is the walk stick (k70a).
+// 0.0.71: a quieter walk HUD. The walk stick stays on a phone and hides where a mouse or keys already move you. The compass only shows when a train ticket or a stop is waiting. Contract and goals stay in the Journal, so the city plate is just the city, the coins, and whatever is happening now (k71a).
+// 0.0.72: the journal and the satchel keep the record. Hiring, printing, paint, the morning crate, the match exchange, contracts, quest turn-in, and the daily blitz are done on the street — the outfitter, a ward counter, and a notice board in every city (k72a).
+// 0.0.73: Help lists what each colour of lamp pays — coin from a slow answer to a perfect one, paint odds, brass, stock, schematic, and how long it stays dark. The numbers are the lamp's own payout. Once you've lit any, the row also says how many of that colour this save has lit, and about how many cans that is worth (k73a).
+// 0.0.74: paint drops stay rarer as the colour climbs, but the top of the ladder is a find you can actually hold. White 1 in 2, then 5, 10, 20, 40, and violet 1 in 80. Prism stays 1 in 10,000. Coin is unchanged (k74a).
+// 0.0.75: a hidden nudge for the rarer cans. Green through violet, and prism, stay on the posted rate until five other signed-in walkers have found that can. After that, a walker who has gone more than one standard deviation past the average those players took rolls a higher chance — one extra deviation doubles it, and it never passes four times the posted rate. The Help chart does not change. Guests stay on the posted rate. White and blue are not nudged (k75a).

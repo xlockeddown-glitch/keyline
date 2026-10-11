@@ -48,7 +48,7 @@ export function routePool(pois: readonly Poi[]): Poi[] {
   const ids = new Set<string>();
   const names = new Set<string>();
   return pois.filter((p) => {
-    if (p.kind === "shop" || p.noClue || ids.has(p.id) || names.has(p.name)) return false;
+    if (p.kind === "shop" || p.kind === "counter" || p.kind === "board" || p.noClue || ids.has(p.id) || names.has(p.name)) return false;
     if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return false;
     ids.add(p.id);
     names.add(p.name);

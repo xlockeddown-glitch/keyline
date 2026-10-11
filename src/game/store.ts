@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
+import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { streetDrop } from "./streets";
 import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
@@ -21,6 +21,7 @@ import type {
   MapKey,
   MissFlash,
   Poi,
+  PoiKind,
   Screen,
   ScoutId,
   StreetRun,
@@ -39,7 +40,8 @@ import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE
 import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
-import { addIngredient, cityStaple, ingredientName, paintFoundLine, rollIngredient, rollVaultPaints, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
+import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, rollIngredient, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
+import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE, VELLUM_CHANCE, lampBrass, lampSchematicHits } from "./vaultPay";
 import { chooseStart, cleanUnlocks, freshUnlocks, goalsCheck, isUnlocked, lampLit, lockLine, migrateUnlocks, runFinished, unlockCity as unlockCityPass, type CityUnlocks } from "./cityPass";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
 import {
@@ -111,7 +113,7 @@ type Hud = {
 export type DealtCard = PublicCard;
 
 /** The server's grade of the open card, as `settleAnswer` applies it. */
-type Graded = { correct: boolean; elapsed: number; reveal: string; fact?: string; credited: boolean };
+type Graded = { correct: boolean; elapsed: number; reveal: string; fact?: string; credited: boolean; paints?: string[] };
 
 type OpenVault = {
   poiId: string;
@@ -210,8 +212,12 @@ export type GameState = {
   miss: MissFlash | null;
   openVault: OpenVault | null;
   hqOpen: boolean;
+  /** Field guide: what each colour of lamp pays. Not saved. */
+  guideOpen: boolean;
   invOpen: boolean;
   shopOpen: boolean;
+  /** Ward counter or notice board. Null when neither sheet is up. */
+  errandOpen: null | "counter" | "board";
   toast: string | null;
   fireworks: FireworksShow | null;
   hud: Hud;
@@ -229,6 +235,7 @@ export type GameState = {
   spreadDrops: (keys: MapKey[], run: StreetRun | null, stack: StreetRun | null) => void;
   tryOpen: (poiId: string, now: number) => string | null;
   closeShop: () => void;
+  closeErrand: () => void;
   pickCategory: (cat: TriviaCat, now: number) => void;
   answer: (choice: string, now: number) => void;
   /** Apply a server-graded answer to the open card (rewards, streak, seen memory). Internal to the lamp flow. */
@@ -278,6 +285,7 @@ export type GameState = {
   buyKiosk: (id: KioskId) => void;
   startContract: () => void;
   toggleHq: (v?: boolean) => void;
+  toggleGuide: (v?: boolean) => void;
   toggleInv: (v?: boolean) => void;
   dismissLoot: () => void;
   claimWheel: () => void;
@@ -650,6 +658,11 @@ function foldSavedSeen(set: (p: Partial<GameState>) => void, get: () => GameStat
   if (seenIds !== mine.seenIds || asked !== mine.asked) set({ seenIds: [...seenIds], asked: [...asked] });
 }
 
+/** Street blanks are lamps. Counters and boards are not dealt as trivia. */
+function lampKind(kind: PoiKind): kind is Exclude<PoiKind, "counter" | "board"> {
+  return kind !== "counter" && kind !== "board";
+}
+
 async function dealCard(
   set: (p: Partial<GameState>) => void,
   get: () => GameState,
@@ -663,7 +676,11 @@ async function dealCard(
   const series = seriesOf(poiId);
   const named = series ? null : city.pois.find((p) => p.id === poiId);
   const blank = series || named ? undefined : st.blanks.find((p) => p.id === poiId);
-  if (!series && !named && !blank) return null;
+  const dealBlank =
+    blank && lampKind(blank.kind)
+      ? { name: blank.name.slice(0, 120), kind: blank.kind, tier: blank.tier }
+      : undefined;
+  if (!series && !named && !dealBlank) return null;
   const spark = Boolean(st.openVault?.spark);
   const scholar = st.equipped === "scholar" ? 3000 : 0;
   const extra = scholar + (st.pressPass > 0 ? 5000 : 0) + (wornPerk(st.scout).vaultMs ?? 0);
@@ -672,7 +689,7 @@ async function dealCard(
     city: st.cityId,
     cat,
     poiId,
-    blank: blank ? { name: blank.name.slice(0, 120), kind: blank.kind, tier: blank.tier } : undefined,
+    blank: dealBlank,
     step: series ? step : undefined,
     spark: spark || undefined,
     windowMs,
@@ -817,8 +834,10 @@ export const useGame = create<GameState>((set, get) => ({
   miss: null,
   openVault: null,
   hqOpen: false,
+  guideOpen: false,
   invOpen: false,
   shopOpen: false,
+  errandOpen: null,
   toast: null,
   fireworks: null,
   hud: {
@@ -866,6 +885,7 @@ export const useGame = create<GameState>((set, get) => ({
       hqOpen: false,
       invOpen: false,
       shopOpen: false,
+      errandOpen: null,
       loot: null,
       miss: null,
       sessionAt: Date.now(),
@@ -994,10 +1014,11 @@ export const useGame = create<GameState>((set, get) => ({
     if (get().openVault?.poiId === poiId) return null;
     if (get().openVault?.pending === "grade") return "Finish this trivia card first.";
     if (get().openVault) get().closeVault();
-    if (isScoutShop(poi)) {
+    if (isScoutShop(poi) || isCounter(poi) || isBoard(poi)) {
       sfx.open();
       set({
-        shopOpen: true,
+        shopOpen: isScoutShop(poi),
+        errandOpen: isCounter(poi) ? "counter" : isBoard(poi) ? "board" : null,
         hqOpen: false,
         invOpen: false,
         openVault: null,
@@ -1023,6 +1044,7 @@ export const useGame = create<GameState>((set, get) => ({
         hqOpen: false,
         invOpen: false,
         shopOpen: false,
+        errandOpen: null,
         loot: null,
         miss: null,
       });
@@ -1041,6 +1063,7 @@ export const useGame = create<GameState>((set, get) => ({
         hqOpen: false,
         invOpen: false,
         shopOpen: false,
+        errandOpen: null,
         loot: null,
         miss: null,
       });
@@ -1052,6 +1075,7 @@ export const useGame = create<GameState>((set, get) => ({
       hqOpen: false,
       invOpen: false,
       shopOpen: false,
+      errandOpen: null,
       loot: null,
       miss: null,
     });
@@ -1138,7 +1162,7 @@ export const useGame = create<GameState>((set, get) => ({
         if (!cur || cur.token !== token) return;
         if (!res.ok) return lost();
         set({ openVault: { ...cur, pending: undefined } });
-        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited }, performance.now());
+        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited, paints: res.paints }, performance.now());
       })
       .catch(() => lost());
   },
@@ -1372,7 +1396,7 @@ export const useGame = create<GameState>((set, get) => ({
       const vellum = series.kind === "stack" ? 3 : 2;
       const schematic = grades.every((g) => g === "perfect") || Math.random() < (series.kind === "stack" ? 0.28 : 0.2);
       const ing = rollIngredient(get().cityId, { id: series.id, tier: series.cost });
-      const paints = rollVaultPaints(series.cost);
+      const paints = paintsFromServer(series.cost, out.paints);
       let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
       for (const id of paints) pantry = addIngredient(pantry, id);
       const loot: LootDrop = {
@@ -1489,21 +1513,17 @@ export const useGame = create<GameState>((set, get) => ({
     });
     const lampMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
     const lampMult = onMarket(lampMarket, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }) ? MARKET_MULT : 1;
-    const brass =
-      1 +
-      (poi.tier === "green" || poi.tier === "amber" ? 2 : 0) +
-      (poi.tier === "red" ? 4 : 0) +
-      (diff === 3 ? 2 : 0);
+    const brass = lampBrass(poi.tier, diff);
     const ink = poi.kind === "museum" || poi.kind === "library" || poi.kind === "theatre" ? 2 : 1;
-    const vellum = poi.kind === "park" || poi.kind === "campus" ? 2 : Math.random() < 0.4 ? 1 : 0;
-    const schematic = poi.tier === "amber" || poi.tier === "red" || poi.tier === "violet" || (poi.tier !== "white" && Math.random() < 0.08);
+    const vellum = poi.kind === "park" || poi.kind === "campus" ? 2 : Math.random() < VELLUM_CHANCE ? 1 : 0;
+    const schematic = lampSchematicHits(poi.tier, Math.random());
     const ing = rollIngredient(get().cityId, poi);
-    const paints = rollVaultPaints(poi.tier);
+    const paints = paintsFromServer(poi.tier, out.paints);
     let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
     for (const id of paints) pantry = addIngredient(pantry, id);
     const baseKeys: Partial<Record<Tier, number>> = {};
-    if (get().equipped === "lucky" && Math.random() < 0.15) baseKeys[poi.tier] = 1;
-    if (grade === "perfect" && Math.random() < 0.1) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
+    if (get().equipped === "lucky" && Math.random() < LUCKY_MATCH_CHANCE) baseKeys[poi.tier] = 1;
+    if (grade === "perfect" && Math.random() < PERFECT_BLUE_CHANCE) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
     // Night market: the trivia card's coin and its bonus matches double; the cloth tip and boosts don't.
     const lampPay = marketPay(lampCoin, baseKeys, lampMult);
     const points = lampPay.coin + tip;
@@ -1643,7 +1663,8 @@ export const useGame = create<GameState>((set, get) => ({
     set({ openVault: null });
     if (ov?.question) scheduleSave(get);
   },
-  closeShop: () => set({ shopOpen: false }),
+  closeShop: () => set({ shopOpen: false, errandOpen: null }),
+  closeErrand: () => set({ errandOpen: null }),
   claimCrate: () => {
     const d = today();
     if (get().lastCrateDay === d) return;
@@ -2030,7 +2051,7 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     const city = CITIES[get().cityId];
-    const unknown = city.pois.filter((p) => p.kind !== "shop" && !get().atlas[p.id]);
+    const unknown = city.pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board" && p.kind !== "station" && !get().atlas[p.id]);
     if (!unknown.length) {
       flashToast(set, get, "Every lantern in this ward is named.", 2000);
       return;
@@ -2050,11 +2071,15 @@ export const useGame = create<GameState>((set, get) => ({
   },
   toggleHq: (v) => {
     const next = v ?? !get().hqOpen;
-    set({ hqOpen: next, invOpen: next ? false : get().invOpen, shopOpen: next ? false : get().shopOpen });
+    set({ hqOpen: next, guideOpen: next ? false : get().guideOpen, invOpen: next ? false : get().invOpen, shopOpen: next ? false : get().shopOpen, errandOpen: next ? null : get().errandOpen });
+  },
+  toggleGuide: (v) => {
+    const next = v ?? !get().guideOpen;
+    set({ guideOpen: next, hqOpen: next ? false : get().hqOpen, invOpen: next ? false : get().invOpen, shopOpen: next ? false : get().shopOpen, errandOpen: next ? null : get().errandOpen });
   },
   toggleInv: (v) => {
     const next = v ?? !get().invOpen;
-    set({ invOpen: next, hqOpen: next ? false : get().hqOpen, shopOpen: next ? false : get().shopOpen });
+    set({ invOpen: next, hqOpen: next ? false : get().hqOpen, guideOpen: next ? false : get().guideOpen, shopOpen: next ? false : get().shopOpen, errandOpen: next ? null : get().errandOpen });
   },
   dismissLoot: () => set({ loot: null, miss: null, toast: null }),
   claimWheel: () => {
@@ -2093,7 +2118,7 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
   },
   replayTutorial: () => {
-    set({ tutorial: 0, howtoDone: false, hqOpen: false, invOpen: false, shopOpen: false });
+    set({ tutorial: 0, howtoDone: false, hqOpen: false, guideOpen: false, invOpen: false, shopOpen: false, errandOpen: null });
     scheduleSave(get);
   },
   resetCity: () => {
@@ -2129,6 +2154,7 @@ export const useGame = create<GameState>((set, get) => ({
       hqOpen: false,
       invOpen: false,
       shopOpen: false,
+      errandOpen: null,
       openVault: null,
       loot: null,
       miss: null,
@@ -2206,6 +2232,7 @@ export const useGame = create<GameState>((set, get) => ({
           hqOpen: false,
           invOpen: false,
           shopOpen: false,
+        errandOpen: null,
           openVault: null,
         });
         flashToast(set, get, rideFindCopy(add), 2200);
@@ -2220,6 +2247,7 @@ export const useGame = create<GameState>((set, get) => ({
         hqOpen: false,
         invOpen: false,
         shopOpen: false,
+        errandOpen: null,
         openVault: null,
       });
       scheduleSave(get);
@@ -2245,6 +2273,7 @@ export const useGame = create<GameState>((set, get) => ({
       hqOpen: false,
       invOpen: false,
       shopOpen: false,
+      errandOpen: null,
       loot: null,
       miss: null,
       sessionAt: Date.now(),

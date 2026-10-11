@@ -1,4 +1,5 @@
 import type { City, CityId, Poi } from "./types";
+import { dest, distM } from "./geo.ts";
 import { TIER_VALUE } from "./rewards.ts";
 
 function poi(p: Poi): Poi {
@@ -3451,8 +3452,79 @@ for (const id of Object.keys(SCOUT_SHOPS) as CityId[]) {
   if (!city.pois.some((p) => p.id === shop.id)) city.pois.push(shop);
 }
 
+const COUNTER_NAME: Record<CityId, [string, string]> = {
+  austin: ["Sixth Street Counter", "Congress Notice"],
+  temple: ["Avenue A Counter", "Main Street Board"],
+  nyc: ["42nd Street Newsstand", "Bryant Notice"],
+  sf: ["Jackson Newsstand", "Portsmouth Board"],
+  london: ["Strand Kiosk", "Leicester Notice"],
+  chicago: ["State Street Counter", "Millennium Board"],
+  detroit: ["Woodward Counter", "Campus Martius Board"],
+  tucson: ["Congress Newsstand", "Presidio Board"],
+  toronto: ["King Street Counter", "Nathan Phillips Board"],
+  la: ["Broadway Newsstand", "Pershing Board"],
+  boston: ["State Street Counter", "Common Notice"],
+  nola: ["Decatur Counter", "Jackson Square Board"],
+  seattle: ["Pike Newsstand", "Occidental Board"],
+  denver: ["16th Street Counter", "Civic Center Board"],
+  nashville: ["Broadway Counter", "Printers Alley Board"],
+};
+
+function deskSpot(city: City, northM: number, eastM: number) {
+  const shop = SCOUT_SHOPS[city.id];
+  let at = dest(city.spawn.lat, city.spawn.lng, northM, eastM);
+  if (shop && distM(at.lat, at.lng, shop.lat, shop.lng) < 80) at = dest(city.spawn.lat, city.spawn.lng, -northM, -eastM);
+  return { lat: Math.round(at.lat * 1e5) / 1e5, lng: Math.round(at.lng * 1e5) / 1e5 };
+}
+
+for (const id of Object.keys(CITIES) as CityId[]) {
+  const city = CITIES[id];
+  const [counterName, boardName] = COUNTER_NAME[id];
+  const counterAt = deskSpot(city, 220, -80);
+  const boardAt = deskSpot(city, 80, 220);
+  if (!city.pois.some((p) => p.kind === "counter")) {
+    city.pois.push(
+      poi({
+        id: `counter-${id}`,
+        name: counterName,
+        lat: counterAt.lat,
+        lng: counterAt.lng,
+        kind: "counter",
+        tier: "white",
+        lore: "A street counter. Matches, the morning crate, and the exchange — nothing you can finish from the journal.",
+      }),
+    );
+  }
+  if (!city.pois.some((p) => p.kind === "board")) {
+    city.pois.push(
+      poi({
+        id: `board-${id}`,
+        name: boardName,
+        lat: boardAt.lat,
+        lng: boardAt.lng,
+        kind: "board",
+        tier: "white",
+        lore: "A notice board. Contracts, errands, and the day's blitz are posted here. You take them in person.",
+      }),
+    );
+  }
+}
+
 export function isScoutShop(p: { kind: string } | null | undefined) {
   return p?.kind === "shop";
+}
+
+export function isCounter(p: { kind: string } | null | undefined) {
+  return p?.kind === "counter";
+}
+
+export function isBoard(p: { kind: string } | null | undefined) {
+  return p?.kind === "board";
+}
+
+/** Outfitter, train station, ward counter, notice board — not a lamp. */
+export function isService(p: { kind: string } | null | undefined) {
+  return p?.kind === "shop" || p?.kind === "station" || p?.kind === "counter" || p?.kind === "board";
 }
 
 export function allPois(city: City, blanks: Poi[] = []) {
@@ -3461,6 +3533,14 @@ export function allPois(city: City, blanks: Poi[] = []) {
 
 export function cityShop(cityId: CityId) {
   return CITIES[cityId].pois.find((p) => p.kind === "shop") ?? null;
+}
+
+export function cityCounter(cityId: CityId) {
+  return CITIES[cityId].pois.find((p) => p.kind === "counter") ?? null;
+}
+
+export function cityBoard(cityId: CityId) {
+  return CITIES[cityId].pois.find((p) => p.kind === "board") ?? null;
 }
 
 export const CITY_LIST: City[] = [
@@ -3505,6 +3585,8 @@ export const KIND_LABEL: Record<import("./types").PoiKind, string> = {
   campus: "Campus",
   water: "Water",
   shop: "Outfitter",
+  counter: "Counter",
+  board: "Notice",
 };
 
 export const CHARMS = {
@@ -3517,7 +3599,7 @@ export const CHARMS = {
   sprinter: {
     id: "sprinter" as const,
     name: "Sprinter's strap",
-    blurb: "Sprint holds longer. Same top pace.",
+    blurb: "Every coat walks the same. The strap doesn't change it.",
     cost: { brass: 6, ink: 0, vellum: 8, schematic: 1 },
   },
   lantern: {
@@ -3614,12 +3696,12 @@ export const STACK_POI: import("./types").Poi = seriesPoi(SERIES.stack);
 
 export const WALK_PACE = 92;
 
-export function walkSpeed(sprinting: boolean, gait = 1) {
-  return WALK_PACE * gait * (sprinting ? 1.5 : 1);
+export function walkSpeed() {
+  return WALK_PACE;
 }
 
-export function cabSpeed(arterial: boolean, gait = 1) {
-  return WALK_PACE * gait * (arterial ? 2.5 : 2);
+export function cabSpeed(arterial: boolean) {
+  return WALK_PACE * (arterial ? 2.5 : 2);
 }
 
 export const SUPER_LEGENDARY_LABEL = "Super Legendary";
@@ -3666,7 +3748,7 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/cat-walk.png",
     idle: "/sprites/scouts/cat-idle.png",
     icon: "/sprites/scouts/cat.png",
-    gait: 1.08,
+    gait: 1,
     bed: "Quiet step",
     perk: { label: "+0.25 s on every lamp", vaultMs: 250 },
   },
@@ -3678,7 +3760,7 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/turtle-walk.png",
     idle: "/sprites/scouts/turtle-idle.png",
     icon: "/sprites/scouts/turtle.png",
-    gait: 0.86,
+    gait: 1,
     bed: "Shell tide",
     perk: { label: "+0.5 s on every lamp", vaultMs: 500 },
   },
@@ -3690,7 +3772,7 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/owl-walk.png",
     idle: "/sprites/scouts/owl-idle.png",
     icon: "/sprites/scouts/owl.png",
-    gait: 1.06,
+    gait: 1,
     bed: "Night eyes",
     perk: { label: "Lamps from a hair farther", reach: 1.05 },
   },
@@ -3702,9 +3784,9 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/corgi-walk.png",
     idle: "/sprites/scouts/corgi-idle.png",
     icon: "/sprites/scouts/corgi.png",
-    gait: 1.12,
+    gait: 1,
     bed: "Curb bounce",
-    perk: { label: "+1% walk", pace: 1.01 },
+    perk: { label: "Same walk as every coat" },
   },
   sloth: {
     id: "sloth",
@@ -3714,7 +3796,7 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/sloth-walk.png",
     idle: "/sprites/scouts/sloth-idle.png",
     icon: "/sprites/scouts/sloth.png",
-    gait: 0.74,
+    gait: 1,
     bed: "The long way",
     perk: { label: "+0.75 s on every lamp", vaultMs: 750 },
   },
@@ -3726,7 +3808,7 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/giraffe-walk.png",
     idle: "/sprites/scouts/giraffe-idle.png",
     icon: "/sprites/scouts/giraffe.png",
-    gait: 1.04,
+    gait: 1,
     bed: "Over the rooftops",
     // 0.0.51: between the Sloth (24,000) and the Fox (88,000). A lookout perk, not a coin or timer one: places
     // get their atlas name from 20% farther off (140 m → 168 m, 200 m → 240 m with the Lantern charm). Opening
@@ -3741,7 +3823,7 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/fox-walk.png",
     idle: "/sprites/scouts/fox-idle.png",
     icon: "/sprites/scouts/fox.png",
-    gait: 1.1,
+    gait: 1,
     bed: "Coal dusk",
     perk: { label: "+1% coins from lamps · +0.25 s", vaultMs: 250, loot: 1.01 },
   },
@@ -3753,7 +3835,7 @@ export const SCOUTS: Record<
     walk: "/sprites/scouts/lynx-walk.png",
     idle: "/sprites/scouts/lynx-idle.png",
     icon: "/sprites/scouts/lynx.png",
-    gait: 1.12,
+    gait: 1,
     bed: "Through the block",
     perk: { label: "Cuts through the block · +1% coins · +0.25 s", vaultMs: 250, loot: 1.01 },
   },

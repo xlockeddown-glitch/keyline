@@ -2,10 +2,9 @@ import { useRef, useState, type CSSProperties } from "react";
 
 type Props = {
   onVector: (x: number, y: number) => void;
-  stamina: number;
 };
 
-export function TouchPad({ onVector, stamina }: Props) {
+export function TouchPad({ onVector }: Props) {
   const origin = useRef<{ x: number; y: number } | null>(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
 
@@ -31,7 +30,6 @@ export function TouchPad({ onVector, stamina }: Props) {
       className="stick pointer-events-auto"
       style={
         {
-          "--pace": String(Math.max(0, Math.min(1, stamina))),
           "--kx": `${knob.x}px`,
           "--ky": `${knob.y}px`,
         } as CSSProperties
@@ -48,10 +46,10 @@ export function TouchPad({ onVector, stamina }: Props) {
       }}
       onPointerUp={release}
       onPointerCancel={release}
-      aria-label="Walk"
+      aria-label="Walk stick. Drag to move."
     >
-      <span className="pace-ring" aria-hidden />
       <span className="stick-knob" aria-hidden />
+      <span className="stick-label">Walk</span>
     </div>
   );
 }

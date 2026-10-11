@@ -6,7 +6,7 @@ import { EMPTY_PAINT, PAINT_USE, cleanPaint, mixPaint, visibleCoat, visibleLante
 test("rarer paint drops much less often, and a miss drops nothing", () => {
   assert.deepEqual(
     VAULT_PAINTS.map((c) => PAINT_DROP_IN[c]),
-    [2, 5, 15, 45, 150, 500],
+    [2, 5, 10, 20, 40, 80],
   );
   for (const color of VAULT_PAINTS) {
     assert.equal(rollPaint(color, 0), `paint-${color}`);
@@ -29,9 +29,9 @@ test("rarer paint drops much less often, and a miss drops nothing", () => {
   const rates = VAULT_PAINTS.map(rate);
   for (let i = 1; i < rates.length; i++) assert.ok(rates[i]! < rates[i - 1]! / 1.5, `${VAULT_PAINTS[i]} should be much rarer than ${VAULT_PAINTS[i - 1]}`);
   assert.ok(Math.abs(rates[0]! - 0.5) < 0.02);
-  assert.ok(rates[3]! <= 1 / 40, "amber is a real find");
-  assert.ok(rates[4]! <= 1 / 120, "red is much rarer than amber");
-  assert.ok(rates[5]! <= 1 / 400, "violet is much rarer than red");
+  assert.ok(Math.abs(rates[3]! - 1 / 20) < 0.02, "amber is about 1 in 20");
+  assert.ok(Math.abs(rates[4]! - 1 / 40) < 0.015, "red is about 1 in 40");
+  assert.ok(Math.abs(rates[5]! - 1 / 80) < 0.01, "violet is about 1 in 80");
 });
 
 test("prism can drop from any colour, and almost never does", () => {

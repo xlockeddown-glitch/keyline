@@ -21,7 +21,7 @@ export type WalkPost = {
 
 /**
  * Metres to keep from one post. `elapsedMs` is the server's own clock since the previous
- * accepted post, never the client's. Anything above the fastest coat's sprint, or past
+ * accepted post, never the client's. Anything above the one walk pace, or past
  * WALK_WINDOW_MS, is cut.
  */
 export function creditWalk(reportedM: number, elapsedMs: number, topMps: number, windowMs = WALK_WINDOW_MS): number {
@@ -56,7 +56,7 @@ function asMeters(v: unknown): number {
 }
 
 /**
- * Move this walker's clock and add whatever the sprint cap allows.
+ * Move this walker's clock and add whatever the walk pace allows.
  * One statement: a second post inside WALK_MIN_GAP_MS changes nothing.
  */
 export async function recordWalk(

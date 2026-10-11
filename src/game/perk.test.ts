@@ -44,20 +44,23 @@ describe("scout perks stay small and scale with the hire", () => {
     }
   });
 
-  it("pace and coin extras stay around one percent", () => {
+  it("every coat walks the same — no sprint, no faster hire", () => {
     for (const s of SCOUT_LIST) {
-      assert.ok((s.perk.pace ?? 1) <= 1.02, s.id);
+      assert.equal(s.gait, 1, s.id);
+      assert.equal(s.perk.pace ?? 1, 1, s.id);
+    }
+    assert.equal(wornPerk("corgi").pace ?? 1, 1);
+    assert.equal(wornPerk("fox").loot, 1.01);
+    assert.ok(SCOUTS.fox.coins > SCOUTS.sloth.coins);
+  });
+
+  it("the dearer coats carry the larger lamp-time habits", () => {
+    assert.ok((wornPerk("cat").vaultMs ?? 0) < (wornPerk("turtle").vaultMs ?? 0));
+    assert.ok((wornPerk("turtle").vaultMs ?? 0) < (wornPerk("sloth").vaultMs ?? 0));
+    for (const s of SCOUT_LIST) {
       assert.ok((s.perk.loot ?? 1) <= 1.02, s.id);
       assert.ok((s.perk.reach ?? 1) <= 1.06, s.id);
     }
-  });
-
-  it("the dearer coats carry the larger habits", () => {
-    assert.ok((wornPerk("cat").vaultMs ?? 0) < (wornPerk("turtle").vaultMs ?? 0));
-    assert.ok((wornPerk("turtle").vaultMs ?? 0) < (wornPerk("sloth").vaultMs ?? 0));
-    assert.equal(wornPerk("corgi").pace, 1.01);
-    assert.equal(wornPerk("fox").loot, 1.01);
-    assert.ok(SCOUTS.fox.coins > SCOUTS.sloth.coins);
   });
 
   it("Super Legendary hire is ten times the Fox and can cut", () => {

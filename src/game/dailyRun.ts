@@ -4,7 +4,7 @@
  * Pure — the client, the server functions (dailyApi.ts) and the tests all use these rules,
  * so the route a player walks is the route the server checks.
  */
-import { CITIES, SCOUTS, WALK_PACE } from "./data.ts";
+import { CITIES, WALK_PACE } from "./data.ts";
 import { distM } from "./geo.ts";
 import { TIER_VALUE } from "./rewards.ts";
 import { matchCap } from "./ticket.ts";
@@ -82,7 +82,7 @@ export function dailySeed(day: string, city: CityId): number {
 export function dailyEligible(cityId: CityId): Poi[] {
   const city = CITIES[cityId];
   const ok = (p: Poi, r: number) =>
-    p.kind !== "shop" && p.kind !== "station" && !p.printShop && distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng) <= r;
+    p.kind !== "shop" && p.kind !== "station" && p.kind !== "counter" && p.kind !== "board" && !p.printShop && distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng) <= r;
   let r = DAILY_RADIUS_M;
   let list = city.pois.filter((p) => ok(p, r));
   while (list.length < DAILY_LAMPS * 2 && r < 6000) {
@@ -131,11 +131,9 @@ export function dailyRoute(cityId: CityId, day: string): DailyRoute {
   };
 }
 
-/** Fastest any walker can go: best coat's gait and pace, sprinting the whole way (stamina ignored). */
+/** Every coat walks at the same pace. The server refuses anything faster. */
 export function dailyTopSpeed(): number {
-  let best = 1;
-  for (const s of Object.values(SCOUTS)) best = Math.max(best, s.gait * (s.perk.pace ?? 1));
-  return WALK_PACE * best * 1.5;
+  return WALK_PACE;
 }
 
 /** Straight-line lamp-to-lamp meters for leg `i` (lamp i-1 → lamp i), i = 1..4. */
@@ -146,15 +144,14 @@ export function legMeters(route: DailyRoute, i: number): number {
   return distM(a.lat, a.lng, b.lat, b.lng);
 }
 
-/** Milliseconds to cover `m` meters at the top sprint, less 10%. */
+/** Milliseconds to cover `m` meters at the one walk pace, less 10%. */
 export function floorForMeters(m: number): number {
   return Math.floor(((Math.max(0, m) / dailyTopSpeed()) * 1000) * 0.9);
 }
 
 /**
  * Fewest milliseconds leg `i` can take wherever in reach the two lights happened: the straight line
- * between the lamps less a full reach at each end, at the top sprint. Honest walks take far longer —
- * streets bend and sprint stamina runs out.
+ * between the lamps less a full reach at each end, at the one walk pace. Honest walks take longer — streets bend.
  */
 export function legFloorMs(route: DailyRoute, i: number): number {
   return floorForMeters(legMeters(route, i) - 2 * DAILY_REACH_M);

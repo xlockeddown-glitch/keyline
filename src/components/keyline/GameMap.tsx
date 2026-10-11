@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
-import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isScoutShop, walkSpeed } from "@/game/data";
+import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isCounter, isScoutShop, walkSpeed } from "@/game/data";
 import { seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
@@ -53,9 +53,12 @@ import { FriendTickets } from "./FriendTickets";
 import { GiftNote } from "./GiftNote";
 import { MysteryWheel } from "./MysteryWheel";
 import { Satchel } from "./Satchel";
+import { WardCounter } from "./WardCounter";
+import { NoticeBoard } from "./NoticeBoard";
 import { Fireworks } from "./Fireworks";
 import { Timetable } from "./Timetable";
 import { Tutorial } from "./Tutorial";
+import { FieldGuide } from "./FieldGuide";
 import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
 import { DailyBlitz } from "./DailyBlitz";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
@@ -177,8 +180,6 @@ export function GameMap() {
   const scoutName = useGame((s) => SCOUTS[s.scout]?.name ?? "The walker");
   const [streets, setStreets] = useState<"loading" | "ready" | "error">("loading");
   const [boardOpen, setBoardOpen] = useState(false);
-  const [runOn, setRunOn] = useState(false);
-  const autoSprint = useRef(false);
   const dailyLines = useRef<Polyline[]>([]);
   const dailyPins = useRef<Marker[]>([]);
   const dailyKey = useRef("");
@@ -849,7 +850,7 @@ export function GameMap() {
       });
       map.on("click", (e) => {
         const t = e.originalEvent.target as HTMLElement | null;
-        if (t?.closest(".vault-pin, .match-pin, .route-stop, .leaflet-control")) return;
+        if (t?.closest(".vault-pin, .shop-pin, .counter-pin, .board-pin, .match-pin, .route-stop, .leaflet-control")) return;
         planWalk(e.latlng.lat, e.latlng.lng);
       });
 
@@ -1147,14 +1148,20 @@ export function GameMap() {
       const cooling = Boolean(v && v.state === "cooling" && v.coolUntil > now);
       const desk = isFareDesk(poi);
       const shop = isScoutShop(poi);
+      const counter = isCounter(poi);
+      const board = isBoard(poi);
       const lit = desk && st.fares > 0;
       const el = shop
         ? `<div class="shop-pin" title="${poi.name}"><span class="shop-awning"></span><span class="shop-body"><i class="shop-window"></i><i class="shop-door"></i></span></div>`
-        : desk
-          ? stationPinHtml({ cooling, fare: lit })
-          : vaultPinHtml(poi, { cooling });
+        : counter
+          ? `<div class="counter-pin" title="${poi.name}"><span class="counter-awning"></span><span class="counter-body"></span></div>`
+          : board
+            ? `<div class="board-pin" title="${poi.name}"><i class="board-post"></i><i class="board-sheet"></i></div>`
+            : desk
+              ? stationPinHtml({ cooling, fare: lit })
+              : vaultPinHtml(poi, { cooling });
       const marker = L.marker([poi.lat, poi.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: shop ? [46, 70] : desk ? [30, 72] : [20, 50], iconAnchor: shop ? [23, 68] : desk ? [15, 70] : [10, 28] }),
+        icon: L.divIcon({ className: "", html: el, iconSize: shop || counter || board ? [46, 70] : desk ? [30, 72] : [20, 50], iconAnchor: shop || counter || board ? [23, 68] : desk ? [15, 70] : [10, 28] }),
         keyboard: false,
         zIndexOffset: shop ? 520 : lit ? 460 : desk ? 280 : 200,
       }).addTo(map);
@@ -1264,7 +1271,7 @@ export function GameMap() {
         }
         return;
       }
-      if (useGame.getState().shopOpen) {
+      if (useGame.getState().shopOpen || useGame.getState().errandOpen) {
         if (e.code === "Escape") {
           useGame.getState().closeShop();
           e.preventDefault();
@@ -1279,11 +1286,11 @@ export function GameMap() {
       if (e.code === "KeyE" || e.code === "Space") interactNearest();
       if (e.code === "KeyF") {
         const s = useGame.getState();
-        if (!s.openVault && !s.hqOpen && !s.invOpen && !s.shopOpen) toggleCab();
+        if (!s.openVault && !s.hqOpen && !s.invOpen && !s.shopOpen && !s.errandOpen) toggleCab();
       }
       if (e.code === "KeyT") {
         const s = useGame.getState();
-        if (s.openVault || s.hqOpen || s.invOpen || s.shopOpen) return;
+        if (s.openVault || s.hqOpen || s.invOpen || s.shopOpen || s.errandOpen) return;
         if (s.hud.seated) {
           flash("Park at the curb. The door is on foot.");
           return;
@@ -1359,7 +1366,7 @@ export function GameMap() {
       last.current = t;
       const dt = Math.min(MAX_DT, (t - prev) / 1000);
       const st = useGame.getState();
-      if (st.blitzOpen || st.openVault || st.hqOpen || st.invOpen || st.screen !== "play") return;
+      if (st.blitzOpen || st.openVault || st.hqOpen || st.invOpen || st.errandOpen || st.screen !== "play") return;
 
       const held = new Set(injected.current ?? keysHeld.current);
       const seated = Boolean(cabRef.current?.seated);
@@ -1413,18 +1420,9 @@ export function GameMap() {
 
       steer = Math.max(-1, Math.min(1, steer));
       throttle = Math.max(-1, Math.min(1, throttle));
-      const worn = SCOUTS[st.scout];
-      const gait = (worn?.gait ?? 1) * (worn?.perk.pace ?? 1);
       const driveG = driveRef.current;
-      const sprintHeld = autoSprint.current || held.has("ShiftLeft") || held.has("ShiftRight");
-      const sprinting = !seated && sprintHeld && pos.current.stamina > 0.08 && (throttle > 0 || auto);
-      const hasSprinter = st.equipped === "sprinter";
-      if (!seated) {
-        if (sprinting) pos.current.stamina = Math.max(0, pos.current.stamina - dt * (hasSprinter ? 0.16 : 0.28) * (SCOUTS[st.scout]?.perk.stamina ?? 1));
-        else pos.current.stamina = Math.min(1, pos.current.stamina + dt * (hasSprinter ? 0.32 : 0.22));
-      }
       const arterial = seated && onArterial(driveG, pos.current.lat, pos.current.lng);
-      const max = seated ? cabSpeed(arterial, gait) : walkSpeed(sprinting, gait);
+      const max = seated ? cabSpeed(arterial) : walkSpeed();
       const rail = seated ? driveG : graphRef.current;
       const foot = graphRef.current;
       const turn = seated ? TURN_CAB : TURN;
@@ -1435,7 +1433,7 @@ export function GameMap() {
       if (hail && cabRef.current && !seated) {
         const cab = cabRef.current;
         const total = pathLength(hail);
-        const pace = cabSpeed(onArterial(driveG, cab.lat, cab.lng), gait);
+        const pace = cabSpeed(onArterial(driveG, cab.lat, cab.lng));
         cab.hailAlong = Math.min(cab.hailAlong + pace * dt, total);
         const next = pointAlongPath(hail, cab.hailAlong);
         const look = pointAlongPath(hail, Math.min(cab.hailAlong + 16, total));
@@ -1592,7 +1590,7 @@ export function GameMap() {
 
       const moving = stepped / Math.max(dt, 1e-3) > 8;
       anim.current.acc += dt;
-      const frameDt = moving ? 0.11 / Math.max(0.7, gait) : 0.34;
+      const frameDt = moving ? 0.11 : 0.34;
       if (anim.current.acc > frameDt) {
         anim.current.acc = 0;
         anim.current.frame = (anim.current.frame + 1) % 4;
@@ -1624,7 +1622,7 @@ export function GameMap() {
       }
 
       vaultMarkers.current.forEach((m, id) => {
-        const node = m.getElement()?.querySelector(".vault-pin, .shop-pin");
+        const node = m.getElement()?.querySelector(".vault-pin, .shop-pin, .counter-pin, .board-pin");
         node?.classList.toggle("near", id === nearestPoi.id && nearestPoi.d < 140);
       });
 
@@ -1772,12 +1770,6 @@ export function GameMap() {
         }}
         onInteract={interactNearest}
         onCab={toggleCab}
-        autoSprint={runOn}
-        onAutoSprint={() => {
-          const next = !autoSprint.current;
-          autoSprint.current = next;
-          setRunOn(next);
-        }}
         onMarket={walkToMarket}
         onRoute={() => {
           if (routeHold.current) {
@@ -1821,6 +1813,8 @@ export function GameMap() {
       <Satchel />
       <HqPanel />
       <ScoutShop />
+      <WardCounter />
+      <NoticeBoard />
       <Fireworks />
       <DailyRunPanel
         onWalk={(lat, lng) => {
@@ -1868,6 +1862,7 @@ export function GameMap() {
       ) : (
         <Tutorial />
       )}
+      <FieldGuide />
     </div>
   );
 }

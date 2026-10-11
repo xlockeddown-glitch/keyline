@@ -1,4 +1,4 @@
-// Distance on the leaderboard: sprint cap, and the folded board (PGLite, migrations through 0014).
+// Distance on the leaderboard: walk-pace cap, and the folded board (PGLite, migrations through 0014).
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -31,7 +31,7 @@ function sqlOf(db: PGlite): Sql {
 
 const TOP = 100;
 
-test("credit: sprint cap, idle window, opening post", () => {
+test("credit: walk-pace cap, idle window, opening post", () => {
   assert.equal(creditWalk(0, 8_000, TOP), 0);
   assert.equal(creditWalk(-20, 8_000, TOP), 0);
   assert.equal(creditWalk(Number.NaN, 8_000, TOP), 0);
@@ -45,7 +45,7 @@ test("credit: sprint cap, idle window, opening post", () => {
   assert.equal(creditOpen(1_000_000, TOP), Math.floor(8 * TOP * WALK_SLACK));
   assert.equal(creditOpen(12, TOP), 12);
   const coat = dailyTopSpeed();
-  assert.ok(coat > 92 * 1.5, "cap is the fastest coat, not a plain raccoon sprint");
+  assert.equal(coat, 92, "every coat is capped at the one walk pace");
   assert.equal(creditWalk(1e12, 60_000, coat), Math.floor(45 * coat * WALK_SLACK));
 });
 

@@ -1,8 +1,7 @@
 import { BookOpen, CircleHelp } from "lucide-react";
-import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, allPois, interactRadius, isScoutShop, seriesOf } from "@/game/data";
+import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
-import { nextSurvey } from "@/game/survey";
 import { formatCool, isFareDesk, SPARK_DAY, ticketHint, VAULTS_PER_FARE } from "@/game/ticket";
 import { blitzDue } from "@/game/dailyBlitz";
 import { useGame } from "@/game/store";
@@ -18,8 +17,6 @@ type Props = {
   onVector: (x: number, y: number) => void;
   onInteract: () => void;
   onCab: () => void;
-  autoSprint: boolean;
-  onAutoSprint: () => void;
   onTimetable: () => void;
   onDesk: () => void;
   onMarket: () => void;
@@ -33,7 +30,7 @@ function rangePips(dist: number, reachM: number) {
   return 1;
 }
 
-export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onTimetable, onDesk, onMarket: onMarketWalk, onRoute }: Props) {
+export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket: onMarketWalk, onRoute }: Props) {
   const keys = useGame((s) => s.keys);
   const points = useGame((s) => s.points);
   const hud = useGame((s) => s.hud);
@@ -41,9 +38,8 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
   const toggleHq = useGame((s) => s.toggleHq);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
   const toggleInv = useGame((s) => s.toggleInv);
-  const replayTutorial = useGame((s) => s.replayTutorial);
+  const toggleGuide = useGame((s) => s.toggleGuide);
   const streak = useGame((s) => s.streak);
-  const contract = useGame((s) => s.contract);
   const equipped = useGame((s) => s.equipped);
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
@@ -61,10 +57,13 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
         ? { ...STACK_POI, lat: stack.lat, lng: stack.lng }
         : allPois(city, blanks).find((p) => p.id === hud.nearestId);
   const reachM = interactRadius(equipped === "lantern");
-  const recasting = Boolean(nearest && !seriesNear && !isScoutShop(nearest) && (vaults[nearest.id]?.coolUntil ?? 0) > Date.now());
+  const service = Boolean(nearest && (isScoutShop(nearest) || isCounter(nearest) || isBoard(nearest)));
+  const recasting = Boolean(nearest && !seriesNear && !service && (vaults[nearest.id]?.coolUntil ?? 0) > Date.now());
   const inReach = Boolean(nearest && hud.nearestDist <= reachM);
   const atShop = Boolean(nearest && isScoutShop(nearest) && inReach && !hud.seated);
-  const needTier: Tier | null = nearest && !recasting && !isScoutShop(nearest) ? nearest.tier : null;
+  const atCounter = Boolean(nearest && isCounter(nearest) && inReach && !hud.seated);
+  const atBoard = Boolean(nearest && isBoard(nearest) && inReach && !hud.seated);
+  const needTier: Tier | null = nearest && !recasting && !service ? nearest.tier : null;
   const haveKey = Boolean(needTier && keys[needTier] > 0);
   const sparkDay = useGame((s) => s.sparkDay);
   const sparkN = useGame((s) => s.sparkN);
@@ -74,12 +73,9 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
   const sparksLeft = (sparkDay === today ? SPARK_DAY - sparkN : SPARK_DAY);
   const sparkedHere = Boolean(nearest && sparkDay === today && sparkLamps.includes(nearest.id));
   const canSpark = Boolean(
-    inReach && needTier && !haveKey && !recasting && !seriesNear && !isScoutShop(nearest) && sparksLeft > 0 && !sparkedHere,
+    inReach && needTier && !haveKey && !recasting && !seriesNear && !service && sparksLeft > 0 && !sparkedHere,
   );
-  const armed = Boolean(atShop || (inReach && haveKey && !recasting) || canSpark);
-  const nextContract = contract?.ids.find((id) => !contract.done.includes(id));
-  const nextName = nextContract ? city.pois.find((p) => p.id === nextContract)?.name : null;
-  const surveyLine = useGame((s) => nextSurvey(s)?.line ?? null);
+  const armed = Boolean(atShop || atCounter || atBoard || (inReach && haveKey && !recasting) || canSpark);
   const fares = useGame((s) => s.fares);
   const cityVaults = useGame((s) => s.cityVaults);
   const belt = TIERS.filter((t) => t === "white" || t === "blue" || t === "green" || keys[t] > 0 || needTier === t);
@@ -87,7 +83,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
   const { market } = useMarket(cityId);
   const marketHere = Boolean(
     nearest &&
-      !isScoutShop(nearest) &&
+      !service &&
       onMarket(market, seriesNear ? { kind: "series", lat: nearest.lat, lng: nearest.lng } : { kind: "lamp", poiId: nearest.id, lat: nearest.lat, lng: nearest.lng }),
   );
 
@@ -99,14 +95,18 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
   const canUnlock = atDesk && (freePick || passes > 0);
   const canDesk = canPunch || canUnlock;
 
-  let cue = hud.seated ? "Park at the curb. The door is on foot." : "Lamps mark the questions. Click the map to walk, and click again to add a stop.";
+  let cue = hud.seated ? "Park at the curb. The door is on foot." : "Click the map to walk.";
   if (nearest) {
     if (hud.seated) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
     else if (canPunch) cue = `Board train · T · ${nearest.name}`;
     else if (canUnlock) cue = `Train station · T · unlock a city (${freePick ? "free pick" : `${passes} pass${passes === 1 ? "" : "es"}`})`;
     else if (atDesk && !fares) cue = `Train station. ${ticketHint(cityVaults)}.`;
     else if (atShop) cue = `${nearest.name} · coats for hire · E`;
+    else if (atCounter) cue = `${nearest.name} · crate, matches, exchange · E`;
+    else if (atBoard) cue = `${nearest.name} · contracts and the blitz · E`;
     else if (nearest && isScoutShop(nearest)) cue = `${formatDist(hud.nearestDist)} · brass awning, coats`;
+    else if (nearest && isCounter(nearest)) cue = `${formatDist(hud.nearestDist)} · street counter`;
+    else if (nearest && isBoard(nearest)) cue = `${formatDist(hud.nearestDist)} · notice board`;
     else if (seriesNear) {
       if (inReach && !haveKey) cue = `Need a ${TIER_LABEL[seriesNear.cost]} match for ${seriesNear.name}`;
       else if (armed) cue = `${seriesNear.name} · ${seriesNear.steps} trivia cards · E`;
@@ -135,13 +135,15 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
       <div className="hud-top flex flex-col-reverse items-stretch gap-2 pl-12 sm:flex-row sm:items-start sm:justify-between">
         <div className="hud-plate hud-status pointer-events-none min-w-0" data-testid="hud-status">
           <div className="flex items-start gap-3">
-            <div className="hud-compass" title={fares > 0 ? `Toward ${hud.deskName}` : "Toward your waypoint"} aria-hidden>
-              <i style={{ transform: `rotate(${hud.aimDeg}deg)` }} />
-            </div>
+            {fares > 0 || hud.routeStops > 0 ? (
+              <div className="hud-compass" title={fares > 0 ? `Toward ${hud.deskName}` : "Toward your stop"} aria-hidden>
+                <i style={{ transform: `rotate(${hud.aimDeg}deg)` }} />
+              </div>
+            ) : null}
             <div className="min-w-0">
           <p className="kicker">
             {city.name}
-            {fares === 0 ? ` · ${cityVaults}/${VAULTS_PER_FARE} ticket` : ""}
+            {fares === 0 ? ` · ticket ${cityVaults}/${VAULTS_PER_FARE}` : ""}
           </p>
           <p className="font-display flex items-center gap-2 text-3xl leading-none tabular-nums">
             <ItemIcon item="coin" size={28} />
@@ -152,22 +154,6 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
           </p>
             </div>
           </div>
-          {contract && nextName ? (
-            <p className="mt-1 truncate text-xs text-fg-muted">
-              <span className="kicker mr-1.5">Next</span>
-              {nextName}
-              <span className="tabular-nums text-fg-subtle">
-                {" "}
-                {contract.done.length}/{contract.ids.length}
-              </span>
-            </p>
-          ) : null}
-          {surveyLine ? (
-            <p className="mt-1 truncate text-xs text-fg-muted">
-              <span className="kicker mr-1.5">Goals</span>
-              {surveyLine}
-            </p>
-          ) : null}
           {hud.routeStops > 1 ? (
             <button type="button" className="fare-hint pointer-events-auto mt-1" onClick={onRoute}>
               <span className="kicker mr-1.5">Route</span>
@@ -185,12 +171,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
               <span className="kicker mr-1.5">Train</span>
               {hud.deskName} · T to board
             </p>
-          ) : (
-            <p className="mt-1 truncate text-xs text-fg-muted">
-              <span className="kicker mr-1.5">Train</span>
-              {ticketHint(cityVaults)}
-            </p>
-          )}
+          ) : null}
           <DailyHudLine />
           <MarketHudLine onWalk={onMarketWalk} />
         </div>
@@ -201,7 +182,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
           <button
             type="button"
             className="hud-plate is-kit pointer-events-auto"
-            onClick={() => replayTutorial()}
+            onClick={() => toggleGuide(true)}
             aria-label="How to play"
           >
             <CircleHelp className="size-4 text-fg-muted" strokeWidth={1.75} />
@@ -244,7 +225,8 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
 
       {busy ? null : (
         <div className="hud-dock">
-          <div className="flex flex-col items-start gap-2">
+          <div className="hud-tools">
+            <div className="hud-tool-row">
             <button
               type="button"
               className="key-belt pointer-events-auto"
@@ -269,31 +251,21 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
                 <span className="tabular-nums">{fares}</span>
               </span>
             </button>
-            <TouchPad onVector={onVector} stamina={hud.stamina} />
             <button
               type="button"
-              className={`hud-plate is-kit pointer-events-auto ${autoSprint ? "is-on" : ""}`}
-              onClick={onAutoSprint}
-              aria-pressed={autoSprint}
-              aria-label={autoSprint ? "Auto-sprint on" : "Auto-sprint off"}
-            >
-              <span className="kicker">Run</span>
-              <span className="block text-xs text-fg-muted">{autoSprint ? "On" : "Off"}</span>
-            </button>
-            <button
-              type="button"
-              className={`hud-plate is-kit pointer-events-auto ${hud.seated ? "is-cab" : ""}`}
+              className={`cab-chip pointer-events-auto ${hud.seated ? "is-on" : ""}`}
               onClick={onCab}
               aria-label={hud.seated ? "Park cab" : "Hail cab"}
             >
               <span className="kicker">{hud.seated ? "Park" : "Cab"}</span>
-              <span className="block text-xs text-fg-muted">F</span>
             </button>
+            </div>
+            <TouchPad onVector={onVector} />
           </div>
 
           <button
             type="button"
-            className={`sight pointer-events-auto ${armed ? "is-armed" : ""} ${inReach && !haveKey && !recasting && !isScoutShop(nearest) ? "is-need" : ""}`}
+            className={`sight pointer-events-auto ${armed ? "is-armed" : ""} ${inReach && !haveKey && !recasting && !service ? "is-need" : ""}`}
             onClick={onInteract}
             disabled={!nearest}
             data-testid="hud-sight"
@@ -306,7 +278,11 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
                       ? `${seriesNear.name} · ${seriesNear.steps} trivia cards`
                       : isScoutShop(nearest)
                         ? "Outfitter"
-                        : isFareDesk(nearest)
+                        : isCounter(nearest)
+                          ? "Counter"
+                          : isBoard(nearest)
+                            ? "Notice"
+                            : isFareDesk(nearest)
                         ? `Train station · ${KIND_LABEL[nearest.kind]}`
                         : `${TIER_LABEL[nearest.tier]} · ${KIND_LABEL[nearest.kind]}`}
                     {marketHere ? <span className="market-x" data-testid="market-lamp"> · {MARKET_TAG}</span> : null}
@@ -329,7 +305,7 @@ export function Hud({ onVector, onInteract, onCab, autoSprint, onAutoSprint, onT
             type="button"
             className={`act-btn pointer-events-auto ${canDesk ? "is-armed" : armed ? "is-armed" : ""}`}
             onClick={canDesk ? onTimetable : onInteract}
-            aria-label={canPunch ? "Board train" : canUnlock ? "Open timetable" : atShop ? "Open outfitter" : armed ? "Light lamp" : "Interact"}
+            aria-label={canPunch ? "Board train" : canUnlock ? "Open timetable" : atShop ? "Open outfitter" : atCounter ? "Open counter" : atBoard ? "Open notice" : armed ? "Light lamp" : "Interact"}
           >
             {canDesk ? "T" : "E"}
           </button>

@@ -188,7 +188,7 @@ export function simplifyLine(line: number[], tolM = 5): number[] {
 
 /** Lamps a market can double: every named mark except the outfitter (no trivia card there). */
 export function marketLamps(pois: Poi[]) {
-  return pois.filter((p) => p.kind !== "shop");
+  return pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board");
 }
 
 export type EligibleWhy = "ok" | "unnamed" | "class" | "freeway" | "unwalkable" | "underground" | "unreachable" | "short" | "no-lamps";

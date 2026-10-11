@@ -1,19 +1,18 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityShop } from "@/game/data";
-import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
-import { BLITZ_FULL, blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
-import { MATERIAL_LIST, TIERS } from "@/game/items";
+import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityBoard, cityCounter, cityShop } from "@/game/data";
+import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
+import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
+import { MATERIAL_LIST } from "@/game/items";
 import { INGREDIENTS, cityStaple, isPaintId, type IngredientId } from "@/game/ingredients";
 import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
-import { BANK_DOWN, BANK_UP, TIER_ORDER, TIER_VALUE, bankDownSpec, bankUpSpec } from "@/game/rewards";
-import { matchCap } from "@/game/ticket";
+import { BANK_DOWN, BANK_UP } from "@/game/rewards";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
 import { sfx } from "@/game/audio";
 import { fareDesk } from "@/game/ticket";
 import { useGame } from "@/game/store";
 import type { CharmId } from "@/game/types";
-import { CostIcons, ItemIcon } from "./ItemIcon";
+import { ItemIcon } from "./ItemIcon";
 import { AuthChip } from "./AuthChip";
 import { RollsBoard } from "./RollsBoard";
 import { DailyBoard } from "./DailyRun";
@@ -45,18 +44,10 @@ export function HqPanel() {
   const claimCircuit = useGame((s) => s.claimCircuit);
   const claimLongQuest = useGame((s) => s.claimLong);
   const wearCloth = useGame((s) => s.wearCloth);
-  const printNight = useGame((s) => s.printPattern);
   const charms = useGame((s) => s.charms);
   const equipped = useGame((s) => s.equipped);
-  const craft = useGame((s) => s.craft);
-  const equip = useGame((s) => s.equip);
-  const buyKiosk = useGame((s) => s.buyKiosk);
   const pressPass = useGame((s) => s.pressPass);
   const keys = useGame((s) => s.keys);
-  const claimCrate = useGame((s) => s.claimCrate);
-  const openBlitz = useGame((s) => s.openBlitz);
-  const bankUp = useGame((s) => s.bankUp);
-  const bankDown = useGame((s) => s.bankDown);
   const lastCrateDay = useGame((s) => s.lastCrateDay);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
   const blitzTake = useGame((s) => s.blitzTake);
@@ -65,19 +56,15 @@ export function HqPanel() {
   const vaultsOpened = useGame((s) => s.vaultsOpened);
   const distanceM = useGame((s) => s.distanceM);
   const bestStreak = useGame((s) => s.bestStreak);
-  const startContract = useGame((s) => s.startContract);
-  const contract = useGame((s) => s.contract);
   const fares = useGame((s) => s.fares);
-  const replayTutorial = useGame((s) => s.replayTutorial);
+  const toggleGuide = useGame((s) => s.toggleGuide);
   const city = CITIES[cityId];
   const desk = fareDesk(city);
   const survey = useGame((s) => s.survey);
   const today = new Date().toISOString().slice(0, 10);
-  const have = { brass, ink, vellum, schematics };
   const stock: Record<string, number> = { brass, ink, vellum, schematic: schematics };
   const claimed = lastCrateDay === today;
   const crateDay = claimed ? Math.max(1, crateStreak) : nextCrateStreak(lastCrateDay, crateStreak, today);
-  const loot = crateLoot(crateDay);
   const blitzReady = blitzDue(lastBlitzDay, today);
   const { market } = useMarket(cityId);
 
@@ -90,13 +77,13 @@ export function HqPanel() {
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Journal</p>
-            <h2 className="font-display text-xl leading-tight">Hideout · {city.name}</h2>
+            <h2 className="font-display text-xl leading-tight">Notes · {city.name}</h2>
             <button
               type="button"
               className="hq-howto mt-1 inline-flex min-h-8 items-center text-xs text-fg-subtle underline-offset-2 hover:text-fg-muted hover:underline"
               onClick={() => {
                 sfx.ui();
-                replayTutorial();
+                toggleGuide(true);
               }}
             >
               How to play
@@ -139,13 +126,37 @@ export function HqPanel() {
                     <ItemIcon item={p.tier} size={36} />
                     <div className="hq-row-copy">
                       <p className="kicker">
-                        {p.kind === "shop" ? "Outfitter" : `${TIER_LABEL[p.tier]} · ${KIND_LABEL[p.kind]}`}
+                        {p.kind === "shop"
+                          ? "Outfitter"
+                          : p.kind === "counter"
+                            ? "Counter"
+                            : p.kind === "board"
+                              ? "Notice"
+                              : `${TIER_LABEL[p.tier]} · ${KIND_LABEL[p.kind]}`}
                         {p.printShop ? " · Print" : ""}
                         {market?.street.lamps.includes(p.id) ? <span className="market-x"> · {MARKET_TAG}</span> : null}
                       </p>
-                      <p className="hq-row-title">{known ? p.name : p.kind === "shop" ? "Undiscovered outfitter" : "Undiscovered lamp"}</p>
+                      <p className="hq-row-title">
+                        {known
+                          ? p.name
+                          : p.kind === "shop"
+                            ? "Undiscovered outfitter"
+                            : p.kind === "counter"
+                              ? "Undiscovered counter"
+                              : p.kind === "board"
+                                ? "Undiscovered notice"
+                                : "Undiscovered lamp"}
+                      </p>
                       <p className="hq-row-sub">
-                        {known ? p.lore : p.kind === "shop" ? "Look for the brass awning on the street." : "Walk up to it to add it to Places."}
+                        {known
+                          ? p.lore
+                          : p.kind === "shop"
+                            ? "Look for the brass awning on the street."
+                            : p.kind === "counter"
+                              ? "A street counter. Matches, the crate, and the exchange."
+                              : p.kind === "board"
+                                ? "A notice board. Contracts and the day's blitz."
+                                : "Walk up to it to add it to Places."}
                       </p>
                     </div>
                   </li>
@@ -170,7 +181,7 @@ export function HqPanel() {
                 ))}
               </ul>
               <p className="kicker mt-2">Press stock</p>
-              <p className="hq-row-sub">Green vaults and up drop this city's ingredient. A few landmarks drop a ward cut from amber up. Print spends one. Every vault also drops a can of its own paint — rarer colours, much less often — and, about 1 in 10,000, prism from any colour. The vat is under Wardrobe.</p>
+              <p className="hq-row-sub">Green vaults and up drop this city's ingredient. Print, paint, and charms are at {cityShop(cityId)?.name ?? "the outfitter"}.</p>
               <ul className="grid gap-2">
                 {(Object.keys(pantry) as IngredientId[])
                   .filter((id) => (pantry[id] ?? 0) > 0 && !isPaintId(id))
@@ -188,7 +199,7 @@ export function HqPanel() {
                   ))}
               </ul>
               <p className="kicker mt-2">Desk tray</p>
-              <p className="text-sm text-fg-muted">Coin for the ward — not another coat.</p>
+              <p className="text-sm text-fg-muted">Buy these at {cityCounter(cityId)?.name ?? "the street counter"}.</p>
               {(Object.values(KIOSK) as (typeof KIOSK)[keyof typeof KIOSK][]).map((item) => {
                 const extra =
                   item.id === "pass" && pressPass > 0
@@ -211,41 +222,27 @@ export function HqPanel() {
                       <p className="hq-row-title">{item.name}</p>
                       <p className="hq-row-sub">{item.blurb}</p>
                       {extra ? <p className="hq-row-sub">{extra}</p> : null}
-                      <div className="hq-row-actions">
-                        <button
-                          type="button"
-                          className={`btn shrink-0 px-3 text-xs ${points >= item.cost ? "btn-primary" : "btn-quiet"}`}
-                          onClick={() => buyKiosk(item.id)}
-                        >
-                          <ItemIcon item="coin" size={18} />
-                          {item.cost.toLocaleString()}
-                        </button>
-                      </div>
-                    </div>
                   </div>
+                </div>
                 );
               })}
               <p className="kicker mt-2">Scouts</p>
               <p className="text-sm text-fg-muted">
-                Coats are hired at {cityShop(cityId)?.name ?? "the outfitter"} — the brass awning on the street. You can still change here.
+                Hire and change coats at {cityShop(cityId)?.name ?? "the outfitter"}.
               </p>
               <ScoutRoster hire={false} />
               <p className="kicker mt-2">Wardrobe</p>
               <p className="text-sm text-fg-muted">
-                Coats and lantern skins are printed at {cityShop(cityId)?.name ?? "the outfitter"} for white and blue matches. What you own, you can put on or take off here.
+                Printed and worn at {cityShop(cityId)?.name ?? "the outfitter"}. The journal only keeps the list.
               </p>
               <PrintShop counter={false} />
               <p className="kicker mt-2">Charms</p>
+              <p className="text-sm text-fg-muted">Printed at {cityShop(cityId)?.name ?? "the outfitter"}. Equip one from the satchel.</p>
               {quests.patterns > 0 && !quests.cloths.includes("night-glass") ? (
                 <div className="hq-row">
                   <div className="hq-row-copy">
                     <p className="hq-row-title">Night glass ×{quests.patterns}</p>
-                    <p className="hq-row-sub">Print spends the pattern and one {INGREDIENTS[cityStaple(cityId)].name}.</p>
-                    <div className="hq-row-actions">
-                      <button type="button" className="btn btn-quiet px-3 text-xs" onClick={() => printNight()}>
-                        Print
-                      </button>
-                    </div>
+                    <p className="hq-row-sub">Print it at {cityShop(cityId)?.name ?? "the outfitter"}. One {INGREDIENTS[cityStaple(cityId)].name}.</p>
                   </div>
                 </div>
               ) : null}
@@ -256,28 +253,11 @@ export function HqPanel() {
                   <div key={id} className="hq-row">
                     <ItemIcon item={id} size={40} />
                     <div className="hq-row-copy">
-                      <p className="hq-row-title">{c.name}</p>
-                      <p className="hq-row-sub">{c.blurb} Print also spends one {INGREDIENTS[cityStaple(cityId)].name}.</p>
-                      {owned ? null : (
-                        <div className="mt-2">
-                          <CostIcons cost={c.cost} have={have} />
-                        </div>
-                      )}
-                      <div className="hq-row-actions">
-                        {owned ? (
-                          <button
-                            type="button"
-                            className={`btn ${equipped === id ? "btn-primary" : "btn-ghost"} px-3 text-xs`}
-                            onClick={() => equip(equipped === id ? null : id)}
-                          >
-                            {equipped === id ? "Equipped" : "Equip"}
-                          </button>
-                        ) : (
-                          <button type="button" className="btn btn-quiet px-3 text-xs" onClick={() => craft(id)}>
-                            Print
-                          </button>
-                        )}
-                      </div>
+                      <p className="hq-row-title">
+                        {c.name}
+                        {owned && equipped === id ? " · on" : ""}
+                      </p>
+                      <p className="hq-row-sub">{owned ? c.blurb : `Not printed. ${c.blurb}`}</p>
                     </div>
                   </div>
                 );
@@ -299,54 +279,27 @@ export function HqPanel() {
             <div className="grid gap-4 text-sm">
               <div>
                 <p className="kicker">Quests</p>
-                <button
-                  type="button"
-                  className="hq-row mt-2 w-full text-left disabled:opacity-70"
-                  disabled={!blitzReady}
-                  onClick={() => {
-                    sfx.ui();
-                    openBlitz();
-                  }}
-                >
-                  <ItemIcon item="coin" size={40} />
-                  <div className="hq-row-copy">
-                    <p className="hq-row-title">{blitzReady ? "Daily Blitz" : "Daily Blitz done"}</p>
-                    <p className="hq-row-sub">
-                      {blitzReady
-                        ? `Six lanterns, white to violet. Coin and a match each. A miss keeps both. Full clear ${BLITZ_FULL}.`
-                        : blitzTake > 0 || blitzMatches.length > 0
-                          ? `+${blitzTakeLine(blitzTake, blitzMatches)} today. The next ladder is tomorrow.`
-                          : "Played today. The next ladder is tomorrow."}
-                    </p>
-                  </div>
-                </button>
+                <p className="mt-1 text-xs text-fg-muted">
+                  {blitzReady
+                    ? `Daily Blitz is posted at ${cityBoard(cityId)?.name ?? "the notice board"}.`
+                    : blitzTake > 0 || blitzMatches.length > 0
+                      ? `Blitz today: +${blitzTakeLine(blitzTake, blitzMatches)}.`
+                      : "Blitz played today."}
+                </p>
               </div>
-              <button
-                type="button"
-                className="hq-row w-full text-left disabled:opacity-70"
-                disabled={claimed}
-                onClick={claimCrate}
-              >
+              <div className="hq-row">
                 <ItemIcon item="crate" size={40} />
                 <div className="hq-row-copy">
-                  <p className="hq-row-title">{claimed ? `Day ${crateDay} claimed` : `Claim day ${crateDay} crate`}</p>
+                  <p className="hq-row-title">{claimed ? `Day ${crateDay} claimed` : `Day ${crateDay} crate is at the counter`}</p>
                   <p className="hq-row-sub">
-                    Login streak {crateDay}/{CRATE_MAX}. One missed day is forgiven.
-                    {crateDay >= 30 ? " A violet is in the box." : ""}
-                  </p>
-                  <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
-                    {TIERS.filter((t) => loot[t] > 0).map((t) => (
-                      <span key={t} className="inline-flex items-center gap-1">
-                        <ItemIcon item={t} size={22} />
-                        {loot[t]} {TIER_LABEL[t]}
-                      </span>
-                    ))}
+                    {cityCounter(cityId)?.name ?? "The street counter"}. Login streak {crateDay}/{CRATE_MAX}.
                   </p>
                 </div>
-              </button>
+              </div>
               <PassProgressRow />
               <FriendJournalRow />
               <QuestDesk
+                act={false}
                 cityId={cityId}
                 cityName={city.name}
                 staple={pantry[cityStaple(cityId)] ?? 0}
@@ -362,66 +315,8 @@ export function HqPanel() {
               <div>
                 <p className="kicker mt-2">Bank</p>
                 <p className="mt-1 text-xs text-fg-muted">
-                  Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower, none. White {TIER_VALUE.white} coin.
+                  The exchange is at {cityCounter(cityId)?.name ?? "the street counter"}. Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower.
                 </p>
-                <p className="mt-3 text-xs text-fg-muted">
-                  Trivia: three in a row pays a white match. Under 3 seconds pays +5 coin. First correct of a topic each UTC day pays a white, three topics a day.
-                </p>
-                <ul className="mt-2 grid gap-2">
-                  {TIER_ORDER.map((tier) => {
-                    const up = bankUpSpec(tier);
-                    const down = bankDownSpec(tier);
-                    if (!up && !down) return null;
-                    const have = keys[tier] ?? 0;
-                    return (
-                      <li key={tier} className="hq-row">
-                        <ItemIcon item={tier} size={36} />
-                        <div className="hq-row-copy">
-                          <p className="hq-row-title">
-                            {TIER_LABEL[tier]} <span className="tabular-nums text-fg-muted">×{have}</span>
-                          </p>
-                          <p className="hq-row-sub">
-                            {up
-                              ? `${up.payN} of these craft 1 ${TIER_LABEL[up.get]}. Taxed.`
-                              : down
-                                ? `1 breaks into ${down.getN} ${TIER_LABEL[down.get]}. No tax.`
-                                : "Held."}
-                          </p>
-                          <div className="hq-row-actions">
-                        {up ? (
-                          <button
-                            type="button"
-                            className="btn btn-quiet px-3 text-xs"
-                            disabled={have < up.payN || (keys[up.get] ?? 0) + up.getN > matchCap(up.get)}
-                            aria-label={`Craft ${up.payN} ${TIER_LABEL[tier]} to 1 ${TIER_LABEL[up.get]}`}
-                            onClick={() => {
-                              sfx.ui();
-                              bankUp(tier);
-                            }}
-                          >
-                            {up.payN} {TIER_LABEL[tier]} → 1 {TIER_LABEL[up.get]}
-                          </button>
-                        ) : null}
-                        {down ? (
-                          <button
-                            type="button"
-                            className="btn btn-quiet px-3 text-xs"
-                            disabled={have < down.payN || (keys[down.get] ?? 0) + down.getN > matchCap(down.get)}
-                            aria-label={`Break 1 ${TIER_LABEL[tier]} to ${down.getN} ${TIER_LABEL[down.get]}`}
-                            onClick={() => {
-                              sfx.ui();
-                              bankDown(tier);
-                            }}
-                          >
-                            1 {TIER_LABEL[tier]} → {down.getN} {TIER_LABEL[down.get]}
-                          </button>
-                        ) : null}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
               </div>
               <ul className="hq-stats">
                 <li className="hq-row">
@@ -489,25 +384,9 @@ export function HqPanel() {
                   );
                 })}
               </ul>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button type="button" className="btn btn-ghost" onClick={startContract}>
-                  {contract ? "Reroll contract" : "Take a contract"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-quiet"
-                  onClick={() => {
-                    toggleHq(false);
-                    sfx.ui();
-                    useGame.setState({ toast: `Walk to ${desk.name}. Board the train there.` });
-                  }}
-                >
-                  Other wards
-                </button>
-              </div>
               <p className="text-xs text-fg-subtle">
-                The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
-                {desk.name}. The clock runs while you’re away. You walk from the far station. The cab stays.
+                Contracts are taken at {cityBoard(cityId)?.name ?? "the notice board"}. The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
+                {desk.name}.
               </p>
             </div>
           ) : null}
@@ -517,7 +396,8 @@ export function HqPanel() {
   );
 }
 
-function QuestDesk({
+export function QuestDesk({
+  act,
   cityId,
   cityName,
   staple,
@@ -530,6 +410,7 @@ function QuestDesk({
   onLong,
   onWear,
 }: {
+  act: boolean;
   cityId: import("@/game/types").CityId;
   cityName: string;
   staple: number;
@@ -556,9 +437,13 @@ function QuestDesk({
             <p className="hq-row-title">{errand.title}</p>
             <p className="hq-row-sub">{errand.sub}</p>
             <div className="hq-row-actions">
-              <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!ready} onClick={onErrand}>
-                {ready ? "Take stock" : "In progress"}
-              </button>
+              {act ? (
+                <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!ready} onClick={onErrand}>
+                  {ready ? "Take stock" : "In progress"}
+                </button>
+              ) : (
+                <p className="text-xs text-fg-subtle">{ready ? "Ready at the notice board." : "In progress."}</p>
+              )}
             </div>
           </div>
         </div>
@@ -570,13 +455,16 @@ function QuestDesk({
                 ? "Scarf claimed."
                 : `Red ${cityCircuit?.red ? "yes" : "no"} · ward ${cityCircuit?.ward ? "yes" : "no"} · ${stapleName} ${staple}/3 · charm ${cityCircuit?.printed || charms > 0 ? "yes" : "no"}.`}
             </p>
-            {cityCircuit?.claimed ? null : (
+            {cityCircuit?.claimed || !act ? null : (
               <div className="hq-row-actions">
                 <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!circuit} onClick={onCircuit}>
                   Claim scarf
                 </button>
               </div>
             )}
+            {!act && !cityCircuit?.claimed ? (
+              <p className="hq-row-sub">{circuit ? "Ready at the notice board." : "Still out."}</p>
+            ) : null}
           </div>
         </div>
         {(Object.keys(LONG_COPY) as LongId[]).map((id) => {
@@ -590,13 +478,14 @@ function QuestDesk({
                 <p className="hq-row-sub">
                   {copy.sub} {shown}.
                 </p>
-                {row.done ? null : (
+                {row.done || !act ? null : (
                   <div className="hq-row-actions">
                     <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!row.ready} onClick={() => onLong(id)}>
                       {row.ready ? "Claim" : "In progress"}
                     </button>
                   </div>
                 )}
+                {!act && !row.done ? <p className="hq-row-sub">{row.ready ? "Ready at the notice board." : "In progress."}</p> : null}
               </div>
             </div>
           );
@@ -616,7 +505,7 @@ function QuestDesk({
                   {worn ? " · worn" : ""}
                 </p>
                 <p className="hq-row-sub">{owned ? clothPerk(id) : clothEarn(id)}</p>
-                {owned ? (
+                {owned && act ? (
                   <div className="hq-row-actions">
                     <button
                       type="button"
@@ -627,7 +516,7 @@ function QuestDesk({
                     </button>
                   </div>
                 ) : (
-                  <p className="hq-row-sub">Not in the closet.</p>
+                  <p className="hq-row-sub">{owned ? (worn ? "Worn." : "In the closet. Put it on at the notice board.") : "Not in the closet."}</p>
                 )}
               </div>
             </div>

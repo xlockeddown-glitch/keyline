@@ -7,7 +7,7 @@ import { useGame } from "@/game/store";
  * The vat. A vault sometimes drops a can of its own colour — rarer colours, much less often.
  * Prism can drop from any colour, about 1 in 10,000. A coat and the street vaults take a set number.
  */
-export function PaintVat() {
+export function PaintVat({ counter }: { counter: boolean }) {
   const pantry = useGame((s) => s.pantry);
   const paints = useGame((s) => s.paints);
   const mix = useGame((s) => s.mixPaint);
@@ -38,7 +38,7 @@ export function PaintVat() {
     <section className="grid gap-2" data-testid="paint-vat">
       <p className="kicker mt-2">The vat</p>
       <p className="text-sm text-pretty text-fg-muted">
-        A vault sometimes drops a can of its own colour. White is common. Each colour after that drops much less often, and red and violet almost never do. Prism can drop from any colour, about 1 in {ULTRA_DROP_IN.toLocaleString()}. A coat and the street vaults each take a set number of that colour. The glass still shows what the lamp costs.
+        A vault sometimes drops a can of its own colour. White is about 1 in 2. Each step after that is about twice as rare, up to violet at 1 in 80. Prism can drop from any colour, about 1 in {ULTRA_DROP_IN.toLocaleString()}. A coat and the street vaults each take a set number of that colour. The glass still shows what the lamp costs.
       </p>
       {PAINT_COLORS.map((color) => {
         const use = PAINT_USE[color];
@@ -54,8 +54,14 @@ export function PaintVat() {
                 {color === "prism" ? `1 in ${ULTRA_DROP_IN.toLocaleString()}. Any vault.` : `1 in ${PAINT_DROP_IN[color]}.`} Coat {use.coat}. Vaults {use.vault}.
               </p>
               <div className="hq-row-actions">
-                {jobButton(color, "coat")}
-                {jobButton(color, "vault")}
+                {counter ? (
+                  <>
+                    {jobButton(color, "coat")}
+                    {jobButton(color, "vault")}
+                  </>
+                ) : (
+                  <p className="text-xs text-fg-subtle">Mix it at the outfitter.</p>
+                )}
               </div>
             </div>
           </div>

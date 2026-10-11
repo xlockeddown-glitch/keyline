@@ -61,6 +61,13 @@ export type GradeResult =
       credited: boolean;
       /** True when this token had already been graded: the first result stands and nothing is credited. */
       replay: boolean;
+      /**
+       * Present only when the server rolled this clear's paint. An empty list means it rolled and
+       * nothing dropped. Absent means the browser rolls at the posted rate (a guest, a spark, or a
+       * Run/Stack card that isn't the last). The shadow, if any, is already in the roll — the list
+       * is just the cans.
+       */
+      paints?: string[];
     }
   | { ok: false; reason: "bad-token" | "not-yours" | "unknown-card" | "slow" };
 

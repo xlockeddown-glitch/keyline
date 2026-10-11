@@ -15,20 +15,13 @@ type Phase = "intro" | "dealing" | "card" | "grading" | "reveal" | "result";
 type Ending = "clear" | "miss" | "left" | "office";
 
 /**
- * Daily Blitz: the login coin, as a six-lantern run. Opens once when the walker
- * enters the city, and again from Journal · Progress until today's run starts.
+ * Daily Blitz: six lanterns, posted on the city's notice board. It no longer opens itself when you walk into town.
  */
 export function DailyBlitz() {
   const open = useGame((s) => s.blitzOpen);
-  const screen = useGame((s) => s.screen);
-  const howtoDone = useGame((s) => s.howtoDone);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
   const blitzTake = useGame((s) => s.blitzTake);
   const blitzMatches = useGame((s) => s.blitzMatches);
-  const openVault = useGame((s) => s.openVault);
-  const hqOpen = useGame((s) => s.hqOpen);
-  const offered = useRef(false);
-
   const [phase, setPhase] = useState<Phase>("intro");
   const [step, setStep] = useState(0);
   const [card, setCard] = useState<PublicCard | null>(null);
@@ -40,16 +33,6 @@ export function DailyBlitz() {
   const [reveal, setReveal] = useState<{ correct: boolean; answer: string; fact?: string; match?: boolean; overflow?: number } | null>(null);
   const gen = useRef(0);
   const grading = useRef(false);
-
-  useEffect(() => {
-    if (offered.current) return;
-    if (screen !== "play" || !howtoDone) return;
-    if (openVault || hqOpen) return;
-    const today = new Date().toISOString().slice(0, 10);
-    if (!blitzDue(lastBlitzDay, today)) return;
-    offered.current = true;
-    useGame.getState().openBlitz();
-  }, [screen, howtoDone, openVault, hqOpen, lastBlitzDay]);
 
   useEffect(() => {
     if (!open) {

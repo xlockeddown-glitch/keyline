@@ -1,8 +1,10 @@
-import { cityShop, SCOUTS } from "@/game/data";
+import { CHARMS, cityShop, SCOUTS } from "@/game/data";
 import { CATALOGUE, owing, payable, priceLine, type Cosmetic, type CosmeticSlot } from "@/game/cosmetics";
+import { INGREDIENTS, cityStaple } from "@/game/ingredients";
 import { vaultPinHtml } from "@/game/pins";
 import { useGame } from "@/game/store";
-import { ItemIcon } from "./ItemIcon";
+import type { CharmId } from "@/game/types";
+import { CostIcons, ItemIcon } from "./ItemIcon";
 import { PaintVat } from "./PaintVat";
 
 const LAMP = vaultPinHtml({ tier: "blue" });
@@ -77,7 +79,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
               {stockWorn ? <span className="ml-2 kicker">Wearing</span> : null}
             </p>
             <p className="hq-row-sub">{slot === "coat" ? "The coat every walker starts in." : "The city's own lamps: brass caps and posts."}</p>
-            {stockWorn ? null : (
+            {stockWorn || !counter ? null : (
               <div className="hq-row-actions">
                 <button type="button" className="btn btn-ghost px-3 text-xs" onClick={() => wearCosmetic(slot, null)}>
                   {slot === "coat" ? "Back to own coat" : "Back to brass"}
@@ -116,7 +118,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
                   </div>
                 )}
                 <div className="hq-row-actions">
-                  {owned ? (
+                  {owned && counter ? (
                     <button
                       type="button"
                       className={`btn ${wearing ? "btn-primary" : "btn-ghost"} px-3 text-xs`}
@@ -124,6 +126,8 @@ export function PrintShop({ counter }: { counter: boolean }) {
                     >
                       {wearing ? "Take off" : "Wear"}
                     </button>
+                  ) : owned ? (
+                    <p className="text-xs text-fg-subtle">{wearing ? "Wearing." : shop ? `Put it on at ${shop.name}` : "Put it on at the outfitter"}</p>
                   ) : counter ? (
                     take.white + take.blue > 0 ? (
                       <button type="button" className="btn btn-primary px-3 text-xs" onClick={() => payCosmetic(c.id)}>
@@ -169,7 +173,66 @@ export function PrintShop({ counter }: { counter: boolean }) {
       ) : null}
       {section("coat", "Coats", "Dyed and re-cut for whoever you walk as. Every character wears it, walking and standing. Looks only — no perk.")}
       {section("lantern", "Lantern skins", "Re-cases every street lamp in a new metal. The glass keeps its match colour, so a lamp's cost still reads at a glance.")}
-      <PaintVat />
+      <PaintVat counter={counter} />
+      {counter ? <CharmPress /> : null}
     </div>
+  );
+}
+
+function CharmPress() {
+  const cityId = useGame((s) => s.cityId);
+  const charms = useGame((s) => s.charms);
+  const craft = useGame((s) => s.craft);
+  const quests = useGame((s) => s.quests);
+  const printNight = useGame((s) => s.printPattern);
+  const brass = useGame((s) => s.brass);
+  const ink = useGame((s) => s.ink);
+  const vellum = useGame((s) => s.vellum);
+  const schematics = useGame((s) => s.schematics);
+  const have = { brass, ink, vellum, schematics };
+  return (
+    <section className="grid gap-2">
+      <p className="kicker mt-2">Charms</p>
+      <p className="text-sm text-fg-muted">Print spends the stock and one {INGREDIENTS[cityStaple(cityId)].name}. Equip it from the satchel.</p>
+      {quests.patterns > 0 && !quests.cloths.includes("night-glass") ? (
+        <div className="hq-row">
+          <div className="hq-row-copy">
+            <p className="hq-row-title">Night glass ×{quests.patterns}</p>
+            <div className="hq-row-actions">
+              <button type="button" className="btn btn-quiet px-3 text-xs" onClick={() => printNight()}>
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {(Object.keys(CHARMS) as CharmId[]).map((id) => {
+        const c = CHARMS[id];
+        const owned = charms.includes(id);
+        return (
+          <div key={id} className="hq-row">
+            <ItemIcon item={id} size={36} />
+            <div className="hq-row-copy">
+              <p className="hq-row-title">{c.name}</p>
+              <p className="hq-row-sub">{c.blurb}</p>
+              {owned ? (
+                <p className="hq-row-sub">Printed.</p>
+              ) : (
+                <>
+                  <div className="mt-2">
+                    <CostIcons cost={c.cost} have={have} />
+                  </div>
+                  <div className="hq-row-actions">
+                    <button type="button" className="btn btn-quiet px-3 text-xs" onClick={() => craft(id)}>
+                      Print
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </section>
   );
 }

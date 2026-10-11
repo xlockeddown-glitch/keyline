@@ -40,13 +40,19 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
                   {wearing ? <p className="mt-1 kicker">{s.bed}</p> : null}
                 </div>
                 {owned ? (
-                  <button
-                    type="button"
-                    className={`btn ${wearing ? "btn-primary" : "btn-ghost"} px-3 text-xs`}
-                    onClick={() => wearScout(s.id)}
-                  >
-                    {wearing ? "Walking" : "Walk"}
-                  </button>
+                  hire ? (
+                    <button
+                      type="button"
+                      className={`btn ${wearing ? "btn-primary" : "btn-ghost"} px-3 text-xs`}
+                      onClick={() => wearScout(s.id)}
+                    >
+                      {wearing ? "Walking" : "Walk"}
+                    </button>
+                  ) : (
+                    <p className="shrink-0 self-center text-xs text-fg-subtle">
+                      {wearing ? "Walking" : shop ? `Change at ${shop.name}` : "At the outfitter"}
+                    </p>
+                  )
                 ) : hire ? (
                   <button
                     type="button"
