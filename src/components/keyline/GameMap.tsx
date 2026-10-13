@@ -1023,7 +1023,7 @@ export function GameMap() {
         return hit ? clearOfFreeway(g, { lat: hit.lat, lng: hit.lng }) : null;
       };
       let street = snapStart(180);
-      if ((!street || distM(street, from) > 36) && !graphCovers(g, from.lat, from.lng, 250)) {
+      if ((!street || distM(street.lat, street.lng, from.lat, from.lng) > 36) && !graphCovers(g, from.lat, from.lng, 250)) {
         try {
           await expandGraph(g, from.lat, from.lng, 1400, abortRef.current?.signal);
         } catch {
@@ -1032,7 +1032,7 @@ export function GameMap() {
         if (destSeq.current !== seq || mapRef.current !== map) return;
         street = snapStart(700) ?? street;
       }
-      if (street && (distM(street, from) <= 36 || !hopTouchesFreeway(g, from, street))) walkFrom = street;
+      if (street && (distM(street.lat, street.lng, from.lat, from.lng) <= 36 || !hopTouchesFreeway(g, from, street))) walkFrom = street;
     }
     const apply = (raw: Pt[] | null) => {
       let path = seated ? raw : finishPath(raw, cut ? from : walkFrom, arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });

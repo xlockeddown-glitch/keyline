@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { DYE_TARGETS, recolorSheet, type SheetKind } from "./dyeRecolor.ts";
 
 function pythonSheet(scout: string, kind: SheetKind, dye: string): { w: number; h: number; src: Buffer; out: Buffer } {
@@ -8,7 +9,7 @@ function pythonSheet(scout: string, kind: SheetKind, dye: string): { w: number; 
 import base64, importlib.util
 from pathlib import Path
 from PIL import Image
-ROOT = Path("/workspace")
+ROOT = Path(${JSON.stringify(fileURLToPath(new URL("../..", import.meta.url)))})
 def load(name, file):
     spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / file)
     mod = importlib.util.module_from_spec(spec)

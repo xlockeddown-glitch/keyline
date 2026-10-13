@@ -13,6 +13,7 @@ export const GREEN_POCKET = 1;
  * Every other source still stops at WHITE_POCKET.
  */
 export const RIDE_WHITE_POCKET = 15;
+export const SPARK_DAY = 6;
 /** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line. */
 export const FARE_MAX_MS = 11 * 60_000;
 /** A violet lamp stays dark for six hours after it pays. */
