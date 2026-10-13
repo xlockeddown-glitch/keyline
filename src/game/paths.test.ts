@@ -315,6 +315,9 @@ test("a north hold stops at the end of the curb instead of bouncing back", () =>
   const back = (p.lat - start.lat) * 111_320;
   assert.ok(far > 10, `never got going (${far.toFixed(1)} m)`);
   assert.ok(back > far - 2.5, `bounced back to ${back.toFixed(1)} m after reaching ${far.toFixed(1)} m`);
+  let backSouth = p;
+  for (let i = 0; i < 20; i++) backSouth = constrainStep(g, backSouth.lat, backSouth.lng, Math.PI, 2, true);
+  assert.ok((p.lat - backSouth.lat) * 111_320 > 8, "aiming back down the curb leaves the dead end");
 });
 
 test("a fresh stand steps back when north dies in a few metres", () => {

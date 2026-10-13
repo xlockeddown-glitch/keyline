@@ -95,6 +95,25 @@
   display:none
 }
 
+.board-pin{
+  width:32px;
+  height:64px;
+  background:url("/sprites/notice-board.png") center bottom / contain no-repeat;
+  filter:drop-shadow(0 2px 1px #0000008c)
+}
+.counter-pin{
+  width:46px;
+  height:58px;
+  background:url("/sprites/street-counter.png") center bottom / contain no-repeat;
+  filter:drop-shadow(0 2px 1px #0000008c)
+}
+.board-pin .service-sign,
+.board-pin .service-post,
+.counter-pin .service-sign,
+.counter-pin .service-post{
+  display:none
+}
+
 .print-front{
   display:grid;
   place-items:end center;

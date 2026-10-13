@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, cityBoard, cityCounter, cityShop } from "@/game/data";
+import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { MATERIAL_LIST } from "@/game/items";
@@ -199,7 +199,7 @@ export function HqPanel() {
                   ))}
               </ul>
               <p className="kicker mt-2">Desk tray</p>
-              <p className="text-sm text-fg-muted">Buy these at {cityCounter(cityId)?.name ?? "the street counter"}.</p>
+              <p className="text-sm text-fg-muted">Buy these at {counterLine(cityId)}.</p>
               {(Object.values(KIOSK) as (typeof KIOSK)[keyof typeof KIOSK][]).map((item) => {
                 const extra =
                   item.id === "pass" && pressPass > 0
@@ -281,7 +281,7 @@ export function HqPanel() {
                 <p className="kicker">Quests</p>
                 <p className="mt-1 text-xs text-fg-muted">
                   {blitzReady
-                    ? `Daily Blitz is posted at ${cityBoard(cityId)?.name ?? "the notice board"}.`
+                    ? `Daily Blitz is posted at ${boardLine(cityId)}.`
                     : blitzTake > 0 || blitzMatches.length > 0
                       ? `Blitz today: +${blitzTakeLine(blitzTake, blitzMatches)}.`
                       : "Blitz played today."}
@@ -292,7 +292,7 @@ export function HqPanel() {
                 <div className="hq-row-copy">
                   <p className="hq-row-title">{claimed ? `Day ${crateDay} claimed` : `Day ${crateDay} crate is at the counter`}</p>
                   <p className="hq-row-sub">
-                    {cityCounter(cityId)?.name ?? "The street counter"}. Login streak {crateDay}/{CRATE_MAX}.
+                    At {counterLine(cityId)}. Login streak {crateDay}/{CRATE_MAX}.
                   </p>
                 </div>
               </div>
@@ -315,7 +315,7 @@ export function HqPanel() {
               <div>
                 <p className="kicker mt-2">Bank</p>
                 <p className="mt-1 text-xs text-fg-muted">
-                  The exchange is at {cityCounter(cityId)?.name ?? "the street counter"}. Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower.
+                  The exchange is at {counterLine(cityId)}. Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower.
                 </p>
               </div>
               <ul className="hq-stats">
@@ -385,7 +385,7 @@ export function HqPanel() {
                 })}
               </ul>
               <p className="text-xs text-fg-subtle">
-                Contracts are taken at {cityBoard(cityId)?.name ?? "the notice board"}. The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
+                Contracts are taken at {boardLine(cityId)}. The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
                 {desk.name}.
               </p>
             </div>

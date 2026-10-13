@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.75";
+export const APP_VERSION = "0.0.76";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k75a";
+export const PUBLISH_STAMP = "k76a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -78,3 +78,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.73: Help lists what each colour of lamp pays — coin from a slow answer to a perfect one, paint odds, brass, stock, schematic, and how long it stays dark. The numbers are the lamp's own payout. Once you've lit any, the row also says how many of that colour this save has lit, and about how many cans that is worth (k73a).
 // 0.0.74: paint drops stay rarer as the colour climbs, but the top of the ladder is a find you can actually hold. White 1 in 2, then 5, 10, 20, 40, and violet 1 in 80. Prism stays 1 in 10,000. Coin is unchanged (k74a).
 // 0.0.75: a hidden nudge for the rarer cans. Green through violet, and prism, stay on the posted rate until five other signed-in walkers have found that can. After that, a walker who has gone more than one standard deviation past the average those players took rolls a higher chance — one extra deviation doubles it, and it never passes four times the posted rate. The Help chart does not change. Guests stay on the posted rate. White and blue are not nudged (k75a).
+// 0.0.76: a tap still walks you when you're off the street. The route joins the nearest clear street, and you cross the open ground to meet it, unless that line would step on a freeway. A dead-end curb no longer traps you: aim back down the street and you leave. Holding into the end still stops, it doesn't bounce (k76a).

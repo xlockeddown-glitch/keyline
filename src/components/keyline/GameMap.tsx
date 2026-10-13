@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isCounter, isScoutShop, walkSpeed } from "@/game/data";
-import { seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
+import { boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { reach, useGame } from "@/game/store";
@@ -842,6 +842,14 @@ export function GameMap() {
             if (g) placeOnStreet(g, lat, lng);
             mapRef.current?.setView([pos.current.lat, pos.current.lng], mapRef.current.getZoom());
           },
+          stand: (lat: number, lng: number) => {
+            clearRoute();
+            pos.current.lat = lat;
+            pos.current.lng = lng;
+            pos.current.speed = 0;
+            playerMarker.current?.setLatLng([lat, lng]);
+            mapRef.current?.setView([lat, lng], mapRef.current.getZoom());
+          },
         };
       }
       paintWard(L, map);
@@ -1006,10 +1014,35 @@ export function GameMap() {
     const walkTo = seated || cut ? (seated ? snapped : target) : snapped;
     const arrive = door && !cut && !seated ? target : walkTo;
     // The walk starts on the closest street that isn't under or beside a freeway, ramp or feeder.
-    const walkFrom = g && !seated ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140, from)) : from;
+    // A walker already in a field (no street within a block) still gets the nearest clear street,
+    // so the route can begin and they can walk across open ground to join it.
+    let walkFrom = from;
+    if (g && !seated) {
+      const snapStart = (max: number) => {
+        const hit = nearest(g, from.lat, from.lng, max);
+        return hit ? clearOfFreeway(g, { lat: hit.lat, lng: hit.lng }) : null;
+      };
+      let street = snapStart(180);
+      if ((!street || distM(street, from) > 36) && !graphCovers(g, from.lat, from.lng, 250)) {
+        try {
+          await expandGraph(g, from.lat, from.lng, 1400, abortRef.current?.signal);
+        } catch {
+          /* the streets already loaded still count */
+        }
+        if (destSeq.current !== seq || mapRef.current !== map) return;
+        street = snapStart(700) ?? street;
+      }
+      if (street && (distM(street, from) <= 36 || !hopTouchesFreeway(g, from, street))) walkFrom = street;
+    }
     const apply = (raw: Pt[] | null) => {
-      const path = seated ? raw : finishPath(raw, cut ? from : walkFrom, arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
+      let path = seated ? raw : finishPath(raw, cut ? from : walkFrom, arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
       if (!path || path.length < 2) return false;
+      // Off the streets (a park, Camp Mabry): walk straight to the route if that line misses every freeway.
+      if (!seated && g) {
+        const join = path[0]!;
+        const gap = distM(from.lat, from.lng, join.lat, join.lng);
+        if (gap > 18 && gap < 800 && !hopTouchesFreeway(g, from, join)) path = [{ lat: from.lat, lng: from.lng }, ...path];
+      }
       const here = closestOnPath(path, pos.current.lat, pos.current.lng, routeAlong.current);
       if (here.dist > 160 && distM(path[0]!.lat, path[0]!.lng, from.lat, from.lng) > 40) return false;
       routeRef.current = path;
@@ -1029,7 +1062,6 @@ export function GameMap() {
     const signal = abortRef.current?.signal;
     const path = seated ? await routeDrive(net, from, snapped, signal) : await routeWalk(g, from, snapped, signal);
     if (signal?.aborted || mapRef.current !== map || destSeq.current !== seq) return;
-    if (waypoint.current !== target) return;
     if (apply(path)) return;
     if (!routeRef.current) {
       useGame.setState({ toast: "No street that way." });
@@ -1154,16 +1186,16 @@ export function GameMap() {
       const el = shop
         ? `<div class="shop-pin" title="${poi.name}"><span class="shop-awning"></span><span class="shop-body"><i class="shop-window"></i><i class="shop-door"></i></span></div>`
         : counter
-          ? `<div class="counter-pin" title="${poi.name}"><span class="counter-awning"></span><span class="counter-body"></span></div>`
+          ? counterPinHtml(poi.name)
           : board
-            ? `<div class="board-pin" title="${poi.name}"><i class="board-post"></i><i class="board-sheet"></i></div>`
+            ? boardPinHtml(poi.name)
             : desk
               ? stationPinHtml({ cooling, fare: lit })
               : vaultPinHtml(poi, { cooling });
       const marker = L.marker([poi.lat, poi.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: shop || counter || board ? [46, 70] : desk ? [30, 72] : [20, 50], iconAnchor: shop || counter || board ? [23, 68] : desk ? [15, 70] : [10, 28] }),
+        icon: L.divIcon({ className: "", html: el, iconSize: shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : [20, 50], iconAnchor: shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : [10, 28] }),
         keyboard: false,
-        zIndexOffset: shop ? 520 : lit ? 460 : desk ? 280 : 200,
+        zIndexOffset: shop ? 520 : lit ? 460 : counter || board ? 400 : desk ? 280 : 200,
       }).addTo(map);
       marker.on("click", () => {
         const nowSt = useGame.getState();

@@ -24,6 +24,21 @@ export function stationPinHtml(o: { cooling?: boolean; fare?: boolean } = {}) {
   return `<div class="station-pin${o.fare ? " has-fare" : ""}${o.cooling ? " cooling" : ""}"><span class="station-sign">${TRAIN}</span><i class="station-post"></i></div>`;
 }
 
+/** A posted sheet. Reads as "notice" at 20px, the same way the train reads as "station". */
+const NOTICE = `<svg class="service-glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ece4d6" d="M6.2 3h8.4L18.4 7.2V21H6.2z"/><path fill="#2c241c" d="M14.4 3v4.4H18.4"/><path d="M8.8 11.2h7M8.8 14.3h7M8.8 17.4h4.4" fill="none" stroke="#2c241c" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+/** Three matches. The counter sells them, so the sign is a fan of matches, not a stall. */
+const CUP = `<svg class="service-glyph" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#ece4d6" stroke-width="1.7" stroke-linecap="round"><path d="M8.2 19 7 8.6M12 19.6V8.2M15.8 19 17 8.6"/></g><circle cx="6.8" cy="6.6" r="2.05" fill="#efe8dc"/><circle cx="12" cy="6.1" r="2.05" fill="#6e8fa8"/><circle cx="17.2" cy="6.6" r="2.05" fill="#cba56c"/></svg>`;
+
+/** Street counter: enamel sign, deep green, a match in a cup. Not a lamp. */
+export function counterPinHtml(name: string) {
+  return `<div class="service-pin counter-pin" title="${name}"><span class="service-sign">${CUP}</span><i class="service-post"></i></div>`;
+}
+
+/** Notice board: enamel sign, ink brown, a posted sheet. Not a lamp. */
+export function boardPinHtml(name: string) {
+  return `<div class="service-pin board-pin" title="${name}"><span class="service-sign">${NOTICE}</span><i class="service-post"></i></div>`;
+}
+
 export function seriesPinHtml(s: Pick<SeriesDef, "kind" | "cost">) {
   return s.kind === "stack"
     ? `<div class="vault-pin is-stack tier-${s.cost}">${STACK_LAMP}</div>`

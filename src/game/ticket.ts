@@ -13,7 +13,8 @@ export const GREEN_POCKET = 1;
  * Every other source still stops at WHITE_POCKET.
  */
 export const RIDE_WHITE_POCKET = 15;
-export const SPARK_DAY = 6;
+/** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line. */
+export const FARE_MAX_MS = 11 * 60_000;
 /** A violet lamp stays dark for six hours after it pays. */
 export const VIOLET_COOL_MS = 6 * 60 * 60_000;
 
@@ -68,7 +69,7 @@ export function fareMs(from: CityId, to: CityId) {
   const a = CITIES[from].spawn;
   const b = CITIES[to].spawn;
   const km = distM(a.lat, a.lng, b.lat, b.lng) / 1000;
-  return Math.round(Math.min(14 * 60_000, Math.max(48_000, 40_000 + km * 240)));
+  return Math.round(Math.min(FARE_MAX_MS, Math.max(48_000, 40_000 + km * 240)));
 }
 
 export function formatEta(ms: number) {

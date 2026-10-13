@@ -19,10 +19,14 @@ RAW = {
     "lantern": ROOT / "artifacts/imagine_images/85506b46-109b-444f-9ac8-4aa38d7c0439.jpg",
     "match": ROOT / "artifacts/imagine_images/82a8bd8c-32b2-4ebd-baab-dcc6085d08b2.jpg",
     "shop": ROOT / "artifacts/imagine_images/c2e39992-3872-4257-a633-3d2387998bdc.jpg",
+    "notice": ROOT / "artifacts/imagine_images/21f446cc-3306-4c6c-856f-6fd3f34bf5f9.jpg",
+    "counter": ROOT / "artifacts/imagine_images/0a845540-4e3c-46e6-9c09-765c1acfb7be.jpg",
 }
 OUT_L = ROOT / "public/sprites/lanterns"
 OUT_M = ROOT / "public/sprites/matches"
 OUT_S = ROOT / "public/sprites/print-shop.png"
+OUT_N = ROOT / "public/sprites/notice-board.png"
+OUT_C = ROOT / "public/sprites/street-counter.png"
 
 # Print-shop metals. Hue is the target; sat_mul pulls the brass chroma toward it; val_mul keeps the folds.
 SKINS = {
@@ -44,6 +48,11 @@ HEADS = {
 
 def is_bg(r: int, g: int, b: int) -> bool:
     return g < 100 and r > 80 and b > 40 and r > g + 30 and b > g + 15 and r < 245
+
+
+def is_speck(r: int, g: int, b: int) -> bool:
+    """Magenta flecks the edge flood missed, including the brightest ones."""
+    return g < 100 and r > 80 and b > 40 and r > g + 30 and b > g + 15
 
 
 def key(src: Path) -> Image.Image:
@@ -110,6 +119,25 @@ def punch_glass(im: Image.Image) -> tuple[float, float, float, float]:
                 xs.append(x)
                 ys.append(y)
     return (min(xs) / w, min(ys) / h, (max(xs) + 1) / w, (max(ys) + 1) / h)
+
+
+def wipe_bg(im: Image.Image) -> int:
+    """Drop leftover magenta specks that never touched the edge."""
+    px = im.load()
+    w, h = im.size
+    n = 0
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a and is_speck(r, g, b):
+                px[x, y] = (0, 0, 0, 0)
+                n += 1
+    return n
+
+
+def crop_box(im: Image.Image) -> Image.Image:
+    box = im.getbbox()
+    return im.crop(box) if box else im
 
 
 def fill_specks(im: Image.Image, glass: tuple[float, float, float, float] | None, limit: int) -> int:
@@ -202,6 +230,12 @@ def fit(im: Image.Image, height: int) -> Image.Image:
     return im.resize((w, height), Image.Resampling.LANCZOS)
 
 
+def pack_pin(im: Image.Image, height: int) -> Image.Image:
+    """Pin size, not the source plate. A 420px prop blows the static cap."""
+    fitted = fit(im, height)
+    return fitted.quantize(colors=64, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+
+
 def main() -> None:
     OUT_L.mkdir(parents=True, exist_ok=True)
     OUT_M.mkdir(parents=True, exist_ok=True)
@@ -220,7 +254,13 @@ def main() -> None:
     shop = key(RAW["shop"])
     print("shop specks", fill_specks(shop, None, 8000))
     fit(shop, 420).save(OUT_S, optimize=True)
-    print("wrote", OUT_L, OUT_M, OUT_S)
+    notice = key(RAW["notice"])
+    print("notice wipe", wipe_bg(notice), "specks", fill_specks(notice, None, 8000))
+    pack_pin(crop_box(notice), 192).save(OUT_N, optimize=True)
+    counter = key(RAW["counter"])
+    print("counter wipe", wipe_bg(counter), "specks", fill_specks(counter, None, 8000))
+    pack_pin(crop_box(counter), 192).save(OUT_C, optimize=True)
+    print("wrote", OUT_L, OUT_M, OUT_S, OUT_N, OUT_C)
 
 
 if __name__ == "__main__":

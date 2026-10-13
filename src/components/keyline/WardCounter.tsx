@@ -14,7 +14,8 @@ export function WardCounter() {
   const open = useGame((s) => s.errandOpen === "counter");
   const close = useGame((s) => s.closeErrand);
   const cityId = useGame((s) => s.cityId);
-  const place = cityCounter(cityId);
+  const errandId = useGame((s) => s.errandId);
+  const place = CITIES[cityId].pois.find((p) => p.id === errandId && p.kind === "counter") ?? cityCounter(cityId);
   const points = useGame((s) => s.points);
   const keys = useGame((s) => s.keys);
   const fares = useGame((s) => s.fares);

@@ -693,18 +693,28 @@ function walkFromNode(g: StreetGraph, node: number, yaw: number, leftover: numbe
   const h = headingNE(yaw);
   let bestId = -1;
   let bestDot = -Infinity;
+  let backId = -1;
+  let backDot = -Infinity;
   for (const id of g.adj[node]!) {
-    if (id === fromSeg) continue;
     const seg = g.segs[id]!;
     const dir = segDir(g, seg);
     const sign = seg.a === node ? 1 : -1;
     const dot = (dir.n * h.n + dir.e * h.e) * sign;
+    if (id === fromSeg) {
+      if (dot > backDot) {
+        backDot = dot;
+        backId = id;
+      }
+      continue;
+    }
     if (dot > bestDot) {
       bestDot = dot;
       bestId = id;
     }
   }
-  // Nothing ahead but the way we came: stop. Turning around onto it made a north hold bounce in place.
+  // Nothing ahead worth taking. A hold into the dead end stays put (a north hold used to bounce).
+  // Aiming back along the only street leaves — otherwise a curb end is a trap.
+  if ((bestId < 0 || bestDot < 0.15) && backId >= 0 && backDot > 0.15 && backDot > bestDot) bestId = backId;
   if (bestId < 0) return here;
   const seg = g.segs[bestId]!;
   const forward = seg.a === node;

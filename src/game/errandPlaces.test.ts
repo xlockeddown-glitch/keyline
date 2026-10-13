@@ -1,26 +1,55 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CITY_LIST, cityBoard, cityCounter, cityShop } from "./data.ts";
+import { CITY_LIST, cityBoard, cityBoards, cityCounter, cityCounters, cityShop } from "./data.ts";
 import { distM } from "./geo.ts";
 
-test("every city has a counter and a notice board, a short walk from spawn and from the outfitter", () => {
+/** Compact cities keep one of each. Bigger maps get two or three, spread across the lamps. */
+const WANT: Record<string, number> = {
+  nashville: 1,
+  denver: 1,
+  nola: 1,
+  seattle: 2,
+  boston: 2,
+  detroit: 2,
+  tucson: 2,
+  toronto: 2,
+  austin: 2,
+  temple: 3,
+  london: 3,
+  chicago: 3,
+  la: 3,
+  nyc: 3,
+  sf: 3,
+};
+
+test("counters and notice boards are spread across the city, with more in the big ones", () => {
   for (const city of CITY_LIST) {
-    const counter = cityCounter(city.id);
-    const board = cityBoard(city.id);
+    const counters = cityCounters(city.id);
+    const boards = cityBoards(city.id);
     const shop = cityShop(city.id);
-    assert.ok(counter, city.id);
-    assert.ok(board, city.id);
-    assert.equal(city.pois.filter((p) => p.kind === "counter").length, 1, city.id);
-    assert.equal(city.pois.filter((p) => p.kind === "board").length, 1, city.id);
-    const counterD = distM(city.spawn.lat, city.spawn.lng, counter!.lat, counter!.lng);
-    const boardD = distM(city.spawn.lat, city.spawn.lng, board!.lat, board!.lng);
-    // Outside the 140 m "you've arrived" circle, still a short walk.
-    assert.ok(counterD > 150 && counterD < 280, `${city.id} counter ${Math.round(counterD)}`);
-    assert.ok(boardD > 150 && boardD < 280, `${city.id} board ${Math.round(boardD)}`);
-    assert.ok(distM(counter!.lat, counter!.lng, board!.lat, board!.lng) > 40, `${city.id} apart`);
-    if (shop) {
-      assert.ok(distM(counter!.lat, counter!.lng, shop.lat, shop.lng) > 40, `${city.id} counter/shop`);
-      assert.ok(distM(board!.lat, board!.lng, shop.lat, shop.lng) > 40, `${city.id} board/shop`);
+    const lamps = city.pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board" && p.kind !== "station");
+    assert.equal(counters.length, WANT[city.id], `${city.id} counters`);
+    assert.equal(boards.length, WANT[city.id], `${city.id} boards`);
+    assert.equal(cityCounter(city.id)?.id, `counter-${city.id}`);
+    assert.equal(cityBoard(city.id)?.id, `board-${city.id}`);
+    const spots = [...counters, ...boards];
+    const names = new Set(spots.map((p) => p.name));
+    assert.equal(names.size, spots.length, `${city.id} names`);
+    for (const spot of spots) {
+      const fromSpawn = distM(city.spawn.lat, city.spawn.lng, spot.lat, spot.lng);
+      assert.ok(fromSpawn > 400, `${city.id} ${spot.name} is ${Math.round(fromSpawn)}m from spawn`);
+      const nearLamp = Math.min(...lamps.map((l) => distM(spot.lat, spot.lng, l.lat, l.lng)));
+      assert.ok(nearLamp > 80, `${city.id} ${spot.name} sits on a lamp (${Math.round(nearLamp)}m)`);
+      if (shop) assert.ok(distM(spot.lat, spot.lng, shop.lat, shop.lng) > 80, `${city.id} ${spot.name} on the shop`);
     }
+    let farthest = 0;
+    for (let i = 0; i < spots.length; i++) {
+      farthest = Math.max(farthest, distM(city.spawn.lat, city.spawn.lng, spots[i]!.lat, spots[i]!.lng));
+      for (let j = i + 1; j < spots.length; j++) {
+        const d = distM(spots[i]!.lat, spots[i]!.lng, spots[j]!.lat, spots[j]!.lng);
+        assert.ok(d > 600, `${city.id} ${spots[i]!.name} and ${spots[j]!.name} are ${Math.round(d)}m apart`);
+      }
+    }
+    assert.ok(farthest > 800, `${city.id} farthest errand is only ${Math.round(farthest)}m out`);
   }
 });

@@ -218,6 +218,8 @@ export type GameState = {
   shopOpen: boolean;
   /** Ward counter or notice board. Null when neither sheet is up. */
   errandOpen: null | "counter" | "board";
+  /** Which counter or board was walked up to. Not saved. */
+  errandId: string | null;
   toast: string | null;
   fireworks: FireworksShow | null;
   hud: Hud;
@@ -838,6 +840,7 @@ export const useGame = create<GameState>((set, get) => ({
   invOpen: false,
   shopOpen: false,
   errandOpen: null,
+  errandId: null,
   toast: null,
   fireworks: null,
   hud: {
@@ -1019,6 +1022,7 @@ export const useGame = create<GameState>((set, get) => ({
       set({
         shopOpen: isScoutShop(poi),
         errandOpen: isCounter(poi) ? "counter" : isBoard(poi) ? "board" : null,
+        errandId: isCounter(poi) || isBoard(poi) ? poi.id : null,
         hqOpen: false,
         invOpen: false,
         openVault: null,

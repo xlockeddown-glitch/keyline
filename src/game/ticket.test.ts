@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CITIES } from "./data.ts";
-import { fareDesk, fareMs, formatEta, isFareDesk, lampCoolMs, sparkState, transitLoot } from "./ticket.ts";
+import { fareDesk, fareMs, FARE_MAX_MS, formatEta, isFareDesk, lampCoolMs, sparkState, transitLoot } from "./ticket.ts";
 
 test("seven night marks, and a violet lamp sleeps six hours", () => {
   const ids = Object.values(CITIES).flatMap((c) => c.pois.filter((p) => p.tier === "violet").map((p) => p.id));
@@ -24,10 +24,10 @@ test("nearby wards are under two minutes", () => {
   assert.ok(ms < 120_000, String(ms));
 });
 
-test("cross-country is capped", () => {
+test("cross-country is capped at eleven minutes", () => {
   const ms = fareMs("boston", "la");
-  assert.ok(ms <= 14 * 60_000);
-  assert.ok(ms > 6 * 60_000);
+  assert.equal(ms, FARE_MAX_MS);
+  assert.ok(fareMs("austin", "chicago") < FARE_MAX_MS);
 });
 
 test("eta copy", () => {

@@ -27,7 +27,7 @@ export const Route = createRootRoute({
       { rel: "stylesheet", href: `/hq-tabs.css?v=${PUBLISH_STAMP}` },
       { rel: "stylesheet", href: `/lantern-art.css?v=${PUBLISH_STAMP}` },
       { rel: "stylesheet", href: `/wardrobe.css?v=${PUBLISH_STAMP}` },
-      { rel: "stylesheet", href: `/prop-art.css?v=${PUBLISH_STAMP}-h` },
+      { rel: "stylesheet", href: `/prop-art.css?v=${PUBLISH_STAMP}-i` },
       { rel: "stylesheet", href: `/coats.css?v=${PUBLISH_STAMP}` },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },

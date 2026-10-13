@@ -3470,44 +3470,130 @@ const COUNTER_NAME: Record<CityId, [string, string]> = {
   nashville: ["Broadway Counter", "Printers Alley Board"],
 };
 
-function deskSpot(city: City, northM: number, eastM: number) {
-  const shop = SCOUT_SHOPS[city.id];
-  let at = dest(city.spawn.lat, city.spawn.lng, northM, eastM);
-  if (shop && distM(at.lat, at.lng, shop.lat, shop.lng) < 80) at = dest(city.spawn.lat, city.spawn.lng, -northM, -eastM);
-  return { lat: Math.round(at.lat * 1e5) / 1e5, lng: Math.round(at.lng * 1e5) / 1e5 };
+function lampPois(city: City) {
+  const lamps = city.pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board" && p.kind !== "station");
+  if (lamps.length < 8) return lamps;
+  const ds = lamps.map((p) => distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng)).sort((a, b) => a - b);
+  const cap = ds[Math.floor((ds.length - 1) * 0.9)] ?? ds[ds.length - 1]!;
+  const core = lamps.filter((p) => distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng) <= cap + 1);
+  return core.length >= 8 ? core : lamps;
+}
+
+/** How many counters, and the same number of notice boards. Compact cities keep one of each. */
+function errandCount(city: City) {
+  const lamps = lampPois(city);
+  if (lamps.length < 4) return 1;
+  const ds = lamps.map((p) => distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng)).sort((a, b) => a - b);
+  const p75 = ds[Math.floor((ds.length - 1) * 0.75)] ?? 0;
+  if (p75 >= 2200) return 3;
+  if (p75 >= 1300) return 2;
+  return 1;
+}
+
+/** Lamps spread across the city. The first is the one farthest from spawn. */
+function spreadAnchors(city: City, n: number, avoid: Poi[] = []) {
+  const lamps = lampPois(city);
+  const ds = lamps.map((p) => distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng)).sort((a, b) => a - b);
+  const p75 = ds[Math.floor((ds.length - 1) * 0.75)] ?? 0;
+  const minFromSpawn = p75 >= 1300 ? 600 : 200;
+  let pool = lamps.filter((p) => distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng) >= minFromSpawn);
+  if (pool.length < n) pool = lamps;
+  const chosen: Poi[] = [];
+  const used = new Set<string>(avoid.map((p) => p.id));
+  const minSep = n <= 1 ? 0 : n === 2 ? 500 : 700;
+  while (chosen.length < n) {
+    let best: Poi | null = null;
+    let bestD = -1;
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      const others = chosen.concat(avoid);
+      const d = others.length
+        ? Math.min(...others.map((c) => distM(c.lat, c.lng, p.lat, p.lng)))
+        : distM(city.spawn.lat, city.spawn.lng, p.lat, p.lng);
+      if (d > bestD) {
+        bestD = d;
+        best = p;
+      }
+    }
+    if (!best) break;
+    if (chosen.length && bestD < minSep) break;
+    chosen.push(best);
+    used.add(best.id);
+  }
+  return chosen;
+}
+
+function beside(city: City, anchor: Poi, taken: { lat: number; lng: number }[]) {
+  const north = anchor.lat - city.spawn.lat;
+  const east = (anchor.lng - city.spawn.lng) * Math.cos((anchor.lat * Math.PI) / 180);
+  const len = Math.hypot(north, east) || 1;
+  const ux = north / len;
+  const uy = east / len;
+  const nudges: [number, number][] = [
+    [95, 55],
+    [95, -55],
+    [-80, 60],
+    [50, 100],
+    [-90, -40],
+    [40, -100],
+  ];
+  const blocked: { lat: number; lng: number }[] = [...city.pois, ...taken];
+  let fallback = dest(anchor.lat, anchor.lng, 90, 40);
+  let fallbackClear = 0;
+  for (const [along, side] of nudges) {
+    const at = dest(anchor.lat, anchor.lng, ux * along - uy * side, uy * along + ux * side);
+    const clear = Math.min(...blocked.map((p) => distM(at.lat, at.lng, p.lat, p.lng)));
+    if (clear > fallbackClear) {
+      fallback = at;
+      fallbackClear = clear;
+    }
+    if (clear > 70) break;
+  }
+  return { lat: Math.round(fallback.lat * 1e5) / 1e5, lng: Math.round(fallback.lng * 1e5) / 1e5 };
+}
+
+function neighborhood(anchor: Poi, suffix: "Counter" | "Board") {
+  const cut = anchor.name.split(/[–—,]/)[0]!.trim();
+  if (`${cut} ${suffix}`.length <= 34) return `${cut} ${suffix}`;
+  const words = cut.split(/\s+/);
+  let base = words[0] ?? cut;
+  for (let i = 1; i < words.length; i++) {
+    const next = `${base} ${words[i]}`;
+    if (next.length > 22) break;
+    base = next;
+  }
+  return `${base} ${suffix}`;
 }
 
 for (const id of Object.keys(CITIES) as CityId[]) {
   const city = CITIES[id];
+  if (city.pois.some((p) => p.kind === "counter" || p.kind === "board")) continue;
   const [counterName, boardName] = COUNTER_NAME[id];
-  const counterAt = deskSpot(city, 220, -80);
-  const boardAt = deskSpot(city, 80, 220);
-  if (!city.pois.some((p) => p.kind === "counter")) {
+  const n = errandCount(city);
+  const bySpawn = (a: Poi, b: Poi) => distM(city.spawn.lat, city.spawn.lng, a.lat, a.lng) - distM(city.spawn.lat, city.spawn.lng, b.lat, b.lng);
+  const counters = spreadAnchors(city, n).sort(bySpawn);
+  const boards = spreadAnchors(city, n, counters).sort(bySpawn);
+  const taken: { lat: number; lng: number }[] = [];
+  const placeOne = (anchor: Poi, kind: "counter" | "board", index: number, authored: string) => {
+    const at = beside(city, anchor, taken);
+    taken.push(at);
     city.pois.push(
       poi({
-        id: `counter-${id}`,
-        name: counterName,
-        lat: counterAt.lat,
-        lng: counterAt.lng,
-        kind: "counter",
+        id: index === 0 ? `${kind}-${id}` : `${kind}-${id}-${index + 1}`,
+        name: index === 0 ? authored : neighborhood(anchor, kind === "counter" ? "Counter" : "Board"),
+        lat: at.lat,
+        lng: at.lng,
+        kind,
         tier: "white",
-        lore: "A street counter. Matches, the morning crate, and the exchange — nothing you can finish from the journal.",
+        lore:
+          kind === "counter"
+            ? "A street counter. Matches, the morning crate, and the exchange — nothing you can finish from the journal."
+            : "A notice board. Contracts, errands, and the day's blitz are posted here. You take them in person.",
       }),
     );
-  }
-  if (!city.pois.some((p) => p.kind === "board")) {
-    city.pois.push(
-      poi({
-        id: `board-${id}`,
-        name: boardName,
-        lat: boardAt.lat,
-        lng: boardAt.lng,
-        kind: "board",
-        tier: "white",
-        lore: "A notice board. Contracts, errands, and the day's blitz are posted here. You take them in person.",
-      }),
-    );
-  }
+  };
+  counters.forEach((anchor, i) => placeOne(anchor, "counter", i, counterName));
+  boards.forEach((anchor, i) => placeOne(anchor, "board", i, boardName));
 }
 
 export function isScoutShop(p: { kind: string } | null | undefined) {
@@ -3539,8 +3625,27 @@ export function cityCounter(cityId: CityId) {
   return CITIES[cityId].pois.find((p) => p.kind === "counter") ?? null;
 }
 
+export function cityCounters(cityId: CityId) {
+  return CITIES[cityId].pois.filter((p) => p.kind === "counter");
+}
+
 export function cityBoard(cityId: CityId) {
   return CITIES[cityId].pois.find((p) => p.kind === "board") ?? null;
+}
+
+export function cityBoards(cityId: CityId) {
+  return CITIES[cityId].pois.filter((p) => p.kind === "board");
+}
+
+/** One stall keeps its name. Several of them are just "any street counter". */
+export function counterLine(cityId: CityId) {
+  const all = cityCounters(cityId);
+  return all.length <= 1 ? (all[0]?.name ?? "the street counter") : "any street counter";
+}
+
+export function boardLine(cityId: CityId) {
+  const all = cityBoards(cityId);
+  return all.length <= 1 ? (all[0]?.name ?? "the notice board") : "any notice board";
 }
 
 export const CITY_LIST: City[] = [

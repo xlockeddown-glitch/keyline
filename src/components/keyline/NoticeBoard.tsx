@@ -13,7 +13,8 @@ export function NoticeBoard() {
   const open = useGame((s) => s.errandOpen === "board");
   const close = useGame((s) => s.closeErrand);
   const cityId = useGame((s) => s.cityId);
-  const place = cityBoard(cityId);
+  const errandId = useGame((s) => s.errandId);
+  const place = CITIES[cityId].pois.find((p) => p.id === errandId && p.kind === "board") ?? cityBoard(cityId);
   const city = CITIES[cityId];
   const pantry = useGame((s) => s.pantry);
   const quests = useGame((s) => s.quests);
