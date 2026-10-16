@@ -5,7 +5,7 @@ import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketOve
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
-import { commitWallet, walletLive } from "./walletClient";
+import { commitWallet, tokenNonce, walletLive } from "./walletClient";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
@@ -38,7 +38,7 @@ import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./match
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
-import { chooseRideGame, dealForRide, forfeitRound, journeyOutcome, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
+import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, rollIngredient, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
@@ -161,7 +161,7 @@ export type GameState = {
   mapKeys: MapKey[];
   run: StreetRun | null;
   stack: StreetRun | null;
-  contract: { ids: string[]; done: string[] } | null;
+  contract: { ids: string[]; done: string[]; nonces?: string[] } | null;
   streak: number;
   bestStreak: number;
   vaultsOpened: number;
@@ -253,7 +253,7 @@ export type GameState = {
   /** The first card landed: today's run is spent, even if they walk away. */
   lockBlitz: () => void;
   /** Add a cleared lantern's coin and a match of its color. No-op unless today's run is locked. */
-  bankBlitz: (pay: number, tier: Tier) => { match: boolean; overflow: number };
+  bankBlitz: (pay: number, tier: Tier, nonce?: string) => { match: boolean; overflow: number };
   /** Remember a dealt blitz card so the next lantern doesn't repeat it. */
   rememberCard: (id: string) => void;
   /** Pay the Daily Lantern Run finish once per UTC day. Returns what landed, or null if already paid. */
@@ -761,7 +761,7 @@ function applyServerGrade(
   award: ServerAward | undefined,
   surveyBefore: Record<string, true>,
   goalsBefore: readonly string[],
-  contractBefore: { ids: string[]; done: string[] } | null,
+  contractBefore: { ids: string[]; done: string[]; nonces?: string[] } | null,
 ) {
   const st = useGame.getState();
   const surveyNew = Object.keys(st.survey).filter((id) => !surveyBefore[id]);
@@ -791,8 +791,8 @@ function applyServerGrade(
   void (async () => {
     for (const id of surveyNew) await commitWallet({ kind: "survey", id });
     for (const cityId of goalsNew) await commitWallet({ kind: "goal", cityId: cityId as CityId });
-    if (contractDone && contractBefore) {
-      await commitWallet({ kind: "contract", id: [...contractBefore.ids].sort().join(",").slice(0, 180) });
+    if (contractDone && contractBefore?.nonces?.length) {
+      await commitWallet({ kind: "contract", nonces: contractBefore.nonces.slice(0, 8) });
     }
   })();
 }
@@ -975,15 +975,21 @@ export const useGame = create<GameState>((set, get) => ({
   },
   unlockCity: (id) => {
     if (!CITIES[id]) return "No ward by that name.";
-    const r = unlockCityPass(get().cities, id);
-    if (!r) return isUnlocked(get().cities, id) ? `${CITIES[id].name} is already open.` : lockLine(get().cities, id);
+    const before = get().cities;
+    const r = unlockCityPass(before, id);
+    if (!r) return isUnlocked(before, id) ? `${CITIES[id].name} is already open.` : lockLine(before, id);
     sfx.pickup();
     // Goals or Lantern Runs already finished in the new city count from the moment it opens.
     const goals = goalsCheck(r.u, id, get().atlas);
     set({ cities: goals.u });
     if (walletLive()) {
       void commitWallet({ kind: "unlock", cityId: id }).then((res) => {
-        if (res && !res.ok) return;
+        if (res == null) {
+          set({ cities: before });
+          saveNow(get);
+          return;
+        }
+        if (!res.ok) return;
         if (goals.earned) return commitWallet({ kind: "goal", cityId: id });
       });
     }
@@ -1667,7 +1673,11 @@ export const useGame = create<GameState>((set, get) => ({
     let contractToast: string | null = null;
     if (contract && contract.ids.includes(poi.id) && !contract.done.includes(poi.id)) {
       const done = [...contract.done, poi.id];
-      contract = { ...contract, done };
+      const stamped = tokenNonce(ov.token);
+      const nonces = [...(contract.nonces ?? [])];
+      if (stamped && !nonces.includes(stamped)) nonces.push(stamped);
+      contract.nonces = nonces;
+      contract = { ...contract, done, nonces };
       if (done.length >= contract.ids.length) {
         nextKeys.amber += 1;
         loot.points += 1500;
@@ -1796,7 +1806,6 @@ export const useGame = create<GameState>((set, get) => ({
       points: get().points + PULSE_POINTS,
       toast: `City Pulse filed. ${PULSE_POINTS} coin.`,
     });
-    pushOp({ kind: "pulse" });
     scheduleSave(get);
     window.setTimeout(() => {
       if (get().toast?.includes("City Pulse")) set({ toast: null });
@@ -1813,7 +1822,7 @@ export const useGame = create<GameState>((set, get) => ({
     set({ lastBlitzDay: d, blitzTake: 0, blitzMatches: [] });
     saveNow(get);
   },
-  bankBlitz: (pay, tier) => {
+  bankBlitz: (pay, tier, nonce) => {
     const n = Math.floor(pay);
     if (n <= 0 || get().lastBlitzDay !== today()) return { match: false, overflow: 0 };
     const have = get().keys[tier] ?? 0;
@@ -1826,7 +1835,8 @@ export const useGame = create<GameState>((set, get) => ({
     });
     saveNow(get);
     const step = BLITZ_STEPS.findIndex((s) => s.tier === tier);
-    if (step >= 0) pushOp({ kind: "blitz", step });
+    const stamped = tokenNonce(nonce);
+    if (step >= 0 && stamped) pushOp({ kind: "blitz", step, nonces: [stamped] });
     return grant;
   },
   rememberCard: (id) => {
@@ -2308,13 +2318,14 @@ export const useGame = create<GameState>((set, get) => ({
     if (!isUnlocked(get().cities, to)) return lockLine(get().cities, to);
     if (get().fares < 1) return `Need a train ticket. ${ticketHint(get().cityVaults)} in this city.`;
     if (get().journey) return "You're already on a train.";
+    const from = get().cityId;
     const now = Date.now();
     const arriveAt = now + fareMs(get().cityId, to);
     const rideGame = dealForRide(arriveAt - now, get().rideHistory ?? []);
     sfx.open();
     set({
       fares: get().fares - 1,
-      journey: { from: get().cityId, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0, rideGame },
+      journey: { from, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0, rideGame },
       rideHistory: pushRideHistory(get().rideHistory ?? [], rideGame),
       screen: "ride",
       hqOpen: false,
@@ -2327,6 +2338,7 @@ export const useGame = create<GameState>((set, get) => ({
       toast: null,
     });
     scheduleSave(get);
+    if (walletLive()) void commitWallet({ kind: "board", from, to });
     return null;
   },
   chooseRideGame: (game) => {
@@ -2388,15 +2400,7 @@ export const useGame = create<GameState>((set, get) => ({
       get().screen === "ride";
     const { journey: nextJourney, keys, add } = settleRide(j, get().keys, now, watching);
     const found = add.white + add.blue + add.green;
-    if (found > 0 && walletLive()) {
-      void commitWallet({
-        kind: "ride",
-        departAt: nextJourney.departAt,
-        arriveAt: nextJourney.arriveAt,
-        openMs: nextJourney.openMs ?? 0,
-        outcome: journeyOutcome(nextJourney),
-      });
-    }
+    if (found > 0 && walletLive()) void commitWallet({ kind: "ride" });
     if (found > 0) {
       sfx.pickup();
       if (now < j.arriveAt) {

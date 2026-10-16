@@ -7,19 +7,28 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { rewardPoints } from "./rewards.ts";
+import { CITIES } from "./data.ts";
+import { surveyProven } from "./survey.ts";
+import { transitLoot } from "./ticket.ts";
 import {
   COIN_CAP,
   KEY_CAP,
+  PASS_CAP,
+  acceptNonces,
   applyDelta,
   emptyWallet,
+  goalOp,
   gradeGrant,
   mergeFirstSync,
+  provenBoost,
+  rideOp,
   spendMatchOp,
   type GradePay,
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet } from "./walletSql.ts";
 import { DEVICE_CAP, applyClientOp, awardGrade, spendDealt, syncPlayer } from "./walletApply.ts";
+import { tokenNonce } from "./walletClient.ts";
 
 function sqlOf(db: PGlite): Sql {
   const sql = (async (strings: TemplateStringsArray, ...values: unknown[]) => {
@@ -31,7 +40,9 @@ function sqlOf(db: PGlite): Sql {
   return sql;
 }
 
-async function db() {
+const mig = (name: string) => readFileSync(new URL(`../../migrations/${name}`, import.meta.url), "utf8");
+
+async function db(extra: string[] = []) {
   const pg = new PGlite();
   await pg.exec(`create table if not exists player_links (
     alias_id text primary key,
@@ -39,7 +50,8 @@ async function db() {
     how text not null,
     linked_at timestamptz not null default now()
   )`);
-  await pg.exec(readFileSync(new URL("../../migrations/0016_player_wallet.sql", import.meta.url), "utf8"));
+  await pg.exec(mig("0016_player_wallet.sql"));
+  for (const name of extra) await pg.exec(mig(name));
   return sqlOf(pg);
 }
 
@@ -178,14 +190,19 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   assert.equal(refused.ok, false);
   assert.equal((await canonicalWallet(sql, "ann")).wallet.keys.white, 0);
 
-  // The same bank trade posted twice is one trade. A second trade, after the pocket changed, is another.
-  await applyClientOp(sql, "ann", { kind: "street", id: "k1", tier: "white", city: "austin", lat: 30.2, lng: -97.7 });
-  await applyClientOp(sql, "ann", { kind: "street", id: "k2", tier: "white", city: "austin", lat: 30.2, lng: -97.7 });
-  await applyClientOp(sql, "ann", { kind: "street", id: "k3", tier: "white", city: "austin", lat: 30.2, lng: -97.7 });
-  await applyClientOp(sql, "ann", { kind: "street", id: "k4", tier: "white", city: "austin", lat: 30.2, lng: -97.7 });
+  // A street match is not a server payout: the id is not from a list the server can check.
+  const street = await applyClientOp(sql, "ann", { kind: "street", id: "k1", tier: "white", city: "austin", lat: 30.2, lng: -97.7 });
+  assert.equal(street.ok, false);
+  assert.equal(street.reason, "unproven");
+  assert.equal((await canonicalWallet(sql, "ann")).wallet.keys.white, 0);
+
+  // The same bank trade posted twice is one trade. The matches come from a device merge, not from the street.
+  const topped = await syncPlayer(sql, "ann", snap({ keys: { white: 4 } }), "annbank01");
+  assert.equal(topped.wallet.keys.white, 4);
   const up = await applyClientOp(sql, "ann", { kind: "bank", dir: "up", tier: "white" });
   assert.equal(up.ok, true);
-  assert.equal(up.wallet.keys.blue, (revised.wallet.keys.blue ?? 0) + 1);
+  assert.equal(up.wallet.keys.white, 0);
+  assert.equal(up.wallet.keys.blue, (topped.wallet.keys.blue ?? 0) + 1);
   const upAgain = await applyClientOp(sql, "ann", { kind: "bank", dir: "up", tier: "white" });
   assert.equal(upAgain.replay || !upAgain.ok, true);
   assert.equal(upAgain.wallet.keys.white, up.wallet.keys.white);
@@ -251,4 +268,232 @@ test("a sixth device cannot mint coins", async () => {
   assert.equal(rows.length, 0);
   const again = await syncPlayer(sql, "cam", snap({ coins: COIN_CAP }), "capdevice9");
   assert.equal(again.wallet.coins, held.coins);
+});
+
+test("each device is clamped to the first-sync caps", () => {
+  assert.equal(COIN_CAP, 250_000);
+  assert.equal(KEY_CAP, 300);
+  assert.equal(PASS_CAP, 25);
+  const merged = mergeFirstSync(
+    emptyWallet(),
+    snap({
+      coins: 9_000_000,
+      keys: { white: 9_000, blue: 900, green: 900, amber: 900, red: 900, violet: 900 },
+      cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], passes: 80, freePick: false },
+    }),
+  );
+  assert.equal(merged.coins, COIN_CAP);
+  for (const tier of ["white", "blue", "green", "amber", "red", "violet"] as const) assert.equal(merged.keys[tier], KEY_CAP);
+  assert.equal(merged.cities.passes, PASS_CAP);
+});
+
+test("a city pass pays only when every place has a graded visit", () => {
+  const ids = CITIES.austin.pois.map((p) => p.id);
+  const w = emptyWallet();
+  w.cities = { ...w.cities, start: "austin", unlocked: ["austin"], freePick: false };
+  const missing = goalOp(w, "austin", new Set(ids.slice(1)));
+  assert.equal(missing.ok, false);
+  if (missing.ok) return;
+  assert.equal(missing.reason, "unproven");
+  const paid = goalOp(w, "austin", new Set(ids));
+  assert.equal(paid.ok, true);
+  if (!paid.ok) return;
+  assert.equal(paid.wallet.cities.passes, 1);
+  assert.ok(paid.wallet.cities.goalsPaid.includes("austin"));
+  const again = goalOp(paid.wallet, "austin", new Set());
+  assert.equal(again.ok, true);
+  if (!again.ok) return;
+  assert.equal(again.wallet.cities.passes, 1);
+});
+
+test("survey matches pay only for goals graded visits can prove", () => {
+  const ids = CITIES.austin.pois.map((p) => p.id);
+  assert.equal(surveyProven("walk-4", new Set(ids)), false);
+  assert.equal(surveyProven("visit-4", new Set(ids.slice(0, 3))), false);
+  assert.equal(surveyProven("visit-4", new Set(ids.slice(0, 4))), true);
+  assert.equal(surveyProven("ward-austin-all", new Set(ids.slice(0, 4))), false);
+  assert.equal(surveyProven("ward-austin-all", new Set(ids)), true);
+  assert.equal(surveyProven("no-such-goal", new Set(ids)), false);
+});
+
+test("a ride pays the idle schedule from the server clock and never a client win", () => {
+  const w = emptyWallet();
+  const at = 1_700_000_000_000;
+  const rideMs = 120_000;
+  const early = rideOp(w, { departAt: at, arriveAt: at + rideMs, now: at + 5_000 });
+  assert.equal(early.ok, true);
+  if (!early.ok) return;
+  assert.equal(early.wallet.keys.white, 0);
+  const due = transitLoot(20_000, 0, rideMs);
+  const mid = rideOp(w, { departAt: at, arriveAt: at + rideMs, now: at + 20_000 });
+  assert.equal(mid.ok, true);
+  if (!mid.ok) return;
+  assert.equal(mid.wallet.keys.white, due.white);
+  assert.equal(mid.wallet.keys.green, 0);
+  const long = 11 * 60_000;
+  const sat = transitLoot(long, long, long);
+  assert.equal(sat.green, 1, "a client that reports the tab stayed open would be owed a green");
+  const full = rideOp(w, { departAt: at, arriveAt: at + long, now: at + long });
+  assert.equal(full.ok, true);
+  if (!full.ok) return;
+  assert.equal(full.wallet.keys.green, 0);
+  assert.equal(rideOp(w, { departAt: 0, arriveAt: 10, now: 10 }).ok, false);
+});
+
+test("lucky and cloth pay only when the server knows the player owns them", async () => {
+  assert.deepEqual(provenBoost(true, "road-dust", { lucky: false, cloths: new Set() }), { lucky: false, cloth: null });
+  assert.deepEqual(provenBoost(true, "road-dust", { lucky: true, cloths: new Set(["road-dust"]) }), { lucky: true, cloth: "road-dust" });
+  const plain = gradeGrant(emptyWallet(), pay());
+  const dressed = gradeGrant(emptyWallet(), pay({ lucky: true, luckyHit: true, cloth: "road-dust" }));
+  assert.equal(plain.ok && dressed.ok, true);
+  if (!plain.ok || !dressed.ok) return;
+  assert.ok((dressed.award?.coins ?? 0) > (plain.award?.coins ?? 0));
+  const sql = await db();
+  await syncPlayer(sql, "lux", snap({ cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }), "luxphone1");
+  const graded = await awardGrade(sql, "lux", "luck1", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
+  assert.equal(graded.wallet.coins, plain.award?.coins);
+  assert.equal(graded.wallet.keys.blue ?? 0, plain.wallet.keys.blue ?? 0);
+});
+
+test("a goal, a survey and a daily each pay once from server records", async () => {
+  const sql = await db(["0006_daily_runs.sql"]);
+  const pois = CITIES.austin.pois.map((p) => p.id);
+  await syncPlayer(sql, "goa", snap({ cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin", "nyc", "temple"], freePick: false } }), "goaphone1");
+  const early = await applyClientOp(sql, "goa", { kind: "goal", cityId: "austin" });
+  assert.equal(early.ok, false);
+  assert.equal(early.reason, "unproven");
+  const graded = await awardGrade(sql, "goa", "g0", { ...pay({ poiId: pois[0] }), prevNonce: "" });
+  assert.equal(graded.detail?.includes(pois[0]!), true);
+  const still = await applyClientOp(sql, "goa", { kind: "goal", cityId: "austin" });
+  assert.equal(still.ok, false);
+  const { id } = await canonicalWallet(sql, "goa");
+  for (const poi of pois.slice(1)) {
+    await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${"grade:" + poi}, ${JSON.stringify({ g: "perfect", pi: poi, coins: 0, keys: {}, boosts: [] })})`;
+  }
+  const surveyEarly = await applyClientOp(sql, "goa", { kind: "survey", id: "walk-4" });
+  assert.equal(surveyEarly.ok, false);
+  assert.equal(surveyEarly.reason, "unproven");
+  const beforeBlue = (await canonicalWallet(sql, "goa")).wallet.keys.blue ?? 0;
+  const visited = await applyClientOp(sql, "goa", { kind: "survey", id: "visit-4" });
+  assert.equal(visited.ok, true);
+  assert.equal(visited.wallet.keys.blue, beforeBlue + 1);
+  const visitedAgain = await applyClientOp(sql, "goa", { kind: "survey", id: "visit-4" });
+  assert.equal(visitedAgain.replay, true);
+  assert.equal(visitedAgain.wallet.keys.blue, visited.wallet.keys.blue);
+  const passes = (await canonicalWallet(sql, "goa")).wallet.cities.passes;
+  const goal = await applyClientOp(sql, "goa", { kind: "goal", cityId: "austin" });
+  assert.equal(goal.ok, true);
+  assert.equal(goal.wallet.cities.passes, passes + 1);
+  const goalAgain = await applyClientOp(sql, "goa", { kind: "goal", cityId: "austin" });
+  assert.equal(goalAgain.wallet.cities.passes, goal.wallet.cities.passes);
+
+  await sql.query(
+    `insert into daily_runs (day, user_id, city, display_name, started_at, last_at, last_lat, last_lng, voided)
+     values ($1, 'goa', 'austin', 'Goa', now(), now(), 0, 0, true)`,
+    [new Date().toISOString().slice(0, 10)],
+  );
+  const voided = await applyClientOp(sql, "goa", { kind: "daily", day: "1999-01-01", city: "austin" });
+  assert.equal(voided.ok, false);
+  assert.equal(voided.reason, "no-run");
+  const nyc = await applyClientOp(sql, "goa", { kind: "daily", day: "1999-01-01", city: "nyc" });
+  assert.equal(nyc.ok, true);
+  assert.equal(nyc.wallet.cities.runs.nyc, 1);
+  const temple = await applyClientOp(sql, "goa", { kind: "daily", day: new Date().toISOString().slice(0, 10), city: "temple" });
+  assert.equal(temple.replay, true);
+  assert.equal(temple.wallet.cities.runs.temple, undefined);
+  assert.equal(temple.wallet.coins, nyc.wallet.coins);
+  assert.equal(temple.wallet.keys.white, nyc.wallet.keys.white);
+});
+
+test("a contract and a blitz pay a graded nonce once", async () => {
+  const sql = await db(["0003_plate_events.sql"]);
+  await syncPlayer(sql, "con", snap({ cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }), "conphone1");
+  const today = new Date().toISOString();
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString();
+  const insert = (nonce: string, at: string) =>
+    sql.query(
+      `insert into plate_events (id, user_id, save_id, plate_id, shown_at, answered_at, latency_ms, correct, rarity, city, difficulty)
+       values ($1, 'con', 's', 'p', $2::timestamptz, $2::timestamptz, 1000, true, 'blue', 'austin', 2)`,
+      [`t:${nonce}`, at],
+    );
+  await insert("nonceold1", yesterday);
+  await insert("noncetoday", today);
+  await insert("nonceblitz", today);
+  const old = await applyClientOp(sql, "con", { kind: "contract", nonces: ["nonceold1"] });
+  assert.equal(old.ok, false);
+  assert.equal(old.reason, "unproven");
+  const made = await applyClientOp(sql, "con", { kind: "contract", nonces: ["noncetoday"] });
+  assert.equal(made.ok, true);
+  assert.equal(made.wallet.keys.amber, 1);
+  assert.ok(made.wallet.coins >= 1500);
+  const reuse = await applyClientOp(sql, "con", { kind: "contract", nonces: ["noncetoday"] });
+  assert.equal(reuse.replay, true);
+  assert.equal(reuse.wallet.keys.amber, 1);
+  const stolen = await applyClientOp(sql, "con", { kind: "blitz", step: 0, nonces: ["noncetoday"] });
+  assert.equal(stolen.ok, false);
+  const blitz = await applyClientOp(sql, "con", { kind: "blitz", step: 0, nonces: ["nonceblitz"] });
+  assert.equal(blitz.ok, true);
+  assert.equal(blitz.wallet.coins, made.wallet.coins + 20);
+  const blitzAgain = await applyClientOp(sql, "con", { kind: "blitz", step: 0, nonces: ["nonceblitz"] });
+  assert.equal(blitzAgain.replay, true);
+  assert.equal(blitzAgain.wallet.coins, blitz.wallet.coins);
+  await insert("noncestep2", today);
+  const skip = await applyClientOp(sql, "con", { kind: "blitz", step: 2, nonces: ["noncestep2"] });
+  assert.equal(skip.ok, false);
+  const step = await applyClientOp(sql, "con", { kind: "blitz", step: 1, nonces: ["noncestep2"] });
+  assert.equal(step.ok, true);
+  assert.deepEqual(acceptNonces(["nope", "noncetoday"], new Set(["noncetoday"])), ["noncetoday"]);
+  assert.equal(acceptNonces(["nope"], new Set()), null);
+});
+
+test("a ride pays only against a server ticket, timed on the server clock", async () => {
+  const sql = await db(["0002_vault_clears.sql"]);
+  const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin", "nyc"] as const, freePick: false };
+  await syncPlayer(sql, "rid", snap({ cities }), "ridphone1");
+  const none = await applyClientOp(sql, "rid", { kind: "ride" });
+  assert.equal(none.ok, false);
+  assert.equal(none.reason, "no-ticket");
+  const unboarded = await applyClientOp(sql, "rid", { kind: "board", from: "austin", to: "nyc" });
+  assert.equal(unboarded.ok, false);
+  assert.equal(unboarded.reason, "no-ticket");
+  await sql`insert into vault_clears (user_id, display_name, tier, correct) values ('rid', 'Rid', 'white', 3)`;
+  const boarded = await applyClientOp(sql, "rid", { kind: "board", from: "austin", to: "nyc" });
+  assert.equal(boarded.ok, true);
+  const { id } = await canonicalWallet(sql, "rid");
+  const at = Date.now() - 20_000;
+  const rows = await sql<{ detail: string; op_key: string }>`select op_key, detail from wallet_ledger where user_id = ${id} and op_key like ${"ticket:%"}`;
+  const ticket = JSON.parse(rows[0]!.detail) as { ms: number };
+  await sql`update wallet_ledger set detail = ${JSON.stringify({ at, from: "austin", to: "nyc", ms: ticket.ms })} where user_id = ${id} and op_key = ${rows[0]!.op_key}`;
+  const due = transitLoot(20_000, 0, ticket.ms);
+  const paid = await applyClientOp(sql, "rid", { kind: "ride" });
+  assert.equal(paid.ok, true);
+  assert.equal(paid.wallet.keys.white, due.white);
+  assert.equal(paid.wallet.keys.green, 0);
+  const replay = await applyClientOp(sql, "rid", { kind: "ride" });
+  assert.equal(replay.replay, true);
+  assert.equal(replay.wallet.keys.white, paid.wallet.keys.white);
+  const stillOut = await applyClientOp(sql, "rid", { kind: "board", from: "austin", to: "nyc" });
+  assert.equal(stillOut.replay, true);
+  assert.equal(stillOut.wallet.keys.white, paid.wallet.keys.white);
+
+  await syncPlayer(sql, "kia", snap({ coins: 1800, cities }), "kiaphone1");
+  const bought = await applyClientOp(sql, "kia", { kind: "kiosk", id: "fare" });
+  assert.equal(bought.ok, true);
+  const fromKiosk = await applyClientOp(sql, "kia", { kind: "board", from: "austin", to: "nyc" });
+  assert.equal(fromKiosk.ok, true);
+  assert.equal(fromKiosk.wallet.keys.white, 0);
+});
+
+test("a failed unlock reply rolls the local city list back", () => {
+  const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  const unlock = store.slice(store.indexOf("unlockCity: (id) =>"), store.indexOf("setHud: (h) =>"));
+  assert.match(unlock, /const before = get\(\)\.cities/);
+  assert.match(unlock, /if \(res == null\)/);
+  assert.match(unlock, /cities: before/);
+  assert.match(store, /commitWallet\(\{ kind: "ride" \}\)/);
+  assert.match(store, /kind: "board"/);
+  assert.doesNotMatch(store, /kind: "pulse"/);
+  const body = Buffer.from(JSON.stringify({ n: "nonceaaaa", t: Date.UTC(2026, 9, 16, 12) })).toString("base64url");
+  assert.equal(tokenNonce(`${body}.sig`), "nonceaaaa");
+  assert.equal(tokenNonce("nope"), null);
 });

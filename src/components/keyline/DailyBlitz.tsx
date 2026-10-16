@@ -119,7 +119,7 @@ export function DailyBlitz() {
     }
     if (correct) {
       sfx.correct();
-      const grant = useGame.getState().bankBlitz(rung.pay, rung.tier);
+      const grant = useGame.getState().bankBlitz(rung.pay, rung.tier, token);
       setReveal({ correct: true, answer, fact, match: grant.match, overflow: grant.overflow });
       if (step + 1 >= BLITZ_STEPS.length) {
         setEnding("clear");

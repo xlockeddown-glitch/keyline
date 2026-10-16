@@ -31,6 +31,16 @@ export function setWalletLive(on: boolean) {
   live = on;
 }
 
+/** Nonce sealed in a grade token. The server checks that it was graded today. */
+export function tokenNonce(token?: string | null): string | null {
+  try {
+    const n = JSON.parse(atob(String(token).split(".")[0]!.replace(/-/g, "+").replace(/_/g, "/"))).n;
+    return typeof n === "string" ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Send one op and copy the server pocket over the save. Null when this device isn't on the server wallet. */
 export async function commitWallet(op: ClientOp): Promise<WalletWire | null> {
   if (!live) return null;

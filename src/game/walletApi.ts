@@ -72,21 +72,11 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("friend"), id: z.string().min(3).max(80) }),
   z.object({ kind: z.literal("survey"), id: z.string().min(1).max(80) }),
   z.object({ kind: z.literal("crate") }),
-  z.object({ kind: z.literal("pulse") }),
-  z.object({ kind: z.literal("contract"), id: z.string().min(1).max(200) }),
-  z.object({ kind: z.literal("blitz"), step: z.number().int().min(0).max(5) }),
+  z.object({ kind: z.literal("contract"), nonces: z.array(z.string().regex(/^[A-Za-z0-9_-]{8,80}$/)).min(1).max(8) }),
+  z.object({ kind: z.literal("blitz"), step: z.number().int().min(0).max(5), nonces: z.array(z.string().regex(/^[A-Za-z0-9_-]{8,80}$/)).min(1).max(8) }),
   z.object({ kind: z.literal("wheel"), tier: Tier, city: City }),
-  z.object({
-    kind: z.literal("ride"),
-    departAt: Count,
-    arriveAt: Count,
-    openMs: Count,
-    outcome: z.discriminatedUnion("kind", [
-      z.object({ kind: z.literal("idle") }),
-      z.object({ kind: z.literal("played") }),
-      z.object({ kind: z.literal("won"), perf: z.number().finite().min(0).max(1), perfect: z.boolean().optional() }),
-    ]),
-  }),
+  z.object({ kind: z.literal("board"), from: City, to: City }),
+  z.object({ kind: z.literal("ride") }),
 ]);
 
 export type WalletWire = {

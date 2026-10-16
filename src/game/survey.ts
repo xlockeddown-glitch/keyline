@@ -84,6 +84,17 @@ export function poiName(id: string) {
   return POI_NAME[id] ?? "Mark";
 }
 
+/** A survey match the server can prove from graded place ids. Distance goals have no server record. */
+export function surveyProven(id: string, visited: ReadonlySet<string>): boolean {
+  const g = SURVEY_GOALS.find((x) => x.id === id);
+  if (!g || g.kind === "walk") return false;
+  const ids = [...visited].filter((poi) => POI_CITY[poi]);
+  if (g.kind === "visit") return ids.length >= g.need;
+  if (g.kind === "kind" && g.poiKind) return ids.filter((poi) => POI_KIND[poi] === g.poiKind).length >= g.need;
+  if (g.kind === "ward" && g.cityId) return ids.filter((poi) => POI_CITY[poi] === g.cityId).length >= g.need;
+  return false;
+}
+
 export type SurveySnap = {
   atlas: Record<string, true>;
   distanceM: number;

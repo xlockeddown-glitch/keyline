@@ -1,6 +1,6 @@
 import { applyTriviaBoosts, creditWhite } from "./boosts.ts";
 import { chooseStart, cleanUnlocks, freshUnlocks, lampLit, runFinished, unlockCity, type CityUnlocks } from "./cityPass.ts";
-import { KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
+import { CITIES, KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
 import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { payDaily } from "./dailyRun.ts";
 import { BLITZ_STEPS, blitzMatch } from "./dailyBlitz.ts";
@@ -15,9 +15,7 @@ import type { CityId, Tier, TriviaCat, TriviaDiff } from "./types.ts";
 import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay.ts";
 import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
-import { PULSE_POINTS } from "./pulse.ts";
 import { FARE_MAX_MS, matchCap, pocketRide, transitLoot } from "./ticket.ts";
-import type { RideOutcome } from "./rideGames.ts";
 
 /**
  * 0.0.78 server wallet. Coins, matches (`keys`), city unlocks and city passes.
@@ -25,9 +23,10 @@ import type { RideOutcome } from "./rideGames.ts";
  * Guests never call this.
  */
 
-export const COIN_CAP = 50_000_000;
-export const KEY_CAP = 2_000;
-export const PASS_CAP = 200;
+/** First sync clamps each device to these before it can raise the server pocket. */
+export const COIN_CAP = 250_000;
+export const KEY_CAP = 300;
+export const PASS_CAP = 25;
 export const RUN_CAP = 9_999;
 const TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 
@@ -236,10 +235,24 @@ export function startOp(w: WalletState, cityId: CityId): OpResult {
   return applyDelta(w, { cities: chooseStart(w.cities, cityId) });
 }
 
-/** One city-pass for finishing every place in a city. Once per city. The atlas stays on the device. */
-export function goalOp(w: WalletState, cityId: CityId): OpResult {
+/** A graded visit the server recorded: a right answer whose grade row names the place. */
+export function gradedPlace(detail: string | null | undefined): string | null {
+  if (!detail) return null;
+  try {
+    const d = JSON.parse(detail) as { g?: unknown; pi?: unknown };
+    if (d.g !== "perfect" && d.g !== "great" && d.g !== "good") return null;
+    return typeof d.pi === "string" && d.pi ? d.pi : null;
+  } catch {
+    return null;
+  }
+}
+
+/** One city pass when every place in the city has a server-graded visit. Once per city. */
+export function goalOp(w: WalletState, cityId: CityId, visited: ReadonlySet<string>): OpResult {
   if (!w.cities.unlocked.includes(cityId)) return { ok: false, reason: "locked" };
   if (w.cities.goalsPaid.includes(cityId)) return { ok: true, wallet: w };
+  const pois = CITIES[cityId]?.pois ?? [];
+  if (!pois.length || !pois.every((p) => visited.has(p.id))) return { ok: false, reason: "unproven" };
   return applyDelta(w, { cities: { ...w.cities, goalsPaid: [...w.cities.goalsPaid, cityId], passes: w.cities.passes + 1 } });
 }
 
@@ -299,9 +312,10 @@ export function friendOp(w: WalletState, n: number): OpResult {
   return applyDelta(w, { coins: paid.points - w.coins, keys: keyDiff(w.keys, paid.keys) });
 }
 
-export function surveyOp(w: WalletState, id: string): OpResult {
+export function surveyOp(w: WalletState, id: string, proven: boolean): OpResult {
   const g = SURVEY_GOALS.find((x) => x.id === id);
   if (!g) return { ok: false, reason: "unknown" };
+  if (!proven) return { ok: false, reason: "unproven" };
   return applyDelta(w, { keys: { [g.reward]: 1 } });
 }
 
@@ -312,43 +326,58 @@ export function crateOp(w: WalletState, today: string): OpResult {
   return applyDelta(w, { keys: loot, meta: { crateDay: today, crateStreak: day } });
 }
 
-export function pulseOp(w: WalletState): OpResult {
-  return applyDelta(w, { coins: PULSE_POINTS });
+/** Nonces from today's graded tokens. Unknown, repeated, or extra ones are dropped. At least one must remain. */
+export function acceptNonces(asked: readonly string[], seen: ReadonlySet<string>): string[] | null {
+  const out: string[] = [];
+  for (const raw of asked) {
+    if (typeof raw !== "string" || !/^[A-Za-z0-9_-]{8,80}$/.test(raw)) continue;
+    if (out.includes(raw) || !seen.has(raw)) continue;
+    out.push(raw);
+    if (out.length === 8) break;
+  }
+  return out.length ? out : null;
 }
 
-export function contractOp(w: WalletState, day: string): OpResult {
+export function contractOp(w: WalletState, day: string, nonces: readonly string[]): OpResult {
   const n = w.meta.contractDay === day ? w.meta.contractN : 0;
-  // A walker can finish several contracts in a day. Past this the server stops paying, so a
-  // modified client can't mint the amber bonus forever. Honest play stays under it.
   if (n >= 24) return { ok: false, reason: "capped" };
-  return applyDelta(w, { coins: 1500, keys: { amber: 1 }, meta: { contractDay: day, contractN: n + 1 } });
+  if (!nonces.length) return { ok: false, reason: "unproven" };
+  const applied = applyDelta(w, { coins: 1500, keys: { amber: 1 }, meta: { contractDay: day, contractN: n + 1 } });
+  if (!applied.ok) return applied;
+  return { ...applied, detail: JSON.stringify({ nonces: [...nonces] }) };
 }
 
-export function blitzOp(w: WalletState, day: string, step: number): OpResult {
+export function blitzOp(w: WalletState, day: string, step: number, nonces: readonly string[]): OpResult {
   if (step < 0 || step >= BLITZ_STEPS.length) return { ok: false, reason: "unknown" };
+  if (!nonces.length) return { ok: false, reason: "unproven" };
   if (w.meta.blitzDay === day && w.meta.blitzStep !== step) return { ok: false, reason: "order" };
   if (w.meta.blitzDay && w.meta.blitzDay !== day && w.meta.blitzDay > day) return { ok: false, reason: "order" };
   const spec = BLITZ_STEPS[step]!;
   const grant = blitzMatch(spec.tier, w.keys[spec.tier] ?? 0, matchCap(spec.tier));
-  return applyDelta(w, {
+  const applied = applyDelta(w, {
     coins: spec.pay + grant.overflow,
     keys: grant.match ? { [spec.tier]: 1 } : {},
     meta: { blitzDay: day, blitzStep: step + 1 },
   });
+  if (!applied.ok) return applied;
+  return { ...applied, detail: JSON.stringify({ nonces: [...nonces] }) };
 }
 
 const MIN_RIDE_GAP_MS = 48_000;
 
-export function rideOp(w: WalletState, input: { departAt: number; arriveAt: number; openMs: number; outcome: RideOutcome; now: number }): OpResult {
+/**
+ * Pay a ride from the server's ticket clock. `departAt` / `arriveAt` / `now` are the ticket row
+ * and the server clock. The idle schedule is the only one: a client win or a tab-open timer is not a payout.
+ */
+export function rideOp(w: WalletState, input: { departAt: number; arriveAt: number; now: number }): OpResult {
   const departAt = num(input.departAt, Number.MAX_SAFE_INTEGER);
   const arriveAt = Math.min(departAt + FARE_MAX_MS, num(input.arriveAt, Number.MAX_SAFE_INTEGER));
-  if (!(arriveAt > departAt)) return { ok: false, reason: "bad-ride" };
+  if (!(departAt > 0) || !(arriveAt > departAt)) return { ok: false, reason: "bad-ride" };
   const same = w.meta.rideAt === departAt;
   if (!same && w.meta.rideAt && departAt < w.meta.rideAt + MIN_RIDE_GAP_MS) return { ok: false, reason: "soon" };
   const wallMs = Math.max(0, Math.min(num(input.now, Number.MAX_SAFE_INTEGER), arriveAt) - departAt);
   const rideMs = arriveAt - departAt;
-  const openMs = Math.max(0, Math.min(num(input.openMs, FARE_MAX_MS), wallMs));
-  const due = transitLoot(wallMs, openMs, rideMs, input.outcome);
+  const due = transitLoot(wallMs, 0, rideMs);
   const have = same ? { white: w.meta.rideWhite, blue: w.meta.rideBlue, green: w.meta.rideGreen } : { white: 0, blue: 0, green: 0 };
   const owe = {
     white: Math.max(0, due.white - have.white),
@@ -487,6 +516,21 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const pay = marketPay(lampCoin, baseKeys, lampMult);
   const lit = lampLit(w.cities, p.poiTier);
   return withBoost(w, pay.coin + tip, pay.keys, boost, lit.u);
+}
+
+/**
+ * Lucky and a quest cloth pay only when the server has a record that this player owns them.
+ * Nothing in the database records either today, so a grade treats both as none.
+ */
+export function provenBoost(
+  lucky: boolean,
+  cloth: ClothId | null,
+  owned: { lucky: boolean; cloths: ReadonlySet<string> },
+): { lucky: boolean; cloth: ClothId | null } {
+  return {
+    lucky: lucky && owned.lucky,
+    cloth: cloth && owned.cloths.has(cloth) ? cloth : null,
+  };
 }
 
 export function clampLoot(n: number) {
