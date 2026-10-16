@@ -46,19 +46,49 @@ function applied(r: MutateResult): Applied {
   return { ...r, view: viewOf(r.wallet), authoritative: r.wallet.migrated };
 }
 
-/** First sync takes the max, once, plus one revise so a reward landing mid-sync is not dropped. */
-export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap): Promise<Applied> {
-  const { wallet } = await canonicalWallet(sql, userId);
-  if (wallet.migrated && wallet.meta.revised) return applied({ ok: true, replay: true, wallet });
-  const key = wallet.migrated ? "migrate-revise" : "migrate";
+/** One device may merge its local save once, plus one revise. A sixth device is ignored. */
+export const DEVICE_CAP = 5;
+const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
+
+export type SyncApplied = Applied & { deviceClosed: boolean };
+
+function deviceOf(opKey: string): string | null {
+  if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
+  if (opKey.startsWith("migrate:")) return opKey.slice("migrate:".length);
+  return null;
+}
+
+/** First sync on this device takes the max, then one revise so a reward landing mid-sync is not dropped. */
+export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
+  const { id, wallet } = await canonicalWallet(sql, userId);
+  if (!DEVICE_RE.test(deviceId)) return { ...applied({ ok: false, replay: false, reason: "device", wallet }), deviceClosed: true };
+  const rows = await sql<{ op_key: string }>`
+    select op_key from wallet_ledger
+    where user_id = ${id} and (op_key like ${"migrate:%"} or op_key like ${"migrate-revise:%"})
+  `;
+  const devices = new Set<string>();
+  let opened = false;
+  let closed = false;
+  for (const row of rows) {
+    const d = deviceOf(row.op_key);
+    if (!d) continue;
+    devices.add(d);
+    if (d !== deviceId) continue;
+    if (row.op_key.startsWith("migrate-revise:")) closed = true;
+    else opened = true;
+  }
+  // This device already had its revise. Later syncs return the server pocket and change nothing.
+  if (closed) return { ...applied({ ok: true, replay: true, wallet }), deviceClosed: true };
+  // A new device past the cap does not get a ledger row, so it cannot mint by inventing ids.
+  if (!opened && devices.size >= DEVICE_CAP) return { ...applied({ ok: true, replay: true, wallet }), deviceClosed: true };
+  const revise = opened;
+  const key = `${revise ? "migrate-revise" : "migrate"}:${deviceId}`;
   const r = await mutateWallet(sql, userId, key, (w) => {
-    if (w.migrated && (w.meta.revised || key === "migrate")) return { ok: true, wallet: w };
     const merged = mergeFirstSync(w, local);
     merged.migrated = true;
-    if (key === "migrate-revise") merged.meta = { ...merged.meta, revised: true };
-    return { ok: true, wallet: merged, detail: "sync" };
+    return { ok: true, wallet: merged, detail: revise ? "sync-revise" : "sync" };
   });
-  return applied(r);
+  return { ...applied(r), deviceClosed: revise && r.ok };
 }
 
 /**

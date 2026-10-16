@@ -19,7 +19,7 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet } from "./walletSql.ts";
-import { applyClientOp, awardGrade, spendDealt, syncPlayer } from "./walletApply.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, spendDealt, syncPlayer } from "./walletApply.ts";
 
 function sqlOf(db: PGlite): Sql {
   const sql = (async (strings: TemplateStringsArray, ...values: unknown[]) => {
@@ -121,11 +121,11 @@ test("first sync keeps the higher of each balance, capped, and unions cities", (
 
 test("sync, award, replay and spend survive a second call and a linked sign-in", async () => {
   const sql = await db();
-  const first = await syncPlayer(sql, "ann", snap({ coins: 40, keys: { white: 3 }, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }));
+  const first = await syncPlayer(sql, "ann", snap({ coins: 40, keys: { white: 3 }, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }), "annphone1");
   assert.equal(first.wallet.migrated, true);
   assert.equal(first.wallet.coins, 40);
   assert.equal(first.wallet.keys.white, 3);
-  assert.equal(first.wallet.meta.revised, false);
+  assert.equal(first.deviceClosed, false);
 
   // A grade before the revise is real money. Replaying the token does not pay it again.
   const graded = await awardGrade(sql, "ann", "n1", { ...pay(), prevNonce: "" });
@@ -135,19 +135,27 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   assert.equal(again.replay, true);
   assert.equal(again.wallet.coins, graded.wallet.coins);
 
-  // The one revise keeps a higher local pocket, then a later sync ignores the device.
-  const revised = await syncPlayer(sql, "ann", snap({ coins: 40, keys: { white: 9 } }));
-  assert.equal(revised.wallet.meta.revised, true);
+  // The one revise keeps a higher local pocket. The same device cannot raise it again after that.
+  const revised = await syncPlayer(sql, "ann", snap({ coins: 40, keys: { white: 9 } }), "annphone1");
+  assert.equal(revised.deviceClosed, true);
   assert.equal(revised.wallet.keys.white, 9);
   assert.ok(revised.wallet.coins >= graded.wallet.coins);
-  const cheated = await syncPlayer(sql, "ann-x", snap({ coins: COIN_CAP, keys: { white: KEY_CAP, violet: 50 } }));
+  const sameDevice = await syncPlayer(sql, "ann", snap({ coins: COIN_CAP, keys: { white: KEY_CAP } }), "annphone1");
+  assert.equal(sameDevice.replay, true);
+  assert.equal(sameDevice.wallet.keys.white, 9);
+  assert.equal(sameDevice.wallet.coins, revised.wallet.coins);
+  const cheated = await syncPlayer(sql, "ann-x", snap({ coins: COIN_CAP, keys: { white: KEY_CAP, violet: 50 } }), "annxphon1");
   // Not linked yet: ann-x is a different walker, so this sync is theirs, not Ann's.
   assert.equal(cheated.wallet.coins, COIN_CAP);
 
   await sql`insert into player_links (alias_id, primary_id, how) values ('ann-y', 'ann', 'code')`;
-  const linked = await syncPlayer(sql, "ann-y", snap({ coins: 1, keys: { white: 1, violet: 80 } }));
-  assert.equal(linked.replay, true);
-  assert.equal(linked.wallet.keys.violet, 0, "after the revise, a linked sign-in can't raise the pocket");
+  const linked = await syncPlayer(sql, "ann-y", snap({ coins: 1, keys: { white: 1, violet: 80 } }), "annyphon1");
+  assert.equal(linked.deviceClosed, false);
+  assert.equal(linked.wallet.keys.violet, 80, "a second device keeps a higher match count");
+  assert.equal(linked.wallet.keys.white, 9, "a second device does not lower a count");
+  const linkedRevise = await syncPlayer(sql, "ann-y", snap({ coins: 1, keys: { violet: 1 } }), "annyphon1");
+  assert.equal(linkedRevise.deviceClosed, true);
+  assert.equal(linkedRevise.wallet.keys.violet, 80);
   const ann = await canonicalWallet(sql, "ann");
   const y = await canonicalWallet(sql, "ann-y");
   assert.equal(ann.id, y.id);
@@ -182,4 +190,65 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   assert.equal(upAgain.replay || !upAgain.ok, true);
   assert.equal(upAgain.wallet.keys.white, up.wallet.keys.white);
   assert.equal(upAgain.wallet.keys.blue, up.wallet.keys.blue);
+});
+
+test("a second device unions cities and only raises a counter", async () => {
+  const sql = await db();
+  const first = await syncPlayer(
+    sql,
+    "bea",
+    snap({
+      coins: 100,
+      keys: { white: 4 },
+      cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], passes: 5, goalsPaid: ["austin"], freePick: false },
+    }),
+    "beaphone1",
+  );
+  await syncPlayer(sql, "bea", snap({ coins: 100, keys: { white: 4 } }), "beaphone1");
+  const second = await syncPlayer(
+    sql,
+    "bea",
+    snap({
+      coins: 10,
+      keys: { white: 1, green: 2 },
+      cities: { ...freshUnlocks(), start: "nyc", unlocked: ["nyc"], passes: 1, goalsPaid: ["nyc"], freePick: false },
+    }),
+    "beaphone2",
+  );
+  assert.equal(second.wallet.coins, 100);
+  assert.equal(second.wallet.keys.white, 4);
+  assert.equal(second.wallet.keys.green, 2);
+  assert.equal(second.wallet.cities.passes, 5);
+  assert.ok(second.wallet.cities.unlocked.includes("austin"));
+  assert.ok(second.wallet.cities.unlocked.includes("nyc"));
+  assert.ok(second.wallet.cities.goalsPaid.includes("austin"));
+  assert.ok(second.wallet.cities.goalsPaid.includes("nyc"));
+  assert.equal(first.wallet.cities.start, "austin");
+  const raised = await syncPlayer(sql, "bea", snap({ coins: 250, keys: { white: 9 } }), "beaphone2");
+  assert.equal(raised.deviceClosed, true);
+  assert.equal(raised.wallet.coins, 250);
+  assert.equal(raised.wallet.keys.white, 9);
+  assert.equal(raised.wallet.keys.green, 2);
+});
+
+test("a sixth device cannot mint coins", async () => {
+  const sql = await db();
+  for (let i = 0; i < DEVICE_CAP; i++) {
+    const id = `capdevice${i}`;
+    const open = await syncPlayer(sql, "cam", snap({ coins: 20 + i, keys: { blue: i } }), id);
+    assert.equal(open.deviceClosed, false);
+    const close = await syncPlayer(sql, "cam", snap({ coins: 20 + i, keys: { blue: i } }), id);
+    assert.equal(close.deviceClosed, true);
+  }
+  const held = (await canonicalWallet(sql, "cam")).wallet;
+  const sixth = await syncPlayer(sql, "cam", snap({ coins: COIN_CAP, keys: { white: KEY_CAP, violet: 40 } }), "capdevice9");
+  assert.equal(sixth.deviceClosed, true);
+  assert.equal(sixth.replay, true);
+  assert.equal(sixth.wallet.coins, held.coins);
+  assert.equal(sixth.wallet.keys.white, held.keys.white);
+  assert.equal(sixth.wallet.keys.violet, 0);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where op_key = ${"migrate:capdevice9"} or op_key = ${"migrate-revise:capdevice9"}`;
+  assert.equal(rows.length, 0);
+  const again = await syncPlayer(sql, "cam", snap({ coins: COIN_CAP }), "capdevice9");
+  assert.equal(again.wallet.coins, held.coins);
 });

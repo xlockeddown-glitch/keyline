@@ -7,6 +7,22 @@ import type { WalletWire } from "./walletApi";
  */
 let live = false;
 
+const DEVICE_KEY = "keyline-device-v1";
+const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
+
+/** Stable id for this browser profile. Each id gets one first-sync merge. */
+export function deviceId(): string {
+  try {
+    const cur = localStorage.getItem(DEVICE_KEY);
+    if (cur && DEVICE_RE.test(cur)) return cur;
+    const id = globalThis.crypto.randomUUID().replace(/-/g, "");
+    localStorage.setItem(DEVICE_KEY, id);
+    return id;
+  } catch {
+    return "device-local";
+  }
+}
+
 export function walletLive() {
   return live;
 }

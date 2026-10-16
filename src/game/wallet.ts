@@ -38,7 +38,7 @@ export type WalletMeta = {
   /** How many blitz lamps have already paid today (0–6). 6 means the day is closed. */
   blitzStep: number;
   wheel: Partial<Record<Tier, number>>;
-  /** Set after the one allowed revise of the first sync. */
+  /** Left over from the single-device sync. Per-device ledger keys are the lock now. */
   revised: boolean;
   /** Depart time of the ride currently paying, plus what that ride has already been credited. */
   rideAt: number;
@@ -134,7 +134,7 @@ export function viewOf(w: WalletState) {
   return { coins: w.coins, keys: { ...w.keys }, cities: w.cities };
 }
 
-/** Higher of each balance, then the cap. City lists union. Never sums, so a save can't be applied twice. */
+/** Higher of each balance, then the cap. Cities and paid goals union. Never lowers a counter, and never sums. */
 export function mergeFirstSync(server: WalletState, local: LocalSnap): WalletState {
   const lk = cleanKeys(local.keys);
   const keys = cleanKeys(null);

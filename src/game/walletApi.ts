@@ -48,6 +48,7 @@ const Snap = z.object({
       violet: Count.optional(),
     })
     .optional(),
+  deviceId: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/),
 });
 
 const Op = z.discriminatedUnion("kind", [
@@ -114,13 +115,14 @@ export const syncWallet = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<SyncWire> => {
     const { getSql } = await import("@/lib/db");
     const { syncPlayer } = await import("./walletApply");
-    const r = await syncPlayer(await getSql(), context.userId, { ...data, keys: data.keys ?? null });
+    const { deviceId, ...snap } = data;
+    const r = await syncPlayer(await getSql(), context.userId, { ...snap, keys: snap.keys ?? null }, deviceId);
     return {
       coins: r.view.coins,
       keys: r.view.keys,
       cities: r.view.cities,
       migrated: r.wallet.migrated,
-      revised: r.wallet.meta.revised,
+      revised: r.deviceClosed,
     };
   });
 

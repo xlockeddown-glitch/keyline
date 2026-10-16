@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 import { syncWallet, type SyncWire } from "@/game/walletApi";
-import { setWalletLive } from "@/game/walletClient";
+import { deviceId, setWalletLive } from "@/game/walletClient";
 import { useGame } from "@/game/store";
 
 function snapOf() {
@@ -20,9 +20,8 @@ function snapOf() {
 
 /**
  * 0.0.78: a signed-in walker's coins, matches and city passes move to the server on sign-in.
- * The first call keeps the higher of the two pockets. One revise catches a reward that landed
- * while that call was in flight, then the server stops taking the device's numbers.
- * Guests never get here.
+ * Each device gets one merge: the higher of the server and this device, never a lower number.
+ * One revise catches a reward that landed while that call was in flight. Guests never get here.
  */
 export function WalletSync() {
   const user = useCurrentUser();
@@ -37,11 +36,12 @@ export function WalletSync() {
     let live = true;
     void (async () => {
       try {
-        let r: SyncWire = await syncWallet({ data: snapOf() });
+        const id = deviceId();
+        let r: SyncWire = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         if (!live) return;
-        // Second call only while the revise is still open. It reads the pocket as it is now,
-        // including anything earned during the first round trip, and then closes the door.
-        if (!r.revised) r = await syncWallet({ data: snapOf() });
+        // Second call only while this device's revise is still open. It reads the pocket as it
+        // is now, including anything earned during the first round trip, and then closes the door.
+        if (!r.revised) r = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         if (!live) return;
         useGame.getState().adoptWallet(r);
         setWalletLive(true);

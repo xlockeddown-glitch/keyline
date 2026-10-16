@@ -7,10 +7,13 @@
  *   - guest, one tab: the store's own flow (tryOpen → pickCategory → answer), the save's seen list as memory;
  *   - guest, two tabs of one save, alternating: the tabs must share the save's memory (seenMemory.ts);
  *   - signed in on two devices (two browser contexts, separate saves), alternating: the server's per-walker recent
- *     list (trivia_recent) must carry the memory. Needs a gate stand-in: --gate http://127.0.0.1:8163 (skipped
- *     without one; the dev server must run with GROK_GATE_ORIGIN pointing at it).
+ *     list (trivia_recent) must carry the memory. Needs the gate stand-in (scripts/gate-standin.mjs)
+ *     on --gate http://127.0.0.1:8163 (skipped without one; the dev server must run with
+ *     GROK_GATE_ORIGIN pointing at it).
  *
- *   node scripts/qa-deal-repeats.mjs http://127.0.0.1:8080 [--gate http://127.0.0.1:8163] [--city detroit] [--n 50]
+ *   node scripts/gate-standin.mjs
+ *   GROK_GATE_ORIGIN=http://127.0.0.1:8163 npm run dev
+ *   node scripts/qa-deal-repeats.mjs http://127.0.0.1:8080 --gate http://127.0.0.1:8163 [--city detroit] [--n 50]
  *
  * Exits 1 on any repeat inside the window.
  */
@@ -34,7 +37,11 @@ async function page(ctx, jwt) {
   await p.goto(base + "/", { waitUntil: "domcontentloaded" });
   await p.waitForSelector(".book-ver", { timeout: 180000 });
   await p.waitForSelector(".city-blade:not([disabled])", { timeout: 180000 });
-  if (jwt) await p.waitForFunction(async () => Boolean((await (await fetch("/api/auth/get-session")).json())?.user), null, { timeout: 60000, polling: 1000 });
+  if (jwt) {
+    await p.waitForFunction(async () => Boolean((await (await fetch("/api/auth/get-session")).json())?.user), null, { timeout: 60000, polling: 1000 });
+    // The signed-in pocket is on the server after this device's sync. Deals before that spend nothing there.
+    await p.waitForFunction(async () => (await import("/src/game/walletClient.ts")).walletLive(), null, { timeout: 60000, polling: 200 });
+  }
   await p.waitForTimeout(600);
   await p.click(".city-blade");
   await p.waitForTimeout(1000);
@@ -55,7 +62,7 @@ async function context(jwt) {
   if (jwt) await c.route(`${base}/**`, (r) => r.continue({ headers: { ...r.request().headers(), "x-grok-identity": jwt } }));
   await c.addInitScript((city) => {
     if (!localStorage.getItem("keyline-save-v1"))
-      localStorage.setItem("keyline-save-v1", JSON.stringify({ version: 2, cityId: city, howtoDone: true, tutorial: 4, cities: { start: city, unlocked: [city], freePick: false, passes: 0, lampPts: 0, goalsPaid: [], runs: {}, runsPaid: [] } }));
+      localStorage.setItem("keyline-save-v1", JSON.stringify({ version: 2, cityId: city, howtoDone: true, tutorial: 4, points: 0, keys: { white: 80, blue: 40, green: 20, amber: 12, red: 8, violet: 8 }, cities: { start: city, unlocked: [city], freePick: false, passes: 0, lampPts: 0, goalsPaid: [], runs: {}, runsPaid: [] } }));
     localStorage.setItem("keyline-first-login-v1", JSON.stringify({ seen: true }));
   }, city);
   return c;
