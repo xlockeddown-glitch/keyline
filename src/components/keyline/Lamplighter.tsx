@@ -14,7 +14,7 @@ export function Lamplighter({
 }: {
   roundMs: number;
   seed: number;
-  onDone: (t: LampTally) => void;
+  onDone: (t: LampTally, taps?: number[]) => void;
   onQuit: () => void;
 }) {
   const lamps = useMemo(() => lampSchedule(roundMs, seed), [roundMs, seed]);
@@ -22,6 +22,7 @@ export function Lamplighter({
   const lit = useRef(new Set<number>());
   const missed = useRef(new Set<number>());
   const tally = useRef({ hits: 0, strays: 0, streak: 0, best: 0 });
+  const taps = useRef<number[]>([]);
   const done = useRef(false);
   const [now, setNow] = useState(0);
   const [flash, setFlash] = useState<"hit" | "stray" | null>(null);
@@ -44,7 +45,7 @@ export function Lamplighter({
         if (!done.current) {
           done.current = true;
           const { hits, strays, best } = tally.current;
-          finish.current({ lamps: lamps.length, hits, strays, streak: best });
+          finish.current({ lamps: lamps.length, hits, strays, streak: best }, taps.current);
         }
         return;
       }
@@ -59,6 +60,7 @@ export function Lamplighter({
     if (done.current) return;
     unlockAudio();
     const t = performance.now() - start.current;
+    taps.current.push(Math.round(t));
     const hit = lampInFrame(lamps, lit.current, t);
     const k = tally.current;
     if (hit) {

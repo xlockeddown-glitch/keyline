@@ -309,7 +309,11 @@ export type GameState = {
    * Start a ride-game round of `game` (default: the ride's current game) and store it as the pick.
    * Returns its length, or null if that game no longer fits before the platform.
    */
-  startRideRound: (game?: RideGameId) => number | null;
+  startRideRound: (game?: RideGameId, issuedMs?: number) => number | null;
+  /** Ask the server for this round's seed. Guests get null and deal locally. */
+  issueRide: (game: RideGameId) => Promise<{ seed: number; n: number; ms: number; game: string } | null>;
+  /** Send the round's moves. The server scores them. Guests no-op. */
+  submitRide: (n: number, moves: { taps?: number[]; picks?: string[]; boxes?: string[]; orders?: string[][] }) => void;
   /** Bank a finished round (best outcome only) and pay what it newly earns. */
   finishRideRound: (outcome: RideOutcome) => { white: number; blue: number; green: number; owed: number };
   /** The player pressed Stop mid-round: forfeit it. Idle pay still stands. */
@@ -2412,14 +2416,35 @@ export const useGame = create<GameState>((set, get) => ({
     set({ journey: chooseRideGame(j, game) });
     saveNow(get);
   },
-  startRideRound: (pick) => {
+  issueRide: async (game) => {
+    if (!walletLive()) return null;
+    const r = await commitWallet({ kind: "ride", deal: game });
+    const d = r?.rideDeal;
+    if (!d || d.game !== game) return null;
+    return d;
+  },
+  submitRide: (n, moves) => {
+    if (!walletLive()) return;
+    void commitWallet({
+      kind: "ride",
+      play: true,
+      round: {
+        n,
+        taps: moves.taps?.slice(0, 80),
+        picks: moves.picks?.slice(0, 8),
+        boxes: moves.boxes?.slice(0, 40),
+        orders: moves.orders?.slice(0, 4).map((o) => o.slice(0, 8)),
+      },
+    });
+  },
+  startRideRound: (pick, issuedMs) => {
     const j = get().journey;
     if (!j) return null;
     const now = Date.now();
     const game = pick ?? rideGameFor(j);
-    if (!rideGameFits(game, j.arriveAt - now)) return null;
-    const ms = rideRoundMs(game, j.arriveAt - now);
+    const ms = issuedMs && issuedMs > 0 ? issuedMs : rideRoundMs(game, j.arriveAt - now);
     if (ms == null) return null;
+    if (!issuedMs && !rideGameFits(game, j.arriveAt - now)) return null;
     // The ride's history entry follows what was actually played, so the next suggestion varies
     // against the player's picks. Rides from before 0.0.35 never pushed an entry; leave theirs alone.
     const hist = get().rideHistory ?? [];
@@ -2468,7 +2493,8 @@ export const useGame = create<GameState>((set, get) => ({
     const beat = watching && now - rideWatchAt >= 20_000;
     if ((found > 0 || beat) && walletLive()) {
       if (beat) rideWatchAt = now;
-      void commitWallet({ kind: "ride", watch: watching });
+      const playing = Boolean((j.roundAt || j.game) && watching);
+      void commitWallet({ kind: "ride", watch: watching, play: playing });
     }
     if (found > 0) {
       sfx.pickup();

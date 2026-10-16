@@ -21,7 +21,7 @@ export function RoutePuzzle({
   city: string;
   maps: RoutePuzzleMap[];
   roundMs: number;
-  onDone: (t: RouteTally) => void;
+  onDone: (t: RouteTally, orders?: string[][]) => void;
   onQuit: () => void;
 }) {
   const [at, setAt] = useState(0);
@@ -29,6 +29,7 @@ export function RoutePuzzle({
   const [shown, setShown] = useState<{ grade: RouteGrade; metres: number } | null>(null);
   const [left, setLeft] = useState(Math.ceil(roundMs / 1000));
   const tally = useRef<RouteTally>({ total: maps.length, done: 0, shortest: 0, close: 0 });
+  const orders = useRef<string[][]>([]);
   const done = useRef(false);
   const start = useRef(0);
   const next = useRef<number | undefined>(undefined);
@@ -39,7 +40,7 @@ export function RoutePuzzle({
     if (done.current) return;
     done.current = true;
     window.clearTimeout(next.current);
-    finish.current({ ...tally.current });
+    finish.current({ ...tally.current }, orders.current);
   }, []);
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export function RoutePuzzle({
   const lock = useCallback(() => {
     if (done.current || shown || !map || order.length < map.stops.length) return;
     const g = gradeRoute(map, order);
+    orders.current.push(order.slice());
     const k = tally.current;
     k.done += 1;
     if (g.grade === "shortest") {

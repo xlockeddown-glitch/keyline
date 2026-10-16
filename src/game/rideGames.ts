@@ -319,6 +319,11 @@ export function lampRoundMs(remainingMs: number): number | null {
 export type LampTier = "white" | "blue" | "green" | "amber";
 export type Lamp = { id: number; at: number; tier: LampTier };
 
+/** Shared round seed. Lamplighter and Match sorter deal from this; Where am I? and Route puzzle use the ride seed plus the round index. */
+export function roundSeed(seed: number, n: number) {
+  return (Math.floor(seed) + Math.max(0, Math.floor(n)) * 7919) >>> 0;
+}
+
 export function seededRng(seed: number) {
   let a = (Math.floor(seed) >>> 0) || 0x9e3779b9;
   return () => {

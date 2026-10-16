@@ -15,6 +15,7 @@ import type { CityId, Tier, TriviaCat, TriviaDiff } from "./types.ts";
 import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay.ts";
 import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
+import { betterOutcome, IDLE, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
 import { FARE_MAX_MS, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
 /**
@@ -59,6 +60,21 @@ export type WalletMeta = {
   /** Tab-open time on the current ride, measured between server heartbeats. */
   rideOpen: number;
   rideSeen: number;
+  /** Server times of the first and latest play event on this ride. Equal means one instant. */
+  rideLo: number;
+  rideHi: number;
+  /** 0 idle, 1 played, 2 won. A win is kept even before the ride has been played long enough to pay it. */
+  rideRank: number;
+  /** Win performance in thousandths, so 1000 is a clean sheet. */
+  ridePerf: number;
+  ridePerfect: boolean;
+  /** A round was dealt or a submit landed. Bare tab heartbeats do not set this. */
+  rideTouch: boolean;
+  /** Open round index, or -1 when this ride has not been dealt. */
+  rideOpenN: number;
+  rideGame: string;
+  /** Length of the open round, the one the server dealt. */
+  rideMs: number;
 };
 
 export type WalletState = {
@@ -110,6 +126,15 @@ const emptyMeta = (): WalletMeta => ({
   walkM: 0,
   rideOpen: 0,
   rideSeen: 0,
+  rideLo: 0,
+  rideHi: 0,
+  rideRank: 0,
+  ridePerf: 0,
+  ridePerfect: false,
+  rideTouch: false,
+  rideOpenN: -1,
+  rideGame: "",
+  rideMs: 0,
 });
 
 export function emptyWallet(): WalletState {
@@ -120,6 +145,19 @@ function num(v: unknown, cap: number) {
   const n = typeof v === "number" ? v : Number(v);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.min(cap, Math.floor(n));
+}
+
+/** Round index. Zero is a real round; anything negative means none has been dealt. */
+function openIndex(v: unknown) {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n) || n < 0) return -1;
+  return Math.min(12, Math.floor(n));
+}
+
+const RIDE_GAME_IDS = ["lamplighter", "where-am-i", "match-sorter", "route-puzzle"] as const;
+
+function rideGameOf(v: unknown): RideGameId | "" {
+  return (RIDE_GAME_IDS as readonly string[]).includes(String(v)) ? (v as RideGameId) : "";
 }
 
 export function cleanMeta(raw: unknown): WalletMeta {
@@ -146,6 +184,15 @@ export function cleanMeta(raw: unknown): WalletMeta {
     walkM: num(m.walkM, WALK_CAP),
     rideOpen: num(m.rideOpen, FARE_MAX_MS),
     rideSeen: num(m.rideSeen, Number.MAX_SAFE_INTEGER),
+    rideLo: num(m.rideLo, Number.MAX_SAFE_INTEGER),
+    rideHi: num(m.rideHi, Number.MAX_SAFE_INTEGER),
+    rideRank: m.rideRank === 1 || m.rideRank === 2 ? m.rideRank : 0,
+    ridePerf: num(m.ridePerf, 1000),
+    ridePerfect: m.ridePerfect === true,
+    rideTouch: m.rideTouch === true,
+    rideOpenN: openIndex(m.rideOpenN),
+    rideGame: rideGameOf(m.rideGame),
+    rideMs: num(m.rideMs, 120_000),
   };
 }
 
@@ -416,12 +463,27 @@ const MIN_RIDE_GAP_MS = 48_000;
 /** One heartbeat can add at most this much tab-open time. The clock is the server's. */
 const RIDE_WATCH_MS = 45_000;
 
+export type RideDealInput = { game: string; n: number; seed: number };
+
 /**
  * Pay a ride from the server's ticket clock. `departAt` / `arriveAt` / `now` are the ticket row
- * and the server clock. A win is not read from the client. Tab-open time grows only when `watch`
- * is set, and only by the gap since the previous server heartbeat.
+ * and the server clock. A win arrives only as `outcome`, already scored from a dealt round.
+ * Tab-open time grows only when `watch` is set. Played and won pay only once play events
+ * span at least half the ride, and never above the guest table.
  */
-export function rideOp(w: WalletState, input: { departAt: number; arriveAt: number; now: number; watch?: boolean }): OpResult {
+export function rideOp(
+  w: WalletState,
+  input: {
+    departAt: number;
+    arriveAt: number;
+    now: number;
+    watch?: boolean;
+    play?: boolean;
+    touch?: boolean;
+    deal?: RideDealInput;
+    outcome?: RideOutcome | null;
+  },
+): OpResult {
   const departAt = num(input.departAt, Number.MAX_SAFE_INTEGER);
   const arriveAt = Math.min(departAt + FARE_MAX_MS, num(input.arriveAt, Number.MAX_SAFE_INTEGER));
   if (!(departAt > 0) || !(arriveAt > departAt)) return { ok: false, reason: "bad-ride" };
@@ -429,7 +491,7 @@ export function rideOp(w: WalletState, input: { departAt: number; arriveAt: numb
   if (!same && w.meta.rideAt && departAt < w.meta.rideAt + MIN_RIDE_GAP_MS) return { ok: false, reason: "soon" };
   const now = num(input.now, Number.MAX_SAFE_INTEGER);
   const wallMs = Math.max(0, Math.min(now, arriveAt) - departAt);
-  const rideMs = arriveAt - departAt;
+  const rideLen = arriveAt - departAt;
   let open = same ? w.meta.rideOpen : 0;
   let seen = same ? w.meta.rideSeen : 0;
   if (input.watch) {
@@ -437,7 +499,37 @@ export function rideOp(w: WalletState, input: { departAt: number; arriveAt: numb
     open = Math.min(FARE_MAX_MS, open + Math.min(RIDE_WATCH_MS, Math.max(0, now - prev)));
     seen = now;
   }
-  const due = transitLoot(wallMs, open, rideMs);
+  let lo = same ? w.meta.rideLo : 0;
+  let hi = same ? w.meta.rideHi : 0;
+  let touch = same ? w.meta.rideTouch : false;
+  let openN = same ? w.meta.rideOpenN : -1;
+  let game = same ? w.meta.rideGame : "";
+  let roundMs = same ? w.meta.rideMs : 0;
+  let best: RideOutcome = same ? storedRide(w.meta) : IDLE;
+  let detail: string | undefined;
+  if (input.deal) {
+    const dealt = rideGameOf(input.deal.game);
+    const left = arriveAt - Math.min(Math.max(now, departAt), arriveAt);
+    const ms = dealt ? rideRoundMs(dealt, left) : null;
+    const n = openN < 0 ? 0 : openN + 1;
+    if (!dealt || ms == null || n > 12 || n !== Math.floor(input.deal.n)) return { ok: false, reason: n !== Math.floor(input.deal.n) ? "busy" : "no-round" };
+    openN = n;
+    game = dealt;
+    roundMs = ms;
+    touch = true;
+    detail = JSON.stringify({ seed: input.deal.seed, n, ms, game: dealt });
+  }
+  if (input.outcome) best = betterOutcome(best, input.outcome);
+  if (input.touch || input.outcome || input.deal) touch = true;
+  if (touch && (input.deal || input.touch || input.outcome || input.play)) {
+    const stamp = Math.min(arriveAt, Math.max(departAt, now));
+    if (lo <= 0 || stamp < lo) lo = stamp;
+    if (stamp > hi) hi = stamp;
+  }
+  const span = hi > lo ? hi - lo : 0;
+  const playedOk = touch && hi > lo && span >= rideLen * 0.5;
+  const paying: RideOutcome = !playedOk ? IDLE : best.kind === "won" ? best : { kind: "played" };
+  const due = transitLoot(wallMs, open, rideLen, paying);
   const have = same ? { white: w.meta.rideWhite, blue: w.meta.rideBlue, green: w.meta.rideGreen } : { white: 0, blue: 0, green: 0 };
   const owe = {
     white: Math.max(0, due.white - have.white),
@@ -446,9 +538,39 @@ export function rideOp(w: WalletState, input: { departAt: number; arriveAt: numb
   };
   const paid = pocketRide(w.keys, owe);
   const gained = keyDiff(w.keys, paid.keys);
-  const meta = { rideAt: departAt, rideWhite: due.white, rideBlue: due.blue, rideGreen: due.green, rideOpen: open, rideSeen: seen };
-  if (!gained.white && !gained.blue && !gained.green) return applyDelta(w, { meta });
-  return applyDelta(w, { keys: gained, meta });
+  const meta = {
+    rideAt: departAt,
+    rideWhite: due.white,
+    rideBlue: due.blue,
+    rideGreen: due.green,
+    rideOpen: open,
+    rideSeen: seen,
+    rideLo: lo,
+    rideHi: hi,
+    rideTouch: touch,
+    rideOpenN: openN,
+    rideGame: game,
+    rideMs: roundMs,
+    ...rankOf(best),
+  };
+  const applied = !gained.white && !gained.blue && !gained.green ? applyDelta(w, { meta }) : applyDelta(w, { keys: gained, meta });
+  if (!applied.ok || !detail) return applied;
+  return { ...applied, detail };
+}
+
+function storedRide(m: WalletMeta): RideOutcome {
+  if (m.rideRank >= 2) {
+    const perf = Math.min(1, m.ridePerf / 1000);
+    return m.ridePerfect ? { kind: "won", perf, perfect: true } : { kind: "won", perf };
+  }
+  if (m.rideRank === 1) return { kind: "played" };
+  return IDLE;
+}
+
+function rankOf(o: RideOutcome): Pick<WalletMeta, "rideRank" | "ridePerf" | "ridePerfect"> {
+  if (o.kind === "won") return { rideRank: 2, ridePerf: Math.round(Math.min(1, Math.max(0, o.perf)) * 1000), ridePerfect: Boolean(o.perfect) };
+  if (o.kind === "played") return { rideRank: 1, ridePerf: 0, ridePerfect: false };
+  return { rideRank: 0, ridePerf: 0, ridePerfect: false };
 }
 
 /** A street match from the player's city-day list. The tier and the market flag come from that list, not the client. */

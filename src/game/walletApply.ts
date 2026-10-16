@@ -35,6 +35,8 @@ import {
   type WalletState,
 } from "./wallet.ts";
 import { CITIES, type KioskId } from "./data.ts";
+import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
+import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
@@ -218,9 +220,22 @@ export type ClientOp =
   | { kind: "blitz"; step: number; nonces: string[] }
   | { kind: "wheel"; tier: Tier; city: CityId }
   | { kind: "board"; from: CityId; to: CityId }
-  | { kind: "ride"; watch?: boolean };
+  | {
+      kind: "ride";
+      watch?: boolean;
+      play?: boolean;
+      deal?: RideGameId;
+      round?: { n: number } & RideMoves;
+    };
 
-export type ClientResult = Applied & { wardrobe?: Wardrobe; ingredient?: { id: string; n: number }; line?: string };
+export type RideDeal = { seed: number; n: number; ms: number; game: string };
+
+export type ClientResult = Applied & {
+  wardrobe?: Wardrobe;
+  ingredient?: { id: string; n: number };
+  line?: string;
+  rideDeal?: RideDeal;
+};
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
@@ -249,13 +264,18 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "daily") {
-    const day = today();
-    const rows = await sql<{ voided: boolean }>`
-      select voided from daily_runs where day = ${day} and city = ${op.city} and user_id = ${sessionUserId} limit 1
-    `;
-    // One payout for the player on the server's UTC day, whichever city asks. A voided run never pays.
-    if (rows[0]?.voided) return { ...applied({ ok: false, replay: false, reason: "no-run", wallet }), authoritative: true };
-    const r = await mutateWallet(sql, sessionUserId, `daily:${day}`, (w) => dailyOp(w, day, op.city));
+    // One finished Lantern Run per city per the day that run started. The row is the proof.
+    const ids = await groupIds(sql, sessionUserId);
+    let done = false;
+    for (const uid of ids) {
+      const rows = await sql<{ time_ms: number | null; voided: boolean }>`
+        select time_ms, voided from daily_runs where day = ${op.day} and city = ${op.city} and user_id = ${uid} limit 1
+      `;
+      const row = rows[0];
+      if (row && Number(row.time_ms) > 0 && row.voided !== true) done = true;
+    }
+    if (!done) return refused(wallet, "no-run");
+    const r = await mutateWallet(sql, sessionUserId, `daily:${op.day}:${op.city}`, (w) => dailyOp(w, op.day, op.city));
     return applied(r);
   }
 
@@ -358,7 +378,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
-  if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op.watch === true);
+  if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op);
 
   const key = opKey(op, wallet);
   const r = await mutateWallet(sql, sessionUserId, key, (w) => {
@@ -560,14 +580,58 @@ async function boardTicket(sql: Sql, sessionUserId: string, id: string, wallet: 
   return applied(r);
 }
 
-/** Pay the open ticket from the server clock. No client departure, arrival, or minigame result is read. */
-async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, watch: boolean): Promise<ClientResult> {
+function rideDealOf(detail: string | undefined): RideDeal | undefined {
+  if (!detail) return;
+  try {
+    const d = JSON.parse(detail) as Partial<RideDeal>;
+    if (typeof d.seed === "number" && typeof d.n === "number" && typeof d.ms === "number" && typeof d.game === "string") {
+      return { seed: d.seed, n: d.n, ms: d.ms, game: d.game };
+    }
+  } catch {
+    /* a heartbeat stores no deal */
+  }
+  return;
+}
+
+function nextRound(w: WalletState, departAt: number) {
+  if (w.meta.rideAt !== departAt || w.meta.rideOpenN < 0) return 0;
+  return w.meta.rideOpenN + 1;
+}
+
+/** Pay the open ticket from the server clock. A win is scored here from the dealt seed and the submitted moves. */
+async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, op: Extract<ClientOp, { kind: "ride" }>): Promise<ClientResult> {
   const ticket = await latestTicket(sql, id);
   if (!ticket) return refused(wallet, "no-ticket");
   const now = Date.now();
+  const clock = { departAt: ticket.at, arriveAt: ticket.at + ticket.ms, now };
+  const watch = op.watch === true;
+  if (op.deal) {
+    const seed = rideSeed(id, ticket.at);
+    const n = nextRound(wallet, ticket.at);
+    const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:d:${n}`, (w) => rideOp(w, { ...clock, deal: { game: op.deal!, n, seed } }));
+    const rideDeal = r.ok ? rideDealOf(r.detail) : undefined;
+    return { ...applied(r), rideDeal };
+  }
+  if (op.round) {
+    const n = Math.floor(op.round.n);
+    const open = wallet.meta.rideAt === ticket.at && wallet.meta.rideOpenN === n && wallet.meta.rideGame;
+    if (!open) {
+      const wallSec = Math.floor(Math.max(0, Math.min(ticket.ms, now - ticket.at)) / 1000);
+      const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:${wallSec}:p`, (w) => rideOp(w, { ...clock, play: true, watch }));
+      return applied(r);
+    }
+    const moves = op.round;
+    const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:r:${n}`, (w) => {
+      if (w.meta.rideAt !== ticket.at || w.meta.rideOpenN !== n || !w.meta.rideGame) return { ok: false, reason: "busy" };
+      const outcome = scoreRide(w.meta.rideGame, rideSeed(id, ticket.at), n, w.meta.rideMs, ticket.to, moves);
+      return rideOp(w, { ...clock, play: true, watch, touch: true, outcome });
+    });
+    return applied(r);
+  }
   const wallSec = Math.floor(Math.max(0, Math.min(ticket.ms, now - ticket.at)) / 1000);
-  const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:${wallSec}${watch ? ":w" : ""}`, (w) =>
-    rideOp(w, { departAt: ticket.at, arriveAt: ticket.at + ticket.ms, now, watch }),
+  const play = op.play === true;
+  const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:${wallSec}${watch ? ":w" : ""}${play ? ":p" : ""}`, (w) =>
+    rideOp(w, { ...clock, watch, play }),
   );
   return applied(r);
 }

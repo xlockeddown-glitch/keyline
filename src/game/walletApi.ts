@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { CITY_LIST, KIOSK } from "./data";
-import type { ClientOp } from "./walletApply";
+import type { ClientOp, RideDeal } from "./walletApply";
 import { COSMETIC_IDS, type Wardrobe } from "./cosmetics";
 import type { CityUnlocks } from "./cityPass";
 import type { CityId, Tier } from "./types";
@@ -81,7 +81,21 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("blitz"), step: z.number().int().min(0).max(5), nonces: z.array(z.string().regex(/^[A-Za-z0-9_-]{8,80}$/)).min(1).max(8) }),
   z.object({ kind: z.literal("wheel"), tier: Tier, city: City }),
   z.object({ kind: z.literal("board"), from: City, to: City }),
-  z.object({ kind: z.literal("ride"), watch: z.boolean().optional() }),
+  z.object({
+    kind: z.literal("ride"),
+    watch: z.boolean().optional(),
+    play: z.boolean().optional(),
+    deal: z.enum(["lamplighter", "where-am-i", "match-sorter", "route-puzzle"]).optional(),
+    round: z
+      .object({
+        n: z.number().int().min(0).max(12),
+        taps: z.array(z.number().int().min(0).max(180_000)).max(80).optional(),
+        picks: z.array(z.string().max(80)).max(8).optional(),
+        boxes: z.array(z.string().max(12)).max(40).optional(),
+        orders: z.array(z.array(z.string().max(80)).max(8)).max(4).optional(),
+      })
+      .optional(),
+  }),
 ]);
 
 export type WalletWire = {
@@ -94,6 +108,7 @@ export type WalletWire = {
   wardrobe?: Wardrobe;
   ingredient?: { id: string; n: number };
   line?: string;
+  rideDeal?: RideDeal;
 };
 
 export type SyncWire = {
@@ -140,5 +155,6 @@ export const applyWallet = createServerFn({ method: "POST" })
       wardrobe: r.wardrobe,
       ingredient: r.ingredient,
       line: r.line,
+      rideDeal: r.rideDeal,
     };
   });

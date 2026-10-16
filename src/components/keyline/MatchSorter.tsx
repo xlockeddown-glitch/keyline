@@ -42,13 +42,14 @@ export function MatchSorter({
 }: {
   roundMs: number;
   seed: number;
-  onDone: (t: SortTally) => void;
+  onDone: (t: SortTally, boxes?: string[]) => void;
   onQuit: () => void;
 }) {
   const matches = useMemo(() => sorterSchedule(seed), [seed]);
   const start = useRef(0);
   const gone = useRef(new Set<number>());
   const tally = useRef({ right: 0, wrong: 0, missed: 0, streak: 0, best: 0 });
+  const boxes = useRef<string[]>(matches.map(() => ""));
   const done = useRef(false);
   const [now, setNow] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -68,6 +69,7 @@ export function MatchSorter({
       for (const m of matches) {
         if (!gone.current.has(m.id) && fallProgress(m, t) >= 1) {
           gone.current.add(m.id);
+          boxes.current[m.id] = "";
           tally.current.missed += 1;
           tally.current.streak = 0;
           if (pickedRef.current === m.id) setPicked(null);
@@ -78,7 +80,7 @@ export function MatchSorter({
           done.current = true;
           const k = tally.current;
           const missed = k.missed + matches.filter((m) => !gone.current.has(m.id)).length;
-          finish.current({ total: matches.length, right: k.right, wrong: k.wrong, missed, streak: k.best });
+          finish.current({ total: matches.length, right: k.right, wrong: k.wrong, missed, streak: k.best }, boxes.current);
         }
         return;
       }
@@ -102,6 +104,7 @@ export function MatchSorter({
       const m: SortMatch | undefined = air.find((x) => x.id === want) ?? air[0];
       if (!m) return;
       gone.current.add(m.id);
+      boxes.current[m.id] = tier;
       const k = tally.current;
       const ok = m.tier === tier;
       if (ok) {

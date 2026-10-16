@@ -16,13 +16,14 @@ export function WhereAmI({
   city: string;
   clues: WhereClue[];
   roundMs: number;
-  onDone: (t: WhereTally) => void;
+  onDone: (t: WhereTally, picks?: string[]) => void;
   onQuit: () => void;
 }) {
   const [at, setAt] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [left, setLeft] = useState(Math.ceil(roundMs / 1000));
   const tally = useRef<WhereTally>({ asked: 0, right: 0, total: clues.length });
+  const picks = useRef<string[]>([]);
   const done = useRef(false);
   const start = useRef(0);
   const next = useRef<number | undefined>(undefined);
@@ -33,7 +34,7 @@ export function WhereAmI({
     if (done.current) return;
     done.current = true;
     window.clearTimeout(next.current);
-    finish.current({ ...tally.current });
+    finish.current({ ...tally.current }, picks.current);
   }, []);
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export function WhereAmI({
     (name: string) => {
       if (done.current || picked || !clue) return;
       unlockAudio();
+      picks.current.push(name);
       const right = name === clue.answer;
       tally.current.asked += 1;
       if (right) {

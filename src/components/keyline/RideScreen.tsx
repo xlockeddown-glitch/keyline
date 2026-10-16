@@ -12,6 +12,7 @@ import {
   lampVerdict,
   perfectLine,
   pickerDefault,
+  roundSeed,
   rideGameFits,
   rideGameFor,
   rideGameLength,
@@ -30,6 +31,7 @@ import { RoutePuzzle } from "./RoutePuzzle";
 import { routeOutcome, routeRound, routeVerdict, type RoutePuzzleMap, type RouteTally } from "@/game/routePuzzle";
 import { sortOutcome, sortVerdict, type SortTally } from "@/game/matchSorter";
 import { whereOutcome, whereRound, whereVerdict, type WhereClue, type WhereTally } from "@/game/whereAmI";
+import { walletLive } from "@/game/walletClient";
 
 function lootLine(j: { grantedWhite?: number; grantedBlue?: number; grantedGreen?: number }) {
   const bits: string[] = [];
@@ -70,7 +72,7 @@ function GamePicker(props: {
   left: number;
   again?: boolean;
   onSelect: (g: RideGameId) => void;
-  onPlay: (g: RideGameId) => void;
+  onPlay: (g: RideGameId) => void | Promise<void>;
 }) {
   const { games, selected, suggested, left, again, onSelect, onPlay } = props;
   return (
@@ -136,8 +138,10 @@ export function RideScreen() {
   const chooseGame = useGame((s) => s.chooseRideGame);
   const finishRideRound = useGame((s) => s.finishRideRound);
   const dropRideRound = useGame((s) => s.dropRideRound);
+  const issueRide = useGame((s) => s.issueRide);
+  const submitRide = useGame((s) => s.submitRide);
   const [, beat] = useState(0);
-  const [round, setRound] = useState<{ ms: number; seed: number; clues?: WhereClue[]; maps?: RoutePuzzleMap[]; game?: RideGameId } | null>(null);
+  const [round, setRound] = useState<{ ms: number; seed: number; n: number; clues?: WhereClue[]; maps?: RoutePuzzleMap[]; game?: RideGameId } | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
@@ -169,38 +173,56 @@ export function RideScreen() {
   const canPlay = rideGameFits(game, left);
   const forRide = rideReward(total, journeyOutcome(journey));
 
-  const play = (pick: RideGameId = game) => {
-    const n = (journey.game?.rounds ?? 0) + (journey.forfeits ?? 0);
+  const play = async (pick: RideGameId = game) => {
+    const guestN = (journey.game?.rounds ?? 0) + (journey.forfeits ?? 0);
+    let seed = journey.departAt;
+    let n = guestN;
+    let dealtMs: number | undefined;
+    if (walletLive()) {
+      const deal = await issueRide(pick);
+      if (!deal || deal.game !== pick) return;
+      seed = deal.seed;
+      n = deal.n;
+      dealtMs = deal.ms;
+    }
     // Deal the round's content before opening it, so a city with nothing to deal never strands an open round.
-    const clues = pick === "where-am-i" ? whereRound(to.pois, journey.departAt, n) : undefined;
-    const maps = pick === "route-puzzle" ? routeRound(to.pois, journey.departAt, n) : undefined;
+    const clues = pick === "where-am-i" ? whereRound(to.pois, seed, n) : undefined;
+    const maps = pick === "route-puzzle" ? routeRound(to.pois, seed, n) : undefined;
     if ((clues && !clues.length) || (maps && !maps.length)) return;
-    const ms = startRideRound(pick);
+    const ms = startRideRound(pick, dealtMs);
     if (ms == null) return;
     setResult(null);
-    if (clues) setRound({ ms, seed: journey.departAt, clues, game: pick });
-    else if (maps) setRound({ ms, seed: journey.departAt, maps, game: pick });
-    else setRound({ ms, seed: journey.departAt + (journey.game?.rounds ?? 0) * 7919 + (journey.forfeits ?? 0), game: pick });
+    const shown = pick === "lamplighter" || pick === "match-sorter" ? roundSeed(seed, n) : seed;
+    if (clues) setRound({ ms, seed: shown, n, clues, game: pick });
+    else if (maps) setRound({ ms, seed: shown, n, maps, game: pick });
+    else setRound({ ms, seed: shown, n, game: pick });
   };
   const settle = (outcome: RideOutcome, verdict: string, sub?: string) => {
     const add = finishRideRound(outcome);
     setRound(null);
     setResult({ verdict, sub, outcome, add });
   };
-  const done = (tally: LampTally) => {
+  const filed = (moves: { taps?: number[]; picks?: string[]; boxes?: string[]; orders?: string[][] }) => {
+    if (round) submitRide(round.n, moves);
+  };
+  const done = (tally: LampTally, taps?: number[]) => {
+    filed({ taps });
     const outcome = lampOutcome(tally);
     settle(outcome, lampVerdict(tally), perfectLine(outcome) ?? (tally.streak >= 5 ? `Best run: ${tally.streak} in a row.` : undefined));
   };
-  const doneWhere = (tally: WhereTally) => {
+  const doneWhere = (tally: WhereTally, picks?: string[]) => {
+    filed({ picks });
     const outcome = whereOutcome(tally);
     settle(outcome, whereVerdict(tally, to.name), perfectLine(outcome));
   };
-  const doneSort = (tally: SortTally) => {
+  const doneSort = (tally: SortTally, boxes?: string[]) => {
+    filed({ boxes });
     const outcome = sortOutcome(tally);
     const sub = perfectLine(outcome) ?? (tally.streak >= 6 ? `Best run: ${tally.streak} in a row.` : undefined);
     settle(outcome, sortVerdict(tally), sub);
   };
-  const doneRoute = (tally: RouteTally) => {
+  const doneRoute = (tally: RouteTally, orders?: string[][]) => {
+    filed({ orders });
     const outcome = routeOutcome(tally);
     settle(outcome, routeVerdict(tally, to.name), perfectLine(outcome));
   };
