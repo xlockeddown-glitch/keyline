@@ -31,6 +31,17 @@ export function setWalletLive(on: boolean) {
   live = on;
 }
 
+let player = "";
+
+/** Canonical id from the last sync. Street spots are seeded with it. */
+export function streetPlayer() {
+  return player;
+}
+
+export function setStreetPlayer(id: string) {
+  player = id;
+}
+
 /** Nonce sealed in a grade token. The server checks that it was graded today. */
 export function tokenNonce(token?: string | null): string | null {
   try {

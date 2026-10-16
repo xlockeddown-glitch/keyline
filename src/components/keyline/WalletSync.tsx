@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 import { syncWallet, type SyncWire } from "@/game/walletApi";
-import { deviceId, setWalletLive } from "@/game/walletClient";
+import { deviceId, setStreetPlayer, setWalletLive } from "@/game/walletClient";
 import { useGame } from "@/game/store";
 
 function snapOf() {
@@ -15,6 +15,9 @@ function snapOf() {
     blitzDay: s.lastBlitzDay,
     blitzStep: s.blitzTake > 0 ? Math.min(6, s.blitzMatches.length) : 0,
     wheel: s.wheelClaimed,
+    lucky: s.charms.includes("lucky"),
+    cloths: s.quests.cloths.slice(0, 18),
+    distanceM: Math.min(150_000, Math.max(0, Math.floor(s.distanceM) || 0)),
   };
 }
 
@@ -30,6 +33,7 @@ export function WalletSync() {
 
   useEffect(() => {
     if (!userId) {
+      setStreetPlayer("");
       setWalletLive(false);
       return;
     }
@@ -44,13 +48,19 @@ export function WalletSync() {
         if (!r.revised) r = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         if (!live) return;
         useGame.getState().adoptWallet(r);
+        setStreetPlayer(r.playerId);
         setWalletLive(true);
+        useGame.getState().bindStreet();
       } catch {
-        if (live) setWalletLive(false);
+        if (live) {
+          setStreetPlayer("");
+          setWalletLive(false);
+        }
       }
     })();
     return () => {
       live = false;
+      setStreetPlayer("");
       setWalletLive(false);
     };
   }, [userId]);

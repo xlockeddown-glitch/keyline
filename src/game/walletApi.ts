@@ -48,6 +48,9 @@ const Snap = z.object({
       violet: Count.optional(),
     })
     .optional(),
+  lucky: z.boolean().optional(),
+  cloths: z.array(z.string().max(40)).max(24).optional(),
+  distanceM: Count.optional(),
   deviceId: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/),
 });
 
@@ -57,7 +60,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("goal"), cityId: City }),
   z.object({ kind: z.literal("bank"), dir: z.enum(["up", "down"]), tier: Tier }),
   z.object({ kind: z.literal("scout"), id: z.string().min(1).max(40) }),
-  z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS) }),
+  z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
   z.object({ kind: z.literal("print"), id: z.enum(COSMETICS) }),
   z.object({ kind: z.literal("refund"), token: z.string().min(10).max(2000) }),
   z.object({
@@ -68,6 +71,8 @@ const Op = z.discriminatedUnion("kind", [
     lat: z.number().finite().min(-90).max(90),
     lng: z.number().finite().min(-180).max(180),
   }),
+  z.object({ kind: z.literal("charm"), id: z.literal("lucky") }),
+  z.object({ kind: z.literal("cloth"), id: z.string().min(1).max(40) }),
   z.object({ kind: z.literal("daily"), day: Day, city: City }),
   z.object({ kind: z.literal("friend"), id: z.string().min(3).max(80) }),
   z.object({ kind: z.literal("survey"), id: z.string().min(1).max(80) }),
@@ -76,7 +81,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("blitz"), step: z.number().int().min(0).max(5), nonces: z.array(z.string().regex(/^[A-Za-z0-9_-]{8,80}$/)).min(1).max(8) }),
   z.object({ kind: z.literal("wheel"), tier: Tier, city: City }),
   z.object({ kind: z.literal("board"), from: City, to: City }),
-  z.object({ kind: z.literal("ride") }),
+  z.object({ kind: z.literal("ride"), watch: z.boolean().optional() }),
 ]);
 
 export type WalletWire = {
@@ -97,6 +102,7 @@ export type SyncWire = {
   cities: CityUnlocks;
   migrated: boolean;
   revised: boolean;
+  playerId: string;
 };
 
 export const syncWallet = createServerFn({ method: "POST" })
@@ -113,6 +119,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       cities: r.view.cities,
       migrated: r.wallet.migrated,
       revised: r.deviceClosed,
+      playerId: r.playerId,
     };
   });
 

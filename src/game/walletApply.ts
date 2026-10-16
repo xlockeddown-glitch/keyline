@@ -6,6 +6,8 @@ import {
   applyDelta,
   bankOp,
   blitzOp,
+  charmOp,
+  clothOp,
   contractOp,
   crateOp,
   dailyOp,
@@ -22,6 +24,7 @@ import {
   scoutOp,
   spendMatchOp,
   startOp,
+  streetOp,
   surveyOp,
   unlockOp,
   viewOf,
@@ -31,11 +34,12 @@ import {
   type OpResult,
   type WalletState,
 } from "./wallet.ts";
-import type { KioskId } from "./data.ts";
+import { CITIES, type KioskId } from "./data.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { surveyProven } from "./survey.ts";
+import { parseStreetId, streetSpot } from "./streetSpots.ts";
 import { fareMs, VAULTS_PER_FARE } from "./ticket.ts";
 import type { CityId, Tier } from "./types.ts";
 
@@ -52,7 +56,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -63,7 +67,7 @@ function deviceOf(opKey: string): string | null {
 /** First sync on this device takes the max, then one revise so a reward landing mid-sync is not dropped. */
 export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
   const { id, wallet } = await canonicalWallet(sql, userId);
-  if (!DEVICE_RE.test(deviceId)) return { ...applied({ ok: false, replay: false, reason: "device", wallet }), deviceClosed: true };
+  if (!DEVICE_RE.test(deviceId)) return { ...applied({ ok: false, replay: false, reason: "device", wallet }), deviceClosed: true, playerId: id };
   const rows = await sql<{ op_key: string }>`
     select op_key from wallet_ledger
     where user_id = ${id} and (op_key like ${"migrate:%"} or op_key like ${"migrate-revise:%"})
@@ -80,9 +84,9 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
     else opened = true;
   }
   // This device already had its revise. Later syncs return the server pocket and change nothing.
-  if (closed) return { ...applied({ ok: true, replay: true, wallet }), deviceClosed: true };
+  if (closed) return { ...applied({ ok: true, replay: true, wallet }), deviceClosed: true, playerId: id };
   // A new device past the cap does not get a ledger row, so it cannot mint by inventing ids.
-  if (!opened && devices.size >= DEVICE_CAP) return { ...applied({ ok: true, replay: true, wallet }), deviceClosed: true };
+  if (!opened && devices.size >= DEVICE_CAP) return { ...applied({ ok: true, replay: true, wallet }), deviceClosed: true, playerId: id };
   const revise = opened;
   const key = `${revise ? "migrate-revise" : "migrate"}:${deviceId}`;
   const r = await mutateWallet(sql, userId, key, (w) => {
@@ -90,7 +94,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
     merged.migrated = true;
     return { ok: true, wallet: merged, detail: revise ? "sync-revise" : "sync" };
   });
-  return { ...applied(r), deviceClosed: revise && r.ok };
+  return { ...applied(r), deviceClosed: revise && r.ok, playerId: id };
 }
 
 /**
@@ -104,8 +108,6 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
   const refunded = pay.clearTier
     ? await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${"refund:" + nonce} limit 1`
     : [];
-  // No table records the lucky charm or a quest cloth. Until one does, both pay as none.
-  const owned = provenBoost(pay.lucky, pay.cloth, { lucky: false, cloths: new Set() });
   const full: GradePay = {
     correct: pay.correct,
     elapsedMs: pay.elapsedMs,
@@ -123,13 +125,13 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     prior,
     streak: pay.streak,
     loot: pay.loot,
-    lucky: owned.lucky,
-    cloth: owned.cloth,
+    lucky: false,
+    cloth: null,
     charmDay: pay.charmDay,
     charmTopics: pay.charmTopics,
     topic: pay.topic,
     dealtAt: pay.dealtAt,
-    luckyHit: owned.lucky && pay.luckyHit,
+    luckyHit: false,
     perfectBlue: pay.perfectBlue,
   };
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
@@ -141,6 +143,10 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
       ...(full.correct && full.poiId ? { pi: full.poiId } : {}),
     });
   const r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
+    const owned = provenBoost(pay.lucky, pay.cloth, { lucky: w.meta.lucky, cloths: new Set(w.meta.cloths) });
+    full.lucky = owned.lucky;
+    full.cloth = owned.cloth;
+    full.luckyHit = owned.lucky && pay.luckyHit;
     let base = w;
     // A walk-away put the match back. Answering after that takes it again, in this same write.
     if (refunded.length && full.clearTier) {
@@ -198,10 +204,12 @@ export type ClientOp =
   | { kind: "goal"; cityId: CityId }
   | { kind: "bank"; dir: "up" | "down"; tier: Tier }
   | { kind: "scout"; id: string }
-  | { kind: "kiosk"; id: KioskId }
+  | { kind: "kiosk"; id: KioskId; poi?: string }
   | { kind: "print"; id: CosmeticId }
   | { kind: "refund"; token: string }
   | { kind: "street"; id: string; tier: Tier; city: CityId; lat: number; lng: number }
+  | { kind: "charm"; id: string }
+  | { kind: "cloth"; id: string }
   | { kind: "daily"; day: string; city: CityId }
   | { kind: "friend"; id: string }
   | { kind: "survey"; id: string }
@@ -210,7 +218,7 @@ export type ClientOp =
   | { kind: "blitz"; step: number; nonces: string[] }
   | { kind: "wheel"; tier: Tier; city: CityId }
   | { kind: "board"; from: CityId; to: CityId }
-  | { kind: "ride" };
+  | { kind: "ride"; watch?: boolean };
 
 export type ClientResult = Applied & { wardrobe?: Wardrobe; ingredient?: { id: string; n: number }; line?: string };
 
@@ -299,17 +307,41 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "street") {
-    // Street matches are dropped at random. There is no city-and-day list the server can check, so it does not pay them.
-    return { ...applied({ ok: false, replay: false, reason: "unproven", wallet }), authoritative: true };
+    const parsed = parseStreetId(op.id);
+    const day = today();
+    if (!parsed || parsed.city !== op.city || parsed.day !== day) return refused(wallet, "unproven");
+    const spot = streetSpot(id, op.city, day, parsed.index);
+    if (!spot || spot.id !== op.id) return refused(wallet, "unproven");
+    const r = await mutateWallet(sql, sessionUserId, `street:${spot.id}`, (w) => streetOp(w, spot, op.city, Date.now()));
+    return applied(r);
+  }
+
+  if (op.kind === "charm") {
+    const r = await mutateWallet(sql, sessionUserId, `charm:${op.id}`, (w) => charmOp(w, op.id));
+    return applied(r);
+  }
+
+  if (op.kind === "cloth") {
+    const r = await mutateWallet(sql, sessionUserId, `cloth:${op.id}`, (w) => clothOp(w, op.id));
+    return applied(r);
+  }
+
+  if (op.kind === "kiosk" && op.id === "smear") {
+    const city = poiCity(op.poi ?? "");
+    if (!city || !wallet.cities.unlocked.includes(city)) return refused(wallet, "unknown");
+    const r = await mutateWallet(sql, sessionUserId, `kiosk:smear:${op.poi}`, (w) => kioskOp(w, "smear"));
+    return applied(r);
   }
 
   if (op.kind === "goal" || op.kind === "survey") {
-    const places = await gradedPlaces(sql, id);
+    const places = await visitedPlaces(sql, id);
+    let meters = wallet.meta.walkM;
+    if (op.kind === "survey" && op.id.startsWith("walk-")) meters = Math.max(meters, await walkedMeters(sql, id));
     if (op.kind === "goal") {
       const r = await mutateWallet(sql, sessionUserId, `goal:${op.cityId}`, (w) => goalOp(w, op.cityId, places));
       return applied(r);
     }
-    const proven = surveyProven(op.id, places);
+    const proven = surveyProven(op.id, places, meters);
     const r = await mutateWallet(sql, sessionUserId, `survey:${op.id}`, (w) => surveyOp(w, op.id, proven));
     return applied(r);
   }
@@ -326,7 +358,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
-  if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet);
+  if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op.watch === true);
 
   const key = opKey(op, wallet);
   const r = await mutateWallet(sql, sessionUserId, key, (w) => {
@@ -380,6 +412,14 @@ function refused(wallet: WalletState, reason: string): ClientResult {
   return { ...applied({ ok: false, replay: false, reason, wallet }), authoritative: true };
 }
 
+function poiCity(poi: string): CityId | null {
+  if (!poi) return null;
+  for (const [cityId, city] of Object.entries(CITIES) as [CityId, (typeof CITIES)[CityId]][]) {
+    if (city.pois.some((p) => p.id === poi)) return cityId;
+  }
+  return null;
+}
+
 async function gradedPlaces(sql: Sql, userId: string): Promise<Set<string>> {
   const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${userId} and op_key like ${"grade:%"}`;
   const out = new Set<string>();
@@ -388,6 +428,22 @@ async function gradedPlaces(sql: Sql, userId: string): Promise<Set<string>> {
     if (place) out.add(place);
   }
   return out;
+}
+
+/** Graded visits plus atlas names the kiosk smear actually bought. */
+async function visitedPlaces(sql: Sql, userId: string): Promise<Set<string>> {
+  const out = await gradedPlaces(sql, userId);
+  const named = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${userId} and op_key like ${"kiosk:smear:%"}`;
+  for (const row of named) {
+    const poi = row.op_key.slice("kiosk:smear:".length);
+    if (poiCity(poi)) out.add(poi);
+  }
+  return out;
+}
+
+async function walkedMeters(sql: Sql, userId: string): Promise<number> {
+  const rows = await sql<{ n: number }>`select coalesce(sum(meters), 0)::int as n from walk_distance_by_player where user_id = ${userId}`;
+  return Number(rows[0]?.n) || 0;
 }
 
 async function gradedNoncesToday(sql: Sql, userIds: string[], nonces: string[], day: string): Promise<Set<string>> {
@@ -505,13 +561,13 @@ async function boardTicket(sql: Sql, sessionUserId: string, id: string, wallet: 
 }
 
 /** Pay the open ticket from the server clock. No client departure, arrival, or minigame result is read. */
-async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: WalletState): Promise<ClientResult> {
+async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, watch: boolean): Promise<ClientResult> {
   const ticket = await latestTicket(sql, id);
   if (!ticket) return refused(wallet, "no-ticket");
   const now = Date.now();
   const wallSec = Math.floor(Math.max(0, Math.min(ticket.ms, now - ticket.at)) / 1000);
-  const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:${wallSec}`, (w) =>
-    rideOp(w, { departAt: ticket.at, arriveAt: ticket.at + ticket.ms, now }),
+  const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:${wallSec}${watch ? ":w" : ""}`, (w) =>
+    rideOp(w, { departAt: ticket.at, arriveAt: ticket.at + ticket.ms, now, watch }),
   );
   return applied(r);
 }

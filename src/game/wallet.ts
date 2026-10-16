@@ -5,7 +5,7 @@ import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { payDaily } from "./dailyRun.ts";
 import { BLITZ_STEPS, blitzMatch } from "./dailyBlitz.ts";
 import { SURVEY_GOALS } from "./survey.ts";
-import { marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
+import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { clothCoin, type ClothId } from "./quests.ts";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards.ts";
@@ -28,6 +28,10 @@ export const COIN_CAP = 250_000;
 export const KEY_CAP = 300;
 export const PASS_CAP = 25;
 export const RUN_CAP = 9_999;
+/** Longest survey walk. A device can bring this much distance into the first sync, not more. */
+export const WALK_CAP = 150_000;
+/** One of each real cloth (dust, book, glass, and a scarf per city). */
+export const CLOTH_CAP = 18;
 const TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 
 export type WalletMeta = {
@@ -46,6 +50,15 @@ export type WalletMeta = {
   rideGreen: number;
   contractDay: string;
   contractN: number;
+  /** Lucky bit crafted or brought in on a first sync. Grades pay the spare match only when this is set. */
+  lucky: boolean;
+  /** Cloth the server has recorded. A grade tip applies only for one of these. */
+  cloths: string[];
+  /** Metres the first sync already counted, before the walk board had them. */
+  walkM: number;
+  /** Tab-open time on the current ride, measured between server heartbeats. */
+  rideOpen: number;
+  rideSeen: number;
 };
 
 export type WalletState = {
@@ -66,6 +79,9 @@ export type LocalSnap = {
   blitzDay?: string;
   blitzStep?: number;
   wheel?: Partial<Record<Tier, number>>;
+  lucky?: boolean;
+  cloths?: string[];
+  distanceM?: number;
 };
 
 export type AwardView = {
@@ -89,6 +105,11 @@ const emptyMeta = (): WalletMeta => ({
   rideGreen: 0,
   contractDay: "",
   contractN: 0,
+  lucky: false,
+  cloths: [],
+  walkM: 0,
+  rideOpen: 0,
+  rideSeen: 0,
 });
 
 export function emptyWallet(): WalletState {
@@ -120,7 +141,31 @@ export function cleanMeta(raw: unknown): WalletMeta {
     rideGreen: num(m.rideGreen, 99),
     contractDay: typeof m.contractDay === "string" ? m.contractDay.slice(0, 10) : "",
     contractN: num(m.contractN, 24),
+    lucky: m.lucky === true,
+    cloths: cleanCloths(m.cloths),
+    walkM: num(m.walkM, WALK_CAP),
+    rideOpen: num(m.rideOpen, FARE_MAX_MS),
+    rideSeen: num(m.rideSeen, Number.MAX_SAFE_INTEGER),
   };
+}
+
+/** A cloth id the game actually has. Anything else is dropped. */
+export function realCloth(id: string): ClothId | null {
+  if (id === "road-dust" || id === "red-book" || id === "night-glass") return id;
+  if (id.startsWith("scarf-") && Object.prototype.hasOwnProperty.call(CITIES, id.slice(6))) return id as ClothId;
+  return null;
+}
+
+function cleanCloths(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const id of raw) {
+    const cloth = typeof id === "string" ? realCloth(id) : null;
+    if (!cloth || out.includes(cloth)) continue;
+    out.push(cloth);
+    if (out.length >= CLOTH_CAP) break;
+  }
+  return out;
 }
 
 function capCities(u: CityUnlocks): CityUnlocks {
@@ -179,6 +224,9 @@ export function mergeFirstSync(server: WalletState, local: LocalSnap): WalletSta
   if (local.wheel) {
     for (const t of TIERS) meta.wheel[t] = Math.max(meta.wheel[t] ?? 0, num(local.wheel[t], 100_000));
   }
+  if (local.lucky) meta.lucky = true;
+  meta.cloths = cleanCloths([...(meta.cloths ?? []), ...(local.cloths ?? [])]);
+  meta.walkM = Math.max(meta.walkM, num(local.distanceM, WALK_CAP));
   return { ...server, coins, keys, cities, meta, migrated: true };
 }
 
@@ -365,19 +413,31 @@ export function blitzOp(w: WalletState, day: string, step: number, nonces: reado
 
 const MIN_RIDE_GAP_MS = 48_000;
 
+/** One heartbeat can add at most this much tab-open time. The clock is the server's. */
+const RIDE_WATCH_MS = 45_000;
+
 /**
  * Pay a ride from the server's ticket clock. `departAt` / `arriveAt` / `now` are the ticket row
- * and the server clock. The idle schedule is the only one: a client win or a tab-open timer is not a payout.
+ * and the server clock. A win is not read from the client. Tab-open time grows only when `watch`
+ * is set, and only by the gap since the previous server heartbeat.
  */
-export function rideOp(w: WalletState, input: { departAt: number; arriveAt: number; now: number }): OpResult {
+export function rideOp(w: WalletState, input: { departAt: number; arriveAt: number; now: number; watch?: boolean }): OpResult {
   const departAt = num(input.departAt, Number.MAX_SAFE_INTEGER);
   const arriveAt = Math.min(departAt + FARE_MAX_MS, num(input.arriveAt, Number.MAX_SAFE_INTEGER));
   if (!(departAt > 0) || !(arriveAt > departAt)) return { ok: false, reason: "bad-ride" };
   const same = w.meta.rideAt === departAt;
   if (!same && w.meta.rideAt && departAt < w.meta.rideAt + MIN_RIDE_GAP_MS) return { ok: false, reason: "soon" };
-  const wallMs = Math.max(0, Math.min(num(input.now, Number.MAX_SAFE_INTEGER), arriveAt) - departAt);
+  const now = num(input.now, Number.MAX_SAFE_INTEGER);
+  const wallMs = Math.max(0, Math.min(now, arriveAt) - departAt);
   const rideMs = arriveAt - departAt;
-  const due = transitLoot(wallMs, 0, rideMs);
+  let open = same ? w.meta.rideOpen : 0;
+  let seen = same ? w.meta.rideSeen : 0;
+  if (input.watch) {
+    const prev = seen > departAt ? seen : departAt;
+    open = Math.min(FARE_MAX_MS, open + Math.min(RIDE_WATCH_MS, Math.max(0, now - prev)));
+    seen = now;
+  }
+  const due = transitLoot(wallMs, open, rideMs);
   const have = same ? { white: w.meta.rideWhite, blue: w.meta.rideBlue, green: w.meta.rideGreen } : { white: 0, blue: 0, green: 0 };
   const owe = {
     white: Math.max(0, due.white - have.white),
@@ -386,9 +446,35 @@ export function rideOp(w: WalletState, input: { departAt: number; arriveAt: numb
   };
   const paid = pocketRide(w.keys, owe);
   const gained = keyDiff(w.keys, paid.keys);
-  const meta = { rideAt: departAt, rideWhite: due.white, rideBlue: due.blue, rideGreen: due.green };
+  const meta = { rideAt: departAt, rideWhite: due.white, rideBlue: due.blue, rideGreen: due.green, rideOpen: open, rideSeen: seen };
   if (!gained.white && !gained.blue && !gained.green) return applyDelta(w, { meta });
   return applyDelta(w, { keys: gained, meta });
+}
+
+/** A street match from the player's city-day list. The tier and the market flag come from that list, not the client. */
+export function streetOp(w: WalletState, spot: { tier: Tier; market: boolean }, city: CityId, now: number): OpResult {
+  const mult = spot.market && marketAt(city, now) ? MARKET_MULT : 1;
+  const have = w.keys[spot.tier] ?? 0;
+  const cap = Math.max(matchCap(spot.tier), have + 1);
+  const add = mult > 1 ? marketMatches(have, cap, mult) : 1;
+  const coin = mult > 1 ? marketOverflowCoin(spot.tier, mult, add) : 0;
+  return applyDelta(w, { coins: coin, keys: { [spot.tier]: add } });
+}
+
+/** Record the lucky bit. One per player. The grade pays the spare match only after this. */
+export function charmOp(w: WalletState, id: string): OpResult {
+  if (id !== "lucky") return { ok: false, reason: "unknown" };
+  if (w.meta.lucky) return { ok: true, wallet: w };
+  return applyDelta(w, { meta: { lucky: true } });
+}
+
+/** Record one real cloth. A second copy, or an id the game does not have, does not enlarge the closet. */
+export function clothOp(w: WalletState, id: string): OpResult {
+  const cloth = realCloth(id);
+  if (!cloth) return { ok: false, reason: "unknown" };
+  if (w.meta.cloths.includes(cloth)) return { ok: true, wallet: w };
+  if (w.meta.cloths.length >= CLOTH_CAP) return { ok: false, reason: "capped" };
+  return applyDelta(w, { meta: { cloths: [...w.meta.cloths, cloth] } });
 }
 
 export type GradePay = {
@@ -518,10 +604,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   return withBoost(w, pay.coin + tip, pay.keys, boost, lit.u);
 }
 
-/**
- * Lucky and a quest cloth pay only when the server has a record that this player owns them.
- * Nothing in the database records either today, so a grade treats both as none.
- */
+/** Lucky and a quest cloth pay only when this wallet already records them. */
 export function provenBoost(
   lucky: boolean,
   cloth: ClothId | null,

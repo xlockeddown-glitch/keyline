@@ -9,12 +9,19 @@ import { freshUnlocks } from "./cityPass.ts";
 import { rewardPoints } from "./rewards.ts";
 import { CITIES } from "./data.ts";
 import { surveyProven } from "./survey.ts";
-import { transitLoot } from "./ticket.ts";
+import { streetSpot } from "./streetSpots.ts";
+import { matchCap, transitLoot } from "./ticket.ts";
+import { marketMatches } from "./nightMarket.ts";
 import {
+  CLOTH_CAP,
   COIN_CAP,
   KEY_CAP,
   PASS_CAP,
+  WALK_CAP,
   acceptNonces,
+  charmOp,
+  clothOp,
+  realCloth,
   applyDelta,
   emptyWallet,
   goalOp,
@@ -190,11 +197,19 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   assert.equal(refused.ok, false);
   assert.equal((await canonicalWallet(sql, "ann")).wallet.keys.white, 0);
 
-  // A street match is not a server payout: the id is not from a list the server can check.
-  const street = await applyClientOp(sql, "ann", { kind: "street", id: "k1", tier: "white", city: "austin", lat: 30.2, lng: -97.7 });
-  assert.equal(street.ok, false);
-  assert.equal(street.reason, "unproven");
-  assert.equal((await canonicalWallet(sql, "ann")).wallet.keys.white, 0);
+  // A street match pays once, and only when the id is on this player's city-day list.
+  const day = new Date().toISOString().slice(0, 10);
+  const spot = streetSpot("ann", "austin", day, 0);
+  assert.ok(spot);
+  const forged = await applyClientOp(sql, "ann", { kind: "street", id: "k1", tier: "violet", city: "austin", lat: 30.2, lng: -97.7 });
+  assert.equal(forged.ok, false);
+  assert.equal(forged.reason, "unproven");
+  const street = await applyClientOp(sql, "ann", { kind: "street", id: spot!.id, tier: "violet", city: "austin", lat: 30.2, lng: -97.7 });
+  assert.equal(street.ok, true);
+  assert.equal(street.wallet.keys[spot!.tier], 1);
+  const streetAgain = await applyClientOp(sql, "ann", { kind: "street", id: spot!.id, tier: "violet", city: "austin", lat: 30.2, lng: -97.7 });
+  assert.equal(streetAgain.replay, true);
+  assert.equal(streetAgain.wallet.keys[spot!.tier], 1);
 
   // The same bank trade posted twice is one trade. The matches come from a device merge, not from the street.
   const topped = await syncPlayer(sql, "ann", snap({ keys: { white: 4 } }), "annbank01");
@@ -285,6 +300,21 @@ test("each device is clamped to the first-sync caps", () => {
   assert.equal(merged.coins, COIN_CAP);
   for (const tier of ["white", "blue", "green", "amber", "red", "violet"] as const) assert.equal(merged.keys[tier], KEY_CAP);
   assert.equal(merged.cities.passes, PASS_CAP);
+  const brought = mergeFirstSync(
+    emptyWallet(),
+    snap({
+      lucky: true,
+      cloths: ["road-dust", "nope", "scarf-austin", "scarf-austin", "scarf-nowhere"],
+      distanceM: 9_000_000,
+    }),
+  );
+  assert.equal(brought.meta.lucky, true);
+  assert.deepEqual(brought.meta.cloths, ["road-dust", "scarf-austin"]);
+  assert.equal(brought.meta.walkM, WALK_CAP);
+  assert.equal(realCloth("nope"), null);
+  assert.equal(CLOTH_CAP, 18);
+  assert.equal(clothOp(emptyWallet(), "nope").ok, false);
+  assert.equal(charmOp(emptyWallet(), "scholar").ok, false);
 });
 
 test("a city pass pays only when every place has a graded visit", () => {
@@ -309,6 +339,8 @@ test("a city pass pays only when every place has a graded visit", () => {
 test("survey matches pay only for goals graded visits can prove", () => {
   const ids = CITIES.austin.pois.map((p) => p.id);
   assert.equal(surveyProven("walk-4", new Set(ids)), false);
+  assert.equal(surveyProven("walk-4", new Set(), 3_999), false);
+  assert.equal(surveyProven("walk-4", new Set(), 4_000), true);
   assert.equal(surveyProven("visit-4", new Set(ids.slice(0, 3))), false);
   assert.equal(surveyProven("visit-4", new Set(ids.slice(0, 4))), true);
   assert.equal(surveyProven("ward-austin-all", new Set(ids.slice(0, 4))), false);
@@ -338,6 +370,19 @@ test("a ride pays the idle schedule from the server clock and never a client win
   if (!full.ok) return;
   assert.equal(full.wallet.keys.green, 0);
   assert.equal(rideOp(w, { departAt: 0, arriveAt: 10, now: 10 }).ok, false);
+  // One late heartbeat cannot claim the whole ride. A beat every 40s across 11 minutes can.
+  const jumped = rideOp(w, { departAt: at, arriveAt: at + long, now: at + long, watch: true });
+  assert.equal(jumped.ok, true);
+  if (!jumped.ok) return;
+  assert.equal(jumped.wallet.keys.green, 0);
+  let watched = w;
+  for (let t = 40_000; t <= long; t += 40_000) {
+    const step = rideOp(watched, { departAt: at, arriveAt: at + long, now: at + t, watch: true });
+    assert.equal(step.ok, true);
+    if (!step.ok) return;
+    watched = step.wallet;
+  }
+  assert.equal(watched.keys.green, 1);
 });
 
 test("lucky and cloth pay only when the server knows the player owns them", async () => {
@@ -353,10 +398,20 @@ test("lucky and cloth pay only when the server knows the player owns them", asyn
   const graded = await awardGrade(sql, "lux", "luck1", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
   assert.equal(graded.wallet.coins, plain.award?.coins);
   assert.equal(graded.wallet.keys.blue ?? 0, plain.wallet.keys.blue ?? 0);
+  const charm = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
+  assert.equal(charm.ok, true);
+  assert.equal(charm.wallet.meta.lucky, true);
+  const cloth = await applyClientOp(sql, "lux", { kind: "cloth", id: "road-dust" });
+  assert.equal(cloth.ok, true);
+  const dressedGrade = await awardGrade(sql, "lux", "luck2", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
+  assert.equal(dressedGrade.wallet.coins - cloth.wallet.coins, dressed.award?.coins);
+  const again = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
+  assert.equal(again.replay || again.ok, true);
+  assert.equal(again.wallet.meta.lucky, true);
 });
 
 test("a goal, a survey and a daily each pay once from server records", async () => {
-  const sql = await db(["0006_daily_runs.sql"]);
+  const sql = await db(["0006_daily_runs.sql", "0014_walk_distance.sql"]);
   const pois = CITIES.austin.pois.map((p) => p.id);
   await syncPlayer(sql, "goa", snap({ cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin", "nyc", "temple"], freePick: false } }), "goaphone1");
   const early = await applyClientOp(sql, "goa", { kind: "goal", cityId: "austin" });
@@ -373,6 +428,11 @@ test("a goal, a survey and a daily each pay once from server records", async () 
   const surveyEarly = await applyClientOp(sql, "goa", { kind: "survey", id: "walk-4" });
   assert.equal(surveyEarly.ok, false);
   assert.equal(surveyEarly.reason, "unproven");
+  const beforeWalk = (await canonicalWallet(sql, "goa")).wallet.keys.blue ?? 0;
+  await sql`insert into walk_distance (user_id, city, meters) values ('goa', 'austin', 4000)`;
+  const walked = await applyClientOp(sql, "goa", { kind: "survey", id: "walk-4" });
+  assert.equal(walked.ok, true);
+  assert.equal(walked.wallet.keys.blue, beforeWalk + 1);
   const beforeBlue = (await canonicalWallet(sql, "goa")).wallet.keys.blue ?? 0;
   const visited = await applyClientOp(sql, "goa", { kind: "survey", id: "visit-4" });
   assert.equal(visited.ok, true);
@@ -484,13 +544,53 @@ test("a ride pays only against a server ticket, timed on the server clock", asyn
   assert.equal(fromKiosk.wallet.keys.white, 0);
 });
 
+test("a market spot pays the double, and a kiosk name counts as a visit", async () => {
+  const sql = await db();
+  const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false };
+  await syncPlayer(sql, "str", snap({ coins: 3000, cities }), "strphone1");
+  const day = new Date().toISOString().slice(0, 10);
+  let market: ReturnType<typeof streetSpot> = null;
+  for (let i = 9; i < 40; i++) {
+    const s = streetSpot("str", "austin", day, i);
+    if (s?.market) {
+      market = s;
+      break;
+    }
+  }
+  assert.ok(market);
+  const paid = await applyClientOp(sql, "str", { kind: "street", id: market!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
+  assert.equal(paid.ok, true);
+  const add = marketMatches(0, Math.max(matchCap(market!.tier), 1), 2);
+  assert.equal(paid.wallet.keys[market!.tier], add);
+  const stale = streetSpot("str", "austin", "1999-01-01", 9);
+  const old = await applyClientOp(sql, "str", { kind: "street", id: stale!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
+  assert.equal(old.ok, false);
+  const poi = CITIES.austin.pois[0]!.id;
+  const named = await applyClientOp(sql, "str", { kind: "kiosk", id: "smear", poi });
+  assert.equal(named.ok, true);
+  const namedAgain = await applyClientOp(sql, "str", { kind: "kiosk", id: "smear", poi });
+  assert.equal(namedAgain.replay, true);
+  assert.equal(namedAgain.wallet.coins, named.wallet.coins);
+  const missing = await applyClientOp(sql, "str", { kind: "kiosk", id: "smear", poi: "not-a-place" });
+  assert.equal(missing.ok, false);
+  assert.equal(missing.wallet.coins, named.wallet.coins);
+  for (const place of CITIES.austin.pois.slice(1, 4)) {
+    const bought = await applyClientOp(sql, "str", { kind: "kiosk", id: "smear", poi: place.id });
+    assert.equal(bought.ok, true);
+  }
+  const before = (await canonicalWallet(sql, "str")).wallet.keys.blue ?? 0;
+  const visit = await applyClientOp(sql, "str", { kind: "survey", id: "visit-4" });
+  assert.equal(visit.ok, true);
+  assert.equal(visit.wallet.keys.blue, before + 1);
+});
+
 test("a failed unlock reply rolls the local city list back", () => {
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   const unlock = store.slice(store.indexOf("unlockCity: (id) =>"), store.indexOf("setHud: (h) =>"));
   assert.match(unlock, /const before = get\(\)\.cities/);
   assert.match(unlock, /if \(res == null\)/);
   assert.match(unlock, /cities: before/);
-  assert.match(store, /commitWallet\(\{ kind: "ride" \}\)/);
+  assert.match(store, /kind: "ride", watch: watching/);
   assert.match(store, /kind: "board"/);
   assert.doesNotMatch(store, /kind: "pulse"/);
   const body = Buffer.from(JSON.stringify({ n: "nonceaaaa", t: Date.UTC(2026, 9, 16, 12) })).toString("base64url");

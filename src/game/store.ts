@@ -5,7 +5,8 @@ import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketOve
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
-import { commitWallet, tokenNonce, walletLive } from "./walletClient";
+import { commitWallet, streetPlayer, tokenNonce, walletLive } from "./walletClient";
+import { parseStreetId, takeStreetSpot } from "./streetSpots";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
@@ -233,6 +234,7 @@ export type GameState = {
   stampPlaces: (ids: string[]) => void;
   collectKey: (id: string) => void;
   maybeSpawnKey: (now: number) => void;
+  bindStreet: () => void;
   maybeSpawnRun: (now: number) => void;
   seedBlanks: (list: Poi[]) => void;
   spreadDrops: (keys: MapKey[], run: StreetRun | null, stack: StreetRun | null) => void;
@@ -364,6 +366,29 @@ function sparksNow(get: () => GameState) {
   return sparkState(get().sparkDay, get().sparkN, get().sparkLamps, today());
 }
 
+let rideWatchAt = 0;
+
+function streetFloor(cityId: CityId, keys: { id: string }[]): number {
+  const day = new Date().toISOString().slice(0, 10);
+  let n = 0;
+  for (const k of keys) {
+    const p = parseStreetId(k.id);
+    if (p && p.city === cityId && p.day === day) n = Math.max(n, p.index + 1);
+  }
+  return n;
+}
+
+/** A spot from this player's city-day list. Guests, and a sync that has not landed, get null. */
+function issuedKey(cityId: CityId, held: { id: string }[]): MapKey | null {
+  const player = streetPlayer();
+  if (!player || !walletLive()) return null;
+  const spot = takeStreetSpot(player, cityId, Date.now(), streetFloor(cityId, held));
+  if (!spot) return null;
+  const m = spot.market ? marketAt(cityId, Date.now()) : null;
+  const p = m ? pointOnMarket(m.street) : streetDrop(CITIES[cityId].spawn, 220, 2200);
+  return { id: spot.id, lat: p.lat, lng: p.lng, tier: spot.tier };
+}
+
 function placeKey(cityId: CityId, tier: Tier): MapKey {
   const c = CITIES[cityId];
   const around = c.spawn;
@@ -427,6 +452,15 @@ function streetKeyTier(playMin: number): Tier {
 }
 
 function seedKeys(cityId: CityId, n = 9): MapKey[] {
+  if (walletLive() && streetPlayer()) {
+    const issued: MapKey[] = [];
+    for (let i = 0; i < n; i++) {
+      const key = issuedKey(cityId, issued);
+      if (!key) break;
+      issued.push(key);
+    }
+    if (issued.length) return issued;
+  }
   const c = CITIES[cityId];
   const out: MapKey[] = [];
   const tiers: Tier[] = ["white", "blue", "white", "white", "blue", "white", "white", "blue", "white"];
@@ -1058,10 +1092,37 @@ export const useGame = create<GameState>((set, get) => ({
     const interval = Math.max(28_000, 78_000 - playMin * 900);
     if (get().mapKeys.length >= cap) return;
     if (now - get().lastKeyAt < interval) return;
+    if (walletLive()) {
+      const key = issuedKey(get().cityId, get().mapKeys);
+      if (!key) return;
+      set({ mapKeys: [...get().mapKeys, key], lastKeyAt: now });
+      scheduleSave(get);
+      return;
+    }
     set({
       mapKeys: [...get().mapKeys, marketKey(get().cityId, streetKeyTier(playMin), now) ?? placeKey(get().cityId, streetKeyTier(playMin))],
       lastKeyAt: now,
     });
+    scheduleSave(get);
+  },
+  bindStreet: () => {
+    const player = streetPlayer();
+    if (!walletLive() || !player) return;
+    const cityId = get().cityId;
+    const day = new Date().toISOString().slice(0, 10);
+    let changed = false;
+    const held = [...get().mapKeys];
+    const mapKeys = get().mapKeys.map((k) => {
+      const parsed = parseStreetId(k.id);
+      if (parsed && parsed.city === cityId && parsed.day === day) return k;
+      const next = issuedKey(cityId, held);
+      if (!next) return k;
+      held.push(next);
+      changed = true;
+      return next;
+    });
+    if (!changed) return;
+    set({ mapKeys });
     scheduleSave(get);
   },
   maybeSpawnRun: (now) => {
@@ -1926,6 +1987,7 @@ export const useGame = create<GameState>((set, get) => ({
       toast: `Printed ${c.name}.`,
       quests: notePrint(s.quests, s.cityId),
     });
+    if (id === "lucky") pushOp({ kind: "charm", id: "lucky" });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 1600);
   },
@@ -1954,6 +2016,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     sfx.pickup();
     set({ quests: paid.log });
+    pushOp({ kind: "cloth", id: paid.cloth });
     flashToast(set, get, `${clothName(paid.cloth)} in the closet.`, 1800);
     scheduleSave(get);
   },
@@ -1965,6 +2028,7 @@ export const useGame = create<GameState>((set, get) => ({
       quests: paid.log,
       schematics: get().schematics + (paid.schematic ? 1 : 0),
     });
+    if (paid.cloth) pushOp({ kind: "cloth", id: paid.cloth });
     const msg = paid.title
       ? `Title: ${paid.title}.`
       : paid.schematic
@@ -1996,6 +2060,7 @@ export const useGame = create<GameState>((set, get) => ({
       quests: printed.log,
       pantry: { ...s.pantry, [press]: (s.pantry[press] ?? 1) - 1 },
     });
+    pushOp({ kind: "cloth", id: "night-glass" });
     flashToast(set, get, "Night glass printed.", 1600);
     scheduleSave(get);
   },
@@ -2208,7 +2273,7 @@ export const useGame = create<GameState>((set, get) => ({
       points: get().points - item.cost,
       atlas: { ...get().atlas, [pick.id]: true as const },
     });
-    pushOp({ kind: "kiosk", id }, () => {
+    pushOp({ kind: "kiosk", id, poi: namedId }, () => {
       const atlas = { ...useGame.getState().atlas };
       delete atlas[namedId];
       set({ atlas });
@@ -2400,7 +2465,11 @@ export const useGame = create<GameState>((set, get) => ({
       get().screen === "ride";
     const { journey: nextJourney, keys, add } = settleRide(j, get().keys, now, watching);
     const found = add.white + add.blue + add.green;
-    if (found > 0 && walletLive()) void commitWallet({ kind: "ride" });
+    const beat = watching && now - rideWatchAt >= 20_000;
+    if ((found > 0 || beat) && walletLive()) {
+      if (beat) rideWatchAt = now;
+      void commitWallet({ kind: "ride", watch: watching });
+    }
     if (found > 0) {
       sfx.pickup();
       if (now < j.arriveAt) {
