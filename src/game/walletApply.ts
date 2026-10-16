@@ -40,9 +40,10 @@ import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
-import { surveyProven } from "./survey.ts";
-import { parseStreetId, streetSpot } from "./streetSpots.ts";
-import { fareMs, VAULTS_PER_FARE } from "./ticket.ts";
+import { isPlace, surveyProven } from "./survey.ts";
+import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
+import { fareMs, FARES_CAP, VAULTS_PER_FARE } from "./ticket.ts";
+import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 
 /** What the browser is allowed to see. */
@@ -332,7 +333,19 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!parsed || parsed.city !== op.city || parsed.day !== day) return refused(wallet, "unproven");
     const spot = streetSpot(id, op.city, day, parsed.index);
     if (!spot || spot.id !== op.id) return refused(wallet, "unproven");
-    const r = await mutateWallet(sql, sessionUserId, `street:${spot.id}`, (w) => streetOp(w, spot, op.city, Date.now()));
+    const key = `street:${spot.id}`;
+    const existing = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${key} limit 1`;
+    if (!existing.length) {
+      if (!wallet.cities.unlocked.includes(op.city)) return refused(wallet, "locked");
+      const ids = await groupIds(sql, sessionUserId);
+      if (!(await cityFresh(sql, id, ids, op.city))) return refused(wallet, "unproven");
+      const prior = await sql<{ n: number }>`
+        select count(*)::int as n from wallet_ledger
+        where user_id = ${id} and op_key like ${"street:sk:" + op.city + ":" + day + ":%"}
+      `;
+      if ((Number(prior[0]?.n) || 0) >= STREET_DAY_CAP) return refused(wallet, "capped");
+    }
+    const r = await mutateWallet(sql, sessionUserId, key, (w) => streetOp(w, op.city, spot.tier));
     return applied(r);
   }
 
@@ -342,7 +355,10 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "cloth") {
-    const r = await mutateWallet(sql, sessionUserId, `cloth:${op.id}`, (w) => clothOp(w, op.id));
+    const meters = Math.max(wallet.meta.walkM, await walkedMeters(sql, id));
+    const places = await visitedPlaces(sql, id);
+    for (const poi of wallet.meta.visits) if (isPlace(poi)) places.add(poi);
+    const r = await mutateWallet(sql, sessionUserId, `cloth:${op.id}`, (w) => clothOp(w, op.id, { meters, visited: places }));
     return applied(r);
   }
 
@@ -355,6 +371,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
 
   if (op.kind === "goal" || op.kind === "survey") {
     const places = await visitedPlaces(sql, id);
+    for (const poi of wallet.meta.visits) if (isPlace(poi)) places.add(poi);
     let meters = wallet.meta.walkM;
     if (op.kind === "survey" && op.id.startsWith("walk-")) meters = Math.max(meters, await walkedMeters(sql, id));
     if (op.kind === "goal") {
@@ -369,12 +386,17 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   if (op.kind === "contract" || op.kind === "blitz") {
     const day = today();
     const asked = op.nonces;
+    const dealt = await blitzDealt(sql, id, asked);
     if (op.kind === "contract") {
-      return noncePayout(sql, sessionUserId, id, wallet, asked, (nonces) => `contract:${[...nonces].sort().join(".")}`, (w, nonces) =>
+      const lamps = asked.filter((n) => !dealt.has(n));
+      if (lamps.length < CONTRACT_LAMPS) return refused(wallet, "unproven");
+      return noncePayout(sql, sessionUserId, id, wallet, lamps, (nonces) => `contract:${[...nonces].sort().join(".")}`, (w, nonces) =>
         contractOp(w, day, nonces),
       );
     }
-    return noncePayout(sql, sessionUserId, id, wallet, asked, () => `blitz:${day}:${op.step}`, (w, nonces) => blitzOp(w, day, op.step, nonces));
+    const cards = asked.filter((n) => dealt.get(n) === op.step);
+    if (!cards.length) return refused(wallet, "unproven");
+    return noncePayout(sql, sessionUserId, id, wallet, cards, () => `blitz:${day}:${op.step}`, (w, nonces) => blitzOp(w, day, op.step, nonces));
   }
 
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
@@ -466,6 +488,55 @@ async function walkedMeters(sql: Sql, userId: string): Promise<number> {
   return Number(rows[0]?.n) || 0;
 }
 
+/** A walk post or a dealt card in this city within the last few minutes. */
+async function cityFresh(sql: Sql, id: string, userIds: string[], city: CityId): Promise<boolean> {
+  const since = new Date(Date.now() - STREET_FRESH_MS).toISOString();
+  for (const uid of userIds) {
+    const walk = await sql<{ n: number }>`
+      select 1 as n from walk_distance
+      where user_id = ${uid} and city = ${city} and updated_at >= ${since}::timestamptz
+      limit 1
+    `;
+    if (walk.length) return true;
+    const dealt = await sql<{ n: number }>`
+      select 1 as n from plate_events
+      where user_id = ${uid} and city = ${city} and answered_at >= ${since}::timestamptz
+      limit 1
+    `;
+    if (dealt.length) return true;
+  }
+  const grades = await sql<{ detail: string }>`
+    select detail from wallet_ledger
+    where user_id = ${id} and op_key like ${"grade:%"} and created_at >= ${since}::timestamptz
+    limit 20
+  `;
+  for (const row of grades) {
+    const place = gradedPlace(row.detail);
+    if (place && poiCity(place) === city) return true;
+  }
+  return false;
+}
+
+/** Step of a blitz-dealt card, keyed by nonce. A street grade is not in here. */
+async function blitzDealt(sql: Sql, id: string, nonces: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  for (const n of nonces.slice(0, 8)) {
+    const rows = await sql<{ detail: string }>`
+      select detail from wallet_ledger where user_id = ${id} and op_key = ${"blitz-card:" + n} limit 1
+    `;
+    const m = /^blitz-(\d+)$/.exec(rows[0]?.detail ?? "");
+    if (m) out.set(n, Number(m[1]));
+  }
+  return out;
+}
+
+/** Remember that this nonce was a blitz card of this step. The blitz payout will not take any other card. */
+export async function noteBlitzCard(sql: Sql, userId: string, nonce: string, step: number): Promise<void> {
+  if (!Number.isInteger(step) || step < 0 || step >= BLITZ_STEPS.length) return;
+  if (!/^[A-Za-z0-9_-]{8,80}$/.test(nonce)) return;
+  await mutateWallet(sql, userId, `blitz-card:${nonce}`, (w) => ({ ok: true, wallet: w, detail: `blitz-${step}` }));
+}
+
 async function gradedNoncesToday(sql: Sql, userIds: string[], nonces: string[], day: string): Promise<Set<string>> {
   const start = `${day}T00:00:00.000Z`;
   const end = new Date(Date.parse(start) + 86_400_000).toISOString();
@@ -550,14 +621,15 @@ async function latestTicket(sql: Sql, id: string): Promise<TicketRow | null> {
   return parseTicket(rows[0]?.detail);
 }
 
-async function ticketsEarned(sql: Sql, id: string, userIds: string[]): Promise<number> {
+async function ticketsEarned(sql: Sql, id: string, userIds: string[], synced: number): Promise<number> {
   let clears = 0;
   for (const uid of userIds) {
     const rows = await sql<{ n: number }>`select coalesce(sum(correct), 0)::int as n from vault_clears where user_id = ${uid}`;
     clears += Number(rows[0]?.n) || 0;
   }
   const bought = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"kiosk:fare:%"}`;
-  return Math.floor(clears / VAULTS_PER_FARE) + (Number(bought[0]?.n) || 0);
+  const fromPlay = Math.floor(clears / VAULTS_PER_FARE) + (Number(bought[0]?.n) || 0);
+  return Math.min(FARES_CAP, Math.max(0, Math.floor(synced))) + fromPlay;
 }
 
 /** Spend one server ticket. The row's clock is Date.now(), and a second board while that train is out does not spend another. */
@@ -565,13 +637,14 @@ async function boardTicket(sql: Sql, sessionUserId: string, id: string, wallet: 
   if (from === to) return refused(wallet, "bad-ride");
   if (!wallet.cities.unlocked.includes(from) || !wallet.cities.unlocked.includes(to)) return refused(wallet, "locked");
   const ids = await groupIds(sql, sessionUserId);
-  const earned = await ticketsEarned(sql, id, ids);
+  const earned = await ticketsEarned(sql, id, ids, wallet.meta.fares);
   const spentRows = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"ticket:%"}`;
   const spent = Number(spentRows[0]?.n) || 0;
+  const held = Math.min(FARES_CAP, Math.max(0, earned - spent));
   const prev = await latestTicket(sql, id);
   const now = Date.now();
   if (prev && now < prev.at + prev.ms) return { ...applied({ ok: true, replay: true, wallet }), authoritative: true };
-  if (earned <= spent) return refused(wallet, "no-ticket");
+  if (held < 1) return refused(wallet, "no-ticket");
   const ms = fareMs(from, to);
   const r = await mutateWallet(sql, sessionUserId, `ticket:${spent}`, (w) => {
     if (!w.cities.unlocked.includes(from) || !w.cities.unlocked.includes(to)) return { ok: false, reason: "locked" };

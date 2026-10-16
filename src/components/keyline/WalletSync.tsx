@@ -3,9 +3,21 @@ import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user
 import { syncWallet, type SyncWire } from "@/game/walletApi";
 import { deviceId, setStreetPlayer, setWalletLive } from "@/game/walletClient";
 import { useGame } from "@/game/store";
+import { FARES_CAP } from "@/game/ticket";
+
+function pressStock(pantry: Partial<Record<string, number>>) {
+  let n = 0;
+  for (const [id, v] of Object.entries(pantry)) {
+    if (id.startsWith("paint-")) continue;
+    const q = Math.floor(Number(v));
+    if (q > 0) n += q;
+  }
+  return Math.min(24, n);
+}
 
 function snapOf() {
   const s = useGame.getState();
+  const n = (v: number, cap: number) => Math.min(cap, Math.max(0, Math.floor(v) || 0));
   return {
     coins: s.points,
     keys: s.keys,
@@ -18,6 +30,14 @@ function snapOf() {
     lucky: s.charms.includes("lucky"),
     cloths: s.quests.cloths.slice(0, 18),
     distanceM: Math.min(150_000, Math.max(0, Math.floor(s.distanceM) || 0)),
+    fares: n(s.fares, FARES_CAP),
+    atlas: Object.keys(s.atlas).slice(0, 640),
+    brass: n(s.brass, 48),
+    ink: n(s.ink, 32),
+    vellum: n(s.vellum, 32),
+    schematic: n(s.schematics, 8),
+    press: pressStock(s.pantry),
+    patterns: n(s.quests.patterns, 4),
   };
 }
 

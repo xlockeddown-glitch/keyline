@@ -33,7 +33,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
-import { BLITZ_STEPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
+import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { mergeSeen, savedSeen } from "./seenMemory";
@@ -371,6 +371,7 @@ function sparksNow(get: () => GameState) {
 }
 
 let rideWatchAt = 0;
+let boarding = false;
 
 function streetFloor(cityId: CityId, keys: { id: string }[]): number {
   const day = new Date().toISOString().slice(0, 10);
@@ -485,7 +486,7 @@ function seedContract(cityId: CityId): { ids: string[]; done: string[] } {
   const pois = [...CITIES[cityId].pois].sort((a, b) => a.tier.localeCompare(b.tier));
   const picks = pois.filter((p) => p.tier !== "white").slice(0, 8);
   const ids: string[] = [];
-  while (ids.length < 3 && picks.length) {
+  while (ids.length < CONTRACT_LAMPS && picks.length) {
     const i = Math.floor(Math.random() * picks.length);
     const p = picks.splice(i, 1)[0]!;
     if (!ids.includes(p.id)) ids.push(p.id);
@@ -2385,29 +2386,46 @@ export const useGame = create<GameState>((set, get) => ({
     if (to === get().cityId) return "You're already in this ward.";
     if (!CITIES[to]) return "No ward by that name.";
     if (!isUnlocked(get().cities, to)) return lockLine(get().cities, to);
-    if (get().fares < 1) return `Need a train ticket. ${ticketHint(get().cityVaults)} in this city.`;
+    const noTicket = `Need a train ticket. ${ticketHint(get().cityVaults)} in this city.`;
+    if (get().fares < 1) return noTicket;
     if (get().journey) return "You're already on a train.";
     const from = get().cityId;
-    const now = Date.now();
-    const arriveAt = now + fareMs(get().cityId, to);
-    const rideGame = dealForRide(arriveAt - now, get().rideHistory ?? []);
-    sfx.open();
-    set({
-      fares: get().fares - 1,
-      journey: { from, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0, rideGame },
-      rideHistory: pushRideHistory(get().rideHistory ?? [], rideGame),
-      screen: "ride",
-      hqOpen: false,
-      invOpen: false,
-      shopOpen: false,
-      errandOpen: null,
-      openVault: null,
-      loot: null,
-      miss: null,
-      toast: null,
-    });
-    scheduleSave(get);
-    if (walletLive()) void commitWallet({ kind: "board", from, to });
+    const go = () => {
+      if (get().fares < 1 || get().journey) return;
+      const now = Date.now();
+      const arriveAt = now + fareMs(from, to);
+      const rideGame = dealForRide(arriveAt - now, get().rideHistory ?? []);
+      sfx.open();
+      set({
+        fares: get().fares - 1,
+        journey: { from, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0, rideGame },
+        rideHistory: pushRideHistory(get().rideHistory ?? [], rideGame),
+        screen: "ride",
+        hqOpen: false,
+        invOpen: false,
+        shopOpen: false,
+        errandOpen: null,
+        openVault: null,
+        loot: null,
+        miss: null,
+        toast: null,
+      });
+      scheduleSave(get);
+    };
+    if (walletLive()) {
+      if (boarding) return "You're already on a train.";
+      boarding = true;
+      void commitWallet({ kind: "board", from, to }).then((res) => {
+        boarding = false;
+        if (!res?.ok) {
+          flashToast(set, get, noTicket, 2400);
+          return;
+        }
+        go();
+      });
+      return null;
+    }
+    go();
     return null;
   },
   chooseRideGame: (game) => {

@@ -51,6 +51,14 @@ const Snap = z.object({
   lucky: z.boolean().optional(),
   cloths: z.array(z.string().max(40)).max(24).optional(),
   distanceM: Count.optional(),
+  fares: Count.optional(),
+  atlas: z.array(z.string().max(80)).max(640).optional(),
+  brass: Count.optional(),
+  ink: Count.optional(),
+  vellum: Count.optional(),
+  schematic: Count.optional(),
+  press: Count.optional(),
+  patterns: Count.optional(),
   deviceId: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/),
 });
 

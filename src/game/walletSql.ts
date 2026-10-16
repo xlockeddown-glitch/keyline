@@ -2,7 +2,7 @@ import type { Sql } from "../lib/db.ts";
 import { canonicalId } from "./playerLinks.ts";
 import { cleanKeys } from "./matchSpend.ts";
 import { cleanUnlocks } from "./cityPass.ts";
-import { cleanMeta, emptyWallet, type AwardView, type OpResult, type WalletState } from "./wallet.ts";
+import { clampWallet, emptyWallet, type AwardView, type OpResult, type WalletState } from "./wallet.ts";
 
 /**
  * One row per canonical player (player_links). A ledger key applies once.
@@ -35,7 +35,7 @@ const json = (v: unknown) => {
 };
 
 export function rowToState(r: DbRow): WalletState {
-  return {
+  return clampWallet({
     coins: Math.max(0, Math.floor(Number(r.coins) || 0)),
     keys: cleanKeys({
       white: Number(r.white) || 0,
@@ -46,10 +46,10 @@ export function rowToState(r: DbRow): WalletState {
       violet: Number(r.violet) || 0,
     }),
     cities: cleanUnlocks(json(r.cities)),
-    meta: cleanMeta(json(r.meta)),
+    meta: json(r.meta),
     migrated: r.migrated === true,
     version: Number(r.version) || 0,
-  };
+  });
 }
 
 const SELECT = `select coins, white, blue, green, amber, red, violet, cities, meta, migrated, version from player_wallets where user_id = $1 limit 1`;

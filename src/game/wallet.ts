@@ -1,11 +1,11 @@
 import { applyTriviaBoosts, creditWhite } from "./boosts.ts";
 import { chooseStart, cleanUnlocks, freshUnlocks, lampLit, runFinished, unlockCity, type CityUnlocks } from "./cityPass.ts";
-import { CITIES, KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
+import { CHARMS, CITIES, KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
 import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { payDaily } from "./dailyRun.ts";
-import { BLITZ_STEPS, blitzMatch } from "./dailyBlitz.ts";
-import { SURVEY_GOALS } from "./survey.ts";
-import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
+import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
+import { SURVEY_GOALS, isPlace } from "./survey.ts";
+import { marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { clothCoin, type ClothId } from "./quests.ts";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards.ts";
@@ -16,7 +16,7 @@ import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay.ts";
 import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
 import { betterOutcome, IDLE, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
-import { FARE_MAX_MS, matchCap, pocketRide, transitLoot } from "./ticket.ts";
+import { FARE_MAX_MS, FARES_CAP, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
 /**
  * 0.0.78 server wallet. Coins, matches (`keys`), city unlocks and city passes.
@@ -33,6 +33,17 @@ export const RUN_CAP = 9_999;
 export const WALK_CAP = 150_000;
 /** One of each real cloth (dust, book, glass, and a scarf per city). */
 export const CLOTH_CAP = 18;
+/** Craft stock a first sync may bring. Enough for the lucky bit and the cloths, not a minted pile. */
+const BRASS_CAP = 48;
+const INK_CAP = 32;
+const VELLUM_CAP = 32;
+const SCHEMATIC_CAP = 8;
+const PRESS_CAP = 24;
+const PATTERN_CAP = 4;
+/** The long walk (quests.ts). Road dust is that distance, already on the wallet. */
+const DUST_WALK_M = 10_000;
+/** Real places a first sync may keep. The atlas is about 580. */
+const VISIT_CAP = 640;
 const TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 
 export type WalletMeta = {
@@ -75,6 +86,17 @@ export type WalletMeta = {
   rideGame: string;
   /** Length of the open round, the one the server dealt. */
   rideMs: number;
+  /** Train tickets held. Never above FARES_CAP. */
+  fares: number;
+  /** Atlas visits from a first sync, real place ids only. */
+  visits: string[];
+  /** Press stock the lucky bit and the cloths spend. */
+  brass: number;
+  ink: number;
+  vellum: number;
+  schematic: number;
+  press: number;
+  patterns: number;
 };
 
 export type WalletState = {
@@ -98,6 +120,14 @@ export type LocalSnap = {
   lucky?: boolean;
   cloths?: string[];
   distanceM?: number;
+  fares?: number;
+  atlas?: string[];
+  brass?: number;
+  ink?: number;
+  vellum?: number;
+  schematic?: number;
+  press?: number;
+  patterns?: number;
 };
 
 export type AwardView = {
@@ -135,6 +165,14 @@ const emptyMeta = (): WalletMeta => ({
   rideOpenN: -1,
   rideGame: "",
   rideMs: 0,
+  fares: 0,
+  visits: [],
+  brass: 0,
+  ink: 0,
+  vellum: 0,
+  schematic: 0,
+  press: 0,
+  patterns: 0,
 });
 
 export function emptyWallet(): WalletState {
@@ -193,6 +231,14 @@ export function cleanMeta(raw: unknown): WalletMeta {
     rideOpenN: openIndex(m.rideOpenN),
     rideGame: rideGameOf(m.rideGame),
     rideMs: num(m.rideMs, 120_000),
+    fares: num(m.fares, FARES_CAP),
+    visits: cleanVisits(m.visits),
+    brass: num(m.brass, BRASS_CAP),
+    ink: num(m.ink, INK_CAP),
+    vellum: num(m.vellum, VELLUM_CAP),
+    schematic: num(m.schematic, SCHEMATIC_CAP),
+    press: num(m.press, PRESS_CAP),
+    patterns: num(m.patterns, PATTERN_CAP),
   };
 }
 
@@ -219,6 +265,31 @@ function capCities(u: CityUnlocks): CityUnlocks {
   const runs: CityUnlocks["runs"] = {};
   for (const [k, v] of Object.entries(u.runs)) runs[k as CityId] = Math.min(RUN_CAP, v ?? 0);
   return { ...u, passes: Math.min(PASS_CAP, u.passes), runs };
+}
+
+function cleanVisits(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const id of raw) {
+    if (typeof id !== "string" || !isPlace(id) || out.includes(id)) continue;
+    out.push(id);
+    if (out.length >= VISIT_CAP) break;
+  }
+  return out;
+}
+
+/** Coins, matches and passes on the way out of the database, not only on the way in. */
+export function clampWallet(w: Omit<WalletState, "meta"> & { meta: unknown }): WalletState {
+  const src = cleanKeys(w.keys);
+  const keys = cleanKeys(null);
+  for (const t of TIERS) keys[t] = Math.min(KEY_CAP, src[t] ?? 0);
+  return {
+    ...w,
+    coins: Math.min(COIN_CAP, Math.max(0, Math.floor(Number(w.coins) || 0))),
+    keys,
+    cities: capCities(cleanUnlocks(w.cities)),
+    meta: cleanMeta(w.meta),
+  };
 }
 
 export function viewOf(w: WalletState) {
@@ -274,6 +345,14 @@ export function mergeFirstSync(server: WalletState, local: LocalSnap): WalletSta
   if (local.lucky) meta.lucky = true;
   meta.cloths = cleanCloths([...(meta.cloths ?? []), ...(local.cloths ?? [])]);
   meta.walkM = Math.max(meta.walkM, num(local.distanceM, WALK_CAP));
+  meta.fares = Math.min(FARES_CAP, Math.max(meta.fares, num(local.fares, FARES_CAP)));
+  meta.visits = cleanVisits([...(meta.visits ?? []), ...(local.atlas ?? [])]);
+  meta.brass = Math.max(meta.brass, num(local.brass, BRASS_CAP));
+  meta.ink = Math.max(meta.ink, num(local.ink, INK_CAP));
+  meta.vellum = Math.max(meta.vellum, num(local.vellum, VELLUM_CAP));
+  meta.schematic = Math.max(meta.schematic, num(local.schematic, SCHEMATIC_CAP));
+  meta.press = Math.max(meta.press, num(local.press, PRESS_CAP));
+  meta.patterns = Math.max(meta.patterns, num(local.patterns, PATTERN_CAP));
   return { ...server, coins, keys, cities, meta, migrated: true };
 }
 
@@ -295,16 +374,13 @@ export function applyDelta(
   if (!Number.isFinite(coins) || coins < 0) return { ok: false, reason: "short-coins" };
   coins = Math.min(COIN_CAP, Math.floor(coins));
   const keys = cleanKeys(w.keys);
-  if (d.keys) {
-    for (const t of TIERS) {
-      const n = d.keys[t];
-      if (!n) continue;
-      const next = (keys[t] ?? 0) + n;
-      if (next < 0) return { ok: false, reason: "short-match" };
-      keys[t] = Math.min(KEY_CAP, next);
-    }
+  for (const t of TIERS) {
+    const n = d.keys?.[t] ?? 0;
+    const next = (keys[t] ?? 0) + n;
+    if (next < 0) return { ok: false, reason: "short-match" };
+    keys[t] = Math.min(KEY_CAP, next);
   }
-  const cities = d.cities ? capCities(cleanUnlocks(d.cities)) : w.cities;
+  const cities = d.cities ? capCities(cleanUnlocks(d.cities)) : capCities(w.cities);
   const meta = d.meta ? cleanMeta({ ...w.meta, ...d.meta }) : w.meta;
   return { ok: true, wallet: { ...w, coins, keys, cities, meta } };
 }
@@ -436,7 +512,7 @@ export function acceptNonces(asked: readonly string[], seen: ReadonlySet<string>
 export function contractOp(w: WalletState, day: string, nonces: readonly string[]): OpResult {
   const n = w.meta.contractDay === day ? w.meta.contractN : 0;
   if (n >= 24) return { ok: false, reason: "capped" };
-  if (!nonces.length) return { ok: false, reason: "unproven" };
+  if (nonces.length < CONTRACT_LAMPS) return { ok: false, reason: "unproven" };
   const applied = applyDelta(w, { coins: 1500, keys: { amber: 1 }, meta: { contractDay: day, contractN: n + 1 } });
   if (!applied.ok) return applied;
   return { ...applied, detail: JSON.stringify({ nonces: [...nonces] }) };
@@ -573,30 +649,73 @@ function rankOf(o: RideOutcome): Pick<WalletMeta, "rideRank" | "ridePerf" | "rid
   return { rideRank: 0, ridePerf: 0, ridePerfect: false };
 }
 
-/** A street match from the player's city-day list. The tier and the market flag come from that list, not the client. */
-export function streetOp(w: WalletState, spot: { tier: Tier; market: boolean }, city: CityId, now: number): OpResult {
-  const mult = spot.market && marketAt(city, now) ? MARKET_MULT : 1;
-  const have = w.keys[spot.tier] ?? 0;
-  const cap = Math.max(matchCap(spot.tier), have + 1);
-  const add = mult > 1 ? marketMatches(have, cap, mult) : 1;
-  const coin = mult > 1 ? marketOverflowCoin(spot.tier, mult, add) : 0;
-  return applyDelta(w, { coins: coin, keys: { [spot.tier]: add } });
+/** One match from the player's city-day list. The city has to be unlocked. A market spot does not pay a second. */
+export function streetOp(w: WalletState, city: CityId, tier: Tier): OpResult {
+  if (!w.cities.unlocked.includes(city)) return { ok: false, reason: "locked" };
+  return applyDelta(w, { keys: { [tier]: 1 } });
 }
 
-/** Record the lucky bit. One per player. The grade pays the spare match only after this. */
+type StockCost = { brass?: number; ink?: number; vellum?: number; schematic?: number; press?: number; patterns?: number };
+
+/** Take the craft's cost off the wallet. Short stock spends nothing. */
+function spendStock(meta: WalletMeta, cost: StockCost): WalletMeta | null {
+  const next = { ...meta };
+  for (const key of ["brass", "ink", "vellum", "schematic", "press", "patterns"] as const) {
+    const n = cost[key] ?? 0;
+    if (n < 1) continue;
+    if (next[key] < n) return null;
+    next[key] -= n;
+  }
+  return next;
+}
+
+/** The lucky bit, paid for in the same write. Already owned is not charged again. */
 export function charmOp(w: WalletState, id: string): OpResult {
   if (id !== "lucky") return { ok: false, reason: "unknown" };
   if (w.meta.lucky) return { ok: true, wallet: w };
-  return applyDelta(w, { meta: { lucky: true } });
+  const cost = CHARMS.lucky.cost;
+  const meta = spendStock(w.meta, { brass: cost.brass, ink: cost.ink, vellum: cost.vellum, schematic: cost.schematic, press: 1 });
+  if (!meta) return { ok: false, reason: "short" };
+  return applyDelta(w, { meta: { ...meta, lucky: true } });
 }
 
-/** Record one real cloth. A second copy, or an id the game does not have, does not enlarge the closet. */
-export function clothOp(w: WalletState, id: string): OpResult {
+function redCities(visited: ReadonlySet<string> | undefined): number {
+  if (!visited) return 0;
+  let n = 0;
+  for (const city of Object.values(CITIES)) {
+    if (city.pois.some((p) => p.tier === "red" && visited.has(p.id))) n += 1;
+  }
+  return n;
+}
+
+/**
+ * One real cloth, paid for in the same write.
+ * Night glass spends a pattern and a press stock. A scarf spends the circuit's three stock.
+ * Road dust needs the 10 km the server already counted. The red book needs a red vault in every city.
+ */
+export function clothOp(w: WalletState, id: string, proof?: { meters?: number; visited?: ReadonlySet<string> }): OpResult {
   const cloth = realCloth(id);
   if (!cloth) return { ok: false, reason: "unknown" };
   if (w.meta.cloths.includes(cloth)) return { ok: true, wallet: w };
   if (w.meta.cloths.length >= CLOTH_CAP) return { ok: false, reason: "capped" };
-  return applyDelta(w, { meta: { cloths: [...w.meta.cloths, cloth] } });
+  let meta = w.meta;
+  if (cloth === "night-glass") {
+    const spent = spendStock(meta, { patterns: 1, press: 1 });
+    if (!spent) return { ok: false, reason: "short" };
+    meta = spent;
+  } else if (cloth.startsWith("scarf-")) {
+    const city = cloth.slice(6) as CityId;
+    if (!w.cities.unlocked.includes(city)) return { ok: false, reason: "locked" };
+    const spent = spendStock(meta, { press: 3 });
+    if (!spent) return { ok: false, reason: "short" };
+    meta = spent;
+  } else if (cloth === "road-dust") {
+    const meters = Math.max(meta.walkM, proof?.meters ?? 0);
+    if (meters < DUST_WALK_M) return { ok: false, reason: "unproven" };
+  } else if (cloth === "red-book") {
+    if (redCities(proof?.visited) < Object.keys(CITIES).length) return { ok: false, reason: "unproven" };
+  }
+  return applyDelta(w, { meta: { ...meta, cloths: [...meta.cloths, cloth] } });
 }
 
 export type GradePay = {

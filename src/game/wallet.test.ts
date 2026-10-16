@@ -9,13 +9,12 @@ import { freshUnlocks } from "./cityPass.ts";
 import { rewardPoints } from "./rewards.ts";
 import { CITIES } from "./data.ts";
 import { surveyProven } from "./survey.ts";
-import { streetSpot } from "./streetSpots.ts";
-import { matchCap, transitLoot } from "./ticket.ts";
+import { STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
+import { FARES_CAP, transitLoot } from "./ticket.ts";
 import { rideReward } from "./rideGames.ts";
 import { payDaily } from "./dailyRun.ts";
 import { rideSeed, scoreRide } from "./rideGrade.ts";
 import { whereRound } from "./whereAmI.ts";
-import { marketMatches } from "./nightMarket.ts";
 import {
   CLOTH_CAP,
   COIN_CAP,
@@ -37,7 +36,7 @@ import {
   type GradePay,
   type LocalSnap,
 } from "./wallet.ts";
-import { canonicalWallet } from "./walletSql.ts";
+import { canonicalWallet, rowToState } from "./walletSql.ts";
 import { DEVICE_CAP, applyClientOp, awardGrade, spendDealt, syncPlayer } from "./walletApply.ts";
 import { tokenNonce } from "./walletClient.ts";
 
@@ -62,6 +61,8 @@ async function db(extra: string[] = []) {
     linked_at timestamptz not null default now()
   )`);
   await pg.exec(mig("0016_player_wallet.sql"));
+  await pg.exec(mig("0003_plate_events.sql"));
+  await pg.exec(mig("0014_walk_distance.sql"));
   for (const name of extra) await pg.exec(mig(name));
   return sqlOf(pg);
 }
@@ -442,7 +443,7 @@ test("the server scores a dealt round and pays nothing for an unknown game", () 
   assert.equal(missed?.kind, "played");
 });
 
-test("lucky and cloth pay only when the server knows the player owns them", async () => {
+test("lucky and cloth are granted only when the craft spends its cost", async () => {
   assert.deepEqual(provenBoost(true, "road-dust", { lucky: false, cloths: new Set() }), { lucky: false, cloth: null });
   assert.deepEqual(provenBoost(true, "road-dust", { lucky: true, cloths: new Set(["road-dust"]) }), { lucky: true, cloth: "road-dust" });
   const plain = gradeGrant(emptyWallet(), pay());
@@ -451,20 +452,53 @@ test("lucky and cloth pay only when the server knows the player owns them", asyn
   if (!plain.ok || !dressed.ok) return;
   assert.ok((dressed.award?.coins ?? 0) > (plain.award?.coins ?? 0));
   const sql = await db();
-  await syncPlayer(sql, "lux", snap({ cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }), "luxphone1");
+  const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
+  await syncPlayer(sql, "lux", snap({ cities }), "luxphone1");
   const graded = await awardGrade(sql, "lux", "luck1", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
   assert.equal(graded.wallet.coins, plain.award?.coins);
-  assert.equal(graded.wallet.keys.blue ?? 0, plain.wallet.keys.blue ?? 0);
+  const freeCharm = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
+  assert.equal(freeCharm.ok, false);
+  assert.equal(freeCharm.reason, "short");
+  assert.equal(freeCharm.wallet.meta.lucky, false);
+  const freeCloth = await applyClientOp(sql, "lux", { kind: "cloth", id: "road-dust" });
+  assert.equal(freeCloth.ok, false);
+  assert.equal(freeCloth.reason, "unproven");
+  const freeGlass = await applyClientOp(sql, "lux", { kind: "cloth", id: "night-glass" });
+  assert.equal(freeGlass.ok, false);
+  assert.equal(freeGlass.reason, "short");
+  await syncPlayer(
+    sql,
+    "lux",
+    snap({
+      cities,
+      brass: 12,
+      ink: 8,
+      vellum: 8,
+      schematic: 1,
+      press: 4,
+      patterns: 1,
+      distanceM: 10_000,
+    }),
+    "luxphone1",
+  );
   const charm = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
   assert.equal(charm.ok, true);
   assert.equal(charm.wallet.meta.lucky, true);
+  assert.equal(charm.wallet.meta.brass, 0);
+  assert.equal(charm.wallet.meta.ink, 0);
+  assert.equal(charm.wallet.meta.press, 3);
   const cloth = await applyClientOp(sql, "lux", { kind: "cloth", id: "road-dust" });
   assert.equal(cloth.ok, true);
+  assert.ok(cloth.wallet.meta.cloths.includes("road-dust"));
+  const glass = await applyClientOp(sql, "lux", { kind: "cloth", id: "night-glass" });
+  assert.equal(glass.ok, true);
+  assert.equal(glass.wallet.meta.patterns, 0);
+  assert.equal(glass.wallet.meta.press, 2);
   const dressedGrade = await awardGrade(sql, "lux", "luck2", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
-  assert.equal(dressedGrade.wallet.coins - cloth.wallet.coins, dressed.award?.coins);
+  assert.equal(dressedGrade.wallet.coins - glass.wallet.coins, dressed.award?.coins);
   const again = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
-  assert.equal(again.replay || again.ok, true);
-  assert.equal(again.wallet.meta.lucky, true);
+  assert.equal(again.replay, true);
+  assert.equal(again.wallet.meta.brass, 0);
 });
 
 test("a goal, a survey and a daily each pay once from server records", async () => {
@@ -569,19 +603,29 @@ test("a contract and a blitz pay a graded nonce once", async () => {
     );
   await insert("nonceold1", yesterday);
   await insert("noncetoday", today);
+  await insert("noncelamp2", today);
+  await insert("noncelamp3", today);
   await insert("nonceblitz", today);
-  const old = await applyClientOp(sql, "con", { kind: "contract", nonces: ["nonceold1"] });
+  const { id: conId } = await canonicalWallet(sql, "con");
+  const markBlitz = (nonce: string, step: number) =>
+    sql`insert into wallet_ledger (user_id, op_key, detail) values (${conId}, ${"blitz-card:" + nonce}, ${"blitz-" + step})`;
+  const old = await applyClientOp(sql, "con", { kind: "contract", nonces: ["nonceold1", "noncelamp2", "noncelamp3"] });
   assert.equal(old.ok, false);
   assert.equal(old.reason, "unproven");
-  const made = await applyClientOp(sql, "con", { kind: "contract", nonces: ["noncetoday"] });
+  const one = await applyClientOp(sql, "con", { kind: "contract", nonces: ["noncetoday"] });
+  assert.equal(one.ok, false);
+  assert.equal(one.reason, "unproven");
+  const made = await applyClientOp(sql, "con", { kind: "contract", nonces: ["noncetoday", "noncelamp2", "noncelamp3"] });
   assert.equal(made.ok, true);
   assert.equal(made.wallet.keys.amber, 1);
   assert.ok(made.wallet.coins >= 1500);
-  const reuse = await applyClientOp(sql, "con", { kind: "contract", nonces: ["noncetoday"] });
+  const reuse = await applyClientOp(sql, "con", { kind: "contract", nonces: ["noncetoday", "noncelamp2", "noncelamp3"] });
   assert.equal(reuse.replay, true);
   assert.equal(reuse.wallet.keys.amber, 1);
-  const stolen = await applyClientOp(sql, "con", { kind: "blitz", step: 0, nonces: ["noncetoday"] });
+  const stolen = await applyClientOp(sql, "con", { kind: "blitz", step: 0, nonces: ["nonceblitz"] });
   assert.equal(stolen.ok, false);
+  assert.equal(stolen.reason, "unproven");
+  await markBlitz("nonceblitz", 0);
   const blitz = await applyClientOp(sql, "con", { kind: "blitz", step: 0, nonces: ["nonceblitz"] });
   assert.equal(blitz.ok, true);
   assert.equal(blitz.wallet.coins, made.wallet.coins + 20);
@@ -589,6 +633,7 @@ test("a contract and a blitz pay a graded nonce once", async () => {
   assert.equal(blitzAgain.replay, true);
   assert.equal(blitzAgain.wallet.coins, blitz.wallet.coins);
   await insert("noncestep2", today);
+  await markBlitz("noncestep2", 1);
   const skip = await applyClientOp(sql, "con", { kind: "blitz", step: 2, nonces: ["noncestep2"] });
   assert.equal(skip.ok, false);
   const step = await applyClientOp(sql, "con", { kind: "blitz", step: 1, nonces: ["noncestep2"] });
@@ -667,7 +712,7 @@ test("a dealt ride is scored from the server seed and does not pay a win in one 
   assert.equal(replay.wallet.meta.rideRank, 2);
 });
 
-test("a market spot pays the double, and a kiosk name counts as a visit", async () => {
+test("a market spot pays one match, and a kiosk name counts as a visit", async () => {
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false };
   await syncPlayer(sql, "str", snap({ coins: 3000, cities }), "strphone1");
@@ -681,10 +726,10 @@ test("a market spot pays the double, and a kiosk name counts as a visit", async 
     }
   }
   assert.ok(market);
+  await sql`insert into walk_distance (user_id, city, meters, updated_at) values ('str', 'austin', 40, now())`;
   const paid = await applyClientOp(sql, "str", { kind: "street", id: market!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
   assert.equal(paid.ok, true);
-  const add = marketMatches(0, Math.max(matchCap(market!.tier), 1), 2);
-  assert.equal(paid.wallet.keys[market!.tier], add);
+  assert.equal(paid.wallet.keys[market!.tier], 1);
   const stale = streetSpot("str", "austin", "1999-01-01", 9);
   const old = await applyClientOp(sql, "str", { kind: "street", id: stale!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
   assert.equal(old.ok, false);
@@ -707,6 +752,144 @@ test("a market spot pays the double, and a kiosk name counts as a visit", async 
   assert.equal(visit.wallet.keys.blue, before + 1);
 });
 
+test("a street claim needs the city, a fresh walk, and stops at the day's cap", async () => {
+  const sql = await db();
+  const day = new Date().toISOString().slice(0, 10);
+  const austin = { ...freshUnlocks(), start: "austin" as const, unlocked: ["austin"] as const, freePick: false };
+  await syncPlayer(sql, "stb", snap({ cities: { ...freshUnlocks(), start: "nyc", unlocked: ["nyc"], freePick: false } }), "stbphone1");
+  const lockedSpot = streetSpot("stb", "austin", day, 0);
+  assert.ok(lockedSpot);
+  const locked = await applyClientOp(sql, "stb", { kind: "street", id: lockedSpot!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
+  assert.equal(locked.ok, false);
+  assert.equal(locked.reason, "locked");
+
+  await syncPlayer(sql, "stc", snap({ cities: austin }), "stcphone1");
+  const quiet = streetSpot("stc", "austin", day, 0);
+  assert.ok(quiet);
+  const cold = await applyClientOp(sql, "stc", { kind: "street", id: quiet!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
+  assert.equal(cold.ok, false);
+  assert.equal(cold.reason, "unproven");
+  await sql`insert into walk_distance (user_id, city, meters, updated_at) values ('stc', 'austin', 80, now())`;
+  for (let i = 0; i < STREET_DAY_CAP; i++) {
+    const spot = streetSpot("stc", "austin", day, i);
+    assert.ok(spot);
+    const paid = await applyClientOp(sql, "stc", { kind: "street", id: spot!.id, tier: spot!.tier, city: "austin", lat: 0, lng: 0 });
+    assert.equal(paid.ok, true, `claim ${i}`);
+    assert.equal(paid.replay, false);
+  }
+  const extra = streetSpot("stc", "austin", day, STREET_DAY_CAP);
+  assert.ok(extra);
+  const capped = await applyClientOp(sql, "stc", { kind: "street", id: extra!.id, tier: extra!.tier, city: "austin", lat: 0, lng: 0 });
+  assert.equal(capped.ok, false);
+  assert.equal(capped.reason, "capped");
+  const again = await applyClientOp(sql, "stc", { kind: "street", id: quiet!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
+  assert.equal(again.replay, true);
+});
+
+test("a signed-in idle ride and a played ride pay the same as a guest", async () => {
+  const sql = await db(["0002_vault_clears.sql"]);
+  const cities = { ...freshUnlocks(), start: "austin" as const, unlocked: ["austin", "nyc"] as const, freePick: false };
+  const synced = await syncPlayer(sql, "far", snap({ fares: 9, cities }), "farphone1");
+  assert.equal(synced.wallet.meta.fares, FARES_CAP);
+  const boarded = await applyClientOp(sql, "far", { kind: "board", from: "austin", to: "nyc" });
+  assert.equal(boarded.ok, true);
+  const { id } = await canonicalWallet(sql, "far");
+  const firstRows = await sql<{ detail: string; op_key: string }>`select op_key, detail from wallet_ledger where user_id = ${id} and op_key like ${"ticket:%"}`;
+  const first = JSON.parse(firstRows[0]!.detail) as { ms: number };
+  const idleAt = Date.now() - first.ms - 80_000;
+  await sql`update wallet_ledger set detail = ${JSON.stringify({ at: idleAt, from: "austin", to: "nyc", ms: first.ms })} where user_id = ${id} and op_key = ${firstRows[0]!.op_key}`;
+  const idleDue = transitLoot(first.ms, 0, first.ms);
+  const idle = await applyClientOp(sql, "far", { kind: "ride" });
+  assert.equal(idle.ok, true);
+  assert.equal(idle.wallet.keys.white, idleDue.white);
+  assert.equal(idle.wallet.keys.blue, idleDue.blue);
+  assert.equal(idle.wallet.keys.green, idleDue.green);
+
+  const doneAt = Date.now() - first.ms - 5_000;
+  await sql`update wallet_ledger set detail = ${JSON.stringify({ at: doneAt, from: "austin", to: "nyc", ms: first.ms })} where user_id = ${id} and op_key = ${firstRows[0]!.op_key}`;
+  const second = await applyClientOp(sql, "far", { kind: "board", from: "austin", to: "nyc" });
+  assert.equal(second.ok, true);
+  assert.equal(second.replay, false);
+
+  const tickets = await sql<{ detail: string; op_key: string }>`select op_key, detail from wallet_ledger where user_id = ${id} and op_key like ${"ticket:%"} order by created_at`;
+  const open = tickets[tickets.length - 1]!;
+  const openTicket = JSON.parse(open.detail) as { ms: number };
+  const wall = Math.floor(openTicket.ms * 0.8);
+  const playAt = Date.now() - wall;
+  await sql`update wallet_ledger set detail = ${JSON.stringify({ at: playAt, from: "austin", to: "nyc", ms: openTicket.ms })} where user_id = ${id} and op_key = ${open.op_key}`;
+  const dealt = await applyClientOp(sql, "far", { kind: "ride", deal: "where-am-i" });
+  assert.equal(dealt.ok, true);
+  assert.equal(dealt.wallet.meta.rideTouch, true);
+  const meta = { ...dealt.wallet.meta, rideLo: playAt };
+  await sql.query(`update player_wallets set meta = $2::jsonb where user_id = $1`, [id, JSON.stringify(meta)]);
+  const played = await applyClientOp(sql, "far", { kind: "ride", play: true });
+  assert.equal(played.ok, true);
+  const playedDue = transitLoot(Date.now() - playAt, 0, openTicket.ms, { kind: "played" });
+  assert.equal(played.wallet.keys.white, idle.wallet.keys.white + playedDue.white);
+  assert.equal(played.wallet.keys.blue, idle.wallet.keys.blue + playedDue.blue);
+  assert.equal(played.wallet.keys.green, idle.wallet.keys.green + playedDue.green);
+  assert.ok(playedDue.white > idleDue.white);
+  const arrived = Date.now() - openTicket.ms - 5_000;
+  await sql`update wallet_ledger set detail = ${JSON.stringify({ at: arrived, from: "austin", to: "nyc", ms: openTicket.ms })} where user_id = ${id} and op_key = ${open.op_key}`;
+  const third = await applyClientOp(sql, "far", { kind: "board", from: "austin", to: "nyc" });
+  assert.equal(third.ok, false);
+  assert.equal(third.reason, "no-ticket");
+});
+
+test("a 50M pocket reads back inside the caps, and atlas visits count", async () => {
+  const raw = rowToState({
+    coins: 50_000_000,
+    white: 2000,
+    blue: 2000,
+    green: 2000,
+    amber: 2000,
+    red: 2000,
+    violet: 2000,
+    cities: { start: "austin", unlocked: ["austin"], freePick: false, passes: 80, lampPts: 0, goalsPaid: [], runs: {}, runsPaid: [] },
+    meta: { walkM: 9_000_000, lucky: true, cloths: ["road-dust", "nope"], visits: ["not-a-place"] },
+    migrated: true,
+    version: 1,
+  });
+  assert.equal(raw.coins, COIN_CAP);
+  assert.equal(raw.keys.white, KEY_CAP);
+  assert.equal(raw.keys.blue, KEY_CAP);
+  assert.equal(raw.cities.passes, PASS_CAP);
+  assert.equal(raw.meta.walkM, WALK_CAP);
+  assert.equal(raw.meta.lucky, true);
+  assert.deepEqual(raw.meta.cloths, ["road-dust"]);
+  assert.deepEqual(raw.meta.visits, []);
+
+  const sql = await db();
+  const places = CITIES.austin.pois.slice(0, 4).map((p) => p.id);
+  const synced = await syncPlayer(
+    sql,
+    "atl",
+    snap({
+      coins: 50_000_000,
+      keys: { white: 2000 },
+      cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], passes: 80, freePick: false },
+      distanceM: 200_000,
+      atlas: [places[0]!, "nope", ...places.slice(1)],
+      fares: 9,
+    }),
+    "atlphone1",
+  );
+  assert.equal(synced.wallet.coins, COIN_CAP);
+  assert.equal(synced.wallet.keys.white, KEY_CAP);
+  assert.equal(synced.wallet.cities.passes, PASS_CAP);
+  assert.equal(synced.wallet.meta.walkM, WALK_CAP);
+  assert.equal(synced.wallet.meta.fares, FARES_CAP);
+  assert.ok(synced.wallet.meta.visits.includes(places[0]!));
+  assert.equal(synced.wallet.meta.visits.includes("nope"), false);
+  await sql.query(`update player_wallets set coins = 50000000, white = 2000 where user_id = $1`, ["atl"]);
+  const read = await canonicalWallet(sql, "atl");
+  assert.equal(read.wallet.coins, COIN_CAP);
+  assert.equal(read.wallet.keys.white, KEY_CAP);
+  const visit = await applyClientOp(sql, "atl", { kind: "survey", id: "visit-4" });
+  assert.equal(visit.ok, true);
+  assert.equal(visit.wallet.keys.blue, 1);
+});
+
 test("a failed unlock reply rolls the local city list back", () => {
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   const unlock = store.slice(store.indexOf("unlockCity: (id) =>"), store.indexOf("setHud: (h) =>"));
@@ -715,6 +898,8 @@ test("a failed unlock reply rolls the local city list back", () => {
   assert.match(unlock, /cities: before/);
   assert.match(store, /kind: "ride", watch: watching, play: playing/);
   assert.match(store, /kind: "board"/);
+  assert.match(store, /if \(!res\?\.ok\)/);
+  assert.match(store, /Need a train ticket/);
   assert.doesNotMatch(store, /kind: "pulse"/);
   const body = Buffer.from(JSON.stringify({ n: "nonceaaaa", t: Date.UTC(2026, 9, 16, 12) })).toString("base64url");
   assert.equal(tokenNonce(`${body}.sig`), "nonceaaaa");

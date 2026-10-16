@@ -84,6 +84,11 @@ export function poiName(id: string) {
   return POI_NAME[id] ?? "Mark";
 }
 
+/** A place the atlas actually has. Retired marks still count; invented ids do not. */
+export function isPlace(id: string) {
+  return Object.prototype.hasOwnProperty.call(POI_CITY, id);
+}
+
 /** A survey match the server can prove. Walk goals use metres the server has already counted. */
 export function surveyProven(id: string, visited: ReadonlySet<string>, meters = 0): boolean {
   const g = SURVEY_GOALS.find((x) => x.id === id);

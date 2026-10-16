@@ -7,7 +7,7 @@ import type { CityId, Poi, PoiKind, Tier, TriviaCat, TriviaDiff, TriviaQ } from 
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward, ServerWallet } from "./triviaSchema";
 import { RUN_ID, STACK_ID } from "./data.ts";
 import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
-import { awardGrade, spendDealt } from "./walletApply.ts";
+import { awardGrade, noteBlitzCard, spendDealt } from "./walletApply.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
 export type { DealInput, DealResult, GradeInput, GradeResult, Grade, PublicCard } from "./triviaSchema";
 
@@ -370,6 +370,15 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         correct = Boolean(first[0]?.correct);
       } else {
         credited = true;
+        const blitzPi = t.x?.pi ?? "";
+        if (correct && blitzPi.startsWith("blitz-")) {
+          const step = Number(/^blitz-(\d+)$/.exec(blitzPi)?.[1]);
+          try {
+            await noteBlitzCard(sql, viewer.userId!, t.n, step);
+          } catch (e) {
+            console.warn("[trivia] blitz card note failed", e instanceof Error ? e.message : e);
+          }
+        }
         await sql`
           insert into plate_stats (plate_id, rarity, difficulty, shown, correct, latency_sum, updated_at)
           values (${card.id}, ${t.r}, ${t.d}, 1, ${correct ? 1 : 0}, ${Math.min(3_600_000, elapsedMs)}, now())

@@ -2,6 +2,15 @@ import type { CityId, Tier } from "./types.ts";
 
 /** One city-day of street matches. A guest spawning at the 28s floor for a full day lands near this. */
 export const STREET_CAP = 3200;
+/**
+ * Claims one player may file in one city on one UTC day.
+ * The curb opens with 9 (`seedKeys`). After that `maybeSpawnKey` waits
+ * `max(28s, 78s − play)`, so forty is the opening deal plus the picks one
+ * walk through a ward actually makes. The 28s floor run for a full day is a script.
+ */
+export const STREET_DAY_CAP = 40;
+/** A claim has to follow a walk post or a dealt card in this city inside this window. */
+export const STREET_FRESH_MS = 5 * 60_000;
 
 const SEED: Tier[] = ["white", "blue", "white", "white", "blue", "white", "white", "blue", "white"];
 

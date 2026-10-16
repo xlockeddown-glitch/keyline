@@ -18,6 +18,9 @@ export const BLITZ_STEPS: { tier: Tier; pay: number; cat: TriviaCat }[] = [
 
 export const BLITZ_FULL = BLITZ_STEPS.reduce((n, s) => n + s.pay, 0);
 
+/** Guest contracts are three lamps. The server pays the amber only for that many graded cards. */
+export const CONTRACT_LAMPS = 3;
+
 export const BLITZ_WINDOW_MS = 20_000;
 
 const TIER_LABEL: Record<Tier, string> = {
