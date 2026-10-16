@@ -5,6 +5,7 @@ import { GameMap } from "./GameMap";
 import { RideScreen } from "./RideScreen";
 import { DyeSync } from "./DyeSync";
 import { WardrobeSync } from "./WardrobeSync";
+import { WalletSync } from "./WalletSync";
 
 export function KeylineApp() {
   const screen = useGame((s) => s.screen);
@@ -12,6 +13,7 @@ export function KeylineApp() {
   return (
     <>
       <WardrobeSync />
+      <WalletSync />
       <DyeSync />
       {view}
     </>

@@ -4,7 +4,8 @@ import { streetDrop } from "./streets";
 import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
-import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard } from "./triviaSchema";
+import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
+import { commitWallet, walletLive } from "./walletClient";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
@@ -31,13 +32,13 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
-import { blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
+import { BLITZ_STEPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
-import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
+import { chooseRideGame, dealForRide, forfeitRound, journeyOutcome, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, rollIngredient, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
@@ -280,6 +281,8 @@ export type GameState = {
   wearCosmetic: (slot: CosmeticSlot, id: CosmeticId | null) => void;
   /** Take the merged wardrobe back from the server (signed-in sync). */
   adoptWardrobe: (w: Wardrobe) => void;
+  /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
+  adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -671,7 +674,8 @@ async function dealCard(
   poiId: string,
   cat: TriviaCat,
   step: number,
-): Promise<{ card: DealtCard; token: string; windowMs: number } | null> {
+  prevToken?: string,
+): Promise<{ card: DealtCard; token: string; windowMs: number; wallet?: ServerWallet } | { need: true } | null> {
   foldSavedSeen(set, get);
   const st = get();
   const city = CITIES[st.cityId];
@@ -687,6 +691,7 @@ async function dealCard(
   const scholar = st.equipped === "scholar" ? 3000 : 0;
   const extra = scholar + (st.pressPass > 0 ? 5000 : 0) + (wornPerk(st.scout).vaultMs ?? 0);
   const windowMs = spark ? 20000 + scholar : step > 0 ? 25000 + scholar : 25000 + extra;
+  const spot = series ? seriesLive(st, series.kind) : (named ?? blank);
   const input: DealInput = {
     city: st.cityId,
     cat,
@@ -697,10 +702,22 @@ async function dealCard(
     windowMs,
     seen: (st.seenIds ?? []).filter((x) => SEEN_ID.test(x)).slice(-SEEN_MAX),
     saveId: st.saveId,
+    pay: {
+      streak: Math.max(0, Math.min(80, Math.floor(st.streak) || 0)),
+      loot: wornPerk(st.scout).loot ?? 1,
+      lucky: st.equipped === "lucky",
+      cloth: st.quests.worn,
+      charmDay: typeof st.charmDay === "string" ? st.charmDay.slice(0, 10) : "",
+      charmTopics: (st.charmTopics ?? []).slice(0, 3),
+      lat: spot?.lat ?? 0,
+      lng: spot?.lng ?? 0,
+      prevToken,
+    },
   };
   try {
     const r = await dealTrivia({ data: input });
-    return r.ok ? { card: r.card, token: r.token, windowMs: r.windowMs } : null;
+    if (!r.ok) return r.reason === "no-match" ? { need: true } : null;
+    return { card: r.card, token: r.token, windowMs: r.windowMs, wallet: r.wallet };
   } catch {
     return null;
   }
@@ -731,7 +748,57 @@ function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boo
   return { plates, plateAgg, plateRoll };
 }
 
+function pushOp(op: Parameters<typeof commitWallet>[0], undo?: () => void) {
+  if (!walletLive()) return;
+  void commitWallet(op).then((r) => {
+    if (r && !r.ok && undo) undo();
+  });
+}
+
+/** After a migrated grade, the server pocket wins. Survey, contract and goal extras are credited on top. */
+function applyServerGrade(
+  wallet: ServerWallet,
+  award: ServerAward | undefined,
+  surveyBefore: Record<string, true>,
+  goalsBefore: readonly string[],
+  contractBefore: { ids: string[]; done: string[] } | null,
+) {
+  const st = useGame.getState();
+  const surveyNew = Object.keys(st.survey).filter((id) => !surveyBefore[id]);
+  const goalsNew = st.cities.goalsPaid.filter((id) => !goalsBefore.includes(id));
+  const contractDone = Boolean(
+    contractBefore &&
+      contractBefore.ids.length > 0 &&
+      contractBefore.done.length < contractBefore.ids.length &&
+      st.contract &&
+      st.contract.ids.join("|") !== contractBefore.ids.join("|"),
+  );
+  const loot = st.loot;
+  st.adoptWallet(wallet);
+  if (award && loot && useGame.getState().loot) {
+    const amber = (award.keys.amber ?? 0) + (contractDone ? 1 : 0);
+    const keys = { ...award.keys };
+    if (contractDone) keys.amber = amber;
+    useGame.setState({
+      loot: {
+        ...useGame.getState().loot!,
+        points: award.coins + (contractDone ? 1500 : 0),
+        keys,
+        boosts: award.boosts.length ? award.boosts : undefined,
+      },
+    });
+  }
+  void (async () => {
+    for (const id of surveyNew) await commitWallet({ kind: "survey", id });
+    for (const cityId of goalsNew) await commitWallet({ kind: "goal", cityId: cityId as CityId });
+    if (contractDone && contractBefore) {
+      await commitWallet({ kind: "contract", id: [...contractBefore.ids].sort().join(",").slice(0, 180) });
+    }
+  })();
+}
+
 function paySurvey(set: (p: Partial<GameState>) => void, get: () => GameState, keys?: Record<Tier, number>) {
+  const before = get().survey;
   const hit = takeSurvey({
     atlas: get().atlas,
     distanceM: get().distanceM,
@@ -741,6 +808,9 @@ function paySurvey(set: (p: Partial<GameState>) => void, get: () => GameState, k
   if (!hit) return false;
   sfx.pickup();
   set({ keys: hit.keys, survey: hit.survey });
+  for (const id of Object.keys(hit.survey)) {
+    if (!before[id]) pushOp({ kind: "survey", id });
+  }
   flashToast(set, get, hit.message, 2400);
   scheduleSave(get);
   return true;
@@ -870,7 +940,10 @@ export const useGame = create<GameState>((set, get) => ({
       if (get().journey) return;
     }
     // 0.0.56: a new player's first pick is their start city; after that only unlocked cities can be entered.
-    if (!get().cities.start) set({ cities: chooseStart(get().cities, id) });
+    if (!get().cities.start) {
+      set({ cities: chooseStart(get().cities, id) });
+      pushOp({ kind: "start", cityId: id });
+    }
     else if (!isUnlocked(get().cities, id)) {
       flashToast(set, get, `${CITIES[id]?.name ?? "That city"} is locked. ${lockLine(get().cities, id).replace(/^Locked · /, "")}`, 3200);
       return;
@@ -908,6 +981,12 @@ export const useGame = create<GameState>((set, get) => ({
     // Goals or Lantern Runs already finished in the new city count from the moment it opens.
     const goals = goalsCheck(r.u, id, get().atlas);
     set({ cities: goals.u });
+    if (walletLive()) {
+      void commitWallet({ kind: "unlock", cityId: id }).then((res) => {
+        if (res && !res.ok) return;
+        if (goals.earned) return commitWallet({ kind: "goal", cityId: id });
+      });
+    }
     flashToast(set, get, `${CITIES[id].name} unlocked${r.paid === "free" ? " · your free second city" : " · 1 city pass spent"}.${goals.earned ? " Every place there already visited: city pass earned." : ""}`, 2800);
     saveNow(get);
     return null;
@@ -934,6 +1013,7 @@ export const useGame = create<GameState>((set, get) => ({
     const goals = goalsCheck(get().cities, get().cityId, atlas);
     const msg = goals.earned ? `Every place in ${CITIES[get().cityId].name} visited · city pass earned` : n === 1 ? `Visited · ${name}` : `Visited ${n} places`;
     set({ atlas, cities: goals.u });
+    if (goals.earned) pushOp({ kind: "goal", cityId: get().cityId });
     const surveyPaid = paySurvey(set, get);
     if (goals.earned) flashToast(set, get, msg, 2800);
     else if (!surveyPaid) flashToast(set, get, msg, 1400);
@@ -958,6 +1038,7 @@ export const useGame = create<GameState>((set, get) => ({
           ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}${coin ? ` + ${coin} coin (pocket full)` : ""}`
           : `${TIER_LABEL[k.tier]} match`,
     });
+    pushOp({ kind: "street", id: k.id, tier: k.tier, city: get().cityId, lat: k.lat, lng: k.lng });
     scheduleSave(get);
     window.setTimeout(() => {
       if (get().toast?.includes("match")) set({ toast: null });
@@ -1107,10 +1188,16 @@ export const useGame = create<GameState>((set, get) => ({
         flashToast(set, get, DEAL_FAIL, 3200);
         return;
       }
+      if ("need" in dealt) {
+        set({ openVault: null });
+        flashToast(set, get, `Need a ${TIER_LABEL[cost!]} match.`, 2400);
+        return;
+      }
       const spark = Boolean(cur.spark);
       const extra = (get().equipped === "scholar" ? 3000 : 0) + (get().pressPass > 0 ? 5000 : 0) + (wornPerk(get().scout).vaultMs ?? 0);
       // Check and take the match in one step: if it was spent while the card was coming (another tab, an exchange), the lamp doesn't open.
-      const keys = cost ? spendMatch(get().keys, cost) : get().keys;
+      // A migrated wallet already paid on the server; that pocket is the one we keep.
+      const keys = dealt.wallet ? cleanKeys(dealt.wallet.keys) : cost ? spendMatch(get().keys, cost) : get().keys;
       if (!keys) {
         set({ openVault: null });
         flashToast(set, get, `Need a ${TIER_LABEL[cost!]} match.`, 2400);
@@ -1121,6 +1208,8 @@ export const useGame = create<GameState>((set, get) => ({
       const shown = performance.now();
       set({
         keys,
+        points: dealt.wallet ? dealt.wallet.coins : get().points,
+        cities: dealt.wallet ? cleanUnlocks(dealt.wallet.cities) : get().cities,
         pressPass,
         openVault: {
           poiId: cur.poiId,
@@ -1166,7 +1255,11 @@ export const useGame = create<GameState>((set, get) => ({
         if (!cur || cur.token !== token) return;
         if (!res.ok) return lost();
         set({ openVault: { ...cur, pending: undefined } });
+        const surveyBefore = get().survey;
+        const goalsBefore = get().cities.goalsPaid;
+        const contractBefore = get().contract;
         get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited, paints: res.paints }, performance.now());
+        if (res.wallet) applyServerGrade(res.wallet, res.award, surveyBefore, goalsBefore, contractBefore);
       })
       .catch(() => lost());
   },
@@ -1340,10 +1433,11 @@ export const useGame = create<GameState>((set, get) => ({
           },
         });
         const nextCat = ov.category;
-        void dealCard(set, get, series.id, nextCat, step + 1).then((dealt) => {
+        const prevToken = ov.token;
+        void dealCard(set, get, series.id, nextCat, step + 1, prevToken).then((dealt) => {
           const cur = get().openVault;
           if (!cur || cur.poiId !== series.id || cur.pending !== "deal") return;
-          if (!dealt) {
+          if (!dealt || "need" in dealt) {
             // Can't reach the lamp for the next card: the run breaks like a walk-away, with a clear message.
             set({ openVault: null, ...seriesPatch(series.kind, coolSeries(get(), series)), toast: `${series.name}: ${DEAL_FAIL}` });
             scheduleSave(get);
@@ -1660,8 +1754,10 @@ export const useGame = create<GameState>((set, get) => ({
     }
     // A lamp walked away from before answering costs nothing: the held match goes back in the pocket.
     if (ov?.held && !series) {
+      const token = ov.token;
       set({ openVault: null, keys: refundMatch(get().keys, ov.held) });
       saveNow(get);
+      if (token) pushOp({ kind: "refund", token });
       return;
     }
     set({ openVault: null });
@@ -1685,6 +1781,7 @@ export const useGame = create<GameState>((set, get) => ({
       keys,
       toast: `Day ${day} crate. ${crateLine(loot)}.`,
     });
+    pushOp({ kind: "crate" });
     scheduleSave(get);
     window.setTimeout(() => {
       if (get().toast?.includes("crate")) set({ toast: null });
@@ -1699,6 +1796,7 @@ export const useGame = create<GameState>((set, get) => ({
       points: get().points + PULSE_POINTS,
       toast: `City Pulse filed. ${PULSE_POINTS} coin.`,
     });
+    pushOp({ kind: "pulse" });
     scheduleSave(get);
     window.setTimeout(() => {
       if (get().toast?.includes("City Pulse")) set({ toast: null });
@@ -1727,6 +1825,8 @@ export const useGame = create<GameState>((set, get) => ({
       blitzMatches: grant.match ? [...get().blitzMatches, tier] : get().blitzMatches,
     });
     saveNow(get);
+    const step = BLITZ_STEPS.findIndex((s) => s.tier === tier);
+    if (step >= 0) pushOp({ kind: "blitz", step });
     return grant;
   },
   rememberCard: (id) => {
@@ -1743,6 +1843,7 @@ export const useGame = create<GameState>((set, get) => ({
     // 0.0.56: the 3rd paid Lantern Run in a city pays a city pass (route c), once per city.
     const runs = runFinished(get().cities, city);
     set({ dailyPaid: marked, keys: paid.keys, points: paid.points, cities: runs.u });
+    pushOp({ kind: "daily", day, city });
     if (runs.earned) flashToast(set, get, `Third Lantern Run in ${CITIES[city]?.name ?? "this city"} · city pass earned.`, 3200);
     scheduleSave(get);
     return { added: paid.added, coins: paid.coins };
@@ -1753,6 +1854,12 @@ export const useGame = create<GameState>((set, get) => ({
     const paid = payFriend(get().keys, get().points, marked.fresh.length, matchCap("white"));
     sfx.pickup();
     set({ friendPaid: marked.paid, keys: paid.keys, points: paid.points });
+    if (walletLive()) {
+      const fresh = marked.fresh;
+      void (async () => {
+        for (const id of fresh) await commitWallet({ kind: "friend", id });
+      })();
+    }
     scheduleSave(get);
     return { fresh: marked.fresh, added: paid.added, coins: paid.coins };
   },
@@ -1767,6 +1874,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     sfx.pickup();
     set({ keys: next, toast: `Four ${TIER_LABEL[spec.pay]} for one ${TIER_LABEL[spec.get]}. Tax paid.` });
+    pushOp({ kind: "bank", dir: "up", tier });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 2000);
   },
@@ -1781,6 +1889,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     sfx.pickup();
     set({ keys: next, toast: `One ${TIER_LABEL[spec.pay]} for three ${TIER_LABEL[spec.get]}. No tax.` });
+    pushOp({ kind: "bank", dir: "down", tier });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 2000);
   },
@@ -1898,11 +2007,16 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     sfx.craft();
+    const prevScout = get().scout;
     set({
       points: get().points - s.coins,
       scouts: [...get().scouts, id],
       scout: id,
       toast: s.perk.label ? `${s.name} hired. ${s.perk.label}` : `${s.name} hired.`,
+    });
+    pushOp({ kind: "scout", id }, () => {
+      if (!useGame.getState().scouts.includes(id)) return;
+      set({ scouts: useGame.getState().scouts.filter((x) => x !== id), scout: prevScout });
     });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 1800);
@@ -1938,7 +2052,10 @@ export const useGame = create<GameState>((set, get) => ({
     const paints = { ...get().paints };
     if (res.done && c.slot === "coat") paints.wornCoat = null;
     if (res.done && c.slot === "lantern") paints.wornVault = null;
+    const prevWardrobe = get().wardrobe;
+    const prevPaints = get().paints;
     set({ wardrobe: res.wardrobe, keys: res.keys, paints });
+    pushOp({ kind: "print", id }, () => set({ wardrobe: prevWardrobe, paints: prevPaints }));
     flashToast(
       set,
       get,
@@ -2000,6 +2117,16 @@ export const useGame = create<GameState>((set, get) => ({
     set({ wardrobe: next });
     saveNow(get);
   },
+  adoptWallet: (w) => {
+    const keys = cleanKeys(w.keys);
+    const cities = cleanUnlocks(w.cities);
+    const points = Math.max(0, Math.floor(Number(w.coins) || 0));
+    const cur = get();
+    const sameKeys = (Object.keys(keys) as Tier[]).every((t) => cur.keys[t] === keys[t]);
+    if (points === cur.points && sameKeys && JSON.stringify(cities) === JSON.stringify(cur.cities)) return;
+    set({ points, keys, cities });
+    saveNow(get);
+  },
   buyKiosk: (id) => {
     const item = KIOSK[id];
     if (get().points < item.cost) {
@@ -2022,6 +2149,7 @@ export const useGame = create<GameState>((set, get) => ({
         keys: { ...get().keys, [tier]: have + n },
       });
       flashToast(set, get, n === 1 ? `${TIER_LABEL[tier]} match from the desk.` : `Two white matches from the desk.`, 2200);
+      pushOp({ kind: "kiosk", id });
       scheduleSave(get);
       return;
     }
@@ -2032,6 +2160,7 @@ export const useGame = create<GameState>((set, get) => ({
       }
       sfx.craft();
       set({ points: get().points - item.cost, fares: get().fares + 1 });
+      pushOp({ kind: "kiosk", id }, () => set({ fares: Math.max(0, useGame.getState().fares - 1) }));
       flashToast(set, get, `A train ticket reprinted. Board at ${fareDesk(CITIES[get().cityId]).name}.`, 2400);
       scheduleSave(get);
       return;
@@ -2039,6 +2168,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (id === "pass") {
       sfx.craft();
       set({ points: get().points - item.cost, pressPass: get().pressPass + 1 });
+      pushOp({ kind: "kiosk", id }, () => set({ pressPass: Math.max(0, useGame.getState().pressPass - 1) }));
       flashToast(set, get, "Press pass. The next door holds five extra seconds.", 2200);
       scheduleSave(get);
       return;
@@ -2051,6 +2181,7 @@ export const useGame = create<GameState>((set, get) => ({
         keys: { ...get().keys, [tier]: get().keys[tier] + 1 },
       });
       flashToast(set, get, `${TIER_LABEL[tier]} match from the desk.`, 2200);
+      pushOp({ kind: "kiosk", id });
       scheduleSave(get);
       return;
     }
@@ -2062,9 +2193,15 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const pick = unknown[Math.floor(Math.random() * unknown.length)]!;
     sfx.craft();
+    const namedId = pick.id;
     set({
       points: get().points - item.cost,
       atlas: { ...get().atlas, [pick.id]: true as const },
+    });
+    pushOp({ kind: "kiosk", id }, () => {
+      const atlas = { ...useGame.getState().atlas };
+      delete atlas[namedId];
+      set({ atlas });
     });
     flashToast(set, get, `Named · ${pick.name}.`, 2400);
     scheduleSave(get);
@@ -2089,6 +2226,31 @@ export const useGame = create<GameState>((set, get) => ({
   claimWheel: () => {
     const offer = get().wheel;
     if (!offer) return;
+    if (walletLive()) {
+      const tier = offer.tier;
+      const city = get().cityId;
+      set({ wheel: null });
+      void commitWallet({ kind: "wheel", tier, city }).then((r) => {
+        if (!r?.ok) {
+          set({ wheel: offer });
+          return;
+        }
+        const wheelClaimed = { ...get().wheelClaimed, [tier]: (get().wheelClaimed[tier] ?? 0) + 1 };
+        let pantry = get().pantry;
+        if (r.ingredient) {
+          for (let i = 0; i < r.ingredient.n; i++) pantry = addIngredient(pantry, r.ingredient.id as IngredientId);
+        }
+        const next = owedTier(get().correctByTier, wheelClaimed);
+        set({
+          pantry,
+          wheelClaimed,
+          wheel: next ? buildWheel(next, get().cityId, Math.random()) : null,
+          toast: r.line || null,
+        });
+        saveNow(get);
+      });
+      return;
+    }
     const paid = grantWheelPrize(offer.slices[offer.win]!, {
       keys: get().keys,
       points: get().points,
@@ -2226,6 +2388,15 @@ export const useGame = create<GameState>((set, get) => ({
       get().screen === "ride";
     const { journey: nextJourney, keys, add } = settleRide(j, get().keys, now, watching);
     const found = add.white + add.blue + add.green;
+    if (found > 0 && walletLive()) {
+      void commitWallet({
+        kind: "ride",
+        departAt: nextJourney.departAt,
+        arriveAt: nextJourney.arriveAt,
+        openMs: nextJourney.openMs ?? 0,
+        outcome: journeyOutcome(nextJourney),
+      });
+    }
     if (found > 0) {
       sfx.pickup();
       if (now < j.arriveAt) {
@@ -2305,6 +2476,19 @@ export function reach() {
   return interactRadius(st.equipped === "lantern") * (wornPerk(st.scout).reach ?? 1);
 }
 
+function savedPocket(raw: string | null): { points: number; cities: CityUnlocks } | null {
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw) as { version?: number; points?: unknown; cities?: unknown };
+    if (!data || (data.version !== 1 && data.version !== 2)) return null;
+    const points = Number(data.points);
+    if (!Number.isFinite(points) || points < 0) return null;
+    return { points: Math.floor(points), cities: cleanUnlocks(data.cities) };
+  } catch {
+    return null;
+  }
+}
+
 if (typeof window !== "undefined") {
   if (import.meta.env.DEV) {
     (window as unknown as { __keyline: typeof useGame }).__keyline = useGame;
@@ -2332,8 +2516,15 @@ if (typeof window !== "undefined") {
     if (e.key !== SAVE_KEY) return;
     const keys = savedKeys(e.newValue);
     if (!keys) return;
-    const cur = useGame.getState().keys;
-    if (!(Object.keys(keys) as Tier[]).every((t) => cur[t] === keys[t])) useGame.setState({ keys });
+    const cur = useGame.getState();
+    const patch: Partial<GameState> = {};
+    if (!(Object.keys(keys) as Tier[]).every((t) => cur.keys[t] === keys[t])) patch.keys = keys;
+    const pocket = savedPocket(e.newValue);
+    if (pocket && (pocket.points !== cur.points || JSON.stringify(pocket.cities) !== JSON.stringify(cur.cities))) {
+      patch.points = pocket.points;
+      patch.cities = pocket.cities;
+    }
+    if (patch.keys || patch.points != null || patch.cities) useGame.setState(patch);
     // 0.0.58: and the cards it was dealt, so this tab doesn't deal them again.
     const seen = savedSeen(e.newValue);
     if (!seen) return;

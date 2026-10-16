@@ -80,6 +80,7 @@ async function db() {
   await pg.exec(migration("0007_daily_runs_per_city.sql"));
   await pg.exec(migration("0011_player_links.sql"));
   await pg.exec(migration("0015_paint_finds.sql"));
+  await pg.exec(migration("0016_player_wallet.sql"));
   await pg.query(`insert into "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") values ('ann', 'Ann Baker', 'ann@x.test', true, now(), now())`);
   return sqlOf(pg);
 }

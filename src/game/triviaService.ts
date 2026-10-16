@@ -4,7 +4,10 @@ import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
 import type { PaintId } from "./ingredients.ts";
 import type { CityId, Poi, PoiKind, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
-import type { DealInput, DealResult, GradeInput, GradeResult, Grade } from "./triviaSchema";
+import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward, ServerWallet } from "./triviaSchema";
+import { RUN_ID, STACK_ID } from "./data.ts";
+import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
+import { awardGrade, spendDealt } from "./walletApply.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
 export type { DealInput, DealResult, GradeInput, GradeResult, Grade, PublicCard } from "./triviaSchema";
 
@@ -65,6 +68,27 @@ type TokenBody = {
   pr?: 0 | 1;
   sv: string;
   n: string;
+  /**
+   * Pay context sealed at deal (0.0.78). The grade recomputes coins from this plus its own clock and rolls.
+   * Absent on a token dealt before the wallet moved server-side: that grade pays with the defaults.
+   */
+  x?: {
+    sk: number;
+    lt: number;
+    lk: 0 | 1;
+    cl: string | null;
+    cd: string;
+    ct: string[];
+    la: number;
+    ln: number;
+    pv: string;
+    sy: 0 | 1 | 2;
+    ss: number;
+    sn: number;
+    pt: Tier;
+    pi: string;
+    cat: string;
+  };
 };
 
 export type TriviaDeps = {
@@ -93,6 +117,11 @@ const b64u = (buf: Buffer) => buf.toString("base64url");
 export function publicCardId(card: { q: string; choices: readonly string[] }): string {
   const h = createHash("sha256").update(`kl53\0${card.q}\0${[...card.choices].sort().join("\0")}`).digest();
   return `c${b64u(h).slice(0, 14)}`;
+}
+
+function coord(n: number | undefined, lim: number) {
+  if (typeof n !== "number" || !Number.isFinite(n)) return 0;
+  return Math.min(lim, Math.max(-lim, n));
 }
 
 function sign(secret: string, body: string) {
@@ -179,7 +208,23 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
     }
   }
   const r = deal(deps, viewer, input, recent);
-  if (r.ok && sql && viewer.userId) {
+  if (!r.ok) return r;
+  // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
+  const spendTier = !input.spark && (input.step ?? 0) === 0 && !input.poiId.startsWith("blitz-");
+  let wallet: ServerWallet | undefined;
+  if (r.ok && sql && viewer.userId && spendTier) {
+    try {
+      const body = openToken(deps.secret, r.token);
+      if (body?.k) {
+        const spent = await spendDealt(sql, viewer.userId, body.n, body.k);
+        if (!spent.skipped && !spent.ok) return { ok: false, reason: "no-match" };
+        if (!spent.skipped && spent.ok) wallet = spent.view;
+      }
+    } catch (e) {
+      console.warn("[trivia] match spend failed", e instanceof Error ? e.message : e);
+    }
+  }
+  if (sql && viewer.userId) {
     try {
       const raw = deps.card(r.card.id)?.id ?? r.card.id;
       await noteDealt(sql, viewer.userId, raw, new Date(deps.now()));
@@ -187,7 +232,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
       console.warn("[trivia] recent note failed", e instanceof Error ? e.message : e);
     }
   }
-  return r;
+  return wallet ? { ...r, wallet } : r;
 }
 
 /** Pick, seal and shuffle one card. `recent` is the server's memory for this walker (oldest first), merged before the save's list. */
@@ -213,6 +258,14 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   const plate = deps.pick(input.city, input.cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
   const pub = publicCardId(plate);
   const windowMs = clampWindow(input.windowMs);
+  const named = !series ? deps.namedPoi(input.city, input.poiId) : null;
+  const pay = input.pay;
+  let pv = "";
+  if (pay?.prevToken) {
+    const prev = openToken(deps.secret, pay.prevToken);
+    const subject = viewer.userId ? `u:${viewer.userId}` : "g";
+    if (prev && prev.s === subject) pv = prev.n;
+  }
   const token = sealToken(deps.secret, {
     v: TOKEN_VERSION,
     c: pub,
@@ -226,6 +279,23 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     pr: paintRoll ? 1 : 0,
     sv: input.saveId,
     n: deps.nonce?.() ?? b64u(randomBytes(12)),
+    x: {
+      sk: clampStreak(pay?.streak ?? 0),
+      lt: clampLoot(pay?.loot ?? 1),
+      lk: pay?.lucky ? 1 : 0,
+      cl: clampCloth(pay?.cloth, input.city),
+      cd: (pay?.charmDay ?? "").slice(0, 10),
+      ct: (pay?.charmTopics ?? []).slice(0, 3),
+      la: named ? named.lat : coord(pay?.lat, 90),
+      ln: named ? named.lng : coord(pay?.lng, 180),
+      pv,
+      sy: !series ? 0 : input.poiId === STACK_ID ? 2 : input.poiId === RUN_ID ? 1 : 1,
+      ss: Math.min(5, Math.max(0, input.step ?? 0)),
+      sn: series?.diffs.length ?? 1,
+      pt: poi.tier,
+      pi: poi.id,
+      cat: input.cat,
+    },
   });
   return {
     ok: true,
@@ -342,6 +412,49 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   }
   if (!prior) ringPut(t.n, { correct, elapsedMs, timedOut });
   const g = correct ? gradeOf(elapsedMs) : null;
+  // Blitz pays through its own ladder (bankBlitz), not the street spark formula.
+  const blitz = t.x?.pi?.startsWith("blitz-") === true;
+  let wallet: ServerWallet | undefined;
+  let award: ServerAward | undefined;
+  if (signedIn && (credited || replay) && deps.sql && !blitz) {
+    try {
+      const sql = await deps.sql();
+      const x = t.x;
+      const rand = deps.rand ?? Math.random;
+      const awarded = await awardGrade(sql, viewer.userId!, t.n, {
+        correct,
+        elapsedMs,
+        mult: g?.mult ?? 0,
+        city: t.city,
+        diff: t.d,
+        clearTier: t.k,
+        poiTier: x?.pt ?? t.r,
+        poiId: x?.pi ?? "",
+        lat: x?.la ?? 0,
+        lng: x?.ln ?? 0,
+        series: x?.sy === 2 ? "stack" : x?.sy === 1 ? "run" : null,
+        step: x?.ss ?? 0,
+        steps: x?.sn ?? 1,
+        prevNonce: x?.pv ?? "",
+        streak: x?.sk ?? 0,
+        loot: typeof x?.lt === "number" ? clampLoot(x.lt) : 1,
+        lucky: x?.lk === 1,
+        cloth: clampCloth(x?.cl, t.city),
+        charmDay: x?.cd ?? "",
+        charmTopics: Array.isArray(x?.ct) ? (x.ct as TriviaCat[]) : [],
+        topic: (x?.cat ?? null) as TriviaCat | null,
+        dealtAt: t.t,
+        luckyHit: x?.lk === 1 && rand() < LUCKY_MATCH_CHANCE,
+        perfectBlue: g?.grade === "perfect" && rand() < PERFECT_BLUE_CHANCE,
+      });
+      if (awarded.authoritative) {
+        wallet = awarded.view;
+        award = awarded.award;
+      }
+    } catch (e) {
+      console.warn("[trivia] wallet award failed", e instanceof Error ? e.message : e);
+    }
+  }
   return {
     ok: true,
     correct,
@@ -355,5 +468,6 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     credited,
     replay,
     ...(paints !== undefined ? { paints } : {}),
+    ...(wallet ? { wallet, ...(award ? { award } : {}) } : {}),
   };
 }

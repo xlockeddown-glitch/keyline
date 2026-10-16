@@ -3,8 +3,8 @@ import { SURVEY_GOALS, surveyHave } from "./survey.ts";
 import type { CityId, Tier } from "./types.ts";
 
 /**
- * 0.0.56 city unlocks. Lives in the client save (like coins and matches); the server never checks it, so friend
- * tickets and dealt cards keep working for any city.
+ * 0.0.56 city unlocks. Guests keep them in the save. A signed-in walker's copy lives on the server
+ * after the first sync (0.0.78); friend tickets and dealt cards still have no city gate.
  *
  *  - A new player picks a starting city out of all 15. The second city is free, picked any time at the train
  *    station (Timetable). City 3 onward costs one city pass each.

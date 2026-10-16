@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.77";
+export const APP_VERSION = "0.0.78";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k77a";
+export const PUBLISH_STAMP = "k78a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -80,3 +80,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.75: a hidden nudge for the rarer cans. Green through violet, and prism, stay on the posted rate until five other signed-in walkers have found that can. After that, a walker who has gone more than one standard deviation past the average those players took rolls a higher chance — one extra deviation doubles it, and it never passes four times the posted rate. The Help chart does not change. Guests stay on the posted rate. White and blue are not nudged (k75a).
 // 0.0.76: a tap still walks you when you're off the street. The route joins the nearest clear street, and you cross the open ground to meet it, unless that line would step on a freeway. A dead-end curb no longer traps you: aim back down the street and you leave. Holding into the end still stops, it doesn't bounce (k76a).
 // 0.0.77: build fixes on 0.0.76 — SPARK_DAY restored (the build failed without it), the off-street walk join measures its distance correctly, lamps offer Math on ~19% of visits (MATH_OFFER_KEEP 0.45 → 0.43), copy and dye tests fixed (k77a).
+// 0.0.78: a signed-in walker's coins, matches and city passes live on the server (migration 0016). The grade pays them, once per token; a city unlock, the print shop, the bank and the other spends are checked there too. The first sync keeps the higher of the server and the local save, capped, then stops taking the device's numbers. Guests stay on the device. A second tab still picks up the pocket (k78a).

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CityUnlocks } from "./cityPass";
 import type { Tier, TriviaDiff } from "./types";
 
 /**
@@ -25,6 +26,23 @@ export const DealIn = z.object({
   windowMs: z.number().int().min(0).max(120000),
   seen: z.array(IdIn).max(SEEN_MAX),
   saveId: z.string().min(1).max(80).regex(/^[A-Za-z0-9_:.-]+$/),
+  /**
+   * Pay context sealed into the token at deal time. The grade uses this, clamped, plus the server's own rolls.
+   * Optional: a deal without it pays with the defaults (a spark, a blitz, an older client).
+   */
+  pay: z
+    .object({
+      streak: z.number().int().min(0).max(80),
+      loot: z.number().finite(),
+      lucky: z.boolean(),
+      cloth: z.string().max(40).nullable(),
+      charmDay: z.string().max(10),
+      charmTopics: z.array(z.enum(CATS)).max(3),
+      lat: z.number().finite().min(-90).max(90),
+      lng: z.number().finite().min(-180).max(180),
+      prevToken: z.string().min(10).max(2000).optional(),
+    })
+    .optional(),
 });
 export type DealInput = z.infer<typeof DealIn>;
 
@@ -39,7 +57,12 @@ export type GradeInput = z.infer<typeof GradeIn>;
 
 /** What the browser gets for a dealt card — the prompt and shuffled choices, never the answer. */
 export type PublicCard = { id: string; q: string; choices: string[]; diff: TriviaDiff; rarity: Tier };
-export type DealResult = { ok: true; token: string; card: PublicCard; windowMs: number } | { ok: false; reason: "unknown-lamp" | "slow" };
+/** Signed-in wallet after a migrated deal spend or grade. Absent for guests and before the first sync. */
+export type ServerWallet = { coins: number; keys: Record<Tier, number>; cities: CityUnlocks };
+export type ServerAward = { coins: number; keys: Partial<Record<Tier, number>>; boosts: string[] };
+export type DealResult =
+  | { ok: true; token: string; card: PublicCard; windowMs: number; wallet?: ServerWallet }
+  | { ok: false; reason: "unknown-lamp" | "slow" | "no-match" };
 
 export type Grade = "perfect" | "great" | "good";
 export type GradeResult =
@@ -68,6 +91,10 @@ export type GradeResult =
        * is just the cans.
        */
       paints?: string[];
+      /** Present once this walker's wallet lives on the server. The client copies it over the local pocket. */
+      wallet?: ServerWallet;
+      /** Coins and matches this grade added. Present with `wallet` on a right answer. */
+      award?: ServerAward;
     }
   | { ok: false; reason: "bad-token" | "not-yours" | "unknown-card" | "slow" };
 
