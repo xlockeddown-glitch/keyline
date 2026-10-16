@@ -5,7 +5,7 @@ import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { payDaily } from "./dailyRun.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
 import { SURVEY_GOALS, isPlace } from "./survey.ts";
-import { marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
+import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { clothCoin, type ClothId } from "./quests.ts";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards.ts";
@@ -29,11 +29,11 @@ export const COIN_CAP = 250_000;
 export const KEY_CAP = 300;
 export const PASS_CAP = 25;
 export const RUN_CAP = 9_999;
-/** Longest survey walk. A device can bring this much distance into the first sync, not more. */
+/** Longest survey walk the server will keep. A device does not bring its own. */
 export const WALK_CAP = 150_000;
 /** One of each real cloth (dust, book, glass, and a scarf per city). */
 export const CLOTH_CAP = 18;
-/** Craft stock a first sync may bring. Enough for the lucky bit and the cloths, not a minted pile. */
+/** Craft stock the server will keep. A device does not bring its own. */
 const BRASS_CAP = 48;
 const INK_CAP = 32;
 const VELLUM_CAP = 32;
@@ -296,63 +296,30 @@ export function viewOf(w: WalletState) {
   return { coins: w.coins, keys: { ...w.keys }, cities: w.cities };
 }
 
-/** Higher of each balance, then the cap. Cities and paid goals union. Never lowers a counter, and never sums. */
+/**
+ * Coins, matches and tickets, whichever side is higher, then the cap.
+ * Unlocked cities union, and only when the id is a real city.
+ * Passes, atlas visits, craft stock, lucky, cloths and distance stay as the server has them.
+ */
 export function mergeFirstSync(server: WalletState, local: LocalSnap): WalletState {
   const lk = cleanKeys(local.keys);
   const keys = cleanKeys(null);
   for (const t of TIERS) keys[t] = Math.min(KEY_CAP, Math.max(server.keys[t] ?? 0, lk[t] ?? 0));
   const coins = Math.min(COIN_CAP, Math.max(server.coins, num(local.coins, COIN_CAP)));
-  const b = cleanUnlocks(local.cities);
   const a = server.cities;
-  const unlocked = [...new Set([...a.unlocked, ...b.unlocked])];
-  const start = a.start ?? b.start;
-  if (start && !unlocked.includes(start)) unlocked.unshift(start);
-  const runs: CityUnlocks["runs"] = { ...a.runs };
-  for (const [k, v] of Object.entries(b.runs)) {
-    const id = k as CityId;
-    runs[id] = Math.min(RUN_CAP, Math.max(runs[id] ?? 0, v ?? 0));
+  const unlocked = [...a.unlocked];
+  for (const id of cleanUnlocks(local.cities).unlocked) {
+    if (!unlocked.includes(id)) unlocked.push(id);
   }
   const cities = capCities(
     cleanUnlocks({
-      start,
+      ...a,
       unlocked,
-      freePick: unlocked.length < 2,
-      passes: Math.max(a.passes, b.passes),
-      lampPts: Math.max(a.lampPts, b.lampPts),
-      goalsPaid: [...new Set([...a.goalsPaid, ...b.goalsPaid])],
-      runsPaid: [...new Set([...a.runsPaid, ...b.runsPaid])],
-      runs,
+      freePick: unlocked.length < 2 ? a.freePick : false,
     }),
   );
   const meta = cleanMeta(server.meta);
-  const localCrate = typeof local.crateDay === "string" ? local.crateDay.slice(0, 10) : "";
-  if (localCrate && (!meta.crateDay || localCrate > meta.crateDay)) {
-    meta.crateDay = localCrate;
-    meta.crateStreak = num(local.crateStreak, CRATE_MAX);
-  } else if (localCrate && localCrate === meta.crateDay) {
-    meta.crateStreak = Math.max(meta.crateStreak, num(local.crateStreak, CRATE_MAX));
-  }
-  const localBlitz = typeof local.blitzDay === "string" ? local.blitzDay.slice(0, 10) : "";
-  if (localBlitz && (!meta.blitzDay || localBlitz > meta.blitzDay)) {
-    meta.blitzDay = localBlitz;
-    meta.blitzStep = num(local.blitzStep, BLITZ_STEPS.length);
-  } else if (localBlitz && localBlitz === meta.blitzDay) {
-    meta.blitzStep = Math.max(meta.blitzStep, num(local.blitzStep, BLITZ_STEPS.length));
-  }
-  if (local.wheel) {
-    for (const t of TIERS) meta.wheel[t] = Math.max(meta.wheel[t] ?? 0, num(local.wheel[t], 100_000));
-  }
-  if (local.lucky) meta.lucky = true;
-  meta.cloths = cleanCloths([...(meta.cloths ?? []), ...(local.cloths ?? [])]);
-  meta.walkM = Math.max(meta.walkM, num(local.distanceM, WALK_CAP));
   meta.fares = Math.min(FARES_CAP, Math.max(meta.fares, num(local.fares, FARES_CAP)));
-  meta.visits = cleanVisits([...(meta.visits ?? []), ...(local.atlas ?? [])]);
-  meta.brass = Math.max(meta.brass, num(local.brass, BRASS_CAP));
-  meta.ink = Math.max(meta.ink, num(local.ink, INK_CAP));
-  meta.vellum = Math.max(meta.vellum, num(local.vellum, VELLUM_CAP));
-  meta.schematic = Math.max(meta.schematic, num(local.schematic, SCHEMATIC_CAP));
-  meta.press = Math.max(meta.press, num(local.press, PRESS_CAP));
-  meta.patterns = Math.max(meta.patterns, num(local.patterns, PATTERN_CAP));
   return { ...server, coins, keys, cities, meta, migrated: true };
 }
 
@@ -649,10 +616,18 @@ function rankOf(o: RideOutcome): Pick<WalletMeta, "rideRank" | "ridePerf" | "rid
   return { rideRank: 0, ridePerf: 0, ridePerfect: false };
 }
 
-/** One match from the player's city-day list. The city has to be unlocked. A market spot does not pay a second. */
-export function streetOp(w: WalletState, city: CityId, tier: Tier): OpResult {
+/**
+ * One claim from the player's city-day list. The city has to be unlocked.
+ * A night-market spot pays two matches while that city's market is open at `at`, the same pocket rule as a guest, and it is still one claim.
+ */
+export function streetOp(w: WalletState, city: CityId, tier: Tier, market = false, at = Date.now()): OpResult {
   if (!w.cities.unlocked.includes(city)) return { ok: false, reason: "locked" };
-  return applyDelta(w, { keys: { [tier]: 1 } });
+  const open = market && marketAt(city, at) != null;
+  if (!open) return applyDelta(w, { keys: { [tier]: 1 } });
+  const have = w.keys[tier] ?? 0;
+  const add = marketMatches(have, Math.max(matchCap(tier), have + 1), MARKET_MULT);
+  const coin = marketOverflowCoin(tier, MARKET_MULT, add);
+  return applyDelta(w, { coins: coin, keys: { [tier]: add } });
 }
 
 type StockCost = { brass?: number; ink?: number; vellum?: number; schematic?: number; press?: number; patterns?: number };

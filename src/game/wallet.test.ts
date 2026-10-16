@@ -10,7 +10,8 @@ import { rewardPoints } from "./rewards.ts";
 import { CITIES } from "./data.ts";
 import { surveyProven } from "./survey.ts";
 import { STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
-import { FARES_CAP, transitLoot } from "./ticket.ts";
+import { marketAt, marketMatches } from "./nightMarket.ts";
+import { FARES_CAP, matchCap, transitLoot } from "./ticket.ts";
 import { rideReward } from "./rideGames.ts";
 import { payDaily } from "./dailyRun.ts";
 import { rideSeed, scoreRide } from "./rideGrade.ts";
@@ -139,8 +140,9 @@ test("first sync keeps the higher of each balance, capped, and unions cities", (
   assert.equal(merged.keys.green, 2);
   assert.ok(merged.cities.unlocked.includes("austin"));
   assert.ok(merged.cities.unlocked.includes("nyc"));
-  assert.equal(merged.cities.passes, 3);
+  assert.equal(merged.cities.passes, 0);
   assert.equal(merged.meta.revised, false);
+  assert.equal(merged.meta.fares, 0);
 });
 
 test("sync, award, replay and spend survive a second call and a linked sign-in", async () => {
@@ -255,11 +257,10 @@ test("a second device unions cities and only raises a counter", async () => {
   assert.equal(second.wallet.coins, 100);
   assert.equal(second.wallet.keys.white, 4);
   assert.equal(second.wallet.keys.green, 2);
-  assert.equal(second.wallet.cities.passes, 5);
+  assert.equal(second.wallet.cities.passes, 0);
   assert.ok(second.wallet.cities.unlocked.includes("austin"));
   assert.ok(second.wallet.cities.unlocked.includes("nyc"));
-  assert.ok(second.wallet.cities.goalsPaid.includes("austin"));
-  assert.ok(second.wallet.cities.goalsPaid.includes("nyc"));
+  assert.deepEqual(second.wallet.cities.goalsPaid, []);
   assert.equal(first.wallet.cities.start, "austin");
   const raised = await syncPlayer(sql, "bea", snap({ coins: 250, keys: { white: 9 } }), "beaphone2");
   assert.equal(raised.deviceClosed, true);
@@ -304,18 +305,60 @@ test("each device is clamped to the first-sync caps", () => {
   );
   assert.equal(merged.coins, COIN_CAP);
   for (const tier of ["white", "blue", "green", "amber", "red", "violet"] as const) assert.equal(merged.keys[tier], KEY_CAP);
-  assert.equal(merged.cities.passes, PASS_CAP);
-  const brought = mergeFirstSync(
+  assert.equal(merged.cities.passes, 0);
+  const keptVisit = CITIES.austin.pois[0]!.id;
+  const server = emptyWallet();
+  server.cities = { ...server.cities, start: "austin", unlocked: ["austin"], passes: 4, goalsPaid: ["austin"], freePick: false };
+  server.meta = { ...server.meta, lucky: true, cloths: ["road-dust"], walkM: 1_200, fares: 1, brass: 3, visits: [keptVisit] };
+  const kept = mergeFirstSync(
+    server,
+    snap({
+      fares: 9,
+      lucky: true,
+      cloths: ["night-glass", "nope"],
+      distanceM: 9_000_000,
+      atlas: ["not-a-place", CITIES.austin.pois[1]!.id],
+      brass: 40,
+      ink: 20,
+      press: 10,
+      patterns: 4,
+      cities: {
+        ...freshUnlocks(),
+        start: "nyc",
+        unlocked: ["nyc", "nope" as "nyc"],
+        passes: 80,
+        goalsPaid: ["nyc"],
+        freePick: false,
+      },
+    }),
+  );
+  assert.equal(kept.meta.fares, FARES_CAP);
+  assert.equal(kept.cities.passes, 4);
+  assert.deepEqual(kept.cities.goalsPaid, ["austin"]);
+  assert.ok(kept.cities.unlocked.includes("austin"));
+  assert.ok(kept.cities.unlocked.includes("nyc"));
+  assert.equal(kept.cities.unlocked.includes("nope" as "nyc"), false);
+  assert.equal(kept.meta.lucky, true);
+  assert.deepEqual(kept.meta.cloths, ["road-dust"]);
+  assert.equal(kept.meta.walkM, 1_200);
+  assert.equal(kept.meta.brass, 3);
+  assert.equal(kept.meta.ink, 0);
+  assert.deepEqual(kept.meta.visits, [keptVisit]);
+  const fresh = mergeFirstSync(
     emptyWallet(),
     snap({
       lucky: true,
-      cloths: ["road-dust", "nope", "scarf-austin", "scarf-austin", "scarf-nowhere"],
+      cloths: ["road-dust"],
       distanceM: 9_000_000,
+      fares: 2,
+      cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin", "nope" as "austin"], freePick: false },
     }),
   );
-  assert.equal(brought.meta.lucky, true);
-  assert.deepEqual(brought.meta.cloths, ["road-dust", "scarf-austin"]);
-  assert.equal(brought.meta.walkM, WALK_CAP);
+  assert.equal(fresh.meta.lucky, false);
+  assert.deepEqual(fresh.meta.cloths, []);
+  assert.equal(fresh.meta.walkM, 0);
+  assert.equal(fresh.meta.fares, FARES_CAP);
+  assert.deepEqual(fresh.cities.unlocked, ["austin"]);
   assert.equal(realCloth("nope"), null);
   assert.equal(CLOTH_CAP, 18);
   assert.equal(clothOp(emptyWallet(), "nope").ok, false);
@@ -466,21 +509,18 @@ test("lucky and cloth are granted only when the craft spends its cost", async ()
   const freeGlass = await applyClientOp(sql, "lux", { kind: "cloth", id: "night-glass" });
   assert.equal(freeGlass.ok, false);
   assert.equal(freeGlass.reason, "short");
-  await syncPlayer(
-    sql,
-    "lux",
-    snap({
-      cities,
-      brass: 12,
-      ink: 8,
-      vellum: 8,
-      schematic: 1,
-      press: 4,
-      patterns: 1,
-      distanceM: 10_000,
-    }),
-    "luxphone1",
-  );
+  const held = await canonicalWallet(sql, "lux");
+  const stock = {
+    ...held.wallet.meta,
+    brass: 12,
+    ink: 8,
+    vellum: 8,
+    schematic: 1,
+    press: 4,
+    patterns: 1,
+    walkM: 10_000,
+  };
+  await sql.query(`update player_wallets set meta = $2::jsonb where user_id = $1`, [held.id, JSON.stringify(stock)]);
   const charm = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
   assert.equal(charm.ok, true);
   assert.equal(charm.wallet.meta.lucky, true);
@@ -712,24 +752,42 @@ test("a dealt ride is scored from the server seed and does not pay a win in one 
   assert.equal(replay.wallet.meta.rideRank, 2);
 });
 
-test("a market spot pays one match, and a kiosk name counts as a visit", async () => {
+test("a market spot pays two matches while the market is open, and a kiosk name counts as a visit", async () => {
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false };
   await syncPlayer(sql, "str", snap({ coins: 3000, cities }), "strphone1");
   const day = new Date().toISOString().slice(0, 10);
+  const now = Date.now();
+  assert.ok(marketAt("austin", now), "austin has a market open on the server clock");
   let market: ReturnType<typeof streetSpot> = null;
-  for (let i = 9; i < 40; i++) {
+  for (let i = 9; i < STREET_DAY_CAP; i++) {
     const s = streetSpot("str", "austin", day, i);
-    if (s?.market) {
+    if (s?.market && (s.tier === "white" || s.tier === "blue")) {
       market = s;
       break;
     }
   }
   assert.ok(market);
+  const plain = streetSpot("str", "austin", day, 0);
+  assert.ok(plain);
+  assert.equal(plain!.market, false);
   await sql`insert into walk_distance (user_id, city, meters, updated_at) values ('str', 'austin', 40, now())`;
-  const paid = await applyClientOp(sql, "str", { kind: "street", id: market!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
+  const one = await applyClientOp(sql, "str", { kind: "street", id: plain!.id, tier: plain!.tier, city: "austin", lat: 0, lng: 0 });
+  assert.equal(one.ok, true);
+  assert.equal(one.wallet.keys[plain!.tier], 1);
+  const before = one.wallet.keys[market!.tier] ?? 0;
+  const add = marketMatches(before, Math.max(matchCap(market!.tier), before + 1), 2);
+  assert.equal(add, 2);
+  const paid = await applyClientOp(sql, "str", { kind: "street", id: market!.id, tier: market!.tier, city: "austin", lat: 0, lng: 0 });
   assert.equal(paid.ok, true);
-  assert.equal(paid.wallet.keys[market!.tier], 1);
+  assert.equal(paid.wallet.keys[market!.tier], before + 2);
+  assert.equal(paid.wallet.coins, one.wallet.coins);
+  const again = await applyClientOp(sql, "str", { kind: "street", id: market!.id, tier: market!.tier, city: "austin", lat: 0, lng: 0 });
+  assert.equal(again.replay, true);
+  assert.equal(again.wallet.keys[market!.tier], before + 2);
+  const { id } = await canonicalWallet(sql, "str");
+  const rows = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"street:sk:austin:" + day + ":%"}`;
+  assert.equal(Number(rows[0]?.n), 2);
   const stale = streetSpot("str", "austin", "1999-01-01", 9);
   const old = await applyClientOp(sql, "str", { kind: "street", id: stale!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
   assert.equal(old.ok, false);
@@ -746,10 +804,10 @@ test("a market spot pays one match, and a kiosk name counts as a visit", async (
     const bought = await applyClientOp(sql, "str", { kind: "kiosk", id: "smear", poi: place.id });
     assert.equal(bought.ok, true);
   }
-  const before = (await canonicalWallet(sql, "str")).wallet.keys.blue ?? 0;
+  const blues = (await canonicalWallet(sql, "str")).wallet.keys.blue ?? 0;
   const visit = await applyClientOp(sql, "str", { kind: "survey", id: "visit-4" });
   assert.equal(visit.ok, true);
-  assert.equal(visit.wallet.keys.blue, before + 1);
+  assert.equal(visit.wallet.keys.blue, blues + 1);
 });
 
 test("a street claim needs the city, a fresh walk, and stops at the day's cap", async () => {
@@ -876,15 +934,19 @@ test("a 50M pocket reads back inside the caps, and atlas visits count", async ()
   );
   assert.equal(synced.wallet.coins, COIN_CAP);
   assert.equal(synced.wallet.keys.white, KEY_CAP);
-  assert.equal(synced.wallet.cities.passes, PASS_CAP);
-  assert.equal(synced.wallet.meta.walkM, WALK_CAP);
+  assert.equal(synced.wallet.cities.passes, 0);
+  assert.equal(synced.wallet.meta.walkM, 0);
   assert.equal(synced.wallet.meta.fares, FARES_CAP);
-  assert.ok(synced.wallet.meta.visits.includes(places[0]!));
-  assert.equal(synced.wallet.meta.visits.includes("nope"), false);
+  assert.deepEqual(synced.wallet.meta.visits, []);
   await sql.query(`update player_wallets set coins = 50000000, white = 2000 where user_id = $1`, ["atl"]);
   const read = await canonicalWallet(sql, "atl");
   assert.equal(read.wallet.coins, COIN_CAP);
   assert.equal(read.wallet.keys.white, KEY_CAP);
+  const fromDevice = await applyClientOp(sql, "atl", { kind: "survey", id: "visit-4" });
+  assert.equal(fromDevice.ok, false);
+  assert.equal(fromDevice.reason, "unproven");
+  const earned = { ...read.wallet.meta, visits: places };
+  await sql.query(`update player_wallets set meta = $2::jsonb where user_id = $1`, [read.id, JSON.stringify(earned)]);
   const visit = await applyClientOp(sql, "atl", { kind: "survey", id: "visit-4" });
   assert.equal(visit.ok, true);
   assert.equal(visit.wallet.keys.blue, 1);

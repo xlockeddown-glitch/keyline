@@ -345,7 +345,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       `;
       if ((Number(prior[0]?.n) || 0) >= STREET_DAY_CAP) return refused(wallet, "capped");
     }
-    const r = await mutateWallet(sql, sessionUserId, key, (w) => streetOp(w, op.city, spot.tier));
+    const r = await mutateWallet(sql, sessionUserId, key, (w) => streetOp(w, op.city, spot.tier, spot.market));
     return applied(r);
   }
 
