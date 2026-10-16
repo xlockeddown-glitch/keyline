@@ -241,7 +241,7 @@ export const HISTORY_LIFE: TriviaQ[] = [
   q("The 2022 Canadian convoy protests occupied…", ["Toronto (and its PATH network)", "Ottawa (and border points)", "Victoria (and Vancouver Island)", "Montreal (and the port)"], "Ottawa (and border points)", 3),
   q("The 2019 Amazon rainforest fires made global headlines from…", ["Chile", "Brazil", "Spain", "Kenya"], "Brazil", 2),
   q("The 2016 impeachment of Dilma Rousseff was in…", ["Argentina", "Brazil", "Mexico", "Colombia"], "Brazil", 2),
-  q("Jair Bolsonaro was president of Brazil from…", ["2010–2014", "2015–2018", "2019 to 2022", "2023–2026"], "2019 to 2022", 2),
+  q("Jair Bolsonaro was president of Brazil from…", ["2010–2014", "2015–2018", "2019–2022", "2023–2026"], "2019–2022", 2),
   q("Luiz Inácio Lula da Silva returned to Brazil's presidency in…", ["2018", "2021", "2023", "2010"], "2023", 2),
   q("The January 8, 2023 attack in Brasília targeted…", ["Brazil's federal buildings", "a football stadium", "the city's cathedral", "a hydroelectric dam"], "Brazil's federal buildings", 3),
   q("Jacinda Ardern resigned as New Zealand's PM in…", ["2019", "2021", "2023", "2025"], "2023", 3),
