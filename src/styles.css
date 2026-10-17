@@ -95,7 +95,7 @@ h3 {
   position: relative;
   width:56px;
   height:56px;
-  image-rendering:pixelated;
+  image-rendering:auto;
   background-color: transparent;
   filter:drop-shadow(0 2px 1px #0000008c);
   transform-origin:50% 90%
@@ -106,33 +106,33 @@ h3 {
   }
 }
 .scout-marker{
-  background-image:url(/sprites/player-walk.png?v=k60s);
+  background-image:url(/sprites/player-walk.png?v=k81p);
   background-repeat:no-repeat;
   background-size:400% 400%
 }
 .scout-marker.is-idle{
-  background-image:url(/sprites/player-idle.png?v=k60s);
+  background-image:url(/sprites/player-idle.png?v=k81p);
   background-size:200% 200%
 }
 .scout-marker[data-scout=cat]{
-  background-image:url(/sprites/scouts/cat-walk.png?v=k60s)
+  background-image:url(/sprites/scouts/cat-walk.png?v=k81p)
 }
 .scout-marker[data-scout=cat].is-idle{
-  background-image:url(/sprites/scouts/cat-idle.png?v=k60s);
+  background-image:url(/sprites/scouts/cat-idle.png?v=k81p);
   background-size:200% 200%
 }
 .scout-marker[data-scout=turtle]{
-  background-image:url(/sprites/scouts/turtle-walk.png?v=k60s)
+  background-image:url(/sprites/scouts/turtle-walk.png?v=k81p)
 }
 .scout-marker[data-scout=turtle].is-idle{
-  background-image:url(/sprites/scouts/turtle-idle.png?v=k60s);
+  background-image:url(/sprites/scouts/turtle-idle.png?v=k81p);
   background-size:200% 200%
 }
 .scout-marker[data-scout=owl]{
-  background-image:url(/sprites/scouts/owl-walk.png?v=k60s)
+  background-image:url(/sprites/scouts/owl-walk.png?v=k81p)
 }
 .scout-marker[data-scout=owl].is-idle{
-  background-image:url(/sprites/scouts/owl-idle.png?v=k60s);
+  background-image:url(/sprites/scouts/owl-idle.png?v=k81p);
   background-size:200% 200%
 }
 .scout-hire{
@@ -1460,70 +1460,70 @@ h3 {
 }
 
 .scout-marker[data-scout="corgi"] {
-  background-image: url("/sprites/scouts/corgi-walk.png?v=k60s");
+  background-image: url("/sprites/scouts/corgi-walk.png?v=k81p");
 }
 .scout-marker[data-scout="corgi"].is-idle {
-  background-image: url("/sprites/scouts/corgi-idle.png?v=k60s");
+  background-image: url("/sprites/scouts/corgi-idle.png?v=k81p");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="sloth"] {
-  background-image: url("/sprites/scouts/sloth-walk.png?v=k60s");
+  background-image: url("/sprites/scouts/sloth-walk.png?v=k81p");
 }
 .scout-marker[data-scout="sloth"].is-idle {
-  background-image: url("/sprites/scouts/sloth-idle.png?v=k60s");
+  background-image: url("/sprites/scouts/sloth-idle.png?v=k81p");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="fox"] {
-  background-image: url("/sprites/scouts/fox-walk.png?v=k60s");
+  background-image: url("/sprites/scouts/fox-walk.png?v=k81p");
 }
 .scout-marker[data-scout="fox"].is-idle {
-  background-image: url("/sprites/scouts/fox-idle.png?v=k60s");
+  background-image: url("/sprites/scouts/fox-idle.png?v=k81p");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="lynx"] {
-  background-image: url("/sprites/scouts/lynx-walk.png?v=k60s");
+  background-image: url("/sprites/scouts/lynx-walk.png?v=k81p");
 }
 .scout-marker[data-scout="lynx"].is-idle {
-  background-image: url("/sprites/scouts/lynx-idle.png?v=k60s");
+  background-image: url("/sprites/scouts/lynx-idle.png?v=k81p");
   background-size: 200% 200%;
 }
 /* 0.0.37: standing still after walking left or right keeps the side profile (2x2: row 0 left, row 1 right). */
 .scout-marker.is-idle.is-side,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
-  background-image: url("/sprites/player-idle-side.png?v=k60s");
+  background-image: url("/sprites/player-idle-side.png?v=k81p");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/cat-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/owl-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/corgi-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="sloth"].is-idle.is-side {
-  background-image: url("/sprites/scouts/sloth-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/sloth-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/fox-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k81p");
 }
 /* 0.0.51: The Giraffe (scripts/draw-giraffe.py). */
 .scout-marker[data-scout="giraffe"] {
-  background-image: url("/sprites/scouts/giraffe-walk.png?v=k60s");
+  background-image: url("/sprites/scouts/giraffe-walk.png?v=k81p");
 }
 .scout-marker[data-scout="giraffe"].is-idle {
-  background-image: url("/sprites/scouts/giraffe-idle.png?v=k60s");
+  background-image: url("/sprites/scouts/giraffe-idle.png?v=k81p");
   background-size: 200% 200%;
 }
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-idle-side.png?v=k60s");
+  background-image: url("/sprites/scouts/giraffe-idle-side.png?v=k81p");
 }
 
 .wheel-night {
@@ -3540,4 +3540,59 @@ h3 {
   height:96px;
   object-fit:contain;
   image-rendering:auto
+}
+
+/* ------------------------------------------------------------------------------------------------
+   0.0.81 art polish: seat the walker in the world instead of floating a sticker on the map.
+   The sheets are painted art shrunk to 96/128 px, not pixel art, and show at ~2.2 device px per sheet
+   pixel on a phone, so they sample smoothly (above: image-rendering auto; pixelated gave 2- and 3-px
+   blocks side by side). GameMap sets --step (0..1, synced to the walk frame) and --breath (0..1, idle)
+   on .pawn and data-face on the marker.
+   Per character: --foot is where the feet land in the 56 px pawn box (after the owl/corgi/giraffe
+   scale-ups below). 0.0.82: no lantern light pool under the walker (removed at Ryan's call).
+   ------------------------------------------------------------------------------------------------ */
+.pawn {
+  --step: 0;
+  --breath: 0;
+  --foot: 48px;
+}
+.pawn:has(.scout-marker[data-scout="raccoon"]),
+.pawn:has(.scout-marker:not([data-scout])) { --foot: 51px; }
+.pawn:has(.scout-marker[data-scout="cat"]) { --foot: 48.5px; }
+.pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48px; }
+.pawn:has(.scout-marker[data-scout="fox"]) { --foot: 51px; }
+.pawn:has(.scout-marker[data-scout="lynx"]) { --foot: 51px; }
+.pawn:has(.scout-marker[data-scout="owl"]) { --foot: 43px; }
+.pawn:has(.scout-marker[data-scout="sloth"]) { --foot: 48px; }
+.pawn:has(.scout-marker[data-scout="turtle"]) { --foot: 48px; }
+.pawn:has(.scout-marker[data-scout="giraffe"]) { --foot: 52px; }
+
+/* 1. Contact shadow: a soft ground ellipse under the feet that tightens when a foot lifts. */
+.pawn::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(var(--foot) - 5px);
+  width: 34px;
+  height: 10px;
+  margin-left: -17px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.78), rgb(0 0 0 / 0.4) 55%, transparent);
+  transform: scale(calc(1 - var(--step) * 0.16));
+  pointer-events: none;
+}
+.pawn.is-seated::before { display: none; }
+/* 2. Body: a thin dark ink edge instead of the offset halo (that halo was the sticker's cut line), step bob
+      and squash, idle breath, a small lean into side walks. Individual transform properties, so the
+      owl/corgi/giraffe scale-ups above still apply and everything pivots on the feet (transform-origin). */
+.pawn .scout-marker {
+  filter: drop-shadow(0 0 0.6px rgb(18 10 4)) drop-shadow(0 0 0.35px rgb(18 10 4)) saturate(0.94);
+  translate: 0 calc(var(--step) * -1.6px);
+  scale: calc(1 + var(--step) * 0.025 + var(--breath) * 0.012) calc(1 - var(--step) * 0.035 + var(--breath) * 0.022);
+  z-index: 1;
+}
+.pawn .scout-marker[data-face="left"]:not(.is-idle) { rotate: -3deg; }
+.pawn .scout-marker[data-face="right"]:not(.is-idle) { rotate: 3deg; }
+@media (prefers-reduced-motion: reduce) {
+  .pawn .scout-marker { translate: none; scale: none; rotate: none; }
 }

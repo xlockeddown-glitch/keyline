@@ -7,7 +7,7 @@ idle-to-walk floor match, pixels touching a cell edge), and since 0.0.37:
   * side idles — the stand-still-facing-left/right sheets sit on the walk floor and don't jump;
 and since 0.0.38 the coat check is per facing (front, left, right) and covers the shop icon, with a
 tighter limit (the Turtle walked in a bare shell at ΔH 3.6–4.1 and slipped under the old 5.5).
-Since 0.0.45 it also checks every print-shop coat variant (public/sprites/coats/<scout>-<coat>-<kind>.png):
+Since 0.0.81 every coat variant also keeps its colour off the fur (coat_leak). Since 0.0.45 it also checks every print-shop coat variant (public/sprites/coats/<scout>-<coat>-<kind>.png):
   * same sheet hygiene as the base sheets (size, magenta, specks, corners, leftover background);
   * the alpha channel is the base sheet's, byte for byte — a coat is a recolour, never a new silhouette;
   * every pose shows the coat: idle, walk front/left/right and both side idles each move the torso colour
@@ -364,6 +364,11 @@ MAX_TARGET_HUE = 20.0
 # facing, as CIE ΔH* of the mean coat colour (variant coats carry 3–10× the chroma of the grey base coats,
 # so a variant gets its own limit rather than the base sheets' 3.2).
 MAX_VARIANT_DH = 4.0
+# 0.0.81: no coat colour on fur. A coat is one cloth in a band of lightness; the repainted pixels of a frame whose
+# base colour is far lighter than the frame's median repainted pixel are fur, bib or belly that the recolour
+# caught (the plum Corgi idled with a lavender chin, chest, belly and paw: 256 pixels in one frame).
+LEAK_DL = 24.0
+MAX_LEAK = 4
 
 
 def _hue_deg(lab: tuple[float, float, float]) -> float:
@@ -395,6 +400,19 @@ def coat_pixels(var: list[Image.Image], base: list[Image.Image]) -> tuple[tuple[
             n += int(k)
     lab = (acc[0] / n, acc[1] / n, acc[2] / n) if n else (0.0, 0.0, 0.0)
     return lab, (box_hit / box_n if box_n else 0.0)
+
+
+def coat_leak(var: list[Image.Image], base: list[Image.Image]) -> int:
+    """Most repainted pixels in any one frame whose base L* is > LEAK_DL above that frame's median repainted base L*."""
+    worst = 0
+    for v, b in zip(var, base):
+        vp, bp = np.asarray(v, dtype=np.int16), np.asarray(b, dtype=np.int16)
+        hit = (vp[..., 3] >= 64) & (vp[..., :3] != bp[..., :3]).any(axis=-1)
+        if not hit.any():
+            continue
+        Ls = np.array([_lab(int(r), int(g), int(bb))[0] for r, g, bb in bp[hit][:, :3]])
+        worst = max(worst, int((Ls > float(np.median(Ls)) + LEAK_DL).sum()))
+    return worst
 
 
 def coat_variant_check() -> tuple[list[dict], list[dict], list[str]]:
@@ -432,7 +450,7 @@ def coat_variant_check() -> tuple[list[dict], list[dict], list[str]]:
                 "side right": (vgrid["idle-side"][1], bgrid["idle-side"][1]),
             }
             coat = {}
-            rec = {"scout": s, "coat": c, "shift": {}, "share": {}, "hueGap": {}, "deltaH": {}}
+            rec = {"scout": s, "coat": c, "shift": {}, "share": {}, "hueGap": {}, "deltaH": {}, "leak": {}}
             for p, (v, bf) in poses.items():
                 shift = math.dist(torso_lab(v), torso_lab(bf))
                 lab, share = coat_pixels(v, bf)
@@ -443,6 +461,10 @@ def coat_variant_check() -> tuple[list[dict], list[dict], list[str]]:
                     fails.append(f"{s}-{c}: {p} doesn't show the coat (torso ΔE {shift:.1f}, {share:.0%} repainted; need {MIN_COAT_SHIFT} and {MIN_COAT_SHARE:.0%})")
                 elif gap > MAX_TARGET_HUE:
                     fails.append(f"{s}-{c}: {p} coat hue is {gap:.0f}° off {tgt['name']}")
+                leak = coat_leak(v, bf)
+                rec["leak"][p] = leak
+                if leak > MAX_LEAK:
+                    fails.append(f"{s}-{c}: {p} coat colour on fur ({leak} light pixels repainted in one frame > {MAX_LEAK})")
             for p, ref in (("walk front", "idle"), ("walk left", "idle"), ("walk right", "idle"), ("side left", "walk left"), ("side right", "walk right")):
                 d = delta_h(coat[ref], coat[p])
                 rec["deltaH"][p] = round(d, 2)

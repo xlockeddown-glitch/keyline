@@ -130,3 +130,11 @@ test("qa:sprites fails an outfit whose walk is a different coat from its idle", 
   assert.equal(status, 1);
   assert.ok(verdict.failures.some((f) => /^cat-oxblood: walk (front|left|right) coat hue is \d+° off Oxblood Greatcoat/.test(f)), verdict.failures.join("\n"));
 });
+
+test("qa:sprites fails coat colour on fur (the 0.0.80 plum Corgi idled with a lavender chin, chest and belly)", () => {
+  const { status, verdict } = runWith("corgi-plum-idle=scripts/fixtures/corgi-plum-idle-leak-k80.png");
+  assert.equal(status, 1);
+  assert.ok(verdict.failures.some((f) => /^corgi-plum: idle coat colour on fur/.test(f)), verdict.failures.join("\n"));
+  const leaks = verdict.failures.filter((f) => /coat colour on fur/.test(f));
+  assert.ok(leaks.every((f) => f.startsWith("corgi-plum:")), leaks.join("\n"));
+});

@@ -8,13 +8,16 @@ import { useGame } from "@/game/store";
  */
 const KINDS: SheetKind[] = ["walk", "idle", "idle-side"];
 
+/** Same stamp as the sheet URLs in styles.css: a dye is mixed from the current art, not a cached older sheet. */
+const ART_STAMP = "k81p";
+
 function sheetUrl(scout: string, kind: SheetKind): string {
   if (scout === "raccoon") {
-    if (kind === "idle") return "/sprites/player-idle.png";
-    if (kind === "walk") return "/sprites/player-walk.png";
-    return "/sprites/player-idle-side.png";
+    if (kind === "idle") return `/sprites/player-idle.png?v=${ART_STAMP}`;
+    if (kind === "walk") return `/sprites/player-walk.png?v=${ART_STAMP}`;
+    return `/sprites/player-idle-side.png?v=${ART_STAMP}`;
   }
-  return `/sprites/scouts/${scout}-${kind}.png`;
+  return `/sprites/scouts/${scout}-${kind}.png?v=${ART_STAMP}`;
 }
 
 async function loadSheet(url: string): Promise<{ data: Uint8ClampedArray; w: number; h: number }> {

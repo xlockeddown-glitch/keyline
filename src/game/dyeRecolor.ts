@@ -33,7 +33,16 @@ const AB_RADIUS = 9;
 const AB_RADIUS_BY: Record<string, number> = { turtle: 14 };
 const L_KEEP: Record<string, number> = { turtle: 0.7 };
 const GRID: Record<SheetKind, number> = { idle: 2, walk: 4, "idle-side": 2 };
-const LANTERN_PAD: Record<string, number> = { lynx: 2, giraffe: 2 };
+const LANTERN_PAD: Record<string, number> = { lynx: 2, giraffe: 2, corgi: 3 };
+/** 0.0.81 clean-up; keep in step with L_WIN, FILL_* in scripts/make-coat-variants.py. */
+const L_WIN: [number, number] = [16, 16];
+const L_WIN_BY: Record<string, [number, number]> = { corgi: [16, 10], owl: [16, 10] };
+const FILL_PASSES = 3;
+const FILL_NEIGHBOURS = 5;
+const FILL_AB = 2.2;
+const FILL_L = 4;
+const HOLE_MAX = 40;
+const FILL_L_BY: Record<string, number> = { turtle: 6 };
 
 type Lab = [number, number, number];
 type Ref = { L: number; a: number; b: number; lo: number; hi: number };
@@ -207,6 +216,9 @@ function coatMask(scout: string, f: Uint8ClampedArray, w: number, ref: Ref): Set
   const fh = y1 - y0;
   const lb = lanternBox(f, w, w, LANTERN_PAD[scout] ?? 6);
   const rad = AB_RADIUS_BY[scout] ?? AB_RADIUS;
+  const [down, up] = L_WIN_BY[scout] ?? L_WIN;
+  const lo = Math.max(ref.lo, ref.L - down);
+  const hi = Math.min(ref.hi, ref.L + up);
   const yStart = Math.trunc(y0 + fh * (HEAD[scout] ?? 0.33));
   const yEnd = Math.trunc(y1 - fh * FOOT);
   for (let y = yStart; y < yEnd; y++) {
@@ -214,7 +226,7 @@ function coatMask(scout: string, f: Uint8ClampedArray, w: number, ref: Ref): Set
       const i = at(f, w, x, y);
       if (f[i + 3]! < 64 || inBox(x, y, lb)) continue;
       const [L, A, B] = toLab(f[i]!, f[i + 1]!, f[i + 2]!);
-      if (ref.lo <= L && L <= ref.hi && Math.hypot(A - ref.a, B - ref.b) <= rad) coat.add(y * w + x);
+      if (lo <= L && L <= hi && Math.hypot(A - ref.a, B - ref.b) <= rad) coat.add(y * w + x);
     }
   }
   const seeds: number[] = [];
@@ -239,7 +251,124 @@ function coatMask(scout: string, f: Uint8ClampedArray, w: number, ref: Ref): Set
       }
     }
   }
-  return seen;
+  const fl = FILL_L_BY[scout] ?? FILL_L;
+  return cleanMask(f, w, seen, ref, lo - fl, hi + fl, rad, lb);
+}
+
+/** Hole fill, enclosed holes and speck removal (make-coat-variants.clean_mask). Frames are square, w x w. */
+function cleanMask(
+  f: Uint8ClampedArray,
+  w: number,
+  seed: Set<number>,
+  ref: Ref,
+  lo: number,
+  hi: number,
+  rad: number,
+  lb: [number, number, number, number] | null,
+): Set<number> {
+  if (!seed.size) return seed;
+  const m = new Set(seed);
+  const fits = (x: number, y: number) => {
+    const i = at(f, w, x, y);
+    if (f[i + 3]! < 64 || inBox(x, y, lb)) return false;
+    const [L, A, B] = toLab(f[i]!, f[i + 1]!, f[i + 2]!);
+    return Math.hypot(A - ref.a, B - ref.b) <= rad * FILL_AB && lo <= L && L <= hi;
+  };
+  const inside = (x: number, y: number) => x >= 0 && x < w && y >= 0 && y < w;
+  const neighbours = (x: number, y: number) => {
+    let n = 0;
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && inside(x + dx, y + dy) && m.has((y + dy) * w + x + dx)) n++;
+    return n;
+  };
+  for (let pass = 0; pass < FILL_PASSES; pass++) {
+    const cand = new Set<number>();
+    for (const p of m) {
+      const x = p % w;
+      const y = (p - x) / w;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const qx = x + dx;
+          const qy = y + dy;
+          if ((dx || dy) && inside(qx, qy) && !m.has(qy * w + qx)) cand.add(qy * w + qx);
+        }
+    }
+    const add: number[] = [];
+    for (const q of cand) {
+      const x = q % w;
+      const y = (q - x) / w;
+      if (neighbours(x, y) >= FILL_NEIGHBOURS && fits(x, y)) add.push(q);
+    }
+    if (!add.length) break;
+    for (const q of add) m.add(q);
+  }
+  const outside = new Uint8Array(w * w);
+  const dq: number[] = [];
+  for (let y = 0; y < w; y++)
+    for (let x = 0; x < w; x++) {
+      const p = y * w + x;
+      if ((x === 0 || y === 0 || x === w - 1 || y === w - 1 || f[p * 4 + 3]! < 64) && !m.has(p)) {
+        outside[p] = 1;
+        dq.push(p);
+      }
+    }
+  while (dq.length) {
+    const p = dq.pop()!;
+    const x = p % w;
+    const y = (p - x) / w;
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ] as const) {
+      const qx = x + dx;
+      const qy = y + dy;
+      const q = qy * w + qx;
+      if (inside(qx, qy) && !m.has(q) && !outside[q]) {
+        outside[q] = 1;
+        dq.push(q);
+      }
+    }
+  }
+  // Only small enclosed patches (folds, highlights, specks); a big one is a part of its own (plastron, satchel).
+  const done = new Uint8Array(w * w);
+  for (let y = 0; y < w; y++)
+    for (let x = 0; x < w; x++) {
+      const p0 = y * w + x;
+      if (m.has(p0) || outside[p0] || done[p0]) continue;
+      const comp = [p0];
+      done[p0] = 1;
+      for (let k = 0; k < comp.length; k++) {
+        const p = comp[k]!;
+        const cx = p % w;
+        const cy = (p - cx) / w;
+        for (const [dx, dy] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ] as const) {
+          const qx = cx + dx;
+          const qy = cy + dy;
+          const q = qy * w + qx;
+          if (inside(qx, qy) && !m.has(q) && !outside[q] && !done[q]) {
+            done[q] = 1;
+            comp.push(q);
+          }
+        }
+      }
+      if (comp.length <= HOLE_MAX) {
+        const add = comp.filter((p) => fits(p % w, Math.floor(p / w)));
+        for (const p of add) m.add(p);
+      }
+    }
+  const out = new Set<number>();
+  for (const p of m) {
+    const x = p % w;
+    if (neighbours(x, (p - x) / w) > 1) out.add(p);
+  }
+  return out;
 }
 
 function recolour(f: Uint8ClampedArray, w: number, mask: Set<number>, ref: Ref, tgt: DyeTarget, keep: number) {
