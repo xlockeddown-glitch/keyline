@@ -37,18 +37,6 @@
 .scout-marker[data-scout="owl"][data-coat="plum"]{background-image:url("/sprites/coats/owl-plum-walk.png?v=k81p")}
 .scout-marker[data-scout="owl"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/owl-plum-idle.png?v=k81p");background-size:200% 200%}
 .scout-marker[data-scout="owl"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/owl-plum-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="oilskin"]{background-image:url("/sprites/coats/sloth-oilskin-walk.png?v=k81p")}
-.scout-marker[data-scout="sloth"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/sloth-oilskin-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/sloth-oilskin-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="bottle"]{background-image:url("/sprites/coats/sloth-bottle-walk.png?v=k81p")}
-.scout-marker[data-scout="sloth"][data-coat="bottle"].is-idle{background-image:url("/sprites/coats/sloth-bottle-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="bottle"].is-idle.is-side{background-image:url("/sprites/coats/sloth-bottle-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="oxblood"]{background-image:url("/sprites/coats/sloth-oxblood-walk.png?v=k81p")}
-.scout-marker[data-scout="sloth"][data-coat="oxblood"].is-idle{background-image:url("/sprites/coats/sloth-oxblood-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="oxblood"].is-idle.is-side{background-image:url("/sprites/coats/sloth-oxblood-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="plum"]{background-image:url("/sprites/coats/sloth-plum-walk.png?v=k81p")}
-.scout-marker[data-scout="sloth"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/sloth-plum-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="sloth"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/sloth-plum-idle-side.png?v=k81p");background-size:200% 200%}
 .scout-marker[data-scout="giraffe"][data-coat="oilskin"]{background-image:url("/sprites/coats/giraffe-oilskin-walk.png?v=k81p")}
 .scout-marker[data-scout="giraffe"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/giraffe-oilskin-idle.png?v=k81p");background-size:200% 200%}
 .scout-marker[data-scout="giraffe"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/giraffe-oilskin-idle-side.png?v=k81p");background-size:200% 200%}

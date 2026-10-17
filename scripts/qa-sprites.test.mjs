@@ -16,13 +16,13 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
-  // 5 legacy characters × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85), the Fox (0.0.86) and
-  // the Corgi (0.0.87) are on the v2 sheets.
-  assert.equal(verdict.sheets.length, 15);
-  // 5 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
-  assert.equal(verdict.coatSheets, 165);
-  assert.equal(verdict.coats.length, 55);
-  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi"]);
+  // 4 legacy characters × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85), the Fox (0.0.86), the
+  // Corgi (0.0.87) and the Sloth (0.0.88) are on the v2 sheets.
+  assert.equal(verdict.sheets.length, 12);
+  // 4 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 132);
+  assert.equal(verdict.coats.length, 44);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth"]);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -37,22 +37,24 @@ function runWith(override) {
 }
 
 test("qa:sprites fails a recoloured character (the 0.0.36 lynx was the fox's silhouette)", () => {
-  // 0.0.86: the Fox is on the v2 sheets now, so the recolour is the Sloth wearing the Lynx's sheets.
+  // 0.0.86: the Fox is on the v2 sheets now, so the recolour was the Sloth wearing the Lynx's sheets; 0.0.88: the
+  // Sloth is v2 too, so it's the Owl.
   const { status, verdict } = runWith(
-    "sloth-walk=public/sprites/scouts/lynx-walk.png,sloth-idle=public/sprites/scouts/lynx-idle.png",
+    "owl-walk=public/sprites/scouts/lynx-walk.png,owl-idle=public/sprites/scouts/lynx-idle.png",
   );
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /lynx\/sloth walk: same silhouette/.test(f)), verdict.failures.join("\n"));
-  assert.ok(verdict.failures.some((f) => /lynx\/sloth idle: same silhouette/.test(f)));
+  assert.ok(verdict.failures.some((f) => /lynx\/owl walk: same silhouette/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.some((f) => /lynx\/owl idle: same silhouette/.test(f)));
 });
 
 test("qa:sprites fails a character whose walk and idle coats differ (the 0.0.36 Tabby walked in green)", () => {
   // 0.0.85: the Tabby is on the v2 sheets now (one coat mask for every frame), so the regression used the Corgi
-  // walking in its green-dye sheet against its own brown idle; 0.0.87: the Corgi is v2 too, so it's the Sloth.
-  const { status, verdict } = runWith("sloth-walk=scripts/dye-sheets/sloth-dye-green-walk.png");
+  // walking in its green-dye sheet against its own brown idle; 0.0.87: the Corgi is v2 too, so it was the Sloth;
+  // 0.0.88: the Sloth is v2 too, so it's the Owl.
+  const { status, verdict } = runWith("owl-walk=scripts/dye-sheets/owl-dye-green-walk.png");
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^sloth: walk and idle coats differ/.test(f)), verdict.failures.join("\n"));
-  assert.ok(verdict.palettes.filter((p) => p.scout !== "sloth").every((p) => p.coatDeltaH <= p.coatLimit));
+  assert.ok(verdict.failures.some((f) => /^owl: walk and idle coats differ/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.palettes.filter((p) => p.scout !== "owl").every((p) => p.coatDeltaH <= p.coatLimit));
 });
 
 // ── 0.0.83 v2 sheets (the redrawn Turtle) ──
@@ -146,12 +148,12 @@ test("qa:sprites checks every coat variant in every pose: repainted, on its cata
 });
 
 test("qa:sprites fails a coat whose walk sheet is still the character's own coat (the coat must show in every pose)", () => {
-  const { status, verdict } = runWith("sloth-plum-walk=public/sprites/scouts/sloth-walk.png") // 0.0.86: was the Fox (now v2);
+  const { status, verdict } = runWith("owl-plum-walk=public/sprites/scouts/owl-walk.png") // 0.0.86/0.0.88: was the Fox, then the Sloth (both v2 now);
   assert.equal(status, 1);
   for (const pose of ["walk front", "walk left", "walk right"]) {
-    assert.ok(verdict.failures.some((f) => f.startsWith(`sloth-plum: ${pose} doesn't show the coat`)), verdict.failures.join("\n"));
+    assert.ok(verdict.failures.some((f) => f.startsWith(`owl-plum: ${pose} doesn't show the coat`)), verdict.failures.join("\n"));
   }
-  assert.ok(verdict.failures.every((f) => f.startsWith("sloth-plum")), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.every((f) => f.startsWith("owl-plum")), verdict.failures.join("\n"));
 });
 
 test("qa:sprites fails a coat with a side idle left in the old coat", () => {
@@ -161,15 +163,15 @@ test("qa:sprites fails a coat with a side idle left in the old coat", () => {
 });
 
 test("qa:sprites fails a coat sheet with a different silhouette from the character", () => {
-  const { status, verdict } = runWith("sloth-oxblood-idle=public/sprites/coats/owl-oxblood-idle.png"); // 0.0.85-0.0.87: was the Tabby, then the Fox, with the Corgi's coat (all v2 now)
+  const { status, verdict } = runWith("owl-oxblood-idle=public/sprites/coats/giraffe-oxblood-idle.png"); // 0.0.85-0.0.88: was the Tabby, then the Fox, the Corgi's coat, then the Sloth (all v2 now)
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^sloth-oxblood-idle: silhouette differs/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.some((f) => /^owl-oxblood-idle: silhouette differs/.test(f)), verdict.failures.join("\n"));
 });
 
 test("qa:sprites fails an outfit whose walk is a different coat from its idle", () => {
-  const { status, verdict } = runWith("sloth-oxblood-walk=public/sprites/coats/sloth-plum-walk.png"); // 0.0.85/0.0.86: was the Tabby, then the Fox (both v2 now)
+  const { status, verdict } = runWith("owl-oxblood-walk=public/sprites/coats/owl-plum-walk.png"); // 0.0.85-0.0.88: was the Tabby, then the Fox, then the Sloth (all v2 now)
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^sloth-oxblood: walk (front|left|right) coat hue is \d+° off Oxblood Greatcoat/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.some((f) => /^owl-oxblood: walk (front|left|right) coat hue is \d+° off Oxblood Greatcoat/.test(f)), verdict.failures.join("\n"));
 });
 
 test("qa:sprites fails coat colour on fur (the 0.0.80 plum Corgi idled with a lavender chin, chest and belly)", () => {
