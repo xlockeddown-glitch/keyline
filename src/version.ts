@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.86";
+export const APP_VERSION = "0.0.87";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k86a";
+export const PUBLISH_STAMP = "k87a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -89,3 +89,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.84: email + password accounts (sign up / sign in under Google and X, reset when mail is switched on); X sign-ins cannot take over a password account; sessions end at once on password reset (k84a).
 // 0.0.85: the Tabby, Fox and Corgi are redrawn on the v2 sheet like the Turtle (8-frame walks, coat layer); the Corgi gets a short-leg waddle. v2 sprite stamp k85a (k85a).
 // 0.0.86: the Sloth and the Raccoon are redrawn on the v2 sheet (sloth: face mask, eye stripes, long claws, teal coat, slow heavy gait; raccoon: bandit mask, ringed tail, olive coat); every v2 scout is underpainted so no frame has see-through holes, and qa:sprites now fails any interior hole; errandPlaces tests join npm test. v2 sprite stamp k86a (k86a).
+// 0.0.87: the Owl and the Penguin (scout id lynx, the Super Legendary) are redrawn on the v2 sheet with coat layers; the Owl loses its 1.28x scale-up. v2 sprite stamp k87a (k87a).
