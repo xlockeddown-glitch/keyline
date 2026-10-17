@@ -1445,13 +1445,6 @@ h3 {
   }
 }
 
-.scout-marker[data-scout="corgi"] {
-  background-image: url("/sprites/scouts/corgi-walk.png?v=k81p");
-}
-.scout-marker[data-scout="corgi"].is-idle {
-  background-image: url("/sprites/scouts/corgi-idle.png?v=k81p");
-  background-size: 200% 200%;
-}
 .scout-marker[data-scout="sloth"] {
   background-image: url("/sprites/scouts/sloth-walk.png?v=k81p");
 }
@@ -1474,9 +1467,6 @@ h3 {
 }
 .scout-marker[data-scout="owl"].is-idle.is-side {
   background-image: url("/sprites/scouts/owl-idle-side.png?v=k81p");
-}
-.scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="sloth"].is-idle.is-side {
   background-image: url("/sprites/scouts/sloth-idle-side.png?v=k81p");
@@ -1558,10 +1548,10 @@ h3 {
 .pawn.is-seated .scout-marker {
   opacity: 0;
 }
-/* The owl and the corgi fill less of the cell than the turtle, so they vanish into the map.
+/* The owl fills less of the cell than the turtle, so it vanishes into the map (0.0.87: the redrawn corgi
+   fills its v2 cell like the cat and fox, so it no longer needs the scale-up).
    The giraffe's lookout doesn't read at the same height as the raccoon. Scale from the feet. */
-.pawn .scout-marker[data-scout="owl"],
-.pawn .scout-marker[data-scout="corgi"] {
+.pawn .scout-marker[data-scout="owl"] {
   transform: scale(1.28);
 }
 .pawn .scout-marker[data-scout="giraffe"] {
@@ -3529,7 +3519,7 @@ h3 {
 .pawn:has(.scout-marker[data-scout="raccoon"]),
 .pawn:has(.scout-marker:not([data-scout])) { --foot: 51px; }
 .pawn:has(.scout-marker[data-scout="cat"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
-.pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48px; }
+.pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="fox"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="lynx"]) { --foot: 51px; }
 .pawn:has(.scout-marker[data-scout="owl"]) { --foot: 43px; }
@@ -3594,6 +3584,14 @@ h3 {
 .scout-marker[data-scout="fox"].is-idle,
 .scout-marker[data-scout="fox"].is-idle.is-side {
   background-image: url("/sprites/scouts/fox-v2.png?v=k83a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.0.87: the Corgi. */
+.scout-marker[data-scout="corgi"],
+.scout-marker[data-scout="corgi"].is-idle,
+.scout-marker[data-scout="corgi"].is-idle.is-side {
+  background-image: url("/sprites/scouts/corgi-v2.png?v=k83a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }

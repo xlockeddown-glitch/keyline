@@ -46,6 +46,8 @@ test("v2 coat recolour matches the sprite rig, and never touches a pixel outside
     ["cat", "dye-white", [0, 768, 384, 960]],
     ["fox", "oxblood", [0, 384, 576, 576]],
     ["fox", "dye-amber", [0, 768, 384, 960]],
+    ["corgi", "plum", [0, 384, 576, 576]],
+    ["corgi", "dye-blue", [0, 768, 384, 960]],
   ] as const) {
     const { w, h, base, mask, out } = pythonCoat(scout, coat, [...box]);
     const mine = applyCoatLayer(new Uint8ClampedArray(base), new Uint8ClampedArray(mask), V2_PALETTE[coat]!, V2_DEFAULT_COAT[scout]!);

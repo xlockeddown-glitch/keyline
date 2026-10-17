@@ -11,7 +11,7 @@
 import { DYE_TARGETS, fromLab, pyRound, toLab, type DyeTarget } from "./dyeRecolor.ts";
 
 /** Scouts drawn on the v2 sheets. Everyone else keeps the 4x4 / 2x2 sheets. */
-export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat", "fox"]);
+export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat", "fox", "corgi"]);
 
 export const V2_COLS = 8;
 export const V2_ROWS = 6;
@@ -28,6 +28,7 @@ export const V2_DEFAULT_COAT: Record<string, DyeTarget> = {
   turtle: { L: 30, C: 26, h: 70 },
   cat: { L: 28, C: 24, h: 64 },
   fox: { L: 24, C: 9, h: 260 },
+  corgi: { L: 26, C: 20, h: 58 },
 };
 
 /** Print-shop coat targets. Keep in step with the `coats` block of scripts/coat-variants.json. */

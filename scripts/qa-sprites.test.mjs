@@ -16,13 +16,13 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
-  // 6 legacy characters × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85) and the Fox (0.0.86)
-  // are on the v2 sheets.
-  assert.equal(verdict.sheets.length, 18);
-  // 6 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
-  assert.equal(verdict.coatSheets, 198);
-  assert.equal(verdict.coats.length, 66);
-  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox"]);
+  // 5 legacy characters × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85), the Fox (0.0.86) and
+  // the Corgi (0.0.87) are on the v2 sheets.
+  assert.equal(verdict.sheets.length, 15);
+  // 5 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 165);
+  assert.equal(verdict.coats.length, 55);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi"]);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -47,12 +47,12 @@ test("qa:sprites fails a recoloured character (the 0.0.36 lynx was the fox's sil
 });
 
 test("qa:sprites fails a character whose walk and idle coats differ (the 0.0.36 Tabby walked in green)", () => {
-  // 0.0.85: the Tabby is on the v2 sheets now (one coat mask for every frame), so the regression uses the Corgi
-  // walking in its green-dye sheet against its own brown idle.
-  const { status, verdict } = runWith("corgi-walk=scripts/dye-sheets/corgi-dye-green-walk.png");
+  // 0.0.85: the Tabby is on the v2 sheets now (one coat mask for every frame), so the regression used the Corgi
+  // walking in its green-dye sheet against its own brown idle; 0.0.87: the Corgi is v2 too, so it's the Sloth.
+  const { status, verdict } = runWith("sloth-walk=scripts/dye-sheets/sloth-dye-green-walk.png");
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^corgi: walk and idle coats differ/.test(f)), verdict.failures.join("\n"));
-  assert.ok(verdict.palettes.filter((p) => p.scout !== "corgi").every((p) => p.coatDeltaH <= p.coatLimit));
+  assert.ok(verdict.failures.some((f) => /^sloth: walk and idle coats differ/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.palettes.filter((p) => p.scout !== "sloth").every((p) => p.coatDeltaH <= p.coatLimit));
 });
 
 // ── 0.0.83 v2 sheets (the redrawn Turtle) ──
@@ -161,7 +161,7 @@ test("qa:sprites fails a coat with a side idle left in the old coat", () => {
 });
 
 test("qa:sprites fails a coat sheet with a different silhouette from the character", () => {
-  const { status, verdict } = runWith("sloth-oxblood-idle=public/sprites/coats/corgi-oxblood-idle.png"); // 0.0.85/0.0.86: was the Tabby, then the Fox (both v2 now)
+  const { status, verdict } = runWith("sloth-oxblood-idle=public/sprites/coats/owl-oxblood-idle.png"); // 0.0.85-0.0.87: was the Tabby, then the Fox, with the Corgi's coat (all v2 now)
   assert.equal(status, 1);
   assert.ok(verdict.failures.some((f) => /^sloth-oxblood-idle: silhouette differs/.test(f)), verdict.failures.join("\n"));
 });
@@ -173,9 +173,11 @@ test("qa:sprites fails an outfit whose walk is a different coat from its idle", 
 });
 
 test("qa:sprites fails coat colour on fur (the 0.0.80 plum Corgi idled with a lavender chin, chest and belly)", () => {
-  const { status, verdict } = runWith("corgi-plum-idle=scripts/fixtures/corgi-plum-idle-leak-k80.png");
+  // 0.0.87: the Corgi is on the v2 sheets, so the fixture is the plum Lynx idle with the same leak painted onto its
+  // pale chest fur (scripts/fixtures/lynx-plum-idle-leak-k87.png).
+  const { status, verdict } = runWith("lynx-plum-idle=scripts/fixtures/lynx-plum-idle-leak-k87.png");
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^corgi-plum: idle coat colour on fur/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.some((f) => /^lynx-plum: idle coat colour on fur/.test(f)), verdict.failures.join("\n"));
   const leaks = verdict.failures.filter((f) => /coat colour on fur/.test(f));
-  assert.ok(leaks.every((f) => f.startsWith("corgi-plum:")), leaks.join("\n"));
+  assert.ok(leaks.every((f) => f.startsWith("lynx-plum:")), leaks.join("\n"));
 });
