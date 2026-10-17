@@ -1,7 +1,7 @@
 {
   "name": "app-builder-workspace",
   "private": true,
-  "version": "0.0.79",
+  "version": "0.0.80",
   "sideEffects": false,
   "type": "module",
   "overrides": {
@@ -25,6 +25,7 @@
     "check:auth": "node scripts/check-auth-invariant.mjs",
     "check:uniformity": "node scripts/uniformity-qa.mjs",
     "qa:sprites": "python3 scripts/qa-sprites.py",
+    "qa:stands": "node --experimental-strip-types scripts/qa-stand-reach.ts",
     "qa:walk-routes": "node --experimental-strip-types scripts/qa-walk-routes.ts",
     "qa:hud-mobile": "node scripts/qa-hud-mobile.mjs",
     "qa:no-answers": "node scripts/qa-no-answers.mjs",

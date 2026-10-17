@@ -1,6 +1,7 @@
 import type { City, CityId, Poi } from "./types";
 import { dest, distM } from "./geo.ts";
 import { TIER_VALUE } from "./rewards.ts";
+import { STAND_AT } from "./standSpots.ts";
 
 function poi(p: Poi): Poi {
   return p;
@@ -3575,11 +3576,14 @@ for (const id of Object.keys(CITIES) as CityId[]) {
   const boards = spreadAnchors(city, n, counters).sort(bySpawn);
   const taken: { lat: number; lng: number }[] = [];
   const placeOne = (anchor: Poi, kind: "counter" | "board", index: number, authored: string) => {
-    const at = beside(city, anchor, taken);
-    taken.push(at);
+    const id0 = index === 0 ? `${kind}-${id}` : `${kind}-${id}-${index + 1}`;
+    const nudged = beside(city, anchor, taken);
+    taken.push(nudged);
+    // 0.0.80: beside() nudges blind to the street map; a stand it dropped in a park sits on the curb instead.
+    const at = STAND_AT[id0] ?? nudged;
     city.pois.push(
       poi({
-        id: index === 0 ? `${kind}-${id}` : `${kind}-${id}-${index + 1}`,
+        id: id0,
         name: index === 0 ? authored : neighborhood(anchor, kind === "counter" ? "Counter" : "Board"),
         lat: at.lat,
         lng: at.lng,
