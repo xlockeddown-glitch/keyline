@@ -92,6 +92,8 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    - top-level `coat_keep_near` [min_px, reach_px]: coat islands of at least min_px within reach_px of the main
      coat (and off the hand/lantern polygons) stay coat even below `coat_min_island` (a thin lining sliver between
      toggles was left blue otherwise).
+   The Raccoon (0.0.89) is the original scout and its legacy sheets are `public/sprites/player-*.png`. They stay as the
+   fallback for a marker without `data-scout`, and `review-shots.py` reads them as the Raccoon's old sheets.
    Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8) speeds up the walk *animation* only; walking speed
    and `SCOUTS.gait` stay the same for every coat. `anim-preview.py` reads it too.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat

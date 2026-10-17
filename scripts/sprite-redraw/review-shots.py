@@ -64,6 +64,11 @@ def up_new(im: Image.Image, tile: int) -> Image.Image:
     return im.resize((tile, tile), Image.LANCZOS)
 
 
+def legacy(scout: str, kind: str) -> str:
+    """The legacy base sheet path (the Raccoon, the original scout, shipped as public/sprites/player-*.png)."""
+    return f"public/sprites/player-{kind}.png" if scout == "raccoon" else f"public/sprites/scouts/{scout}-{kind}.png"
+
+
 def main() -> None:
     scout, prefix = sys.argv[1], sys.argv[2]
     rev = sys.argv[3] if len(sys.argv) > 3 else "origin/main"
@@ -79,7 +84,7 @@ def main() -> None:
     for c in ("plum", "dye-green"):
         new[c] = Image.fromarray(rig.apply_coat(b, mask, targets[c], default), "RGBA")
     old = {
-        "base": (git_png(rev, f"public/sprites/scouts/{scout}-idle.png"), git_png(rev, f"public/sprites/scouts/{scout}-walk.png")),
+        "base": (git_png(rev, legacy(scout, "idle")), git_png(rev, legacy(scout, "walk"))),
         "plum": (git_png(rev, f"public/sprites/coats/{scout}-plum-idle.png"), git_png(rev, f"public/sprites/coats/{scout}-plum-walk.png")),
         "dye-green": (git_png(rev, f"scripts/dye-sheets/{scout}-dye-green-idle.png"), git_png(rev, f"scripts/dye-sheets/{scout}-dye-green-walk.png")),
     }
@@ -113,7 +118,7 @@ def main() -> None:
     ]
     board(front, S).save(f"{prefix}walk-front.png")
     oi, _ = old["base"]
-    osd = git_png(rev, f"public/sprites/scouts/{scout}-idle-side.png")
+    osd = git_png(rev, legacy(scout, "idle-side"))
     idle = [
         ("live idle front (4) · side idle left (2) · right (2)", [up_old(cell(oi, c % 2, c // 2, 128), S) for c in range(4)] + [up_old(cell(osd, c, 0, 96), S) for c in range(2)] + [up_old(cell(osd, c, 1, 96), S) for c in range(2)]),
         *pv("idle front (4) · left (4)", 4),
