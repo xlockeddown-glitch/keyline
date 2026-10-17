@@ -67,6 +67,7 @@ import {
   WEEKLY_SPORTS_20261009,
 } from "@/game/banks/weekly_20261009";
 import { WEEKLY_POLITICAL_20261016, WEEKLY_SPORTS_20261016 } from "@/game/banks/weekly_20261016";
+import { LEVEL_POLITICAL_20261016 } from "@/game/banks/level_20261016";
 import type { CityId, Poi, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 
 const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
@@ -345,7 +346,7 @@ function mergeCat(a: TriviaQ[], b: TriviaQ[]): TriviaQ[] {
 const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	sports: mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006), WEEKLY_SPORTS_20261009), WEEKLY_SPORTS_20261016),
 	local: mergeCat(mergeCat(CORE_GENERAL.local ?? [], GENERAL_BANK.local ?? []), WEEKLY_LOCAL_20261006),
-	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009), WEEKLY_POLITICAL_20261016),
+	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009), WEEKLY_POLITICAL_20261016), LEVEL_POLITICAL_20261016),
 	food: mergeCat(mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []), WEEKLY_FOOD_20261006),
 	arts: mergeCat(mergeCat(mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []), WEEKLY_ARTS_20261006), WEEKLY_ARTS_20261009),
 	math: mergeCat(MATH_BANK, MATH_MORE).map(rescoreMath),
@@ -621,11 +622,12 @@ const TEXAS_ARTS = [
 const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 	austin: {
 		local: [
-			q("The Texas Capitol is clad in which local stone?", [
-				"Cream limestone",
+			// https://en.wikipedia.org/wiki/Texas_State_Capitol
+			q("The Texas Capitol's outer walls are clad in which stone?", [
+				"Oak Hill limestone",
 				"Sunset Red granite",
-				"White Georgia marble",
-				"Brown sandstone"
+				"Texas Pearl granite",
+				"Cordova Cream limestone"
 			], "Sunset Red granite"),
 			q("How many stories is the UT Tower?", [
 				"14",
@@ -2882,7 +2884,9 @@ export function pickTrivia(
 		cat === "local"
 			? (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId))
 			: (GENERAL[cat] ?? []);
-	const hit = pickUnseenRarity(color, cityPool, globalPool, seen, mathLamp ? prefer : want);
+	// 0.0.81: a blue math lamp draws its easy and medium blue cards alike (it only ever dealt the easy half).
+	const mathSoft = mathLamp && color === "blue" && want == null ? undefined : mathLamp ? prefer : want;
+	const hit = pickUnseenRarity(color, cityPool, globalPool, seen, mathSoft);
 	if (hit) return hit.plate;
 
 	rarityStats.fallbacks += 1;
@@ -2906,7 +2910,7 @@ export function pickTrivia(
 	// Every allowed card in this category has been seen: try the nearest tier up before repeating.
 	const up = upStep(color);
 	for (let t = up; t; t = upStep(t)) {
-		const upHit = pickUnseenAt(t, cityPool, globalPool, seen, mathLamp ? prefer : want);
+		const upHit = pickUnseenAt(t, cityPool, globalPool, seen, mathSoft);
 		if (upHit) return upHit;
 	}
 	// Still nothing new: recycle the card seen longest ago, never a recent one.

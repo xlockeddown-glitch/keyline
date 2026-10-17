@@ -9,8 +9,9 @@ import type { TriviaSeed } from "./types";
 export const DOOR_QUIZZES: Record<string, TriviaSeed[]> = {
   "tx-capitol": [
     {
-      q: "The Texas Capitol is clad in which local stone?",
-      choices: ["Limestone", "Sunset Red granite", "Marble", "Sandstone"],
+      // https://en.wikipedia.org/wiki/Texas_State_Capitol
+      q: "The Texas Capitol's outer walls are clad in which stone?",
+      choices: ["Oak Hill limestone", "Sunset Red granite", "Texas Pearl granite", "Cordova Cream limestone"],
       answer: "Sunset Red granite",
     },
   ],
