@@ -13,6 +13,12 @@ import { DYE_TARGETS, fromLab, pyRound, toLab, type DyeTarget } from "./dyeRecol
 /** Scouts drawn on the v2 sheets. Everyone else keeps the 4x4 / 2x2 sheets. */
 export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat", "fox", "corgi"]);
 
+/**
+ * Walk cadence per v2 scout (frames per second multiplier while walking; walking speed is unchanged, see
+ * perk.test "every coat walks the same"). 0.0.87: the Corgi's short legs take quicker, smaller steps.
+ */
+export const V2_CADENCE: Readonly<Record<string, number>> = { corgi: 1.35 };
+
 export const V2_COLS = 8;
 export const V2_ROWS = 6;
 export const V2_WALK_FRAMES = 8;

@@ -16,6 +16,11 @@ CELL, WALK_DT, IDLE_DT = 192, 0.44 / 8, 0.34
 scout = sys.argv[1] if len(sys.argv) > 1 else "turtle"
 out = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(f"/workspace/screenshots/{scout}-redraw-anim.gif")
 FOOT = json.loads((ROOT / "scripts" / "sprite-redraw" / scout / "rig.json").read_text())["foot_y"]
+# 0.0.87: per-scout walk cadence (src/game/coatLayer.ts V2_CADENCE), e.g. the Corgi's quicker short steps
+import re
+_cad = re.search(r"V2_CADENCE[^=]*=\s*\{([^}]*)\}", (ROOT / "src" / "game" / "coatLayer.ts").read_text())
+CADENCE = {k: float(v) for k, v in re.findall(r"(\w+):\s*([\d.]+)", _cad.group(1))} if _cad else {}
+WALK_DT /= CADENCE.get(scout, 1.0)
 sheet = Image.open(ROOT / "public" / "sprites" / "scouts" / f"{scout}-v2.png").convert("RGBA")
 
 
