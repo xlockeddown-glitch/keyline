@@ -97,9 +97,16 @@ VARIANTS = {
     for k in KINDS
 }
 
+# 0.0.91: one legacy character is left (the Giraffe), so the silhouette check has nothing to pair it with. An override
+# naming a v2 scout's legacy sheet ("lynx-walk=...") adds that sheet to the silhouette check only (the recolour test).
+SHAPE_EXTRA: dict[str, dict[str, Path]] = {}
+
 for _pair in filter(None, os.environ.get("KEYLINE_SPRITE_OVERRIDE", "").split(",")):
     _name, _path = _pair.split("=", 1)
-    if _name.endswith("-icon"):
+    _sk = re.fullmatch(r"([a-z]+)-(idle-side|idle|walk)", _name)
+    if _sk and _sk.group(1) in V2_SHEETS:
+        SHAPE_EXTRA.setdefault(_sk.group(1), {})[_sk.group(2)] = (ROOT / _path).resolve()
+    elif _name.endswith("-icon"):
         ICONS[_name[:-5]] = (ROOT / _path).resolve()
     elif _name.endswith("-v2-coat") and _name[:-8] in V2_SHEETS:
         V2_SHEETS[_name[:-8]]["mask"] = (ROOT / _path).resolve()
@@ -251,6 +258,7 @@ def shape_check() -> tuple[list[dict], list[str], list[str]]:
     rows, fails, warns = [], [], []
     for kind in KINDS:
         masks = {s: mask(SHEETS[f"{s}-{kind}"][0]) for s in LEGACY_IDS if SHEETS[f"{s}-{kind}"][0].exists()}
+        masks.update({s: mask(k[kind]) for s, k in SHAPE_EXTRA.items() if kind in k})
         for a, b in itertools.combinations(sorted(masks), 2):
             if len(masks[a]) != len(masks[b]):
                 continue

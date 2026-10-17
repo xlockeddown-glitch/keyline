@@ -11,14 +11,14 @@
 import { DYE_TARGETS, fromLab, pyRound, toLab, type DyeTarget } from "./dyeRecolor.ts";
 
 /** Scouts drawn on the v2 sheets. Everyone else keeps the 4x4 / 2x2 sheets. */
-export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl"]);
+export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl", "lynx"]);
 
 /**
  * Walk cadence per v2 scout (frames per second multiplier while walking; walking speed is unchanged, see
  * perk.test "every coat walks the same"). 0.0.87: the Corgi's short legs take quicker, smaller steps. 0.0.88: the
- * Sloth takes slower, heavier ones over the same ground.
+ * Sloth takes slower, heavier ones over the same ground. 0.0.91: the Penguin (lynx) waddles in short, quick steps.
  */
-export const V2_CADENCE: Readonly<Record<string, number>> = { corgi: 1.35, sloth: 0.8 };
+export const V2_CADENCE: Readonly<Record<string, number>> = { corgi: 1.35, sloth: 0.8, lynx: 1.25 };
 
 export const V2_COLS = 8;
 export const V2_ROWS = 6;
@@ -39,6 +39,7 @@ export const V2_DEFAULT_COAT: Record<string, DyeTarget> = {
   sloth: { L: 30, C: 22, h: 205 },
   raccoon: { L: 34, C: 26, h: 100 },
   owl: { L: 26, C: 22, h: 268 },
+  lynx: { L: 25, C: 44, h: 316 },
 };
 
 /** Print-shop coat targets. Keep in step with the `coats` block of scripts/coat-variants.json. */
