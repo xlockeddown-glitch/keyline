@@ -225,6 +225,11 @@ def cut_parts(view, col, a, w):
     coat = w > 0.35
     hand = poly_mask(shape, view["hand"]["poly"])
     lant = poly_mask(shape, view["lantern"]["poly"]) & ~hand
+    if view.get("skip_coat"):
+        # "skip_coat": the sleeve reaches into the hand / lantern polygons (corgi): the coat, and for the lantern
+        # its outline too (the coat grown by this many px), stays on the body instead of swinging with them
+        hand &= ~coat
+        lant &= ~ndimage.binary_dilation(coat, iterations=int(view["skip_coat"]))
     parts["hand"] = layer(col, a, w, hand)
     parts["lantern"] = layer(col, a, w, lant)
     used |= hand | lant
