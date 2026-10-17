@@ -1,0 +1,813 @@
+{
+  "_doc": "Cut-out rig for the 0.0.88 sloth redraw. Coordinates are source pixels inside each view's crop (see scripts/sprite-redraw/README.md). Polygons are [x,y] lists; pivots are [x,y]. No tail (a sloth's is a stub hidden by the coat). The satchel and the free clawed hand stay on the body. The profiles are painted standing with the boots together; the far leg is a copy of the near one. 'gait' makes the walk slow and heavy: small careful steps, a low lift, a big weight shift.",
+  "scout": "sloth",
+  "source": "turnaround.jpg",
+  "background": [
+    240,
+    3,
+    126
+  ],
+  "scale": 0.31,
+  "motion": 1.23,
+  "foot_y": 166,
+  "default_coat": {
+    "L": 30,
+    "C": 22,
+    "h": 205
+  },
+  "grade": {
+    "saturation": 0.86,
+    "gamma": 1.12,
+    "gain": 0.94,
+    "warm": 4
+  },
+  "coat_keep": 1.25,
+  "coat_min_island": 800,
+  "coat_keep_near": [
+    100,
+    20
+  ],
+  "gait": {
+    "swing": 12.0,
+    "lift": 10.0,
+    "slide": 14.0,
+    "bob": 3.0,
+    "lift_fb": 8.0,
+    "hip": 8.0,
+    "bob_fb": 4.0,
+    "roll": 3.0
+  },
+  "views": {
+    "front": {
+      "crop": [
+        20,
+        95,
+        335,
+        600
+      ],
+      "sole": "auto",
+      "chest_y": 160,
+      "hip_y": 345,
+      "skip_coat": 1,
+      "body_open": 2,
+      "head": {
+        "ellipse": [
+          170,
+          70,
+          85,
+          70
+        ],
+        "poly": [
+          [
+            90,
+            0
+          ],
+          [
+            255,
+            0
+          ],
+          [
+            255,
+            125
+          ],
+          [
+            90,
+            125
+          ]
+        ],
+        "top": true,
+        "max_y": 125,
+        "layer": "front"
+      },
+      "hand": {
+        "poly": [
+          [
+            28,
+            212
+          ],
+          [
+            82,
+            212
+          ],
+          [
+            82,
+            262
+          ],
+          [
+            28,
+            262
+          ]
+        ],
+        "pivot": [
+          76,
+          226
+        ]
+      },
+      "lantern": {
+        "poly": [
+          [
+            12,
+            262
+          ],
+          [
+            94,
+            262
+          ],
+          [
+            94,
+            428
+          ],
+          [
+            12,
+            428
+          ]
+        ],
+        "pivot": [
+          52,
+          262
+        ]
+      },
+      "legs": [
+        {
+          "name": "far",
+          "poly": [
+            [
+              78,
+              352
+            ],
+            [
+              166,
+              352
+            ],
+            [
+              166,
+              484
+            ],
+            [
+              78,
+              484
+            ]
+          ],
+          "hip": [
+            122,
+            345
+          ],
+          "ankle_y": 420
+        },
+        {
+          "name": "near",
+          "poly": [
+            [
+              167,
+              352
+            ],
+            [
+              262,
+              352
+            ],
+            [
+              262,
+              484
+            ],
+            [
+              167,
+              484
+            ]
+          ],
+          "hip": [
+            215,
+            345
+          ],
+          "ankle_y": 420
+        }
+      ]
+    },
+    "back": {
+      "crop": [
+        930,
+        95,
+        1260,
+        600
+      ],
+      "sole": "auto",
+      "chest_y": 160,
+      "hip_y": 350,
+      "skip_coat": 1,
+      "body_open": 2,
+      "head": {
+        "ellipse": [
+          135,
+          60,
+          95,
+          60
+        ],
+        "poly": [
+          [
+            50,
+            0
+          ],
+          [
+            215,
+            0
+          ],
+          [
+            215,
+            112
+          ],
+          [
+            50,
+            112
+          ]
+        ],
+        "top": true,
+        "max_y": 112,
+        "layer": "back"
+      },
+      "hand": {
+        "poly": [
+          [
+            248,
+            212
+          ],
+          [
+            296,
+            212
+          ],
+          [
+            296,
+            262
+          ],
+          [
+            248,
+            262
+          ]
+        ],
+        "pivot": [
+          262,
+          228
+        ]
+      },
+      "lantern": {
+        "poly": [
+          [
+            238,
+            262
+          ],
+          [
+            316,
+            262
+          ],
+          [
+            316,
+            428
+          ],
+          [
+            238,
+            428
+          ]
+        ],
+        "pivot": [
+          275,
+          262
+        ]
+      },
+      "legs": [
+        {
+          "name": "far",
+          "poly": [
+            [
+              55,
+              355
+            ],
+            [
+              141,
+              355
+            ],
+            [
+              141,
+              484
+            ],
+            [
+              55,
+              484
+            ]
+          ],
+          "hip": [
+            100,
+            350
+          ],
+          "ankle_y": 420
+        },
+        {
+          "name": "near",
+          "poly": [
+            [
+              142,
+              355
+            ],
+            [
+              224,
+              355
+            ],
+            [
+              224,
+              484
+            ],
+            [
+              142,
+              484
+            ]
+          ],
+          "hip": [
+            185,
+            350
+          ],
+          "ankle_y": 420
+        }
+      ]
+    },
+    "left": {
+      "crop": [
+        325,
+        95,
+        640,
+        600
+      ],
+      "sole": "auto",
+      "skip_coat": 1,
+      "body_open": 2,
+      "head": {
+        "ellipse": [
+          160,
+          65,
+          80,
+          65
+        ],
+        "poly": [
+          [
+            80,
+            0
+          ],
+          [
+            235,
+            0
+          ],
+          [
+            235,
+            100
+          ],
+          [
+            215,
+            120
+          ],
+          [
+            180,
+            135
+          ],
+          [
+            80,
+            135
+          ]
+        ],
+        "top": true,
+        "max_y": 135,
+        "layer": "front"
+      },
+      "hand": {
+        "poly": [
+          [
+            36,
+            206
+          ],
+          [
+            82,
+            206
+          ],
+          [
+            82,
+            256
+          ],
+          [
+            36,
+            256
+          ]
+        ],
+        "pivot": [
+          78,
+          226
+        ]
+      },
+      "lantern": {
+        "poly": [
+          [
+            12,
+            256
+          ],
+          [
+            90,
+            256
+          ],
+          [
+            90,
+            422
+          ],
+          [
+            12,
+            422
+          ]
+        ],
+        "pivot": [
+          62,
+          256
+        ]
+      },
+      "legs": [
+        {
+          "name": "far",
+          "poly": [
+            [
+              96,
+              395
+            ],
+            [
+              124,
+              395
+            ],
+            [
+              124,
+              475
+            ],
+            [
+              96,
+              475
+            ]
+          ],
+          "hip": [
+            172,
+            350
+          ],
+          "ankle_y": 425,
+          "ankle": [
+            168,
+            425
+          ],
+          "art_angle": 0.0,
+          "copy": "near",
+          "copy_offset": [
+            -10,
+            -3
+          ],
+          "shade": 0.8
+        },
+        {
+          "name": "near",
+          "poly": [
+            [
+              124,
+              355
+            ],
+            [
+              230,
+              355
+            ],
+            [
+              230,
+              488
+            ],
+            [
+              124,
+              488
+            ]
+          ],
+          "hip": [
+            180,
+            350
+          ],
+          "ankle_y": 425,
+          "ankle": [
+            176,
+            427
+          ],
+          "art_angle": 0.0
+        }
+      ]
+    },
+    "right": {
+      "crop": [
+        630,
+        95,
+        925,
+        600
+      ],
+      "sole": "auto",
+      "skip_coat": 1,
+      "body_open": 2,
+      "head": {
+        "ellipse": [
+          150,
+          65,
+          80,
+          65
+        ],
+        "poly": [
+          [
+            60,
+            0
+          ],
+          [
+            230,
+            0
+          ],
+          [
+            230,
+            135
+          ],
+          [
+            135,
+            135
+          ],
+          [
+            100,
+            118
+          ],
+          [
+            80,
+            100
+          ],
+          [
+            60,
+            100
+          ]
+        ],
+        "top": true,
+        "max_y": 135,
+        "layer": "front"
+      },
+      "hand": {
+        "poly": [
+          [
+            212,
+            212
+          ],
+          [
+            258,
+            212
+          ],
+          [
+            258,
+            262
+          ],
+          [
+            212,
+            262
+          ]
+        ],
+        "pivot": [
+          216,
+          228
+        ]
+      },
+      "lantern": {
+        "poly": [
+          [
+            198,
+            262
+          ],
+          [
+            275,
+            262
+          ],
+          [
+            275,
+            424
+          ],
+          [
+            198,
+            424
+          ]
+        ],
+        "pivot": [
+          240,
+          262
+        ]
+      },
+      "legs": [
+        {
+          "name": "far",
+          "poly": [
+            [
+              160,
+              400
+            ],
+            [
+              196,
+              400
+            ],
+            [
+              196,
+              470
+            ],
+            [
+              173,
+              470
+            ],
+            [
+              173,
+              425
+            ],
+            [
+              160,
+              420
+            ]
+          ],
+          "hip": [
+            113,
+            350
+          ],
+          "ankle_y": 425,
+          "ankle": [
+            117,
+            425
+          ],
+          "art_angle": 0.0,
+          "copy": "near",
+          "copy_offset": [
+            10,
+            -3
+          ],
+          "shade": 0.8
+        },
+        {
+          "name": "near",
+          "poly": [
+            [
+              58,
+              355
+            ],
+            [
+              152,
+              355
+            ],
+            [
+              152,
+              420
+            ],
+            [
+              173,
+              425
+            ],
+            [
+              173,
+              488
+            ],
+            [
+              58,
+              488
+            ]
+          ],
+          "hip": [
+            105,
+            350
+          ],
+          "ankle_y": 425,
+          "ankle": [
+            109,
+            427
+          ],
+          "art_angle": 0.0
+        }
+      ]
+    },
+    "idle_front": {
+      "_doc": "3/4 standing idle (lantern in the right hand, viewer's left; the other clawed hand on the satchel, which hangs on the viewer's right as in the front walk), painted separately: idle-keyart.jpg. Static legs; head, hand and lantern are parts; eyes for the blink.",
+      "source": "idle-keyart.jpg",
+      "background": [
+        235,
+        3,
+        121
+      ],
+      "crop": [
+        400,
+        20,
+        860,
+        690
+      ],
+      "sole": "auto",
+      "scale": 0.231,
+      "skip_coat": 1,
+      "head": {
+        "ellipse": [
+          215,
+          120,
+          110,
+          90
+        ],
+        "poly": [
+          [
+            100,
+            0
+          ],
+          [
+            320,
+            0
+          ],
+          [
+            320,
+            140
+          ],
+          [
+            300,
+            180
+          ],
+          [
+            270,
+            198
+          ],
+          [
+            160,
+            198
+          ],
+          [
+            140,
+            180
+          ],
+          [
+            100,
+            140
+          ]
+        ],
+        "top": true,
+        "max_y": 198,
+        "layer": "front"
+      },
+      "eyes": [
+        [
+          185,
+          114,
+          12,
+          12
+        ],
+        [
+          255,
+          106,
+          12,
+          12
+        ]
+      ],
+      "hand": {
+        "poly": [
+          [
+            60,
+            246
+          ],
+          [
+            132,
+            246
+          ],
+          [
+            132,
+            318
+          ],
+          [
+            60,
+            318
+          ]
+        ],
+        "pivot": [
+          124,
+          275
+        ]
+      },
+      "lantern": {
+        "poly": [
+          [
+            40,
+            318
+          ],
+          [
+            142,
+            318
+          ],
+          [
+            142,
+            526
+          ],
+          [
+            40,
+            526
+          ]
+        ],
+        "pivot": [
+          92,
+          318
+        ]
+      },
+      "legs": [],
+      "head_offset": [
+        0,
+        2
+      ],
+      "head_tilt": 0.0
+    }
+  }
+}

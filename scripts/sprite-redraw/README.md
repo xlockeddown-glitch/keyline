@@ -92,7 +92,7 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    - top-level `coat_keep_near` [min_px, reach_px]: coat islands of at least min_px within reach_px of the main
      coat (and off the hand/lantern polygons) stay coat even below `coat_min_island` (a thin lining sliver between
      toggles was left blue otherwise).
-   Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35) speeds up the walk *animation* only; walking speed
+   Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8) speeds up the walk *animation* only; walking speed
    and `SCOUTS.gait` stay the same for every coat. `anim-preview.py` reads it too.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
    from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the
