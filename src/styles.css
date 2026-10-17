@@ -1459,13 +1459,6 @@ h3 {
   background-image: url("/sprites/scouts/sloth-idle.png?v=k81p");
   background-size: 200% 200%;
 }
-.scout-marker[data-scout="fox"] {
-  background-image: url("/sprites/scouts/fox-walk.png?v=k81p");
-}
-.scout-marker[data-scout="fox"].is-idle {
-  background-image: url("/sprites/scouts/fox-idle.png?v=k81p");
-  background-size: 200% 200%;
-}
 .scout-marker[data-scout="lynx"] {
   background-image: url("/sprites/scouts/lynx-walk.png?v=k81p");
 }
@@ -1487,9 +1480,6 @@ h3 {
 }
 .scout-marker[data-scout="sloth"].is-idle.is-side {
   background-image: url("/sprites/scouts/sloth-idle-side.png?v=k81p");
-}
-.scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="lynx"].is-idle.is-side {
   background-image: url("/sprites/scouts/lynx-idle-side.png?v=k81p");
@@ -3540,7 +3530,7 @@ h3 {
 .pawn:has(.scout-marker:not([data-scout])) { --foot: 51px; }
 .pawn:has(.scout-marker[data-scout="cat"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48px; }
-.pawn:has(.scout-marker[data-scout="fox"]) { --foot: 51px; }
+.pawn:has(.scout-marker[data-scout="fox"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="lynx"]) { --foot: 51px; }
 .pawn:has(.scout-marker[data-scout="owl"]) { --foot: 43px; }
 .pawn:has(.scout-marker[data-scout="sloth"]) { --foot: 48px; }
@@ -3596,6 +3586,14 @@ h3 {
 .scout-marker[data-scout="cat"].is-idle,
 .scout-marker[data-scout="cat"].is-idle.is-side {
   background-image: url("/sprites/scouts/cat-v2.png?v=k83a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.0.86: the Fox. */
+.scout-marker[data-scout="fox"],
+.scout-marker[data-scout="fox"].is-idle,
+.scout-marker[data-scout="fox"].is-idle.is-side {
+  background-image: url("/sprites/scouts/fox-v2.png?v=k83a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
