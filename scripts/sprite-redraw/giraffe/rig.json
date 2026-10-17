@@ -1,0 +1,74 @@
+{
+  "_doc": "Cut-out rig for the 0.0.92 Giraffe redraw. Coordinates are source pixels inside each view's crop (see scripts/sprite-redraw/README.md). The head part is the head AND the neck down into the coat collar (layer back, so the collar covers the root), rotating about head.pivot at the neck's root: the top-level `neck` option pumps it forward and back with the stride. Profiles standing (far leg a copy of the near one); the tufted tail is its own part (behind the boots in the profiles and the idle, over the legs from behind). Lantern in the right hand, held forward of the coat in the profiles.",
+  "scout": "giraffe",
+  "source": "turnaround.jpg",
+  "background": [229, 0, 117],
+  "rim_keep_warm": true,
+  "scale": 0.258,
+  "motion": 1.47,
+  "foot_y": 166,
+  "default_coat": {"L": 30, "C": 46, "h": 8},
+  "grade": {"saturation": 0.9, "gamma": 1.1, "gain": 0.95, "warm": 0},
+  "coat_keep": 1.25,
+  "coat_min_island": 800,
+  "coat_keep_near": [100, 20],
+  "gait": {"swing": 18.0, "lift": 14.0, "slide": 18.0, "bob": 2.0, "lift_fb": 12.0, "hip": 6.5, "bob_fb": 4.0, "roll": 0.0},
+  "neck": {"walk": 3.0, "sway": 2.0, "idle": 1.5},
+  "underpaint": {"close": 6, "depth": 6, "shade": 0.75},
+  "views": {
+    "front": {
+      "crop": [40, 30, 335, 680], "sole": "auto", "chest_y": 290, "hip_y": 470, "skip_coat": 1, "body_open": 2,
+      "head": {"ellipse": [158, 122, 64, 70], "poly": [[118, 180], [202, 180], [206, 272], [114, 272]], "top": true, "max_y": 268, "layer": "back", "pivot": [160, 268]},
+      "hand": {"poly": [[36, 414], [82, 414], [82, 450], [36, 450]], "pivot": [68, 422]},
+      "lantern": {"poly": [[14, 450], [90, 450], [90, 572], [14, 572]], "pivot": [50, 450]},
+      "legs": [
+        {"name": "far", "poly": [[72, 505], [157, 505], [157, 632], [72, 632]], "hip": [118, 500], "ankle_y": 545},
+        {"name": "near", "poly": [[158, 505], [246, 505], [246, 632], [158, 632]], "hip": [200, 500], "ankle_y": 545}
+      ]
+    },
+    "back": {
+      "crop": [935, 30, 1230, 680], "sole": "auto", "chest_y": 290, "hip_y": 470, "skip_coat": 1, "body_open": 2,
+      "head": {"ellipse": [135, 118, 60, 64], "poly": [[90, 170], [180, 170], [182, 268], [88, 268]], "top": true, "max_y": 264, "layer": "back", "pivot": [135, 264]},
+      "hand": {"poly": [[214, 414], [256, 414], [256, 448], [214, 448]], "pivot": [226, 420]},
+      "lantern": {"poly": [[204, 440], [282, 440], [282, 574], [204, 574]], "pivot": [240, 440]},
+      "tail": {"poly": [[116, 460], [152, 460], [152, 560], [116, 560]], "pivot": [133, 466], "layer": "front", "rev": 2},
+      "legs": [
+        {"name": "far", "poly": [[58, 503], [132, 503], [132, 632], [58, 632]], "hip": [95, 500], "ankle_y": 545},
+        {"name": "near", "poly": [[133, 503], [212, 503], [212, 632], [133, 632]], "hip": [172, 500], "ankle_y": 545}
+      ]
+    },
+    "left": {
+      "crop": [345, 30, 645, 680], "sole": "auto", "skip_coat": 1, "body_open": 2,
+      "head": {"ellipse": [138, 120, 80, 70], "poly": [[124, 180], [220, 180], [224, 276], [118, 276]], "top": true, "max_y": 272, "layer": "back", "pivot": [170, 272]},
+      "hand": {"poly": [[26, 336], [72, 336], [72, 380], [26, 380]], "pivot": [62, 348]},
+      "lantern": {"poly": [[8, 372], [82, 372], [82, 502], [8, 502]], "pivot": [45, 372]},
+      "tail": {"poly": [[220, 468], [266, 468], [266, 552], [220, 552]], "pivot": [229, 477], "layer": "back", "rev": 2},
+      "legs": [
+        {"name": "far", "poly": [[95, 540], [110, 540], [110, 560], [95, 560]], "hip": [166, 498], "ankle_y": 545, "ankle": [160, 548], "art_angle": 0.0, "copy": "near", "copy_offset": [-10, -3], "shade": 0.8},
+        {"name": "near", "poly": [[128, 500], [212, 500], [212, 638], [88, 638], [88, 560], [128, 545]], "hip": [168, 498], "ankle_y": 545, "ankle": [164, 548], "art_angle": 0.0}
+      ]
+    },
+    "right": {
+      "crop": [645, 30, 935, 680], "sole": "auto", "skip_coat": 1, "body_open": 2,
+      "head": {"ellipse": [145, 121, 72, 70], "poly": [[62, 180], [158, 180], [162, 276], [58, 276]], "top": true, "max_y": 272, "layer": "back", "pivot": [112, 272]},
+      "hand": {"poly": [[180, 346], [224, 346], [224, 392], [180, 392]], "pivot": [188, 358]},
+      "lantern": {"poly": [[164, 384], [242, 384], [242, 516], [164, 516]], "pivot": [200, 384]},
+      "tail": {"poly": [[6, 468], [52, 468], [52, 552], [6, 552]], "pivot": [43, 477], "layer": "back", "rev": 2},
+      "legs": [
+        {"name": "far", "poly": [[160, 540], [175, 540], [175, 560], [160, 560]], "hip": [110, 498], "ankle_y": 545, "ankle": [116, 548], "art_angle": 0.0, "copy": "near", "copy_offset": [10, -3], "shade": 0.8},
+        {"name": "near", "poly": [[72, 500], [152, 500], [152, 545], [190, 560], [190, 638], [58, 638]], "hip": [112, 498], "ankle_y": 545, "ankle": [116, 548], "art_angle": 0.0}
+      ]
+    },
+    "idle_front": {
+      "_doc": "3/4 standing idle (lantern low in the right hand, viewer's left; the other hand in the coat pocket; tail tuft out to the right behind the near boot), painted separately: idle-keyart.jpg. Static legs; head+neck, hand, lantern and tail are parts; eyes for the blink.",
+      "source": "idle-keyart.jpg", "background": [223, 1, 107],
+      "crop": [460, 10, 790, 700], "sole": "auto", "scale": 0.2407, "skip_coat": 1,
+      "head": {"ellipse": [175, 131, 65, 72], "poly": [[138, 190], [232, 190], [232, 290], [130, 290]], "top": true, "max_y": 286, "layer": "back", "pivot": [182, 286]},
+      "eyes": [[134, 138, 12, 16], [206, 148, 14, 16]],
+      "hand": {"poly": [[32, 392], [84, 392], [84, 432], [32, 432]], "pivot": [70, 400]},
+      "lantern": {"poly": [[12, 424], [90, 424], [90, 570], [12, 570]], "pivot": [52, 424]},
+      "tail": {"poly": [[262, 498], [316, 498], [316, 575], [262, 575]], "pivot": [268, 505], "layer": "back", "rev": 2},
+      "legs": []
+    }
+  }
+}

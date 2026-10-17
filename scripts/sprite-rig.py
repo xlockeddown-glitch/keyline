@@ -116,6 +116,10 @@ def key_image(rig, src: Path, bg, names):
         # (Penguin 0.0.91) a red knit scarf is red, not a maroon outline: pixels whose red clearly leads both green
         # and blue, with blue not above green (magenta bleed has blue well over green), keep their colour
         ink &= ~((col[..., 0] > 1.6 * np.maximum(col[..., 1], col[..., 2])) & (col[..., 2] <= col[..., 1] * 1.25))
+    if rig.get("rim_keep_warm"):
+        # (Giraffe 0.0.92) dark caramel fur edges (red over green, blue well under green) are fur, not a maroon
+        # outline: magenta bleed always carries blue near or over green. Inking them drew grey lines down the neck.
+        ink &= ~(col[..., 2] < 0.9 * col[..., 1])
     lum = col @ np.array([0.299, 0.587, 0.114])
     col[ink] = lum[ink][:, None] * 0.85 + np.array([6.0, 3.0, 0.0])
     col[a < 0.02] = 0
@@ -471,7 +475,7 @@ def leg_len(view, leg):
     return view["sole"] - leg["hip"][1]
 
 
-def pose(kind, name, i, view, n=WALK_FRAMES, gait=None):
+def pose(kind, name, i, view, n=WALK_FRAMES, gait=None, neck=None):
     """Pose parameters for one frame. kind: 'walk' (8 frames, one stride) or 'idle' (n frames, one breath).
     Translations are in turnaround pixels (rig scale); render() rescales them for views painted at another size.
 
@@ -554,6 +558,19 @@ def pose(kind, name, i, view, n=WALK_FRAMES, gait=None):
             P["legs"] = [{"angle": 6.0 if l["name"] == "near" else -5.0, "lift": 0.0} for l in view["legs"]]
         else:
             P["legs"] = [{"angle": 0.0, "lift": 0.0} for _ in view.get("legs", [])]
+    if neck:
+        # "neck" (top-level rig option, opt-in; giraffe 0.0.92): the head part is head + neck down into the collar,
+        # rotating about head.pivot (the neck's root under the collar). Extra rotation in degrees: "walk" (profiles:
+        # the neck pumps forward and back twice per stride, a beat after each footfall), "sway" (front/back walk:
+        # with the hips, a beat late), "idle" (slow, with the breath).
+        if kind == "walk":
+            t0 = 2 * math.pi * i / WALK_FRAMES
+            if side:
+                P["head_rot"] += -(1 if name == "right" else -1) * neck.get("walk", 0.0) * math.sin(2 * t0 - 1.0)
+            else:
+                P["head_rot"] += neck.get("sway", 0.0) * math.sin(t0 - 0.9)
+        else:
+            P["head_rot"] += neck.get("idle", 0.0) * math.sin(2 * math.pi * i / n - 1.2)
     return P
 
 
@@ -627,7 +644,7 @@ def render(view, name, parts, P, rig):
     body_M = to_canvas @ T(P["body_dx"] * k, (P["body_dy"] + P.get("bob", 0.0)) * k) @ R(P["body_rot"], ax, sole) @ R(P.get("roll", 0.0), ax, view["head"]["max_y"]) @ S(1 + 0.006 * P["breath"], 1 + 0.014 * P["breath"], ax, sole)
     order = sorted(leg_M, key=lambda t: 0 if t[0]["name"] == "far" else 1)
     hv = view["head"]
-    neck = (hv["ellipse"][0], hv["max_y"])
+    neck = tuple(hv["pivot"]) if hv.get("pivot") else (hv["ellipse"][0], hv["max_y"])
     head = blink(parts["head"], view["eyes"]) if P["blink"] and view.get("eyes") else parts["head"]
     hox, hoy = view.get("head_offset", [0, 0])  # a settled/hunched head sits lower and forward in its collar
     head_M = body_M @ T((P["shoulder"] + hox) * k, (P["head_dy"] + hoy) * k) @ R(P["head_rot"] + view.get("head_tilt", 0.0), *neck)
@@ -859,11 +876,11 @@ def main():
             Image.fromarray(np.dstack([np.clip(dbg[..., :3] / np.maximum(dbg[..., 3:4], 1e-6), 0, 255), dbg[..., 3] * 255]).astype(np.uint8)).save(d / f"debug-body-{name}.png")
         if name in WALK_ROWS:
             for i in range(WALK_FRAMES):
-                put(WALK_ROWS[name], i, render(view, name, parts, pose("walk", name, i, view, gait=rig.get("gait")), rig), view_ref)
+                put(WALK_ROWS[name], i, render(view, name, parts, pose("walk", name, i, view, gait=rig.get("gait"), neck=rig.get("neck")), rig), view_ref)
         if name in IDLE_CELLS:
             r, c0, n = IDLE_CELLS[name]
             for i in range(n):
-                put(r, c0 + i, render(view, name, parts, pose("idle", name, i, view, n, gait=rig.get("gait")), rig), view_ref)
+                put(r, c0 + i, render(view, name, parts, pose("idle", name, i, view, n, gait=rig.get("gait"), neck=rig.get("neck")), rig), view_ref)
     out = ROOT / "public" / "sprites" / "scouts"
     base_img, mask_img = pack(base_sheet, coat_sheet)
     base_img.save(out / f"{scout}-v2.png", optimize=True)
