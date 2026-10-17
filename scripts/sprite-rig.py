@@ -119,6 +119,15 @@ def key_image(rig, src: Path, bg, names):
     for name in names:
         x0, y0, x1, y1 = rig["views"][name]["crop"]
         vc, va = col[y0:y1, x0:x1].copy(), a[y0:y1, x0:x1].copy()
+        # "shadow_from": the painter added a soft floor shadow (darkened magenta). From this row down, anything
+        # whose chromaticity is the key colour's is shadow, not character: drop it (the game draws its own).
+        sf = rig["views"][name].get("shadow_from")
+        if sf is not None:
+            raw = im[y0:y1, x0:x1]
+            chroma = raw / np.maximum(raw.sum(-1, keepdims=True), 1)
+            near = np.sqrt(((chroma - bg / bg.sum()) ** 2).sum(-1)) < rig["views"][name].get("shadow_chroma", 0.26)
+            near[: int(sf)] = False
+            va[near], vc[near] = 0, 0
         # "erase": polygons of paint to drop (hair-thin whiskers seen from behind key out pink and read as specks)
         for poly in rig["views"][name].get("erase", []):
             m = poly_mask(va.shape, poly)
@@ -228,13 +237,32 @@ def cut_parts(view, col, a, w):
         if tv.get("min_red"):
             # Fur, not the darker boot leather the polygon crosses: drop dark paint that carries on outside the
             # polygon (the boot); dark stripes and outline wholly inside it stay with the tail.
-            dark, n = ndimage.label((col[..., 0] < tv["min_red"]) & (a > 0.3) & ~used)
-            outside = np.unique(dark[(dark > 0) & ~poly_mask(shape, tv["poly"])])
-            tail &= ~np.isin(dark, outside[outside > 0])
+            if tv.get("rev", 1) < 2:  # rev 1 (cat): any dark component touching outside the polygon goes
+                dark, n = ndimage.label((col[..., 0] < tv["min_red"]) & (a > 0.3) & ~used)
+                outside = np.unique(dark[(dark > 0) & ~poly_mask(shape, tv["poly"])])
+                tail &= ~np.isin(dark, outside[outside > 0])
+            else:  # rev 2 (fox)
+                # "min_rb": saturated fur shadow (red well above blue) is still fur, however dark
+                fur = (col[..., 0] >= tv["min_red"]) | ((col[..., 0] - col[..., 2]) >= tv.get("min_rb", 999))
+                dark, n = ndimage.label(~fur & (a > 0.3) & ~used)
+                inpoly = poly_mask(shape, tv["poly"])
+                if n:
+                    n_out = ndimage.sum(~inpoly, dark, range(1, n + 1))
+                    n_in = ndimage.sum(inpoly, dark, range(1, n + 1))
+                    # mostly outside the polygon = something else (a boot); mostly inside = the tail's own shading
+                    foreign = 1 + np.where(n_out > np.maximum(40, 0.5 * n_in))[0]
+                    # ... and only where a leg could be (a tail's own grey outline may touch a boot yet lie clear of it)
+                    legs_at = np.zeros(shape, bool)
+                    for lg in view.get("legs", []):
+                        legs_at |= poly_mask(shape, lg["poly"])
+                    if not legs_at.any():
+                        legs_at[:] = True
+                    tail &= ~(np.isin(dark, foreign) & legs_at)
         lab, n = ndimage.label(tail & (a > 0.5))
-        if n > 1:  # keep the tail itself, not slivers of whatever else the polygon grazed
+        if n > 1:  # keep the tail itself (it may be in a few pieces), not slivers of whatever else the polygon grazed
             sizes = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
-            tail &= ndimage.binary_dilation(lab == 1 + int(np.argmax(sizes)), iterations=2)
+            big = 1 + (np.where(sizes >= max(0.04 * sizes.max(), 20))[0] if tv.get("rev", 1) >= 2 else np.array([int(np.argmax(sizes))]))
+            tail &= ndimage.binary_dilation(np.isin(lab, big), iterations=2)
         parts["tail"] = layer(col, a, w, tail)
         if tv.get("layer", "back") == "back":
             # paint under whatever covered the tail (hem, legs) so a swing never shows a gap at its root
@@ -299,8 +327,21 @@ def cut_parts(view, col, a, w):
         legs.append({**leg, "thigh": thigh, "boot": boot, "sole_pts": sole_pts})
     parts["legs"] = legs
     body = layer(col, a, w, ~used)
-    front_holes = hand | lant | (head if hv["layer"] == "front" else np.zeros(shape, bool)) | (tail if tail_front else np.zeros(shape, bool))
+    if view.get("body_open") and view["legs"]:
+        # Below the hem the body should hold nothing thin: a lone outline strand (a tail root's edge left beside a
+        # leg) reads as a dark stick once the legs move. Opening drops strands, keeps the hem's rim.
+        top = min(min(p[1] for p in lg["poly"]) for lg in view["legs"])
+        solid = body[..., 3] > 0.3
+        thin = solid & ~ndimage.binary_opening(solid, iterations=int(view["body_open"]))
+        thin[:top] = False
+        body[ndimage.binary_dilation(thin, iterations=1) & ~ndimage.binary_opening(solid, iterations=int(view["body_open"]))] = 0
+    tail_rev2 = tail_front and view["tail"].get("rev", 1) >= 2
+    front_holes = hand | lant | (head if hv["layer"] == "front" else np.zeros(shape, bool)) | (tail if tail_front and not tail_rev2 else np.zeros(shape, bool))
     parts["body"] = fill_under(body, front_holes & (a > 0.5), 10)
+    if tail_rev2:
+        # under a tail hanging in front: fill only inside the body's closed outline, never out past it (the tip
+        # would leave a painted ghost behind when it swings)
+        parts["body"] = fill_under(parts["body"], tail & (a > 0.5), 0)
     return parts
 
 
@@ -641,6 +682,12 @@ def main():
     coatL = {}
     for name, (col, a) in views.items():
         w = coat_weight(col)
+        if rig.get("coat_min_island"):
+            # bluish specks off the coat (eye shine, a nose highlight) are not coat: keep only big coat regions
+            lab, n = ndimage.label(w > 0.05)
+            if n:
+                sizes = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
+                w = w * np.isin(lab, 1 + np.where(sizes >= rig["coat_min_island"])[0])
         g = grade(col, {**rig["grade"], **rig["views"][name].get("grade", {})})
         graded[name] = (g, a, w)
         sel = (w > 0.9) & (a > 0.95)
