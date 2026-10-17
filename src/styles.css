@@ -114,13 +114,6 @@ h3 {
   background-image:url(/sprites/player-idle.png?v=k81p);
   background-size:200% 200%
 }
-.scout-marker[data-scout=owl]{
-  background-image:url(/sprites/scouts/owl-walk.png?v=k81p)
-}
-.scout-marker[data-scout=owl].is-idle{
-  background-image:url(/sprites/scouts/owl-idle.png?v=k81p);
-  background-size:200% 200%
-}
 .scout-hire{
   display:grid;
   place-items:center;
@@ -1458,9 +1451,6 @@ h3 {
   background-image: url("/sprites/player-idle-side.png?v=k81p");
   background-size: 200% 200%;
 }
-.scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-idle-side.png?v=k81p");
-}
 .scout-marker[data-scout="lynx"].is-idle.is-side {
   background-image: url("/sprites/scouts/lynx-idle-side.png?v=k81p");
 }
@@ -1538,12 +1528,10 @@ h3 {
 .pawn.is-seated .scout-marker {
   opacity: 0;
 }
-/* The owl fills less of the cell than the turtle, so it vanishes into the map (0.0.87: the redrawn corgi
-   fills its v2 cell like the cat and fox, so it no longer needs the scale-up).
-   The giraffe's lookout doesn't read at the same height as the raccoon. Scale from the feet. */
-.pawn .scout-marker[data-scout="owl"] {
-  transform: scale(1.28);
-}
+/* The giraffe's lookout doesn't read at the same height as the raccoon. Scale from the feet.
+   (0.0.87: the redrawn corgi fills its v2 cell like the cat and fox, so it no longer needs the scale-up; 0.0.90: nor
+   does the redrawn owl, which stands as tall as the raccoon in its cell. The old owl's 1.28 made up for a small
+   legacy figure and would make the new one a head taller than the rest of the set.) */
 .pawn .scout-marker[data-scout="giraffe"] {
   transform: scale(1.46);
 }
@@ -3498,8 +3486,8 @@ h3 {
    pixel on a phone, so they sample smoothly (above: image-rendering auto; pixelated gave 2- and 3-px
    blocks side by side). GameMap sets --step (0..1, synced to the walk frame) and --breath (0..1, idle)
    on .pawn and data-face on the marker.
-   Per character: --foot is where the feet land in the 56 px pawn box (after the owl/corgi/giraffe
-   scale-ups below). 0.0.82: no lantern light pool under the walker (removed at Ryan's call).
+   Per character: --foot is where the feet land in the 56 px pawn box (after the giraffe
+   scale-up below). 0.0.82: no lantern light pool under the walker (removed at Ryan's call).
    ------------------------------------------------------------------------------------------------ */
 .pawn {
   --step: 0;
@@ -3512,7 +3500,7 @@ h3 {
 .pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="fox"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="lynx"]) { --foot: 51px; }
-.pawn:has(.scout-marker[data-scout="owl"]) { --foot: 43px; }
+.pawn:has(.scout-marker[data-scout="owl"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="sloth"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="turtle"]) { --foot: 48px; }
 .pawn:has(.scout-marker[data-scout="giraffe"]) { --foot: 52px; }
@@ -3534,7 +3522,7 @@ h3 {
 .pawn.is-seated::before { display: none; }
 /* 2. Body: a thin dark ink edge instead of the offset halo (that halo was the sticker's cut line), step bob
       and squash, idle breath, a small lean into side walks. Individual transform properties, so the
-      owl/corgi/giraffe scale-ups above still apply and everything pivots on the feet (transform-origin). */
+      giraffe scale-up above still applies and everything pivots on the feet (transform-origin). */
 .pawn .scout-marker {
   filter: drop-shadow(0 0 0.6px rgb(18 10 4)) drop-shadow(0 0 0.35px rgb(18 10 4)) saturate(0.94);
   translate: 0 calc(var(--step) * -1.6px);
@@ -3598,6 +3586,14 @@ h3 {
 .scout-marker[data-scout="raccoon"].is-idle,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
   background-image: url("/sprites/scouts/raccoon-v2.png?v=k86a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.0.90: the Owl. */
+.scout-marker[data-scout="owl"],
+.scout-marker[data-scout="owl"].is-idle,
+.scout-marker[data-scout="owl"].is-idle.is-side {
+  background-image: url("/sprites/scouts/owl-v2.png?v=k83a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }

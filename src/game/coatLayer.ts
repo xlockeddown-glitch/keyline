@@ -11,7 +11,7 @@
 import { DYE_TARGETS, fromLab, pyRound, toLab, type DyeTarget } from "./dyeRecolor.ts";
 
 /** Scouts drawn on the v2 sheets. Everyone else keeps the 4x4 / 2x2 sheets. */
-export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat", "fox", "corgi", "sloth", "raccoon"]);
+export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl"]);
 
 /**
  * Walk cadence per v2 scout (frames per second multiplier while walking; walking speed is unchanged, see
@@ -38,6 +38,7 @@ export const V2_DEFAULT_COAT: Record<string, DyeTarget> = {
   corgi: { L: 26, C: 20, h: 58 },
   sloth: { L: 30, C: 22, h: 205 },
   raccoon: { L: 34, C: 26, h: 100 },
+  owl: { L: 26, C: 22, h: 268 },
 };
 
 /** Print-shop coat targets. Keep in step with the `coats` block of scripts/coat-variants.json. */
