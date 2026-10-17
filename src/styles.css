@@ -1444,17 +1444,6 @@ h3 {
   background-image: url("/sprites/player-idle-side.png?v=k81p");
   background-size: 200% 200%;
 }
-/* 0.0.51: The Giraffe (scripts/draw-giraffe.py). */
-.scout-marker[data-scout="giraffe"] {
-  background-image: url("/sprites/scouts/giraffe-walk.png?v=k81p");
-}
-.scout-marker[data-scout="giraffe"].is-idle {
-  background-image: url("/sprites/scouts/giraffe-idle.png?v=k81p");
-  background-size: 200% 200%;
-}
-.scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-idle-side.png?v=k81p");
-}
 
 .wheel-night {
   background: color-mix(in oklab, var(--color-night) 72%, transparent);
@@ -1521,9 +1510,13 @@ h3 {
 /* The giraffe's lookout doesn't read at the same height as the raccoon. Scale from the feet.
    (0.0.87: the redrawn corgi fills its v2 cell like the cat and fox, so it no longer needs the scale-up; 0.0.90: nor
    does the redrawn owl, which stands as tall as the raccoon in its cell. The old owl's 1.28 made up for a small
-   legacy figure and would make the new one a head taller than the rest of the set.) */
+   legacy figure and would make the new one a head taller than the rest of the set.
+   0.0.92: the v2 giraffe already stands taller in its cell (~158 px to the ossicones vs ~149), so 1.25 (was 1.46)
+   puts its head well over the set, about 1.3x the raccoon, while its coat and boots stay close to the others' size;
+   at 1.46 the whole body read as a giant. Pivot on the v2 foot line so the feet stay on --foot.) */
 .pawn .scout-marker[data-scout="giraffe"] {
-  transform: scale(1.46);
+  transform: scale(1.25);
+  transform-origin: 50% 48.5px;
 }
 .pawn .cab-sprite[hidden] {
   display: none;
@@ -3476,8 +3469,8 @@ h3 {
    pixel on a phone, so they sample smoothly (above: image-rendering auto; pixelated gave 2- and 3-px
    blocks side by side). GameMap sets --step (0..1, synced to the walk frame) and --breath (0..1, idle)
    on .pawn and data-face on the marker.
-   Per character: --foot is where the feet land in the 56 px pawn box (after the giraffe
-   scale-up below). 0.0.82: no lantern light pool under the walker (removed at Ryan's call).
+   Per character: --foot is where the feet land in the 56 px pawn box (the giraffe's scale-up pivots on its
+   feet). 0.0.82: no lantern light pool under the walker (removed at Ryan's call).
    ------------------------------------------------------------------------------------------------ */
 .pawn {
   --step: 0;
@@ -3493,7 +3486,7 @@ h3 {
 .pawn:has(.scout-marker[data-scout="owl"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="sloth"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="turtle"]) { --foot: 48px; }
-.pawn:has(.scout-marker[data-scout="giraffe"]) { --foot: 52px; }
+.pawn:has(.scout-marker[data-scout="giraffe"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 
 /* 1. Contact shadow: a soft ground ellipse under the feet that tightens when a foot lifts. */
 .pawn::before {
@@ -3584,6 +3577,14 @@ h3 {
 .scout-marker[data-scout="owl"].is-idle,
 .scout-marker[data-scout="owl"].is-idle.is-side {
   background-image: url("/sprites/scouts/owl-v2.png?v=k83a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.0.92: the Giraffe. */
+.scout-marker[data-scout="giraffe"],
+.scout-marker[data-scout="giraffe"].is-idle,
+.scout-marker[data-scout="giraffe"].is-idle.is-side {
+  background-image: url("/sprites/scouts/giraffe-v2.png?v=k83a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }

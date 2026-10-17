@@ -77,10 +77,21 @@ ICONS = {s: SCOUTS / f"{s}.png" for s in SCOUT_IDS}
 # coat mask, checked by v2_check(). Every other check here covers the legacy 4x4 / 2x2 sheets only.
 _v2_src = (ROOT / "src" / "game" / "coatLayer.ts").read_text()
 V2_IDS = re.findall(r'"([a-z]+)"', re.search(r"V2_SCOUTS[^=]*=\s*new Set\(\[([^\]]*)\]", _v2_src).group(1))
+# 0.0.92: every scout is on the v2 sheets, so the legacy checks below have no committed sheets left to read. They
+# stay (a 4x4 / 2x2 sheet would come back under them) and the tests keep exercising them on the Giraffe's last legacy
+# sheets, kept with their coat and dye sheets and shop icon in scripts/fixtures/legacy/: KEYLINE_QA_LEGACY=giraffe
+# checks those as a legacy character instead of the scout's v2 sheet.
+LEGACY_FIXTURES = ROOT / "scripts" / "fixtures" / "legacy"
+QA_LEGACY = [s for s in os.environ.get("KEYLINE_QA_LEGACY", "").split(",") if s]
+V2_IDS = [s for s in V2_IDS if s not in QA_LEGACY]
 LEGACY_IDS = [s for s in SCOUT_IDS if s not in V2_IDS]
 for _s in V2_IDS:
     for _k in ("idle", "walk", "idle-side"):
         SHEETS.pop(f"{_s}-{_k}", None)
+for _s in QA_LEGACY:
+    for _k in ("idle", "walk", "idle-side"):
+        SHEETS[f"{_s}-{_k}"] = (LEGACY_FIXTURES / f"{_s}-{_k}.png", SHEETS[f"{_s}-{_k}"][1])
+    ICONS[_s] = LEGACY_FIXTURES / f"{_s}.png"
 V2_SHEETS = {s: {"base": SCOUTS / f"{s}-v2.png", "mask": SCOUTS / f"{s}-v2-coat.png"} for s in V2_IDS}
 KINDS = ["idle", "walk", "idle-side"]
 
@@ -91,7 +102,7 @@ COAT_DIR = SPR / "coats"
 # 0.0.64: dye sheets are not shipped (the browser mixes them). qa still reads the copies the generator writes.
 DYE_DIR = ROOT / "scripts" / "dye-sheets"
 VARIANTS = {
-    f"{s}-{c}-{k}": ((DYE_DIR if str(c).startswith("dye-") else COAT_DIR) / f"{s}-{c}-{k}.png", SHEETS[f"{s}-{k}"][1])
+    f"{s}-{c}-{k}": ((LEGACY_FIXTURES if s in QA_LEGACY else DYE_DIR if str(c).startswith("dye-") else COAT_DIR) / f"{s}-{c}-{k}.png", SHEETS[f"{s}-{k}"][1])
     for s in LEGACY_IDS
     for c in COATS
     for k in KINDS
