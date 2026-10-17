@@ -357,6 +357,10 @@ def cut_parts(view, col, a, w):
         thin = solid & ~ndimage.binary_opening(solid, iterations=int(view["body_open"]))
         thin[:top] = False
         body[ndimage.binary_dilation(thin, iterations=1) & ~ndimage.binary_opening(solid, iterations=int(view["body_open"]))] = 0
+    # Holes the painting itself has (the gap between an idle's planted legs, an arm's crook): carried with the body
+    # into the part-id sheet as "art_gap", so the holes check doesn't count them.
+    solid_src = a > 0.5
+    parts["art_gap"] = (ndimage.binary_fill_holes(solid_src) & ~solid_src).astype(float)
     tail_rev2 = tail_front and view["tail"].get("rev", 1) >= 2
     front_holes = hand | lant | (head if hv["layer"] == "front" else np.zeros(shape, bool)) | (tail if tail_front and not tail_rev2 else np.zeros(shape, bool))
     parts["body"] = fill_under(body, front_holes & (a > 0.5), 10)
@@ -387,8 +391,12 @@ def apply(M, pt):
     return v[0], v[1]
 
 
-def place(canvas, part, M):
-    """Composite a premultiplied part onto the canvas through M (part coords -> canvas coords)."""
+PART_IDS = {"body": 1, "head": 2, "tail": 3, "leg": 4, "hand": 5, "lantern": 6, "art_gap": 7}
+
+
+def place(canvas, part, M, label=None, pid=0):
+    """Composite a premultiplied part onto the canvas through M (part coords -> canvas coords). With `label`, also
+    record which part is on top wherever it lands opaque (the part-id sheet qa-sprites uses for the holes check)."""
     inv = np.linalg.inv(M)
     H, W = canvas.shape[:2]
     src = np.zeros_like(canvas)
@@ -399,6 +407,8 @@ def place(canvas, part, M):
     a = src[..., 3:4]
     canvas *= 1 - a
     canvas += src
+    if label is not None:
+        label[a[..., 0] > 0.5] = pid
     return canvas
 
 
@@ -546,6 +556,7 @@ def render(view, name, parts, P, rig):
     k = rig["scale"] / scale * rig.get("motion", 1.0)
     Hc = int(round(CELL / scale))
     canvas = np.zeros((Hc, Hc, 5))
+    label = np.zeros((Hc, Hc), np.uint8)
     side = name in ("left", "right")
     face = 1 if name == "right" else -1
     sole = view["sole"]
@@ -613,28 +624,75 @@ def render(view, name, parts, P, rig):
     hox, hoy = view.get("head_offset", [0, 0])  # a settled/hunched head sits lower and forward in its collar
     head_M = body_M @ T((P["shoulder"] + hox) * k, (P["head_dy"] + hoy) * k) @ R(P["head_rot"] + view.get("head_tilt", 0.0), *neck)
     if hv["layer"] == "back":
-        place(canvas, head, head_M)
+        place(canvas, head, head_M, label, PART_IDS["head"])
     tv = view.get("tail")
     if tv:
         tail_M = body_M @ T((P["hip"] if not side else P["hem_dx"]) * k, 0) @ R(P["tail_rot"], *tv["pivot"])
         if tv.get("layer", "back") == "back":
-            place(canvas, parts["tail"], tail_M)
+            place(canvas, parts["tail"], tail_M, label, PART_IDS["tail"])
     for leg, M, bM in order:
-        place(canvas, leg["thigh"], M)
-        place(canvas, leg["boot"], bM)
-    place(canvas, body, body_M)
+        place(canvas, leg["thigh"], M, label, PART_IDS["leg"])
+        place(canvas, leg["boot"], bM, label, PART_IDS["leg"])
+    place(canvas, body, body_M, label, PART_IDS["body"])
     if tv and tv.get("layer", "back") == "front":
-        place(canvas, parts["tail"], tail_M)
+        place(canvas, parts["tail"], tail_M, label, PART_IDS["tail"])
     if hv["layer"] == "front":
-        place(canvas, head, head_M)
+        place(canvas, head, head_M, label, PART_IDS["head"])
     hp = view["hand"]["pivot"]
     sh = P["shoulder"] if not side else 0.0
     hand_M = body_M @ T((P["hand_dx"] + sh) * k, P["hand_dy"] * k) @ R(P["hand_rot"], *hp)
-    place(canvas, parts["hand"], hand_M)
+    place(canvas, parts["hand"], hand_M, label, PART_IDS["hand"])
     lp_ = view["lantern"]["pivot"]
     lant_M = hand_M @ R(P["lantern_rot"] - P["hand_rot"] - P["body_rot"], *lp_)
-    place(canvas, parts["lantern"], lant_M)
-    return canvas
+    place(canvas, parts["lantern"], lant_M, label, PART_IDS["lantern"])
+    if rig.get("underpaint"):
+        underpaint(canvas, label, rig["underpaint"])
+    gap = np.zeros((Hc, Hc, 4))
+    place(gap, np.repeat(parts["art_gap"][..., None], 4, axis=2), body_M)
+    label[(gap[..., 3] > 0.5) & (canvas[..., 3] < 0.5)] = PART_IDS["art_gap"]
+    return canvas, label
+
+
+def underpaint(canvas, label, opt):
+    """Paint a shadow layer *behind* a rendered frame wherever the background would show through the figure:
+    slits between parts the rig moves apart (thigh/boot under the hem, the tail joint), soft or keyed-out paint
+    inside a part (the raccoon's tail rings), and fully enclosed gaps. Opt-in per scout ("underpaint" in rig.json,
+    raccoon 0.0.89): {"close": closing radius in canvas px (gaps up to ~2x this wide are filled), "depth": how far
+    inside the filled outline semi-transparent paint is backed, "shade": darkening of the copied neighbour colour}.
+    Openings framed by the hand or lantern (the bail loop, the gap between the lantern arm and the body) stay open.
+    The underpaint copies the nearest solid pixel's colour and coat-mask value, so a dyed coat stays dyed."""
+    r = int(opt.get("close", 6))
+    a = canvas[..., 3]
+    solid = a > 0.5
+    disk = np.hypot(*np.mgrid[-r : r + 1, -r : r + 1]) <= r
+    pad = r + 2
+    closed = ndimage.binary_closing(np.pad(solid, pad), structure=disk)[pad:-pad, pad:-pad]
+    filled = ndimage.binary_fill_holes(closed | solid)
+    core = ndimage.binary_erosion(ndimage.binary_fill_holes(solid), iterations=int(opt.get("depth", 6)))
+    region = ((filled & ~solid) | core) & (a < 0.98)
+    L, n = ndimage.label(region, structure=np.ones((3, 3)))
+    keep = np.zeros_like(region)
+    hand = (label == PART_IDS["hand"]) | (label == PART_IDS["lantern"])
+    for i in range(1, n + 1):
+        m = L == i
+        ring = ndimage.binary_dilation(m, structure=np.ones((3, 3))) & ~m & solid
+        if ring.any() and hand[ring].mean() >= 0.3:
+            continue
+        keep |= m
+    if not keep.any():
+        return
+    _, (iy, ix) = ndimage.distance_transform_edt(~solid, return_indices=True)
+    src = canvas[iy, ix]
+    sa = np.maximum(src[..., 3:4], 1e-6)
+    under = np.concatenate([src[..., :3] / sa * opt.get("shade", 0.75), np.ones_like(sa), src[..., 4:] / sa], axis=2)
+    w = keep[..., None] * (1 - canvas[..., 3:4])
+    canvas += w * under
+    label[keep & (label == 0)] = label[iy, ix][keep & (label == 0)]
+
+
+def downscale_label(label):
+    """Part ids at cell size (nearest: ids are not blendable)."""
+    return np.asarray(Image.fromarray(label).resize((CELL, CELL), Image.NEAREST))
 
 
 def downscale(canvas):
@@ -755,8 +813,13 @@ def main():
     keep = rig.get("coat_keep") or min(1.0, 22.0 / max(spread, 1e-3))
     base_sheet = np.zeros((ROWS * CELL, COLS * CELL, 4), np.uint8)
     coat_sheet = np.zeros((ROWS * CELL, COLS * CELL), np.uint8)
+    part_sheet = np.zeros((ROWS * CELL, COLS * CELL), np.uint8)
 
-    def put(r, c, cell, view_ref):
+    def put(r, c, rendered, view_ref):
+        canvas, label = rendered
+        cell = downscale(canvas)
+        lab = downscale_label(label)
+        part_sheet[r * CELL : (r + 1) * CELL, c * CELL : (c + 1) * CELL] = np.where((cell[..., 3] > 0.02) | (lab == PART_IDS["art_gap"]), lab, 0)
         b, m = finish(cell, rig, view_ref, keep)
         base_sheet[r * CELL : (r + 1) * CELL, c * CELL : (c + 1) * CELL] = b
         coat_sheet[r * CELL : (r + 1) * CELL, c * CELL : (c + 1) * CELL] = m
@@ -783,15 +846,18 @@ def main():
             Image.fromarray(np.dstack([np.clip(dbg[..., :3] / np.maximum(dbg[..., 3:4], 1e-6), 0, 255), dbg[..., 3] * 255]).astype(np.uint8)).save(d / f"debug-body-{name}.png")
         if name in WALK_ROWS:
             for i in range(WALK_FRAMES):
-                put(WALK_ROWS[name], i, downscale(render(view, name, parts, pose("walk", name, i, view, gait=rig.get("gait")), rig)), view_ref)
+                put(WALK_ROWS[name], i, render(view, name, parts, pose("walk", name, i, view, gait=rig.get("gait")), rig), view_ref)
         if name in IDLE_CELLS:
             r, c0, n = IDLE_CELLS[name]
             for i in range(n):
-                put(r, c0 + i, downscale(render(view, name, parts, pose("idle", name, i, view, n, gait=rig.get("gait")), rig)), view_ref)
+                put(r, c0 + i, render(view, name, parts, pose("idle", name, i, view, n, gait=rig.get("gait")), rig), view_ref)
     out = ROOT / "public" / "sprites" / "scouts"
     base_img, mask_img = pack(base_sheet, coat_sheet)
     base_img.save(out / f"{scout}-v2.png", optimize=True)
     mask_img.save(out / f"{scout}-v2-coat.png", optimize=True)
+    # Part ids per pixel (0 none, see PART_IDS), for qa-sprites' interior-holes check: a gap closed off by the
+    # lantern or the lantern hand is the lantern hanging against the body, not a hole in it.
+    Image.fromarray(part_sheet, "L").save(d / "parts-v2.png", optimize=True)
     # Shop/hire icon: the first standing frame at half size, palette PNG like the other icons.
     r0 = IDLE_CELLS["idle_front"][0]
     icon = base_img.convert("RGBA").crop((0, r0 * CELL, CELL, (r0 + 1) * CELL)).resize((96, 96), Image.LANCZOS)
