@@ -933,5 +933,10 @@
   "coat_keep_near": [
     100,
     20
-  ]
+  ],
+  "underpaint": {
+    "close": 6,
+    "depth": 6,
+    "shade": 0.75
+  }
 }

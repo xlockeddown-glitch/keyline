@@ -641,5 +641,10 @@
       "head_tilt": -3.0
     }
   },
-  "coat_keep": 1.25
+  "coat_keep": 1.25,
+  "underpaint": {
+    "close": 6,
+    "depth": 6,
+    "shade": 0.75
+  }
 }
