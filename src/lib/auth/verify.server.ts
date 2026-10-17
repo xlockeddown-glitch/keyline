@@ -1,6 +1,7 @@
 import { getRequest } from "@tanstack/react-start/server";
 import { gateIdentityEnabled } from "./gate-identity.server";
 import { auth, authConfigured } from "./server";
+import { sessionUserFromHeaders } from "./session-lookup";
 
 /**
  * Server-side session resolution (server-only).
@@ -65,13 +66,8 @@ export async function getSessionUser(
     headers = new Headers(request.headers);
     headers.set("Authorization", `Bearer ${bearerToken}`);
   }
-  // The signed session-data cookie is trusted for five minutes and is NOT
-  // consulted against the database. Password reset and the link guard delete
-  // the session row immediately; without this flag the old cookie still
-  // authorizes wallet and profile calls until the cache expires.
-  const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } });
-  if (!session?.user) return null;
-  return { id: session.user.id, email: session.user.email ?? null };
+  // Skips the signed cookie cache so a reset / revoked session stops at once (see session-lookup.ts).
+  return sessionUserFromHeaders(auth.api as never, headers);
 }
 
 /**

@@ -11,10 +11,11 @@ import { dropUnprovenPassword, emailPasswordAuthOptions, signUpProblem, trustedO
 import { canonicalAuthLink, mailerFromEnv, resetPasswordEmail, RESEND_ENDPOINT, type AuthEmail, type Mailer } from "./mailer.server.ts";
 import { emailAuthMessage } from "./email-messages.ts";
 import { authRateLimitStorage } from "./rate-limit.server.ts";
+import { sessionUserFromHeaders } from "./session-lookup.ts";
 
 const quiet = () => {};
 
-async function setup(mailer: Mailer | null) {
+async function setup(mailer: Mailer | null, extra: Record<string, unknown> = {}) {
   const db: Record<string, Record<string, unknown>[]> = { user: [], session: [], account: [], verification: [] };
   // The hook reads the instance lazily, same as server.ts.
   const holder: { auth?: { $context: Promise<{ internalAdapter: unknown }> } } = {};
@@ -30,6 +31,7 @@ async function setup(mailer: Mailer | null) {
     },
     ...emailPasswordAuthOptions(mailer),
     logger: { disabled: true },
+    ...extra,
   });
   holder.auth = auth as never;
   const context = await auth.$context;
@@ -334,4 +336,23 @@ test("rate limit storage falls back to memory (and never throws) when the table 
   } finally {
     console.warn = warn;
   }
+});
+
+test("after a password reset the old session cookie no longer resolves a walker (wallet / profile lookup)", async () => {
+  const { sent, mailer } = captureMailer();
+  // Same session config as server.ts: the signed session-data cookie is cached for five minutes.
+  const { auth } = await setup(mailer, { session: { cookieCache: { enabled: true, maxAge: 300 } } });
+  const up = await auth.api.signUpEmail({ body: { name: "Ryan Gray", email: "ryan@example.com", password: "old-password-1" }, returnHeaders: true });
+  const cookie = up.headers
+    .getSetCookie()
+    .map((c) => c.split(";")[0])
+    .join("; ");
+  assert.match(cookie, /session_data=/, "cookie cache is on, so the signed session-data cookie is set");
+  const headers = new Headers({ cookie });
+  assert.equal((await sessionUserFromHeaders(auth.api as never, headers))?.email, "ryan@example.com");
+  sent.length = 0;
+  await auth.api.requestPasswordReset({ body: { email: "ryan@example.com", redirectTo: "/reset-password" } });
+  const token = /reset-password\/([^\s?]+)/.exec(sent[0]!.text)![1]!;
+  await auth.api.resetPassword({ body: { token, newPassword: "new-password-2" } });
+  assert.equal(await sessionUserFromHeaders(auth.api as never, headers), null, "old cookie must not reach wallet or profile");
 });
