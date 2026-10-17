@@ -1,8 +1,9 @@
 /**
  * Self-hosted Better Auth for THIS app (server-only).
  *
- * Pre-wired for live preview + deploy — do not rewrite this file. To enable
- * local email/password, flip the flag in `./email-password` only (see auth skill).
+ * Pre-wired for live preview + deploy — do not rewrite this file. Email/password
+ * (0.0.84) is configured in `./email-password` + `./mailer.server`; this file only
+ * spreads those options in and wires the link guard.
  *
  * The app runs its own Better Auth at `/api/auth/*`, so the session cookie stays
  * on this app's own origin. Sign-in federates to the shared **Grok auth broker**
@@ -35,8 +36,10 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
-import { ensureDbReady, getPglite } from "../db";
-import { emailAndPasswordEnabled } from "./email-password";
+import { ensureDbReady, getPglite, getSql } from "../db";
+import { authRateLimitStorage } from "./rate-limit.server";
+import { dropUnprovenPassword, emailAndPasswordEnabled, emailPasswordAuthOptions, AUTH_RATE_LIMIT } from "./email-password";
+import { mailerFromEnv } from "./mailer.server";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
@@ -220,6 +223,11 @@ export const auth = betterAuth({
   databaseHooks: {
     account: {
       create: {
+        // 0.0.84: a Google / X identity landing on an unconfirmed password account removes that password.
+        before: async (account, ctx) => {
+          // Outside a request scope the hook gets no ctx; fall back to this instance's adapter.
+          await dropUnprovenPassword(account, ctx?.context.internalAdapter ?? (await auth.$context).internalAdapter);
+        },
         after: async (account) => {
           const h = createHash("sha256").update(String(account.accountId)).digest("hex").slice(0, 10);
           console.log(`[auth] new sign-in identity provider=${account.providerId} account#${h} user=${account.userId}`);
@@ -228,8 +236,16 @@ export const auth = betterAuth({
     },
   },
 
-  // Local email/password — toggled only via `./email-password` (not a plugin).
-  ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
+  // Local email/password — options, reset mail and sign-up checks live in `./email-password` (not a plugin).
+  ...(emailAndPasswordEnabled ? emailPasswordAuthOptions(mailerFromEnv()) : {}),
+  // Per-IP limits shared across serverless instances (`rateLimit` table, 0017). On in production only (default).
+  rateLimit: {
+    ...AUTH_RATE_LIMIT,
+    customStorage: authRateLimitStorage(async () => {
+      const sql = await getSql();
+      return (text, params) => sql.query(text, params);
+    }),
+  },
 
   // `__Host-` prefixed cookies: the browser REFUSES any same-named cookie that
   // carries a `Domain` attribute, so a sibling `*.grok.me` app cannot "toss" a

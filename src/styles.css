@@ -3596,3 +3596,17 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .pawn .scout-marker { translate: none; scale: none; rotate: none; }
 }
+
+/* 0.0.84 email + password accounts (sign-in sheet) */
+.acct-or{display:flex;align-items:center;gap:10px;color:var(--color-fg-muted);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;margin:2px 0}
+.acct-or::before,.acct-or::after{content:"";flex:1;height:1px;background:var(--color-border)}
+.acct-card{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);background:var(--color-bg-subtle);text-align:left}
+.acct-title{font-family:var(--font-display, inherit);font-size:1.05rem;line-height:1.2}
+.acct-field{display:flex;flex-direction:column;gap:4px;font-size:.8125rem;color:var(--color-fg-muted)}
+.acct-field small{font-size:.75rem}
+.acct-input{width:100%;min-width:0;min-height:44px;padding:0 12px;border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-fg);font-size:1rem}
+.acct-input:focus-visible{outline:2px solid var(--color-accent);outline-offset:1px}
+.acct-error{font-size:.8125rem;color:var(--color-fg);border-left:3px solid var(--color-accent);padding:2px 0 2px 8px;text-wrap:pretty}
+.acct-note{font-size:.8125rem;color:var(--color-fg-muted);text-wrap:pretty}
+.acct-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px}
+.acct-link{min-height:32px;font-size:.8125rem;color:var(--color-fg);text-decoration:underline;text-underline-offset:3px;background:none;border:0;padding:0;cursor:pointer}
