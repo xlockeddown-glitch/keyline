@@ -68,7 +68,7 @@ function v2Fixture(kind) {
     // A walk frame that lost its art (right walk, frame 3).
     // 0.0.89: a see-through hole in the Raccoon's coat (left walk, frame 3): the map would show through the body.
     "punched-hole": `from PIL import Image\nim = Image.open("public/sprites/scouts/raccoon-v2.png").convert("RGBA")\nim.paste((0, 0, 0, 0), (3 * 192 + 88, 192 + 95, 3 * 192 + 92, 192 + 98))\nim.save("${out}")`,
-    // The same hole in the Turtle (left walk, frame 3): a queued scout may not get worse than its ratchet.
+    // The same kind of hole in the Turtle (left walk, frame 3, mid-body): every scout is held to zero.
     "punched-hole-turtle": `from PIL import Image\nimport numpy as np\nim = Image.open("public/sprites/scouts/turtle-v2.png").convert("RGBA")\na = np.asarray(im)[192:384, 576:768, 3]\nys, xs = np.where(a == a.max())\ny, x = int(np.median(ys)), int(np.median(xs))\nim.paste((0, 0, 0, 0), (576 + x - 3, 192 + y - 3, 576 + x + 3, 192 + y + 3))\nim.save("${out}")`,
     "missing-frame": `from PIL import Image\nim = Image.open("public/sprites/scouts/turtle-v2.png").convert("RGBA")\nim.paste((0, 0, 0, 0), (3 * 192, 2 * 192, 4 * 192, 3 * 192))\nim.save("${out}")`,
   }[kind];
@@ -100,23 +100,20 @@ test("qa:sprites checks the v2 scouts: every frame, planted feet, the mask on th
   }
 });
 
-test("qa:sprites checks every v2 frame for see-through holes: none on the Raccoon, the queued scouts within their ratchet", () => {
+test("qa:sprites checks every v2 frame for see-through holes: none on any scout", () => {
   const { verdict } = runWith("");
   for (const t of verdict.v2) {
-    const [capN, capPx] = t.holes.allowance;
-    assert.ok(t.holes.count <= capN && t.holes.px <= capPx, `${t.scout} ${t.holes.count} holes ${t.holes.px}px`);
-    assert.equal(t.holes.list.length, t.holes.count);
+    assert.equal(t.holes.count, 0, `${t.scout}: ${JSON.stringify(t.holes.list)}`);
+    assert.equal(t.holes.px, 0);
+    assert.deepEqual(t.holes.list, []);
   }
-  const raccoon = verdict.v2.find((t) => t.scout === "raccoon");
-  assert.deepEqual(raccoon.holes.allowance, [0, 0]);
-  assert.equal(raccoon.holes.count, 0, JSON.stringify(raccoon.holes.list));
 });
 
 test("qa:sprites fails a see-through hole in a v2 frame (the 0.0.89 Raccoon showed the map between his legs)", () => {
   const { status, verdict } = runWith(`raccoon-v2=${v2Fixture("punched-hole")}`);
   assert.equal(status, 1);
   assert.ok(
-    verdict.failures.some((f) => /^raccoon-v2: 1 see-through holes, 12px \(allowed 0, 0px\): walk left frame 3 12px/.test(f)),
+    verdict.failures.some((f) => /^raccoon-v2: 1 see-through holes, 12px: walk left frame 3 12px/.test(f)),
     verdict.failures.join("\n"),
   );
   const t = runWith(`turtle-v2=${v2Fixture("punched-hole-turtle")}`);

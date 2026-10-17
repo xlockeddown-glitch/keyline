@@ -16,6 +16,9 @@ part of the design rather than rig defects:
 * the lantern / bail loop and the gap between the lantern hand and body
   (ring >= 30% hand/lantern ids),
 * openings already present in the painted key art (>= 50% art_gap id),
+* a soft edge: a semi-transparent patch whose alpha never drops below SOLID_A (half opacity), i.e. the
+  anti-aliased rim where two parts overlap (0.0.89 spot check: tail tips over boots, sleeve over coat at alpha
+  143-176 tint the map faintly rather than show it),
 * a real stride gap between two legs (max inscribed radius >= 3.5 px with
   legs making up >= 50% of the ring) - that is negative space, not a hole.
 
@@ -55,6 +58,10 @@ def cell_holes(cell: np.ndarray, lab: np.ndarray | None) -> list[dict]:
         m = L == i
         area = int(m.sum())
         if area < MIN_AREA:
+            continue
+        if not enclosed[m].any() and a[m].min() >= SOLID_A:
+            # a soft edge, not a hole: semi-transparent paint that never drops below half opacity (the anti-aliased
+            # rim where two parts' edges overlap, e.g. a tail tip over a boot) tints the map, it doesn't show it
             continue
         if lab is not None:
             ring = ndimage.binary_dilation(m, structure=np.ones((3, 3))) & ~m & solid
