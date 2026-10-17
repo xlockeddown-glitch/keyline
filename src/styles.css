@@ -3528,7 +3528,7 @@ h3 {
 .scout-marker[data-scout="turtle"],
 .scout-marker[data-scout="turtle"].is-idle,
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/turtle-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3536,7 +3536,7 @@ h3 {
 .scout-marker[data-scout="cat"],
 .scout-marker[data-scout="cat"].is-idle,
 .scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/cat-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3544,7 +3544,7 @@ h3 {
 .scout-marker[data-scout="fox"],
 .scout-marker[data-scout="fox"].is-idle,
 .scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/fox-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3552,7 +3552,7 @@ h3 {
 .scout-marker[data-scout="corgi"],
 .scout-marker[data-scout="corgi"].is-idle,
 .scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/corgi-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3560,7 +3560,7 @@ h3 {
 .scout-marker[data-scout="sloth"],
 .scout-marker[data-scout="sloth"].is-idle,
 .scout-marker[data-scout="sloth"].is-idle.is-side {
-  background-image: url("/sprites/scouts/sloth-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/sloth-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3568,7 +3568,7 @@ h3 {
 .scout-marker[data-scout="raccoon"],
 .scout-marker[data-scout="raccoon"].is-idle,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
-  background-image: url("/sprites/scouts/raccoon-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/raccoon-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3576,7 +3576,7 @@ h3 {
 .scout-marker[data-scout="owl"],
 .scout-marker[data-scout="owl"].is-idle,
 .scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/owl-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3584,7 +3584,7 @@ h3 {
 .scout-marker[data-scout="giraffe"],
 .scout-marker[data-scout="giraffe"].is-idle,
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-v2.png?v=k83a");
+  background-image: url("/sprites/scouts/giraffe-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3592,7 +3592,7 @@ h3 {
 .scout-marker[data-scout="lynx"],
 .scout-marker[data-scout="lynx"].is-idle,
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-v2.png?v=k87a");
+  background-image: url("/sprites/scouts/lynx-v2.png?v=k88a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }

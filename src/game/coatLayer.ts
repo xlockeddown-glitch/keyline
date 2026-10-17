@@ -28,7 +28,7 @@ export const V2_IDLE_FRAMES = 8;
 export const V2_SIDE_IDLE_FRAMES = 4;
 
 /** Cache stamp for the v2 sheets (styles.css uses the same one). */
-export const V2_STAMP = "k87a";
+export const V2_STAMP = "k88a";
 
 /** Coat each v2 base sheet is painted in (scripts/sprite-redraw/<scout>/rig.json `default_coat`). */
 export const V2_DEFAULT_COAT: Record<string, DyeTarget> = {
