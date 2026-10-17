@@ -49,7 +49,7 @@ function check(scout: string, kind: SheetKind, dye: string) {
 test("dyed coat matches the sprite mixer", () => {
   check("lynx", "idle", "dye-blue");
   check("corgi", "walk", "dye-blue");
-  check("fox", "idle-side", "dye-violet");
+  check("owl", "idle-side", "dye-violet"); // 0.0.86: the Fox moved to the v2 sheets (coatLayer.test.ts)
 });
 
 test("0.0.81 clean-up (lightness window, hole fill, enclosed holes) matches the sprite mixer", () => {
