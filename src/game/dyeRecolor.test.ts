@@ -47,14 +47,14 @@ function check(scout: string, kind: SheetKind, dye: string) {
 }
 
 test("dyed coat matches the sprite mixer", () => {
-  check("lynx", "idle", "dye-blue");
+  check("giraffe", "idle", "dye-blue"); // 0.0.91: was the Lynx slot's Penguin (v2 now, coatLayer.test.ts)
   check("giraffe", "walk", "dye-blue"); // 0.0.87: the Corgi moved to the v2 sheets (coatLayer.test.ts)
   check("giraffe", "idle-side", "dye-violet"); // 0.0.86/0.0.90: was the Fox, then the Owl (both v2 now, coatLayer.test.ts)
 });
 
 test("0.0.81 clean-up (lightness window, hole fill, enclosed holes) matches the sprite mixer", () => {
-  check("lynx", "idle", "dye-red"); // 0.0.87/0.0.90: was the Corgi, then the Owl (both v2 now; they had the L_WIN_BY window)
-  check("lynx", "walk", "dye-amber"); // 0.0.83-0.0.89: was the Turtle, the Sloth, then the Raccoon (all v2 now, coatLayer.test.ts)
-  check("lynx", "idle", "dye-green"); // 0.0.85: the Tabby moved to the v2 sheets (coatLayer.test.ts)
+  check("giraffe", "idle", "dye-red"); // 0.0.87/0.0.90/0.0.91: was the Corgi, the Owl, then the Penguin (all v2 now)
+  check("giraffe", "walk", "dye-amber"); // 0.0.83-0.0.91: was the Turtle, the Sloth, the Raccoon, then the Penguin (all v2 now, coatLayer.test.ts)
+  check("giraffe", "idle-side", "dye-green"); // 0.0.85/0.0.91: was the Tabby, then the Penguin (both v2 now, coatLayer.test.ts)
   check("giraffe", "walk", "dye-prism");
 });

@@ -1438,21 +1438,11 @@ h3 {
   }
 }
 
-.scout-marker[data-scout="lynx"] {
-  background-image: url("/sprites/scouts/lynx-walk.png?v=k81p");
-}
-.scout-marker[data-scout="lynx"].is-idle {
-  background-image: url("/sprites/scouts/lynx-idle.png?v=k81p");
-  background-size: 200% 200%;
-}
 /* 0.0.37: standing still after walking left or right keeps the side profile (2x2: row 0 left, row 1 right). */
 /* 0.0.89: the Raccoon is on the v2 sheet; player-*.png stay as the fallback for a marker without data-scout. */
 .scout-marker.is-idle.is-side {
   background-image: url("/sprites/player-idle-side.png?v=k81p");
   background-size: 200% 200%;
-}
-.scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-idle-side.png?v=k81p");
 }
 /* 0.0.51: The Giraffe (scripts/draw-giraffe.py). */
 .scout-marker[data-scout="giraffe"] {
@@ -3499,7 +3489,7 @@ h3 {
 .pawn:has(.scout-marker[data-scout="cat"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="fox"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
-.pawn:has(.scout-marker[data-scout="lynx"]) { --foot: 51px; }
+.pawn:has(.scout-marker[data-scout="lynx"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="owl"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="sloth"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="turtle"]) { --foot: 48px; }
@@ -3594,6 +3584,14 @@ h3 {
 .scout-marker[data-scout="owl"].is-idle,
 .scout-marker[data-scout="owl"].is-idle.is-side {
   background-image: url("/sprites/scouts/owl-v2.png?v=k83a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.0.91: the Penguin (scout id lynx, the Super Legendary). */
+.scout-marker[data-scout="lynx"],
+.scout-marker[data-scout="lynx"].is-idle,
+.scout-marker[data-scout="lynx"].is-idle.is-side {
+  background-image: url("/sprites/scouts/lynx-v2.png?v=k83a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }

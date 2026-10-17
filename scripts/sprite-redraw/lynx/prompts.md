@@ -36,4 +36,4 @@ would ink its fringe dark. Legs are the feet only, far foot a copy of the near o
 `motion` 1.25 (0.38 / 0.304). The claws at the toe tips are separate dark marks in the key art and stay so.
 Default coat: royal purple (L25 C44 h316), "Royal", set off by the gold trim and red scarf: away from the owl's
 midnight blue (h268 C22), deeper and more saturated than catalogue plum (L30 C30 h330) and darker than the violet dye.
-No special CSS scale.
+No special CSS scale. `V2_CADENCE.lynx = 1.25`: quicker short waddle steps (walking speed unchanged).

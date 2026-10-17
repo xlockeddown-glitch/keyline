@@ -16,13 +16,14 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
-  // 2 legacy characters × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85), the Fox (0.0.86), the
-  // Corgi (0.0.87), the Sloth (0.0.88), the Raccoon (0.0.89) and the Owl (0.0.90) are on the v2 sheets.
-  assert.equal(verdict.sheets.length, 6);
-  // 2 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
-  assert.equal(verdict.coatSheets, 66);
-  assert.equal(verdict.coats.length, 22);
-  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl"]);
+  // 1 legacy character (the Giraffe) × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85), the Fox
+  // (0.0.86), the Corgi (0.0.87), the Sloth (0.0.88), the Raccoon (0.0.89), the Owl (0.0.90) and the Penguin (lynx,
+  // 0.0.91) are on the v2 sheets.
+  assert.equal(verdict.sheets.length, 3);
+  // 1 legacy character × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 33);
+  assert.equal(verdict.coats.length, 11);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl", "lynx"]);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -38,10 +39,12 @@ function runWith(override) {
 
 test("qa:sprites fails a recoloured character (the 0.0.36 lynx was the fox's silhouette)", () => {
   // 0.0.86: the Fox is on the v2 sheets now, so the recolour was the Sloth wearing the Lynx's sheets; 0.0.88: the
-  // Sloth is v2 too, so it was the Owl; 0.0.90: the Owl is v2 too, so it's the Giraffe.
-  const { status, verdict } = runWith(
-    "giraffe-walk=public/sprites/scouts/lynx-walk.png,giraffe-idle=public/sprites/scouts/lynx-idle.png",
-  );
+  // Sloth is v2 too, so it was the Owl; 0.0.90: the Owl is v2 too, so it's the Giraffe. 0.0.91: the Penguin is v2
+  // too and the Giraffe is the last legacy character, so the Penguin's legacy sheets (kept as fixtures) come back
+  // into the silhouette check through the override, with the Giraffe wearing them.
+  const walk = "scripts/fixtures/lynx-walk-legacy-k90.png";
+  const idle = "scripts/fixtures/lynx-idle-legacy-k90.png";
+  const { status, verdict } = runWith(`giraffe-walk=${walk},giraffe-idle=${idle},lynx-walk=${walk},lynx-idle=${idle}`);
   assert.equal(status, 1);
   assert.ok(verdict.failures.some((f) => /giraffe\/lynx walk: same silhouette/.test(f)), verdict.failures.join("\n"));
   assert.ok(verdict.failures.some((f) => /giraffe\/lynx idle: same silhouette/.test(f)));
@@ -188,7 +191,7 @@ test("qa:sprites fails a coat with a side idle left in the old coat", () => {
 });
 
 test("qa:sprites fails a coat sheet with a different silhouette from the character", () => {
-  const { status, verdict } = runWith("giraffe-oxblood-idle=public/sprites/coats/lynx-oxblood-idle.png"); // 0.0.85-0.0.90: was the Tabby, the Fox, the Corgi's coat, the Sloth, then the Owl (all v2 now)
+  const { status, verdict } = runWith("giraffe-oxblood-idle=scripts/fixtures/lynx-idle-legacy-k90.png"); // 0.0.85-0.0.91: was the Tabby, the Fox, the Corgi's coat, the Sloth, the Owl, then the Penguin's oxblood coat (all v2 now); now the Penguin's legacy idle
   assert.equal(status, 1);
   assert.ok(verdict.failures.some((f) => /^giraffe-oxblood-idle: silhouette differs/.test(f)), verdict.failures.join("\n"));
 });
@@ -200,11 +203,12 @@ test("qa:sprites fails an outfit whose walk is a different coat from its idle", 
 });
 
 test("qa:sprites fails coat colour on fur (the 0.0.80 plum Corgi idled with a lavender chin, chest and belly)", () => {
-  // 0.0.87: the Corgi is on the v2 sheets, so the fixture is the plum Lynx idle with the same leak painted onto its
-  // pale chest fur (scripts/fixtures/lynx-plum-idle-leak-k87.png).
-  const { status, verdict } = runWith("lynx-plum-idle=scripts/fixtures/lynx-plum-idle-leak-k87.png");
+  // 0.0.87: the Corgi is on the v2 sheets, so the fixture was the plum Lynx idle with the same leak painted onto its
+  // pale chest fur; 0.0.91: the Penguin is v2 too, so it's the plum Giraffe idle with lavender on its pale patches
+  // (scripts/fixtures/giraffe-plum-idle-leak-k91.png).
+  const { status, verdict } = runWith("giraffe-plum-idle=scripts/fixtures/giraffe-plum-idle-leak-k91.png");
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^lynx-plum: idle coat colour on fur/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.some((f) => /^giraffe-plum: idle coat colour on fur/.test(f)), verdict.failures.join("\n"));
   const leaks = verdict.failures.filter((f) => /coat colour on fur/.test(f));
-  assert.ok(leaks.every((f) => f.startsWith("lynx-plum:")), leaks.join("\n"));
+  assert.ok(leaks.every((f) => f.startsWith("giraffe-plum:")), leaks.join("\n"));
 });

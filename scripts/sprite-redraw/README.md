@@ -109,7 +109,7 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    the scale-up is gone. Keep a scout's special CSS scale only if the v2 figure still reads wrong next to the set
    (the Giraffe's 1.46x lookout height is a design choice, not a fill fix).
    The Penguin (0.0.91, the Super Legendary) never had a special scale; its v2 figure fills the cell like the rest.
-   Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8) speeds up the walk *animation* only; walking speed
+   Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8, lynx/Penguin 1.25) speeds up the walk *animation* only; walking speed
    and `SCOUTS.gait` stay the same for every coat. `anim-preview.py` reads it too.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
    from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the
