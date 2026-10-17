@@ -79,6 +79,21 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    polygons, so the coat stays on the body (the hand drops coat pixels; the lantern drops the coat grown by this
    many px, i.e. its outline too). Also keep a far leg's polygon off the tail root: a column of tail outline at
    the polygon's top edge is smeared up to the hip and swings as a brown stick.
+   Options added for the stubby corgi (0.0.87, second pass), all optional; scouts without them render as before:
+   - per view `source` / `background`: a view may come from its own painting (the corgi's profiles come from
+     `turnaround-standing.jpg`, painted standing with the legs together, because mid-stride short legs with big
+     `art_angle`s wedged the wide thigh out under the hem); it is skin-gain matched to the main source;
+   - per leg `copy` (another leg's name), `copy_offset` [dx, dy] and `shade`: the leg is drawn as a shifted,
+     darkened copy of that leg (the hidden far leg of a standing profile);
+   - top-level `gait` {swing, lift, slide, bob, lift_fb, hip, bob_fb, roll}, defaults 32 / 18 / 0 / 0 / 13 / 6.5 /
+     4 / 0: a short-legged waddle uses a small swing, `slide` (the legs translate forward/back rather than rotate,
+     so short legs step without wedging), an extra body `bob` at passing and `roll` (degrees; the bottom swings
+     out over the planted foot in front/back views, rocking about the neck so the head stays inside qa's drift);
+   - top-level `coat_keep_near` [min_px, reach_px]: coat islands of at least min_px within reach_px of the main
+     coat (and off the hand/lantern polygons) stay coat even below `coat_min_island` (a thin lining sliver between
+     toggles was left blue otherwise).
+   Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35) speeds up the walk *animation* only; walking speed
+   and `SCOUTS.gait` stay the same for every coat. `anim-preview.py` reads it too.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
    from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the
    body behind moving parts, and animates them:
@@ -107,7 +122,7 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
 6. **Review.** `python3 scripts/sprite-redraw/review-shots.py <scout> /workspace/screenshots/<scout>-redraw- [REV] [PREV_V2_REV]`
    (old vs new, coats, strips, idles), `python3 scripts/sprite-redraw/anim-preview.py <scout> <out.gif>` (every walk and
    idle animated at game speed: 0.055 s per walk frame, 0.34 s per idle frame) and, with a dev server up,
-   `node scripts/sprite-redraw/ingame-shots.mjs http://127.0.0.1:8092 /workspace/screenshots/<scout>-redraw-ingame- <scout>`.
+   `node scripts/sprite-redraw/ingame-shots.mjs http://127.0.0.1:<port> /workspace/screenshots/<scout>-redraw-ingame- <scout>`.
 
 ## Size
 
