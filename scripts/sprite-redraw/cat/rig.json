@@ -187,7 +187,8 @@
      ],
      "ankle_y": 436
     }
-   ]
+   ],
+   "step_reach": 5.0
   },
   "back": {
    "crop": [

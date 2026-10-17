@@ -3,15 +3,15 @@
  *
  * Layout (scripts/sprite-rig.py writes it): 8 x 6 cells of 192 px.
  *   rows 0-3  walk, 8 frames per stride: down, left, right, up
- *   row 4     idle down (cols 0-3), idle left (cols 4-7)
- *   row 5     idle right (cols 0-3), idle up (cols 4-7)
+ *   row 4     idle down: the 3/4 standing idle, 8 frames
+ *   row 5     idle left (cols 0-3), idle right (cols 4-7); stopping after walking up shows the down idle
  * The base sheet wears the scout's default coat. `<scout>-v2-coat.png` is a grey mask of coat coverage, so a
  * print-shop coat or vat dye recolours exactly the coat (never shell, belly, fur, boots or lantern).
  */
 import { DYE_TARGETS, fromLab, pyRound, toLab, type DyeTarget } from "./dyeRecolor.ts";
 
 /** Scouts drawn on the v2 sheets. Everyone else keeps the 4x4 / 2x2 sheets. */
-export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle"]);
+export const V2_SCOUTS: ReadonlySet<string> = new Set(["turtle", "cat"]);
 
 export const V2_COLS = 8;
 export const V2_ROWS = 6;
@@ -26,6 +26,7 @@ export const V2_STAMP = "k83a";
 /** Coat each v2 base sheet is painted in (scripts/sprite-redraw/<scout>/rig.json `default_coat`). */
 export const V2_DEFAULT_COAT: Record<string, DyeTarget> = {
   turtle: { L: 30, C: 26, h: 70 },
+  cat: { L: 28, C: 24, h: 64 },
 };
 
 /** Print-shop coat targets. Keep in step with the `coats` block of scripts/coat-variants.json. */

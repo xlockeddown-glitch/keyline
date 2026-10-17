@@ -37,14 +37,16 @@ print(base64.b64encode(out.tobytes()).decode())
 }
 
 test("v2 coat recolour matches the sprite rig, and never touches a pixel outside the coat mask", () => {
-  // Walk right frames 0-2 and the first standing frame.
-  for (const [coat, box] of [
-    ["plum", [0, 384, 576, 576]],
-    ["dye-red", [0, 768, 384, 960]],
-    ["oilskin", [768, 0, 1152, 192]],
+  // Walk right frames 0-2 and the first standing frame, for every v2 scout.
+  for (const [scout, coat, box] of [
+    ["turtle", "plum", [0, 384, 576, 576]],
+    ["turtle", "dye-red", [0, 768, 384, 960]],
+    ["turtle", "oilskin", [768, 0, 1152, 192]],
+    ["cat", "bottle", [0, 384, 576, 576]],
+    ["cat", "dye-white", [0, 768, 384, 960]],
   ] as const) {
-    const { w, h, base, mask, out } = pythonCoat("turtle", coat, [...box]);
-    const mine = applyCoatLayer(new Uint8ClampedArray(base), new Uint8ClampedArray(mask), V2_PALETTE[coat]!, V2_DEFAULT_COAT.turtle!);
+    const { w, h, base, mask, out } = pythonCoat(scout, coat, [...box]);
+    const mine = applyCoatLayer(new Uint8ClampedArray(base), new Uint8ClampedArray(mask), V2_PALETTE[coat]!, V2_DEFAULT_COAT[scout]!);
     let worst = 0;
     let off = 0;
     let coatPx = 0;
@@ -53,9 +55,9 @@ test("v2 coat recolour matches the sprite rig, and never touches a pixel outside
       if (mask[i - (i % 4)] === 0 && mine[i] !== base[i]) off++;
     }
     for (let i = 0; i < mask.length; i += 4) if (mask[i]! > 0 && base[i + 3]! > 0) coatPx++;
-    assert.ok(worst <= 1, `${coat}: worst byte gap ${worst} (${w}x${h})`);
-    assert.equal(off, 0, `${coat}: ${off} bytes changed outside the coat mask`);
-    assert.ok(coatPx > 1000, `${coat}: strip has a coat to recolour`);
+    assert.ok(worst <= 1, `${scout} ${coat}: worst byte gap ${worst} (${w}x${h})`);
+    assert.equal(off, 0, `${scout} ${coat}: ${off} bytes changed outside the coat mask`);
+    assert.ok(coatPx > 1000, `${scout} ${coat}: strip has a coat to recolour`);
   }
 });
 

@@ -16,12 +16,12 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
-  // 8 legacy characters × walk / idle / side idle; the Turtle is on the v2 sheets (0.0.83).
-  assert.equal(verdict.sheets.length, 24);
-  // 8 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
-  assert.equal(verdict.coatSheets, 264);
-  assert.equal(verdict.coats.length, 88);
-  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle"]);
+  // 7 legacy characters × walk / idle / side idle; the Turtle (0.0.83) and the Tabby (0.0.85) are on the v2 sheets.
+  assert.equal(verdict.sheets.length, 21);
+  // 7 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 231);
+  assert.equal(verdict.coats.length, 77);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat"]);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -45,10 +45,12 @@ test("qa:sprites fails a recoloured character (the 0.0.36 lynx was the fox's sil
 });
 
 test("qa:sprites fails a character whose walk and idle coats differ (the 0.0.36 Tabby walked in green)", () => {
-  const { status, verdict } = runWith("cat-walk=scripts/fixtures/cat-walk-olive-k36.png");
+  // 0.0.85: the Tabby is on the v2 sheets now (one coat mask for every frame), so the regression uses the Corgi
+  // walking in its green-dye sheet against its own brown idle.
+  const { status, verdict } = runWith("corgi-walk=scripts/dye-sheets/corgi-dye-green-walk.png");
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^cat: walk and idle coats differ/.test(f)), verdict.failures.join("\n"));
-  assert.ok(verdict.palettes.filter((p) => p.scout !== "cat").every((p) => p.coatDeltaH <= p.coatLimit));
+  assert.ok(verdict.failures.some((f) => /^corgi: walk and idle coats differ/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.palettes.filter((p) => p.scout !== "corgi").every((p) => p.coatDeltaH <= p.coatLimit));
 });
 
 // ── 0.0.83 v2 sheets (the redrawn Turtle) ──
@@ -67,25 +69,26 @@ function v2Fixture(kind) {
   return out;
 }
 
-test("qa:sprites checks the v2 Turtle: every frame, planted feet, the mask on the coat, every coat and dye exact", () => {
+test("qa:sprites checks the v2 scouts: every frame, planted feet, the mask on the coat, every coat and dye exact", () => {
   const { verdict } = runWith("");
-  const t = verdict.v2.find((r) => r.scout === "turtle");
-  assert.equal(t.walkRows.length, 4);
-  for (const row of t.walkRows) {
-    assert.equal(row.feet.length, 8);
-    const spread = Math.max(...row.feet) - Math.min(...row.feet);
-    // Profiles: planted feet hold the floor. Toward/away from camera the stepping foot lands a little lower
-    // (it comes toward the viewer) — but it must move at all, or the walk is marching in place again.
-    if (row.row === 1 || row.row === 2) assert.ok(spread <= 3, `row ${row.row} feet ${row.feet}`);
-    else assert.ok(spread >= 2 && spread <= 4, `row ${row.row} feet ${row.feet}`);
-  }
-  assert.deepEqual(t.idle.map((r) => r.face), ["down", "left", "right"]);
-  assert.ok(t.maskHueGap <= 14, `mask hue gap ${t.maskHueGap}`);
-  assert.ok(t.maskFit >= 0.75, `mask fit ${t.maskFit}`);
-  assert.equal(t.variants.length, 11);
-  for (const v of t.variants) {
-    assert.equal(v.offMask, 0, `${v.coat} changed pixels off the coat`);
-    assert.ok(v.targetHueGap <= 20, `${v.coat} hue ${v.targetHueGap}`);
+  for (const t of verdict.v2) {
+    assert.equal(t.walkRows.length, 4);
+    for (const row of t.walkRows) {
+      assert.equal(row.feet.length, 8);
+      const spread = Math.max(...row.feet) - Math.min(...row.feet);
+      // Profiles: planted feet hold the floor. Toward/away from camera the stepping foot lands a little lower
+      // (it comes toward the viewer) — but it must move at all, or the walk is marching in place again.
+      if (row.row === 1 || row.row === 2) assert.ok(spread <= 3, `${t.scout} row ${row.row} feet ${row.feet}`);
+      else assert.ok(spread >= 2 && spread <= 4, `${t.scout} row ${row.row} feet ${row.feet}`);
+    }
+    assert.deepEqual(t.idle.map((r) => r.face), ["down", "left", "right"]);
+    assert.ok(t.maskHueGap <= 14, `mask hue gap ${t.maskHueGap}`);
+    assert.ok(t.maskFit >= 0.75, `mask fit ${t.maskFit}`);
+    assert.equal(t.variants.length, 11);
+    for (const v of t.variants) {
+      assert.equal(v.offMask, 0, `${t.scout} ${v.coat} changed pixels off the coat`);
+      assert.ok(v.targetHueGap <= 20, `${t.scout} ${v.coat} hue ${v.targetHueGap}`);
+    }
   }
 });
 
@@ -156,15 +159,15 @@ test("qa:sprites fails a coat with a side idle left in the old coat", () => {
 });
 
 test("qa:sprites fails a coat sheet with a different silhouette from the character", () => {
-  const { status, verdict } = runWith("cat-oxblood-idle=public/sprites/coats/corgi-oxblood-idle.png");
+  const { status, verdict } = runWith("fox-oxblood-idle=public/sprites/coats/corgi-oxblood-idle.png"); // 0.0.85: was the Tabby (now v2)
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^cat-oxblood-idle: silhouette differs/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.some((f) => /^fox-oxblood-idle: silhouette differs/.test(f)), verdict.failures.join("\n"));
 });
 
 test("qa:sprites fails an outfit whose walk is a different coat from its idle", () => {
-  const { status, verdict } = runWith("cat-oxblood-walk=public/sprites/coats/cat-plum-walk.png");
+  const { status, verdict } = runWith("fox-oxblood-walk=public/sprites/coats/fox-plum-walk.png"); // 0.0.85: was the Tabby (now v2)
   assert.equal(status, 1);
-  assert.ok(verdict.failures.some((f) => /^cat-oxblood: walk (front|left|right) coat hue is \d+° off Oxblood Greatcoat/.test(f)), verdict.failures.join("\n"));
+  assert.ok(verdict.failures.some((f) => /^fox-oxblood: walk (front|left|right) coat hue is \d+° off Oxblood Greatcoat/.test(f)), verdict.failures.join("\n"));
 });
 
 test("qa:sprites fails coat colour on fur (the 0.0.80 plum Corgi idled with a lavender chin, chest and belly)", () => {
