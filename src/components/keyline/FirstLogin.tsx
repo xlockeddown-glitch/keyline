@@ -91,7 +91,7 @@ export function FirstLoginOverlay({
       aria-labelledby={waiting ? undefined : "first-login-title"}
       aria-busy={waiting || undefined}
     >
-      <div className="panel w-full max-w-md rounded-t-xl pb-[env(safe-area-inset-bottom)] sm:rounded-xl">
+      <div className="panel max-h-[100dvh] w-full max-w-md overflow-y-auto rounded-t-xl pb-[env(safe-area-inset-bottom)] sm:rounded-xl">
         <div className="px-5 py-5">
           {waiting ? (
             <div className="space-y-3" aria-hidden>

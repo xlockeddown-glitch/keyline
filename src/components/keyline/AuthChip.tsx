@@ -1,6 +1,7 @@
 import { UserButton } from "@/lib/auth/gates";
 import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { EmailAuth } from "./EmailAuth";
 
 export function SignInActions({ callbackURL = "/" }: { callbackURL?: string }) {
   if (!authEnabled) {
@@ -18,6 +19,10 @@ export function SignInActions({ callbackURL = "/" }: { callbackURL?: string }) {
           Continue with {p.label}
         </button>
       ))}
+      <div className="acct-or" aria-hidden>
+        <span>or</span>
+      </div>
+      <EmailAuth />
     </div>
   );
 }
