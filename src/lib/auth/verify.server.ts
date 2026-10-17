@@ -65,7 +65,11 @@ export async function getSessionUser(
     headers = new Headers(request.headers);
     headers.set("Authorization", `Bearer ${bearerToken}`);
   }
-  const session = await auth.api.getSession({ headers });
+  // The signed session-data cookie is trusted for five minutes and is NOT
+  // consulted against the database. Password reset and the link guard delete
+  // the session row immediately; without this flag the old cookie still
+  // authorizes wallet and profile calls until the cache expires.
+  const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } });
   if (!session?.user) return null;
   return { id: session.user.id, email: session.user.email ?? null };
 }

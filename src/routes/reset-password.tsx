@@ -4,6 +4,8 @@ import { resetPassword } from "@/lib/auth/email-client";
 
 /** 0.0.84: landing page for the emailed reset link (Better Auth redirects here with `?token=` or `?error=`). */
 export const Route = createFileRoute("/reset-password")({
+  // The reset token arrives in the query string. Don't hand it to fonts or the branding script via Referer.
+  head: () => ({ meta: [{ name: "referrer", content: "no-referrer" }, { name: "robots", content: "noindex" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     token: typeof s.token === "string" ? s.token : undefined,
     error: typeof s.error === "string" ? s.error : undefined,

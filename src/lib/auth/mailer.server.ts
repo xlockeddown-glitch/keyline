@@ -65,8 +65,52 @@ export function mailerFromEnv(
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 
+/** Display names are interpolated into the text part. Strip header-like breaks and control chars. */
+function plainName(name: string): string {
+  return name.replace(/[\u0000-\u001f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+/**
+ * Auth links carry a bearer token in the path. Two ways that token leaves the app:
+ *   - `X-Forwarded-Host` (trusted by Better Auth when the base URL is dynamic) can aim the link at
+ *     another `*.grok-sandbox.com` host. A pinned `BETTER_AUTH_URL` replaces that origin. With no pin,
+ *     real mail is refused unless the link host is the request's own `Host` header.
+ *   - An absolute `callbackURL` / `redirectTo` (loopback is in the dev allow-list) makes the click
+ *     handler 302 the token off-origin. Absolute callbacks are folded back to a same-origin path.
+ */
+export function canonicalAuthLink(
+  url: string,
+  env: Env = process.env,
+  request?: { headers: { get(name: string): string | null } } | null,
+  realMail = false,
+): string {
+  const u = new URL(url);
+  const pinned = val(env, "BETTER_AUTH_URL");
+  if (pinned) {
+    const base = new URL(pinned);
+    u.protocol = base.protocol;
+    u.host = base.host;
+  } else if (realMail) {
+    const host = request?.headers.get("host")?.split(",")[0]?.trim() ?? "";
+    if (!host || u.host.toLowerCase() !== host.toLowerCase()) {
+      throw new Error("refusing to email an auth link whose host is not this app");
+    }
+  }
+  const callback = u.searchParams.get("callbackURL");
+  if (callback && (/^[a-z][a-z0-9+.-]*:/i.test(callback) || callback.startsWith("//") || callback.startsWith("/\\") || callback.includes("\\"))) {
+    u.searchParams.set("callbackURL", u.pathname.includes("/reset-password/") ? "/reset-password" : "/");
+  }
+  return u.toString();
+}
+
+function safeAddress(to: string): string {
+  const addr = to.trim();
+  if (!addr || /[\r\n]/.test(addr) || addr.length > 320) throw new Error("refusing to email a malformed address");
+  return addr;
+}
+
 function letter(opts: { name: string; lead: string; cta: string; url: string; foot: string }): Omit<AuthEmail, "to" | "subject"> {
-  const hi = opts.name.trim() ? `Hi ${opts.name.trim()},` : "Hi,";
+  const hi = plainName(opts.name) ? `Hi ${plainName(opts.name)},` : "Hi,";
   const text = `${hi}\n\n${opts.lead}\n\n${opts.cta}: ${opts.url}\n\n${opts.foot}\n\n— Keyline`;
   const html = `<div style="font-family:Georgia,serif;max-width:480px;margin:0 auto;padding:24px;color:#2b2118;background:#f6efe2">
 <p style="font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#8a6a3a;margin:0 0 12px">Keyline</p>
@@ -78,7 +122,7 @@ function letter(opts: { name: string; lead: string; cta: string; url: string; fo
 
 export function resetPasswordEmail(to: string, name: string, url: string): AuthEmail {
   return {
-    to,
+    to: safeAddress(to),
     subject: "Reset your Keyline password",
     ...letter({
       name,
@@ -92,7 +136,7 @@ export function resetPasswordEmail(to: string, name: string, url: string): AuthE
 
 export function verifyEmail(to: string, name: string, url: string): AuthEmail {
   return {
-    to,
+    to: safeAddress(to),
     subject: "Confirm your Keyline email",
     ...letter({
       name,
