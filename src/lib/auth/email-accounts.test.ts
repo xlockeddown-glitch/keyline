@@ -7,8 +7,8 @@ import { handleOAuthUserInfo } from "better-auth/oauth2";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
-import { dropUnprovenPassword, emailPasswordAuthOptions, signUpProblem } from "./email-password.ts";
-import { mailerFromEnv, resetPasswordEmail, RESEND_ENDPOINT, type AuthEmail, type Mailer } from "./mailer.server.ts";
+import { dropUnprovenPassword, emailPasswordAuthOptions, signUpProblem, trustedOriginsFor } from "./email-password.ts";
+import { canonicalAuthLink, mailerFromEnv, resetPasswordEmail, RESEND_ENDPOINT, type AuthEmail, type Mailer } from "./mailer.server.ts";
 import { emailAuthMessage } from "./email-messages.ts";
 import { authRateLimitStorage } from "./rate-limit.server.ts";
 
@@ -101,12 +101,20 @@ test("forgot password: mails a one-time link; the token sets a new password and 
   const url = /(http:\/\/localhost:8080\/api\/auth\/reset-password\/[^\s?]+)/.exec(sent[0]!.text)?.[1];
   assert.ok(url, sent[0]!.text);
   const token = url.split("/").pop()!;
+  assert.equal(token.length, 24, "reset token is 24 chars from Better Auth's generator");
   assert.ok(db.session!.length >= 1);
   await auth.api.resetPassword({ body: { token, newPassword: "new-password-2" } });
   assert.equal(db.session!.length, 0, "sessions revoked on reset");
   assert.equal(await errCode(auth.api.signInEmail({ body: { email: "ryan@example.com", password: "old-password-1" } })), "INVALID_EMAIL_OR_PASSWORD");
   assert.ok((await auth.api.signInEmail({ body: { email: "ryan@example.com", password: "new-password-2" } })).token);
   assert.equal(await errCode(auth.api.resetPassword({ body: { token, newPassword: "third-password-3" } })), "INVALID_TOKEN");
+  sent.length = 0;
+  await auth.api.requestPasswordReset({ body: { email: "ryan@example.com", redirectTo: "/reset-password" } });
+  const expired = /reset-password\/([^?\s]+)/.exec(sent.at(-1)!.text)![1]!;
+  const row = db.verification!.find((v) => String(v.identifier).endsWith(expired));
+  assert.ok(row);
+  row.expiresAt = new Date(Date.now() - 1000);
+  assert.equal(await errCode(auth.api.resetPassword({ body: { token: expired, newPassword: "third-password-3" } })), "INVALID_TOKEN");
   // Unknown email: same answer, nothing sent.
   sent.length = 0;
   await auth.api.requestPasswordReset({ body: { email: "nobody@example.com", redirectTo: "/reset-password" } });
@@ -146,6 +154,34 @@ test("squatter guard: Google sign-in onto an UNCONFIRMED password account links 
   assert.equal(await errCode(auth.api.signInEmail({ body: { email: "victim@gmail.example", password: "squat-pass-1" } })), "INVALID_EMAIL_OR_PASSWORD");
 });
 
+test("squatter guard: an unverified X sign-in cannot take over a password account", async () => {
+  const { auth, db } = await setup(null);
+  const context = await auth.$context;
+  const me = await auth.api.signUpEmail({ body: { name: "Owner", email: "owner@gmail.example", password: "owner-pass-1" } });
+  const attack = async (emailVerified: boolean) =>
+    handleOAuthUserInfo({ context, headers: new Headers() } as never, {
+      userInfo: { id: "x-attacker", email: "owner@gmail.example", emailVerified, name: "Attacker" },
+      account: { providerId: "grok-x", accountId: "x-attacker" } as never,
+    });
+  const unverified = await attack(false);
+  assert.ok(unverified.error, "unverified X must not link");
+  assert.equal(unverified.data, null);
+  assert.equal(db.account!.filter((a) => a.providerId === "credential").length, 1);
+  assert.equal((await auth.api.signInEmail({ body: { email: "owner@gmail.example", password: "owner-pass-1" } })).user.id, me.user.id);
+  const verifiedFlag = await attack(true);
+  assert.ok(verifiedFlag.error, "X is not treated as mailbox proof even if the profile says verified");
+  assert.equal(db.account!.filter((a) => a.providerId === "credential").length, 1);
+  assert.equal(db.account!.filter((a) => a.providerId === "grok-x").length, 0);
+});
+
+test("an X sign-in still joins a Google account that has no password", async () => {
+  const { auth, oauth, db } = await setup(null);
+  const id = await oauth("grok-google", { id: "g-only", email: "both@gmail.example", emailVerified: true, name: "Both" });
+  const x = await oauth("grok-x", { id: "x-both", email: "both@gmail.example", emailVerified: false, name: "Both" });
+  assert.equal(x, id);
+  assert.equal(db.user!.length, 1);
+});
+
 test("squatter guard leaves a CONFIRMED password alone", async () => {
   const { auth, oauth, db } = await setup(null);
   const me = await auth.api.signUpEmail({ body: { name: "Me", email: "me@gmail.example", password: "my-pass-word-1" } });
@@ -181,6 +217,82 @@ test("mailer: Resend when key + from are set (key only in the header), dev log o
   assert.equal(mailerFromEnv({ NODE_ENV: "production" }), null);
   assert.equal(mailerFromEnv({ NODE_ENV: "production", RESEND_API_KEY: "k" }), null, "a key without a from address is not enough");
   assert.match(resetPasswordEmail("a@b.co", "<b>", "https://x.example/?a=1&b=2").html, /&lt;b&gt;.*a=1&amp;b=2/s);
+  assert.doesNotMatch(resetPasswordEmail("a@b.co", "Ann\r\nBcc: x@evil.example", "https://x.example/r").text, /\r|\nBcc/);
+  assert.throws(() => resetPasswordEmail("a@b.co\r\nBcc: x@evil.example", "Ann", "https://x.example/r"), /malformed address/);
+});
+
+test("reset revocation is real only when the session cookie cache is ignored", async () => {
+  const { sent, mailer } = captureMailer();
+  const db: Record<string, Record<string, unknown>[]> = { user: [], session: [], account: [], verification: [] };
+  const holder: { auth?: { $context: Promise<{ internalAdapter: unknown }> } } = {};
+  const auth = betterAuth({
+    secret: "test-secret-test-secret-test-secret-0123",
+    baseURL: "http://localhost:8080",
+    database: memoryAdapter(db),
+    session: { cookieCache: { enabled: true, maxAge: 300 } },
+    advanced: {
+      useSecureCookies: false,
+      defaultCookieAttributes: { secure: true, sameSite: "lax" as const, path: "/" },
+      cookies: { session_token: { name: "__Host-grok-auth.session_token" }, session_data: { name: "__Host-grok-auth.session_data" } },
+    },
+    databaseHooks: {
+      account: { create: { before: async (account, ctx) => void (await dropUnprovenPassword(account, ctx?.context.internalAdapter ?? ((await holder.auth!.$context).internalAdapter as never))) } },
+    },
+    ...emailPasswordAuthOptions(mailer),
+    logger: { disabled: true },
+  });
+  holder.auth = auth as never;
+  const up = await auth.handler(
+    new Request("http://localhost:8080/api/auth/sign-up/email", {
+      method: "POST",
+      headers: { origin: "http://localhost:8080", "content-type": "application/json" },
+      body: JSON.stringify({ name: "C", email: "cache@example.com", password: "old-password-1" }),
+    }),
+  );
+  const cookies = (up.headers.getSetCookie?.() ?? []).map((c) => c.split(";")[0]).join("; ");
+  assert.match(up.headers.getSetCookie?.().join("\n") ?? "", /__Host-grok-auth\.session_token=.*HttpOnly.*Secure.*SameSite=Lax/s);
+  sent.length = 0;
+  await auth.api.requestPasswordReset({
+    body: { email: "cache@example.com", redirectTo: "/reset-password" },
+    headers: new Headers({ origin: "http://localhost:8080" }),
+  });
+  const token = /reset-password\/([^?\s]+)/.exec(sent.at(-1)!.text)![1]!;
+  await auth.api.resetPassword({ body: { token, newPassword: "new-password-2" } });
+  assert.equal(db.session!.length, 0);
+  const headers = new Headers({ cookie: cookies, origin: "http://localhost:8080" });
+  assert.ok((await auth.api.getSession({ headers }))?.user, "cookie cache still answers");
+  assert.equal((await auth.api.getSession({ headers, query: { disableCookieCache: true } }))?.user, undefined);
+});
+
+test("auth links are pinned to this app and absolute callbacks are folded back", () => {
+  const poisoned = "https://evil.grok-sandbox.com/api/auth/reset-password/tok?callbackURL=http%3A%2F%2F127.0.0.1%3A8080%2Fsteal";
+  const pinned = canonicalAuthLink(poisoned, { BETTER_AUTH_URL: "https://keyline.example" });
+  const u = new URL(pinned);
+  assert.equal(u.origin, "https://keyline.example");
+  assert.equal(u.searchParams.get("callbackURL"), "/reset-password");
+  assert.match(u.pathname, /\/tok$/);
+  const hostOf = (host: string) => ({ headers: { get: (name: string) => (name === "host" ? host : null) } });
+  const same = canonicalAuthLink(
+    "https://preview.grok-sandbox.com/api/auth/reset-password/tok?callbackURL=%2Freset-password",
+    {},
+    hostOf("preview.grok-sandbox.com"),
+    true,
+  );
+  assert.equal(new URL(same).host, "preview.grok-sandbox.com");
+  assert.throws(
+    () => canonicalAuthLink(poisoned, {}, hostOf("preview.grok-sandbox.com"), true),
+    /not this app/,
+  );
+  assert.equal(
+    new URL(canonicalAuthLink("http://localhost:8080/api/auth/verify-email?token=t&callbackURL=https%3A%2F%2Fevil.example", {})).searchParams.get("callbackURL"),
+    "/",
+  );
+});
+
+test("a public origin does not trust loopback for auth redirects", () => {
+  assert.deepEqual(trustedOriginsFor("https://keyline.example", ["*.grok-sandbox.com"], ["http://localhost:8080"]), ["https://keyline.example"]);
+  assert.ok(trustedOriginsFor("http://localhost:8080", [], ["http://localhost:8080", "http://127.0.0.1:8080"]).includes("http://127.0.0.1:8080"));
+  assert.ok(trustedOriginsFor(undefined, ["*.grok-sandbox.com"], ["http://localhost:8080"]).includes("*.grok-sandbox.com"));
 });
 
 test("error copy", () => {

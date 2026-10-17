@@ -38,7 +38,7 @@ import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite, getSql } from "../db";
 import { authRateLimitStorage } from "./rate-limit.server";
-import { dropUnprovenPassword, emailAndPasswordEnabled, emailPasswordAuthOptions, AUTH_RATE_LIMIT } from "./email-password";
+import { dropUnprovenPassword, emailAndPasswordEnabled, emailPasswordAuthOptions, AUTH_RATE_LIMIT, trustedOriginsFor } from "./email-password";
 import { mailerFromEnv } from "./mailer.server";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
@@ -118,17 +118,10 @@ const baseURL = explicitBaseURL ?? {
   fallback: "http://localhost:8080",
 };
 
-// Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.).
-// Missing entries here surface as FORBIDDEN "Invalid origin".
-const trustedOrigins: string[] = explicitBaseURL
-  ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
-  : [
-      // Host wildcards (matched against Origin's host)
-      ...previewAllowedHosts,
-      // Full-origin wildcards (matched against Origin)
-      ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
-      ...LOCAL_DEV_ORIGINS,
-    ];
+// Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.) and
+// on reset/verify redirects. A public BETTER_AUTH_URL does not also trust
+// loopback — see `trustedOriginsFor`.
+const trustedOrigins: string[] = trustedOriginsFor(explicitBaseURL, previewAllowedHosts, LOCAL_DEV_ORIGINS);
 
 const databaseUrl = env("DATABASE_URL");
 
@@ -223,7 +216,8 @@ export const auth = betterAuth({
   databaseHooks: {
     account: {
       create: {
-        // 0.0.84: a Google / X identity landing on an unconfirmed password account removes that password.
+        // 0.0.84: a proving identity (Google / gate) landing on an unconfirmed password account removes that password.
+        // X is refused by the same guard — its email is not proof of the mailbox.
         before: async (account, ctx) => {
           // Outside a request scope the hook gets no ctx; fall back to this instance's adapter.
           await dropUnprovenPassword(account, ctx?.context.internalAdapter ?? (await auth.$context).internalAdapter);
