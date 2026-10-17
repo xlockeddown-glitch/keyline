@@ -5,6 +5,7 @@
 
 Timing matches GameMap: walking advances 8 frames per 0.44 s stride (0.055 s/frame), idle 0.34 s/frame.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CELL, WALK_DT, IDLE_DT = 192, 0.44 / 8, 0.34
 scout = sys.argv[1] if len(sys.argv) > 1 else "turtle"
 out = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(f"/workspace/screenshots/{scout}-redraw-anim.gif")
+FOOT = json.loads((ROOT / "scripts" / "sprite-redraw" / scout / "rig.json").read_text())["foot_y"]
 sheet = Image.open(ROOT / "public" / "sprites" / "scouts" / f"{scout}-v2.png").convert("RGBA")
 
 
@@ -42,7 +44,7 @@ while t < LOOP - 1e-9:
     for k, (label, f) in enumerate(panels):
         x, y = (k % 4) * CELL, (k // 4) * (CELL + 22)
         d.rectangle([x + 2, y + 2, x + CELL - 3, y + CELL - 3], fill=(226, 221, 204))
-        d.line([x + 20, y + 163, x + CELL - 20, y + 163], fill=(190, 182, 160), width=1)  # rig floor line
+        d.line([x + 20, y + FOOT, x + CELL - 20, y + FOOT], fill=(190, 182, 160), width=1)  # rig floor line
         r, c = f(t)
         im.paste(cell(r, c), (x, y), cell(r, c))
         d.text((x + 8, y + CELL + 4), label, fill=(60, 50, 40))

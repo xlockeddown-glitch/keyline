@@ -118,7 +118,12 @@ def key_image(rig, src: Path, bg, names):
     views = {}
     for name in names:
         x0, y0, x1, y1 = rig["views"][name]["crop"]
-        views[name] = (col[y0:y1, x0:x1].copy(), a[y0:y1, x0:x1].copy())
+        vc, va = col[y0:y1, x0:x1].copy(), a[y0:y1, x0:x1].copy()
+        # "erase": polygons of paint to drop (hair-thin whiskers seen from behind key out pink and read as specks)
+        for poly in rig["views"][name].get("erase", []):
+            m = poly_mask(va.shape, poly)
+            va[m], vc[m] = 0, 0
+        views[name] = (vc, va)
     return views
 
 
@@ -144,10 +149,16 @@ def poly_mask(shape, poly):
     return np.asarray(img) > 127
 
 
-def ellipse_mask(shape, e, max_y):
+def ellipse_mask(shape, e, max_y, poly=None, top=False):
+    """Head region: an ellipse cut at the collar, plus an optional polygon (pointed ears, whiskers)."""
     cx, cy, rx, ry = e
     yy, xx = np.mgrid[0 : shape[0], 0 : shape[1]]
-    return (((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 <= 1) & (yy <= max_y)
+    m = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 <= 1
+    if poly:
+        m |= poly_mask(shape, poly)
+    if top:  # everything above the head's centre is head (ear tips, tufts), whatever the outline
+        m |= yy <= cy
+    return m & (yy <= max_y)
 
 
 def layer(col, a, w, mask):
@@ -208,11 +219,38 @@ def cut_parts(view, col, a, w):
     parts["hand"] = layer(col, a, w, hand)
     parts["lantern"] = layer(col, a, w, lant)
     used |= hand | lant
+    # Tail (optional): its own part, swung about its root. Its polygon must hug the tail where it passes a leg
+    # in front of it; where the tail is in front of a leg (back view) the leg's hidden paint is filled in below.
+    tail = np.zeros(shape, bool)
+    tv = view.get("tail")
+    if tv:
+        tail = poly_mask(shape, tv["poly"]) & ~used & (w < 0.08)
+        if tv.get("min_red"):
+            # Fur, not the darker boot leather the polygon crosses: drop dark paint that carries on outside the
+            # polygon (the boot); dark stripes and outline wholly inside it stay with the tail.
+            dark, n = ndimage.label((col[..., 0] < tv["min_red"]) & (a > 0.3) & ~used)
+            outside = np.unique(dark[(dark > 0) & ~poly_mask(shape, tv["poly"])])
+            tail &= ~np.isin(dark, outside[outside > 0])
+        lab, n = ndimage.label(tail & (a > 0.5))
+        if n > 1:  # keep the tail itself, not slivers of whatever else the polygon grazed
+            sizes = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
+            tail &= ndimage.binary_dilation(lab == 1 + int(np.argmax(sizes)), iterations=2)
+        parts["tail"] = layer(col, a, w, tail)
+        if tv.get("layer", "back") == "back":
+            # paint under whatever covered the tail (hem, legs) so a swing never shows a gap at its root
+            parts["tail"] = fill_under(parts["tail"], poly_mask(shape, tv["poly"]) & (a > 0.5) & ~tail, 8)
+        used |= tail
+    tail_front = bool(tv) and tv.get("layer", "back") == "front"
     hv = view["head"]
-    head = ellipse_mask(shape, hv["ellipse"], hv["max_y"]) & ~coat & ~used
+    head = ellipse_mask(shape, hv["ellipse"], hv["max_y"], hv.get("poly"), hv.get("top", False)) & ~coat & ~used
     parts["head"] = layer(col, a, w, head)
     if hv["layer"] == "back":
-        parts["head"] = extend(parts["head"], "down", hv["max_y"] + 14)
+        # Paint under the collar so a nod never opens a gap, but only in columns the hood/body covers below the
+        # cut (a head wider than the hood would otherwise grow streaks off its cheeks).
+        y0 = int(hv["max_y"]) + 1
+        below = ((a[y0 : y0 + 14] > 0.5) & ~head[y0 : y0 + 14]).all(0) if y0 + 14 <= shape[0] else np.zeros(shape[1], bool)
+        below = ndimage.binary_erosion(below, iterations=3)
+        parts["head"] = np.where(below[None, :, None], extend(parts["head"], "down", hv["max_y"] + 14), parts["head"])
     used |= head
     legs = []
     for leg in view["legs"]:
@@ -250,13 +288,18 @@ def cut_parts(view, col, a, w):
         # No hair-thin strands (a smeared single column reads as a stick once the leg rotates).
         solid = ndimage.binary_opening(thigh[..., 3] > 0.5, iterations=2)
         thigh = thigh * ndimage.binary_dilation(solid, iterations=1)[..., None]
+        if tail_front:
+            # the tail hangs in front of this leg: fill the leg's paint under it so a lifted leg has no hole
+            hole = poly_mask(shape, leg["poly"]) & tail
+            thigh = fill_under(thigh, hole & (yy < leg["ankle_y"]), 24)
+            boot = fill_under(boot, hole & (yy >= leg["ankle_y"]), 24)
         bm = boot[..., 3] > 0.5
         cols = np.where(bm.any(0))[0]
         sole_pts = np.array([[x, np.where(bm[:, x])[0].max()] for x in cols], float) if len(cols) else np.array([[0.0, leg["ankle_y"]]])
         legs.append({**leg, "thigh": thigh, "boot": boot, "sole_pts": sole_pts})
     parts["legs"] = legs
     body = layer(col, a, w, ~used)
-    front_holes = hand | lant | (head if hv["layer"] == "front" else np.zeros(shape, bool))
+    front_holes = hand | lant | (head if hv["layer"] == "front" else np.zeros(shape, bool)) | (tail if tail_front else np.zeros(shape, bool))
     parts["body"] = fill_under(body, front_holes & (a > 0.5), 10)
     return parts
 
@@ -359,7 +402,7 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
     hips sway over the planted foot, shoulders, head and lantern counter-sway, body rises at passing."""
     side = name in ("left", "right")
     P = {"body_dx": 0.0, "body_dy": 0.0, "body_rot": 0.0, "breath": 0.0, "head_dy": 0.0, "head_rot": 0.0, "hand_rot": 0.0,
-         "hand_dx": 0.0, "hand_dy": 0.0, "lantern_rot": 0.0, "hip": 0.0, "shoulder": 0.0, "flare": 0.0, "hem_dx": 0.0, "blink": 0.0, "legs": []}
+         "hand_dx": 0.0, "hand_dy": 0.0, "lantern_rot": 0.0, "hip": 0.0, "shoulder": 0.0, "flare": 0.0, "hem_dx": 0.0, "blink": 0.0, "tail_rot": 0.0, "legs": []}
     if kind == "walk":
         p = i / WALK_FRAMES
         t0 = 2 * math.pi * p
@@ -383,6 +426,7 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
             P["flare"] = 0.08 * abs(math.cos(t0))
             P["hem_dx"] = -face * 3.0 * math.cos(2 * t0 - 1.0)
             P["head_rot"] = -0.8 * face * math.sin(2 * t0 - 0.8)
+            P["tail_rot"] = face * 5.0 * math.sin(2 * t0 - 1.6)  # bobs a beat behind each step
         else:
             back = name == "back"
             for k, _ in enumerate(view["legs"]):
@@ -396,6 +440,7 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
             P["hand_rot"] = -2.0 * math.sin(t0)
             P["lantern_rot"] = 7.0 * math.sin(t0 - 1.1)
             P["head_rot"] = 1.2 * math.sin(t0 - 0.6)
+            P["tail_rot"] = 7.0 * math.sin(t0 - 1.4)  # swings with the hips, a beat late
         lag = math.sin(2 * math.pi * (p - 1 / WALK_FRAMES))
         P["head_dy"] = 1.6 * (abs(lag) - abs(math.sin(t0)))
     else:
@@ -411,6 +456,7 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
             P["head_rot"] = 1.4 * math.sin(2 * math.pi * q - 0.9)
             P["lantern_rot"] = 3.5 * math.sin(2 * math.pi * q + 0.6)
             P["blink"] = 1.0 if i == 5 else 0.0
+        P["tail_rot"] = 4.0 * math.sin(2 * math.pi * q + 1.8)  # slow lazy swish
         if side:
             P["legs"] = [{"angle": 6.0 if l["name"] == "near" else -5.0, "lift": 0.0} for l in view["legs"]]
         else:
@@ -420,7 +466,9 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
 
 def render(view, name, parts, P, rig):
     scale = view.get("scale", rig["scale"])
-    k = rig["scale"] / scale  # pose translations are in rig-scale pixels
+    # pose translations are in rig-scale pixels; "motion" scales them for a scout painted at another size, so the
+    # stride, lift and bob read the same on screen for every scout
+    k = rig["scale"] / scale * rig.get("motion", 1.0)
     Hc = int(round(CELL / scale))
     canvas = np.zeros((Hc, Hc, 5))
     side = name in ("left", "right")
@@ -441,7 +489,7 @@ def render(view, name, parts, P, rig):
                 rot = -face * (lp["angle"] - leg.get("art_angle", 0.0))
                 M = to_canvas @ T(0, dy - lp["lift"] * k) @ R(rot, hx, hy)
                 # Boot counter-rotates about the ankle so the sole stays near flat, then heel/toe roll.
-                ankle = (sum(p[0] for p in leg["poly"]) / len(leg["poly"]), leg["ankle_y"])
+                ankle = leg.get("ankle") or (sum(p[0] for p in leg["poly"]) / len(leg["poly"]), leg["ankle_y"])
                 bM = M @ R(-0.8 * rot - face * lp.get("toe", 0.0), *ankle)
             else:
                 z = lp.get("z", 0.0)
@@ -491,10 +539,17 @@ def render(view, name, parts, P, rig):
     head_M = body_M @ T((P["shoulder"] + hox) * k, (P["head_dy"] + hoy) * k) @ R(P["head_rot"] + view.get("head_tilt", 0.0), *neck)
     if hv["layer"] == "back":
         place(canvas, head, head_M)
+    tv = view.get("tail")
+    if tv:
+        tail_M = body_M @ T((P["hip"] if not side else P["hem_dx"]) * k, 0) @ R(P["tail_rot"], *tv["pivot"])
+        if tv.get("layer", "back") == "back":
+            place(canvas, parts["tail"], tail_M)
     for leg, M, bM in order:
         place(canvas, leg["thigh"], M)
         place(canvas, leg["boot"], bM)
     place(canvas, body, body_M)
+    if tv and tv.get("layer", "back") == "front":
+        place(canvas, parts["tail"], tail_M)
     if hv["layer"] == "front":
         place(canvas, head, head_M)
     hp = view["hand"]["pivot"]
@@ -572,7 +627,7 @@ def pack(base_sheet, mask_sheet):
 
 def head_median(col, a, w, view):
     hv = view["head"]
-    m = ellipse_mask(a.shape, hv["ellipse"], hv["max_y"]) & (w < 0.05) & (a > 0.95)
+    m = ellipse_mask(a.shape, hv["ellipse"], hv["max_y"], hv.get("poly"), hv.get("top", False)) & (w < 0.05) & (a > 0.95)
     return np.median(col[m], 0)
 
 
