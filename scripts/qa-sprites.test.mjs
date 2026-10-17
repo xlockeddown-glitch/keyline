@@ -16,13 +16,13 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
-  // 4 legacy characters × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85), the Fox (0.0.86), the
-  // Corgi (0.0.87) and the Sloth (0.0.88) are on the v2 sheets.
-  assert.equal(verdict.sheets.length, 12);
-  // 4 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
-  assert.equal(verdict.coatSheets, 132);
-  assert.equal(verdict.coats.length, 44);
-  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth"]);
+  // 3 legacy characters × walk / idle / side idle; the Turtle (0.0.83), the Tabby (0.0.85), the Fox (0.0.86), the
+  // Corgi (0.0.87), the Sloth (0.0.88) and the Raccoon (0.0.89) are on the v2 sheets.
+  assert.equal(verdict.sheets.length, 9);
+  // 3 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 99);
+  assert.equal(verdict.coats.length, 33);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth", "raccoon"]);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });

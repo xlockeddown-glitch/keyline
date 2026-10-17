@@ -1453,8 +1453,8 @@ h3 {
   background-size: 200% 200%;
 }
 /* 0.0.37: standing still after walking left or right keeps the side profile (2x2: row 0 left, row 1 right). */
-.scout-marker.is-idle.is-side,
-.scout-marker[data-scout="raccoon"].is-idle.is-side {
+/* 0.0.89: the Raccoon is on the v2 sheet; player-*.png stay as the fallback for a marker without data-scout. */
+.scout-marker.is-idle.is-side {
   background-image: url("/sprites/player-idle-side.png?v=k81p");
   background-size: 200% 200%;
 }
@@ -3506,8 +3506,8 @@ h3 {
   --breath: 0;
   --foot: 48px;
 }
-.pawn:has(.scout-marker[data-scout="raccoon"]),
-.pawn:has(.scout-marker:not([data-scout])) { --foot: 51px; }
+.pawn:has(.scout-marker:not([data-scout])) { --foot: 51px; } /* legacy player-*.png fallback */
+.pawn:has(.scout-marker[data-scout="raccoon"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="cat"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="fox"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
@@ -3590,6 +3590,14 @@ h3 {
 .scout-marker[data-scout="sloth"].is-idle,
 .scout-marker[data-scout="sloth"].is-idle.is-side {
   background-image: url("/sprites/scouts/sloth-v2.png?v=k83a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.0.89: the Raccoon. */
+.scout-marker[data-scout="raccoon"],
+.scout-marker[data-scout="raccoon"].is-idle,
+.scout-marker[data-scout="raccoon"].is-idle.is-side {
+  background-image: url("/sprites/scouts/raccoon-v2.png?v=k83a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
