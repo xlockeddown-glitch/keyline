@@ -112,6 +112,10 @@ def key_image(rig, src: Path, bg, names):
     sat = (mx - mn) / np.maximum(mx, 1)
     hue_red = (col[..., 0] >= col[..., 1]) & (col[..., 2] >= col[..., 1] * 0.9) | ((col[..., 0] > col[..., 1] * 1.6) & (mx < 140))
     ink = rim & hue_red & (sat > 0.25)
+    if rig.get("rim_keep_red"):
+        # (Penguin 0.0.91) a red knit scarf is red, not a maroon outline: pixels whose red clearly leads both green
+        # and blue, with blue not above green (magenta bleed has blue well over green), keep their colour
+        ink &= ~((col[..., 0] > 1.6 * np.maximum(col[..., 1], col[..., 2])) & (col[..., 2] <= col[..., 1] * 1.25))
     lum = col @ np.array([0.299, 0.587, 0.114])
     col[ink] = lum[ink][:, None] * 0.85 + np.array([6.0, 3.0, 0.0])
     col[a < 0.02] = 0
@@ -136,9 +140,13 @@ def key_image(rig, src: Path, bg, names):
     return views
 
 
-def coat_weight(col):
-    """Cobalt mask colour -> coat coverage 0..1 (B well above R and G)."""
-    w = (col[..., 2] - np.maximum(col[..., 0], col[..., 1]) + 4) / 24
+def coat_weight(col, key="cobalt"):
+    """Mask colour -> coat coverage 0..1. Cobalt (default): B well above R and G. "green" (top-level `mask_key`,
+    the Penguin 0.0.91, whose blue-black feathers read as cobalt): G well above R and B."""
+    if key == "green":
+        w = (col[..., 1] - np.maximum(col[..., 0], col[..., 2]) + 4) / 24
+    else:
+        w = (col[..., 2] - np.maximum(col[..., 0], col[..., 1]) + 4) / 24
     return np.clip(w, 0, 1)
 
 
@@ -778,7 +786,7 @@ def main():
     graded = {}
     coatL = {}
     for name, (col, a) in views.items():
-        w = coat_weight(col)
+        w = coat_weight(col, rig.get("mask_key", "cobalt"))
         if rig.get("coat_min_island"):
             # bluish specks off the coat (eye shine, a nose highlight) are not coat: keep only big coat regions
             lab, n = ndimage.label(w > 0.05)

@@ -31,8 +31,13 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    Save it as `scripts/sprite-redraw/<scout>/turnaround.jpg`.
    - Ask for the legs apart in the side views (a stride) and arms/lantern clear of the body: separate parts cut
      cleanly.
-   - Cobalt works because no scout has blue fur. The Penguin is blue: give it a different mask colour (e.g.
-     saturated green) and change `coat_weight()`.
+   - Cobalt works because no scout has blue fur. The Penguin (0.0.91) is blue-black, so its coat is painted in flat
+     saturated **green** and its rig.json sets `"mask_key": "green"` (`coat_weight()` then reads G over R and B).
+     Any other scout with green in it can do the same. Its rig folder is `lynx/`: the folder is the scout id
+     (the Penguin sits in the lynx slot), because qa-sprites reads `sprite-redraw/<scout id>/`.
+   - A red part near the silhouette (the Penguin's scarf) is caught by the maroon-outline fix that inks red-magenta
+     rim pixels dark; `"rim_keep_red": true` keeps pixels whose red clearly leads green and blue (with blue not
+     above green, unlike magenta bleed).
    - **Lantern hand:** every scout carries it in the same hand in every view (the Turtle: its right hand, so
      viewer's left from the front, viewer's right from the back, the near hand facing right and the far hand,
      reaching from behind the chest, facing left). Say so in the prompt; check it before rigging.
@@ -103,6 +108,7 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    The Owl (0.0.90) had a 1.28x CSS scale-up for its small legacy figure; the v2 owl fills its cell like the rest, so
    the scale-up is gone. Keep a scout's special CSS scale only if the v2 figure still reads wrong next to the set
    (the Giraffe's 1.46x lookout height is a design choice, not a fill fix).
+   The Penguin (0.0.91, the Super Legendary) never had a special scale; its v2 figure fills the cell like the rest.
    Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8) speeds up the walk *animation* only; walking speed
    and `SCOUTS.gait` stay the same for every coat. `anim-preview.py` reads it too.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
