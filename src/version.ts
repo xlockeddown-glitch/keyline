@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.84";
+export const APP_VERSION = "0.0.85";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k84a";
+export const PUBLISH_STAMP = "k85a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -86,3 +86,5 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.81: math levelled out — 602 near-duplicate easy math cards cut (identity and zero sums, products and quotients like 0 ÷ 13 and 7 × 1, n + 1 and n − 1, x − x, the b + a twin of every a + b, and the subtraction that just undoes an addition card already in the deck), so math is 19.3% of trivia cards (was 24.2%, cap 20%). 12 new verified political cards (Canada's Supreme Court, Senate and Commons, the European Parliament, U.S. amendment ratification; L.A. council and mayor term limit; Toronto council, amalgamation and Metro Toronto; the GLA and the GLC). A blue math lamp now deals its medium blue cards as well as the easy ones (it only ever dealt the easy half). The Texas Capitol stone card no longer gives its answer away: every choice is a named Texas stone (k81a).
 // 0.0.82: character polish pass — every walker stands on the street instead of floating like a sticker: a soft ground shadow under the feet, smooth scaling instead of blocky pixels, a thin dark ink edge instead of the offset halo, a small step bob and squash timed to the walk, idle breathing and a lean into side walks (reduced motion turns the motion off). Coats and dyes recolour cleanly: no more lavender chin, bib, belly or lip on the Corgi, no brown lantern sleeve, no brown specks in the coat; the reddish fringe on ears and tails is gone. qa:sprites fails coat colour on fur. Sprite sheets recompressed losslessly (static 8.00 → ~6.3 MB); sprite cache stamp k81p (k82a).
 // 0.0.83: the Turtle is redrawn — new painted art at 192 px frames with 8-frame walks in all four directions (true right-facing frames, not mirrors): a real stride with heel strike and push-off, the coat hem swinging with the legs, the body rising and falling, the lantern (always in its right hand) swinging; toward and away from the camera the feet step forward with hip sway. Standing still it settles into a hunched 3/4 pose that breathes, sways its lantern and blinks. Its coat is a separate layer, so print-shop coats and dyes recolour exactly the coat and never the shell, belly, skin, boots or lantern (qa:sprites proves it for every coat and dye). The other scouts keep their sheets for now; v2 sprite stamp k83a (k83a).
+// 0.0.84: email + password accounts (sign up / sign in under Google and X, reset when mail is switched on); X sign-ins cannot take over a password account; sessions end at once on password reset (k84a).
+// 0.0.85: the Tabby, Fox and Corgi are redrawn on the v2 sheet like the Turtle (8-frame walks, coat layer); the Corgi gets a short-leg waddle. v2 sprite stamp k85a (k85a).
