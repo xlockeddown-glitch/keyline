@@ -75,6 +75,10 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
      eye highlights read as cobalt and dyed with the coat);
    - per view `body_open` (iterations): below the top of the leg polygons the body keeps nothing thinner than
      this; outline strands left beside a leg otherwise read as dark sticks when the legs move.
+   Option added for the corgi (0.0.87): per view `skip_coat` (px): the sleeve reaches into the hand and lantern
+   polygons, so the coat stays on the body (the hand drops coat pixels; the lantern drops the coat grown by this
+   many px, i.e. its outline too). Also keep a far leg's polygon off the tail root: a column of tail outline at
+   the polygon's top edge is smeared up to the hip and swings as a brown stick.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
    from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the
    body behind moving parts, and animates them:
