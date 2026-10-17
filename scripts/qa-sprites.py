@@ -17,7 +17,7 @@ Since 0.0.83 scouts on the redrawn v2 sheets (src/game/coatLayer.ts V2_SCOUTS) g
 of 192 px cells (8-frame walks, an 8-frame 3/4 front idle, 4-frame side idles) plus a coat mask — cell hygiene and registration, the mask sits on
 the base coat, and every coat and dye changes only masked pixels and lands on the catalogue hue. Since 0.0.89 v2_check
 also fails interior alpha holes (scripts/sprite-holes.py: the map showing through gaps between rig parts or keyed-out
-paint, in any frame of any view) beyond a per-scout ratchet (V2_HOLE_ALLOWANCE, zero for the Raccoon and new scouts).
+paint, in any frame of any view); every v2 scout must have none.
 KEYLINE_SPRITE_OVERRIDE="name=path,..." swaps sheets in for the self-tests (v2: <scout>-v2=, <scout>-v2-coat=)."""
 from __future__ import annotations
 
@@ -570,16 +570,7 @@ def _sprite_holes():
 
 
 # 0.0.89 interior alpha holes (scripts/sprite-holes.py): see-through gaps inside a frame's silhouette, >= 4 px each,
-# in every frame of every view. The Raccoon (and every scout redrawn from now on) must have none. The scouts below
-# shipped/approved before the check existed; their current counts are a ratchet (holes, px) while their repair is
-# queued: lower an entry when a scout is fixed, delete it at zero, never raise it.
-V2_HOLE_ALLOWANCE = {
-    "turtle": (35, 455),
-    "cat": (41, 708),
-    "fox": (24, 355),
-    "corgi": (15, 118),
-    "sloth": (20, 373),
-}
+# in every frame of every view. Every v2 scout must have none (the rig's `underpaint` backs the joints).
 
 
 def _hue_arr(rgb: np.ndarray, rig) -> tuple[np.ndarray, np.ndarray]:
@@ -689,12 +680,11 @@ def v2_check() -> tuple[list[dict], list[str]]:
                     fails.append(f"{s}-v2: paint in unused cell col {c} row {r}")
         holes = holes_mod.scout_holes(s, bp)
         n_holes, hole_px = len(holes), sum(h["area"] for h in holes)
-        cap_n, cap_px = V2_HOLE_ALLOWANCE.get(s, (0, 0))
-        rec["holes"] = {"count": n_holes, "px": hole_px, "allowance": [cap_n, cap_px], "list": holes}
-        if n_holes > cap_n or hole_px > cap_px:
+        rec["holes"] = {"count": n_holes, "px": hole_px, "list": holes}
+        if n_holes:
             worst = sorted(holes, key=lambda h: -h["area"])[:3]
             where = "; ".join(f"{h['view']} frame {h['frame']} {h['area']}px at ({h['x']},{h['y']})" for h in worst)
-            fails.append(f"{s}-v2: {n_holes} see-through holes, {hole_px}px (allowed {cap_n}, {cap_px}px): {where}")
+            fails.append(f"{s}-v2: {n_holes} see-through holes, {hole_px}px: {where}")
         rec["walkRows"] = walk_rows
         rec["idle"] = idle_rows
         # The mask must sit on the coat the base sheet wears (default colour), not on shell, belly or skin.
