@@ -1641,8 +1641,8 @@ export function GameMap() {
         el.classList.toggle("is-side", cell.sheet === "idle-side");
         el.classList.toggle("is-seated", seated);
         if (!seated) el.style.backgroundPosition = cell.position;
-        // wip/art-proto: facing + a step phase synced to the sheet frame, read by CSS for bob, lean,
-        // breathing and the ground shadow (see "art-proto" in styles.css).
+        // 0.0.81 art polish: facing, plus a step phase synced to the sheet frame, read by CSS for the bob,
+        // lean, breathing, ground shadow and lantern pool (see "0.0.81 art polish" in styles.css).
         el.dataset.face = faceFromYaw(pos.current.yaw);
         const phase = (anim.current.frame + Math.min(1, anim.current.acc / frameDt)) / 4;
         const stride = moving ? Math.abs(Math.sin(phase * Math.PI * 2)) : 0;

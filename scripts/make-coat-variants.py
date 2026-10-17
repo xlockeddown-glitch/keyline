@@ -13,7 +13,8 @@ Which pixels are the coat, per pose (idle sheet, each walk facing, each side-idl
   * kept: only candidates connected to the torso, so fur, tails, bags and boots of a similar shade stay put.
 Recolour: each coat pixel keeps its lightness offset from the pose's coat (folds, seams and shading survive),
 moved onto the target lightness, with the target hue and a chroma that eases off in the shadows.
-Deterministic; rerun after any base sheet changes, then `npm run qa:sprites`."""
+Deterministic; rerun after any base sheet changes, then scripts/optimize-sprites.py (lossless; the static cap is
+tight) and `npm run qa:sprites`."""
 from __future__ import annotations
 
 import importlib.util
@@ -64,7 +65,7 @@ GRID = {"idle": 2, "walk": 4, "idle-side": 2}
 # Padding of the lantern box the coat stays out of (make-lynx.lantern_box). The 0.0.49 Penguin holds its lantern
 # right at the sleeve tip, so the default box would swallow the sleeve and the front of the coat; its lantern has
 # no coat-coloured pixels to protect, so a tight box (just the glow) is enough.
-LANTERN_PAD = {"lynx": 2, "giraffe": 2}  # 0.0.51: the Giraffe holds it at the sleeve tip too
+LANTERN_PAD = {"lynx": 2, "giraffe": 2, "corgi": 3}  # 0.0.51: the Giraffe holds it at the sleeve tip too. 0.0.81: the Corgi's pad-6 box swallowed its lantern sleeve, which stayed brown
 
 
 def coat_ref(frames: list[Image.Image], radius: float = 8.0):
@@ -93,6 +94,35 @@ def coat_ref(frames: list[Image.Image], radius: float = 8.0):
     }
 
 
+# 0.0.81 art polish: the coat's lightness window is capped around the pose's mean coat lightness. Some characters'
+# coats share a hue with their fur and differ only in lightness (the Corgi's idle reference came out with hi = 73
+# against a mean of 36, so the cream chin, bib, belly and paw dyed lavender). Below / above the mean, in L*.
+L_WIN = (16.0, 16.0)
+# The Corgi's cheeks (L 47+) frame its mouth: with them out, the dark lip is no longer joined to the coat and drops
+# out too (it dyed purple). The Owl's pale breast feathers sit just above its coat the same way.
+L_WIN_BY = {"corgi": (16.0, 10.0), "owl": (16.0, 10.0)}
+# Clean-up after the hard threshold (the same in src/game/dyeRecolor.ts):
+#   hole fill: an opaque pixel next to the coat with >= FILL_NEIGHBOURS of its 8 neighbours already coat, a colour
+#     within FILL_AB x the coat radius and the window +/- FILL_L, joins the coat (FILL_PASSES rounds). The hard
+#     threshold left olive folds and brown specks inside every recoloured coat;
+#   enclosed holes: then, in each patch of at most HOLE_MAX pixels the coat walls off from the outside, every pixel
+#     that passes the same colour test;
+#   speck removal: a coat pixel with <= 1 coat neighbour is dropped.
+FILL_PASSES = 3
+FILL_NEIGHBOURS = 5
+FILL_AB = 2.2
+FILL_L = 4.0
+HOLE_MAX = 40
+# The Turtle: lit cloth over the shell runs to L 50, past the coat range; it stayed as tan blotches (camouflage again).
+FILL_L_BY = {"turtle": 6.0}
+N8 = [(dx, dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy]
+
+
+def coat_window(scout: str, ref):
+    down, up = L_WIN_BY.get(scout, L_WIN)
+    return max(ref["lo"], ref["L"] - down), min(ref["hi"], ref["L"] + up)
+
+
 def coat_mask(scout: str, f: Image.Image, ref) -> set[tuple[int, int]]:
     bb = qa.solid_bbox(f)
     if not bb:
@@ -100,6 +130,8 @@ def coat_mask(scout: str, f: Image.Image, ref) -> set[tuple[int, int]]:
     x0, y0, x1, y1 = bb
     w, h = x1 - x0, y1 - y0
     lb = _lynx.lantern_box(f, LANTERN_PAD.get(scout, 6))
+    lo, hi = coat_window(scout, ref)
+    rad = AB_RADIUS_BY.get(scout, AB_RADIUS)
     px = f.load()
     coat: set[tuple[int, int]] = set()
     for y in range(int(y0 + h * HEAD[scout]), int(y1 - h * FOOT)):
@@ -108,7 +140,7 @@ def coat_mask(scout: str, f: Image.Image, ref) -> set[tuple[int, int]]:
             if a < 64 or (lb and _lynx.in_box(x, y, lb)):
                 continue
             L, A, B = to_lab(r, g, b)
-            if ref["lo"] <= L <= ref["hi"] and math.hypot(A - ref["a"], B - ref["b"]) <= AB_RADIUS_BY.get(scout, AB_RADIUS):
+            if lo <= L <= hi and math.hypot(A - ref["a"], B - ref["b"]) <= rad:
                 coat.add((x, y))
     seeds = [p for p in coat if y0 + h * 0.45 <= p[1] <= y0 + h * 0.75 and x0 + w * 0.3 <= p[0] <= x1 - w * 0.3]
     seen, dq = set(seeds), deque(seeds)
@@ -120,7 +152,71 @@ def coat_mask(scout: str, f: Image.Image, ref) -> set[tuple[int, int]]:
                 if p in coat and p not in seen:
                     seen.add(p)
                     dq.append(p)
-    return seen
+    fl = FILL_L_BY.get(scout, FILL_L)
+    return clean_mask(f, seen, ref, lo - fl, hi + fl, rad, lb)
+
+
+def clean_mask(f: Image.Image, m: set[tuple[int, int]], ref, lo: float, hi: float, rad: float, lb) -> set[tuple[int, int]]:
+    if not m:
+        return m
+    px = f.load()
+    W, H = f.width, f.height
+
+    def fits(x: int, y: int) -> bool:
+        r, g, b, a = px[x, y]
+        if a < 64 or (lb and _lynx.in_box(x, y, lb)):
+            return False
+        L, A, B = to_lab(r, g, b)
+        return math.hypot(A - ref["a"], B - ref["b"]) <= rad * FILL_AB and lo <= L <= hi
+
+    m = set(m)
+    for _ in range(FILL_PASSES):
+        add = set()
+        cand = {(x + dx, y + dy) for x, y in m for dx, dy in N8} - m
+        for x, y in cand:
+            if not (0 <= x < W and 0 <= y < H):
+                continue
+            if sum((x + dx, y + dy) in m for dx, dy in N8) >= FILL_NEIGHBOURS and fits(x, y):
+                add.add((x, y))
+        if not add:
+            break
+        m |= add
+    # Enclosed holes: anything the coat walls off from the outside (4-connected, through non-coat pixels from
+    # the transparent background and the cell border) that is still a coat colour, like the Turtle's lit folds.
+    outside: set[tuple[int, int]] = set()
+    dq = deque()
+    for y in range(H):
+        for x in range(W):
+            if (x in (0, W - 1) or y in (0, H - 1) or px[x, y][3] < 64) and (x, y) not in m:
+                outside.add((x, y))
+                dq.append((x, y))
+    while dq:
+        x, y = dq.popleft()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            q = (x + dx, y + dy)
+            if 0 <= q[0] < W and 0 <= q[1] < H and q not in m and q not in outside:
+                outside.add(q)
+                dq.append(q)
+    # Only small holes (folds, highlights, specks): a big walled-off patch is a part of its own (the Turtle's
+    # plastron, a satchel) and stays.
+    done: set[tuple[int, int]] = set()
+    for y in range(H):
+        for x in range(W):
+            if (x, y) in m or (x, y) in outside or (x, y) in done:
+                continue
+            comp, dq = [(x, y)], deque([(x, y)])
+            done.add((x, y))
+            while dq:
+                cx, cy = dq.popleft()
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    q = (cx + dx, cy + dy)
+                    if 0 <= q[0] < W and 0 <= q[1] < H and q not in m and q not in outside and q not in done:
+                        done.add(q)
+                        comp.append(q)
+                        dq.append(q)
+            if len(comp) <= HOLE_MAX:
+                m.update(p for p in comp if fits(*p))
+    return {p for p in m if sum((p[0] + dx, p[1] + dy) in m for dx, dy in N8) > 1}
 
 
 def recolour(f: Image.Image, mask: set[tuple[int, int]], ref, tgt, keep: float = 1.0) -> Image.Image:
@@ -193,14 +289,14 @@ def main() -> None:
 
 
 # Sheet URLs carry the stamp the art last changed in, like the base sheets in styles.css.
-ART_STAMP = "k60s"
+ART_STAMP = "k81p"
 # Characters whose base art changed since: their coat sheets carry the newer stamp (0.0.49: the Lynx slot is the Penguin).
 ART_STAMP_BY = {}
 
 
 def write_css() -> None:
     lines = [
-        "/* Print-shop coats (k60s) — GENERATED by scripts/make-coat-variants.py; do not edit by hand.",
+        f"/* Print-shop coats ({ART_STAMP}) — GENERATED by scripts/make-coat-variants.py; do not edit by hand.",
         "   data-coat on a .scout-marker swaps each sheet for the same character's recoloured sheet. Sizes and",
         "   frame positions come from the base rules in styles.css (one more attribute = higher specificity). */",
     ]

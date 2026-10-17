@@ -51,3 +51,10 @@ test("dyed coat matches the sprite mixer", () => {
   check("corgi", "walk", "dye-blue");
   check("fox", "idle-side", "dye-violet");
 });
+
+test("0.0.81 clean-up (lightness window, hole fill, enclosed holes) matches the sprite mixer", () => {
+  check("corgi", "idle", "dye-red");
+  check("turtle", "walk", "dye-amber");
+  check("cat", "idle", "dye-green");
+  check("giraffe", "walk", "dye-prism");
+});
