@@ -1023,5 +1023,10 @@
       "shadow_from": 610
     }
   },
-  "coat_min_island": 800
+  "coat_min_island": 800,
+  "underpaint": {
+    "close": 6,
+    "depth": 6,
+    "shade": 0.75
+  }
 }

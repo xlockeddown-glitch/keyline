@@ -645,21 +645,23 @@ def render(view, name, parts, P, rig):
     lp_ = view["lantern"]["pivot"]
     lant_M = hand_M @ R(P["lantern_rot"] - P["hand_rot"] - P["body_rot"], *lp_)
     place(canvas, parts["lantern"], lant_M, label, PART_IDS["lantern"])
-    if rig.get("underpaint"):
-        underpaint(canvas, label, rig["underpaint"])
     gap = np.zeros((Hc, Hc, 4))
     place(gap, np.repeat(parts["art_gap"][..., None], 4, axis=2), body_M)
-    label[(gap[..., 3] > 0.5) & (canvas[..., 3] < 0.5)] = PART_IDS["art_gap"]
+    art_gap = gap[..., 3] > 0.5
+    if rig.get("underpaint"):
+        underpaint(canvas, label, rig["underpaint"], art_gap)
+    label[art_gap & (canvas[..., 3] < 0.5)] = PART_IDS["art_gap"]
     return canvas, label
 
 
-def underpaint(canvas, label, opt):
+def underpaint(canvas, label, opt, art_gap=None):
     """Paint a shadow layer *behind* a rendered frame wherever the background would show through the figure:
     slits between parts the rig moves apart (thigh/boot under the hem, the tail joint), soft or keyed-out paint
     inside a part (the raccoon's tail rings), and fully enclosed gaps. Opt-in per scout ("underpaint" in rig.json,
     raccoon 0.0.89): {"close": closing radius in canvas px (gaps up to ~2x this wide are filled), "depth": how far
     inside the filled outline semi-transparent paint is backed, "shade": darkening of the copied neighbour colour}.
-    Openings framed by the hand or lantern (the bail loop, the gap between the lantern arm and the body) stay open.
+    Openings framed by the hand or lantern (the bail loop, the gap between the lantern arm and the body) stay open,
+    and so do openings painted in the key art wider than the closing disk (`art_gap`, e.g. between the cat's idle legs).
     The underpaint copies the nearest solid pixel's colour and coat-mask value, so a dyed coat stays dyed."""
     r = int(opt.get("close", 6))
     a = canvas[..., 3]
@@ -679,6 +681,9 @@ def underpaint(canvas, label, opt):
         if ring.any() and hand[ring].mean() >= 0.3:
             continue
         keep |= m
+    if art_gap is not None and art_gap.any():
+        # painted openings wider than the closing disk (the cat's idle legs) stay open; hairline slits get backed
+        keep &= ~ndimage.binary_opening(art_gap, structure=disk)
     if not keep.any():
         return
     _, (iy, ix) = ndimage.distance_transform_edt(~solid, return_indices=True)
