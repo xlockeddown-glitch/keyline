@@ -62,6 +62,19 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    - top-level `motion`: multiplies every pose translation (lift, step, bob, sway) for a scout painted at another
      size than the Turtle (cat: 1.28 = 0.38 / 0.296), so motion reads the same on screen; per view
      `step_reach` if the front/back step comes out over qa's 4 px.
+   Options added for the fox (0.0.86), all optional; the Turtle and the Tabby render byte-identical without them:
+   - per view `shadow_from` (a row in the crop) and `shadow_chroma` (default 0.26): the painter added a soft floor
+     shadow (darkened key colour). From that row down, paint whose chromaticity is within `shadow_chroma` of the
+     key colour's is dropped; boot leather sits ~0.34 away, so the soles survive;
+   - `tail.rev: 2` switches the tail cut to the fox rules: `min_rb` (fur whose red is that far above its blue stays
+     fur however dark, for deep red fox shading), a dark component only counts as foreign (a boot) if it is
+     mostly outside the polygon and inside a leg polygon, every piece of tail ≥ 4% of the largest is kept (the
+     tail may cross the legs and split), and a `"front"` tail fills the body under it only inside the body's
+     closed outline (filling past it left a painted ghost of the tip when the tail swung);
+   - top-level `coat_min_island` (px): coat-coloured regions smaller than this are not coat (the fox's nose and
+     eye highlights read as cobalt and dyed with the coat);
+   - per view `body_open` (iterations): below the top of the leg polygons the body keeps nothing thinner than
+     this; outline strands left beside a leg otherwise read as dark sticks when the legs move.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
    from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the
    body behind moving parts, and animates them:
