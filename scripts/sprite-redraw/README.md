@@ -100,6 +100,9 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
      so do openings painted in the key art wider than the closing disk (the cat's idle legs).
    The Raccoon (0.0.89) is the original scout and its legacy sheets are `public/sprites/player-*.png`. They stay as the
    fallback for a marker without `data-scout`, and `review-shots.py` reads them as the Raccoon's old sheets.
+   The Owl (0.0.90) had a 1.28x CSS scale-up for its small legacy figure; the v2 owl fills its cell like the rest, so
+   the scale-up is gone. Keep a scout's special CSS scale only if the v2 figure still reads wrong next to the set
+   (the Giraffe's 1.46x lookout height is a design choice, not a fill fix).
    Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8) speeds up the walk *animation* only; walking speed
    and `SCOUTS.gait` stay the same for every coat. `anim-preview.py` reads it too.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
