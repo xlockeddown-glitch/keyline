@@ -38,6 +38,8 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    - A red part near the silhouette (the Penguin's scarf) is caught by the maroon-outline fix that inks red-magenta
      rim pixels dark; `"rim_keep_red": true` keeps pixels whose red clearly leads green and blue (with blue not
      above green, unlike magenta bleed).
+   - The same fix inks dark caramel fur edges (the Giraffe's neck came out with grey lines down both sides);
+     `"rim_keep_warm": true` keeps rim pixels whose blue is well under their green (magenta bleed never is).
    - **Lantern hand:** every scout carries it in the same hand in every view (the Turtle: its right hand, so
      viewer's left from the front, viewer's right from the back, the near hand facing right and the far hand,
      reaching from behind the chest, facing left). Say so in the prompt; check it before rigging.
@@ -109,7 +111,18 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    the scale-up is gone. Keep a scout's special CSS scale only if the v2 figure still reads wrong next to the set
    (the Giraffe's 1.46x lookout height is a design choice, not a fill fix).
    The Penguin (0.0.91, the Super Legendary) never had a special scale; its v2 figure fills the cell like the rest.
-   Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8, lynx/Penguin 1.25) speeds up the walk *animation* only; walking speed
+   The Giraffe (0.0.92) keeps a scale-up, now 1.25 (was 1.46): its v2 figure already stands ~158 px in the cell (the
+   others ~149), so 1.25 puts its head about 1.3x the Raccoon's height while its coat and boots stay near the set's
+   size (at 1.46 the whole body read as a giant). The CSS pivots it on the v2 foot line (`transform-origin: 50% 48.5px`).
+   **Necks:** the Giraffe's head part is head + neck down into the collar (`head.layer: "back"`, `head.pivot` at the
+   neck's root under the collar, so the collar hides the joint and the under-collar smear backs it). Top-level
+   `"neck": {"walk", "sway", "idle"}` adds that much rotation in degrees: the neck pumps twice per stride in the
+   profiles, sways with the hips front/back, and drifts with the breath in the idles. Keep it inside qa's head drift
+   (6 px walking, 3 px idle).
+   **No legacy scouts are left** (0.0.92). The legacy 4x4 / 2x2 checks in qa-sprites.py stay and the tests run them
+   on the Giraffe's last legacy sheets, coats, dyes and icon in `scripts/fixtures/legacy/` (`KEYLINE_QA_LEGACY=giraffe`
+   treats that scout as legacy for one run; `make-coat-variants.py` and the dye mixer test read the same).
+   Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8, lynx/Penguin 1.25; the Giraffe walks at 1) speeds up the walk *animation* only; walking speed
    and `SCOUTS.gait` stay the same for every coat. `anim-preview.py` reads it too.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
    from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the

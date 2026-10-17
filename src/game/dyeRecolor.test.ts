@@ -6,9 +6,12 @@ import { DYE_TARGETS, recolorSheet, type SheetKind } from "./dyeRecolor.ts";
 
 function pythonSheet(scout: string, kind: SheetKind, dye: string): { w: number; h: number; src: Buffer; out: Buffer } {
   const py = `
-import base64, importlib.util
+import base64, importlib.util, os
 from pathlib import Path
 from PIL import Image
+# 0.0.92: every scout is on the v2 sheets; the legacy mixer is checked on the Giraffe's last legacy sheets
+# (scripts/fixtures/legacy, see qa-sprites.py KEYLINE_QA_LEGACY).
+os.environ["KEYLINE_QA_LEGACY"] = "${scout}"
 ROOT = Path(${JSON.stringify(fileURLToPath(new URL("../..", import.meta.url)))})
 def load(name, file):
     spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / file)
