@@ -91,7 +91,12 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
      out over the planted foot in front/back views, rocking about the neck so the head stays inside qa's drift);
    - top-level `coat_keep_near` [min_px, reach_px]: coat islands of at least min_px within reach_px of the main
      coat (and off the hand/lantern polygons) stay coat even below `coat_min_island` (a thin lining sliver between
-     toggles was left blue otherwise).
+     toggles was left blue otherwise);
+   - top-level `underpaint` {close, depth, shade} (Raccoon 0.0.89): after compositing, paint a shadow layer *behind*
+     each frame wherever the map would show through: slits up to ~2×`close` canvas px wide between parts the rig
+     moves apart (thigh/boot under the hem, the tail joint), semi-transparent paint more than `depth` px inside the
+     outline (keyed-out tail rings) and enclosed gaps. It copies the nearest solid pixel's colour (× `shade`) and
+     coat-mask value, so dyed coats stay dyed. Openings framed by the hand or lantern (the bail loop) stay open.
    The Raccoon (0.0.89) is the original scout and its legacy sheets are `public/sprites/player-*.png`. They stay as the
    fallback for a marker without `data-scout`, and `review-shots.py` reads them as the Raccoon's old sheets.
    Cadence: `V2_CADENCE` in `src/game/coatLayer.ts` (corgi 1.35, sloth 0.8) speeds up the walk *animation* only; walking speed
@@ -117,10 +122,20 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    Pose numbers live in `pose()`; translations are in turnaround pixels and rescaled for views painted at
    another size.
    Everything renders at source resolution and is downscaled once to 192 px.
+   The rig also writes `scripts/sprite-redraw/<scout>/parts-v2.png`, a part-id sheet (which part is on top at each
+   pixel: body 1, head 2, tail 3, leg 4, hand 5, lantern 6, art gap 7 = an opening already painted in the key art).
+   Commit it with the sheet: the holes check reads it.
    Then `default_coat` in rig.json picks the coat colour the base sheet wears (Lab L/C/h; match the old sheets).
 4. **Compress.** `/workspace/.venv-png/bin/python scripts/optimize-sprites.py` (lossless oxipng).
 5. **Check.** `npm run qa:sprites` (v2 checks: cells, planted feet, no cut-offs, the mask sits on the coat, every coat
-   and dye changes only masked pixels and lands on its hue), `npx tsc --noEmit`, `npm test`.
+   and dye changes only masked pixels and lands on its hue, no see-through holes), `npx tsc --noEmit`, `npm test`.
+   Holes (0.0.89, `scripts/sprite-holes.py`; `python3 scripts/sprite-holes.py <scout>` lists them by view and frame):
+   per frame, pixels with alpha < 128 fully enclosed by paint, or alpha < 200 at least 2 px inside the filled
+   outline, 8-connected, ≥ 4 px each at 192. Not counted: openings framed ≥ 30% by the hand/lantern (the bail loop,
+   the gap between the lantern arm and the body), openings ≥ 50% inside a painted art gap, and real stride gaps
+   between legs (inscribed radius ≥ 3.5 px, legs ≥ 50% of the rim). A new scout must have none;
+   `V2_HOLE_ALLOWANCE` in qa-sprites.py holds the counts of the scouts that predate the check (turtle, cat, fox,
+   corgi, sloth) as a ratchet until they are repaired: lower it, never raise it.
 6. **Review.** `python3 scripts/sprite-redraw/review-shots.py <scout> /workspace/screenshots/<scout>-redraw- [REV] [PREV_V2_REV]`
    (old vs new, coats, strips, idles), `python3 scripts/sprite-redraw/anim-preview.py <scout> <out.gif>` (every walk and
    idle animated at game speed: 0.055 s per walk frame, 0.34 s per idle frame) and, with a dev server up,
