@@ -48,7 +48,7 @@ type Lab = [number, number, number];
 type Ref = { L: number; a: number; b: number; lo: number; hi: number };
 
 /** Python 3 round(): halves go to the even integer. Colour math depends on it. */
-function pyRound(n: number): number {
+export function pyRound(n: number): number {
   const sign = n < 0 ? -1 : 1;
   const a = Math.abs(n);
   const f = Math.floor(a);
@@ -69,7 +69,7 @@ function linToSrgb(u: number): number {
   return Math.max(0, Math.min(255, pyRound(v * 255)));
 }
 
-function toLab(r: number, g: number, b: number): Lab {
+export function toLab(r: number, g: number, b: number): Lab {
   const R = srgbToLin(r);
   const G = srgbToLin(g);
   const B = srgbToLin(b);
@@ -83,7 +83,7 @@ function toLab(r: number, g: number, b: number): Lab {
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 }
 
-function fromLab(L: number, a: number, b: number): [number, number, number] {
+export function fromLab(L: number, a: number, b: number): [number, number, number] {
   const fy = (L + 16) / 116;
   const fx = fy + a / 500;
   const fz = fy - b / 200;

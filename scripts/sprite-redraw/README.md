@@ -1,0 +1,86 @@
+# Sprite redraw pipeline (v2 sheets)
+
+0.0.83 sample: the Turtle. Everyone else stays on the legacy 4x4 walk / 2x2 idle / 2x2 side-idle sheets until
+redrawn the same way.
+
+## What a v2 scout ships
+
+| file | what |
+| --- | --- |
+| `public/sprites/scouts/<scout>-v2.png` | 1536x1152, 8x6 cells of 192 px, 256-colour palette PNG. Rows 0-3: 8-frame walk down / left / right / up (true left and right drawings, not mirrors). Row 4: the 3/4 front idle, 8 frames (one slow breath, head nod, lantern sway, a blink). Row 5: idle left (cols 0-3), idle right (4-7). No up idle: stopping after walking up shows the front idle. Wears the scout's default coat. |
+| `public/sprites/scouts/<scout>-v2-coat.png` | Same size, greyscale: coat coverage per pixel (0 = not coat). |
+| `public/sprites/scouts/<scout>.png` | 96 px shop icon (first standing frame, half size). |
+
+Coats and dyes are not files: `DyeSync` recolours the base through the mask in the browser
+(`applyCoatLayer` in `src/game/coatLayer.ts`, Python twin `apply_coat` in `scripts/sprite-rig.py`). Only masked
+pixels change, so a coat can never bleed onto shell, belly, fur, boots or lantern. qa:sprites proves it for
+every coat and dye.
+
+Runtime: add the scout to `V2_SCOUTS` and `V2_DEFAULT_COAT` (`src/game/coatLayer.ts`), add its CSS block (copy
+the Turtle's in `src/styles.css`, "0.0.83 redrawn scouts"), point `walk`/`idle` in `src/game/data.ts` at the v2
+sheet, delete its legacy sheets, coat PNGs (`public/sprites/coats/<scout>-*`) and dye QA sheets
+(`scripts/dye-sheets/<scout>-*`), and rerun `python3 scripts/make-coat-variants.py --css`. GameMap, DyeSync,
+qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
+
+## Making the art (per scout, about half a day)
+
+1. **Key art.** Generate one turnaround sheet with the image tool: front, left profile, right profile, back, same
+   scale and ground line, on flat magenta (#FF00FF), with the coat painted in flat **cobalt blue** as a mask
+   colour. Give it the current sheets (upscaled) and a lineup of all nine scouts as references so it keeps the
+   character and the chunky proportions. Iterate 2-3 passes; see `turtle/prompts.md` for the exact prompts.
+   Save it as `scripts/sprite-redraw/<scout>/turnaround.jpg`.
+   - Ask for the legs apart in the side views (a stride) and arms/lantern clear of the body: separate parts cut
+     cleanly.
+   - Cobalt works because no scout has blue fur. The Penguin is blue: give it a different mask colour (e.g.
+     saturated green) and change `coat_weight()`.
+   - **Lantern hand:** every scout carries it in the same hand in every view (the Turtle: its right hand, so
+     viewer's left from the front, viewer's right from the back, the near hand facing right and the far hand,
+     reaching from behind the chest, facing left). Say so in the prompt; check it before rigging.
+   - **Idle key art (second pass):** a characterful 3/4 standing pose (turned toward the viewer, hunched, lantern
+     out in the lantern hand), same coat mask, magenta background. Give it the turnaround and the old idle frame
+     as references. Save as `idle-keyart.jpg`; it is its own view (`idle_front`) in rig.json with `"source"`,
+     `"background"` (the pass's own magenta), `"scale"` (match the turnaround figure's height), `"sole": "auto"`,
+     no legs, and `"eyes"` (ellipses for the blink). The script matches its skin tone to the turnaround (per-channel
+     gain) and you can add a per-view `"grade"` override if its palette runs hotter.
+2. **Rig.** Write `scripts/sprite-redraw/<scout>/rig.json` (copy the Turtle's): per view a crop box, the sole line,
+   and polygons + pivots for head (ellipse; in front of or behind the body), lantern hand, lantern, and the near
+   and far leg (hip pivot, ankle line, the leg's angle in the art for side views). Run with `--debug` and look at
+   `debug-body-<view>.png` to check the cut. A leg keeps only paint joined to its boot and below the coat's hem
+   outline (shell rim, tail and hem edge stay on the body), and its hidden ends are smeared only from interior
+   columns, so a swinging leg never drags a dark flap. Coordinates are source pixels in the view's crop.
+3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
+   from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the
+   body behind moving parts, and animates them:
+   - side walk (contact · down · passing · up, twice): legs swing ±32° about the hip, the swing foot lifts 18 px,
+     the leading boot strikes heel-first (toe up) and the trailing boot peels heel-up before it leaves; the body
+     height is solved every frame so the planted foot stays on the street (so the body is lowest at contact,
+     highest at passing); the coat hem flares with the stride and sways a beat behind it (a per-row warp of the
+     body below the hips, `warp_rows`); the lantern hand swings against the lantern-side leg and the lantern lags
+     like a pendulum; head bob trails the body by a frame;
+   - front/back walk: the swing foot lifts and steps toward the viewer (lower and ~10% bigger; away from the
+     viewer in the back view), thighs follow halfway; hips sway over the planted foot while shoulders, head,
+     hand and lantern counter-sway (the same per-row warp, shoulders → hips); body rises at passing. The floor
+     is fixed per view from the neutral stance, so the stepping foot lands ~3 px (at 192) lower — qa:sprites
+     allows 4 px on these rows and the self-test requires at least 2 so it can't slide back to marching in place;
+   - side idles: breath (slight vertical swell), head rise, lantern sway;
+   - 3/4 idle (`idle_front`, 8 frames): one slow breath, the head settles lower/forward in the collar
+     (`head_offset`/`head_tilt`) and nods a beat behind the breath, lantern sways, eyes close on frame 6
+     (`blink()`: lids painted from the surrounding skin plus a lash line).
+   Pose numbers live in `pose()`; translations are in turnaround pixels and rescaled for views painted at
+   another size.
+   Everything renders at source resolution and is downscaled once to 192 px.
+   Then `default_coat` in rig.json picks the coat colour the base sheet wears (Lab L/C/h; match the old sheets).
+4. **Compress.** `/workspace/.venv-png/bin/python scripts/optimize-sprites.py` (lossless oxipng).
+5. **Check.** `npm run qa:sprites` (v2 checks: cells, planted feet, no cut-offs, the mask sits on the coat, every coat
+   and dye changes only masked pixels and lands on its hue), `npx tsc --noEmit`, `npm test`.
+6. **Review.** `python3 scripts/sprite-redraw/review-shots.py <scout> /workspace/screenshots/<scout>-redraw- [REV] [PREV_V2_REV]`
+   (old vs new, coats, strips, idles), `python3 scripts/sprite-redraw/anim-preview.py <scout> <out.gif>` (every walk and
+   idle animated at game speed: 0.055 s per walk frame, 0.34 s per idle frame) and, with a dev server up,
+   `node scripts/sprite-redraw/ingame-shots.mjs http://127.0.0.1:8092 /workspace/screenshots/<scout>-redraw-ingame- <scout>`.
+
+## Size
+
+Turtle: base 157 KB + mask 32 KB = 189 KB, against 275 KB for its legacy sheets and 12 coat PNGs. The full-colour
+PNG is 900 KB; the 256-colour palette (Floyd-Steinberg) is what makes 192 px frames fit. All nine scouts on v2
+come to about 1.7 MB against 2.9 MB for the legacy sheets and coat PNGs today (135 files), so the static build gets
+smaller as they move.

@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -14,10 +16,12 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(r.status, 0, r.stdout + r.stderr);
   const verdict = JSON.parse(r.stdout);
   assert.equal(verdict.ok, true);
-  assert.equal(verdict.sheets.length, 27);
-  // 9 characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
-  assert.equal(verdict.coatSheets, 297);
-  assert.equal(verdict.coats.length, 99);
+  // 8 legacy characters × walk / idle / side idle; the Turtle is on the v2 sheets (0.0.83).
+  assert.equal(verdict.sheets.length, 24);
+  // 8 legacy characters × (4 print-shop coats + 7 vat dyes) × walk / idle / side idle.
+  assert.equal(verdict.coatSheets, 264);
+  assert.equal(verdict.coats.length, 88);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle"]);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -47,22 +51,54 @@ test("qa:sprites fails a character whose walk and idle coats differ (the 0.0.36 
   assert.ok(verdict.palettes.filter((p) => p.scout !== "cat").every((p) => p.coatDeltaH <= p.coatLimit));
 });
 
-test("qa:sprites fails the 0.0.37 Turtle, which walked in a bare shell but idled in a hooded coat", () => {
-  const { status, verdict } = runWith(
-    "turtle-walk=scripts/fixtures/turtle-walk-shell-k37.png,turtle-idle-side=scripts/fixtures/does-not-exist.png",
-  );
-  assert.equal(status, 1);
-  for (const facing of ["front", "left", "right"]) {
-    assert.ok(
-      verdict.failures.some((f) => f.startsWith(`turtle: walk and idle coats differ in colour (walking ${facing},`)),
-      verdict.failures.join("\n"),
-    );
+// ── 0.0.83 v2 sheets (the redrawn Turtle) ──
+
+function v2Fixture(kind) {
+  // Writes a broken copy of the committed Turtle v2 sheet or mask to a temp file and returns its path.
+  const out = join(mkdtempSync(join(tmpdir(), "qa-v2-")), `${kind}.png`);
+  const py = {
+    // Coat mask over the whole body: shell, belly, skin and boots would all take the coat colour.
+    "mask-everywhere": `from PIL import Image\nim = Image.open("public/sprites/scouts/turtle-v2.png").convert("RGBA")\nImage.eval(im.getchannel("A"), lambda v: 255 if v else 0).save("${out}")`,
+    // A walk frame that lost its art (right walk, frame 3).
+    "missing-frame": `from PIL import Image\nim = Image.open("public/sprites/scouts/turtle-v2.png").convert("RGBA")\nim.paste((0, 0, 0, 0), (3 * 192, 2 * 192, 4 * 192, 3 * 192))\nim.save("${out}")`,
+  }[kind];
+  const r = spawnSync("python3", ["-c", py], { cwd: root, encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  return out;
+}
+
+test("qa:sprites checks the v2 Turtle: every frame, planted feet, the mask on the coat, every coat and dye exact", () => {
+  const { verdict } = runWith("");
+  const t = verdict.v2.find((r) => r.scout === "turtle");
+  assert.equal(t.walkRows.length, 4);
+  for (const row of t.walkRows) {
+    assert.equal(row.feet.length, 8);
+    const spread = Math.max(...row.feet) - Math.min(...row.feet);
+    // Profiles: planted feet hold the floor. Toward/away from camera the stepping foot lands a little lower
+    // (it comes toward the viewer) — but it must move at all, or the walk is marching in place again.
+    if (row.row === 1 || row.row === 2) assert.ok(spread <= 3, `row ${row.row} feet ${row.feet}`);
+    else assert.ok(spread >= 2 && spread <= 4, `row ${row.row} feet ${row.feet}`);
   }
-  // Only the turtle trips the coat check; the other seven stay inside their limits.
-  const coatFails = verdict.failures.filter((f) => /coats? differ/.test(f));
-  assert.ok(coatFails.every((f) => f.startsWith("turtle:")), coatFails.join("\n"));
-  const turtle = verdict.palettes.find((p) => p.scout === "turtle");
-  assert.ok(turtle.coatDeltaH > 3.2 && turtle.coatDeltaH < 5.5, `scored ${turtle.coatDeltaH}: under the old 5.5 limit, over the new one`);
+  assert.deepEqual(t.idle.map((r) => r.face), ["down", "left", "right"]);
+  assert.ok(t.maskHueGap <= 14, `mask hue gap ${t.maskHueGap}`);
+  assert.ok(t.maskFit >= 0.75, `mask fit ${t.maskFit}`);
+  assert.equal(t.variants.length, 11);
+  for (const v of t.variants) {
+    assert.equal(v.offMask, 0, `${v.coat} changed pixels off the coat`);
+    assert.ok(v.targetHueGap <= 20, `${v.coat} hue ${v.targetHueGap}`);
+  }
+});
+
+test("qa:sprites fails a v2 coat mask that covers the shell and belly", () => {
+  const { status, verdict } = runWith(`turtle-v2-coat=${v2Fixture("mask-everywhere")}`);
+  assert.equal(status, 1);
+  assert.ok(verdict.failures.some((f) => /^turtle-v2-coat: masked pixels are not the base coat/.test(f)), verdict.failures.join("\n"));
+});
+
+test("qa:sprites fails a v2 sheet with a missing walk frame", () => {
+  const { status, verdict } = runWith(`turtle-v2=${v2Fixture("missing-frame")}`);
+  assert.equal(status, 1);
+  assert.ok(verdict.failures.some((f) => f === "turtle-v2 walk row 2 frame 3: empty"), verdict.failures.join("\n"));
 });
 
 test("qa:sprites checks every facing and the shop icon against the idle coat, per-character limits", () => {

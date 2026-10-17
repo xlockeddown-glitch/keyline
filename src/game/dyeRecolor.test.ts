@@ -54,7 +54,7 @@ test("dyed coat matches the sprite mixer", () => {
 
 test("0.0.81 clean-up (lightness window, hole fill, enclosed holes) matches the sprite mixer", () => {
   check("corgi", "idle", "dye-red");
-  check("turtle", "walk", "dye-amber");
+  check("sloth", "walk", "dye-amber"); // 0.0.83: the Turtle moved to the v2 sheets (coatLayer.test.ts)
   check("cat", "idle", "dye-green");
   check("giraffe", "walk", "dye-prism");
 });

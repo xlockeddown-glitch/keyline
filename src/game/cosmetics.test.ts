@@ -16,6 +16,7 @@ import {
 } from "./cosmetics.ts";
 import { TIER_VALUE } from "./rewards.ts";
 import { crateLoot } from "./crate.ts";
+import { V2_PALETTE, V2_SCOUTS } from "./coatLayer.ts";
 import type { Tier } from "./types";
 
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
@@ -139,7 +140,13 @@ test("art wiring: the coat palette, the generated coat CSS and the lantern-skin 
   assert.deepEqual(Object.keys(palette).sort(), Object.keys(COATS).sort());
   for (const [id, c] of Object.entries(COATS)) assert.equal(palette[id]!.name, c.name);
   const coatsCss = read("../../public/coats.css");
-  for (const scout of ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"]) {
+  const all = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"];
+  // 0.0.83: v2 scouts (redrawn sheets) have no coat PNGs; the browser recolours their coat mask from V2_PALETTE.
+  for (const scout of all.filter((s) => V2_SCOUTS.has(s))) {
+    assert.ok(!coatsCss.includes(`[data-scout="${scout}"]`), `${scout} is v2: no coat sheets in coats.css`);
+    for (const coat of Object.keys(COATS)) assert.ok(V2_PALETTE[coat], `${scout} ${coat}: no v2 coat target`);
+  }
+  for (const scout of all.filter((s) => !V2_SCOUTS.has(s))) {
     for (const coat of Object.keys(COATS)) {
       for (const [sel, kind] of [["", "walk"], [".is-idle", "idle"], [".is-idle.is-side", "idle-side"]] as const) {
         const rule = `.scout-marker[data-scout="${scout}"][data-coat="${coat}"]${sel}{background-image:url("/sprites/coats/${scout}-${coat}-${kind}.png`;

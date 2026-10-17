@@ -13,6 +13,8 @@ Which pixels are the coat, per pose (idle sheet, each walk facing, each side-idl
   * kept: only candidates connected to the torso, so fur, tails, bags and boots of a similar shade stay put.
 Recolour: each coat pixel keeps its lightness offset from the pose's coat (folds, seams and shading survive),
 moved onto the target lightness, with the target hue and a chroma that eases off in the shadows.
+0.0.83: scouts on the redrawn v2 sheets (qa.V2_IDS, e.g. the Turtle) have no coat PNGs — the browser recolours their
+coat mask (src/game/coatLayer.ts) — so this covers qa.LEGACY_IDS only.
 Deterministic; rerun after any base sheet changes, then scripts/optimize-sprites.py (lossless; the static cap is
 tight) and `npm run qa:sprites`."""
 from __future__ import annotations
@@ -279,13 +281,13 @@ def main() -> None:
     out = DYE_OUT if dyes_only else OUT
     targets = DYES if dyes_only else COATS
     out.mkdir(parents=True, exist_ok=True)
-    for scout in qa.SCOUT_IDS:
+    for scout in qa.LEGACY_IDS:
         for coat in targets:
             for kind in GRID:
                 save_exact(variant(scout, kind, coat), out / f"{scout}-{coat}-{kind}.png")
     if not dyes_only:
         write_css()
-    print(f"wrote {len(qa.SCOUT_IDS) * len(targets) * len(GRID)} sheets to {out.relative_to(ROOT)}" + ("" if dyes_only else " and public/coats.css"))
+    print(f"wrote {len(qa.LEGACY_IDS) * len(targets) * len(GRID)} sheets to {out.relative_to(ROOT)}" + ("" if dyes_only else " and public/coats.css"))
 
 
 # Sheet URLs carry the stamp the art last changed in, like the base sheets in styles.css.
@@ -300,7 +302,7 @@ def write_css() -> None:
         "   data-coat on a .scout-marker swaps each sheet for the same character's recoloured sheet. Sizes and",
         "   frame positions come from the base rules in styles.css (one more attribute = higher specificity). */",
     ]
-    for scout in qa.SCOUT_IDS:
+    for scout in qa.LEGACY_IDS:
         for coat in COATS:
             base = f'.scout-marker[data-scout="{scout}"][data-coat="{coat}"]'
             stamp = "k64p" if str(coat).startswith("dye-") else ART_STAMP_BY.get(scout, ART_STAMP)

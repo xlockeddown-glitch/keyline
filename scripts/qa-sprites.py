@@ -13,13 +13,17 @@ Since 0.0.81 every coat variant also keeps its colour off the fur (coat_leak). S
   * every pose shows the coat: idle, walk front/left/right and both side idles each move the torso colour
     off the character's own coat (ΔE) and onto the catalogue hue (scripts/coat-variants.json);
   * one coat per outfit: walk facings and side idles match the idle coat (ΔH), like the base sheets.
-KEYLINE_SPRITE_OVERRIDE="name=path,..." swaps sheets in for the self-tests."""
+Since 0.0.83 scouts on the redrawn v2 sheets (src/game/coatLayer.ts V2_SCOUTS) get v2_check instead: one 8x6 sheet
+of 192 px cells (8-frame walks, an 8-frame 3/4 front idle, 4-frame side idles) plus a coat mask — cell hygiene and registration, the mask sits on
+the base coat, and every coat and dye changes only masked pixels and lands on the catalogue hue.
+KEYLINE_SPRITE_OVERRIDE="name=path,..." swaps sheets in for the self-tests (v2: <scout>-v2=, <scout>-v2-coat=)."""
 from __future__ import annotations
 
 import itertools
 import json
 import math
 import os
+import re
 import sys
 from functools import lru_cache
 from hashlib import md5
@@ -66,6 +70,16 @@ SHEETS = {
 # Shop icons (one 96 px idle-style portrait each); checked against the idle coat, not inspected as sheets.
 SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"]  # 0.0.51: + the Giraffe
 ICONS = {s: SCOUTS / f"{s}.png" for s in SCOUT_IDS}
+
+# 0.0.83: scouts redrawn on the v2 sheets (src/game/coatLayer.ts V2_SCOUTS) — one 8x6 sheet of 192 px cells plus a
+# coat mask, checked by v2_check(). Every other check here covers the legacy 4x4 / 2x2 sheets only.
+_v2_src = (ROOT / "src" / "game" / "coatLayer.ts").read_text()
+V2_IDS = re.findall(r'"([a-z]+)"', re.search(r"V2_SCOUTS[^=]*=\s*new Set\(\[([^\]]*)\]", _v2_src).group(1))
+LEGACY_IDS = [s for s in SCOUT_IDS if s not in V2_IDS]
+for _s in V2_IDS:
+    for _k in ("idle", "walk", "idle-side"):
+        SHEETS.pop(f"{_s}-{_k}", None)
+V2_SHEETS = {s: {"base": SCOUTS / f"{s}-v2.png", "mask": SCOUTS / f"{s}-v2-coat.png"} for s in V2_IDS}
 KINDS = ["idle", "walk", "idle-side"]
 
 # 0.0.45 print-shop coats, plus 0.0.64 vat dyes: one recoloured walk / idle / side-idle set per character.
@@ -76,7 +90,7 @@ COAT_DIR = SPR / "coats"
 DYE_DIR = ROOT / "scripts" / "dye-sheets"
 VARIANTS = {
     f"{s}-{c}-{k}": ((DYE_DIR if str(c).startswith("dye-") else COAT_DIR) / f"{s}-{c}-{k}.png", SHEETS[f"{s}-{k}"][1])
-    for s in SCOUT_IDS
+    for s in LEGACY_IDS
     for c in COATS
     for k in KINDS
 }
@@ -85,6 +99,10 @@ for _pair in filter(None, os.environ.get("KEYLINE_SPRITE_OVERRIDE", "").split(",
     _name, _path = _pair.split("=", 1)
     if _name.endswith("-icon"):
         ICONS[_name[:-5]] = (ROOT / _path).resolve()
+    elif _name.endswith("-v2-coat") and _name[:-8] in V2_SHEETS:
+        V2_SHEETS[_name[:-8]]["mask"] = (ROOT / _path).resolve()
+    elif _name.endswith("-v2") and _name[:-3] in V2_SHEETS:
+        V2_SHEETS[_name[:-3]]["base"] = (ROOT / _path).resolve()
     elif _name in VARIANTS:
         VARIANTS[_name] = ((ROOT / _path).resolve(), VARIANTS[_name][1])
     else:
@@ -230,7 +248,7 @@ def iou(a: list[int], b: list[int]) -> float:
 def shape_check() -> tuple[list[dict], list[str], list[str]]:
     rows, fails, warns = [], [], []
     for kind in KINDS:
-        masks = {s: mask(SHEETS[f"{s}-{kind}"][0]) for s in SCOUT_IDS if SHEETS[f"{s}-{kind}"][0].exists()}
+        masks = {s: mask(SHEETS[f"{s}-{kind}"][0]) for s in LEGACY_IDS if SHEETS[f"{s}-{kind}"][0].exists()}
         for a, b in itertools.combinations(sorted(masks), 2):
             if len(masks[a]) != len(masks[b]):
                 continue
@@ -287,7 +305,7 @@ def delta_h(p: tuple[float, float, float], q: tuple[float, float, float]) -> flo
 
 def palette_check() -> tuple[list[dict], list[str]]:
     rows, fails = [], []
-    for s in SCOUT_IDS:
+    for s in LEGACY_IDS:
         ip, wp, sp = (SHEETS[f"{s}-{k}"][0] for k in KINDS)
         if not (ip.exists() and wp.exists()):
             continue
@@ -321,7 +339,7 @@ def palette_check() -> tuple[list[dict], list[str]]:
 
 def side_idle_check() -> tuple[list[dict], list[str]]:
     rows, fails = [], []
-    for s in SCOUT_IDS:
+    for s in LEGACY_IDS:
         sp, wp = SHEETS[f"{s}-idle-side"][0], SHEETS[f"{s}-walk"][0]
         if not sp.exists():
             fails.append(f"{s}: no side idle sheet (stopping while walking left/right snaps to the front)")
@@ -421,7 +439,7 @@ def coat_variant_check() -> tuple[list[dict], list[dict], list[str]]:
         rep = inspect(name, path, size)
         reports.append(rep)
         fails.extend(f"{name}: {m}" for m in rep["failures"])
-    for s in SCOUT_IDS:
+    for s in LEGACY_IDS:
         base = {k: SHEETS[f"{s}-{k}"][0] for k in KINDS}
         if not all(p.exists() for p in base.values()):
             continue
@@ -514,6 +532,178 @@ def inspect(name: str, path: Path, size: tuple[int, int]) -> dict:
     }
 
 
+
+# ── 0.0.83 v2 sheets ─────────────────────────────────────────────────────
+V2_CELL, V2_COLS, V2_ROWS = 192, 8, 6
+V2_WALK_FRAMES = 8
+# idle facing -> (row, first col, frames): the 3/4 front idle is 8 frames; side idles 4. No up idle (stopping
+# after walking up shows the front idle).
+V2_IDLE_CELLS = {"down": (4, 0, 8), "left": (5, 0, 4), "right": (5, 4, 4)}
+MAX_V2_FOOT_SPREAD = 3      # floor line wobble inside one walk row (192 px cells)
+MAX_V2_FOOT_SPREAD_FB = 4   # front/back rows: the foot stepping toward the viewer lands ~3 px lower, by design
+MAX_V2_CROSS_FOOT = 4       # floor difference between facings, and idle vs walk
+MAX_V2_HEAD_DRIFT = 6       # head x range inside one walk row (front sway is ~1 px; the rest is the lean)
+MAX_V2_IDLE_HEAD = 3
+MIN_V2_COAT_SHARE = 0.12    # every frame shows the coat
+MAX_V2_COAT_WOBBLE = 0.25   # coat pixel count vs the row median (a frame that loses the coat layer)
+MAX_V2_MASK_HUE = 14.0      # median hue gap between masked base pixels and the default coat
+MIN_V2_MASK_FIT = 0.75      # share of masked pixels painted as the default coat (true mask ~0.87; mask over the whole body ~0.49)
+MAX_V2_TARGET_HUE = 20.0
+
+
+def _sprite_rig():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("sprite_rig", ROOT / "scripts" / "sprite-rig.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _hue_arr(rgb: np.ndarray, rig) -> tuple[np.ndarray, np.ndarray]:
+    lab = rig.to_lab(rgb.astype(np.float64))
+    return (np.degrees(np.arctan2(lab[..., 2], lab[..., 1])) + 360) % 360, np.hypot(lab[..., 1], lab[..., 2])
+
+
+def _gap(h: np.ndarray, t: float) -> np.ndarray:
+    return np.abs((h - t + 180) % 360 - 180)
+
+
+def v2_check() -> tuple[list[dict], list[str]]:
+    rows, fails = [], []
+    if not V2_IDS:
+        return rows, fails
+    rig = _sprite_rig()
+    for s in V2_IDS:
+        bp, mp = V2_SHEETS[s]["base"], V2_SHEETS[s]["mask"]
+        size = (V2_COLS * V2_CELL, V2_ROWS * V2_CELL)
+        rep = inspect(f"{s}-v2", bp, size)
+        fails.extend(f"{s}-v2: {m}" for m in rep["failures"])
+        if not bp.exists() or not mp.exists():
+            if not mp.exists():
+                fails.append(f"{s}-v2-coat: missing")
+            rows.append({"scout": s, "ok": False})
+            continue
+        base_img = Image.open(bp).convert("RGBA")
+        mask_img = Image.open(mp).convert("L")
+        if mask_img.size != size:
+            fails.append(f"{s}-v2-coat: size {mask_img.size} != {size}")
+            rows.append({"scout": s, "ok": False})
+            continue
+        base = np.asarray(base_img)
+        mask = np.asarray(mask_img)
+        alpha = base[..., 3]
+        default = json.loads((ROOT / "scripts" / "sprite-redraw" / s / "rig.json").read_text())["default_coat"]
+        rec: dict = {"scout": s, "base": str(bp.relative_to(ROOT)) if bp.is_relative_to(ROOT) else str(bp)}
+        stray = int(((mask > 0) & (alpha == 0)).sum())
+        if stray:
+            fails.append(f"{s}-v2-coat: {stray}px of coat where the sheet is empty")
+
+        def cell(c: int, r: int) -> tuple[Image.Image, np.ndarray, np.ndarray]:
+            box = (c * V2_CELL, r * V2_CELL, (c + 1) * V2_CELL, (r + 1) * V2_CELL)
+            return base_img.crop(box), base[box[1]:box[3], box[0]:box[2]], mask[box[1]:box[3], box[0]:box[2]]
+
+        used = set()
+        walk_rows = []
+        for r in range(4):
+            heads, feet, coat_px, edges = [], [], [], 0
+            for c in range(V2_WALK_FRAMES):
+                used.add((c, r))
+                f, px, m = cell(c, r)
+                bb = solid_bbox(f)
+                if not bb:
+                    fails.append(f"{s}-v2 walk row {r} frame {c}: empty")
+                    continue
+                heads.append(head_cx(f))
+                feet.append(bb[3])
+                edges += edge_touch(f)
+                op = px[..., 3] > 200
+                coat_px.append(int(((m > 127) & op).sum()))
+                share = coat_px[-1] / max(1, int(op.sum()))
+                if share < MIN_V2_COAT_SHARE:
+                    fails.append(f"{s}-v2 walk row {r} frame {c}: coat covers {share:.0%} of the body (< {MIN_V2_COAT_SHARE:.0%})")
+            if not feet:
+                continue
+            drift = max(heads) - min(heads)
+            med = sorted(coat_px)[len(coat_px) // 2]
+            wobble = max(abs(n - med) / max(med, 1) for n in coat_px)
+            walk_rows.append({"row": r, "headDrift": round(drift, 1), "feet": feet, "coatWobble": round(wobble, 3), "edgePx": edges})
+            if drift > MAX_V2_HEAD_DRIFT:
+                fails.append(f"{s}-v2 walk row {r}: body drifts {drift:.1f}px across the stride")
+            if max(feet) - min(feet) > (MAX_V2_FOOT_SPREAD_FB if r in (0, 3) else MAX_V2_FOOT_SPREAD):
+                fails.append(f"{s}-v2 walk row {r}: floor wobbles {feet}")
+            if edges:
+                fails.append(f"{s}-v2 walk row {r}: {edges}px touch the cell edge (cut off)")
+            if wobble > MAX_V2_COAT_WOBBLE:
+                fails.append(f"{s}-v2 walk row {r}: coat area jumps {wobble:.0%} between frames")
+        floors = [sorted(x["feet"])[len(x["feet"]) // 2] for x in walk_rows]
+        if floors and max(floors) - min(floors) > MAX_V2_CROSS_FOOT:
+            fails.append(f"{s}-v2 walk: facings stand on different floors {floors} (turn jump)")
+        idle_rows = []
+        for face, (r, c0, n) in V2_IDLE_CELLS.items():
+            heads, feet = [], []
+            for i in range(n):
+                used.add((c0 + i, r))
+                f, px, m = cell(c0 + i, r)
+                bb = solid_bbox(f)
+                if not bb:
+                    fails.append(f"{s}-v2 idle {face} frame {i}: empty")
+                    continue
+                heads.append(head_cx(f))
+                feet.append(bb[3])
+                if edge_touch(f):
+                    fails.append(f"{s}-v2 idle {face} frame {i}: touches the cell edge (cut off)")
+            if not feet:
+                continue
+            idle_rows.append({"face": face, "headDrift": round(max(heads) - min(heads), 1), "floor": max(feet)})
+            if max(heads) - min(heads) > MAX_V2_IDLE_HEAD:
+                fails.append(f"{s}-v2 idle {face}: head jumps {max(heads) - min(heads):.1f}px")
+            if floors and abs(max(feet) - sum(floors) / len(floors)) > MAX_V2_CROSS_FOOT:
+                fails.append(f"{s}-v2 idle {face}: floor {max(feet)} vs walk {floors} (hop on stop/start)")
+        for r in range(V2_ROWS):
+            for c in range(V2_COLS):
+                if (c, r) not in used and cell(c, r)[1][..., 3].any():
+                    fails.append(f"{s}-v2: paint in unused cell col {c} row {r}")
+        rec["walkRows"] = walk_rows
+        rec["idle"] = idle_rows
+        # The mask must sit on the coat the base sheet wears (default colour), not on shell, belly or skin.
+        full = (mask >= 238) & (alpha > 200)
+        hue, chroma = _hue_arr(base[full][:, :3], rig)
+        mask_gap = float(np.median(_gap(hue, default["h"]))) if full.any() else 999.0
+        # The base coat is painted to a model (default hue, chroma easing off with lightness); shell, belly, skin
+        # and boots are not, even where they are brown too. Most masked pixels must fit that model.
+        lab = rig.to_lab(base[full][:, :3].astype(np.float64))
+        model = default["C"] * np.clip(lab[:, 0] / default["L"], 0.5, 1.2)
+        fit = float(((_gap(hue, default["h"]) <= 10) & (np.abs(chroma - model) <= 6)).mean()) if full.any() else 0.0
+        rec["maskHueGap"] = round(mask_gap, 2)
+        rec["maskFit"] = round(fit, 3)
+        if mask_gap > MAX_V2_MASK_HUE or fit < MIN_V2_MASK_FIT:
+            fails.append(f"{s}-v2-coat: masked pixels are not the base coat (hue gap {mask_gap:.1f}°, {fit:.0%} painted as the coat < {MIN_V2_MASK_FIT:.0%})")
+        # Every print-shop coat and dye: only masked pixels change, the coat lands on the target hue.
+        variants = []
+        for cid, tgt in COATS.items():
+            out = rig.apply_coat(base, mask, tgt, default)
+            changed_off = int((np.any(out != base, -1) & (mask == 0)).sum())
+            alpha_diff = int((out[..., 3] != base[..., 3]).sum())
+            h2, _ = _hue_arr(out[full][:, :3], rig)
+            tgt_gap = float(np.median(_gap(h2, tgt["h"]))) if full.any() else 999.0
+            variants.append({"coat": cid, "offMask": changed_off, "targetHueGap": round(tgt_gap, 2)})
+            if changed_off:
+                fails.append(f"{s}-v2 {cid}: coat colour on fur/shell ({changed_off}px outside the coat mask changed)")
+            if alpha_diff:
+                fails.append(f"{s}-v2 {cid}: recolour changed the silhouette ({alpha_diff}px)")
+            if tgt_gap > MAX_V2_TARGET_HUE:
+                fails.append(f"{s}-v2 {cid}: coat misses the catalogue hue (median gap {tgt_gap:.1f}° > {MAX_V2_TARGET_HUE})")
+        rec["variants"] = variants
+        icon = ICONS.get(s)
+        if icon and icon.exists():
+            ic = np.asarray(Image.open(icon).convert("RGBA"))
+            d = delta_h(torso_lab([Image.fromarray(ic)]), torso_lab([cell(V2_IDLE_CELLS["down"][1], V2_IDLE_CELLS["down"][0])[0]]))
+            rec["iconDeltaH"] = round(d, 2)
+            if d > MAX_COAT_DH:
+                fails.append(f"{s}: shop icon coat differs from the v2 idle (ΔH {d:.1f} > {MAX_COAT_DH})")
+        rows.append(rec)
+    return rows, fails
+
 def main() -> int:
     reports = [inspect(name, path, size) for name, (path, size) in SHEETS.items()]
     failures = []
@@ -528,7 +718,7 @@ def main() -> int:
         if len(names) > 1:
             failures.append(f"duplicate sheet {digest[:8]}: {', '.join(names)}")
     frames = []
-    scouts = SCOUT_IDS
+    scouts = LEGACY_IDS
     for scout in scouts:
         ip, wp = SHEETS[f"{scout}-idle"][0], SHEETS[f"{scout}-walk"][0]
         if not (ip.exists() and wp.exists()):
@@ -546,6 +736,8 @@ def main() -> int:
     failures.extend(side_fails)
     coat_sheets, coat_rows, coat_fails = coat_variant_check()
     failures.extend(coat_fails)
+    v2_rows, v2_fails = v2_check()
+    failures.extend(v2_fails)
     verdict = {
         "ok": not failures,
         "sheets": reports,
@@ -555,6 +747,7 @@ def main() -> int:
         "sideIdles": sides,
         "coatSheets": len(coat_sheets),
         "coats": coat_rows,
+        "v2": v2_rows,
         "failures": failures,
         "warnings": warnings,
     }

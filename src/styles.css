@@ -121,13 +121,6 @@ h3 {
   background-image:url(/sprites/scouts/cat-idle.png?v=k81p);
   background-size:200% 200%
 }
-.scout-marker[data-scout=turtle]{
-  background-image:url(/sprites/scouts/turtle-walk.png?v=k81p)
-}
-.scout-marker[data-scout=turtle].is-idle{
-  background-image:url(/sprites/scouts/turtle-idle.png?v=k81p);
-  background-size:200% 200%
-}
 .scout-marker[data-scout=owl]{
   background-image:url(/sprites/scouts/owl-walk.png?v=k81p)
 }
@@ -1495,9 +1488,6 @@ h3 {
 }
 .scout-marker[data-scout="cat"].is-idle.is-side {
   background-image: url("/sprites/scouts/cat-idle-side.png?v=k81p");
-}
-.scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="owl"].is-idle.is-side {
   background-image: url("/sprites/scouts/owl-idle-side.png?v=k81p");
@@ -3595,4 +3585,22 @@ h3 {
 .pawn .scout-marker[data-face="right"]:not(.is-idle) { rotate: 3deg; }
 @media (prefers-reduced-motion: reduce) {
   .pawn .scout-marker { translate: none; scale: none; rotate: none; }
+}
+
+/* ------------------------------------------------------------------------------------------------
+   0.0.83 redrawn scouts (v2 sheets, src/game/coatLayer.ts): one 8x6 sheet of 192 px cells holds every
+   walk (8 frames) and idle (4 frames) facing, so walk / idle / side idle all use it. GameMap sets the
+   cell; previews with no position show the first standing frame (col 0, row 4). Coats and dyes are
+   recoloured in the browser through the coat mask (DyeSync). The rig already bobs the body, so the
+   0.0.81 step bob is off for these.
+   ------------------------------------------------------------------------------------------------ */
+.scout-marker[data-scout="turtle"],
+.scout-marker[data-scout="turtle"].is-idle,
+.scout-marker[data-scout="turtle"].is-idle.is-side {
+  background-image: url("/sprites/scouts/turtle-v2.png?v=k83a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+.pawn .scout-marker[data-art="v2"] {
+  translate: none;
 }

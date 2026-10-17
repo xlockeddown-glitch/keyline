@@ -3,6 +3,7 @@ import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isCounter, isScoutShop, walkSpeed } from "@/game/data";
 import { boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
+import { V2_SCOUTS, v2Cell } from "@/game/coatLayer";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
@@ -167,7 +168,7 @@ export function GameMap() {
   const legDoor = useRef(false);
   const routeHold = useRef(false);
   const follow = useRef(true);
-  const anim = useRef({ frame: 0, acc: 0 });
+  const anim = useRef({ frame: 0, loop: 0, acc: 0 });
   const last = useRef(0);
   const nightRef = useRef<HTMLDivElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -1626,6 +1627,7 @@ export function GameMap() {
       if (anim.current.acc > frameDt) {
         anim.current.acc = 0;
         anim.current.frame = (anim.current.frame + 1) % 4;
+        anim.current.loop = (anim.current.loop + 1) % 8; // v2 sheets: the front idle is 8 frames long
       }
       const row = walkRow(pos.current.yaw);
       const pawn = playerMarker.current?.getElement()?.querySelector(".pawn") as HTMLElement | null;
@@ -1636,7 +1638,14 @@ export function GameMap() {
         if (st.quests.worn) el.dataset.cloth = st.quests.worn;
         else el.removeAttribute("data-cloth");
         setCoat(el, visibleCoat(st.paints.wornCoat, st.wardrobe.coat));
-        const cell = spriteCell(moving, row, anim.current.frame);
+        // 0.0.83: redrawn scouts use one 8x6 sheet (8-frame strides) — same stride time, twice the frames.
+        const v2 = V2_SCOUTS.has(st.scout);
+        const tick = (v2 ? anim.current.loop : anim.current.frame) + Math.min(1, anim.current.acc / frameDt);
+        const cell = v2
+          ? { sheet: !moving && (row === 1 || row === 2) ? "idle-side" : moving ? "walk" : "idle", position: v2Cell(moving, row, tick).position }
+          : spriteCell(moving, row, anim.current.frame);
+        if (v2) el.dataset.art = "v2";
+        else if (el.hasAttribute("data-art")) el.removeAttribute("data-art");
         el.classList.toggle("is-idle", !moving);
         el.classList.toggle("is-side", cell.sheet === "idle-side");
         el.classList.toggle("is-seated", seated);
@@ -1644,7 +1653,7 @@ export function GameMap() {
         // 0.0.81 art polish: facing, plus a step phase synced to the sheet frame, read by CSS for the bob,
         // lean, breathing and ground shadow (see "0.0.81 art polish" in styles.css).
         el.dataset.face = faceFromYaw(pos.current.yaw);
-        const phase = (anim.current.frame + Math.min(1, anim.current.acc / frameDt)) / 4;
+        const phase = tick / 4;
         const stride = moving ? Math.abs(Math.sin(phase * Math.PI * 2)) : 0;
         const breath = moving ? 0 : 0.5 + 0.5 * Math.sin(t / 520);
         pawn?.style.setProperty("--step", stride.toFixed(3));
