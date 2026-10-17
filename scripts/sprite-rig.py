@@ -330,6 +330,23 @@ def cut_parts(view, col, a, w):
         cols = np.where(bm.any(0))[0]
         sole_pts = np.array([[x, np.where(bm[:, x])[0].max()] for x in cols], float) if len(cols) else np.array([[0.0, leg["ankle_y"]]])
         legs.append({**leg, "thigh": thigh, "boot": boot, "sole_pts": sole_pts})
+    # per leg "copy" (corgi 0.0.87): stubby legs painted standing overlap, so the far leg is mostly hidden behind
+    # the near one. Its polygon still claims what shows of it (off the body), but its parts become a copy of the
+    # named leg moved by "copy_offset" [dx, dy] and darkened by "shade"; give its hip / ankle moved the same way.
+    for lg in legs:
+        if lg.get("copy"):
+            src = next(o for o in legs if o["name"] == lg["copy"])
+            dx, dy = (int(round(v)) for v in lg.get("copy_offset", [0, 0]))
+            sh = float(lg.get("shade", 0.8))
+            for k in ("thigh", "boot"):
+                m = np.zeros_like(src[k])
+                H, W = shape
+                ys, yd = (slice(0, H - dy), slice(dy, H)) if dy >= 0 else (slice(-dy, H), slice(0, H + dy))
+                xs, xd = (slice(0, W - dx), slice(dx, W)) if dx >= 0 else (slice(-dx, W), slice(0, W + dx))
+                m[yd, xd] = src[k][ys, xs]
+                m[..., :3] *= sh
+                lg[k] = m
+            lg["sole_pts"] = src["sole_pts"] + np.array([dx, dy], float)
     parts["legs"] = legs
     body = layer(col, a, w, ~used)
     if view.get("body_open") and view["legs"]:
@@ -436,7 +453,7 @@ def leg_len(view, leg):
     return view["sole"] - leg["hip"][1]
 
 
-def pose(kind, name, i, view, n=WALK_FRAMES):
+def pose(kind, name, i, view, n=WALK_FRAMES, gait=None):
     """Pose parameters for one frame. kind: 'walk' (8 frames, one stride) or 'idle' (n frames, one breath).
     Translations are in turnaround pixels (rig scale); render() rescales them for views painted at another size.
 
@@ -447,6 +464,13 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
     Front/back walk: the swing foot steps toward the viewer (down + slightly bigger; away for the back view),
     hips sway over the planted foot, shoulders, head and lantern counter-sway, body rises at passing."""
     side = name in ("left", "right")
+    # "gait" (top-level rig option, opt-in; corgi 0.0.87): a short-legged waddle. Keys and defaults (the plain walk):
+    # swing 32 / lift 18 (profile leg swing in degrees, foot lift), bob 0 (extra body rise at passing in profile,
+    # body only, so the planted foot stays on the street), lift_fb 13, hip 6.5, bob_fb 4 (front/back foot lift,
+    # hip sway, body rise), roll 0 (front/back side-to-side body rock in degrees, the waddle).
+    # slide 0: stubby legs (corgi) step by sliding forward/back under the hem (px, like a shuffle) instead of
+    # swinging about the hip, so the wide fluffy thigh never wedges out from under the coat; swing then only tilts.
+    g = {"swing": 32.0, "lift": 18.0, "slide": 0.0, "bob": 0.0, "lift_fb": 13.0, "hip": 6.5, "bob_fb": 4.0, "roll": 0.0, **(gait or {})}
     P = {"body_dx": 0.0, "body_dy": 0.0, "body_rot": 0.0, "breath": 0.0, "head_dy": 0.0, "head_rot": 0.0, "hand_rot": 0.0,
          "hand_dx": 0.0, "hand_dy": 0.0, "lantern_rot": 0.0, "hip": 0.0, "shoulder": 0.0, "flare": 0.0, "hem_dx": 0.0, "blink": 0.0, "tail_rot": 0.0, "legs": []}
     if kind == "walk":
@@ -454,13 +478,14 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
         t0 = 2 * math.pi * p
         if side:
             face = 1 if name == "right" else -1
-            A, lift = 32.0, 18.0
+            A, lift = g["swing"], g["lift"]
             # near leg forward at p=0 (heel strike), far leg back (push-off).
             for l in view["legs"]:
                 th = t0 + (0.0 if l["name"] == "near" else math.pi)
                 toe = 11.0 * max(0.0, math.cos(th)) ** 4  # heel strike: toe up
                 heel = 14.0 * max(0.0, -math.cos(th + 0.25)) ** 4  # push-off at the end of stance: heel peels up
-                P["legs"].append({"angle": A * math.cos(th), "lift": lift * max(0.0, -math.sin(th)) ** 0.8, "toe": toe - heel})
+                P["legs"].append({"angle": A * math.cos(th), "lift": lift * max(0.0, -math.sin(th)) ** 0.8, "toe": toe - heel,
+                                  "slide": face * g["slide"] * math.cos(th)})
             # right hand holds the lantern: near leg is the right leg facing right, the far leg facing left.
             th_r = t0 + (0.0 if name == "right" else math.pi)
             arm = -math.cos(th_r)  # forward when the right leg is back
@@ -473,16 +498,20 @@ def pose(kind, name, i, view, n=WALK_FRAMES):
             P["hem_dx"] = -face * 3.0 * math.cos(2 * t0 - 1.0)
             P["head_rot"] = -0.8 * face * math.sin(2 * t0 - 0.8)
             P["tail_rot"] = face * 5.0 * math.sin(2 * t0 - 1.6)  # bobs a beat behind each step
+            P["bob"] = -g["bob"] * math.sin(t0) ** 2  # body up at passing (sin = ±1), down at contact
         else:
             back = name == "back"
             for k, _ in enumerate(view["legs"]):
                 th = t0 + k * math.pi
                 z = -math.cos(th)  # -1 back .. +1 forward; the swing (sin > 0) brings it forward
-                P["legs"].append({"angle": 0.0, "lift": 13.0 * max(0.0, math.sin(th)), "z": -z if back else z})
+                P["legs"].append({"angle": 0.0, "lift": g["lift_fb"] * max(0.0, math.sin(th)), "z": -z if back else z})
             # hips over the planted foot (rig legs are ordered screen-left, screen-right in both views)
-            P["hip"] = 6.5 * math.sin(t0)
+            P["hip"] = g["hip"] * math.sin(t0)
             P["shoulder"] = -2.8 * math.sin(t0)
-            P["body_dy"] = -4.0 * abs(math.sin(t0))
+            P["body_dy"] = -g["bob_fb"] * abs(math.sin(t0))
+            if g["roll"]:
+                # waddle: the bottom swings out over the planted foot, rocking about the neck so the head stays put
+                P["roll"] = -g["roll"] * math.sin(t0)
             P["hand_rot"] = -2.0 * math.sin(t0)
             P["lantern_rot"] = 7.0 * math.sin(t0 - 1.1)
             P["head_rot"] = 1.2 * math.sin(t0 - 0.6)
@@ -533,7 +562,7 @@ def render(view, name, parts, P, rig):
             hx, hy = leg["hip"]
             if side:
                 rot = -face * (lp["angle"] - leg.get("art_angle", 0.0))
-                M = to_canvas @ T(0, dy - lp["lift"] * k) @ R(rot, hx, hy)
+                M = to_canvas @ T(lp.get("slide", 0.0) * k, dy - lp["lift"] * k) @ R(rot, hx, hy)
                 # Boot counter-rotates about the ankle so the sole stays near flat, then heel/toe roll.
                 ankle = leg.get("ankle") or (sum(p[0] for p in leg["poly"]) / len(leg["poly"]), leg["ankle_y"])
                 bM = M @ R(-0.8 * rot - face * lp.get("toe", 0.0), *ankle)
@@ -576,7 +605,7 @@ def render(view, name, parts, P, rig):
     elif not side and (P["hip"] or P["shoulder"]):
         r = ramp(Hb, view.get("chest_y", 170), view.get("hip_y", 300), "smooth")
         body = warp_rows(body, (P["shoulder"] + (P["hip"] - P["shoulder"]) * r) * k, np.zeros(Hb), ax)
-    body_M = to_canvas @ T(P["body_dx"] * k, P["body_dy"] * k) @ R(P["body_rot"], ax, sole) @ S(1 + 0.006 * P["breath"], 1 + 0.014 * P["breath"], ax, sole)
+    body_M = to_canvas @ T(P["body_dx"] * k, (P["body_dy"] + P.get("bob", 0.0)) * k) @ R(P["body_rot"], ax, sole) @ R(P.get("roll", 0.0), ax, view["head"]["max_y"]) @ S(1 + 0.006 * P["breath"], 1 + 0.014 * P["breath"], ax, sole)
     order = sorted(leg_M, key=lambda t: 0 if t[0]["name"] == "far" else 1)
     hv = view["head"]
     neck = (hv["ellipse"][0], hv["max_y"])
@@ -692,7 +721,19 @@ def main():
             lab, n = ndimage.label(w > 0.05)
             if n:
                 sizes = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
-                w = w * np.isin(lab, 1 + np.where(sizes >= rig["coat_min_island"])[0])
+                keep_ids = 1 + np.where(sizes >= rig["coat_min_island"])[0]
+                near = rig.get("coat_keep_near")
+                if near:
+                    # [min px, reach px] (corgi): a smaller piece of coat seen between the toggles and the strap is
+                    # still coat if it lies within reach of a big coat region and off the hand / lantern
+                    big = ndimage.binary_dilation(np.isin(lab, keep_ids), iterations=int(near[1]))
+                    v = rig["views"][name]
+                    off = poly_mask(w.shape, v["hand"]["poly"]) | poly_mask(w.shape, v["lantern"]["poly"])
+                    for i in np.where((sizes >= near[0]) & (sizes < rig["coat_min_island"]))[0]:
+                        comp = lab == i + 1
+                        if (comp & big).any() and not (comp & off).any():
+                            keep_ids = np.append(keep_ids, i + 1)
+                w = w * np.isin(lab, keep_ids)
         g = grade(col, {**rig["grade"], **rig["views"][name].get("grade", {})})
         graded[name] = (g, a, w)
         sel = (w > 0.9) & (a > 0.95)
@@ -742,11 +783,11 @@ def main():
             Image.fromarray(np.dstack([np.clip(dbg[..., :3] / np.maximum(dbg[..., 3:4], 1e-6), 0, 255), dbg[..., 3] * 255]).astype(np.uint8)).save(d / f"debug-body-{name}.png")
         if name in WALK_ROWS:
             for i in range(WALK_FRAMES):
-                put(WALK_ROWS[name], i, downscale(render(view, name, parts, pose("walk", name, i, view), rig)), view_ref)
+                put(WALK_ROWS[name], i, downscale(render(view, name, parts, pose("walk", name, i, view, gait=rig.get("gait")), rig)), view_ref)
         if name in IDLE_CELLS:
             r, c0, n = IDLE_CELLS[name]
             for i in range(n):
-                put(r, c0 + i, downscale(render(view, name, parts, pose("idle", name, i, view, n), rig)), view_ref)
+                put(r, c0 + i, downscale(render(view, name, parts, pose("idle", name, i, view, n, gait=rig.get("gait")), rig)), view_ref)
     out = ROOT / "public" / "sprites" / "scouts"
     base_img, mask_img = pack(base_sheet, coat_sheet)
     base_img.save(out / f"{scout}-v2.png", optimize=True)
