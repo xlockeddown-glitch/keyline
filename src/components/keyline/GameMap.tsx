@@ -3,7 +3,7 @@ import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isCounter, isScoutShop, walkSpeed } from "@/game/data";
 import { boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
-import { V2_SCOUTS, v2Cell } from "@/game/coatLayer";
+import { V2_CADENCE, V2_SCOUTS, v2Cell } from "@/game/coatLayer";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
@@ -1623,7 +1623,8 @@ export function GameMap() {
 
       const moving = stepped / Math.max(dt, 1e-3) > 8;
       anim.current.acc += dt;
-      const frameDt = moving ? 0.11 : 0.34;
+      // 0.0.87: a v2 scout may walk at a quicker cadence (the Corgi's short legs); idle timing is shared
+      const frameDt = moving ? 0.11 / (V2_SCOUTS.has(st.scout) ? (V2_CADENCE[st.scout] ?? 1) : 1) : 0.34;
       if (anim.current.acc > frameDt) {
         anim.current.acc = 0;
         anim.current.frame = (anim.current.frame + 1) % 4;
