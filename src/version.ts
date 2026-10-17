@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.85";
+export const APP_VERSION = "0.0.86";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k85a";
+export const PUBLISH_STAMP = "k86a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -88,3 +88,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.83: the Turtle is redrawn — new painted art at 192 px frames with 8-frame walks in all four directions (true right-facing frames, not mirrors): a real stride with heel strike and push-off, the coat hem swinging with the legs, the body rising and falling, the lantern (always in its right hand) swinging; toward and away from the camera the feet step forward with hip sway. Standing still it settles into a hunched 3/4 pose that breathes, sways its lantern and blinks. Its coat is a separate layer, so print-shop coats and dyes recolour exactly the coat and never the shell, belly, skin, boots or lantern (qa:sprites proves it for every coat and dye). The other scouts keep their sheets for now; v2 sprite stamp k83a (k83a).
 // 0.0.84: email + password accounts (sign up / sign in under Google and X, reset when mail is switched on); X sign-ins cannot take over a password account; sessions end at once on password reset (k84a).
 // 0.0.85: the Tabby, Fox and Corgi are redrawn on the v2 sheet like the Turtle (8-frame walks, coat layer); the Corgi gets a short-leg waddle. v2 sprite stamp k85a (k85a).
+// 0.0.86: the Sloth is redrawn on the v2 sheet (face mask, eye stripes, long claws, teal coat, slow heavy gait); errandPlaces tests join npm test. v2 sprite stamp k86a (k86a).
