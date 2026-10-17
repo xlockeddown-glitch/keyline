@@ -13,18 +13,6 @@
 .scout-marker[data-scout="raccoon"][data-coat="plum"]{background-image:url("/sprites/coats/raccoon-plum-walk.png?v=k81p")}
 .scout-marker[data-scout="raccoon"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/raccoon-plum-idle.png?v=k81p");background-size:200% 200%}
 .scout-marker[data-scout="raccoon"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/raccoon-plum-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="oilskin"]{background-image:url("/sprites/coats/corgi-oilskin-walk.png?v=k81p")}
-.scout-marker[data-scout="corgi"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/corgi-oilskin-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/corgi-oilskin-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="bottle"]{background-image:url("/sprites/coats/corgi-bottle-walk.png?v=k81p")}
-.scout-marker[data-scout="corgi"][data-coat="bottle"].is-idle{background-image:url("/sprites/coats/corgi-bottle-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="bottle"].is-idle.is-side{background-image:url("/sprites/coats/corgi-bottle-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="oxblood"]{background-image:url("/sprites/coats/corgi-oxblood-walk.png?v=k81p")}
-.scout-marker[data-scout="corgi"][data-coat="oxblood"].is-idle{background-image:url("/sprites/coats/corgi-oxblood-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="oxblood"].is-idle.is-side{background-image:url("/sprites/coats/corgi-oxblood-idle-side.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="plum"]{background-image:url("/sprites/coats/corgi-plum-walk.png?v=k81p")}
-.scout-marker[data-scout="corgi"][data-coat="plum"].is-idle{background-image:url("/sprites/coats/corgi-plum-idle.png?v=k81p");background-size:200% 200%}
-.scout-marker[data-scout="corgi"][data-coat="plum"].is-idle.is-side{background-image:url("/sprites/coats/corgi-plum-idle-side.png?v=k81p");background-size:200% 200%}
 .scout-marker[data-scout="lynx"][data-coat="oilskin"]{background-image:url("/sprites/coats/lynx-oilskin-walk.png?v=k81p")}
 .scout-marker[data-scout="lynx"][data-coat="oilskin"].is-idle{background-image:url("/sprites/coats/lynx-oilskin-idle.png?v=k81p");background-size:200% 200%}
 .scout-marker[data-scout="lynx"][data-coat="oilskin"].is-idle.is-side{background-image:url("/sprites/coats/lynx-oilskin-idle-side.png?v=k81p");background-size:200% 200%}
