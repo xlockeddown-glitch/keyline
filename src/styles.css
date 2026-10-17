@@ -114,13 +114,6 @@ h3 {
   background-image:url(/sprites/player-idle.png?v=k81p);
   background-size:200% 200%
 }
-.scout-marker[data-scout=cat]{
-  background-image:url(/sprites/scouts/cat-walk.png?v=k81p)
-}
-.scout-marker[data-scout=cat].is-idle{
-  background-image:url(/sprites/scouts/cat-idle.png?v=k81p);
-  background-size:200% 200%
-}
 .scout-marker[data-scout=owl]{
   background-image:url(/sprites/scouts/owl-walk.png?v=k81p)
 }
@@ -1485,9 +1478,6 @@ h3 {
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
   background-image: url("/sprites/player-idle-side.png?v=k81p");
   background-size: 200% 200%;
-}
-.scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-idle-side.png?v=k81p");
 }
 .scout-marker[data-scout="owl"].is-idle.is-side {
   background-image: url("/sprites/scouts/owl-idle-side.png?v=k81p");
@@ -3548,7 +3538,7 @@ h3 {
 }
 .pawn:has(.scout-marker[data-scout="raccoon"]),
 .pawn:has(.scout-marker:not([data-scout])) { --foot: 51px; }
-.pawn:has(.scout-marker[data-scout="cat"]) { --foot: 48.5px; }
+.pawn:has(.scout-marker[data-scout="cat"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="corgi"]) { --foot: 48px; }
 .pawn:has(.scout-marker[data-scout="fox"]) { --foot: 51px; }
 .pawn:has(.scout-marker[data-scout="lynx"]) { --foot: 51px; }
@@ -3598,6 +3588,14 @@ h3 {
 .scout-marker[data-scout="turtle"].is-idle,
 .scout-marker[data-scout="turtle"].is-idle.is-side {
   background-image: url("/sprites/scouts/turtle-v2.png?v=k83a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.0.85: the Tabby. */
+.scout-marker[data-scout="cat"],
+.scout-marker[data-scout="cat"].is-idle,
+.scout-marker[data-scout="cat"].is-idle.is-side {
+  background-image: url("/sprites/scouts/cat-v2.png?v=k83a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }

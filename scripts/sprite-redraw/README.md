@@ -48,6 +48,20 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
    `debug-body-<view>.png` to check the cut. A leg keeps only paint joined to its boot and below the coat's hem
    outline (shell rim, tail and hem edge stay on the body), and its hidden ends are smeared only from interior
    columns, so a swinging leg never drags a dark flap. Coordinates are source pixels in the view's crop.
+   Options added for the cat (0.0.85), all optional, the Turtle uses none of them:
+   - `head.poly` (unioned with the ellipse: pointed ears, muzzle, whiskers) and `head.top: true` (everything above
+     the ellipse centre is head, so no ear tip stays behind on the body when the head nods);
+   - `tail`: `poly`, `pivot` (its root), `layer` (`"back"`: drawn before the legs, profiles and the idle; `"front"`:
+     after the body, e.g. a tail hanging over the legs in the back view, where the legs' hidden paint is filled in),
+     `min_red` (drop dark paint that carries on outside the polygon, i.e. boot leather the polygon crosses). It
+     sways with the stride (profiles: a bob behind each step; back: with the hips) and slowly in the idles;
+   - per leg `ankle` [x, y]: the real ankle the boot counter-rotates about (default: the polygon's mean x on the
+     ankle line). For profile art painted mid-stride, give both legs the same hip x and set `art_angle` from the
+     hip→ankle line; separate hip x or a wrong ankle makes the second contact frame narrower than the first;
+   - per view `erase`: polygons of paint to drop after keying (back-view whiskers key out pink);
+   - top-level `motion`: multiplies every pose translation (lift, step, bob, sway) for a scout painted at another
+     size than the Turtle (cat: 1.28 = 0.38 / 0.296), so motion reads the same on screen; per view
+     `step_reach` if the front/back step comes out over qa's 4 px.
 3. **Render.** `python3 scripts/sprite-rig.py <scout>`. It keys the background (with despill), measures the coat
    from the cobalt, grades the rest towards the older sheets (`grade` in rig.json), cuts the parts, fills the
    body behind moving parts, and animates them:
@@ -80,7 +94,8 @@ qa:sprites and make-coat-variants pick the rest up from `V2_SCOUTS`.
 
 ## Size
 
-Turtle: base 157 KB + mask 32 KB = 189 KB, against 275 KB for its legacy sheets and 12 coat PNGs. The full-colour
+Turtle: base 157 KB + mask 32 KB = 189 KB, against 275 KB for its legacy sheets and 12 coat PNGs. Cat: base
+151 KB + mask 24 KB. The full-colour
 PNG is 900 KB; the 256-colour palette (Floyd-Steinberg) is what makes 192 px frames fit. All nine scouts on v2
 come to about 1.7 MB against 2.9 MB for the legacy sheets and coat PNGs today (135 files), so the static build gets
 smaller as they move.
