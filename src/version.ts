@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.83";
+export const APP_VERSION = "0.0.84";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k83a";
+export const PUBLISH_STAMP = "k84a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
