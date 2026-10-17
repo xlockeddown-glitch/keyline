@@ -111,7 +111,21 @@ try {
     const jwt = await (await fetch(`${gate}/mint?sub=qa-repeats-${run}&name=Repeats&email=repeats-${run}@qa.keyline.test`)).text();
     const a = await context(jwt);
     const b = await context(jwt);
-    await scenario("signed in, two devices", [await page(a, jwt), await page(b, jwt)]);
+    const pa = await page(a, jwt);
+    const pb = await page(b, jwt);
+    // Both devices must be the walker the stand-in minted. A dev server started without
+    // GROK_GATE_ORIGIN ignores the token and each context gets its own walker, so nothing is shared
+    // and the check reports false repeats.
+    const who = (p) => p.evaluate(async () => (await (await fetch("/api/auth/get-session")).json())?.user ?? null);
+    const [ua, ub] = [await who(pa), await who(pb)];
+    const want = `repeats-${run}@qa.keyline.test`;
+    if (!ua || !ub || ua.id !== ub.id || ua.email !== want) {
+      throw new Error(
+        `signed-in devices are not one stand-in walker (a=${ua?.id}/${ua?.email}, b=${ub?.id}/${ub?.email}, want ${want}). ` +
+          `Start the dev server with GROK_GATE_ORIGIN=${gate}.`,
+      );
+    }
+    await scenario("signed in, two devices", [pa, pb]);
     await a.close();
     await b.close();
   } else rows.push({ label: "signed in, two devices", skipped: "no --gate" });
