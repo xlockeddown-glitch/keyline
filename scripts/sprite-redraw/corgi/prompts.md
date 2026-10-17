@@ -40,3 +40,18 @@ References: turnaround.jpg, ref-current.
 
 Used as is. As with the Tabby, the idle carries the satchel on the corgi's left hip while the turnaround's front
 view has it on the right, so stopping after a walk down moves the satchel across the body. Known limit.
+
+## Second pass (0.0.87, "make it stubbier and more corgi")
+
+Ryan's review of the first corgi: next to the fox it read as a fox (long legs, slim upright build). Prompts below
+are condensed from the passes, not verbatim.
+
+- turnaround b/c (`turnaround.jpg`, front and back views used): the same corgi redrawn as an unmistakable Pembroke:
+  very short stubby legs with the boots right under the coat hem, a long low barrel-chested body, a broad fluffy
+  white chest bib and white muzzle blaze, big upright rounded-tip ears, a shorter broader face, a fluffy
+  cotton-ball rump instead of a tail; same coat (cobalt mask colour, dark toggles), satchel and brass lantern; same
+  four views and magenta background as before.
+- turnaround d (`turnaround-standing.jpg`, both profiles used): the same character, profiles only, standing with the
+  boots together (not mid-stride), lantern held clear of the body. Rigged with the far leg as a copy of the near one.
+- idle c (`idle-keyart.jpg`): the stubby corgi in the three-quarter idle, satchel on the viewer's left to match the
+  front walk view (this resolves the first pass's satchel-swap limit), cotton-ball rump showing to the right.
