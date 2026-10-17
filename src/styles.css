@@ -3541,3 +3541,67 @@ h3 {
   object-fit:contain;
   image-rendering:auto
 }
+
+/* ------------------------------------------------------------------------------------------------
+   wip/art-proto (corgi only): seat the walker in the world instead of floating a sticker on the map.
+   GameMap sets --step (0..1, synced to the walk frame), --breath (0..1 idle) on .pawn, data-face on
+   the marker. Everything below is scoped to the corgi so the other scouts stay as a control.
+   ------------------------------------------------------------------------------------------------ */
+.pawn:has(.scout-marker[data-scout="corgi"]) {
+  --step: 0;
+  --breath: 0;
+}
+/* 1. Contact shadow: a soft ground ellipse under the feet that tightens when a foot lifts. */
+.pawn:has(.scout-marker[data-scout="corgi"])::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 36px;
+  width: 34px;
+  height: 10px;
+  margin-left: -17px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.78), rgb(0 0 0 / 0.4) 55%, transparent);
+  transform: scale(calc(1 - var(--step) * 0.16));
+  pointer-events: none;
+}
+/* 2. Lantern light pool on the street at the lantern's side, with a slow flicker. */
+.pawn:has(.scout-marker[data-scout="corgi"])::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  width: 96px;
+  height: 50px;
+  margin-left: -38px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 200 120 / 0.42), rgb(255 160 70 / 0.18) 50%, transparent);
+  pointer-events: none;
+  z-index: -1;
+  animation: art-proto-flicker 2.6s ease-in-out infinite;
+}
+.pawn:has(.scout-marker[data-scout="corgi"][data-face="left"])::after { margin-left: -58px; }
+.pawn:has(.scout-marker[data-scout="corgi"][data-face="up"])::after { margin-left: -56px; }
+.pawn.is-seated::before,
+.pawn.is-seated::after { display: none; }
+@keyframes art-proto-flicker {
+  0%, 100% { opacity: 0.92; }
+  37% { opacity: 1; }
+  52% { opacity: 0.8; }
+  71% { opacity: 0.97; }
+}
+/* 3. Body: smooth sampling (the sheets are painted art shrunk to 96 px, not pixel art), a thin dark
+      ink edge instead of the offset halo, a touch of night grade, step bob + squash, idle breath, lean. */
+.pawn .scout-marker[data-scout="corgi"] {
+  image-rendering: auto;
+  filter: drop-shadow(0 0 0.6px rgb(18 10 4)) drop-shadow(0 0 0.35px rgb(18 10 4)) saturate(0.94);
+  translate: 0 calc(var(--step) * -1.6px);
+  scale: calc(1 + var(--step) * 0.025 + var(--breath) * 0.012) calc(1 - var(--step) * 0.035 + var(--breath) * 0.022);
+  z-index: 1;
+}
+.pawn .scout-marker[data-scout="corgi"][data-face="left"]:not(.is-idle) { rotate: -3deg; }
+.pawn .scout-marker[data-scout="corgi"][data-face="right"]:not(.is-idle) { rotate: 3deg; }
+@media (prefers-reduced-motion: reduce) {
+  .pawn:has(.scout-marker[data-scout="corgi"])::after { animation: none; }
+  .pawn .scout-marker[data-scout="corgi"] { translate: none; scale: none; rotate: none; }
+}
