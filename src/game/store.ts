@@ -160,6 +160,10 @@ export type GameState = {
   scout: ScoutId;
   /** 0.0.45 print shop: cosmetic coats and lantern skins (owned, paid so far, worn). Purely visual. */
   wardrobe: Wardrobe;
+  /** 0.0.99: the city print worn over the coat (cosmetic, must be earned on the server). */
+  printWorn: string | null;
+  /** 0.0.99: prints whose earn moment has been shown. */
+  printsSeen: string[];
   /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
   paints: PaintBench;
   atlas: Record<string, true>;
@@ -368,7 +372,7 @@ export type GameState = {
   dropRideRound: () => void;
 };
 
-export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" | "level" };
+export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" | "level" | "print" };
 /** 0.0.95: show the match-reward pop (also sets a plain toast for screen readers / old paths). */
 export function popMatch(p: Omit<MatchPop, "id">) {
   useGame.setState({ matchPop: { ...p, id: Date.now() } });
@@ -578,6 +582,8 @@ function persistable(s: GameState) {
     scouts: s.scouts,
     scout: s.scout,
     wardrobe: s.wardrobe,
+    printWorn: s.printWorn,
+    printsSeen: s.printsSeen,
     paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
@@ -966,6 +972,8 @@ export const useGame = create<GameState>((set, get) => ({
   scouts: saved?.scouts?.length ? saved.scouts : ["raccoon"],
   scout: saved?.scout ?? "raccoon",
   wardrobe: cleanWardrobe(saved?.wardrobe),
+  printWorn: typeof saved?.printWorn === "string" ? saved.printWorn : null,
+  printsSeen: Array.isArray(saved?.printsSeen) ? saved.printsSeen.filter((x: unknown) => typeof x === "string") : [],
   paints: cleanPaint(saved?.paints),
   atlas: saved?.atlas ?? {},
   survey: saved?.survey ?? {},

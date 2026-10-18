@@ -73,6 +73,11 @@ import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
 import { MARKET_TAG, closestOnStreet, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
 import { visibleCoat } from "@/game/paint";
+
+/** 0.0.99: a worn city print shows over any coat or paint. */
+function wornLook(paint: Parameters<typeof visibleCoat>[0], coat: string | null): string | null {
+  return useGame.getState().printWorn ?? visibleCoat(paint, coat);
+}
 import { useWalkPoster } from "@/game/walkClient";
 
 type LModule = typeof import("leaflet");
@@ -949,7 +954,7 @@ export function GameMap() {
 
       const icon = L.divIcon({
         className: "",
-        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}"${coatAttr(visibleCoat(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat))} data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
+        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}"${coatAttr(wornLook(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat))} data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
         iconSize: [56, 56],
         iconAnchor: [28, 30],
       });
@@ -959,7 +964,7 @@ export function GameMap() {
         keyboard: false,
         zIndexOffset: 800,
       }).addTo(map);
-      warmSheets(useGame.getState().scout, visibleCoat(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat));
+      warmSheets(useGame.getState().scout, wornLook(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat));
 
       rebuildPins(L, map);
       paintMarket();
@@ -1771,7 +1776,7 @@ export function GameMap() {
         el.dataset.scout = st.scout;
         if (st.quests.worn) el.dataset.cloth = st.quests.worn;
         else el.removeAttribute("data-cloth");
-        setCoat(el, visibleCoat(st.paints.wornCoat, st.wardrobe.coat));
+        setCoat(el, wornLook(st.paints.wornCoat, st.wardrobe.coat));
         // 0.0.83: redrawn scouts use one 8x6 sheet (8-frame strides) — same stride time, twice the frames.
         const v2 = V2_SCOUTS.has(st.scout);
         const tick = (v2 ? anim.current.loop : anim.current.frame) + Math.min(1, anim.current.acc / frameDt);
@@ -1864,10 +1869,10 @@ export function GameMap() {
 
   useEffect(() => {
     const unsub = useGame.subscribe((s, p) => {
-      if (s.scout !== p.scout || s.quests.worn !== p.quests.worn || s.wardrobe.coat !== p.wardrobe.coat || s.paints.wornCoat !== p.paints.wornCoat) {
+      if (s.scout !== p.scout || s.quests.worn !== p.quests.worn || s.wardrobe.coat !== p.wardrobe.coat || s.paints.wornCoat !== p.paints.wornCoat || s.printWorn !== p.printWorn) {
         const el = playerMarker.current?.getElement()?.querySelector(".scout-marker") as HTMLElement | null;
         if (el) el.dataset.scout = s.scout;
-        const coat = visibleCoat(s.paints.wornCoat, s.wardrobe.coat);
+        const coat = wornLook(s.paints.wornCoat, s.wardrobe.coat);
         if (el) setCoat(el, coat);
         warmSheets(s.scout, coat);
         if (el && s.quests.worn) el.dataset.cloth = s.quests.worn;

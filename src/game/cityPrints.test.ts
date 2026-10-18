@@ -1,10 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { CITIES } from "./data.ts";
-import { ALL_PRINTS, CITY_PRINTS, PRINTS_PENDING, applyPrintLayer, printProgress } from "./cityPrints.ts";
+import { ALL_PRINTS, CITY_PRINTS, PRINTS_PENDING, PRINT_GOALS, applyPrintLayer, printProgress } from "./cityPrints.ts";
 import type { CityId } from "./types.ts";
 
-test("0.0.97: every city has a print or is on the shrinking pending list (new cities cannot ship without one)", () => {
+test("0.0.99: print goals are Ryan's (500 right + 150/300/500 km walking) and each print uses its slot's goal", () => {
+  assert.deepEqual(PRINT_GOALS.map((g) => g.meters), [150_000, 300_000, 500_000]);
+  for (const list of Object.values(CITY_PRINTS)) list?.forEach((p, i) => assert.deepEqual(p.goal, PRINT_GOALS[i], p.id));
+  for (const list of Object.values(CITY_PRINTS)) assert.ok((list?.length ?? 0) <= 3);
+});
+
+test("0.0.99: every city has a print or is on the shrinking pending list (new cities cannot ship without one)", () => {
   for (const id of Object.keys(CITIES) as CityId[]) {
     const has = (CITY_PRINTS[id]?.length ?? 0) > 0;
     const pending = PRINTS_PENDING.includes(id);
