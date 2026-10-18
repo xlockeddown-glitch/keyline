@@ -54,7 +54,6 @@ export const SCIENCE_BANK: TriviaQ[] = [
   q("A light-year measures\u2026", ["time", "distance", "mass", "temperature"], "distance", 2),
   q("The galaxy that contains the Solar System is the\u2026", ["Andromeda", "Milky Way", "Whirlpool", "Sombrero"], "Milky Way", 1),
   q("The nearest star to the Sun is\u2026", ["Sirius", "Proxima Centauri", "Betelgeuse", "Barnard's Star"], "Proxima Centauri", 3),
-  q("Atomic number is the number of\u2026", ["neutrons", "protons", "electrons in ions always", "nuclei in a mole"], "protons", 2),
   q("Isotopes of an element differ in\u2026", ["proton count", "neutron count", "element name", "atomic number"], "neutron count", 3),
   q("The most abundant gas in Earth's air is\u2026", ["oxygen", "nitrogen", "CO2", "hydrogen"], "nitrogen", 2),
   q("Chlorophyll makes plants look\u2026", ["red", "green", "blue", "white"], "green", 1),
