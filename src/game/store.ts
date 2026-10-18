@@ -45,7 +45,7 @@ import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type 
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, rollIngredient, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
 import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE, VELLUM_CHANCE, lampBrass, lampSchematicHits } from "./vaultPay";
 import { chooseStart, cleanUnlocks, freshUnlocks, goalsCheck, isUnlocked, lampLit, lockLine, migrateUnlocks, runFinished, unlockCity as unlockCityPass, type CityUnlocks } from "./cityPass";
-import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, WHEEL_EVERY, type WheelOffer } from "./wheel";
+import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, wheelClaimFailed, wheelDue, type WheelOffer } from "./wheel";
 import {
   claimCircuit,
   claimErrand,
@@ -296,6 +296,8 @@ export type GameState = {
   toggleInv: (v?: boolean) => void;
   dismissLoot: () => void;
   claimWheel: () => void;
+  /** Close the wheel without claiming (0.0.89). The spin is offered again later. */
+  dismissWheel: () => void;
   skipTutorial: () => void;
   advanceTutorial: (n?: number) => void;
   replayTutorial: () => void;
@@ -672,7 +674,8 @@ function foldWheel(get: () => GameState, tier: Tier): { correctByTier: Record<Ti
   if (held) return { correctByTier, wheel: held };
   const n = correctByTier[tier] ?? 0;
   const claimed = get().wheelClaimed[tier] ?? 0;
-  if (n > 0 && n % WHEEL_EVERY === 0 && Math.floor(n / WHEEL_EVERY) > claimed) {
+  // 0.0.89: any unclaimed spin of this color, not only the exact 25th, so "Later" or a failed claim comes back.
+  if (wheelDue(n, claimed)) {
     return { correctByTier, wheel: buildWheel(tier, get().cityId, Math.random()) };
   }
   return { correctByTier, wheel: held };
@@ -2312,7 +2315,13 @@ export const useGame = create<GameState>((set, get) => ({
       set({ wheel: null });
       void commitWallet({ kind: "wheel", tier, city }).then((r) => {
         if (!r?.ok) {
-          set({ wheel: offer });
+          // 0.0.89: never re-show the same offer (players got stuck looping on "Take it").
+          const fail = wheelClaimFailed(r, tier, get().correctByTier, get().wheelClaimed);
+          set({ wheel: null, wheelClaimed: fail.wheelClaimed, toast: fail.toast });
+          saveNow(get);
+          window.setTimeout(() => {
+            if (get().toast === fail.toast) set({ toast: null });
+          }, 2600);
           return;
         }
         const wheelClaimed = { ...get().wheelClaimed, [tier]: (get().wheelClaimed[tier] ?? 0) + 1 };
@@ -2351,6 +2360,11 @@ export const useGame = create<GameState>((set, get) => ({
     window.setTimeout(() => {
       if (get().toast === paid.line) set({ toast: null });
     }, 2200);
+  },
+  dismissWheel: () => {
+    if (!get().wheel) return;
+    // Not a claim: the spin stays owed and comes back on the next correct answer of that color.
+    set({ wheel: null });
   },
   skipTutorial: () => {
     set({ tutorial: 4, howtoDone: true });

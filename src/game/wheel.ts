@@ -126,3 +126,31 @@ export function grantWheelPrize(
   }
   return { keys, points: bag.points, pantry: bag.pantry, line: prize.label };
 }
+
+/** True when this color has a spin earned locally that has not been claimed yet. */
+export function wheelDue(correct: number, claimed: number): boolean {
+  return correct > 0 && Math.floor(correct / WHEEL_EVERY) > claimed;
+}
+
+export const WHEEL_RETRY_LINE = "Wheel will be back in a moment";
+export const WHEEL_NO_SPIN_LINE = "No spin due on your account yet";
+
+/**
+ * 0.0.89: what to do when a signed-in wheel claim fails. The wheel always closes; it is never re-shown
+ * in place (that trapped players on "Take it"). An authoritative "no-spin" means the server counts fewer
+ * graded answers than this device (answers before sign-in, another device), so this color is marked
+ * caught up locally and the wheel waits for the next 25. Anything else (network, busy) keeps the claim
+ * count, so the spin is offered again on the next correct answer of that color.
+ */
+export function wheelClaimFailed(
+  r: { ok?: boolean; reason?: string; authoritative?: boolean } | null | undefined,
+  tier: Tier,
+  correct: Record<Tier, number>,
+  claimed: Record<Tier, number>,
+): { wheelClaimed: Record<Tier, number>; toast: string } {
+  if (r && r.reason === "no-spin") {
+    const caught = Math.max(claimed[tier] ?? 0, Math.floor((correct[tier] ?? 0) / WHEEL_EVERY));
+    return { wheelClaimed: { ...claimed, [tier]: caught }, toast: WHEEL_NO_SPIN_LINE };
+  }
+  return { wheelClaimed: claimed, toast: WHEEL_RETRY_LINE };
+}

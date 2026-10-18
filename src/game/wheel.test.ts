@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildWheel, caughtUpClaims, grantWheelPrize, owedTier, wheelSlices } from "./wheel.ts";
+import { readFileSync } from "node:fs";
+import {
+  buildWheel,
+  caughtUpClaims,
+  grantWheelPrize,
+  owedTier,
+  WHEEL_NO_SPIN_LINE,
+  WHEEL_RETRY_LINE,
+  wheelClaimFailed,
+  wheelDue,
+  wheelSlices,
+} from "./wheel.ts";
 
 const EMPTY = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
 
@@ -40,4 +51,44 @@ test("a full match pocket pays coin instead of a wasted key", () => {
   assert.equal(paid.keys.white, 4);
   assert.ok(paid.points > 10);
   assert.match(paid.line, /coin/i);
+});
+
+test("0.0.89: a server no-spin closes the wheel for good and marks the color caught up", () => {
+  // Device counts 27 white (some answered before sign-in); the server graded fewer and refuses.
+  const correct = { ...EMPTY, white: 27 };
+  const out = wheelClaimFailed({ ok: false, reason: "no-spin", authoritative: true }, "white", correct, EMPTY);
+  assert.equal(out.wheelClaimed.white, 1);
+  assert.equal(out.toast, WHEEL_NO_SPIN_LINE);
+  // Nothing owed any more, and the next white answer does not re-trap.
+  assert.equal(owedTier(correct, out.wheelClaimed), null);
+  assert.equal(wheelDue(28, out.wheelClaimed.white), false);
+  // The next 25 still earns a spin.
+  assert.equal(wheelDue(50, out.wheelClaimed.white), true);
+  // Never lowers a claim count.
+  assert.equal(wheelClaimFailed({ ok: false, reason: "no-spin" }, "white", correct, { ...EMPTY, white: 3 }).wheelClaimed.white, 3);
+});
+
+test("0.0.89: a network or busy failure keeps the spin owed for later", () => {
+  const correct = { ...EMPTY, white: 25 };
+  for (const r of [null, { ok: false, reason: "busy" }]) {
+    const out = wheelClaimFailed(r, "white", correct, EMPTY);
+    assert.equal(out.wheelClaimed.white, 0);
+    assert.equal(out.toast, WHEEL_RETRY_LINE);
+    assert.equal(owedTier(correct, out.wheelClaimed), "white");
+    // Comes back on the next white answer, not only on the exact 25th.
+    assert.equal(wheelDue(26, out.wheelClaimed.white), true);
+  }
+  assert.equal(wheelDue(0, 0), false);
+  assert.equal(wheelDue(24, 0), false);
+});
+
+test("0.0.89: the wheel never re-shows a failed offer and always has a close button", () => {
+  const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.ok(!store.includes("set({ wheel: offer })"), "failed claim must not re-show the same offer");
+  assert.match(store, /dismissWheel: \(\) => \{/);
+  const ui = readFileSync(new URL("../components/keyline/MysteryWheel.tsx", import.meta.url), "utf8");
+  assert.match(ui, /aria-label="Close wheel, spin later"/);
+  assert.match(ui, /onClick=\{\(\) => dismissWheel\(\)\}/);
+  // A fresh offer resets the spin state instead of opening already landed.
+  assert.match(ui, /\}, \[wheel\]\);/);
 });

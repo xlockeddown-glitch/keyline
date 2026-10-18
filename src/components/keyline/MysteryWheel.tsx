@@ -11,6 +11,7 @@ export function MysteryWheel() {
   const miss = useGame((s) => s.miss);
   const openVault = useGame((s) => s.openVault);
   const claimWheel = useGame((s) => s.claimWheel);
+  const dismissWheel = useGame((s) => s.dismissWheel);
   const [spinning, setSpinning] = useState(false);
   const [armed, setArmed] = useState(false);
   const [landed, setLanded] = useState(false);
@@ -19,7 +20,8 @@ export function MysteryWheel() {
     setSpinning(false);
     setArmed(false);
     setLanded(false);
-  }, [wheel?.tier, wheel?.win]);
+    // Keyed on the offer itself, so a fresh offer never opens already "landed".
+  }, [wheel]);
 
   if (!wheel || loot || miss || openVault) return null;
 
@@ -44,7 +46,17 @@ export function MysteryWheel() {
 
   return (
     <div className="wheel-night absolute inset-0 z-[860] flex items-end justify-center p-3 sm:items-center" role="dialog" aria-labelledby="wheel-title">
-      <div className="wheel-card w-full max-w-sm">
+      <div className="wheel-card relative w-full max-w-sm">
+        {/* 0.0.89: always a way out. Closing does not use up the spin. */}
+        <button
+          type="button"
+          className="btn btn-ghost absolute right-2 top-2 px-2 py-1 text-sm"
+          aria-label="Close wheel, spin later"
+          title="Later"
+          onClick={() => dismissWheel()}
+        >
+          ✕
+        </button>
         <p className="kicker" id="wheel-title">
           {TIER_LABEL[wheel.tier]} wheel
         </p>
