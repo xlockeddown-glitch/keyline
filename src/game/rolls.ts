@@ -9,11 +9,16 @@ import {
   emptyStandingBoard,
   publicStandingName,
   rankKind,
+  rankLanterns,
+  EMPTY_RIDE_BOARDS,
+  RIDE_BOARD_TOP,
+  type MyRideRanks,
+  type RideBoards,
   type AttemptAgg,
   type StandingBoard,
   type StandingKind,
 } from "./standings";
-import { loadDistanceBoard } from "./walkBoard";
+import { loadDistanceBoard, loadMyDistance } from "./walkBoard";
 
 export const ROLL_TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
 
@@ -310,5 +315,59 @@ export const fetchStandings = createServerFn({ method: "GET" })
       return boardFromAggs(kind, scope, city, byTier);
     } catch {
       return emptyStandingBoard(kind, scope, city);
+    }
+  });
+
+// ── 0.0.94: whole-game boards for the ride side panel ───────────────────
+
+/** Top 5 by lanterns answered correctly (all colours) and top 5 by metres walked (server-credited, capped per post). */
+export const fetchRideBoards = createServerFn({ method: "GET" }).handler(async (): Promise<RideBoards> => {
+  try {
+    const sql = await getSql();
+    const rows = await sql<{ user_id: string; display_name: string | null; correct: number; updated_at: Date | string | null }>`
+      select user_id, max(display_name) as display_name, sum(correct)::int as correct, max(updated_at) as updated_at
+      from vault_clears_by_player
+      where correct > 0
+      group by user_id
+      order by sum(correct) desc
+      limit 25
+    `;
+    const lanterns = rankLanterns(
+      rows.map((r) => ({ userId: r.user_id, name: r.display_name ?? "", correct: Number(r.correct) || 0, updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : 0 })),
+    );
+    const distance = (await loadDistanceBoard(sql, null, RIDE_BOARD_TOP)).map((r) => ({ userId: r.userId, name: r.name, rank: r.rank, value: r.meters ?? 0 }));
+    return { lanterns, distance };
+  } catch {
+    return EMPTY_RIDE_BOARDS;
+  }
+});
+
+/** The signed-in player's own totals and ranks on both ride boards. */
+export const fetchMyRideRanks = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<MyRideRanks> => {
+    const none: MyRideRanks = { lanterns: { value: 0, rank: null }, distance: { value: 0, rank: null } };
+    try {
+      const sql = await getSql();
+      const me = await canonicalId(sql, context.userId);
+      const rows = await sql<{ correct: number; rank: number }>`
+        with t as (
+          select user_id, sum(correct)::int as correct, max(updated_at) as updated_at
+          from vault_clears_by_player
+          group by user_id
+        )
+        select a.correct, (
+          select count(*)::int + 1 from t b
+          where b.correct > a.correct
+             or (b.correct = a.correct and b.updated_at < a.updated_at)
+             or (b.correct = a.correct and b.updated_at = a.updated_at and b.user_id < a.user_id)
+        ) as rank
+        from t a where a.user_id = ${me}
+      `;
+      const walk = await loadMyDistance(sql, me, null);
+      const c = Number(rows[0]?.correct) || 0;
+      return { lanterns: { value: c, rank: c > 0 ? Number(rows[0]?.rank) || null : null }, distance: { value: walk.meters, rank: walk.rank } };
+    } catch {
+      return none;
     }
   });

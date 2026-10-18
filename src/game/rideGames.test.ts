@@ -31,23 +31,23 @@ const won = (perf: number): RideOutcome => ({ kind: "won", perf });
 const whites = (ms: number, o: RideOutcome) => rideValue(rideReward(ms, o));
 const empty = (): Record<Tier, number> => ({ white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 });
 
-test("eight-minute ride: idle 1, played 3, won 5 to 7", () => {
-  assert.deepEqual(rideReward(8 * MIN, IDLE), { white: 1, blue: 0 });
-  assert.deepEqual(rideReward(8 * MIN, played), { white: 3, blue: 0 });
-  assert.deepEqual(rideReward(8 * MIN, won(0)), { white: 5, blue: 0 });
-  assert.deepEqual(rideReward(8 * MIN, won(0.5)), { white: 6, blue: 0 });
-  assert.equal(whites(8 * MIN, won(1)), 7);
+test("six-minute ride (0.0.94 base, was eight): idle 1, played 3, won 5 to 7", () => {
+  assert.deepEqual(rideReward(6 * MIN, IDLE), { white: 1, blue: 0 });
+  assert.deepEqual(rideReward(6 * MIN, played), { white: 3, blue: 0 });
+  assert.deepEqual(rideReward(6 * MIN, won(0)), { white: 5, blue: 0 });
+  assert.deepEqual(rideReward(6 * MIN, won(0.5)), { white: 6, blue: 0 });
+  assert.equal(whites(6 * MIN, won(1)), 7);
 });
 
-test("table across ride lengths", () => {
+test("table across ride lengths (0.0.94: minutes ×0.75 for the six-minute base)", () => {
   // [minutes, idle, played, weakest win, best win] — best win in white-value
   const rows: [number, number, number, number, number][] = [
-    [0.8, 1, 1, 1, 2],
-    [1, 1, 1, 1, 2],
-    [4, 1, 2, 3, 4],
-    [8, 1, 3, 5, 7],
-    [11, 1, 4, 7, 10],
-    [14, 2, 5, 9, 12],
+    [0.6, 1, 1, 1, 2],
+    [0.75, 1, 1, 1, 2],
+    [3, 1, 2, 3, 4],
+    [6, 1, 3, 5, 7],
+    [8.25, 1, 4, 7, 10],
+    [10.5, 2, 5, 9, 12],
   ];
   for (const [m, idle, play, lo, hi] of rows) {
     assert.equal(whites(m * MIN, IDLE), idle, `${m}m idle`);
@@ -67,7 +67,7 @@ test("every tier pays at least one, even on the shortest fare", () => {
 });
 
 test("better play never pays less, at any length", () => {
-  for (let ms = 48_000; ms <= 14 * MIN; ms += 6_000) {
+  for (let ms = 48_000; ms <= 10.5 * MIN; ms += 6_000) {
     const ladder = [IDLE, played, won(0), won(0.25), won(0.5), won(0.74), won(0.75), won(0.9), won(1)];
     for (let i = 1; i < ladder.length; i++) {
       assert.ok(whites(ms, ladder[i]!) >= whites(ms, ladder[i - 1]!), `${ms}ms step ${i}`);
@@ -77,29 +77,29 @@ test("better play never pays less, at any length", () => {
 });
 
 test("strong wins trade three whites for a blue", () => {
-  assert.deepEqual(rideReward(8 * MIN, won(1)), { white: 4, blue: 1 });
-  assert.deepEqual(rideReward(8 * MIN, won(0.75)), { white: 4, blue: 1 });
-  assert.deepEqual(rideReward(8 * MIN, won(0.74)), { white: 6, blue: 0 });
+  assert.deepEqual(rideReward(6 * MIN, won(1)), { white: 4, blue: 1 });
+  assert.deepEqual(rideReward(6 * MIN, won(0.75)), { white: 4, blue: 1 });
+  assert.deepEqual(rideReward(6 * MIN, won(0.74)), { white: 6, blue: 0 });
   // Under five whites: no swap.
-  assert.deepEqual(rideReward(4 * MIN, won(1)), { white: 4, blue: 0 });
+  assert.deepEqual(rideReward(3 * MIN, won(1)), { white: 4, blue: 0 });
   // Mid-long ride: one blue only.
-  assert.deepEqual(rideReward(11 * MIN, won(1)), { white: 7, blue: 1 });
+  assert.deepEqual(rideReward(8.25 * MIN, won(1)), { white: 7, blue: 1 });
   // Longest rides: two.
-  assert.deepEqual(rideReward(14 * MIN, won(1)), { white: 6, blue: 2 });
-  assert.deepEqual(rideReward(14 * MIN, won(0.75)), { white: 5, blue: 2 });
-  assert.deepEqual(rideReward(14 * MIN, won(0.5)), { white: 11, blue: 0 });
+  assert.deepEqual(rideReward(10.5 * MIN, won(1)), { white: 6, blue: 2 });
+  assert.deepEqual(rideReward(10.5 * MIN, won(0.75)), { white: 5, blue: 2 });
+  assert.deepEqual(rideReward(10.5 * MIN, won(0.5)), { white: 11, blue: 0 });
 });
 
 test("same inputs, same payout", () => {
-  for (let i = 0; i < 5; i++) assert.deepEqual(rideReward(13 * MIN, won(0.8)), rideReward(13 * MIN, won(0.8)));
+  for (let i = 0; i < 5; i++) assert.deepEqual(rideReward(9.75 * MIN, won(0.8)), rideReward(9.75 * MIN, won(0.8)));
 });
 
-test("idle replaces the old trickle; ten-minute blue and the green are unchanged", () => {
-  assert.deepEqual(transitLoot(8 * MIN, 8 * MIN, 8 * MIN), { white: 1, blue: 0, green: 0 });
-  assert.deepEqual(transitLoot(14 * MIN, 0, 14 * MIN), { white: 2, blue: 1, green: 0 });
-  assert.deepEqual(transitLoot(14 * MIN, 14 * MIN, 14 * MIN), { white: 2, blue: 1, green: 1 });
+test("idle replaces the old trickle; the long-haul blue (7 min) and the green", () => {
+  assert.deepEqual(transitLoot(6 * MIN, 6 * MIN, 6 * MIN), { white: 1, blue: 0, green: 0 });
+  assert.deepEqual(transitLoot(10.5 * MIN, 0, 10.5 * MIN), { white: 2, blue: 1, green: 0 });
+  assert.deepEqual(transitLoot(10.5 * MIN, 10.5 * MIN, 10.5 * MIN), { white: 2, blue: 1, green: 1 });
   assert.deepEqual(transitLoot(5_000, 0, 48_000), { white: 0, blue: 0, green: 0 });
-  assert.deepEqual(transitLoot(14 * MIN, 0, 14 * MIN, won(1)), { white: 6, blue: 3, green: 0 });
+  assert.deepEqual(transitLoot(10.5 * MIN, 0, 10.5 * MIN, won(1)), { white: 6, blue: 3, green: 0 });
 });
 
 function ride(ms: number): Journey {
@@ -113,52 +113,52 @@ function run(j: Journey, keys: Record<Tier, number>, from: number, to: number, w
 }
 
 test("a won ride pays exactly the win, no matter how many ticks or reloads", () => {
-  let { j, keys } = run(ride(8 * MIN), empty(), 0, 60_000);
+  let { j, keys } = run(ride(6 * MIN), empty(), 0, 60_000);
   assert.equal(keys.white, 1, "seat pays idle early");
   j = markRound(openRound(j, 60_000), won(1));
-  ({ j, keys } = run(j, keys, 61_000, 8 * MIN + 5_000));
+  ({ j, keys } = run(j, keys, 61_000, 6 * MIN + 5_000));
   assert.deepEqual([keys.white, keys.blue], [4, 1]);
   // Reload: the save comes back and ticks again.
-  const again = run(forfeitRound(JSON.parse(JSON.stringify(j)) as Journey), keys, 8 * MIN, 8 * MIN + 30_000);
+  const again = run(forfeitRound(JSON.parse(JSON.stringify(j)) as Journey), keys, 6 * MIN, 6 * MIN + 30_000);
   assert.deepEqual([again.keys.white, again.keys.blue], [4, 1]);
 });
 
 test("a ride pays one outcome: the best round", () => {
-  let j = ride(11 * MIN);
+  let j = ride(8.25 * MIN);
   j = markRound(j, won(1));
   j = markRound(j, played);
   j = markRound(j, won(0.2));
   assert.deepEqual(journeyOutcome(j), won(1));
   assert.equal(j.game?.rounds, 3);
-  const { keys } = run(j, empty(), 0, 11 * MIN);
+  const { keys } = run(j, empty(), 0, 8.25 * MIN);
   assert.equal(rideValue({ white: keys.white, blue: keys.blue - 1 }), 10, "best win only, plus the ten-minute blue");
   assert.deepEqual(betterOutcome(won(0.3), played), won(0.3));
   assert.deepEqual(betterOutcome(IDLE, played), played);
 });
 
 test("tab closed mid-round forfeits the round, idle still pays", () => {
-  let { j, keys } = run(ride(4 * MIN), empty(), 0, 30_000);
+  let { j, keys } = run(ride(3 * MIN), empty(), 0, 30_000);
   j = openRound(j, 30_000);
   const saved = JSON.parse(JSON.stringify(j)) as Journey;
   const loaded = forfeitRound(saved);
   assert.equal(loaded.roundAt, undefined);
   assert.equal(loaded.forfeits, 1);
   assert.deepEqual(journeyOutcome(loaded), IDLE);
-  ({ keys } = run(loaded, keys, 31_000, 4 * MIN + 2_000, false));
+  ({ keys } = run(loaded, keys, 31_000, 3 * MIN + 2_000, false));
   assert.equal(keys.white, 1);
   assert.equal(keys.blue, 0);
 });
 
 test("forfeit keeps an earlier best", () => {
-  const j = openRound(markRound(ride(8 * MIN), played), 90_000);
+  const j = openRound(markRound(ride(6 * MIN), played), 90_000);
   assert.deepEqual(journeyOutcome(forfeitRound(j)), played);
-  assert.equal(forfeitRound(ride(8 * MIN)).forfeits, undefined, "nothing open, nothing forfeited");
+  assert.equal(forfeitRound(ride(6 * MIN)).forfeits, undefined, "nothing open, nothing forfeited");
 });
 
 test("ride pocket holds a whole 14-minute win; other sources keep the old pocket", () => {
   assert.equal(RIDE_WHITE_POCKET, 15);
   assert.equal(matchCap("white"), WHITE_POCKET);
-  const best = rideReward(14 * MIN - 1, won(0.74));
+  const best = rideReward(10.5 * MIN - 1, won(0.74));
   assert.equal(best.blue, 0);
   const full = { ...empty(), white: WHITE_POCKET };
   const got = pocketRide(full, { white: best.white, blue: 0, green: 0 });

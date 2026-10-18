@@ -39,6 +39,7 @@ import {
 } from "./wallet.ts";
 import { CITIES, type KioskId } from "./data.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
+import { rideRamp } from "./rideGames.ts";
 import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
@@ -266,7 +267,7 @@ export type ClientOp =
       round?: { n: number } & RideMoves;
     };
 
-export type RideDeal = { seed: number; n: number; ms: number; game: string };
+export type RideDeal = { seed: number; n: number; ms: number; game: string; ramp?: number; bonus?: boolean };
 
 export type ClientResult = Applied & {
   wardrobe?: Wardrobe;
@@ -747,7 +748,7 @@ function rideDealOf(detail: string | undefined): RideDeal | undefined {
   try {
     const d = JSON.parse(detail) as Partial<RideDeal>;
     if (typeof d.seed === "number" && typeof d.n === "number" && typeof d.ms === "number" && typeof d.game === "string") {
-      return { seed: d.seed, n: d.n, ms: d.ms, game: d.game };
+      return { seed: d.seed, n: d.n, ms: d.ms, game: d.game, ramp: typeof d.ramp === "number" ? d.ramp : 1, bonus: d.bonus === true };
     }
   } catch {
     /* a heartbeat stores no deal */
@@ -785,7 +786,8 @@ async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: Wall
     const moves = op.round;
     const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:r:${n}`, (w) => {
       if (w.meta.rideAt !== ticket.at || w.meta.rideOpenN !== n || !w.meta.rideGame) return { ok: false, reason: "busy" };
-      const outcome = scoreRide(w.meta.rideGame, rideSeed(id, ticket.at), n, w.meta.rideMs, ticket.to, moves);
+      const ramp = rideRamp(n, w.meta.rideBonusN === n);
+      const outcome = scoreRide(w.meta.rideGame, rideSeed(id, ticket.at), n, w.meta.rideMs, ticket.to, moves, ramp);
       return rideOp(w, { ...clock, play: true, watch, touch: true, outcome });
     });
     return applied(r);

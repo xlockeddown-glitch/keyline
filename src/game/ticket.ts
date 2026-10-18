@@ -1,6 +1,6 @@
 import { CITIES, CITY_LIST } from "./data.ts";
 import { distM } from "./geo.ts";
-import { IDLE, journeyOutcome, rideReward, type RideOutcome } from "./rideGames.ts";
+import { IDLE, journeyOutcome, RIDE_BONUS_WHITE, rideReward, type RideOutcome } from "./rideGames.ts";
 import type { City, CityId, Journey, Poi, Tier } from "./types";
 
 export const VAULTS_PER_FARE = 3;
@@ -14,8 +14,11 @@ export const GREEN_POCKET = 1;
  */
 export const RIDE_WHITE_POCKET = 15;
 export const SPARK_DAY = 6;
-/** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line. */
-export const FARE_MAX_MS = 11 * 60_000;
+/** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line.
+ *  0.0.94: 8 min (was 11) and a gentler distance line, so most rides land around 6-8 min. */
+export const FARE_MAX_MS = 8 * 60_000;
+/** 0.0.94: the long-haul blue (and the sat-it-out green) now come at 7 min (was 10, unreachable once rides cap at 8). */
+export const HAUL_MS = 7 * 60_000;
 /** A violet lamp stays dark for six hours after it pays. */
 export const VIOLET_COOL_MS = 6 * 60 * 60_000;
 
@@ -70,7 +73,7 @@ export function fareMs(from: CityId, to: CityId) {
   const a = CITIES[from].spawn;
   const b = CITIES[to].spawn;
   const km = distM(a.lat, a.lng, b.lat, b.lng) / 1000;
-  return Math.round(Math.min(FARE_MAX_MS, Math.max(48_000, 40_000 + km * 240)));
+  return Math.round(Math.min(FARE_MAX_MS, Math.max(48_000, 40_000 + km * 170)));
 }
 
 export function formatEta(ms: number) {
@@ -88,12 +91,12 @@ export function otherWards(from: CityId) {
 /**
  * What the carriage owes so far. Whites are the ride's one payout (idle, played or won — the best
  * finished round), due once the train has run 12s; strong wins may carry swapped blues.
- * 10+ min is a blue; sitting the whole 10+ min haul with the tab open is a green.
+ * 7+ min (HAUL_MS) is a blue; sitting the whole haul with the tab open is a green.
  */
 export function transitLoot(wallMs: number, openMs: number, rideMs = wallMs, outcome: RideOutcome = IDLE) {
   const pay = rideReward(rideMs, outcome);
   const started = wallMs >= 12_000 || outcome.kind !== "idle";
-  const ten = 10 * 60_000;
+  const ten = HAUL_MS;
   const blue = wallMs >= ten ? 1 : 0;
   const sat = wallMs >= ten && openMs >= ten && openMs >= wallMs * 0.85;
   return {
@@ -130,7 +133,8 @@ export function settleRide(j: Journey, keys: Record<Tier, number>, now: number, 
   const openMs = (j.openMs ?? 0) + (watching ? dt : 0);
   const wallMs = Math.max(0, clipped - j.departAt);
   const rideMs = Math.max(0, j.arriveAt - j.departAt);
-  const due = transitLoot(wallMs, openMs, rideMs, journeyOutcome(j));
+  const due0 = transitLoot(wallMs, openMs, rideMs, journeyOutcome(j));
+  const due = { ...due0, white: due0.white + (j.bonusWon ? RIDE_BONUS_WHITE : 0) };
   const have = { white: j.grantedWhite ?? 0, blue: j.grantedBlue ?? 0, green: j.grantedGreen ?? 0 };
   const owe = {
     white: Math.max(0, due.white - have.white),

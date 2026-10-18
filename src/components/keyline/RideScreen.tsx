@@ -1,3 +1,4 @@
+import { RideBoardsPanel } from "./RideBoards";
 import { useEffect, useState } from "react";
 import { CITIES } from "@/game/data";
 import { formatEta } from "@/game/ticket";
@@ -22,6 +23,7 @@ import {
   type LampTally,
   type RideGameId,
   type RideOutcome,
+  RIDE_BONUS_WHITE,
 } from "@/game/rideGames";
 import { AudioDock } from "./AudioDock";
 import { Lamplighter } from "./Lamplighter";
@@ -141,7 +143,7 @@ export function RideScreen() {
   const issueRide = useGame((s) => s.issueRide);
   const submitRide = useGame((s) => s.submitRide);
   const [, beat] = useState(0);
-  const [round, setRound] = useState<{ ms: number; seed: number; n: number; clues?: WhereClue[]; maps?: RoutePuzzleMap[]; game?: RideGameId } | null>(null);
+  const [round, setRound] = useState<{ ms: number; seed: number; n: number; ramp: number; bonus: boolean; clues?: WhereClue[]; maps?: RoutePuzzleMap[]; game?: RideGameId } | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
   useEffect(() => {
@@ -177,25 +179,26 @@ export function RideScreen() {
     const guestN = (journey.game?.rounds ?? 0) + (journey.forfeits ?? 0);
     let seed = journey.departAt;
     let n = guestN;
-    let dealtMs: number | undefined;
+    let dealt: { ms: number; ramp?: number; bonus?: boolean } | undefined;
     if (walletLive()) {
       const deal = await issueRide(pick);
       if (!deal || deal.game !== pick) return;
       seed = deal.seed;
       n = deal.n;
-      dealtMs = deal.ms;
+      dealt = deal;
     }
     // Deal the round's content before opening it, so a city with nothing to deal never strands an open round.
     const clues = pick === "where-am-i" ? whereRound(to.pois, seed, n) : undefined;
     const maps = pick === "route-puzzle" ? routeRound(to.pois, seed, n) : undefined;
     if ((clues && !clues.length) || (maps && !maps.length)) return;
-    const ms = startRideRound(pick, dealtMs);
-    if (ms == null) return;
+    const opened = startRideRound(pick, dealt, n);
+    if (opened == null) return;
+    const { ms, ramp, bonus } = opened;
     setResult(null);
     const shown = pick === "lamplighter" || pick === "match-sorter" ? roundSeed(seed, n) : seed;
-    if (clues) setRound({ ms, seed: shown, n, clues, game: pick });
-    else if (maps) setRound({ ms, seed: shown, n, maps, game: pick });
-    else setRound({ ms, seed: shown, n, game: pick });
+    if (clues) setRound({ ms, seed: shown, n, ramp, bonus, clues, game: pick });
+    else if (maps) setRound({ ms, seed: shown, n, ramp, bonus, maps, game: pick });
+    else setRound({ ms, seed: shown, n, ramp, bonus, game: pick });
   };
   const settle = (outcome: RideOutcome, verdict: string, sub?: string) => {
     const add = finishRideRound(outcome);
@@ -236,6 +239,7 @@ export function RideScreen() {
       <div className="title-audio">
         <AudioDock />
       </div>
+      <RideBoardsPanel />
       <div className="ride-folio">
         <p className="kicker">En route · {from.name}</p>
         <h1 className="title-word">{to.name}</h1>
@@ -248,14 +252,19 @@ export function RideScreen() {
         </div>
         {lootLine(journey) ? <p className="ride-loot">{lootLine(journey)}</p> : null}
 
+        {round ? (
+          <p className={`ride-round-tag${round.bonus ? " is-bonus" : ""}`} data-testid={round.bonus ? "ride-bonus" : "ride-round"}>
+            {round.bonus ? `Bonus round · ×${round.ramp.toFixed(2)} pace · win for +${RIDE_BONUS_WHITE} white` : `Round ${round.n + 1}${round.ramp > 1 ? ` · ×${round.ramp.toFixed(2)} pace` : ""}`}
+          </p>
+        ) : null}
         {round?.clues ? (
           <WhereAmI city={to.name} clues={round.clues} roundMs={round.ms} onDone={doneWhere} onQuit={quit} />
         ) : round?.maps ? (
           <RoutePuzzle city={to.name} maps={round.maps} roundMs={round.ms} onDone={doneRoute} onQuit={quit} />
         ) : round?.game === "match-sorter" ? (
-          <MatchSorter roundMs={round.ms} seed={round.seed} onDone={doneSort} onQuit={quit} />
+          <MatchSorter roundMs={round.ms} seed={round.seed} ramp={round.ramp} onDone={doneSort} onQuit={quit} />
         ) : round ? (
-          <Lamplighter roundMs={round.ms} seed={round.seed} onDone={done} onQuit={quit} />
+          <Lamplighter roundMs={round.ms} seed={round.seed} ramp={round.ramp} onDone={done} onQuit={quit} />
         ) : result ? (
           <div className="ride-result">
             <p className="kicker">{RIDE_GAME_NAME[game]}</p>
@@ -313,7 +322,7 @@ export function RideScreen() {
 
         {round ? null : (
           <p className="ride-hint text-xs text-fg-subtle">
-            Ten minutes: a blue. Sit with the tab open the whole haul: a green. Close it and the train still keeps time.
+            Seven minutes: a blue. Sit with the tab open the whole haul: a green. Halfway there's a bonus round. Close it and the train still keeps time.
           </p>
         )}
       </div>

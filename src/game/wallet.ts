@@ -15,7 +15,7 @@ import type { CityId, Tier, TriviaCat, TriviaDiff } from "./types.ts";
 import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay.ts";
 import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
-import { betterOutcome, IDLE, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
+import { betterOutcome, bonusDue, IDLE, RIDE_BONUS_WHITE, rideRamp, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
 import { perfectRefund } from "./perfectRefund.ts";
 import { FARE_MAX_MS, FARES_CAP, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
@@ -84,6 +84,10 @@ export type WalletMeta = {
   rideTouch: boolean;
   /** Open round index, or -1 when this ride has not been dealt. */
   rideOpenN: number;
+  /** 0.0.94: index of this ride's bonus round, or -1 before the midway deal. */
+  rideBonusN: number;
+  /** 0.0.94: the bonus round was won (pays RIDE_BONUS_WHITE once). */
+  rideBonusWon: boolean;
   rideGame: string;
   /** Length of the open round, the one the server dealt. */
   rideMs: number;
@@ -164,6 +168,8 @@ const emptyMeta = (): WalletMeta => ({
   ridePerfect: false,
   rideTouch: false,
   rideOpenN: -1,
+  rideBonusN: -1,
+  rideBonusWon: false,
   rideGame: "",
   rideMs: 0,
   fares: 0,
@@ -230,6 +236,8 @@ export function cleanMeta(raw: unknown): WalletMeta {
     ridePerfect: m.ridePerfect === true,
     rideTouch: m.rideTouch === true,
     rideOpenN: openIndex(m.rideOpenN),
+    rideBonusN: openIndex(m.rideBonusN),
+    rideBonusWon: m.rideBonusWon === true,
     rideGame: rideGameOf(m.rideGame),
     rideMs: num(m.rideMs, 120_000),
     fares: num(m.fares, FARES_CAP),
@@ -547,6 +555,8 @@ export function rideOp(
   let hi = same ? w.meta.rideHi : 0;
   let touch = same ? w.meta.rideTouch : false;
   let openN = same ? w.meta.rideOpenN : -1;
+  let bonusN = same ? w.meta.rideBonusN : -1;
+  let bonusWon = same ? w.meta.rideBonusWon : false;
   let game = same ? w.meta.rideGame : "";
   let roundMs = same ? w.meta.rideMs : 0;
   let best: RideOutcome = same ? storedRide(w.meta) : IDLE;
@@ -554,16 +564,20 @@ export function rideOp(
   if (input.deal) {
     const dealt = rideGameOf(input.deal.game);
     const left = arriveAt - Math.min(Math.max(now, departAt), arriveAt);
-    const ms = dealt ? rideRoundMs(dealt, left) : null;
     const n = openN < 0 ? 0 : openN + 1;
+    const bonus = bonusDue(departAt, arriveAt, now, bonusN);
+    const ramp = rideRamp(n, bonus);
+    const ms = dealt ? rideRoundMs(dealt, left, ramp) : null;
     if (!dealt || ms == null || n > 12 || n !== Math.floor(input.deal.n)) return { ok: false, reason: n !== Math.floor(input.deal.n) ? "busy" : "no-round" };
     openN = n;
+    if (bonus) bonusN = n;
     game = dealt;
     roundMs = ms;
     touch = true;
-    detail = JSON.stringify({ seed: input.deal.seed, n, ms, game: dealt });
+    detail = JSON.stringify({ seed: input.deal.seed, n, ms, game: dealt, ramp, bonus });
   }
   if (input.outcome) best = betterOutcome(best, input.outcome);
+  if (input.outcome?.kind === "won" && openN >= 0 && openN === bonusN) bonusWon = true;
   if (input.touch || input.outcome || input.deal) touch = true;
   if (touch && (input.deal || input.touch || input.outcome || input.play)) {
     const stamp = Math.min(arriveAt, Math.max(departAt, now));
@@ -573,7 +587,8 @@ export function rideOp(
   const span = hi > lo ? hi - lo : 0;
   const playedOk = touch && hi > lo && span >= rideLen * 0.5;
   const paying: RideOutcome = !playedOk ? IDLE : best.kind === "won" ? best : { kind: "played" };
-  const due = transitLoot(wallMs, open, rideLen, paying);
+  const due0 = transitLoot(wallMs, open, rideLen, paying);
+  const due = { ...due0, white: due0.white + (bonusWon ? RIDE_BONUS_WHITE : 0) };
   const have = same ? { white: w.meta.rideWhite, blue: w.meta.rideBlue, green: w.meta.rideGreen } : { white: 0, blue: 0, green: 0 };
   const owe = {
     white: Math.max(0, due.white - have.white),
@@ -593,6 +608,8 @@ export function rideOp(
     rideHi: hi,
     rideTouch: touch,
     rideOpenN: openN,
+    rideBonusN: bonusN,
+    rideBonusWon: bonusWon,
     rideGame: game,
     rideMs: roundMs,
     ...rankOf(best),

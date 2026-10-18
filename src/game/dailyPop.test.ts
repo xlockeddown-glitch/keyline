@@ -99,7 +99,7 @@ test("street matches doubled: 18 opening, cap 16 (10 at pocket 5+), 14s–39s sp
   for (let i = 0; i < 2000; i++) assert.notEqual(streetSpot("p", "austin", "2026-10-17", i)!.tier, "violet", "violet stays off the curb");
   assert.equal(streetSpot("p", "austin", "2026-10-17", STREET_CAP), null);
   const s = src("./store.ts");
-  assert.match(s, /return pocket >= 5 \? 10 : 16;/);
+  assert.match(s, /return pocket >= 15 \? 10 : 16;/, "0.0.94: cap 16 until 15+ held");
   assert.match(s, /Math\.max\(14_000, 39_000 - playMin \* 450\)/);
   assert.doesNotMatch(s, /if \(pocket >= 7\) return;/, "0.0.93: the pocket>=7 spawn pause is gone");
   assert.match(s, /function seedKeys\(cityId: CityId, n = SEED\.length\)/);

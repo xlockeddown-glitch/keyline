@@ -43,7 +43,7 @@ import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./match
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
-import { chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
+import { bonusDue, rideRamp, chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, rollIngredient, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
@@ -346,11 +346,11 @@ export type GameState = {
   chooseRideGame: (game: RideGameId) => void;
   /**
    * Start a ride-game round of `game` (default: the ride's current game) and store it as the pick.
-   * Returns its length, or null if that game no longer fits before the platform.
+   * Returns its length, pace and whether it is the midway bonus round (0.0.94), or null if that game no longer fits before the platform.
    */
-  startRideRound: (game?: RideGameId, issuedMs?: number) => number | null;
+  startRideRound: (game?: RideGameId, issued?: { ms: number; ramp?: number; bonus?: boolean }, n?: number) => { ms: number; ramp: number; bonus: boolean } | null;
   /** Ask the server for this round's seed. Guests get null and deal locally. */
-  issueRide: (game: RideGameId) => Promise<{ seed: number; n: number; ms: number; game: string } | null>;
+  issueRide: (game: RideGameId) => Promise<{ seed: number; n: number; ms: number; game: string; ramp?: number; bonus?: boolean } | null>;
   /** Send the round's moves. The server scores them. Guests no-op. */
   submitRide: (n: number, moves: { taps?: number[]; picks?: string[]; boxes?: string[]; orders?: string[][] }) => void;
   /** Bank a finished round (best outcome only) and pay what it newly earns. */
@@ -473,8 +473,8 @@ function placeRun(cityId: CityId): StreetRun {
 }
 
 function streetKeyCap(pocket: number): number {
-  // 0.0.90: doubled (was 5 / 8).
-  return pocket >= 5 ? 10 : 16;
+  // 0.0.90: doubled (was 5 / 8). 0.0.94: drops to 10 only at 15+ held (was 5+).
+  return pocket >= 15 ? 10 : 16;
 }
 
 /** A little rarer the longer this session has been going. Violet stays off the curb. */
@@ -2633,21 +2633,25 @@ export const useGame = create<GameState>((set, get) => ({
       },
     });
   },
-  startRideRound: (pick, issuedMs) => {
+  startRideRound: (pick, issued, n) => {
     const j = get().journey;
     if (!j) return null;
     const now = Date.now();
     const game = pick ?? rideGameFor(j);
-    const ms = issuedMs && issuedMs > 0 ? issuedMs : rideRoundMs(game, j.arriveAt - now);
+    const live = Boolean(issued && issued.ms > 0);
+    // Signed in, the server's deal decides the pace and the bonus; a guest works it out the same way here.
+    const bonus = live ? issued!.bonus === true : bonusDue(j.departAt, j.arriveAt, now, j.bonusDealt ? 0 : -1);
+    const ramp = live ? (issued!.ramp ?? 1) : rideRamp(n ?? (j.game?.rounds ?? 0) + (j.forfeits ?? 0), bonus);
+    const ms = live ? issued!.ms : rideRoundMs(game, j.arriveAt - now, ramp);
     if (ms == null) return null;
-    if (!issuedMs && !rideGameFits(game, j.arriveAt - now)) return null;
+    if (!live && !rideGameFits(game, j.arriveAt - now)) return null;
     // The ride's history entry follows what was actually played, so the next suggestion varies
     // against the player's picks. Rides from before 0.0.35 never pushed an entry; leave theirs alone.
     const hist = get().rideHistory ?? [];
     const history = j.rideGame && hist.length && hist[hist.length - 1] !== game ? [...hist.slice(0, -1), game] : hist;
-    set({ journey: openRound(chooseRideGame(j, game), now), rideHistory: history });
+    set({ journey: openRound(chooseRideGame(j, game), now, bonus), rideHistory: history });
     saveNow(get);
-    return ms;
+    return { ms, ramp, bonus };
   },
   finishRideRound: (outcome) => {
     const j = get().journey;

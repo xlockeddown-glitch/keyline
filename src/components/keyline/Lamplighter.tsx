@@ -9,15 +9,18 @@ import { LAMP_HIT_MS, LAMP_TRAVEL_MS, lampInFrame, lampSchedule, type LampTally 
 export function Lamplighter({
   roundMs,
   seed,
+  ramp = 1,
   onDone,
   onQuit,
 }: {
   roundMs: number;
   seed: number;
+  /** 0.0.94: pace for this round (1 = the old speed). */
+  ramp?: number;
   onDone: (t: LampTally, taps?: number[]) => void;
   onQuit: () => void;
 }) {
-  const lamps = useMemo(() => lampSchedule(roundMs, seed), [roundMs, seed]);
+  const lamps = useMemo(() => lampSchedule(roundMs, seed, ramp), [roundMs, seed, ramp]);
   const start = useRef(0);
   const lit = useRef(new Set<number>());
   const missed = useRef(new Set<number>());

@@ -8,16 +8,16 @@ export type RideOutcome = { kind: "idle" } | { kind: "played" } | { kind: "won";
 
 export const IDLE: RideOutcome = { kind: "idle" };
 
-/** Payout table is written for an eight-minute ride and scaled from there. */
-export const RIDE_BASE_MS = 8 * 60_000;
+/** Payout table is written for a six-minute ride and scaled from there (0.0.94: was eight; rides got shorter, pay per ride holds). */
+export const RIDE_BASE_MS = 6 * 60_000;
 export const BASE_IDLE = 1;
 export const BASE_PLAYED = 3;
 export const BASE_WON_LOW = 5;
 export const BASE_WON_HIGH = 7;
 /** A win at or above this performance is strong: it can trade three whites for a blue. */
 export const STRONG_WIN = 0.75;
-/** Rides this long can trade twice. */
-export const LONG_RIDE_MS = 12 * 60_000;
+/** Rides this long can trade twice (0.0.94: 9 min, was 12, scaled with the six-minute base). */
+export const LONG_RIDE_MS = 9 * 60_000;
 export const BLUE_IN_WHITES = 3;
 /** Flat whites a perfect round adds on top of the ride's pay. Not scaled by ride length. */
 export const RIDE_PERFECT_BONUS = 1;
@@ -88,6 +88,12 @@ export type RideGameMark = {
   forfeits?: number;
   /** How the last unfinished round ended (0.0.42): the player pressed Stop, or the tab closed. Missing on older saves. */
   lastCut?: "stopped" | "closed";
+  /** 0.0.94: the open round is this ride's midway bonus round. */
+  roundBonus?: boolean;
+  /** 0.0.94: a bonus round has been dealt this ride (only one per ride). */
+  bonusDealt?: boolean;
+  /** 0.0.94: the bonus round was won; the ride pays RIDE_BONUS_WHITE more. */
+  bonusWon?: boolean;
 };
 
 export function journeyOutcome(j: RideGameMark): RideOutcome {
@@ -101,21 +107,22 @@ export function journeyOutcome(j: RideGameMark): RideOutcome {
 export function markRound<J extends RideGameMark>(j: J, outcome: RideOutcome): J {
   const best = betterOutcome(journeyOutcome(j), outcome);
   const rounds = (j.game?.rounds ?? 0) + 1;
-  const next: J = { ...j, roundAt: undefined };
+  const next: J = { ...j, roundAt: undefined, roundBonus: undefined };
+  if (j.roundBonus && outcome.kind === "won") next.bonusWon = true;
   if (best.kind === "idle") return next;
   next.game = { kind: best.kind, perf: best.kind === "won" ? best.perf : 0, rounds };
   if (best.kind === "won" && best.perfect) next.game.perfect = true;
   return next;
 }
 
-export function openRound<J extends RideGameMark>(j: J, now: number): J {
-  return { ...j, roundAt: now };
+export function openRound<J extends RideGameMark>(j: J, now: number, bonus = false): J {
+  return bonus ? { ...j, roundAt: now, roundBonus: true, bonusDealt: true } : { ...j, roundAt: now, roundBonus: undefined };
 }
 
 /** A round still open when the save loads was cut off: forfeit it. Idle pay and earlier bests stand. */
 export function forfeitRound<J extends RideGameMark>(j: J, why: "stopped" | "closed" = "closed"): J {
   if (j.roundAt == null) return j;
-  return { ...j, roundAt: undefined, forfeits: (j.forfeits ?? 0) + 1, lastCut: why };
+  return { ...j, roundAt: undefined, roundBonus: undefined, forfeits: (j.forfeits ?? 0) + 1, lastCut: why };
 }
 
 /** Ride-screen line for an unfinished round, or undefined when a finished round already stands. */
@@ -288,11 +295,39 @@ export function routeRoundMs(remainingMs: number): number | null {
   return Math.min(ROUTE_ROUND_MAX_MS, room);
 }
 
-/** Round length for this ride's game. */
-export function rideRoundMs(game: RideGameId, remainingMs: number): number | null {
-  if (game === "where-am-i") return whereRoundMs(remainingMs);
-  if (game === "route-puzzle") return routeRoundMs(remainingMs);
-  if (game === "match-sorter") return sorterRoundMs(remainingMs);
+// ── 0.0.94: each round a little faster, and a midway bonus round ───────
+
+/** Speed-up per round dealt this ride, and its ceiling. */
+export const RAMP_STEP = 0.06;
+export const RAMP_MAX = 0.3;
+/** The bonus round runs this much hotter again. */
+export const BONUS_RAMP = 0.1;
+/** Whites a won bonus round adds to the ride, flat, once. */
+export const RIDE_BONUS_WHITE = 2;
+
+/** Pace multiplier for round n (0-based): 1, 1.06, 1.12 … 1.3; the bonus round adds 0.1. */
+export function rideRamp(n: number, bonus = false): number {
+  const k = 1 + Math.min(RAMP_MAX, RAMP_STEP * Math.max(0, Math.floor(n) || 0));
+  return Math.round((k + (bonus ? BONUS_RAMP : 0)) * 100) / 100;
+}
+
+/** The first round dealt once the ride is halfway is the bonus round (and only that one). */
+export function bonusDue(departAt: number, arriveAt: number, now: number, bonusN: number): boolean {
+  return bonusN < 0 && now >= departAt + (arriveAt - departAt) / 2 && now < arriveAt;
+}
+
+/** Round length for this ride's game. Timed-answer games get a shorter clock as the pace ramps (never under their floor). */
+export function rideRoundMs(game: RideGameId, remainingMs: number, ramp = 1): number | null {
+  const k = ramp > 1 ? ramp : 1;
+  if (game === "where-am-i") {
+    const ms = whereRoundMs(remainingMs);
+    return ms == null ? null : Math.max(WHERE_ROUND_MIN_MS, Math.floor(ms / k));
+  }
+  if (game === "route-puzzle") {
+    const ms = routeRoundMs(remainingMs);
+    return ms == null ? null : Math.max(ROUTE_ROUND_MIN_MS, Math.floor(ms / k));
+  }
+  if (game === "match-sorter") return sorterRoundMs(remainingMs) == null ? null : Math.ceil(SORT_ROUND_MS / k);
   return lampRoundMs(remainingMs);
 }
 
@@ -336,7 +371,8 @@ export function seededRng(seed: number) {
 }
 
 /** When each lamp crosses the frame. Gaps tighten as the round goes on. */
-export function lampSchedule(roundMs: number, seed: number): Lamp[] {
+export function lampSchedule(roundMs: number, seed: number, ramp = 1): Lamp[] {
+  const k = ramp > 1 ? ramp : 1;
   const rnd = seededRng(seed);
   const out: Lamp[] = [];
   let at = 1_700;
@@ -346,7 +382,7 @@ export function lampSchedule(roundMs: number, seed: number): Lamp[] {
     const roll = rnd();
     const tier: LampTier = roll < 0.55 ? "white" : roll < 0.8 ? "blue" : roll < 0.95 ? "green" : "amber";
     out.push({ id: id++, at: Math.round(at), tier });
-    const gap = 1_350 - 550 * t;
+    const gap = (1_350 - 550 * t) / k;
     at += gap + (rnd() - 0.5) * 360;
   }
   return out;

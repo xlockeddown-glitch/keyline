@@ -37,15 +37,18 @@ function Glyph({ tier }: { tier: Tier }) {
 export function MatchSorter({
   roundMs,
   seed,
+  ramp = 1,
   onDone,
   onQuit,
 }: {
   roundMs: number;
   seed: number;
+  /** 0.0.94: pace for this round (1 = the old speed). */
+  ramp?: number;
   onDone: (t: SortTally, boxes?: string[]) => void;
   onQuit: () => void;
 }) {
-  const matches = useMemo(() => sorterSchedule(seed), [seed]);
+  const matches = useMemo(() => sorterSchedule(seed, ramp), [seed, ramp]);
   const start = useRef(0);
   const gone = useRef(new Set<number>());
   const tally = useRef({ right: 0, wrong: 0, missed: 0, streak: 0, best: 0 });

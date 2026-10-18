@@ -25,9 +25,9 @@ export type RideMoves = {
  * Null when this game has nothing to score (unknown id, or the city dealt an empty round).
  * The caller then pays the played bonus only, and only once the ride was actually played.
  */
-export function scoreRide(game: string, seed: number, n: number, ms: number, city: CityId, moves: RideMoves): RideOutcome | null {
+export function scoreRide(game: string, seed: number, n: number, ms: number, city: CityId, moves: RideMoves, ramp = 1): RideOutcome | null {
   if (game === "lamplighter") {
-    const lamps = lampSchedule(ms, roundSeed(seed, n));
+    const lamps = lampSchedule(ms, roundSeed(seed, n), ramp);
     const lit = new Set<number>();
     let hits = 0;
     let strays = 0;
@@ -52,7 +52,7 @@ export function scoreRide(game: string, seed: number, n: number, ms: number, cit
     return whereOutcome({ asked: picks.length, right, total: clues.length });
   }
   if (game === "match-sorter") {
-    const matches = sorterSchedule(roundSeed(seed, n));
+    const matches = sorterSchedule(roundSeed(seed, n), ramp);
     const boxes = moves.boxes ?? [];
     let right = 0;
     let wrong = 0;

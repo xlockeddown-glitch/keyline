@@ -20,7 +20,8 @@ export type SortMatch = { id: number; tier: Tier; wave: number; at: number; fall
 export const SORT_LANES = 5;
 
 /** Every match in the round, in drop order. Timing is fixed; only the tiers follow the seed. */
-export function sorterSchedule(seed: number): SortMatch[] {
+export function sorterSchedule(seed: number, ramp = 1): SortMatch[] {
+  const k = ramp > 1 ? ramp : 1;
   const rnd = seededRng(seed * 13 + 7);
   const out: SortMatch[] = [];
   let at = SORT_FIRST_MS;
@@ -38,7 +39,7 @@ export function sorterSchedule(seed: number): SortMatch[] {
     while (bag.length < w.count) bag.push(SORT_TIERS[Math.floor(rnd() * SORT_TIERS.length)]!);
     shuffle(bag);
     for (let i = 0; i < w.count; i++) {
-      out.push({ id: id++, tier: bag[i]!, wave, at: Math.round(at), fallMs: w.fallMs, lane: Math.floor(rnd() * SORT_LANES) });
+      out.push({ id: id++, tier: bag[i]!, wave, at: Math.round(at / k), fallMs: Math.round(w.fallMs / k), lane: Math.floor(rnd() * SORT_LANES) });
       if (i < w.count - 1) at += w.gapMs;
     }
     at += SORT_WAVE_PAUSE_MS;

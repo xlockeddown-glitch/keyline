@@ -193,3 +193,29 @@ export const STANDING_KINDS: { id: StandingKind; label: string; blurb: string }[
   { id: "speed", label: "Fastest", blurb: "Lowest average answer time. Ten trivia cards to rank." },
   { id: "accuracy", label: "% correct", blurb: "Highest share answered correctly. One hundred trivia cards to rank." },
 ];
+
+// ── 0.0.94: whole-game boards beside the ride (desktop) ─────────────────
+
+export const RIDE_BOARD_TOP = 5;
+
+export type RideBoardRow = { userId: string; name: string; rank: number; value: number };
+export type RideBoards = { lanterns: RideBoardRow[]; distance: RideBoardRow[] };
+export type MyRideRanks = { lanterns: { value: number; rank: number | null }; distance: { value: number; rank: number | null } };
+
+export const EMPTY_RIDE_BOARDS: RideBoards = { lanterns: [], distance: [] };
+
+/** Top 5 by total lanterns answered correctly (every colour summed). Ties: earlier, then user id. */
+export function rankLanterns(rows: { userId: string; name: string; correct: number; updatedAt: number }[], limit = RIDE_BOARD_TOP): RideBoardRow[] {
+  return [...rows]
+    .filter((r) => r.correct > 0)
+    .sort((a, b) => b.correct - a.correct || a.updatedAt - b.updatedAt || a.userId.localeCompare(b.userId))
+    .slice(0, limit)
+    .map((r, i) => ({ userId: r.userId, name: publicStandingName(r.name), rank: i + 1, value: Math.floor(r.correct) }));
+}
+
+/** The player's own line to pin under a top-5 board: only when they rank and are not already shown. */
+export function ownLine(top: RideBoardRow[], me: string | null | undefined, mine: { value: number; rank: number | null } | null | undefined): { rank: number; value: number } | null {
+  if (!me || !mine || mine.rank == null || mine.value <= 0) return null;
+  if (top.some((r) => r.userId === me)) return null;
+  return { rank: mine.rank, value: mine.value };
+}
