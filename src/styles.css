@@ -3595,7 +3595,7 @@ h3 {
 .scout-marker[data-scout="turtle"],
 .scout-marker[data-scout="turtle"].is-idle,
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/turtle-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3603,7 +3603,7 @@ h3 {
 .scout-marker[data-scout="cat"],
 .scout-marker[data-scout="cat"].is-idle,
 .scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/cat-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3611,7 +3611,7 @@ h3 {
 .scout-marker[data-scout="fox"],
 .scout-marker[data-scout="fox"].is-idle,
 .scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/fox-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3619,7 +3619,7 @@ h3 {
 .scout-marker[data-scout="corgi"],
 .scout-marker[data-scout="corgi"].is-idle,
 .scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/corgi-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3627,7 +3627,7 @@ h3 {
 .scout-marker[data-scout="sloth"],
 .scout-marker[data-scout="sloth"].is-idle,
 .scout-marker[data-scout="sloth"].is-idle.is-side {
-  background-image: url("/sprites/scouts/sloth-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/sloth-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3635,7 +3635,7 @@ h3 {
 .scout-marker[data-scout="raccoon"],
 .scout-marker[data-scout="raccoon"].is-idle,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
-  background-image: url("/sprites/scouts/raccoon-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/raccoon-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3643,7 +3643,7 @@ h3 {
 .scout-marker[data-scout="owl"],
 .scout-marker[data-scout="owl"].is-idle,
 .scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/owl-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3651,7 +3651,7 @@ h3 {
 .scout-marker[data-scout="giraffe"],
 .scout-marker[data-scout="giraffe"].is-idle,
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/giraffe-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3659,7 +3659,7 @@ h3 {
 .scout-marker[data-scout="lynx"],
 .scout-marker[data-scout="lynx"].is-idle,
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-v2.png?v=k92a");
+  background-image: url("/sprites/scouts/lynx-v2.png?v=k93a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3680,3 +3680,106 @@ h3 {
 .acct-note{font-size:.8125rem;color:var(--color-fg-muted);text-wrap:pretty}
 .acct-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px}
 .acct-link{min-height:32px;font-size:.8125rem;color:var(--color-fg);text-decoration:underline;text-underline-offset:3px;background:none;border:0;padding:0;cursor:pointer}
+
+/* 0.0.93: Quest Board pin ("!" + glow when goals are new or ready), the match cache, the first-play arrow, goals. */
+.quest-pin .service-sign {
+  background: linear-gradient(160deg, #ffe08a, #e0a92e);
+  color: #2a1c06;
+}
+.quest-bang {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  border-radius: 50%;
+  background: #ffcc33;
+  color: #2a1c06;
+  font: 800 14px/20px system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 0 0 2px #2a1c06, 0 0 12px 4px rgb(255 204 51 / 0.8);
+  display: none;
+}
+.quest-pin.is-alert .quest-bang {
+  display: block;
+  animation: quest-bob 1.1s ease-in-out infinite;
+}
+.quest-pin.is-alert .service-sign {
+  box-shadow: 0 0 14px 6px rgb(255 204 51 / 0.65);
+}
+@keyframes quest-bob {
+  50% { transform: translateY(-4px); }
+}
+.quest-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #ffe08a;
+  font: 700 12px/1.1 system-ui, sans-serif;
+  text-shadow: 0 1px 2px #000;
+  animation: quest-bob 0.9s ease-in-out infinite;
+  pointer-events: none;
+}
+.quest-arrow b {
+  font-size: 22px;
+}
+.cache-pin {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #8fd0ff, #3a7bd5 55%, #2d5a2f);
+  box-shadow: 0 0 0 2px #fff4c2, 0 0 18px 8px rgb(143 208 255 / 0.6);
+  animation: cache-glow 1.6s ease-in-out infinite;
+}
+.cache-pin i {
+  position: absolute;
+  inset: 9px 7px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #f4f0e6 0 4px, #5f9ad0 4px 8px, #5fb36a 8px 12px);
+}
+@keyframes cache-glow {
+  50% { box-shadow: 0 0 0 2px #fff4c2, 0 0 26px 12px rgb(143 208 255 / 0.85); }
+}
+.goal-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.goal-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: color-mix(in oklab, var(--color-vault-green) 22%, transparent);
+  pointer-events: none;
+}
+.goal-row.is-ready {
+  border-color: #ffcc33;
+  box-shadow: 0 0 10px rgb(255 204 51 / 0.35);
+}
+.goal-row.is-paid {
+  opacity: 0.6;
+}
+.goal-copy {
+  position: relative;
+  flex: 1;
+}
+.goal-title {
+  font-weight: 600;
+}
+.goal-sub {
+  font-size: 12px;
+  color: var(--color-fg-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .quest-pin.is-alert .quest-bang, .quest-arrow, .cache-pin { animation: none; }
+}
+.goals-card {
+  display: grid;
+  gap: 8px;
+}

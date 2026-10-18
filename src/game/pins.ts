@@ -34,6 +34,11 @@ export function counterPinHtml(name: string) {
   return `<div class="service-pin counter-pin" title="${name}"><span class="service-sign">${CUP}</span><i class="service-post"></i></div>`;
 }
 
+/** 0.0.93: the Quest Board. Gold sign; glows with a "!" when goals are new or ready to collect. */
+export function questPinHtml(name: string, alert: boolean) {
+  return `<div class="service-pin board-pin quest-pin${alert ? " is-alert" : ""}" data-quest="1" title="${name}"><b class="quest-bang" aria-hidden="true">!</b><span class="service-sign">${NOTICE}</span><i class="service-post"></i></div>`;
+}
+
 /** Notice board: enamel sign, ink brown, a posted sheet. Not a lamp. */
 export function boardPinHtml(name: string) {
   return `<div class="service-pin board-pin" title="${name}"><span class="service-sign">${NOTICE}</span><i class="service-post"></i></div>`;

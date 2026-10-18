@@ -1,5 +1,7 @@
 import { X } from "lucide-react";
-import { CITIES, cityBoard } from "@/game/data";
+import { useEffect } from "react";
+import { CITIES, cityBoard, isQuestBoard } from "@/game/data";
+import { DailyGoals } from "./DailyGoals";
 import { BLITZ_FULL, blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { INGREDIENTS, cityStaple } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
@@ -20,7 +22,6 @@ export function NoticeBoard() {
   const quests = useGame((s) => s.quests);
   const charms = useGame((s) => s.charms);
   const distanceM = useGame((s) => s.distanceM);
-  const claimErrand = useGame((s) => s.claimErrand);
   const claimCircuit = useGame((s) => s.claimCircuit);
   const claimLongQuest = useGame((s) => s.claimLong);
   const wearCloth = useGame((s) => s.wearCloth);
@@ -33,6 +34,10 @@ export function NoticeBoard() {
   const today = new Date().toISOString().slice(0, 10);
   const blitzReady = blitzDue(lastBlitzDay, today);
 
+  const openQuest = useGame((s) => s.openQuest);
+  useEffect(() => {
+    if (open && isQuestBoard(place)) openQuest(true);
+  }, [open, place, openQuest]);
   useSheetOpen(open);
   if (!open || !place) return null;
 
@@ -41,7 +46,7 @@ export function NoticeBoard() {
       <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <p className="kicker">Notice · {city.name}</p>
+            <p className="kicker">{isQuestBoard(place) ? "Quests" : "Notice"} · {city.name}</p>
             <h2 className="font-display text-2xl">{place.name}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">{place.lore}</p>
           </div>
@@ -51,6 +56,7 @@ export function NoticeBoard() {
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <div className="grid gap-3 text-sm">
+            <DailyGoals act />
             <button
               type="button"
               className="hq-row w-full text-left disabled:opacity-70"
@@ -85,7 +91,6 @@ export function NoticeBoard() {
               charms={charms.length}
               distanceM={distanceM}
               quests={quests}
-              onErrand={claimErrand}
               onCircuit={claimCircuit}
               onLong={claimLongQuest}
               onWear={wearCloth}

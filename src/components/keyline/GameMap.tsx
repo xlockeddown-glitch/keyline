@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
-import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
-import { boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
+import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
+import { CACHE_GRAB_M, cacheSeed, questAlert } from "@/game/goals";
+import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { V2_CADENCE, V2_SCOUTS, v2Cell } from "@/game/coatLayer";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
@@ -10,6 +11,7 @@ import { startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
   snapReachable,
+  quietDrop,
   walkableTarget,
   walkReach,
   canGrabMatch,
@@ -189,6 +191,8 @@ export function GameMap() {
   const cityId = useGame((s) => s.cityId);
   const scoutName = useGame((s) => SCOUTS[s.scout]?.name ?? "The walker");
   const [streets, setStreets] = useState<"loading" | "ready" | "error">("loading");
+  const cacheRef = useRef<{ lat: number; lng: number; marker: { remove: () => void } } | null>(null);
+  const arrowRef = useRef<{ remove: () => void } | null>(null);
   const [boardOpen, setBoardOpen] = useState(false);
   const dailyLines = useRef<Polyline[]>([]);
   const dailyPins = useRef<Marker[]>([]);
@@ -300,6 +304,7 @@ export function GameMap() {
   function enterCab() {
     const cab = cabRef.current;
     if (!cab || cab.seated) return;
+    useGame.getState().noteGoalKind("cab");
     pos.current.lat = cab.lat;
     pos.current.lng = cab.lng;
     pos.current.yaw = cab.yaw;
@@ -1227,7 +1232,9 @@ export function GameMap() {
         : counter
           ? counterPinHtml(poi.name)
           : board
-            ? boardPinHtml(poi.name)
+            ? isQuestBoard(poi)
+              ? questPinHtml(poi.name, questAlert(st.goals))
+              : boardPinHtml(poi.name)
             : desk
               ? stationPinHtml({ cooling, fare: lit })
               : vaultPinHtml(poi, { cooling });
@@ -1581,6 +1588,13 @@ export function GameMap() {
         lastKeyCheck.current = t;
         st.maybeSpawnKey(Date.now());
         st.maybeSpawnRun(Date.now());
+        // 0.0.93: walk onto the day's match cache to open it.
+        const c = cacheRef.current;
+        if (c && distM(pos.current.lat, pos.current.lng, c.lat, c.lng) <= CACHE_GRAB_M) {
+          cacheRef.current = null;
+          c.marker.remove();
+          st.claimCache();
+        }
       }
 
       if (
@@ -1856,6 +1870,52 @@ export function GameMap() {
       void fillSurroundings(dg, city.spawn.lat, city.spawn.lng, city.pois, abort.signal, true);
     });
   }
+
+  // 0.0.93: the day's match cache, the Quest Board's "!" and the first-play arrow to it.
+  useEffect(() => {
+    if (streets !== "ready") return;
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    const city = CITIES[cityId];
+    const day = new Date().toISOString().slice(0, 10);
+    if (useGame.getState().cacheDay !== day) {
+      const at = quietDrop(cacheSeed(cityId, day, city.start ?? city.spawn));
+      const marker = L.marker([at.lat, at.lng], {
+        icon: L.divIcon({ className: "", html: '<div class="cache-pin" data-testid="cache-pin" title="Match cache"><i></i></div>', iconSize: [36, 36], iconAnchor: [18, 18] }),
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 450,
+      }).addTo(map);
+      cacheRef.current = { lat: at.lat, lng: at.lng, marker };
+    }
+    const qb = city.pois.find((p) => isQuestBoard(p));
+    if (qb && !useGame.getState().questVisited) {
+      arrowRef.current = L.marker([qb.lat, qb.lng], {
+        icon: L.divIcon({ className: "", html: '<div class="quest-arrow" data-testid="quest-arrow">Quest Board<b>▼</b></div>', iconSize: [120, 44], iconAnchor: [60, 112] }),
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 900,
+      }).addTo(map);
+    }
+    const paint = (on: boolean) => document.querySelectorAll("[data-quest]").forEach((el) => el.classList.toggle("is-alert", on));
+    paint(questAlert(useGame.getState().goals));
+    const unsub = useGame.subscribe((s, p) => {
+      if (s.goals !== p.goals) paint(questAlert(s.goals));
+      if (s.questWalk !== p.questWalk && qb) void setDestination(qb.lat, qb.lng, true);
+      if (s.questVisited && arrowRef.current) {
+        arrowRef.current.remove();
+        arrowRef.current = null;
+      }
+    });
+    return () => {
+      unsub();
+      cacheRef.current?.marker.remove();
+      cacheRef.current = null;
+      arrowRef.current?.remove();
+      arrowRef.current = null;
+    };
+  }, [streets, cityId]);
 
   return (
     <div

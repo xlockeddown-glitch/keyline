@@ -1076,3 +1076,52 @@ test("0.0.92 server wheel: Take all pays the combined prizes and reports its sli
     Math.random = real;
   }
 });
+
+test("0.0.93 streaks: 5 right in a row pays a white match on the server; a miss resets", async () => {
+  const sql = await db();
+  const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
+  await syncPlayer(sql, "stk", snap({ cities }), "stkphone1");
+  const at = async (n: string, correct: boolean) => {
+    const r = await awardGrade(sql, "stk", n, { ...pay({ correct }), prevNonce: "" });
+    await sql`update wallet_ledger set created_at = now() + (${n.length} || ' seconds')::interval where op_key = ${"grade:" + n}`;
+    return r;
+  };
+  let last;
+  for (const n of ["a", "aa", "aaa", "aaaa"]) last = await at(n, true);
+  const white4 = last!.wallet.keys.white;
+  const fifth = await at("aaaaa", true);
+  assert.equal(fifth.wallet.keys.white, white4 + 1, "5 in a row: a white match");
+  assert.ok(fifth.award?.boosts.includes("5 in a row"));
+  await at("aaaaaa", false);
+  const after = await at("aaaaaaa", true);
+  assert.equal(after.wallet.keys.white, fifth.wallet.keys.white, "a miss reset the run");
+});
+
+test("0.0.93 cache and daily goals: once a day, 2-3 white/blue/green matches; goals need proof of play", async () => {
+  const sql = await db();
+  const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
+  await syncPlayer(sql, "cac", snap({ cities }), "cacphone1");
+  const c1 = await applyClientOp(sql, "cac", { kind: "cache", city: "austin" });
+  assert.ok(c1.ok);
+  const got = c1.cache!.got;
+  assert.ok(got.length >= 2 && got.length <= 3 && got.every((t) => t === "white" || t === "blue" || t === "green"));
+  const c2 = await applyClientOp(sql, "cac", { kind: "cache", city: "austin" });
+  assert.equal(c2.replay, true);
+  assert.deepEqual(c2.wallet.keys, c1.wallet.keys, "once per day");
+  const locked = await applyClientOp(sql, "cac", { kind: "cache", city: "nyc" });
+  assert.equal(locked.ok, false);
+
+  const early = await applyClientOp(sql, "cac", { kind: "dgoal", i: 0 });
+  assert.equal(early.ok, false, "no graded answers yet");
+  for (const n of ["g1", "g2", "g3", "g4", "g5", "g6"]) await awardGrade(sql, "cac", n, { ...pay(), prevNonce: "" });
+  const coins0 = (await canonicalWallet(sql, "cac")).wallet.coins;
+  const allEarly = await applyClientOp(sql, "cac", { kind: "dgoal", i: 3 });
+  assert.equal(allEarly.ok, false, "all three first");
+  for (const i of [0, 1, 2]) assert.ok((await applyClientOp(sql, "cac", { kind: "dgoal", i })).ok);
+  const twice = await applyClientOp(sql, "cac", { kind: "dgoal", i: 0 });
+  assert.equal(twice.replay, true);
+  const all = await applyClientOp(sql, "cac", { kind: "dgoal", i: 3 });
+  assert.ok(all.ok);
+  assert.equal(all.wallet.coins - coins0, 3 * 60);
+  assert.equal(all.wallet.keys.green, (c1.wallet.keys.green ?? 0) + 1);
+});

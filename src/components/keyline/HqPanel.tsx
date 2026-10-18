@@ -5,13 +5,14 @@ import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { MATERIAL_LIST } from "@/game/items";
 import { INGREDIENTS, cityStaple, isPaintId, type IngredientId } from "@/game/ingredients";
-import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, errandDone, errandLabel, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
+import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
 import { BANK_DOWN, BANK_UP } from "@/game/rewards";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
 import { sfx } from "@/game/audio";
 import { fareDesk } from "@/game/ticket";
 import { useGame } from "@/game/store";
 import type { CharmId } from "@/game/types";
+import { DailyGoals } from "./DailyGoals";
 import { ItemIcon } from "./ItemIcon";
 import { AuthChip } from "./AuthChip";
 import { RollsBoard } from "./RollsBoard";
@@ -40,7 +41,6 @@ export function HqPanel() {
   const schematics = useGame((s) => s.schematics);
   const pantry = useGame((s) => s.pantry);
   const quests = useGame((s) => s.quests);
-  const claimErrand = useGame((s) => s.claimErrand);
   const claimCircuit = useGame((s) => s.claimCircuit);
   const claimLongQuest = useGame((s) => s.claimLong);
   const wearCloth = useGame((s) => s.wearCloth);
@@ -277,6 +277,7 @@ export function HqPanel() {
 
           {tab === "Progress" ? (
             <div className="grid gap-4 text-sm">
+              <DailyGoals act={false} />
               <div>
                 <p className="kicker">Quests</p>
                 <p className="mt-1 text-xs text-fg-muted">
@@ -307,7 +308,6 @@ export function HqPanel() {
                 charms={charms.length}
                 distanceM={distanceM}
                 quests={quests}
-                onErrand={claimErrand}
                 onCircuit={claimCircuit}
                 onLong={claimLongQuest}
                 onWear={wearCloth}
@@ -405,7 +405,6 @@ export function QuestDesk({
   charms,
   distanceM,
   quests,
-  onErrand,
   onCircuit,
   onLong,
   onWear,
@@ -418,35 +417,17 @@ export function QuestDesk({
   charms: number;
   distanceM: number;
   quests: QuestLog;
-  onErrand: () => void;
   onCircuit: () => void;
   onLong: (id: LongId) => void;
   onWear: (id: ClothId | null) => void;
 }) {
-  const errand = errandLabel(quests.errand);
-  const ready = errandDone(quests.errand);
   const circuit = circuitReady(quests, cityId, staple, charms);
   const cityCircuit = quests.circuit[cityId];
   const longs = longProgress(quests, distanceM);
   return (
     <div>
-      <p className="kicker mt-2">Quests</p>
+      <p className="kicker mt-2">Milestones</p>
       <div className="mt-2 grid gap-2">
-        <div className="hq-row">
-          <div className="hq-row-copy">
-            <p className="hq-row-title">{errand.title}</p>
-            <p className="hq-row-sub">{errand.sub}</p>
-            <div className="hq-row-actions">
-              {act ? (
-                <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!ready} onClick={onErrand}>
-                  {ready ? "Take stock" : "In progress"}
-                </button>
-              ) : (
-                <p className="text-xs text-fg-subtle">{ready ? "Ready at the notice board." : "In progress."}</p>
-              )}
-            </div>
-          </div>
-        </div>
         <div className="hq-row">
           <div className="hq-row-copy">
             <p className="hq-row-title">{cityName} circuit</p>

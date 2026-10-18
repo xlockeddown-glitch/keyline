@@ -139,3 +139,8 @@ export function goalsClaimable(g: GoalDay): boolean {
   for (let i = 0; i < 3; i++) if (goalDone(g, i) && !g.paid[i]) return true;
   return g.paid.every(Boolean) && !g.all;
 }
+
+/** The Quest Board glows with "!" on a new day, until today's goals are looked at, and while something is ready. */
+export function questAlert(g: GoalDay, day = new Date().toISOString().slice(0, 10)): boolean {
+  return g.day !== day || !g.seen || goalsClaimable(g);
+}

@@ -620,6 +620,22 @@ export function reachableDrop(p: Pt): Pt {
   return snapReachable(walkGraph, p, boundReach());
 }
 
+/** 0.0.93: a spot on the reachable walk, off main roads where one is near (the match cache). */
+export function quietDrop(p: Pt): Pt {
+  const g = walkGraph;
+  if (!g?.segs.length) return p;
+  const r = boundReach();
+  let best: Snap | null = null;
+  for (let i = 0; i < g.segs.length; i++) {
+    const seg = g.segs[i]!;
+    if (seg.arterial || (r && !segReachable(g, i, r))) continue;
+    const snap = projectToSeg(g, p.lat, p.lng, seg);
+    snap.seg = i;
+    if (!best || snap.dist < best.dist) best = snap;
+  }
+  return best && best.dist < 400 ? { lat: best.lat, lng: best.lng } : snapReachable(g, p, r);
+}
+
 export function walkReach(): Reach | null {
   return boundReach();
 }

@@ -3598,6 +3598,31 @@ for (const id of Object.keys(CITIES) as CityId[]) {
   };
   counters.forEach((anchor, i) => placeOne(anchor, "counter", i, counterName));
   boards.forEach((anchor, i) => placeOne(anchor, "board", i, boardName));
+  // 0.0.93: the Quest Board, a short walk from the city start: today's goals live here.
+  const start = city.start ?? city.spawn;
+  const lamps = city.pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board" && p.kind !== "station");
+  const near = [...lamps].sort((a, b) => distM(start.lat, start.lng, a.lat, a.lng) - distM(start.lat, start.lng, b.lat, b.lng))[0];
+  if (near) {
+    const qid = `board-${id}-quest`;
+    const nudged = beside(city, near, taken);
+    const at = STAND_AT[qid] ?? nudged;
+    city.pois.push(
+      poi({
+        id: qid,
+        name: "Quest Board",
+        lat: at.lat,
+        lng: at.lng,
+        kind: "board",
+        tier: "white",
+        lore: "The Quest Board. Three goals a day, a little pay each, and a green match for all three.",
+      }),
+    );
+  }
+}
+
+export const QUEST_BOARD = (cityId: CityId) => `board-${cityId}-quest`;
+export function isQuestBoard(p: { id: string } | null | undefined) {
+  return Boolean(p && /^board-[a-z]+-quest$/.test(p.id));
 }
 
 export function isScoutShop(p: { kind: string } | null | undefined) {

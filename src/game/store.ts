@@ -34,6 +34,7 @@ import type {
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
+import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDone, noteGoal, payMatch, payMatches, streakLine, streakPrize, type GoalDay, type GoalKind } from "./goals";
 import { perfectRefund } from "./perfectRefund.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
@@ -51,7 +52,6 @@ import { chooseStart, cleanUnlocks, freshUnlocks, goalsCheck, isUnlocked, lampLi
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, wheelClaimFailed, wheelDue, type WheelOffer } from "./wheel";
 import {
   claimCircuit,
-  claimErrand,
   claimLong,
   grantScrap,
   hydrateQuests,
@@ -174,6 +174,14 @@ export type GameState = {
   wheel: WheelOffer | null;
   /** 0.0.92: signed in, the server already rolled and paid this spin; the wheel lands on `win`. */
   wheelPaid: { win: number; line: string } | null;
+  /** 0.0.93: today's three daily goals (replace the old errand). */
+  goals: GoalDay;
+  /** 0.0.93: UTC day the match cache was last opened (once per player per day). */
+  cacheDay: string;
+  /** 0.0.93: the Quest Board panel. */
+  questOpen: boolean;
+  /** 0.0.93: first-play arrow to the Quest Board stays until the board is opened once. */
+  questVisited: boolean;
   distanceM: number;
   lastCrateDay: string;
   crateStreak: number;
@@ -287,7 +295,6 @@ export type GameState = {
   bankDown: (tier: Tier) => void;
   craft: (id: CharmId) => void;
   equip: (id: CharmId | null) => void;
-  claimErrand: () => void;
   claimCircuit: () => void;
   claimLong: (id: LongId) => void;
   wearCloth: (id: ClothId | null) => void;
@@ -317,6 +324,13 @@ export type GameState = {
   toggleInv: (v?: boolean) => void;
   dismissLoot: () => void;
   claimWheel: () => void;
+  noteGoalKind: (kind: GoalKind, amount?: number) => void;
+  claimGoal: (i: number) => void;
+  openQuest: (open: boolean) => void;
+  /** 0.0.93: the journal shortcut: GameMap walks to the Quest Board when this ticks. */
+  questWalk: number;
+  walkToQuest: () => void;
+  claimCache: () => void;
   /** 0.0.92: the slice to land on. Signed in, the server claims first; null means the claim failed (wheel closed). */
   spinWheel: () => Promise<number | null>;
   /** Close the wheel without claiming (0.0.89). The spin is offered again later. */
@@ -557,6 +571,9 @@ function persistable(s: GameState) {
     lastPulseDay: s.lastPulseDay,
     lastBlitzDay: s.lastBlitzDay,
     lastBlitzOfferDay: s.lastBlitzOfferDay,
+    goals: s.goals,
+    cacheDay: s.cacheDay,
+    questVisited: s.questVisited,
     passGift: s.passGift,
     blitzTake: s.blitzTake,
     blitzMatches: s.blitzMatches,
@@ -945,6 +962,11 @@ export const useGame = create<GameState>((set, get) => ({
   cratePop: null,
   blitzOffer: false,
   lastBlitzOfferDay: typeof saved?.lastBlitzOfferDay === "string" ? saved.lastBlitzOfferDay : "",
+  goals: cleanGoals(saved?.goals, new Date().toISOString().slice(0, 10)),
+  cacheDay: typeof saved?.cacheDay === "string" ? saved.cacheDay : "",
+  questOpen: false,
+  questWalk: 0,
+  questVisited: saved?.questVisited === true,
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
   sparkLamps: saved?.sparkLamps ?? [],
@@ -1120,6 +1142,7 @@ export const useGame = create<GameState>((set, get) => ({
     const add = mult > 1 ? marketMatches(get().keys[k.tier], Math.max(matchCap(k.tier), get().keys[k.tier] + 1), mult) : 1;
     const coin = mult > 1 ? marketOverflowCoin(k.tier, mult, add) : 0;
     const keys = { ...get().keys, [k.tier]: get().keys[k.tier] + add };
+    get().noteGoalKind("street");
     sfx.pickup();
     set({
       keys,
@@ -2077,18 +2100,6 @@ export const useGame = create<GameState>((set, get) => ({
     set({ equipped: id });
     scheduleSave(get);
   },
-  claimErrand: () => {
-    const paid = claimErrand(get().quests, get().cityId);
-    if (!paid) {
-      flashToast(set, get, "The errand is not finished.", 1400);
-      return;
-    }
-    sfx.pickup();
-    const pantry = addIngredient(get().pantry, paid.ingredient);
-    set({ quests: paid.log, pantry });
-    flashToast(set, get, `${ingredientName(paid.ingredient)} from the errand.`, 1800);
-    scheduleSave(get);
-  },
   claimCircuit: () => {
     const s = get();
     const paid = claimCircuit(s.quests, s.cityId, s.pantry[cityStaple(s.cityId)] ?? 0, s.charms.length);
@@ -2380,6 +2391,61 @@ export const useGame = create<GameState>((set, get) => ({
     set({ invOpen: next, hqOpen: next ? false : get().hqOpen, guideOpen: next ? false : get().guideOpen, shopOpen: next ? false : get().shopOpen, errandOpen: next ? null : get().errandOpen });
   },
   dismissLoot: () => set({ loot: null, miss: null, toast: null }),
+  noteGoalKind: (kind, amount = 1) => {
+    const g = noteGoal(get().goals, kind, amount, today());
+    if (g !== get().goals) set({ goals: g });
+  },
+  walkToQuest: () => set({ questWalk: get().questWalk + 1, hqOpen: false, invOpen: false, guideOpen: false }),
+  openQuest: (open) => {
+    set({ questOpen: open, ...(open ? { questVisited: true, goals: { ...noteGoal(get().goals, "right", 0, today()), seen: true } } : {}) });
+    if (open) scheduleSave(get);
+  },
+  claimGoal: (i) => {
+    const g = noteGoal(get().goals, "right", 0, today());
+    const all = i === 3;
+    if (all ? !(g.paid.every(Boolean) && !g.all) : !goalDone(g, i) || g.paid[i]) return;
+    const mark = (): GoalDay => (all ? { ...g, all: true } : { ...g, paid: g.paid.map((p, k) => p || k === i) as GoalDay["paid"] });
+    const line = all ? "All three goals! A green match." : `Goal done. +${GOAL_COIN} coin.`;
+    if (walletLive()) {
+      void commitWallet({ kind: "dgoal", i }).then((r) => {
+        if (!r?.ok && !r?.replay) {
+          set({ toast: r?.reason === "unproven" ? "Answer a few lanterns first, then claim." : "Board's busy. Try again in a moment." });
+          return;
+        }
+        set({ goals: mark(), toast: line });
+        saveNow(get);
+      });
+      return;
+    }
+    if (all) {
+      const p = payMatch(get().keys, GOAL_ALL_TIER);
+      set({ keys: p.keys, points: get().points + p.coin, goals: mark(), toast: p.match ? line : `All three goals! Pocket full: +${p.coin} coin.` });
+    } else set({ points: get().points + GOAL_COIN, goals: mark(), toast: line });
+    sfx.pickup();
+    scheduleSave(get);
+  },
+  claimCache: () => {
+    const d = today();
+    if (get().cacheDay === d) return;
+    const say = (got: Tier[], coin: number) =>
+      `Match cache! ${got.length ? got.map((t) => TIER_LABEL[t]).join(", ") : "No room"}${coin ? ` + ${coin} coin (pocket full)` : ""}.`;
+    set({ cacheDay: d });
+    sfx.pickup();
+    if (walletLive()) {
+      void commitWallet({ kind: "cache", city: get().cityId }).then((r) => {
+        if (!r?.ok && !r?.replay) {
+          set({ cacheDay: "", toast: "The cache is stuck. Try again in a moment." });
+          return;
+        }
+        set({ toast: say(r.cache?.got ?? [], r.cache?.coin ?? 0) });
+        saveNow(get);
+      });
+      return;
+    }
+    const paid = payMatches(get().keys, cachePrize(streetPlayer() || "guest", d));
+    set({ keys: paid.keys, points: get().points + paid.coin, toast: say(paid.got, paid.coin) });
+    scheduleSave(get);
+  },
   spinWheel: async () => {
     const offer = get().wheel;
     if (!offer) return null;
@@ -2589,6 +2655,7 @@ export const useGame = create<GameState>((set, get) => ({
     const before = get().keys;
     const granted = (x: GameState["journey"]) => (x?.grantedWhite ?? 0) + (x?.grantedBlue ?? 0) + (x?.grantedGreen ?? 0);
     set({ journey: markRound(j, outcome) });
+    get().noteGoalKind("ride");
     get().tickJourney();
     const after = get().keys;
     saveNow(get);
@@ -2765,3 +2832,28 @@ if (typeof window !== "undefined") {
   window.addEventListener("pagehide", flush);
 }
 
+
+// 0.0.93: daily-goal progress and answer streaks, from the counters the game already keeps.
+if (typeof window !== "undefined") {
+  useGame.subscribe((s, prev) => {
+    if (s.correctByTier !== prev.correctByTier) {
+      for (const t of ["green", "blue"] as const) {
+        const d = (s.correctByTier[t] ?? 0) - (prev.correctByTier[t] ?? 0);
+        if (d > 0) s.noteGoalKind(t, d);
+      }
+    }
+    if (s.distanceM > prev.distanceM) s.noteGoalKind("walk", s.distanceM - prev.distanceM);
+    if (s.streak > prev.streak) {
+      s.noteGoalKind("right", s.streak - prev.streak);
+      const tier = streakPrize(s.streak);
+      if (tier) {
+        // Signed in, the server pays it with the grade (walletApply awardGrade); a guest pays here.
+        if (!walletLive()) {
+          const p = payMatch(s.keys, tier);
+          useGame.setState({ keys: p.keys, points: s.points + p.coin });
+        }
+        window.setTimeout(() => useGame.setState({ toast: streakLine(s.streak, tier) }), 900);
+      }
+    }
+  });
+}
