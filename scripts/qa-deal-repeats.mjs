@@ -72,7 +72,7 @@ async function context(jwt) {
 const open = (p, i) =>
   p.evaluate(async (i) => {
     const G = window.__kg;
-    const lamps = window.__D.CITIES[G.getState().cityId].pois.filter((x) => x.kind !== "shop" && !x.fareDesk);
+    const lamps = window.__D.CITIES[G.getState().cityId].pois.filter((x) => x.kind !== "shop" && x.kind !== "board" && x.kind !== "counter" && x.kind !== "station" && !x.fareDesk);
     const poi = lamps[(i * 7) % lamps.length];
     const wait = (f) => new Promise((ok, no) => { const t0 = Date.now(); const iv = setInterval(() => { if (f()) { clearInterval(iv); ok(); } else if (Date.now() - t0 > 30000) { clearInterval(iv); no(new Error("timeout")); } }, 30); });
     G.setState({ keys: { white: 6, blue: 4, green: 3, amber: 1, red: 1, violet: 3 }, vaults: {}, loot: null, miss: null });
