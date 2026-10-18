@@ -66,6 +66,8 @@ export function MysteryWheel() {
   const openVault = useGame((s) => s.openVault);
   const claimWheel = useGame((s) => s.claimWheel);
   const dismissWheel = useGame((s) => s.dismissWheel);
+  const spinWheel = useGame((s) => s.spinWheel);
+  const paid = useGame((s) => s.wheelPaid);
   const [spinning, setSpinning] = useState(false);
   const [landed, setLanded] = useState(false);
   const [angle, setAngle] = useState(0);
@@ -86,8 +88,11 @@ export function MysteryWheel() {
   const n = wheel.slices.length;
   const slice = 360 / n;
   const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const target = TURNS * 360 + (360 - (wheel.win * slice + slice / 2));
-  const prize = wheel.slices[wheel.win]!;
+  // 0.0.92: signed in, land on the slice the server rolled and paid; a guest's own roll otherwise.
+  const win = paid?.win ?? wheel.win;
+  const targetFor = (i: number) => TURNS * 360 + (360 - (i * slice + slice / 2));
+  const target = targetFor(win);
+  const prize = wheel.slices[win]!;
 
   function tickPointer() {
     sfx.tick();
@@ -98,26 +103,29 @@ export function MysteryWheel() {
     el.classList.add("is-tick");
   }
 
-  function land() {
-    setAngle(target);
+  function land(to = target) {
+    setAngle(to);
     setSpinning(false);
     setLanded(true);
     sfx.pickup();
   }
 
-  function spin() {
+  async function spin() {
     if (spinning || landed) return;
     sfx.open();
+    setSpinning(true);
+    const won = await spinWheel();
+    if (won == null) return; // the claim failed: the store closed the wheel with a toast (0.0.89).
+    const to = targetFor(won);
     if (reduce) {
-      land();
+      land(to);
       return;
     }
-    setSpinning(true);
     const t0 = performance.now();
     let lastPeg = 0;
     const frame = (now: number) => {
       const t = Math.min(1, (now - t0) / SPIN_MS);
-      const a = wheelAngle(t, target);
+      const a = wheelAngle(t, to);
       // The pointer sits on the slice edges' pegs: a click each time an edge passes under it.
       const peg = Math.floor((a + slice / 2) / slice);
       if (peg !== lastPeg) {
@@ -126,7 +134,7 @@ export function MysteryWheel() {
       }
       setAngle(a);
       if (t < 1) raf.current = requestAnimationFrame(frame);
-      else land();
+      else land(to);
     };
     raf.current = requestAnimationFrame(frame);
   }
@@ -164,7 +172,7 @@ export function MysteryWheel() {
               const mid = i * slice + slice / 2;
               const [ix, iy] = point(mid, R * 0.8);
               const [tx, ty] = point(mid, R * 0.56);
-              const won = landed && i === wheel.win;
+              const won = landed && i === win;
               return (
                 <g key={i} data-testid={`wheel-slice-${i}`} data-tone={tone} className={won ? "wheel-won" : undefined}>
                   <path d={slicePath(i, n)} fill={fill} stroke="#fff8e8" strokeWidth={1.6} />

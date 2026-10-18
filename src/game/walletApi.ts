@@ -116,6 +116,7 @@ export type WalletWire = {
   wardrobe?: Wardrobe;
   ingredient?: { id: string; n: number };
   line?: string;
+  wheelWin?: number;
   rideDeal?: RideDeal;
 };
 
@@ -163,6 +164,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       wardrobe: r.wardrobe,
       ingredient: r.ingredient,
       line: r.line,
+      wheelWin: r.wheelWin,
       rideDeal: r.rideDeal,
     };
   });

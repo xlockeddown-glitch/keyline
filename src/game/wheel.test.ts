@@ -137,3 +137,12 @@ test("0.0.92 wheel spin: eases out past the winner, settles back exactly on it, 
   }
   assert.ok(Math.abs(peak - (target + WHEEL_OVERSHOOT_DEG)) < 1e-6, "overshoots by the set amount");
 });
+
+test("0.0.92 signed-in wheel lands on the server's slice: Spin claims first, the disc animates to the reply's index", () => {
+  const ui = readFileSync(new URL("../components/keyline/MysteryWheel.tsx", import.meta.url), "utf8");
+  const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.match(ui, /const won = await spinWheel\(\);/);
+  assert.match(ui, /const win = paid\?\.win \?\? wheel\.win;/);
+  assert.match(store, /wheelPaid: \{ win: r\.wheelWin, line \}/);
+  assert.match(store, /if \(!walletLive\(\)\) return offer\.win;/, "guests keep their own roll");
+});

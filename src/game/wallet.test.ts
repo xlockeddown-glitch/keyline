@@ -1028,6 +1028,9 @@ test("0.0.92 server wheel: a rare slice pays a match one tier up, once per earne
   try {
     const r = await applyClientOp(sql, "wil", { kind: "wheel", tier: "white", city: "austin" });
     assert.ok(r.ok, JSON.stringify(r));
+    // Shown == paid: the reply names the slice the server rolled, and that slice is what landed in the pocket.
+    assert.equal(typeof r.wheelWin, "number");
+    assert.equal(buildWheel("white", "austin", 0).slices[r.wheelWin!]!.face, "Rare");
     assert.equal(r.wallet.keys.blue, 1);
     const again = await applyClientOp(sql, "wil", { kind: "wheel", tier: "white", city: "austin" });
     assert.equal(again.ok, false);

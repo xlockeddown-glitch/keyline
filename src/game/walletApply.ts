@@ -245,6 +245,8 @@ export type ClientResult = Applied & {
   wardrobe?: Wardrobe;
   ingredient?: { id: string; n: number };
   line?: string;
+  /** 0.0.92: index of the slice the server rolled and paid (the client animates to it). */
+  wheelWin?: number;
   rideDeal?: RideDeal;
 };
 
@@ -334,7 +336,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
         detail: line,
       };
     });
-    return { ...applied(r), ingredient, line };
+    return { ...applied(r), ingredient, line, wheelWin: offer.win };
   }
 
   if (op.kind === "street") {

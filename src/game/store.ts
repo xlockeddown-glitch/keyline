@@ -172,6 +172,8 @@ export type GameState = {
   correctByTier: Record<Tier, number>;
   wheelClaimed: Record<Tier, number>;
   wheel: WheelOffer | null;
+  /** 0.0.92: signed in, the server already rolled and paid this spin; the wheel lands on `win`. */
+  wheelPaid: { win: number; line: string } | null;
   distanceM: number;
   lastCrateDay: string;
   crateStreak: number;
@@ -315,6 +317,8 @@ export type GameState = {
   toggleInv: (v?: boolean) => void;
   dismissLoot: () => void;
   claimWheel: () => void;
+  /** 0.0.92: the slice to land on. Signed in, the server claims first; null means the claim failed (wheel closed). */
+  spinWheel: () => Promise<number | null>;
   /** Close the wheel without claiming (0.0.89). The spin is offered again later. */
   dismissWheel: () => void;
   skipTutorial: () => void;
@@ -929,6 +933,7 @@ export const useGame = create<GameState>((set, get) => ({
       ? { ...emptyWheelClaims(), ...saved.wheelClaimed }
       : caughtUpClaims({ ...EMPTY_CORRECT, ...saved?.correctByTier }),
   wheel: null,
+  wheelPaid: null,
   distanceM: saved?.distanceM ?? 0,
   lastCrateDay: saved?.lastCrateDay ?? "",
   crateStreak: saved?.crateStreak ?? 0,
@@ -2375,38 +2380,57 @@ export const useGame = create<GameState>((set, get) => ({
     set({ invOpen: next, hqOpen: next ? false : get().hqOpen, guideOpen: next ? false : get().guideOpen, shopOpen: next ? false : get().shopOpen, errandOpen: next ? null : get().errandOpen });
   },
   dismissLoot: () => set({ loot: null, miss: null, toast: null }),
+  spinWheel: async () => {
+    const offer = get().wheel;
+    if (!offer) return null;
+    if (!walletLive()) return offer.win;
+    const tier = offer.tier;
+    const city = get().cityId;
+    const r = await commitWallet({ kind: "wheel", tier, city });
+    const gone = get().wheel !== offer;
+    if (gone && !r?.ok) return null;
+    if (!r?.ok || typeof r.wheelWin !== "number") {
+      // 0.0.89: never re-show the same offer (players got stuck looping on "Take it").
+      const fail = wheelClaimFailed(r, tier, get().correctByTier, get().wheelClaimed);
+      set({ wheel: null, wheelPaid: null, wheelClaimed: fail.wheelClaimed, toast: fail.toast });
+      saveNow(get);
+      window.setTimeout(() => {
+        if (get().toast === fail.toast) set({ toast: null });
+      }, 2600);
+      return null;
+    }
+    // Paid on the server already (the pocket came back with the reply). Count it now; Take it only closes.
+    const wheelClaimed = { ...get().wheelClaimed, [tier]: (get().wheelClaimed[tier] ?? 0) + 1 };
+    let pantry = get().pantry;
+    if (r.ingredient) {
+      for (let i = 0; i < r.ingredient.n; i++) pantry = addIngredient(pantry, r.ingredient.id as IngredientId);
+    }
+    const line = r.line || offer.slices[r.wheelWin]?.label || "";
+    if (gone) {
+      // Closed mid-spin: the prize is paid anyway, so say what it was.
+      set({ pantry, wheelClaimed, wheelPaid: null, toast: line || null });
+      saveNow(get);
+      return null;
+    }
+    set({ pantry, wheelClaimed, wheelPaid: { win: r.wheelWin, line } });
+    saveNow(get);
+    return r.wheelWin;
+  },
   claimWheel: () => {
     const offer = get().wheel;
     if (!offer) return;
+    const done = get().wheelPaid;
+    if (done) {
+      const next = owedTier(get().correctByTier, get().wheelClaimed);
+      set({ wheelPaid: null, wheel: next ? buildWheel(next, get().cityId, Math.random()) : null, toast: done.line || null });
+      window.setTimeout(() => {
+        if (get().toast === done.line) set({ toast: null });
+      }, 2200);
+      return;
+    }
     if (walletLive()) {
-      const tier = offer.tier;
-      const city = get().cityId;
+      // Signed in, the spin claims (spinWheel). Nothing to pay here.
       set({ wheel: null });
-      void commitWallet({ kind: "wheel", tier, city }).then((r) => {
-        if (!r?.ok) {
-          // 0.0.89: never re-show the same offer (players got stuck looping on "Take it").
-          const fail = wheelClaimFailed(r, tier, get().correctByTier, get().wheelClaimed);
-          set({ wheel: null, wheelClaimed: fail.wheelClaimed, toast: fail.toast });
-          saveNow(get);
-          window.setTimeout(() => {
-            if (get().toast === fail.toast) set({ toast: null });
-          }, 2600);
-          return;
-        }
-        const wheelClaimed = { ...get().wheelClaimed, [tier]: (get().wheelClaimed[tier] ?? 0) + 1 };
-        let pantry = get().pantry;
-        if (r.ingredient) {
-          for (let i = 0; i < r.ingredient.n; i++) pantry = addIngredient(pantry, r.ingredient.id as IngredientId);
-        }
-        const next = owedTier(get().correctByTier, wheelClaimed);
-        set({
-          pantry,
-          wheelClaimed,
-          wheel: next ? buildWheel(next, get().cityId, Math.random()) : null,
-          toast: r.line || null,
-        });
-        saveNow(get);
-      });
       return;
     }
     const paid = grantWheelPrize(offer.slices[offer.win]!, {
@@ -2432,6 +2456,11 @@ export const useGame = create<GameState>((set, get) => ({
   },
   dismissWheel: () => {
     if (!get().wheel) return;
+    // 0.0.92: a spin the server already paid closes like Take it (the prize is in the pocket).
+    if (get().wheelPaid) {
+      get().claimWheel();
+      return;
+    }
     // Not a claim: the spin stays owed and comes back on the next correct answer of that color.
     set({ wheel: null });
   },
