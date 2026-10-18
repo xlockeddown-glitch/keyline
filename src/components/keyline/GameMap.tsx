@@ -915,6 +915,7 @@ export function GameMap() {
         hold = null;
       };
       box.addEventListener("pointerdown", (ev) => {
+        heldAt = 0; // 0.0.99: a new press forgets the last hold
         if (!ev.isPrimary || (ev.pointerType === "mouse" && ev.button !== 0)) return;
         if ((ev.target as HTMLElement | null)?.closest(PINS)) return;
         endHold();
@@ -941,9 +942,19 @@ export function GameMap() {
       map.on("dragstart zoomstart", endHold);
       box.addEventListener("contextmenu", (ev) => ev.preventDefault());
       map.on("click", (e) => {
-        if (Date.now() - heldAt < 700) return; // the click that ends a long-press
+        // 0.0.99: the click that ends a long-press is swallowed however long the hold was (a desktop mouse
+        // is often held well past 700 ms, and that click used to replace the route the hold had just extended).
+        if (heldAt) {
+          heldAt = 0;
+          return;
+        }
         const t = e.originalEvent.target as HTMLElement | null;
         if (t?.closest(PINS)) return;
+        // 0.0.99: Shift+click adds a stop on desktop (same as press and hold).
+        if ((e.originalEvent as MouseEvent).shiftKey) {
+          holdStop(e.latlng.lat, e.latlng.lng);
+          return;
+        }
         planWalk(e.latlng.lat, e.latlng.lng);
       });
 

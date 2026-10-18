@@ -80,7 +80,7 @@ export function FieldGuide() {
               </p>
             ))}
           </div>
-          <p className="mt-4 text-sm text-pretty text-fg" data-testid="help-hold">Tap to walk somewhere; press and hold to add a stop.</p>
+          <p className="mt-4 text-sm text-pretty text-fg" data-testid="help-hold">Tap to walk somewhere; press and hold (or Shift+click) to add a stop.</p>
           {/* 0.0.95: city passes in plain words. */}
           <section className="mt-5" data-testid="help-pass">
             <h3 className="font-display text-lg leading-tight">City passes</h3>

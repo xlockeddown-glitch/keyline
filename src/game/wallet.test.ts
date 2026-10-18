@@ -221,6 +221,27 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   assert.equal(streetAgain.replay, true);
   assert.equal(streetAgain.wallet.keys[spot!.tier], 1);
 
+  // 0.0.99 regression (Ryan's twitch): white 30 + 1/3 credit, the pickup's colour at 30: the server keeps the
+  // white credit and adds exactly one credit to the pickup's colour (or merges at 3). Nothing lost.
+  {
+    const s2 = streetSpot("ann", "austin", day, 1)!;
+    const { id: annId, wallet: orig } = await canonicalWallet(sql, "ann");
+    const cols = { white: 30, blue: 30, green: 30, amber: 30, red: 30, violet: 30 } as Record<string, number>;
+    await sql.query(`update player_wallets set white = 30, blue = 30, green = $2, amber = $3, red = $4, violet = $5, meta = meta || '{"credit":{"white":1}}'::jsonb where user_id = $1`, [annId, s2.tier === "green" ? 30 : 0, s2.tier === "amber" ? 30 : 0, s2.tier === "red" ? 30 : 0, s2.tier === "violet" ? 30 : 0]);
+    void cols;
+    const before2 = (await canonicalWallet(sql, "ann")).wallet;
+    const r2 = await applyClientOp(sql, "ann", { kind: "street", id: s2.id, tier: s2.tier, city: "austin", lat: 30.2, lng: -97.7 });
+    assert.equal(r2.ok, true);
+    const after2 = (await canonicalWallet(sql, "ann")).wallet;
+    assert.equal(after2.keys[s2.tier], 30, "pocket stays at 30");
+    const want = s2.tier === "white" ? { white: 2 } : s2.tier === "violet" ? { white: 1 } : { white: 1, [s2.tier]: 1 };
+    assert.deepEqual(after2.meta.credit, want);
+    if (s2.tier === "violet") assert.ok(after2.coins > before2.coins, "full violet pays coin");
+    assert.deepEqual(r2.view.credit, want, "the view the device adopts carries the same credit");
+    const k = orig.keys;
+    await sql.query(`update player_wallets set coins = $2, white = $3, blue = $4, green = $5, amber = $6, red = $7, violet = $8, meta = meta || '{"credit":{}}'::jsonb where user_id = $1`, [annId, orig.coins, k.white, k.blue, k.green, k.amber, k.red, k.violet]);
+  }
+
   // The same bank trade posted twice is one trade. The matches come from a device merge, not from the street.
   const topped = await syncPlayer(sql, "ann", snap({ keys: { white: 4 } }), "annbank01");
   assert.equal(topped.wallet.keys.white, 4);

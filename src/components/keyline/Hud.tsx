@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { BookOpen, CircleHelp } from "lucide-react";
 import { creditHint } from "@/game/goals";
+import { CREDIT_CALM_MS, Calm } from "@/game/calm";
 import { LevelHudBadge } from "./Levels";
 import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
@@ -34,7 +36,13 @@ function rangePips(dist: number, reachM: number) {
 
 export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket: onMarketWalk, onRoute }: Props) {
   const keys = useGame((s) => s.keys);
-  const credit = useGame((s) => s.credit);
+  const liveCredit = useGame((s) => s.credit);
+  // 0.0.99: the pip shows a credit change once, after the server's pocket has landed (no 1/3 ↔ none flicker).
+  const [credit, setCredit] = useState(liveCredit);
+  const calm = useRef<Calm<typeof liveCredit> | null>(null);
+  if (!calm.current) calm.current = new Calm(liveCredit, CREDIT_CALM_MS, setCredit);
+  useEffect(() => calm.current!.push(liveCredit), [liveCredit]);
+  useEffect(() => () => calm.current?.stop(), []);
   const points = useGame((s) => s.points);
   const hud = useGame((s) => s.hud);
   const cityId = useGame((s) => s.cityId);
