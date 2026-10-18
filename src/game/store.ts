@@ -6,6 +6,7 @@ import { MARKET_MULT, MARKET_TAG, marketAt, marketCoolMs, marketMatches, marketM
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
+import { RECENT_MAX, pushRecent, type RecentReward, type RewardSource } from "./recentRewards";
 import { commitWallet, streetPlayer, tokenNonce, walletLive } from "./walletClient";
 import { SEED, parseStreetId, takeStreetSpot } from "./streetSpots";
 import { poiName, takeSurvey } from "./survey";
@@ -160,6 +161,8 @@ export type GameState = {
   scout: ScoutId;
   /** 0.0.45 print shop: cosmetic coats and lantern skins (owned, paid so far, worn). Purely visual. */
   wardrobe: Wardrobe;
+  /** 0.0.99: guests' last 20 rewards (signed-in players read the server ledger). */
+  recent: RecentReward[];
   /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
   paints: PaintBench;
   atlas: Record<string, true>;
@@ -370,8 +373,13 @@ export type GameState = {
 
 export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" | "level" };
 /** 0.0.95: show the match-reward pop (also sets a plain toast for screen readers / old paths). */
+/** 0.0.99: pops that arrive while one is showing wait their turn instead of replacing it. */
+const popQueue: MatchPop[] = [];
+let popSeq = 0;
 export function popMatch(p: Omit<MatchPop, "id">) {
-  useGame.setState({ matchPop: { ...p, id: Date.now() } });
+  const pop = { ...p, id: Date.now() * 100 + (popSeq++ % 100) };
+  if (useGame.getState().matchPop) popQueue.push(pop);
+  else useGame.setState({ matchPop: pop });
 }
 
 /** 0.0.96: a wrong answer. The Tabby keeps its streak on the first miss of each (Chicago) day. */
@@ -578,6 +586,7 @@ function persistable(s: GameState) {
     scouts: s.scouts,
     scout: s.scout,
     wardrobe: s.wardrobe,
+    recent: s.recent,
     paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
@@ -966,6 +975,7 @@ export const useGame = create<GameState>((set, get) => ({
   scouts: saved?.scouts?.length ? saved.scouts : ["raccoon"],
   scout: saved?.scout ?? "raccoon",
   wardrobe: cleanWardrobe(saved?.wardrobe),
+  recent: Array.isArray(saved?.recent) ? saved.recent.slice(0, RECENT_MAX) : [],
   paints: cleanPaint(saved?.paints),
   atlas: saved?.atlas ?? {},
   survey: saved?.survey ?? {},
@@ -2944,4 +2954,39 @@ useGame.subscribe((s, prev) => {
         })();
   useGame.setState({ keys: st.keys, credit: st.credit, points: s.points + st.coin, ...(msg && !s.toast ? { toast: msg } : {}) });
   settling = false;
+});
+
+// 0.0.99: when a pop is dismissed, the next queued one shows.
+useGame.subscribe((s, prev) => {
+  if (prev.matchPop && !s.matchPop && popQueue.length) {
+    const next = popQueue.shift()!;
+    queueMicrotask(() => useGame.setState({ matchPop: next }));
+  }
+});
+
+// 0.0.99 Recent rewards for guests: every rise in coin or matches is logged with its best-known source.
+useGame.subscribe((s, prev) => {
+  if (walletLive() || adopting) return;
+  if (s.keys === prev.keys && s.points === prev.points && s.credit === prev.credit) return;
+  const keys: Partial<Record<Tier, number>> = {};
+  for (const t of Object.keys(s.keys) as Tier[]) {
+    const d = (s.keys[t] ?? 0) - (prev.keys[t] ?? 0);
+    if (d > 0) keys[t] = d;
+  }
+  const credit: Partial<Record<Tier, number>> = {};
+  for (const [t, n] of Object.entries(s.credit) as [Tier, number][]) if ((n ?? 0) > (prev.credit[t] ?? 0)) credit[t] = n - (prev.credit[t] ?? 0);
+  const coins = s.points - prev.points;
+  if (coins <= 0 && !Object.keys(keys).length && !Object.keys(credit).length) return;
+  const pop = s.matchPop && s.matchPop !== prev.matchPop ? s.matchPop.kind : null;
+  const vault = prev.openVault ?? s.openVault;
+  const poi = vault ? CITIES[s.cityId]?.pois.find((p) => p.id === (vault as { poiId?: string }).poiId) : undefined;
+  const src: RewardSource = pop === "level" ? "level" : pop === "gift" ? "gift" : pop === "cache" ? "cache" : pop === "streak" ? "streak" : poi ? "lamp" : "reward";
+  const r: RecentReward = { at: Date.now(), src, ...(poi ? { where: poi.name } : {}), coins: Math.max(0, coins), keys, ...(Object.keys(credit).length ? { credit } : {}) };
+  // Merge with the entry from the same moment (a reward often lands in two writes).
+  const top = s.recent[0];
+  if (top && r.at - top.at < 1500 && (top.src === r.src || r.src === "reward")) {
+    const k = { ...top.keys };
+    for (const [t, n] of Object.entries(keys) as [Tier, number][]) k[t] = (k[t] ?? 0) + n;
+    useGame.setState({ recent: [{ ...top, coins: top.coins + r.coins, keys: k }, ...s.recent.slice(1)] });
+  } else useGame.setState({ recent: pushRecent(s.recent, r) });
 });

@@ -111,13 +111,15 @@ export async function mutateWallet(
       // 0.0.97: one pocket rule for every server write: rises past 30 become credits that merge 3→1 up.
       // A first sync (migrate*) only carries the save over; it is not a reward and must not mint credits.
       let next = res.wallet;
+      let merged: Partial<Record<string, number>> = {};
       if (!opKey.startsWith("migrate")) {
         const st = settlePocket(wallet.keys, next.keys, wallet.meta.credit);
+        merged = st.merged;
         next = { ...next, coins: next.coins + st.coin, keys: st.keys, meta: { ...next.meta, credit: st.credit } };
       } else {
         next = { ...next, meta: { ...next.meta, credit: wallet.meta.credit } };
       }
-      const detail = res.detail ?? (res.award ? JSON.stringify(res.award) : "");
+      const detail = withDelta(res.detail ?? (res.award ? JSON.stringify(res.award) : ""), opKey, wallet, next, merged);
       const updated = await sql.query<{ version: number }>(
         `update player_wallets set
            coins = $2, white = $3, blue = $4, green = $5, amber = $6, red = $7, violet = $8,
@@ -170,4 +172,34 @@ export async function priorGrades(sql: Sql, userId: string, prevNonce: string, l
     }
   }
   return out;
+}
+
+/**
+ * 0.0.99 Recent rewards: the ledger row also carries what the write actually changed ("_d": coin, matches
+ * and 3→1 merges), so the Journal can list the last rewards with no new table. Notes that aren't JSON stay as
+ * they are (those rows show their source only).
+ */
+export function withDelta(detail: string, opKey: string, before: WalletState, after: WalletState, merged: Partial<Record<string, number>>): string {
+  if (opKey.startsWith("migrate")) return detail;
+  const k: Record<string, number> = {};
+  for (const t of Object.keys(after.keys) as (keyof WalletState["keys"])[]) {
+    const d = (after.keys[t] ?? 0) - (before.keys[t] ?? 0);
+    if (d) k[t] = d;
+  }
+  const c = after.coins - before.coins;
+  const cr: Record<string, number> = {};
+  for (const [t, n] of Object.entries(after.meta.credit ?? {})) {
+    const dn = (n ?? 0) - ((before.meta.credit as Record<string, number> | undefined)?.[t] ?? 0);
+    if (dn > 0) cr[t] = dn;
+  }
+  if (!c && !Object.keys(k).length && !Object.keys(merged).length && !Object.keys(cr).length) return detail;
+  const d = { c, k, ...(Object.keys(merged).length ? { mg: merged } : {}), ...(Object.keys(cr).length ? { cr } : {}) };
+  if (!detail) return JSON.stringify({ _d: d });
+  try {
+    const o = JSON.parse(detail);
+    if (o && typeof o === "object" && !Array.isArray(o)) return JSON.stringify({ ...o, _d: d });
+  } catch {
+    /* a plain note */
+  }
+  return detail;
 }

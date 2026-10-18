@@ -1,7 +1,7 @@
 import { PERFECT_REFUND_LINE } from "@/game/perfectRefund";
 import { useEffect, useState } from "react";
 import { useGame } from "@/game/store";
-import { overlayBusy } from "@/game/overlayGate";
+import { POP_MAX_WAIT_MS, overlayBusy } from "@/game/overlayGate";
 import type { Tier } from "@/game/types";
 import { DIFF_LABEL } from "@/game/triviaMeta";
 import { streakPrize } from "@/game/goals";
@@ -14,7 +14,18 @@ export function LootToast() {
   const toast = useGame((s) => s.toast);
   const dismissLoot = useGame((s) => s.dismissLoot);
   const streak = useGame((s) => s.streak);
-  const busy = useGame(overlayBusy);
+  const covered = useGame(overlayBusy);
+  const vaultOpen = useGame((s) => Boolean(s.openVault));
+  const pending = useGame((s) => Boolean(s.loot || s.miss || s.matchPop));
+  // 0.0.99 safety net: once no vault is open, a queued pop waits at most POP_MAX_WAIT_MS.
+  const [forced, setForced] = useState(false);
+  useEffect(() => {
+    if (!pending) return setForced(false);
+    if (!covered || vaultOpen || forced) return;
+    const t = window.setTimeout(() => setForced(true), POP_MAX_WAIT_MS);
+    return () => window.clearTimeout(t);
+  }, [pending, covered, vaultOpen, forced]);
+  const busy = covered && !(forced && !vaultOpen);
 
   const hold = loot ? (loot.grade === "perfect" ? 3600 : loot.grade === "great" ? 3200 : 2800) : 2600;
 

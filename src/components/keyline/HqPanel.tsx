@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LevelPanel } from "./Levels";
+import { RecentRewards } from "./RecentRewards";
 import { StreakBoardSection } from "./RideBoards";
 import { X } from "lucide-react";
 import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
@@ -281,6 +282,7 @@ export function HqPanel() {
           {tab === "Progress" ? (
             <div className="grid gap-4 text-sm">
               <LevelPanel />
+              <RecentRewards />
               <DailyGoals act={false} />
               <div>
                 <p className="kicker">Quests</p>

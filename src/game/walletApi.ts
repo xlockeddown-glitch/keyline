@@ -181,3 +181,18 @@ export const applyWallet = createServerFn({ method: "POST" })
       rideDeal: r.rideDeal,
     };
   });
+
+/** 0.0.99: the signed-in player's last 20 rewards, from the wallet ledger. */
+export const fetchRecentRewards = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const { getSql } = await import("@/lib/db");
+    const { recentFromLedger } = await import("./recentRewards");
+    const { canonicalWallet } = await import("./walletSql");
+    const { CITIES } = await import("./data");
+    const sql = await getSql();
+    const { id } = await canonicalWallet(sql, context.userId);
+    const names = new Map<string, string>();
+    for (const c of Object.values(CITIES)) for (const p of c.pois) names.set(p.id, p.name);
+    return recentFromLedger(sql, id, (pid) => names.get(pid));
+  });
