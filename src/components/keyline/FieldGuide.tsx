@@ -80,6 +80,18 @@ export function FieldGuide() {
               </p>
             ))}
           </div>
+          {/* 0.0.95: what the lantern result's badges and emblems mean. */}
+          <section className="mt-5" data-testid="help-badges">
+            <h3 className="font-display text-lg leading-tight">Prize badges</h3>
+            <ul className="badge-help mt-2 grid gap-1.5 text-sm">
+              <li><span className="emb-badge is-market">🏮 ×2</span><span>Night market: everything on its street pays ×N.</span></li>
+              <li><span className="emb-badge is-streak">🔥 5</span><span>Answer streak: right answers in a row (5 pays a white, 10 a blue).</span></li>
+              <li><span className="emb-badge is-boost">⚡2</span><span>Boosts applied (charm, ride reward, scout ability). Tap it to see which.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="blue" size={22} /><b>↺</b></span><span>Perfect score: your match comes back.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Match back, but the pocket was full, so coin instead.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="coin" size={20} /><ItemIcon item="white" size={20} /><ItemIcon item="brass" size={20} /><b>+N</b></span><span>Items earned: coin, matches, brass, ink, vellum, schematic, ingredient, paint.</span></li>
+            </ul>
+          </section>
         </div>
         <div className="shrink-0 border-t border-border px-5 py-3">
           {askStuck ? (

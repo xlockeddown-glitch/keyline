@@ -4002,3 +4002,11 @@ h3 {
   .mp-burst i { animation: none; opacity: 0.7; transform: rotate(var(--a)) translateY(-70px); }
   .mp-emblems { transition: none; }
 }
+
+/* 0.0.95: Help "Prize badges" and the tappable ⚡ list. */
+.badge-help li { display: grid; grid-template-columns: 5.2rem 1fr; align-items: center; gap: 0.6rem; }
+.badge-help .emb-badge { justify-self: start; }
+.badge-ico { display: inline-flex; align-items: center; gap: 2px; }
+.badge-ico b { font-size: 0.85rem; margin-left: 2px; }
+.emb-badge.is-boost[role="button"] { cursor: pointer; }
+.emb-boost-list { margin: 0.25rem auto 0.4rem; padding: 0.35rem 0.7rem; border-radius: 0.6rem; background: rgb(0 0 0 / 0.35); font-size: 0.8rem; text-align: left; list-style: none; }

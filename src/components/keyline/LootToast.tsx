@@ -175,6 +175,7 @@ export function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }
   if (loot.ingredient) list.push({ key: "ing", title: loot.ingredient.name, node: <Jar />, amt: "+1" });
   for (const c of [loot.paint, loot.extraPaint]) if (c) list.push({ key: c.id, title: c.name, node: <i className={`emb-paint paint-found is-${c.id.slice(6)}`} />, amt: "+1" });
   const hot = streakPrize(streak) ? streak : 0;
+  const [showBoosts, setShowBoosts] = useState(false);
   return (
     <div className={`emb-wrap is-${loot.grade}`} aria-label={`${loot.grade}, ${DIFF_LABEL[loot.diff] ?? ""}, +${loot.points} coin`}>
       {loot.grade === "perfect" ? (
@@ -197,11 +198,30 @@ export function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }
           </span>
         ) : null}
         {loot.boosts?.length ? (
-          <span className="emb-badge is-boost" title={loot.boosts.join(" · ")}>
+          <span
+            className="emb-badge is-boost"
+            title={loot.boosts.join(" · ")}
+            role="button"
+            tabIndex={0}
+            data-testid="loot-boosts"
+            aria-expanded={showBoosts}
+            onClick={(e) => {
+              // 0.0.95: tap (phone) lists the boosts instead of dismissing the result.
+              e.stopPropagation();
+              setShowBoosts((v) => !v);
+            }}
+          >
             ⚡{loot.boosts.length}
           </span>
         ) : null}
       </div>
+      {showBoosts && loot.boosts?.length ? (
+        <ul className="emb-boost-list" data-testid="loot-boost-list">
+          {loot.boosts.map((b) => (
+            <li key={b}>⚡ {b}</li>
+          ))}
+        </ul>
+      ) : null}
       <div className="emb-row">
         {list.map((e, i) => (
           <span key={e.key} className={`emb ${e.cls ?? ""}`} title={e.title} data-testid={e.testid} style={{ animationDelay: `${120 + i * 90}ms` }}>
