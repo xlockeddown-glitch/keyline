@@ -1215,6 +1215,28 @@ test("0.0.95 Beth B.'s Corgi restore: owned once, duplicate purchases refunded, 
   assert.ok(!(await ownedOf(sql, "zed")).scouts.includes("corgi"));
 });
 
+test("0.0.98 regression: a gift-owned scout is never charged or refused on re-buy (Beth's Corgi)", async () => {
+  const sql = await db();
+  const beth = SCOUT_GIFTS[0]!.userId;
+  await syncPlayer(sql, beth, snap({ coins: 50 }), "bethphone2");
+  // A device that hasn't synced yet shows Corgi unowned and sends a buy with too few coins:
+  // before 0.0.98 this was refused "short-coins" and the client rolled the Corgi back.
+  const poor = await applyClientOp(sql, beth, { kind: "scout", id: "corgi" });
+  assert.equal(poor.ok, true);
+  assert.equal((await canonicalWallet(sql, beth)).wallet.coins, 50);
+  // With coins, still no second charge.
+  await sql`update player_wallets set coins = 20000 where user_id = ${(await canonicalWallet(sql, beth)).id}`;
+  const rich = await applyClientOp(sql, beth, { kind: "scout", id: "corgi" });
+  assert.equal(rich.ok, true);
+  assert.equal((await canonicalWallet(sql, beth)).wallet.coins, 20000);
+  assert.ok((await ownedOf(sql, beth)).scouts.includes("corgi"));
+  // A player who doesn't own it still pays.
+  await syncPlayer(sql, "buyer", snap({ coins: 20000 }), "buyerphone1");
+  const b = await applyClientOp(sql, "buyer", { kind: "scout", id: "corgi" });
+  assert.equal(b.ok, true);
+  assert.ok((await canonicalWallet(sql, "buyer")).wallet.coins < 20000);
+});
+
 test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin, Fox/Penguin +10%", () => {
   const plain = gradeGrant(emptyWallet(), pay());
   const rum = gradeGrant(emptyWallet(), pay({ scout: "raccoon", rummage: true }));

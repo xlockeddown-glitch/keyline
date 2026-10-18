@@ -1,6 +1,7 @@
 import { PERFECT_REFUND_LINE } from "@/game/perfectRefund";
 import { useEffect, useState } from "react";
 import { useGame } from "@/game/store";
+import { overlayBusy } from "@/game/overlayGate";
 import type { Tier } from "@/game/types";
 import { DIFF_LABEL } from "@/game/triviaMeta";
 import { streakPrize } from "@/game/goals";
@@ -13,17 +14,20 @@ export function LootToast() {
   const toast = useGame((s) => s.toast);
   const dismissLoot = useGame((s) => s.dismissLoot);
   const streak = useGame((s) => s.streak);
+  const busy = useGame(overlayBusy);
 
   const hold = loot ? (loot.grade === "perfect" ? 3600 : loot.grade === "great" ? 3200 : 2800) : 2600;
 
   useEffect(() => {
-    if (!loot && !miss) return;
+    if ((!loot && !miss) || busy) return;
     const id = window.setTimeout(() => dismissLoot(), hold);
     return () => window.clearTimeout(id);
-  }, [loot, miss, hold, dismissLoot]);
+  }, [loot, miss, hold, dismissLoot, busy]);
 
   const matchPop = useGame((s) => s.matchPop);
   if (!loot && !miss && !toast && !matchPop) return null;
+  // Queued: loot and pops stay in the store and show once the card/modal closes.
+  if (busy && (loot || miss || matchPop)) return null;
 
   return (
     <>

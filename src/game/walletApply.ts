@@ -580,6 +580,13 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
   if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op);
 
+  // 0.0.98: a scout the account already owns on the server (bought under any key, or restored by a gift such as
+  // gift:bethb-corgi-0095) is never charged again and never refused, so a device that hasn't caught up can't
+  // roll the scout back on a "short-coins" refusal.
+  if (op.kind === "scout" && (await ownedOf(sql, sessionUserId)).scouts.includes(op.id as ScoutId)) {
+    return applied({ ok: true, replay: true, wallet });
+  }
+
   const key = opKey(op, wallet);
   const r = await mutateWallet(sql, sessionUserId, key, (w) => {
     switch (op.kind) {

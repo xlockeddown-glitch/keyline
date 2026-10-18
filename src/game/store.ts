@@ -862,6 +862,9 @@ function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boo
   return { plates, plateAgg, plateRoll };
 }
 
+/** 0.0.98: scouts the server reported as owned on sign-in; a refused buy never rolls these back. */
+const serverOwnedScouts = new Set<string>();
+
 function pushOp(op: Parameters<typeof commitWallet>[0], undo?: () => void) {
   if (!walletLive()) return;
   void commitWallet(op).then((r) => {
@@ -2221,12 +2224,15 @@ export const useGame = create<GameState>((set, get) => ({
     });
     pushOp({ kind: "scout", id }, () => {
       if (!useGame.getState().scouts.includes(id)) return;
+      // 0.0.98: never drop a scout the server says this account owns (gift restores included).
+      if (serverOwnedScouts.has(id)) return;
       set({ scouts: useGame.getState().scouts.filter((x) => x !== id), scout: prevScout });
     });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 1800);
   },
   adoptOwned: (o) => {
+    for (const x of o.scouts) serverOwnedScouts.add(x);
     const st = get();
     const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
     const charms = Array.from(new Set([...st.charms, ...(o.charms as typeof st.charms)]));
