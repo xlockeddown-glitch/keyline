@@ -376,8 +376,64 @@ export type NightMarket = {
   endsAt: number;
 };
 
+/** 0.0.95: a market needs at least this much connected walkable street (same-name pieces that touch merge). */
+export const MARKET_MIN_RUN_M = 300;
+/** Pieces whose ends sit this close count as touching (the bake simplifies and clips lines). */
+const JOIN_M = 15;
+
+/** Connected runs of a street: same-name pieces whose endpoints touch, merged. Longest first. */
+export function streetRuns(lines: readonly number[][]): { lines: number[][]; lenM: number }[] {
+  const n = lines.length;
+  const parent = lines.map((_, i) => i);
+  const root = (i: number): number => (parent[i] === i ? i : (parent[i] = root(parent[i]!)));
+  const ends = lines.map((l) => [[l[0]!, l[1]!], [l[l.length - 2]!, l[l.length - 1]!]] as const);
+  const pts = (l: readonly number[]) => {
+    const out: [number, number][] = [];
+    for (let i = 0; i + 1 < l.length; i += 2) out.push([l[i]!, l[i + 1]!]);
+    return out;
+  };
+  for (let a = 0; a < n; a++)
+    for (let b = a + 1; b < n; b++) {
+      if (root(a) === root(b)) continue;
+      // An end of one piece touching any vertex of the other (T-joins, simplified ends).
+      const touch =
+        ends[a]!.some(([la, ln]) => pts(lines[b]!).some(([lb, mb]) => distM(la, ln, lb, mb) <= JOIN_M)) ||
+        ends[b]!.some(([la, ln]) => pts(lines[a]!).some(([lb, mb]) => distM(la, ln, lb, mb) <= JOIN_M));
+      if (touch) parent[root(a)] = root(b);
+    }
+  const groups = new Map<number, number[][]>();
+  lines.forEach((l, i) => {
+    const r = root(i);
+    groups.set(r, [...(groups.get(r) ?? []), l]);
+  });
+  return [...groups.values()].map((g) => ({ lines: g, lenM: g.reduce((t, l) => t + lineLength(l), 0) })).sort((x, y) => y.lenM - x.lenM);
+}
+
+/**
+ * 0.0.95: the market runs only on its longest connected stretch, and only streets whose stretch is at least
+ * MARKET_MIN_RUN_M qualify ("like 3 dots" in Temple). A city with none keeps its single longest stretch.
+ */
+export function fitMarketStreets(all: readonly MarketStreet[], minRunM = MARKET_MIN_RUN_M): MarketStreet[] {
+  const fitted = all.map((s) => {
+    const run = streetRuns(s.lines)[0];
+    if (!run) return { ...s, lenM: 0 };
+    return { ...s, lines: run.lines, lenM: Math.round(run.lenM) };
+  });
+  const long = fitted.filter((s) => s.lenM >= minRunM);
+  if (long.length) return long;
+  const best = [...fitted].sort((a, b) => b.lenM - a.lenM)[0];
+  return best ? [best] : [];
+}
+
+const FITTED = new Map<CityId, MarketStreet[]>();
+
 export function marketStreets(city: CityId): MarketStreet[] {
-  return MARKET_STREETS[city] ?? [];
+  let s = FITTED.get(city);
+  if (!s) {
+    s = fitMarketStreets(MARKET_STREETS[city] ?? []);
+    FITTED.set(city, s);
+  }
+  return s;
 }
 
 /** The market open in this city at this moment (null only if a city has no eligible street). */

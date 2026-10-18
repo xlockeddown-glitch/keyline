@@ -38,7 +38,7 @@ const austin: City = {
       lat: 30.2862,
       lng: -97.7394,
       kind: "campus",
-      tier: "amber",
+      tier: "red",
       lore: "The Main Building's tower is the university's clock and weather vane. It turns burnt orange after a Longhorn win.",
     }),
     poi({
@@ -1614,7 +1614,7 @@ const toronto: City = {
       lat: 43.6677,
       lng: -79.3948,
       kind: "museum",
-      tier: "amber",
+      tier: "red",
       lore: "Dinosaurs, a crystal on Bloor, and a century of collecting. Libeskind's 2007 glass-and-aluminum prism juts over the sidewalk.",
     }),
     poi({

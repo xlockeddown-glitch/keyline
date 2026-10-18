@@ -350,7 +350,7 @@ test("0.0.90: markets want 3+ lamps (best-lit fallback), named paths count, lamp
   assert.equal(marketIndex("austin", H0 + 10, 4, weights), marketIndex("austin", H0 + 10, 4, weights));
   for (let h = H0; h < H0 + 200; h++) assert.notEqual(marketIndex("austin", h, 4, weights), marketIndex("austin", h + 1, 4, weights));
   // The bake keeps every city at MARKET_MIN_STREETS or more.
-  for (const city of ALL) assert.ok(marketStreets(city).length >= MARKET_MIN_STREETS, city);
+  for (const city of ALL) assert.ok((MARKET_STREETS[city] ?? []).length >= MARKET_MIN_STREETS && marketStreets(city).length >= 3, city); // 0.0.95: the 300 m stretch rule may drop a short one
 });
 
 test("0.0.90: a lamp on the open market relights three times as fast; off the market, unchanged", () => {
