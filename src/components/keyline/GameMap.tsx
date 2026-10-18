@@ -191,7 +191,7 @@ export function GameMap() {
   const cityId = useGame((s) => s.cityId);
   const scoutName = useGame((s) => SCOUTS[s.scout]?.name ?? "The walker");
   const [streets, setStreets] = useState<"loading" | "ready" | "error">("loading");
-  const cacheRef = useRef<{ lat: number; lng: number; marker: { remove: () => void } } | null>(null);
+  const cacheRef = useRef<{ lat: number; lng: number; seed: { lat: number; lng: number } | null; marker: { remove: () => void; setLatLng: (ll: [number, number]) => unknown } } | null>(null);
   const arrowRef = useRef<{ remove: () => void } | null>(null);
   const [boardOpen, setBoardOpen] = useState(false);
   const dailyLines = useRef<Polyline[]>([]);
@@ -1432,6 +1432,7 @@ export function GameMap() {
       },
       hasRoute: () => Boolean(routeRef.current && routeRef.current.length >= 2),
       getAlong: () => routeAlong.current,
+      getCache: () => (cacheRef.current ? { lat: cacheRef.current.lat, lng: cacheRef.current.lng } : null),
     };
     return () => {
       delete window.__controlsTest;
@@ -1590,6 +1591,16 @@ export function GameMap() {
         st.maybeSpawnRun(Date.now());
         // 0.0.93: walk onto the day's match cache to open it.
         const c = cacheRef.current;
+        if (c?.seed) {
+          // The walk graph can land after the cache was placed; snap it onto a quiet street once it does.
+          const q = quietDrop(c.seed);
+          if (q.lat !== c.seed.lat || q.lng !== c.seed.lng) {
+            c.lat = q.lat;
+            c.lng = q.lng;
+            c.seed = null;
+            c.marker.setLatLng([q.lat, q.lng]);
+          }
+        }
         if (c && distM(pos.current.lat, pos.current.lng, c.lat, c.lng) <= CACHE_GRAB_M) {
           cacheRef.current = null;
           c.marker.remove();
@@ -1880,14 +1891,15 @@ export function GameMap() {
     const city = CITIES[cityId];
     const day = new Date().toISOString().slice(0, 10);
     if (useGame.getState().cacheDay !== day) {
-      const at = quietDrop(cacheSeed(cityId, day, city.start ?? city.spawn));
+      const seed = cacheSeed(cityId, day, city.start ?? city.spawn);
+      const at = quietDrop(seed);
       const marker = L.marker([at.lat, at.lng], {
         icon: L.divIcon({ className: "", html: '<div class="cache-pin" data-testid="cache-pin" title="Match cache"><i></i></div>', iconSize: [36, 36], iconAnchor: [18, 18] }),
         interactive: false,
         keyboard: false,
         zIndexOffset: 450,
       }).addTo(map);
-      cacheRef.current = { lat: at.lat, lng: at.lng, marker };
+      cacheRef.current = { lat: at.lat, lng: at.lng, seed: at.lat === seed.lat && at.lng === seed.lng ? seed : null, marker };
     }
     const qb = city.pois.find((p) => isQuestBoard(p));
     if (qb && !useGame.getState().questVisited) {
@@ -2046,6 +2058,7 @@ declare global {
       goTo?: (lat: number, lng: number) => void;
       hasRoute?: () => boolean;
       getAlong?: () => number;
+      getCache?: () => { lat: number; lng: number } | null;
     };
   }
 }
