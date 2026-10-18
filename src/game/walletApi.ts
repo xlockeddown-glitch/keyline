@@ -127,6 +127,8 @@ export type SyncWire = {
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
+  /** 0.0.97: the server's overflow credits. */
+  credit?: Partial<Record<Tier, number>>;
   migrated: boolean;
   revised: boolean;
   playerId: string;
@@ -148,6 +150,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       coins: r.view.coins,
       keys: r.view.keys,
       cities: r.view.cities,
+      credit: r.view.credit,
       migrated: r.wallet.migrated,
       revised: r.deviceClosed,
       playerId: r.playerId,

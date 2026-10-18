@@ -1,4 +1,5 @@
 import { BookOpen, CircleHelp } from "lucide-react";
+import { creditHint } from "@/game/goals";
 import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
@@ -32,6 +33,7 @@ function rangePips(dist: number, reachM: number) {
 
 export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket: onMarketWalk, onRoute }: Props) {
   const keys = useGame((s) => s.keys);
+  const credit = useGame((s) => s.credit);
   const points = useGame((s) => s.points);
   const hud = useGame((s) => s.hud);
   const cityId = useGame((s) => s.cityId);
@@ -245,9 +247,10 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
               aria-label="Matches, open satchel"
             >
               {belt.map((t) => (
-                <span key={t} className={`key-slot ${needTier === t ? "is-mark" : ""}`}>
+                <span key={t} className={`key-slot ${needTier === t ? "is-mark" : ""}`} title={creditHint(credit, t) ?? undefined}>
                   <ItemIcon item={t} size={22} />
                   <span className="tabular-nums">{keys[t]}</span>
+                  {credit[t] ? <span className="credit-pip" data-testid={`credit-${t}`}>{credit[t]}/3</span> : null}
                 </span>
               ))}
               <span

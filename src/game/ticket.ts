@@ -5,15 +5,16 @@ import type { City, CityId, Journey, Poi, Tier } from "./types";
 
 export const VAULTS_PER_FARE = 3;
 export const FARES_CAP = 2;
-/** 0.0.96: pockets ~50% bigger (white 4→6, blue 4→6, green 1→2, amber/red/violet 99→150). */
-export const WHITE_POCKET = 6;
-export const BLUE_POCKET = 6;
-export const GREEN_POCKET = 2;
+/** 0.0.97: every pocket holds 30 (0.0.96 was white 6, blue 6, green 2, amber/red/violet 150). Overflow merges 3→1 up (goals.ts settlePocket). */
+export const WHITE_POCKET = 30;
+export const BLUE_POCKET = 30;
+export const GREEN_POCKET = 30;
 /**
  * Ride grants alone may fill whites this far, so a 14-minute win lands whole.
  * Every other source still stops at WHITE_POCKET.
  */
-export const RIDE_WHITE_POCKET = 22; // 0.0.96: was 15 (~50% bigger, keeps a full street pocket + the biggest win)
+/** 0.0.97: no ride special case; rides use the same 30 pocket (and overflow merges like everything else). */
+export const RIDE_WHITE_POCKET = WHITE_POCKET;
 export const SPARK_DAY = 6;
 /** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line.
  *  0.0.94: 8 min (was 11) and a gentler distance line, so most rides land around 6-8 min. */
@@ -44,7 +45,7 @@ export function sparkState(day: string, n: number, lamps: string[], today: strin
   return { sparkDay: today, sparkN: 0, sparkLamps: [] as string[] };
 }
 
-export const HIGH_POCKET = 150;
+export const HIGH_POCKET = 30;
 
 export function matchCap(tier: import("./types").Tier) {
   if (tier === "white") return WHITE_POCKET;
@@ -114,14 +115,11 @@ export function transitLoot(wallMs: number, openMs: number, rideMs = wallMs, out
  * comes as three whites instead; anything still over is dropped.
  */
 export function pocketRide(keys: Record<Tier, number>, owe: { white: number; blue: number; green: number }) {
-  const want = { white: Math.max(0, owe.white), blue: Math.max(0, owe.blue), green: Math.max(0, owe.green) };
-  const blue = Math.min(want.blue, Math.max(0, BLUE_POCKET - (keys.blue ?? 0)));
-  const spill = (want.blue - blue) * 3;
-  const white = Math.min(want.white + spill, Math.max(0, RIDE_WHITE_POCKET - (keys.white ?? 0)));
-  const green = Math.min(want.green, Math.max(0, GREEN_POCKET - (keys.green ?? 0)));
+  // 0.0.97: everything owed lands; overflow becomes credits in settlePocket (no ride special pocket).
+  const add = { white: Math.max(0, owe.white), blue: Math.max(0, owe.blue), green: Math.max(0, owe.green) };
   return {
-    keys: { ...keys, white: (keys.white ?? 0) + white, blue: (keys.blue ?? 0) + blue, green: (keys.green ?? 0) + green },
-    add: { white, blue, green },
+    keys: { ...keys, white: (keys.white ?? 0) + add.white, blue: (keys.blue ?? 0) + add.blue, green: (keys.green ?? 0) + add.green },
+    add,
   };
 }
 

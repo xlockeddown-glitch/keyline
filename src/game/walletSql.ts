@@ -1,4 +1,5 @@
 import type { Sql } from "../lib/db.ts";
+import { settlePocket } from "./goals.ts";
 import { canonicalId } from "./playerLinks.ts";
 import { cleanKeys } from "./matchSpend.ts";
 import { cleanUnlocks } from "./cityPass.ts";
@@ -107,7 +108,15 @@ export async function mutateWallet(
         await sql`delete from wallet_ledger where user_id = ${id} and op_key = ${opKey}`;
         return { ok: false, replay: false, reason: res.reason, wallet };
       }
-      const next = res.wallet;
+      // 0.0.97: one pocket rule for every server write: rises past 30 become credits that merge 3→1 up.
+      // A first sync (migrate*) only carries the save over; it is not a reward and must not mint credits.
+      let next = res.wallet;
+      if (!opKey.startsWith("migrate")) {
+        const st = settlePocket(wallet.keys, next.keys, wallet.meta.credit);
+        next = { ...next, coins: next.coins + st.coin, keys: st.keys, meta: { ...next.meta, credit: st.credit } };
+      } else {
+        next = { ...next, meta: { ...next.meta, credit: wallet.meta.credit } };
+      }
       const detail = res.detail ?? (res.award ? JSON.stringify(res.award) : "");
       const updated = await sql.query<{ version: number }>(
         `update player_wallets set

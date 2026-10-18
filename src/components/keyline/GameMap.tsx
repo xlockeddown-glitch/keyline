@@ -49,7 +49,7 @@ import {
   type StreetGraph,
 } from "@/game/streets";
 import { fareDesk, isFareDesk } from "@/game/ticket";
-import { tapAction, type PlanStop } from "@/game/routePlan";
+import { HOLD_CAP, holdAction, tapAction, type PlanStop } from "@/game/routePlan";
 import { clampWard, inWard, wardFrom, wardRing, type Ward } from "@/game/ward";
 import { Hud } from "./Hud";
 import { VaultModal } from "./VaultModal";
@@ -560,6 +560,33 @@ export function GameMap() {
     void setDestination(lat, lng, door, false, keyId);
   }
 
+  /** 0.0.97: press and hold adds a stop to the end of the route (up to HOLD_CAP stops). */
+  function holdStop(lat: number, lng: number) {
+    if (cabRef.current?.seated) return planWalk(lat, lng);
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (L && map) {
+      const ring = L.marker([lat, lng], { icon: L.divIcon({ className: "", html: '<div class="hold-ring"></div>', iconSize: [44, 44], iconAnchor: [22, 22] }), interactive: false, keyboard: false, zIndexOffset: 650 }).addTo(map);
+      window.setTimeout(() => ring.remove(), 700);
+    }
+    try {
+      navigator.vibrate?.(18);
+    } catch {
+      /* no vibration */
+    }
+    const act = holdAction(queue.current, waypoint.current, { lat, lng });
+    if (act === "start") return planWalk(lat, lng);
+    if (act === "same") return;
+    if (act === "full") {
+      flash(`Route is full (${HOLD_CAP} stops). Tap to start a new one.`);
+      return;
+    }
+    queue.current = [...queue.current, { lat, lng }];
+    paintQueue();
+    syncRouteHud();
+    flash(`Stop ${queue.current.length + 1} added.`, 1200);
+  }
+
   function drawRoute(L: LModule, map: LMap, path: Pt[]) {
     if (mapRef.current !== map) return; // removed map: Leaflet would throw adding to its gone panes
     routeLine.current?.remove();
@@ -878,9 +905,45 @@ export function GameMap() {
       map.on("dragstart", () => {
         follow.current = false;
       });
+      // 0.0.97: press and hold (~480 ms, finger still) adds a stop; a plain tap replaces the route.
+      const PINS = ".vault-pin, .shop-pin, .counter-pin, .board-pin, .match-pin, .route-stop, .leaflet-control";
+      let hold: { id: number; x: number; y: number; timer: number } | null = null;
+      let heldAt = 0;
+      const box = map.getContainer();
+      const endHold = () => {
+        if (hold) window.clearTimeout(hold.timer);
+        hold = null;
+      };
+      box.addEventListener("pointerdown", (ev) => {
+        if (!ev.isPrimary || (ev.pointerType === "mouse" && ev.button !== 0)) return;
+        if ((ev.target as HTMLElement | null)?.closest(PINS)) return;
+        endHold();
+        const x = ev.clientX;
+        const y = ev.clientY;
+        hold = {
+          id: ev.pointerId,
+          x,
+          y,
+          timer: window.setTimeout(() => {
+            hold = null;
+            heldAt = Date.now();
+            const m = mapRef.current;
+            if (!m) return;
+            const ll = m.containerPointToLatLng(m.mouseEventToContainerPoint(ev as unknown as MouseEvent));
+            holdStop(ll.lat, ll.lng);
+          }, 480),
+        };
+      });
+      box.addEventListener("pointermove", (ev) => {
+        if (hold && ev.pointerId === hold.id && Math.hypot(ev.clientX - hold.x, ev.clientY - hold.y) > 8) endHold();
+      });
+      for (const t of ["pointerup", "pointercancel", "pointerleave"]) box.addEventListener(t, endHold);
+      map.on("dragstart zoomstart", endHold);
+      box.addEventListener("contextmenu", (ev) => ev.preventDefault());
       map.on("click", (e) => {
+        if (Date.now() - heldAt < 700) return; // the click that ends a long-press
         const t = e.originalEvent.target as HTMLElement | null;
-        if (t?.closest(".vault-pin, .shop-pin, .counter-pin, .board-pin, .match-pin, .route-stop, .leaflet-control")) return;
+        if (t?.closest(PINS)) return;
         planWalk(e.latlng.lat, e.latlng.lng);
       });
 

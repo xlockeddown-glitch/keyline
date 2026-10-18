@@ -10,7 +10,6 @@
 import { distM, metersPerDegLng } from "./geo.ts";
 import { isFreeway, isWalkableWay, type WayTags } from "./walkable.ts";
 import { MARKET_STREETS } from "./marketStreets.ts";
-import { TIER_VALUE } from "./rewards.ts";
 import type { CityId, Poi, Tier } from "./types";
 
 export const MARKET_HOUR_MS = 60 * 60_000;
@@ -549,16 +548,18 @@ export function marketPay(coin: number, keys: Partial<Record<Tier, number>>, mul
 }
 
 /** Matches a spark (or a street pick-up) adds: `mult` of them, but never past the pocket cap (at least 1). */
-export function marketMatches(have: number, cap: number, mult: number): number {
-  return Math.max(1, Math.min(mult, cap - have));
+export function marketMatches(_have: number, _cap: number, mult: number): number {
+  // 0.0.97: all `mult` land; a full pocket turns the extras into merge credits (goals.ts settlePocket).
+  return Math.max(1, mult);
 }
 
 /**
  * A market match that won't fit the pocket pays its ladder value in coin instead (as a full pocket does for the
  * Lantern Run and a spark), so the ×2 is never lost to the cap. `added` is what marketMatches let in.
  */
-export function marketOverflowCoin(tier: Tier, mult: number, added: number): number {
-  return Math.max(0, mult - added) * TIER_VALUE[tier];
+export function marketOverflowCoin(_tier: Tier, _mult: number, _added: number): number {
+  // 0.0.97: overflow merges up instead of paying coin.
+  return 0;
 }
 
 /** Closest point on the market street to a walker (where the HUD line walks you). */

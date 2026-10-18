@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { cleanCredit, creditHint, settlePocket } from "./goals";
 import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
 import { MARKET_MULT, MARKET_TAG, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
@@ -144,6 +145,8 @@ export type GameState = {
   screen: Screen;
   cityId: CityId;
   keys: Record<Tier, number>;
+  /** 0.0.97: overflow credits per colour (0-2); every 3 merge into 1 match of the next colour. */
+  credit: Partial<Record<Tier, number>>;
   points: number;
   brass: number;
   ink: number;
@@ -316,7 +319,7 @@ export type GameState = {
   /** Take the merged wardrobe back from the server (signed-in sync). */
   adoptWardrobe: (w: Wardrobe) => void;
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
-  adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks }) => void;
+  adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
   adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[] }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
@@ -562,6 +565,7 @@ function persistable(s: GameState) {
     version: SAVE_VERSION,
     cityId: s.cityId,
     keys: s.keys,
+    credit: s.credit,
     points: s.points,
     brass: s.brass,
     ink: s.ink,
@@ -946,6 +950,7 @@ export const useGame = create<GameState>((set, get) => ({
   screen: "title",
   cityId: savedCity,
   keys: cleanKeys({ ...EMPTY_KEYS, ...saved?.keys }),
+  credit: cleanCredit((saved as { credit?: unknown } | null)?.credit),
   points: saved?.points ?? 0,
   brass: saved?.brass ?? 0,
   ink: saved?.ink ?? 0,
@@ -2265,6 +2270,7 @@ export const useGame = create<GameState>((set, get) => ({
     const prevPaints = get().paints;
     set({ wardrobe: res.wardrobe, keys: res.keys, paints });
     pushOp({ kind: "print", id }, () => set({ wardrobe: prevWardrobe, paints: prevPaints }));
+
     flashToast(
       set,
       get,
@@ -2331,9 +2337,13 @@ export const useGame = create<GameState>((set, get) => ({
     const cities = cleanUnlocks(w.cities);
     const points = Math.max(0, Math.floor(Number(w.coins) || 0));
     const cur = get();
+    const credit = w.credit ? cleanCredit(w.credit) : cur.credit;
     const sameKeys = (Object.keys(keys) as Tier[]).every((t) => cur.keys[t] === keys[t]);
-    if (points === cur.points && sameKeys && JSON.stringify(cities) === JSON.stringify(cur.cities)) return;
-    set({ points, keys, cities });
+    if (points === cur.points && sameKeys && JSON.stringify(cities) === JSON.stringify(cur.cities) && JSON.stringify(credit) === JSON.stringify(cur.credit)) return;
+    // The server already settled this pocket: the client hook must not settle it again.
+    adopting = true;
+    set({ points, keys, cities, credit });
+    adopting = false;
     saveNow(get);
   },
   buyKiosk: (id) => {
@@ -2346,12 +2356,8 @@ export const useGame = create<GameState>((set, get) => ({
       const tier: Tier = id === "wick" ? "blue" : "white";
       const add = id === "tinder" ? 2 : 1;
       const have = get().keys[tier] ?? 0;
-      const room = Math.max(0, matchCap(tier) - have);
-      const n = Math.min(add, room);
-      if (n < 1) {
-        flashToast(set, get, "That pocket is full.", 1600);
-        return;
-      }
+      void have;
+      const n = add; // 0.0.97: overflow becomes merge credits (pocket hook).
       sfx.craft();
       set({
         points: get().points - item.cost,
@@ -2906,3 +2912,30 @@ if (typeof window !== "undefined") {
     }
   });
 }
+
+
+/**
+ * 0.0.97 pocket rule on the client (guests and the optimistic signed-in pocket): any rise past a pocket of 30
+ * becomes overflow credits that merge 3→1 into the next colour (goals.ts settlePocket). Server pockets adopted
+ * through adoptWallet are already settled and skipped.
+ */
+let adopting = false;
+let settling = false;
+useGame.subscribe((s, prev) => {
+  if (adopting || settling || s.keys === prev.keys) return;
+  const st = settlePocket(prev.keys, s.keys, s.credit);
+  const changed = (Object.keys(st.keys) as Tier[]).some((t) => st.keys[t] !== s.keys[t]) || JSON.stringify(st.credit) !== JSON.stringify(s.credit) || st.coin > 0;
+  if (!changed) return;
+  settling = true;
+  const merged = Object.entries(st.merged) as [Tier, number][];
+  const msg = merged.length
+    ? `↑ 3 extras merged: +${merged.map(([t, n]) => `${n} ${TIER_LABEL[t]}`).join(", ")}`
+    : st.coin
+      ? `Violet pocket full: +${st.coin} coin`
+      : (() => {
+          const [t] = (Object.keys(st.credited) as Tier[]).slice(-1);
+          return t ? `Pocket full · ${creditHint(st.credit, t) ?? `${TIER_LABEL[t]} extra`}` : null;
+        })();
+  useGame.setState({ keys: st.keys, credit: st.credit, points: s.points + st.coin, ...(msg && !s.toast ? { toast: msg } : {}) });
+  settling = false;
+});

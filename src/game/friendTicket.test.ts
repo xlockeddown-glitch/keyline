@@ -121,9 +121,8 @@ test("dealt order is a permutation of the card's four choices", () => {
 test("payFriend: +1 white; a full white pocket pays 30 coin instead", () => {
   const keys = { white: 1, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
   assert.deepEqual(payFriend(keys, 100, 1, matchCap("white")), { keys: { ...keys, white: 2 }, points: 100, added: 1, coins: 0 });
-  const full = { ...keys, white: 6 };
-  assert.deepEqual(payFriend(full, 100, 1, matchCap("white"), payMatchesOf), { keys: { ...full, blue: 1 }, points: 100, added: 1, coins: 0 });
-  assert.deepEqual(payFriend({ ...keys, white: 5 }, 0, 2, matchCap("white"), payMatchesOf), { keys: { ...keys, white: 6, blue: 1 }, points: 0, added: 2, coins: 0 });
+  const full = { ...keys, white: 30 };
+  assert.deepEqual(payFriend(full, 100, 1, matchCap("white"), payMatchesOf), { keys: { ...full, white: 31 }, points: 100, added: 1, coins: 0 });
 });
 
 test("markFriendPaid: a reward lands in a save once, however often the news repeats", () => {

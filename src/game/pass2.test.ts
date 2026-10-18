@@ -48,8 +48,8 @@ test("creditCafeWhite respects the pocket", () => {
   const one = creditCafeWhite(keys, 1);
   assert.equal(one.added, 1);
   assert.equal(one.keys.white, 4);
-  const full = creditCafeWhite({ ...keys, white: 6 }, 1);
-  assert.deepEqual([full.added, full.keys.white, full.keys.blue], [1, 6, 1]);
+  const full = creditCafeWhite({ ...keys, white: 30 }, 1);
+  assert.deepEqual([full.added, full.keys.white], [1, 31]);
 });
 
 test("city pack draws existing tagged trivia cards and skips held ids", () => {

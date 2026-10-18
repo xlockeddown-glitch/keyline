@@ -4018,3 +4018,12 @@ h3 {
 /* 0.0.96 Fox (Clever): the wrong option the server crossed out. */
 .plate-choice.is-struck { opacity: 0.45; text-decoration: line-through; text-decoration-thickness: 2px; cursor: not-allowed; }
 .ability-name { display: inline-block; padding: 0 0.45em; margin-right: 0.15em; border-radius: 999px; background: color-mix(in oklab, var(--color-accent, #e0a33a) 22%, transparent); font-weight: 700; letter-spacing: 0.01em; }
+
+/* 0.0.97 long-press adds a stop: no iOS callout / text selection on the map, and a ring cue. */
+.leaflet-container { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.hold-ring { width: 44px; height: 44px; border-radius: 999px; border: 3px solid #c4a35a; animation: hold-ring 0.6s ease-out forwards; }
+@keyframes hold-ring { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hold-ring { animation: none; opacity: 0.8; } }
+/* 0.0.97: overflow credits on the pocket ("2/3 toward the next colour"). */
+.key-slot { position: relative; }
+.credit-pip { position: absolute; right: -4px; top: -6px; font-size: 9px; font-weight: 800; line-height: 1; padding: 2px 3px; border-radius: 6px; background: #c4a35a; color: #1a1406; }

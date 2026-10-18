@@ -28,6 +28,18 @@ export function planStop(queue: readonly PlanStop[], current: PlanStop | null, s
   return { action: "append" as const, queue: [...queue, stop] };
 }
 
+/** 0.0.97: a long-press route holds at most this many stops (the live one included). */
+export const HOLD_CAP = 5;
+
+/** 0.0.97: press-and-hold adds a stop to the end of the route (a tap still replaces it). */
+export function holdAction(queue: readonly PlanStop[], current: PlanStop | null, stop: PlanStop): "start" | "same" | "append" | "full" {
+  if (!current) return "start";
+  const last = queue.length ? queue[queue.length - 1]! : current;
+  if (sameStop(last, stop)) return "same";
+  if (queue.length + 1 >= HOLD_CAP) return "full";
+  return "append";
+}
+
 /**
  * 0.0.95: what a map tap does. Tapping the live stop again is a no-op; any other tap replaces the whole
  * route (never queues onto it).

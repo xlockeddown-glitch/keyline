@@ -1,5 +1,4 @@
 import type { Tier, TriviaCat } from "./types";
-import { TIER_VALUE } from "./rewards.ts";
 
 /**
  * Daily Blitz (0.0.59): the login coin, played. Six lanterns, white through violet.
@@ -50,9 +49,9 @@ export function blitzBank(cleared: number) {
 }
 
 /** One match of the lantern's color, or its coin value when that pocket is full. */
-export function blitzMatch(tier: Tier, have: number, cap: number): { match: boolean; overflow: number } {
-  if (have < cap) return { match: true, overflow: 0 };
-  return { match: false, overflow: TIER_VALUE[tier] };
+export function blitzMatch(_tier: Tier, _have: number, _cap: number): { match: boolean; overflow: number } {
+  // 0.0.97: the match always lands; a full pocket turns it into a merge credit (goals.ts settlePocket).
+  return { match: true, overflow: 0 };
 }
 
 export function cleanBlitzMatches(raw: unknown): Tier[] {

@@ -65,7 +65,7 @@ test("applyBank refuses a short pocket or a cap overflow", () => {
   const next = applyBank(keys, bankUpSpec("white")!, matchCap);
   assert.deepEqual(next, { white: 0, blue: 1, green: 0, amber: 0, red: 0, violet: 0 });
   assert.equal(applyBank({ ...keys, white: 3 }, bankUpSpec("white")!, matchCap), null);
-  const fat = { white: 4, blue: 1, green: 0, amber: 0, red: 0, violet: 0 };
+  const fat = { white: 28, blue: 1, green: 0, amber: 0, red: 0, violet: 0 };
   assert.equal(applyBank(fat, bankDownSpec("blue")!, matchCap), null);
 });
 

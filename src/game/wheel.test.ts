@@ -42,17 +42,10 @@ test("rarer vaults pay more coin and lean toward matches", () => {
   assert.equal(spun.slices.length, 10);
 });
 
-test("0.0.96: a full match pocket steps up (match ↑); coin only when every tier above is full", () => {
+test("0.0.97: a wheel match always lands in its colour (the pocket rule merges overflow)", () => {
   const prize = { kind: "key", tier: "white", n: 1, face: "Match", label: "A white match" } as const;
-  const keys = { white: 6, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
-  const up = grantWheelPrize(prize, { keys, points: 10, pantry: {} });
-  assert.deepEqual([up.keys.white, up.keys.blue, up.points], [6, 1, 10]);
-  assert.match(up.line, /Match ↑/);
-  const all = { white: 6, blue: 6, green: 2, amber: 150, red: 150, violet: 0 };
-  const paid = grantWheelPrize(prize, { keys: all, points: 10, pantry: {} });
-  assert.ok(paid.points > 10);
-  assert.equal(paid.keys.violet, 0, "violet only from red");
-  assert.match(paid.line, /coin/i);
+  const paid = grantWheelPrize(prize, { keys: { white: 30, blue: 0, green: 0, amber: 0, red: 0, violet: 0 }, points: 10, pantry: {} });
+  assert.deepEqual([paid.keys.white, paid.points], [31, 10]);
 });
 
 test("0.0.89: a server no-spin closes the wheel for good and marks the color caught up", () => {
@@ -114,15 +107,14 @@ test("0.0.92 wheel prizes: white wheel pays white and blue matches; red never vi
   }
 });
 
-test("0.0.92 wheel prizes: a pair into a nearly full pocket pays what fits plus overflow coin", async () => {
+test("0.0.92 wheel prizes: a pair lands whole (0.0.97 pocket rule merges any overflow)", async () => {
   const { wheelSlices } = await import("./wheel.ts");
   const { matchCap } = await import("./ticket.ts");
   const pair = wheelSlices("white", "austin").find((s) => s.prize.face === "Pair")!.prize;
   assert.equal(pair.kind, "key");
   const keys = { white: matchCap("white") - 1, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
   const paid = grantWheelPrize(pair, { keys, points: 0, pantry: {} });
-  assert.equal(paid.keys.white, matchCap("white"));
-  assert.equal(paid.keys.blue, 1, "the one that didn't fit stepped up");
+  assert.equal(paid.keys.white, matchCap("white") + 1);
   assert.equal(paid.points, 0);
 });
 

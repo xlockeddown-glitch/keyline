@@ -80,6 +80,7 @@ export function FieldGuide() {
               </p>
             ))}
           </div>
+          <p className="mt-4 text-sm text-pretty text-fg" data-testid="help-hold">Tap to walk somewhere; press and hold to add a stop.</p>
           {/* 0.0.95: city passes in plain words. */}
           <section className="mt-5" data-testid="help-pass">
             <h3 className="font-display text-lg leading-tight">City passes</h3>
@@ -95,8 +96,8 @@ export function FieldGuide() {
               <li><span className="emb-badge is-streak">🔥 5</span><span>Answer streak: right answers in a row (5 pays a white, 10 a blue).</span></li>
               <li><span className="emb-badge is-boost">⚡2</span><span>Boosts applied (charm, ride reward, scout ability). Tap it to see which.</span></li>
               <li><span className="badge-ico"><ItemIcon item="blue" size={22} /><b>↺</b></span><span>Perfect score: your match comes back.</span></li>
-              <li><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>Pocket full: the match steps up to the next colour with room.</span></li>
-              <li><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Every pocket above is full, so coin instead.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>Pockets hold 30 of each colour. Extras on a full pocket count toward the next colour: 3 extras merge into 1 match of the next colour (white→blue→green→amber→red→violet). The pocket shows “2/3” while it fills.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Violet pocket full: extra violets pay coin instead.</span></li>
               <li><span className="badge-ico"><ItemIcon item="coin" size={20} /><ItemIcon item="white" size={20} /><ItemIcon item="brass" size={20} /><b>+N</b></span><span>Items earned: coin, matches, brass, ink, vellum, schematic, ingredient, paint.</span></li>
             </ul>
           </section>

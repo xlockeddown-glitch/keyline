@@ -133,17 +133,12 @@ test("third streak plus a new topic plus a fast answer stacks", () => {
   assert.deepEqual(stacked.labels, ["Streak spark", "Perfect timing", "Category charm"]);
 });
 
-test("creditWhite respects the white pocket", () => {
+test("creditWhite adds whites (0.0.97: the pocket rule settles overflow into merge credits)", () => {
   const keys = { white: 3, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
   const one = creditWhite(keys, 1);
   assert.equal(one.added, 1);
   assert.equal(one.keys.white, 4);
-  const full = creditWhite({ ...keys, white: WHITE_POCKET }, 1);
-  assert.equal(full.added, 1, "0.0.96: match ↑");
-  assert.equal(full.keys.white, WHITE_POCKET);
-  assert.equal(full.keys.blue, 1);
-  const two = creditWhite({ ...keys, white: WHITE_POCKET - 1 }, 2);
-  assert.deepEqual([two.keys.white, two.keys.blue, two.coins], [WHITE_POCKET, 1, 0]);
+  assert.equal(creditWhite({ ...keys, white: WHITE_POCKET }, 2).keys.white, WHITE_POCKET + 2);
 });
 
 test("no topic means no Category charm", () => {

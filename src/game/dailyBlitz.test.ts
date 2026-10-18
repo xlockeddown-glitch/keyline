@@ -28,11 +28,11 @@ test("the ladder climbs white to violet", () => {
   );
 });
 
-test("each right lantern drops a match of its color, or the match's coin when that pocket is full", () => {
+test("each right lantern drops a match of its color, full pockets merge (0.0.97)", () => {
   assert.deepEqual(blitzMatch("white", 0, 4), { match: true, overflow: 0 });
   assert.deepEqual(blitzMatch("white", 3, 4), { match: true, overflow: 0 });
-  assert.deepEqual(blitzMatch("white", 4, 4), { match: false, overflow: TIER_VALUE.white });
-  assert.deepEqual(blitzMatch("green", 1, 1), { match: false, overflow: TIER_VALUE.green });
+  // 0.0.97: a full pocket still takes the match (it becomes a merge credit).
+  assert.deepEqual(blitzMatch("white", 30, 30), { match: true, overflow: 0 });
   assert.deepEqual(blitzMatch("violet", 0, 99), { match: true, overflow: 0 });
   assert.equal(blitzMatchLine(["white"]), "a White match");
   assert.equal(blitzMatchLine(["white", "blue"]), "White and Blue matches");

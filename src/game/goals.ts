@@ -20,41 +20,91 @@ export function streakLine(run: number, tier: Tier): string {
 }
 
 /**
- * 0.0.96: THE shared pocket rule. A match goes in its own tier; a full tier steps it up to the next tier with
- * room (white → blue → green → amber → red → violet). Violet is only reached from red (or violet) — never from a
- * lower tier in one go. Coin (the tier's value) only when every allowed tier above is full.
+ * 0.0.97 pocket rule (Ryan): every colour holds POCKET (30). A match landing on a full pocket becomes one
+ * overflow credit of that colour; every 3 credits merge into 1 match of the NEXT colour only (white→blue→
+ * green→amber→red→violet), which lands by the same rule. Leftover credits (0-2 per colour) persist. A full
+ * violet pocket pays violet's coin value per overflow match. Pockets already above 30 (old 150 caps) keep
+ * what they hold; new matches of that colour count as overflow.
+ *
+ * Reward code just adds matches; settlePocket (run once per write: walletSql.mutateWallet on the server,
+ * the store's pocket hook on the client) turns any rise past the pocket into credits and merges.
  */
-export function stepMatch(keys: Record<Tier, number>, tier: Tier): { tier: Tier | null; coin: number } {
-  const from = STEP_TIERS.indexOf(tier);
-  for (let i = from; i < STEP_TIERS.length; i++) {
-    const t = STEP_TIERS[i]!;
-    if (t === "violet" && tier !== "red" && tier !== "violet") break;
-    if ((keys[t] ?? 0) < matchCap(t)) return { tier: t, coin: 0 };
+export const POCKET = 30;
+export type Credit = Partial<Record<Tier, number>>;
+export type Settled = {
+  keys: Record<Tier, number>;
+  credit: Credit;
+  coin: number;
+  /** Matches made by merging, per colour they landed in. */
+  merged: Partial<Record<Tier, number>>;
+  /** Overflow credits added this settle, per colour. */
+  credited: Partial<Record<Tier, number>>;
+};
+
+export function cleanCredit(raw: unknown): Credit {
+  const out: Credit = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const t of STEP_TIERS) {
+    const n = Math.floor(Number((raw as Record<string, unknown>)[t]) || 0);
+    if (t !== "violet" && n > 0) out[t] = Math.min(2, n);
   }
-  return { tier: null, coin: TIER_VALUE[tier] };
+  return out;
 }
 
-/** One match into the pocket (stepped up when full), or coin when nothing above has room. `tier` is where it landed. */
-export function payMatch(keys: Record<Tier, number>, tier: Tier): { keys: Record<Tier, number>; coin: number; match: boolean; tier: Tier | null; up: boolean } {
-  const s = stepMatch(keys, tier);
-  if (!s.tier) return { keys, coin: s.coin, match: false, tier: null, up: false };
-  return { keys: { ...keys, [s.tier]: (keys[s.tier] ?? 0) + 1 }, coin: 0, match: true, tier: s.tier, up: s.tier !== tier };
-}
-
-/** Several matches of one tier through the shared rule; the per-tier tally of what landed, plus any coin. */
-export function payMatchesOf(keys: Record<Tier, number>, tier: Tier, n: number): { keys: Record<Tier, number>; add: Partial<Record<Tier, number>>; coin: number; up: number } {
-  let k = keys;
+export function settlePocket(before: Record<Tier, number>, after: Record<Tier, number>, credit: Credit = {}): Settled {
+  const keys = { ...after };
+  const cr: Credit = cleanCredit(credit);
+  const merged: Partial<Record<Tier, number>> = {};
+  const credited: Partial<Record<Tier, number>> = {};
   let coin = 0;
-  let up = 0;
-  const add: Partial<Record<Tier, number>> = {};
-  for (let i = 0; i < n; i++) {
-    const p = payMatch(k, tier);
-    k = p.keys;
-    coin += p.coin;
-    if (p.tier) add[p.tier] = (add[p.tier] ?? 0) + 1;
-    if (p.up) up++;
+  let carry = 0;
+  for (let i = 0; i < STEP_TIERS.length; i++) {
+    const t = STEP_TIERS[i]!;
+    const b = before[t] ?? 0;
+    const a = after[t] ?? 0;
+    const cur = a > b ? b : a;
+    const inc = Math.max(0, a - b) + carry;
+    if (carry) merged[t] = (merged[t] ?? 0) + carry;
+    carry = 0;
+    const land = Math.min(inc, Math.max(0, matchCap(t) - cur));
+    keys[t] = cur + land;
+    const over = inc - land;
+    if (!over) continue;
+    if (t === "violet") {
+      coin += over * TIER_VALUE.violet;
+      continue;
+    }
+    credited[t] = (credited[t] ?? 0) + over;
+    const c = (cr[t] ?? 0) + over;
+    carry = Math.floor(c / 3);
+    if (c % 3) cr[t] = c % 3;
+    else delete cr[t];
   }
-  return { keys: k, add, coin, up };
+  return { keys, credit: cr, coin, merged, credited };
+}
+
+/** "2/3 toward blue" for a colour's leftover credits, or null. */
+export function creditHint(credit: Credit, tier: Tier): string | null {
+  const n = credit[tier] ?? 0;
+  const next = STEP_TIERS[STEP_TIERS.indexOf(tier) + 1];
+  return n > 0 && next ? `${n}/3 toward ${next}` : null;
+}
+
+/** 0.0.97: a match always lands in its own colour; the pocket rule happens in settlePocket. */
+export function stepMatch(_keys: Record<Tier, number>, tier: Tier): { tier: Tier | null; coin: number } {
+  return { tier, coin: 0 };
+}
+
+/** One match of `tier` added (settlePocket turns overflow into credits). */
+export function payMatch(keys: Record<Tier, number>, tier: Tier): { keys: Record<Tier, number>; coin: number; match: boolean; tier: Tier | null; up: boolean } {
+  return { keys: { ...keys, [tier]: (keys[tier] ?? 0) + 1 }, coin: 0, match: true, tier, up: false };
+}
+
+/** Several matches of one tier added (settlePocket turns overflow into credits). */
+export function payMatchesOf(keys: Record<Tier, number>, tier: Tier, n: number): { keys: Record<Tier, number>; add: Partial<Record<Tier, number>>; coin: number; up: number } {
+  const c = Math.max(0, Math.floor(n));
+  if (!c) return { keys, add: {}, coin: 0, up: 0 };
+  return { keys: { ...keys, [tier]: (keys[tier] ?? 0) + c }, add: { [tier]: c }, coin: 0, up: 0 };
 }
 
 /* ---------------------------------------------------------------- match cache */

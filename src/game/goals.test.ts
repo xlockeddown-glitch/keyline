@@ -7,11 +7,11 @@ test("streak prizes: 5 white, 10 blue, round again", () => {
   assert.deepEqual([1, 4, 5, 9, 10, 15, 20, 25].map(streakPrize), [null, null, "white", null, "blue", "white", "blue", "white"]);
 });
 
-test("0.0.96: coin only when every pocket above is full", () => {
-  const keys = { white: matchCap("white"), blue: matchCap("blue"), green: matchCap("green"), amber: matchCap("amber"), red: matchCap("red"), violet: 0 };
+test("0.0.97: payMatch adds in its own colour (the pocket rule settles later)", () => {
+  const keys = { white: matchCap("white"), blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
   const p = payMatch(keys, "white");
-  assert.equal(p.match, false);
-  assert.ok(p.coin > 0);
+  assert.equal(p.keys.white, matchCap("white") + 1);
+  assert.equal(p.coin, 0);
 });
 
 test("cache: same spot per city/day, 2-3 matches never violet, same prize on retry", () => {
@@ -40,37 +40,56 @@ test("daily goals: three distinct, progress counts, claimable", () => {
   assert.equal(noteGoal(g, defs[0]!.kind, 1, "2026-10-19").day, "2026-10-19", "a new day starts fresh");
 });
 
-test("0.0.95 payMatches steps a full colour up to the next tier with room, coin only when all are full", async () => {
+test("0.0.97 payMatches lands each rolled colour as is", async () => {
   const { payMatches } = await import("./goals.ts");
-  const { matchCap } = await import("./ticket.ts");
   const z = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
-  const full = (ts: string[]) => ({ ...z, ...Object.fromEntries(ts.map((t) => [t, matchCap(t as never)])) });
-  assert.deepEqual(payMatches(full(["white"]), ["white"]).got, ["blue"]);
-  assert.deepEqual(payMatches(full(["white", "blue", "green"]), ["blue"]).got, ["amber"]);
-  assert.deepEqual(payMatches(full(["green"]), ["green", "green"]).got, ["amber", "amber"].slice(0, 2));
-  assert.deepEqual(payMatches(z, ["white"]).got, ["white"], "room: pays the rolled colour");
-  const none = payMatches(full(["white", "blue", "green", "amber", "red", "violet"]), ["white", "blue"]);
-  assert.deepEqual(none.got, []);
-  assert.ok(none.coin > 0);
+  const r = payMatches(z, ["white", "blue", "white"]);
+  assert.deepEqual(r.got, ["white", "blue", "white"]);
+  assert.deepEqual([r.keys.white, r.keys.blue, r.coin], [2, 1, 0]);
 });
 
-test("0.0.96: pockets ~50% bigger and one shared step-up rule (violet only from red)", async () => {
-  const { matchCap } = await import("./ticket.ts");
-  const { stepMatch, payMatch, payMatchesOf } = await import("./goals.ts");
-  assert.deepEqual(["white", "blue", "green", "amber", "red", "violet"].map((t) => matchCap(t as never)), [6, 6, 2, 150, 150, 150]);
+test("0.0.97: payMatchesOf adds n of one colour", async () => {
+  const { payMatchesOf } = await import("./goals.ts");
   const z = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
-  assert.equal(stepMatch({ ...z, white: 6 }, "white").tier, "blue");
-  assert.equal(stepMatch({ ...z, white: 6, blue: 6, green: 2 }, "white").tier, "amber");
-  // Violet is never reached from white/blue/green/amber.
-  const fullToRed = { white: 6, blue: 6, green: 2, amber: 150, red: 150, violet: 0 };
-  const w = stepMatch(fullToRed, "white");
-  assert.equal(w.tier, null);
-  assert.ok(w.coin > 0);
-  assert.equal(stepMatch(fullToRed, "red").tier, "violet");
-  const p = payMatch({ ...z, blue: 6 }, "blue");
-  assert.equal(p.tier, "green");
-  assert.equal(p.up, true);
-  assert.equal(p.coin, 0);
-  const many = payMatchesOf({ ...z, white: 5 }, "white", 3);
-  assert.deepEqual(many.add, { white: 1, blue: 2 });
+  assert.deepEqual(payMatchesOf({ ...z, white: 29 }, "white", 3).add, { white: 3 });
+});
+
+test("0.0.97 pocket rule: every colour holds 30; 3 extras merge into 1 of the next colour only", async () => {
+  const { settlePocket, creditHint, POCKET } = await import("./goals.ts");
+  const { matchCap } = await import("./ticket.ts");
+  const { TIER_VALUE } = await import("./rewards.ts");
+  assert.equal(POCKET, 30);
+  for (const t of ["white", "blue", "green", "amber", "red", "violet"] as const) assert.equal(matchCap(t), 30);
+  const z = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
+  // Room: lands as is.
+  assert.deepEqual(settlePocket(z, { ...z, white: 5 }).keys, { ...z, white: 5 });
+  // Full white: 2 extras → credits, persisted; the third merges into blue (never amber).
+  const full = { ...z, white: 30 };
+  const a = settlePocket(full, { ...full, white: 32 });
+  assert.deepEqual(a.keys, full);
+  assert.deepEqual(a.credit, { white: 2 });
+  assert.equal(creditHint(a.credit, "white"), "2/3 toward blue");
+  const b = settlePocket(full, { ...full, white: 31 }, a.credit);
+  assert.deepEqual(b.keys, { ...full, blue: 1 });
+  assert.deepEqual(b.credit, {});
+  assert.deepEqual(b.merged, { blue: 1 });
+  // Chain: white→blue full→credit there, never skipping a colour.
+  const wb = { ...z, white: 30, blue: 30 };
+  const c = settlePocket(wb, { ...wb, white: 33 }, { blue: 2 });
+  assert.deepEqual(c.keys, { ...wb, green: 1 });
+  assert.deepEqual(c.credit, {});
+  assert.equal(c.keys.amber, 0, "no jump to amber");
+  // Full violet pays violet's coin per overflow match.
+  const v = settlePocket({ ...z, violet: 30 }, { ...z, violet: 32 });
+  assert.equal(v.coin, 2 * TIER_VALUE.violet);
+  assert.equal(v.keys.violet, 30);
+  // Existing players above 30 keep what they have; new ones count as overflow; spending still works.
+  const old = { ...z, amber: 150 };
+  const o = settlePocket(old, { ...old, amber: 151 });
+  assert.equal(o.keys.amber, 150);
+  assert.deepEqual(o.credit, { amber: 1 });
+  assert.equal(settlePocket(old, { ...old, amber: 149 }).keys.amber, 149, "spends are untouched");
+  // Forged credits are clamped to 0-2 (and none on violet).
+  const f = settlePocket(z, z, { white: 99, violet: 5 } as never);
+  assert.deepEqual(f.credit, { white: 2 });
 });

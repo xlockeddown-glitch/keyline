@@ -155,24 +155,18 @@ test("forfeit keeps an earlier best", () => {
   assert.equal(forfeitRound(ride(6 * MIN)).forfeits, undefined, "nothing open, nothing forfeited");
 });
 
-test("ride pocket holds a whole 14-minute win; other sources keep the old pocket", () => {
-  assert.equal(RIDE_WHITE_POCKET, 22);
+test("0.0.97: rides use the same 30 pocket; everything owed lands (overflow merges later)", () => {
+  assert.equal(RIDE_WHITE_POCKET, 30);
   assert.equal(matchCap("white"), WHITE_POCKET);
   const best = rideReward(10.5 * MIN - 1, won(0.74));
-  assert.equal(best.blue, 0);
   const full = { ...empty(), white: WHITE_POCKET };
   const got = pocketRide(full, { white: best.white, blue: 0, green: 0 });
-  assert.equal(got.add.white, best.white, "a full street pocket plus the biggest win is not cut");
-  assert.ok(got.keys.white <= RIDE_WHITE_POCKET);
-  const over = pocketRide({ ...empty(), white: 21 }, { white: 5, blue: 0, green: 0 });
-  assert.equal(over.keys.white, RIDE_WHITE_POCKET);
+  assert.equal(got.add.white, best.white, "nothing owed is cut");
 });
 
-test("no room for a blue: it comes as three whites", () => {
+test("0.0.97: a blue owed is a blue, even into a full pocket (it merges up, never down)", () => {
   const got = pocketRide({ ...empty(), blue: BLUE_POCKET }, { white: 4, blue: 1, green: 0 });
-  assert.deepEqual(got.add, { white: 7, blue: 0, green: 0 });
-  const some = pocketRide({ ...empty(), blue: BLUE_POCKET - 1 }, { white: 6, blue: 2, green: 0 });
-  assert.deepEqual(some.add, { white: 9, blue: 1, green: 0 });
+  assert.deepEqual(got.add, { white: 4, blue: 1, green: 0 });
 });
 
 test("selector: Lamplighter under two minutes; Where am I? and Match sorter share two to six; Route puzzle from six on", () => {

@@ -54,7 +54,7 @@ import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 
 /** What the browser is allowed to see. */
-export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"] };
+export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"]; credit?: Partial<Record<Tier, number>> };
 
 export type Applied = MutateResult & { view: WalletView; authoritative: boolean };
 

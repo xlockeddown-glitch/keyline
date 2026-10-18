@@ -341,9 +341,9 @@ test("finish reward: 2 white + 1 blue, 150 coin on the white=30 ladder; a full p
   const empty: Record<Tier, number> = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
   const a = payDaily(empty, 100);
   assert.deepEqual([a.keys.white, a.keys.blue, a.points, a.coins], [2, 1, 100, 0]);
-  // 0.0.96: full pockets step up (white→green, blue→amber once green fills); no coin.
-  const full = payDaily({ ...empty, white: 6, blue: 6 }, 0);
-  assert.deepEqual([full.keys.white, full.keys.blue, full.keys.green, full.keys.amber, full.coins], [6, 6, 2, 1, 0]);
+  // 0.0.97: the reward lands as is; settlePocket turns overflow into merge credits.
+  const full = payDaily({ ...empty, white: 30, blue: 30 }, 0);
+  assert.deepEqual([full.keys.white, full.keys.blue, full.coins], [32, 31, 0]);
 });
 
 test("finish reward pays once per city per day: a second city pays again, the same city doesn't", () => {

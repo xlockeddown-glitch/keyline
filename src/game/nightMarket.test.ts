@@ -249,14 +249,11 @@ test("doubling: trivia-card coin and bonus matches on the market street pay ×2;
   assert.deepEqual(pay, { coin: 486, keys: { blue: 2, white: 2 }, extraCoin: 243, extraMatches: 2 });
   assert.deepEqual(marketPay(243, { blue: 1 }, 1), { coin: 243, keys: { blue: 1 }, extraCoin: 0, extraMatches: 0 });
   assert.deepEqual(doubleKeys({}, 2), {});
-  // Sparks and street matches: two, but never past the pocket cap, and never fewer than one.
-  assert.equal(marketMatches(0, 15, 2), 2);
-  assert.equal(marketMatches(14, 15, 2), 1);
-  assert.equal(marketMatches(3, 15, 1), 1);
-  // …and a market match the pocket can't hold pays its ladder value in coin.
-  assert.equal(marketOverflowCoin("white", 2, 1), 30);
-  assert.equal(marketOverflowCoin("blue", 2, 2), 0);
-  assert.equal(marketOverflowCoin("green", 1, 1), 0);
+  // 0.0.97: sparks and street matches: all `mult` land (a full pocket merges them up), never fewer than one.
+  assert.equal(marketMatches(0, 30, 2), 2);
+  assert.equal(marketMatches(30, 30, 2), 2);
+  assert.equal(marketMatches(3, 30, 1), 1);
+  assert.equal(marketOverflowCoin("white", 2, 1), 0);
 });
 
 test("doubling: on-street test — baked lamps, measured blanks/series/matches, and only during that hour", () => {

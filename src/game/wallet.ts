@@ -8,7 +8,7 @@ import { SURVEY_GOALS, isPlace } from "./survey.ts";
 import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
-import { payMatch, payMatchesOf } from "./goals.ts";
+import { cleanCredit, payMatch, payMatchesOf } from "./goals.ts";
 import type { ScoutId } from "./types";
 import { clothCoin, type ClothId } from "./quests.ts";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards.ts";
@@ -105,6 +105,8 @@ export type WalletMeta = {
   schematic: number;
   press: number;
   patterns: number;
+  /** 0.0.97: overflow credits per colour (0-2), the server's own; never taken from a client save. */
+  credit: Partial<Record<Tier, number>>;
 };
 
 export type WalletState = {
@@ -183,6 +185,7 @@ const emptyMeta = (): WalletMeta => ({
   schematic: 0,
   press: 0,
   patterns: 0,
+  credit: {},
 });
 
 export function emptyWallet(): WalletState {
@@ -251,6 +254,7 @@ export function cleanMeta(raw: unknown): WalletMeta {
     schematic: num(m.schematic, SCHEMATIC_CAP),
     press: num(m.press, PRESS_CAP),
     patterns: num(m.patterns, PATTERN_CAP),
+    credit: cleanCredit(m.credit),
   };
 }
 
@@ -305,7 +309,7 @@ export function clampWallet(w: Omit<WalletState, "meta"> & { meta: unknown }): W
 }
 
 export function viewOf(w: WalletState) {
-  return { coins: w.coins, keys: { ...w.keys }, cities: w.cities };
+  return { coins: w.coins, keys: { ...w.keys }, cities: w.cities, credit: { ...w.meta.credit } };
 }
 
 /**
@@ -429,10 +433,8 @@ export function kioskOp(w: WalletState, id: KioskId): OpResult {
   if (id === "tinder" || id === "wick") {
     const tier: Tier = id === "wick" ? "blue" : "white";
     const add = id === "tinder" ? 2 : 1;
-    const room = Math.max(0, matchCap(tier) - (w.keys[tier] ?? 0));
-    const n = Math.min(add, room);
-    if (n < 1) return { ok: false, reason: "full" };
-    return applyDelta(w, { coins: -item.cost, keys: { [tier]: n } });
+    // 0.0.97: no "pocket full" refusal; overflow becomes merge credits.
+    return applyDelta(w, { coins: -item.cost, keys: { [tier]: add } });
   }
   if (id === "amber" || id === "oil") {
     const tier: Tier = id === "oil" ? "violet" : "amber";

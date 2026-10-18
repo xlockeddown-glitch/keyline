@@ -71,3 +71,19 @@ test("0.0.95: a new tap replaces the route; tapping the live stop again does not
   assert.equal(tapAction(here, { lat: here.lat + 0.01, lng: here.lng }), "replace");
   assert.equal(tapAction({ ...here, keyId: "a" }, { ...here, keyId: "b" }), "replace");
 });
+
+test("0.0.97: a tap replaces the route; press-and-hold appends; 5 stops max", async () => {
+  const { tapAction, holdAction, HOLD_CAP } = await import("./routePlan.ts");
+  const a = { lat: 30.27, lng: -97.74 };
+  const b = { lat: 30.272, lng: -97.74 };
+  const c = { lat: 30.274, lng: -97.74 };
+  assert.equal(HOLD_CAP, 5);
+  assert.equal(tapAction(a, b), "replace", "tap never queues");
+  assert.equal(holdAction([], null, a), "start");
+  assert.equal(holdAction([], a, b), "append");
+  assert.equal(holdAction([b], a, c), "append");
+  assert.equal(holdAction([b], a, { lat: b.lat + 0.00003, lng: b.lng }), "same", "holding on the last stop twice adds nothing");
+  const four = [b, c, { lat: 30.276, lng: -97.74 }, { lat: 30.278, lng: -97.74 }];
+  assert.equal(holdAction(four.slice(0, 3), a, { lat: 30.29, lng: -97.74 }), "append", "4th queued = 5 total");
+  assert.equal(holdAction(four, a, { lat: 30.29, lng: -97.74 }), "full");
+});

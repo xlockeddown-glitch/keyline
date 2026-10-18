@@ -1128,26 +1128,18 @@ test("0.0.93 cache and daily goals: once a day, 2-3 white/blue/green matches; go
   assert.equal(all.wallet.keys.green, green0 + 1);
 });
 
-test("0.0.95 cache always pays: full colours step up to the next tier with room; all full pays coin", async () => {
+test("0.0.97 cache into full pockets: matches become merge credits on the server, never coin below violet", async () => {
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
   await syncPlayer(sql, "cfull", snap({ cities }), "cfullphone1");
-  const cap = (t: string) => matchCap(t as never);
-  await sql.query(`update player_wallets set white = $2, blue = $3, green = $4 where user_id = $1`, ["cfull", cap("white"), cap("blue"), cap("green")]);
+  await sql.query(`update player_wallets set white = 30, blue = 30, green = 30 where user_id = $1`, ["cfull"]);
   const r = await applyClientOp(sql, "cfull", { kind: "cache", city: "austin" });
   assert.ok(r.ok);
-  assert.ok(r.cache!.got.length >= 2, "still paid matches");
-  assert.ok(r.cache!.got.every((t) => t === "amber" || t === "red" || t === "violet"), `stepped up: ${r.cache!.got}`);
   assert.equal(r.cache!.coin, 0);
-
-  await syncPlayer(sql, "call", snap({ cities }), "callphone1");
-  await sql.query(`update player_wallets set white = $2, blue = $3, green = $4, amber = $5, red = $6, violet = $7 where user_id = $1`, [
-    "call", cap("white"), cap("blue"), cap("green"), cap("amber"), cap("red"), cap("violet"),
-  ]);
-  const all = await applyClientOp(sql, "call", { kind: "cache", city: "austin" });
-  assert.ok(all.ok);
-  assert.deepEqual(all.cache!.got, []);
-  assert.ok(all.cache!.coin > 0, "every pocket full: overflow coin");
+  const w = (await canonicalWallet(sql, "cfull")).wallet;
+  assert.deepEqual([w.keys.white, w.keys.blue, w.keys.green], [30, 30, 30]);
+  const credits = Object.values(w.meta.credit).reduce((a, b) => a + (b ?? 0), 0) + 3 * (w.keys.amber ?? 0);
+  assert.ok(credits >= 1, "the cache still counts toward the next colours");
 });
 
 test("0.0.95 Amanda's make-up gift: 2 red once, idempotent, only her account, overflow coin when full", async () => {
@@ -1166,19 +1158,14 @@ test("0.0.95 Amanda's make-up gift: 2 red once, idempotent, only her account, ov
   const other = await syncPlayer(sql, "someone-else", snap({}), "otherphone1");
   assert.equal(other.giftNotes, undefined);
   assert.equal(other.wallet.keys.red ?? 0, 0);
-  // 0.0.96: red full steps up to violet (match ↑); red and violet full pays coin.
+  // 0.0.97: a full red pocket turns the gift into red credits (2/3 toward violet).
   const list = [{ ...g, key: "gift:test-full", userId: "fullred" }];
   await syncPlayer(sql, "fullred", snap({}), "fullphone1");
   await sql.query(`update player_wallets set red = $2 where user_id = $1`, ["fullred", matchCap("red")]);
   assert.deepEqual(await grantMatchGifts(sql, "fullred", list), [g.note]);
   const up = (await canonicalWallet(sql, "fullred")).wallet;
   assert.equal(up.keys.red, matchCap("red"));
-  assert.equal(up.keys.violet, 2, "match ↑ to violet");
-  await syncPlayer(sql, "fullall", snap({}), "fullall1");
-  await sql.query(`update player_wallets set red = $2, violet = $2 where user_id = $1`, ["fullall", matchCap("red")]);
-  const before = (await canonicalWallet(sql, "fullall")).wallet.coins;
-  await grantMatchGifts(sql, "fullall", [{ ...g, key: "gift:test-full2", userId: "fullall" }]);
-  assert.ok((await canonicalWallet(sql, "fullall")).wallet.coins > before, "coin only when every tier above is full");
+  assert.deepEqual(up.meta.credit, { red: 2 });
 });
 
 test("0.0.95 purchases live on the account: a scout bought on one device shows on another after logout", async () => {
@@ -1236,8 +1223,8 @@ test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin,
   const fullBlue = { ...emptyWallet(), keys: { ...emptyWallet().keys, blue: matchCap("blue") + 5 } };
   const rumFull = gradeGrant(fullBlue, pay({ scout: "raccoon", rummage: true, clearTier: "white", poiTier: "white" }));
   const plainFull = gradeGrant(fullBlue, pay({ clearTier: "white", poiTier: "white" }));
-  assert.equal(rumFull.award!.coins, plainFull.award!.coins, "0.0.96: full blue steps up, no coin");
-  assert.equal((rumFull.award!.keys.green ?? 0) - (plainFull.award!.keys.green ?? 0), 1, "Rummager blue steps up to green");
+  assert.equal(rumFull.award!.coins, plainFull.award!.coins, "0.0.97: full blue is not coin");
+  assert.equal((rumFull.award!.keys.blue ?? 0) - (plainFull.award!.keys.blue ?? 0), 1, "Rummager blue lands (merged later)");
   const fox = gradeGrant(emptyWallet(), pay({ scout: "fox", loot: 1.1 }));
   assert.ok(fox.award!.coins > plain.award!.coins);
 
@@ -1283,4 +1270,33 @@ test("0.0.96 Plate refunds 1 in 3 failed lamps (server roll); Tabby keeps a stre
   await awardGrade(sql, "rac", "rmiss", { ...pay({ correct: false, scout: "raccoon" }), prevNonce: "" });
   const rf = await awardGrade(sql, "rac", "r5", { ...pay({ scout: "raccoon" }), prevNonce: "" });
   assert.ok(!rf.award?.boosts.includes("5 in a row"), "other coats lose the streak");
+});
+
+test("0.0.97 server pocket: overflow credits persist on the server, merge 3→1 up, and a client can't forge them", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "cred", snap({}), "credphone1");
+  await sql.query(`update player_wallets set white = 30 where user_id = $1`, ["cred"]);
+  const { id } = await canonicalWallet(sql, "cred");
+  const { mutateWallet } = await import("./walletSql.ts");
+  const add = (k: string, n: number) => mutateWallet(sql, "cred", k, (w) => ({ ok: true, wallet: { ...w, keys: { ...w.keys, white: w.keys.white + n } } }));
+  await add("t:1", 2);
+  let w = (await canonicalWallet(sql, "cred")).wallet;
+  assert.equal(w.keys.white, 30);
+  assert.deepEqual(w.meta.credit, { white: 2 }, "partial credits persist");
+  await add("t:2", 1);
+  w = (await canonicalWallet(sql, "cred")).wallet;
+  assert.deepEqual([w.keys.white, w.keys.blue], [30, 1]);
+  assert.deepEqual(w.meta.credit, {});
+  // A client save carrying credits changes nothing on the server.
+  await syncPlayer(sql, "cred", { ...snap({}), credit: { white: 2, blue: 2 } } as never, "credphone2");
+  assert.deepEqual((await canonicalWallet(sql, "cred")).wallet.meta.credit, {});
+  // Forged meta values are clamped on read.
+  await sql.query(`update player_wallets set meta = meta || '{"credit":{"white":50,"violet":3}}'::jsonb where user_id = $1`, [id]);
+  assert.deepEqual((await canonicalWallet(sql, "cred")).wallet.meta.credit, { white: 2 });
+  // Legacy pockets above 30 are kept.
+  await sql.query(`update player_wallets set amber = 150 where user_id = $1`, [id]);
+  await mutateWallet(sql, "cred", "t:3", (x) => ({ ok: true, wallet: { ...x, keys: { ...x.keys, amber: x.keys.amber + 1 } } }));
+  w = (await canonicalWallet(sql, "cred")).wallet;
+  assert.equal(w.keys.amber, 150);
+  assert.equal(w.meta.credit.amber, 1);
 });
