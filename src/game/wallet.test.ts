@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
-import { freshUnlocks } from "./cityPass.ts";
+import { freshUnlocks, giftPass } from "./cityPass.ts";
 import { rewardPoints } from "./rewards.ts";
 import { CITIES, SERIES } from "./data.ts";
 import { surveyProven } from "./survey.ts";
@@ -40,7 +40,7 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet, rowToState } from "./walletSql.ts";
-import { DEVICE_CAP, applyClientOp, awardGrade, spendDealt, syncPlayer } from "./walletApply.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, grantPassGift, spendDealt, syncPlayer } from "./walletApply.ts";
 import { tokenNonce } from "./walletClient.ts";
 
 function sqlOf(db: PGlite): Sql {
@@ -259,7 +259,7 @@ test("a second device unions cities and only raises a counter", async () => {
   assert.equal(second.wallet.coins, 100);
   assert.equal(second.wallet.keys.white, 4);
   assert.equal(second.wallet.keys.green, 2);
-  assert.equal(second.wallet.cities.passes, 0);
+  assert.equal(second.wallet.cities.passes, 1, "0.0.90: only the one-time free pass");
   assert.ok(second.wallet.cities.unlocked.includes("austin"));
   assert.ok(second.wallet.cities.unlocked.includes("nyc"));
   assert.deepEqual(second.wallet.cities.goalsPaid, []);
@@ -936,7 +936,7 @@ test("a 50M pocket reads back inside the caps, and atlas visits count", async ()
   );
   assert.equal(synced.wallet.coins, COIN_CAP);
   assert.equal(synced.wallet.keys.white, KEY_CAP);
-  assert.equal(synced.wallet.cities.passes, 0);
+  assert.equal(synced.wallet.cities.passes, 1, "0.0.90: only the one-time free pass");
   assert.equal(synced.wallet.meta.walkM, 0);
   assert.equal(synced.wallet.meta.fares, FARES_CAP);
   assert.deepEqual(synced.wallet.meta.visits, []);
@@ -1000,4 +1000,17 @@ test("0.0.90 perfect refund: violet never refunds; full pocket pays overflow coi
   assert.equal(v.award?.keys.violet ?? 0, 0);
   assert.deepEqual(perfectRefund("blue", 5, 5), { match: 0, coin: TIER_VALUE.blue });
   assert.deepEqual(perfectRefund("blue", 4, 5), { match: 1, coin: 0 });
+});
+
+test("0.0.90 pass gift: new player gets 1, a second grant is a no-op, existing player +1, clamp 25", async () => {
+  const sql = await db();
+  await grantPassGift(sql, "newbie");
+  await grantPassGift(sql, "newbie");
+  assert.equal((await canonicalWallet(sql, "newbie")).wallet.cities.passes, 1);
+  // Sync also grants it (once) and is idempotent.
+  await syncPlayer(sql, "newbie", snap(), "newbphon1");
+  assert.equal((await canonicalWallet(sql, "newbie")).wallet.cities.passes, 1);
+  assert.equal(giftPass(freshUnlocks()).passes, 1);
+  assert.equal(giftPass({ ...freshUnlocks(), passes: 4 }).passes, 5);
+  assert.equal(giftPass({ ...freshUnlocks(), passes: 25 }).passes, 25);
 });

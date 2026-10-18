@@ -33,6 +33,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
+import { PASS_GIFT_LINE, giftPass } from "./cityPass";
 import { perfectRefund } from "./perfectRefund.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
@@ -184,6 +185,8 @@ export type GameState = {
   cratePop: { day: number; line: string } | null;
   blitzOffer: boolean;
   lastBlitzOfferDay: string;
+  /** 0.0.90: the one free city pass was given to this save. */
+  passGift: boolean;
   sparkDay: string;
   sparkN: number;
   sparkLamps: string[];
@@ -550,6 +553,7 @@ function persistable(s: GameState) {
     lastPulseDay: s.lastPulseDay,
     lastBlitzDay: s.lastBlitzDay,
     lastBlitzOfferDay: s.lastBlitzOfferDay,
+    passGift: s.passGift,
     blitzTake: s.blitzTake,
     blitzMatches: s.blitzMatches,
     sparkDay: s.sparkDay,
@@ -889,6 +893,7 @@ function legacyDailyRun(): { day?: unknown; city?: unknown; timeMs?: unknown } |
 }
 
 const saved = typeof window !== "undefined" ? loadSave() : null;
+const passGiftDue = typeof window !== "undefined" && saved?.passGift !== true;
 const savedCity = saved?.cityId && saved.cityId in CITIES ? saved.cityId : "austin";
 
 export const useGame = create<GameState>((set, get) => ({
@@ -944,7 +949,11 @@ export const useGame = create<GameState>((set, get) => ({
   friendPaid: Array.isArray(saved?.friendPaid) ? saved.friendPaid.filter((k): k is string => typeof k === "string") : [],
   giftsSeen: Array.isArray(saved?.giftsSeen) ? saved.giftsSeen.filter((k): k is string => typeof k === "string") : [],
   // 0.0.56: no save = a new player (picks a start city); a save without unlocks is from before 0.0.56 and migrates.
-  cities: saved ? (saved.cities ? cleanUnlocks(saved.cities) : migrateUnlocks(saved)) : freshUnlocks(),
+  // 0.0.90: one free pass, once per save (a new save starts at 1). Signed-in pockets are replaced by the server's on sync.
+  cities: passGiftDue
+    ? giftPass(saved ? (saved.cities ? cleanUnlocks(saved.cities) : migrateUnlocks(saved)) : freshUnlocks())
+    : saved ? (saved.cities ? cleanUnlocks(saved.cities) : migrateUnlocks(saved)) : freshUnlocks(),
+  passGift: true,
   charmDay: typeof saved?.charmDay === "string" ? saved.charmDay : "",
   charmTopics: Array.isArray(saved?.charmTopics) ? saved.charmTopics : [],
   blanks: Array.isArray(saved?.blanks) ? saved.blanks : [],
@@ -974,7 +983,7 @@ export const useGame = create<GameState>((set, get) => ({
   shopOpen: false,
   errandOpen: null,
   errandId: null,
-  toast: null,
+  toast: passGiftDue ? PASS_GIFT_LINE : null,
   fireworks: null,
   hud: {
     nearestId: null,

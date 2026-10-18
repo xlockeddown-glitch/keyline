@@ -1,9 +1,11 @@
+import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
 import { groupIds } from "./playerLinks.ts";
 import { mutateWallet, canonicalWallet, priorGrades, type MutateResult } from "./walletSql.ts";
 import {
   acceptNonces,
   applyDelta,
+  PASS_CAP,
   bankOp,
   blitzOp,
   charmOp,
@@ -68,7 +70,15 @@ function deviceOf(opKey: string): string | null {
 }
 
 /** First sync on this device takes the max, then one revise so a reward landing mid-sync is not dropped. */
+/** 0.0.90: one free city pass per player, once (ledger key makes a second call a no-op). */
+export async function grantPassGift(sql: Sql, userId: string): Promise<MutateResult> {
+  return mutateWallet(sql, userId, PASS_GIFT_KEY, (w) =>
+    applyDelta(w, { cities: giftPass(w.cities, PASS_CAP) }),
+  );
+}
+
 export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
+  await grantPassGift(sql, userId);
   const { id, wallet } = await canonicalWallet(sql, userId);
   if (!DEVICE_RE.test(deviceId)) return { ...applied({ ok: false, replay: false, reason: "device", wallet }), deviceClosed: true, playerId: id };
   const rows = await sql<{ op_key: string }>`

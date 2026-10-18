@@ -212,3 +212,10 @@ export function migrateUnlocks(save: OldSave): CityUnlocks {
   const runsPaid = (Object.keys(runs) as CityId[]).filter((id) => (runs[id] ?? 0) >= RUNS_PER_PASS);
   return { start: seen[0]!, unlocked: seen, freePick: seen.length < 2, passes: 1, lampPts: 0, goalsPaid, runs, runsPaid };
 }
+
+/** 0.0.90: everyone gets one free city pass, once (new players start at 1). Clamped like the server (25). */
+export const PASS_GIFT_KEY = "gift:pass-0090";
+export const PASS_GIFT_LINE = "A free city pass for you.";
+export function giftPass(u: CityUnlocks, cap = 25): CityUnlocks {
+  return { ...u, passes: Math.min(cap, u.passes + 1) };
+}
