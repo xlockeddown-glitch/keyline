@@ -68,6 +68,16 @@ function stock(id: IngredientId, n: number, face: string): WheelPrize {
   return { kind: "ingredient", id, n, face, label: n > 1 ? `${n} ${name}` : name };
 }
 
+/**
+ * 0.0.90: the tier one above the wheel's, for the rare match slice. Never violet unless the wheel is violet
+ * (violet matches only come off a violet wheel, as before).
+ */
+export function wheelUpTier(tier: Tier): Tier {
+  if (tier === "violet") return "violet";
+  const up = TIERS[RANK[tier] + 1]!;
+  return up === "violet" ? tier : up;
+}
+
 export function wheelSlices(tier: Tier, cityId: CityId): { prize: WheelPrize; w: number }[] {
   const r = RANK[tier];
   const step = r + 1;
@@ -76,14 +86,23 @@ export function wheelSlices(tier: Tier, cityId: CityId): { prize: WheelPrize; w:
   const lesser = TIERS[Math.max(0, r - 1)]!;
   return [
     { prize: coins(20 * step, "Coin"), w: Math.max(8, 28 - r * 3) },
-    { prize: coins(45 * step, "Pile"), w: 18 },
-    { prize: coins(80 * step, "Heap"), w: 8 + r },
-    { prize: coins(140 * step, "Jackpot"), w: 3 + r * 2 },
     { prize: keyPrize(tier, 1), w: 6 + r * 3 },
-    { prize: keyPrize(r >= 3 ? tier : lesser, r >= 4 ? 1 : 1), w: 7 },
-    { prize: stock(staple, r >= 3 ? 2 : 1, "Stock"), w: 16 },
+    { prize: coins(45 * step, "Pile"), w: 16 },
+    // 0.0.90: a pair of matches (the wheel's tier from amber up, one below it under that; white stays white).
+    { prize: { ...keyPrize(r >= 3 ? tier : lesser, 2), face: "Pair" }, w: 7 },
+    { prize: coins(80 * step, "Heap"), w: 8 + r },
+    { prize: stock(staple, r >= 3 ? 2 : 1, "Stock"), w: 14 },
+    // 0.0.90: the rare one: a match one tier up (white wheel → blue).
+    { prize: { ...keyPrize(wheelUpTier(tier), 1), face: "Rare" }, w: 3 + r },
+    { prize: coins(140 * step, "Jackpot"), w: 3 + r * 2 },
     { prize: cut && r >= 2 ? stock(cut, 1, "Cut") : coins(55 * step, "Cut"), w: 5 + r * 2 },
   ];
+}
+
+/** 0.0.90: slice colour. A match slice wears its tier; coin is brass, an ingredient is ink. */
+export function wheelSliceTone(p: WheelPrize): Tier | "brass" | "ink" {
+  if (p.kind === "key") return p.tier;
+  return p.kind === "coins" ? "brass" : "ink";
 }
 
 export function buildWheel(tier: Tier, cityId: CityId, roll: number): WheelOffer {

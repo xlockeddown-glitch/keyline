@@ -39,7 +39,7 @@ test("rarer vaults pay more coin and lean toward matches", () => {
   assert.ok(violetKey > whiteKey);
   const spun = buildWheel("amber", "austin", 0);
   assert.equal(spun.win, 0);
-  assert.equal(spun.slices.length, 8);
+  assert.equal(spun.slices.length, 9);
 });
 
 test("a full match pocket pays coin instead of a wasted key", () => {
