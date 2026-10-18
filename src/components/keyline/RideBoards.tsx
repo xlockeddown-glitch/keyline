@@ -7,7 +7,7 @@ import { usePlayerId } from "./PlayerLink";
 /** How often the side boards refresh while the ride runs. */
 const REFRESH_MS = 30_000;
 
-function Board(props: { title: string; testid: string; rows: RideBoardRow[]; me: string | null; mine?: { value: number; rank: number | null }; fmt: (n: number) => string }) {
+export function Board(props: { title: string; testid: string; rows: RideBoardRow[]; me: string | null; mine?: { value: number; rank: number | null }; fmt: (n: number) => string }) {
   const own = ownLine(props.rows, props.me, props.mine);
   return (
     <section className="ride-board" data-testid={props.testid}>
@@ -65,6 +65,33 @@ export function RideBoardsPanel() {
     <aside className="ride-boards" aria-label="Leaderboards" data-testid="ride-boards">
       <Board title="Lanterns lit right" testid="ride-board-lanterns" rows={boards.lanterns} me={me} mine={mine?.lanterns} fmt={(n) => n.toLocaleString()} />
       <Board title="Distance walked" testid="ride-board-distance" rows={boards.distance} me={me} mine={mine?.distance} fmt={(n) => formatDistance(n)} />
+      <Board title="Longest streak" testid="ride-board-streak" rows={boards.streak ?? []} me={me} mine={mine?.streak} fmt={(n) => `${n} in a row`} />
     </aside>
+  );
+}
+
+/** 0.0.99: Journal · Leaderboard: the Longest streak top 5 (server-computed from answer records). */
+export function StreakBoardSection() {
+  const user = useCurrentUser();
+  const playerId = usePlayerId();
+  const [rows, setRows] = useState<RideBoardRow[]>([]);
+  const [mine, setMine] = useState<{ value: number; rank: number | null } | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    void fetchRideBoards()
+      .then((b) => live && setRows(b.streak ?? []))
+      .catch(() => {});
+    if (user)
+      void fetchMyRideRanks()
+        .then((m) => live && setMine(m.streak))
+        .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [user]);
+  return (
+    <div className="mt-5 border-t border-border pt-4 journal-streak">
+      <Board title="Longest streak" testid="journal-board-streak" rows={rows} me={playerId ?? user?.id ?? null} mine={mine} fmt={(n) => `${n} in a row`} />
+    </div>
   );
 }

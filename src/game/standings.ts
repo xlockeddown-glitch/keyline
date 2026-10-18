@@ -203,8 +203,8 @@ export const STANDING_KINDS: { id: StandingKind; label: string; blurb: string }[
 export const RIDE_BOARD_TOP = 5;
 
 export type RideBoardRow = { userId: string; name: string; rank: number; value: number };
-export type RideBoards = { lanterns: RideBoardRow[]; distance: RideBoardRow[] };
-export type MyRideRanks = { lanterns: { value: number; rank: number | null }; distance: { value: number; rank: number | null } };
+export type RideBoards = { lanterns: RideBoardRow[]; distance: RideBoardRow[]; streak?: RideBoardRow[] };
+export type MyRideRanks = { lanterns: { value: number; rank: number | null }; distance: { value: number; rank: number | null }; streak?: { value: number; rank: number | null } };
 
 export const EMPTY_RIDE_BOARDS: RideBoards = { lanterns: [], distance: [] };
 

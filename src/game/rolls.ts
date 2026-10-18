@@ -358,7 +358,9 @@ export const fetchRideBoards = createServerFn({ method: "GET" }).handler(async (
       rows.map((r) => ({ userId: r.user_id, name: r.display_name ?? "", correct: Number(r.correct) || 0, updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : 0 })),
     );
     const distance = (await loadDistanceBoard(sql, null, RIDE_BOARD_TOP)).map((r) => ({ userId: r.userId, name: r.name, rank: r.rank, value: r.meters ?? 0 }));
-    return { lanterns, distance };
+    const { streakBoard } = await import("./streakBoard");
+    const streak = (await streakBoard(sql)).top;
+    return { lanterns, distance, streak };
   } catch {
     return EMPTY_RIDE_BOARDS;
   }
@@ -388,7 +390,9 @@ export const fetchMyRideRanks = createServerFn({ method: "GET" })
       `;
       const walk = await loadMyDistance(sql, me, null);
       const c = Number(rows[0]?.correct) || 0;
-      return { lanterns: { value: c, rank: c > 0 ? Number(rows[0]?.rank) || null : null }, distance: { value: walk.meters, rank: walk.rank } };
+      const { streakBoard } = await import("./streakBoard");
+      const streak = (await streakBoard(sql, me)).mine;
+      return { lanterns: { value: c, rank: c > 0 ? Number(rows[0]?.rank) || null : null }, distance: { value: walk.meters, rank: walk.rank }, streak };
     } catch {
       return none;
     }

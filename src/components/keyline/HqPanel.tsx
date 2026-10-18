@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LevelPanel } from "./Levels";
+import { StreakBoardSection } from "./RideBoards";
 import { X } from "lucide-react";
 import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
@@ -269,6 +270,7 @@ export function HqPanel() {
           {tab === "Leaderboard" ? (
             <>
               <DailyBoard city={cityId} />
+              <StreakBoardSection />
               <div className="mt-5 border-t border-border pt-4">
                 <RollsBoard />
                 <PlayerLinkRow />
