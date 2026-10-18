@@ -1,4 +1,5 @@
 import { hasShield, streakRun } from "./scoutPerks.ts";
+import { marketMult } from "./nightMarket.ts";
 import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
@@ -241,6 +242,8 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
       g: full.correct ? letter : "miss",
       pv: prevNonce,
       ...(full.correct && full.poiId ? { pi: full.poiId } : {}),
+      // 0.0.98: night-market lamp, for the Night Owl title.
+      ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
     });
   const r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
     const owned = provenBoost(pay.lucky, pay.cloth, { lucky: w.meta.lucky, cloths: new Set(w.meta.cloths) });
@@ -272,13 +275,16 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     }
     if (!base.migrated || !full.correct) return { ok: true, wallet: base, award: grant.award, detail };
     if (streakTier && grant.ok) {
-      const p = payMatch(grant.wallet.keys, streakTier);
-      const extra = applyDelta(grant.wallet, { coins: p.coin, keys: p.tier ? { [p.tier]: 1 } : {} });
+      // 0.0.98: a level boost (15 min, spent from a token) doubles the streak pay.
+      const doubled = grant.wallet.meta.boostUntil > Date.now();
+      const p = payMatchesOf(grant.wallet.keys, streakTier, doubled ? 2 : 1);
+      const extra = applyDelta(grant.wallet, { coins: p.coin, keys: p.add });
       if (extra.ok) {
         const award = grant.award ?? { coins: 0, keys: {}, boosts: [] };
         const keys = { ...award.keys };
-        if (p.tier) keys[p.tier] = (keys[p.tier] ?? 0) + 1;
-        const streakAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, `${run + 1} in a row`] };
+        for (const [t, n] of Object.entries(p.add) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
+        const label = `${run + 1} in a row${doubled ? " ×2" : ""}`;
+        const streakAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, label] };
         return { ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) };
       }
     }

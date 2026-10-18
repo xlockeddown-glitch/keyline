@@ -368,7 +368,7 @@ export type GameState = {
   dropRideRound: () => void;
 };
 
-export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" };
+export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" | "level" };
 /** 0.0.95: show the match-reward pop (also sets a plain toast for screen readers / old paths). */
 export function popMatch(p: Omit<MatchPop, "id">) {
   useGame.setState({ matchPop: { ...p, id: Date.now() } });

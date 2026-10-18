@@ -1,5 +1,6 @@
 import { BookOpen, CircleHelp } from "lucide-react";
 import { creditHint } from "@/game/goals";
+import { LevelHudBadge } from "./Levels";
 import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
@@ -143,6 +144,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
               </div>
             ) : null}
             <div className="min-w-0">
+          <LevelHudBadge />
           <p className="kicker">
             {city.name}
             {fares === 0 ? ` · ticket ${cityVaults}/${VAULTS_PER_FARE}` : ""}

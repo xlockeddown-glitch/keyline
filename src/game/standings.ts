@@ -25,6 +25,10 @@ export type StandingRow = {
   rate: number | null;
   /** Set on the distance board. Metres the server accepted. */
   meters?: number;
+  /** 0.0.98: level, displayed title and name colour id. */
+  level?: number;
+  title?: string | null;
+  color?: string | null;
 };
 
 export type StandingBoard = {
