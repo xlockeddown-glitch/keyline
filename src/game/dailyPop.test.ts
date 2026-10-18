@@ -77,7 +77,7 @@ test("a newly earned train ticket does not auto-route to the station (only a del
 
 test("route: a ✕ beside the Route pill from one stop up cancels the whole route; Esc too when nothing is open", () => {
   const h = src("../components/keyline/Hud.tsx");
-  assert.match(h, /hud\.routeStops >= 1 \?/);
+  assert.match(h, /hud\.routeStops >= 1 \|\| hud\.waypoint \?/, "0.0.95: the Stop chip shows during any walk");
   assert.match(h, /data-testid="route-cancel"[\s\S]*?onClick=\{\(\) => useGame\.getState\(\)\.cancelRoute\(\)\}/);
   const s = src("./store.ts");
   assert.match(s, /cancelRoute: \(\) => set\(\{ routeCancel: get\(\)\.routeCancel \+ 1 \}\)/);
@@ -85,7 +85,7 @@ test("route: a ✕ beside the Route pill from one stop up cancels the whole rout
   assert.match(g, /if \(s\.routeCancel !== p\.routeCancel\) clearRoute\(\);/);
   assert.match(g, /if \(!panel\) clearRoute\(\);/);
   const css = src("../styles.css");
-  assert.match(css, /\.route-cancel\{[^}]*min-width:44px;min-height:44px/);
+  assert.match(css, /\.route-cancel\{[^}]*min-width:76px;min-height:40px/, "0.0.95: a big red Stop chip");
 });
 
 test("street matches doubled: 18 opening, cap 16 (10 at pocket 5+), 14s–39s spawns, 80 claims a city-day", () => {

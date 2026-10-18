@@ -36,6 +36,53 @@ export function PassProgressRow({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function Bar({ have, need, done }: { have: number; need: number; done?: boolean }) {
+  const pct = done ? 100 : Math.max(0, Math.min(100, (have / Math.max(1, need)) * 100));
+  return (
+    <span className="pass-bar" aria-hidden>
+      <i style={{ width: `${pct}%` }} className={done ? "is-done" : ""} />
+    </span>
+  );
+}
+
+/**
+ * 0.0.95: the plain "How to get a city pass" card at the station when a city is locked: how many passes you
+ * hold, what one does, and the three ways to earn one with live progress bars.
+ */
+export function PassHelpCard() {
+  const cities = useGame((s) => s.cities);
+  const cityId = useGame((s) => s.cityId);
+  const atlas = useGame((s) => s.atlas);
+  const p = passProgress(cities, cityId, atlas);
+  const name = CITIES[cityId].name;
+  return (
+    <div className="pass-help" data-testid="pass-help">
+      <p className="font-display text-lg leading-tight">How to get a city pass</p>
+      <p className="mt-1 text-sm text-pretty">
+        You have <b className="tabular-nums">{p.passes}</b> pass{p.passes === 1 ? "" : "es"}. <b>1 pass unlocks a new city.</b>
+        {p.passes ? " Tap “Use pass” next to the city you want." : " Earn one any of these ways:"}
+      </p>
+      <ul className="mt-2 grid gap-2 text-sm">
+        <li>
+          <span className="flex justify-between gap-2"><span>Light amber, red or violet lamps</span><span className="tabular-nums text-fg-muted">{p.lamps.have}/{PASS_POINTS} pts</span></span>
+          <span className="block text-xs text-fg-muted">Amber 1 point, red 4, violet 10. 10 points = 1 pass.</span>
+          <Bar have={p.lamps.have} need={p.lamps.need} />
+        </li>
+        <li>
+          <span className="flex justify-between gap-2"><span>Finish “All of {name}”</span><span className="tabular-nums text-fg-muted">{p.goals.paid ? "done" : `${p.goals.have}/${p.goals.need}`}</span></span>
+          <span className="block text-xs text-fg-muted">Visit every place in this city.</span>
+          <Bar have={p.goals.have} need={p.goals.need} done={p.goals.paid} />
+        </li>
+        <li>
+          <span className="flex justify-between gap-2"><span>3 Lantern Runs in {name}</span><span className="tabular-nums text-fg-muted">{p.runs.paid ? "done" : `${p.runs.have}/${p.runs.need}`}</span></span>
+          <span className="block text-xs text-fg-muted">The daily Lantern Run, finished three times in one city.</span>
+          <Bar have={p.runs.have} need={p.runs.need} done={p.runs.paid} />
+        </li>
+      </ul>
+    </div>
+  );
+}
+
 /** Lock badge + what a locked city needs. Empty for an open city. */
 export function LockNote({ id, short = false }: { id: CityId; short?: boolean }) {
   const cities = useGame((s) => s.cities);

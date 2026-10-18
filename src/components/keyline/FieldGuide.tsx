@@ -80,6 +80,13 @@ export function FieldGuide() {
               </p>
             ))}
           </div>
+          {/* 0.0.95: city passes in plain words. */}
+          <section className="mt-5" data-testid="help-pass">
+            <h3 className="font-display text-lg leading-tight">City passes</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              1 pass unlocks a new city (your second city is free). Earn a pass by lighting amber, red or violet lamps (amber 1 point, red 4, violet 10; 10 points = 1 pass), by finishing “All of” a city, or by doing 3 Lantern Runs in one city. Spend it at the train station: “Use pass”.
+            </p>
+          </section>
           {/* 0.0.95: what the lantern result's badges and emblems mean. */}
           <section className="mt-5" data-testid="help-badges">
             <h3 className="font-display text-lg leading-tight">Prize badges</h3>

@@ -4010,3 +4010,8 @@ h3 {
 .badge-ico b { font-size: 0.85rem; margin-left: 2px; }
 .emb-badge.is-boost[role="button"] { cursor: pointer; }
 .emb-boost-list { margin: 0.25rem auto 0.4rem; padding: 0.35rem 0.7rem; border-radius: 0.6rem; background: rgb(0 0 0 / 0.35); font-size: 0.8rem; text-align: left; list-style: none; }
+/* 0.0.95: station "How to get a city pass" card. */
+.pass-help { padding: 0.8rem 0.9rem; border-radius: 0.8rem; border: 1px solid var(--color-border); background: color-mix(in oklab, var(--color-accent, #c4a35a) 10%, transparent); }
+.pass-bar { display: block; height: 8px; margin-top: 4px; border-radius: 999px; background: rgb(255 255 255 / 0.1); overflow: hidden; }
+.pass-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #c4a35a, #ffcf4a); }
+.pass-bar i.is-done { background: #4fd27a; }

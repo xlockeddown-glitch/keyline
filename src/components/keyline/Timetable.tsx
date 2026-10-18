@@ -4,7 +4,7 @@ import { fareMs, formatEta, otherWards } from "@/game/ticket";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
 import { unlockCost } from "@/game/cityPass";
-import { LockNote, PassProgressRow } from "./CityPass";
+import { LockNote, PassHelpCard, PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 
 type Props = { onClose: () => void; onPunch: (id: CityId) => void };
@@ -43,7 +43,7 @@ export function Timetable({ onClose, onPunch }: Props) {
         </header>
         <ul className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
           <li className="border-b border-border pb-3">
-            <PassProgressRow compact />
+            {otherWards(cityId).some((c) => unlockCost(cities, c.id) !== "open") ? <PassHelpCard /> : <PassProgressRow compact />}
           </li>
           {[...otherWards(cityId)].sort((a, b) => Number(unlockCost(cities, a.id) !== "open") - Number(unlockCost(cities, b.id) !== "open")).map((c) => {
             const eta = formatEta(fareMs(cityId, c.id));
@@ -60,14 +60,14 @@ export function Timetable({ onClose, onPunch }: Props) {
                   {cost === "free" || cost === "pass" ? (
                     <button
                       type="button"
-                      className="btn btn-quiet shrink-0 px-3 text-xs"
+                      className={`btn ${cost === "pass" ? "btn-primary" : "btn-quiet"} shrink-0 px-3 text-xs`}
                       data-testid={`unlock-${c.id}`}
                       onClick={() => {
                         sfx.ui();
                         unlock(c.id);
                       }}
                     >
-                      {cost === "free" ? "Unlock · free" : "Unlock · 1 pass"}
+                      {cost === "free" ? "Unlock · free" : "Use pass"}
                     </button>
                   ) : null}
                 </li>
