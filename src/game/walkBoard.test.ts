@@ -45,7 +45,7 @@ test("credit: walk-pace cap, idle window, opening post", () => {
   assert.equal(creditOpen(1_000_000, TOP), Math.floor(8 * TOP * WALK_SLACK));
   assert.equal(creditOpen(12, TOP), 12);
   const coat = dailyTopSpeed();
-  assert.equal(coat, 92 * 1.15, "every coat is capped at the one walk pace (0.0.90: +15%)");
+  assert.equal(coat, 92 * 1.15 * 1.2, "0.0.96: capped at the fastest coat (Penguin ×1.2) so no coat is refused");
   assert.equal(creditWalk(1e12, 60_000, coat), Math.floor(45 * coat * WALK_SLACK));
 });
 

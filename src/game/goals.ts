@@ -29,6 +29,8 @@ export function payMatch(keys: Record<Tier, number>, tier: Tier): { keys: Record
 /* ---------------------------------------------------------------- match cache */
 
 export const CACHE_GRAB_M = 30;
+/** 0.0.96: how close you must be to see the cache on the map (the Owl sees it from anywhere). */
+export const CACHE_SEE_M = 450;
 const CACHE_TIERS: Tier[] = ["white", "blue", "green"];
 
 /** Same raw spot for everyone in a city on a day (the client snaps it onto the reachable walk, off main roads). */

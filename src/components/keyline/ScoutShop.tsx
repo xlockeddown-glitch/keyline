@@ -31,7 +31,11 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
                 <div>
                   <p className="font-display text-lg leading-tight">{s.name}</p>
                   <p className="text-sm text-pretty text-fg-muted">{s.blurb}</p>
-                  <p className="mt-1 kicker">{s.perk.label}</p>
+                  {/* 0.0.96: the ability's short name, then what it does. */}
+                  <p className="mt-1 text-sm" data-testid={`ability-${s.id}`}>
+                    <span className="ability-name">{s.perk.label.split(" · ")[0]}</span>
+                    <span className="text-fg-muted"> {s.perk.label.split(" · ").slice(1).join(" · ")}</span>
+                  </p>
                   {s.id === SUPER_LEGENDARY_ID ? (
                     <p className="mt-1 kicker">{SUPER_LEGENDARY_LABEL}</p>
                   ) : s.coins >= 50000 ? (

@@ -85,7 +85,7 @@ export function VaultModal() {
                 : -1;
       if (idx < 0) return;
       const choice = quiz.choices[idx];
-      if (!choice) return;
+      if (!choice || choice === quiz.struck) return;
       e.preventDefault();
       sfx.ui();
       useGame.getState().answer(choice, performance.now());
@@ -237,8 +237,9 @@ export function VaultModal() {
                   <button
                     key={b.key}
                     type="button"
-                    className={b.className}
-                    disabled={openVault.pending === "grade"}
+                    className={`${b.className}${quiz.struck === b.text ? " is-struck" : ""}`}
+                    disabled={openVault.pending === "grade" || quiz.struck === b.text}
+                    data-struck={quiz.struck === b.text ? "1" : undefined}
                     onClick={() => {
                       sfx.ui();
                       answer(b.text, performance.now());

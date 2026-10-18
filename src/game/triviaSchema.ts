@@ -41,6 +41,8 @@ export const DealIn = z.object({
       lat: z.number().finite().min(-90).max(90),
       lng: z.number().finite().min(-180).max(180),
       prevToken: z.string().min(10).max(2000).optional(),
+      /** 0.0.96: the worn coat; its abilities are rolled by the server at grade time. */
+      scout: z.string().max(20).optional(),
     })
     .optional(),
 });
@@ -56,7 +58,7 @@ export const GradeIn = z.object({
 export type GradeInput = z.infer<typeof GradeIn>;
 
 /** What the browser gets for a dealt card — the prompt and shuffled choices, never the answer. */
-export type PublicCard = { id: string; q: string; choices: string[]; diff: TriviaDiff; rarity: Tier };
+export type PublicCard = { id: string; q: string; choices: string[]; diff: TriviaDiff; rarity: Tier; /** 0.0.96 Fox: a wrong option the server crossed out. */ struck?: string };
 /** Signed-in wallet after a migrated deal spend or grade. Absent for guests and before the first sync. */
 export type ServerWallet = { coins: number; keys: Record<Tier, number>; cities: CityUnlocks };
 export type ServerAward = { coins: number; keys: Partial<Record<Tier, number>>; boosts: string[] };

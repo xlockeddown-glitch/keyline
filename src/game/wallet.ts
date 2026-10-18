@@ -7,6 +7,9 @@ import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
 import { SURVEY_GOALS, isPlace } from "./survey.ts";
 import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
+import { owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
+import { payMatch } from "./goals.ts";
+import type { ScoutId } from "./types";
 import { clothCoin, type ClothId } from "./quests.ts";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards.ts";
 /** Same table as triviaMeta DIFF_MULT. Inlined so this module doesn't pull the street graph into node tests. */
@@ -740,6 +743,10 @@ export type GradePay = {
   dealtAt: number;
   luckyHit: boolean;
   perfectBlue: boolean;
+  /** 0.0.96: worn coat and the server's ability rolls (Raccoon blue drop, Plate refund). */
+  scout?: ScoutId | null;
+  rummage?: boolean;
+  shellBack?: boolean;
 };
 
 function gradeLetter(ms: number): "perfect" | "great" | "good" {
@@ -797,10 +804,11 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     const have = w.keys[tier] ?? 0;
     const cap = matchCap(tier);
     const mult = marketMult(p.city, p.dealtAt, spot);
-    if (have >= cap) return withBoost(w, 12 * mult, {}, boost);
+    const owl = owlMatchCoin(p.scout ?? null, mult, tier);
+    if (have >= cap) return withBoost(w, 12 * mult + owlExtraCoin(p.scout ?? null, mult, 12), {}, boost);
     const add = marketMatches(have, cap, mult);
     const coin = mult > 1 && have < cap ? marketOverflowCoin(tier, mult, add) : 0;
-    return withBoost(w, coin, { [tier]: add }, boost);
+    return withBoost(w, coin + owl, { [tier]: add }, boost);
   }
 
   if (p.series) {
@@ -819,6 +827,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     else if (p.lucky && p.luckyHit) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
     const sMult = marketMult(p.city, p.dealtAt, { kind: "series", lat: p.lat, lng: p.lng });
     const pay = marketPay(seriesCoin, baseKeys, sMult);
+    pay.coin += owlExtraCoin(p.scout ?? null, sMult, seriesCoin);
     // 0.0.90: reaching the last card means every card was right: the spent match comes back (not violet).
     const back = perfectRefund(def.cost, (w.keys[def.cost] ?? 0) + (pay.keys[def.cost] ?? 0), matchCap(def.cost));
     const sKeys = { ...pay.keys };
@@ -838,12 +847,22 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   if (gradeLetter(p.elapsedMs) === "perfect" && p.perfectBlue) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
   const lampMult = marketMult(p.city, p.dealtAt, spot);
   const pay = marketPay(lampCoin, baseKeys, lampMult);
+  pay.coin += owlExtraCoin(p.scout ?? null, lampMult, lampCoin);
   const lit = lampLit(w.cities, p.poiTier);
   // 0.0.90: a single-question lamp answered right is a perfect lamp: match back, same tier (not violet).
   const back = perfectRefund(p.poiTier, (w.keys[p.poiTier] ?? 0) + (pay.keys[p.poiTier] ?? 0), matchCap(p.poiTier));
   const lKeys = { ...pay.keys };
   if (back.match) lKeys[p.poiTier] = (lKeys[p.poiTier] ?? 0) + back.match;
-  return withBoost(w, pay.coin + tip + back.coin, lKeys, boost, lit.u);
+  // 0.0.96 Raccoon (Rummager): a server-rolled blue match on top (overflow coin when the blue pocket is full).
+  let rummageCoin = 0;
+  if (p.rummage) {
+    const have = { ...w.keys };
+    for (const [t, n] of Object.entries(lKeys) as [Tier, number][]) have[t] = (have[t] ?? 0) + (n ?? 0);
+    const r = payMatch(have, "blue");
+    if (r.match) lKeys.blue = (lKeys.blue ?? 0) + 1;
+    rummageCoin = r.coin;
+  }
+  return withBoost(w, pay.coin + tip + back.coin + rummageCoin, lKeys, boost, lit.u);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */
@@ -859,6 +878,8 @@ export function provenBoost(
 }
 
 export function clampLoot(n: number) {
+  // 0.0.96: Fox and Penguin pay +10%; 1.01 stays for a client still on 0.0.95.
+  if (Math.abs(n - 1.1) < 0.001) return 1.1;
   return Math.abs(n - 1.01) < 0.001 ? 1.01 : 1;
 }
 

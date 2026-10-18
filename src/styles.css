@@ -3596,7 +3596,7 @@ h3 {
 .scout-marker[data-scout="turtle"],
 .scout-marker[data-scout="turtle"].is-idle,
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/turtle-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3604,7 +3604,7 @@ h3 {
 .scout-marker[data-scout="cat"],
 .scout-marker[data-scout="cat"].is-idle,
 .scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/cat-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3612,7 +3612,7 @@ h3 {
 .scout-marker[data-scout="fox"],
 .scout-marker[data-scout="fox"].is-idle,
 .scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/fox-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3620,7 +3620,7 @@ h3 {
 .scout-marker[data-scout="corgi"],
 .scout-marker[data-scout="corgi"].is-idle,
 .scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/corgi-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3628,7 +3628,7 @@ h3 {
 .scout-marker[data-scout="sloth"],
 .scout-marker[data-scout="sloth"].is-idle,
 .scout-marker[data-scout="sloth"].is-idle.is-side {
-  background-image: url("/sprites/scouts/sloth-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/sloth-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3636,7 +3636,7 @@ h3 {
 .scout-marker[data-scout="raccoon"],
 .scout-marker[data-scout="raccoon"].is-idle,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
-  background-image: url("/sprites/scouts/raccoon-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/raccoon-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3644,7 +3644,7 @@ h3 {
 .scout-marker[data-scout="owl"],
 .scout-marker[data-scout="owl"].is-idle,
 .scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/owl-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3652,7 +3652,7 @@ h3 {
 .scout-marker[data-scout="giraffe"],
 .scout-marker[data-scout="giraffe"].is-idle,
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/giraffe-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3660,7 +3660,7 @@ h3 {
 .scout-marker[data-scout="lynx"],
 .scout-marker[data-scout="lynx"].is-idle,
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-v2.png?v=k95a");
+  background-image: url("/sprites/scouts/lynx-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -4015,3 +4015,6 @@ h3 {
 .pass-bar { display: block; height: 8px; margin-top: 4px; border-radius: 999px; background: rgb(255 255 255 / 0.1); overflow: hidden; }
 .pass-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #c4a35a, #ffcf4a); }
 .pass-bar i.is-done { background: #4fd27a; }
+/* 0.0.96 Fox (Clever): the wrong option the server crossed out. */
+.plate-choice.is-struck { opacity: 0.45; text-decoration: line-through; text-decoration-thickness: 2px; cursor: not-allowed; }
+.ability-name { display: inline-block; padding: 0 0.45em; margin-right: 0.15em; border-radius: 999px; background: color-mix(in oklab, var(--color-accent, #e0a33a) 22%, transparent); font-weight: 700; letter-spacing: 0.01em; }

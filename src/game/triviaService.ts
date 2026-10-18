@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { rummageHit, scoutOf, shellBackHit, strikeOption } from "./scoutPerks.ts";
 import type { Sql } from "../lib/db.ts";
 import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
@@ -88,6 +89,8 @@ type TokenBody = {
     pt: Tier;
     pi: string;
     cat: string;
+    /** 0.0.96: worn coat at deal time. */
+    sc?: string;
   };
 };
 
@@ -258,6 +261,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   const plate = deps.pick(input.city, input.cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
   const pub = publicCardId(plate);
   const windowMs = clampWindow(input.windowMs);
+  const scout = scoutOf(input.pay?.scout);
   const named = !series ? deps.namedPoi(input.city, input.poiId) : null;
   const pay = input.pay;
   let pv = "";
@@ -295,13 +299,16 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
       pt: poi.tier,
       pi: poi.id,
       cat: input.cat,
+      ...(scout ? { sc: scout } : {}),
     },
   });
+  // 0.0.96 Fox: the server strikes one wrong option on red/violet lamps (never the answer).
+  const struck = series || input.spark ? null : strikeOption(scout, plate.rarity, plate.choices, plate.answer, (deps.rand ?? Math.random)());
   return {
     ok: true,
     token,
     windowMs,
-    card: { id: pub, q: plate.q, choices: shuffle(plate.choices, deps.rand), diff: plate.diff ?? 2, rarity: plate.rarity },
+    card: { id: pub, q: plate.q, choices: shuffle(plate.choices, deps.rand), diff: plate.diff ?? 2, rarity: plate.rarity, ...(struck ? { struck } : {}) },
   };
 }
 
@@ -455,6 +462,9 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         dealtAt: t.t,
         luckyHit: x?.lk === 1 && rand() < LUCKY_MATCH_CHANCE,
         perfectBlue: g?.grade === "perfect" && rand() < PERFECT_BLUE_CHANCE,
+        scout: scoutOf(x?.sc),
+        rummage: rummageHit(scoutOf(x?.sc), rand()),
+        shellBack: shellBackHit(scoutOf(x?.sc), rand()),
       });
       if (awarded.authoritative) {
         wallet = awarded.view;

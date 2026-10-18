@@ -3833,8 +3833,9 @@ export const WALK_PACE = 92 * 1.15;
 /** 0.0.90: the cab is +25% (grid 184 → 230, arterial 230 → 287.5); its base no longer rides on the walk pace. */
 export const CAB_PACE = 92 * 1.25;
 
-export function walkSpeed() {
-  return WALK_PACE;
+/** 0.0.96: a worn coat's pace perk (Corgi 1.15, Sloth 0.9, Penguin 1.2) scales the walk. */
+export function walkSpeed(scout?: import("./types").ScoutId) {
+  return WALK_PACE * (scout ? (SCOUTS[scout]?.perk.pace ?? 1) : 1);
 }
 
 export function cabSpeed(arterial: boolean) {
@@ -3845,7 +3846,7 @@ export const SUPER_LEGENDARY_LABEL = "Super Legendary";
 export const SUPER_LEGENDARY_ID: import("./types").ScoutId = "lynx";
 /** Locked: Super Legendary hire is exactly 10× the Fox — not 3×. */
 export const SUPER_LEGENDARY_MULT = 10;
-const FOX_COINS = 88000;
+const FOX_COINS = 90000;
 export function superLegendaryCost() {
   return FOX_COINS * SUPER_LEGENDARY_MULT;
 }
@@ -3875,82 +3876,81 @@ export const SCOUTS: Record<
     icon: "/sprites/scouts/raccoon.png",
     gait: 1,
     bed: "Lantern dust",
-    perk: { label: "The original coat. No extra." },
+    perk: { label: "Rummager · 1 in 15 lamps drops a blue match", rummage: 15 },
   },
   cat: {
     id: "cat",
     name: "The Tabby",
     blurb: "A quieter step. The lantern still swings.",
-    coins: 7200,
+    coins: 8000,
     walk: "/sprites/scouts/cat-v2.png",
     idle: "/sprites/scouts/cat-v2.png",
     icon: "/sprites/scouts/cat.png",
     gait: 1,
     bed: "Quiet step",
-    perk: { label: "+0.25 s on every lamp", vaultMs: 250 },
+    perk: { label: "Nine lives · first miss a day keeps your streak · +1 s", vaultMs: 1000, shield: true },
   },
   turtle: {
     id: "turtle",
     name: "The Plate",
     blurb: "Takes the long way. The shell remembers.",
-    coins: 18600,
+    coins: 24000,
     walk: "/sprites/scouts/turtle-v2.png",
     idle: "/sprites/scouts/turtle-v2.png",
     icon: "/sprites/scouts/turtle.png",
     gait: 1,
     bed: "Shell tide",
-    perk: { label: "+0.5 s on every lamp", vaultMs: 500 },
+    perk: { label: "Shell · 1 in 3 failed lamps refund the match", shellBack: 3 },
   },
   owl: {
     id: "owl",
     name: "The Owl",
     blurb: "Night eyes. The lantern still swings.",
-    coins: 14000,
+    coins: 18000,
     walk: "/sprites/scouts/owl-v2.png",
     idle: "/sprites/scouts/owl-v2.png",
     icon: "/sprites/scouts/owl.png",
     gait: 1,
     bed: "Night eyes",
-    perk: { label: "Lamps from a hair farther", reach: 1.05 },
+    perk: { label: "Night eyes · market pays ×2.5 · cache always on the map", market: 2.5, cacheAnywhere: true },
   },
   corgi: {
     id: "corgi",
     name: "The Corgi",
     blurb: "Short legs, long errand. The lantern still clears the curb.",
-    coins: 9600,
+    coins: 12000,
     walk: "/sprites/scouts/corgi-v2.png",
     idle: "/sprites/scouts/corgi-v2.png",
     icon: "/sprites/scouts/corgi.png",
     gait: 1,
     bed: "Curb bounce",
-    perk: { label: "Same walk as every coat" },
+    perk: { label: "Zoomies · walks 15% faster", pace: 1.15 },
   },
   sloth: {
     id: "sloth",
     name: "The Sloth",
     blurb: "Takes the longer long way. The coat still fits.",
-    coins: 24000,
+    coins: 20000,
     walk: "/sprites/scouts/sloth-v2.png",
     idle: "/sprites/scouts/sloth-v2.png",
     icon: "/sprites/scouts/sloth.png",
     gait: 1,
     bed: "The long way",
-    perk: { label: "+0.75 s on every lamp", vaultMs: 750 },
+    perk: { label: "Hang time · +4 s per lamp · walks 10% slower", vaultMs: 4000, pace: 0.9 },
   },
   giraffe: {
     id: "giraffe",
     name: "The Giraffe",
     blurb: "Sees over the rooftops. Names the next block before you reach it.",
-    coins: 42000,
+    coins: 45000,
     walk: "/sprites/scouts/giraffe-v2.png",
     idle: "/sprites/scouts/giraffe-v2.png",
     icon: "/sprites/scouts/giraffe.png",
     gait: 1,
     bed: "Over the rooftops",
-    // 0.0.51: between the Sloth (24,000) and the Fox (88,000). A lookout perk, not a coin or timer one: places
-    // get their atlas name from 20% farther off (140 m → 168 m, 200 m → 240 m with the Lantern charm). Opening
-    // reach, lamp time, pace and coin stay as the Raccoon's, so nothing the server checks moves.
-    perk: { label: "Names places from a little farther", sight: 1.2 },
+    // 0.0.96 Long neck: 2× reach for lamps and match pick-ups (the server never checked reach), and places still
+    // get their atlas name from 20% farther off (sight 1.2).
+    perk: { label: "Long neck · 2× reach for lamps and matches", reach: 2, sight: 1.2 },
   },
   fox: {
     id: "fox",
@@ -3962,7 +3962,7 @@ export const SCOUTS: Record<
     icon: "/sprites/scouts/fox.png",
     gait: 1,
     bed: "Coal dusk",
-    perk: { label: "+1% coins from lamps · +0.25 s", vaultMs: 250, loot: 1.01 },
+    perk: { label: "Clever · +10% lamp coin · a wrong option struck on red/violet", loot: 1.1, strike: true },
   },
   lynx: {
     id: "lynx",
@@ -3974,9 +3974,12 @@ export const SCOUTS: Record<
     icon: "/sprites/scouts/lynx.png",
     gait: 1,
     bed: "Through the block",
-    perk: { label: "Cuts through the block · +1% coins · +0.25 s", vaultMs: 250, loot: 1.01 },
+    perk: { label: "Belly slide · cuts through blocks · 20% faster · +10% coin", pace: 1.2, loot: 1.1 },
   },
 };
+
+/** 0.0.96: the fastest coat pace; the server's walk ceilings use it so no coat is refused. */
+export const MAX_PACE = 1.2;
 
 export function wornPerk(id: import("./types").ScoutId) {
   return SCOUTS[id]?.perk ?? { label: "" };

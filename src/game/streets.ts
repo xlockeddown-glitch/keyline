@@ -1320,9 +1320,10 @@ export const MATCH_GRAB_M = 22;
  * network (an old save that put it on a freeway, a curb across a wide road) also counts once the walker
  * stands at the closest walkable spot to it — walks end there, so they must be able to collect there.
  */
-export function canGrabMatch(g: StreetGraph | null, walker: Pt, match: Pt): boolean {
+export function canGrabMatch(g: StreetGraph | null, walker: Pt, match: Pt, reach = 1): boolean {
   const d = distM(walker.lat, walker.lng, match.lat, match.lng);
-  if (d <= MATCH_GRAB_M) return true;
+  // 0.0.96: the Giraffe (Long neck) picks matches up from twice as far.
+  if (d <= MATCH_GRAB_M * reach) return true;
   if (!g || !g.segs.length || d > 70) return false;
   const curb = nearest(g, match.lat, match.lng, 70);
   if (!curb) return false;

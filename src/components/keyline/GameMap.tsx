@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
-import { CACHE_GRAB_M, cacheSeed, questAlert } from "@/game/goals";
+import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
+import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { V2_CADENCE, V2_SCOUTS, v2Cell } from "@/game/coatLayer";
@@ -497,7 +498,7 @@ export function GameMap() {
     if (keyId) {
       const match = useGame.getState().mapKeys.find((k) => k.id === keyId);
       if (match) {
-        if (canGrabMatch(graphRef.current, pos.current, match)) useGame.getState().collectKey(match.id);
+        if (canGrabMatch(graphRef.current, pos.current, match, reachMult(useGame.getState().scout))) useGame.getState().collectKey(match.id);
         else flash("That match is off the street.");
         queue.current = queue.current.filter((s) => s.keyId !== keyId);
         legKey.current = null;
@@ -1319,7 +1320,7 @@ export function GameMap() {
       void setDestination(k.lat, k.lng);
       return;
     }
-    if (!canGrabMatch(graphRef.current, pos.current, k)) {
+    if (!canGrabMatch(graphRef.current, pos.current, k, reachMult(useGame.getState().scout))) {
       planWalk(k.lat, k.lng, false, k.id);
       return;
     }
@@ -1501,7 +1502,7 @@ export function GameMap() {
       throttle = Math.max(-1, Math.min(1, throttle));
       const driveG = driveRef.current;
       const arterial = seated && onArterial(driveG, pos.current.lat, pos.current.lng);
-      const max = seated ? cabSpeed(arterial) : walkSpeed();
+      const max = seated ? cabSpeed(arterial) : walkSpeed(useGame.getState().scout);
       const rail = seated ? driveG : graphRef.current;
       const foot = graphRef.current;
       const turn = seated ? TURN_CAB : TURN;
@@ -1599,6 +1600,12 @@ export function GameMap() {
             c.marker.setLatLng([q.lat, q.lng]);
           }
         }
+        // 0.0.96: the cache shows within CACHE_SEE_M; the Owl (Night eyes) sees it from anywhere.
+        if (c) {
+          const el = (c.marker as unknown as { getElement?: () => HTMLElement | undefined }).getElement?.();
+          const seen = cacheAnywhere(st.scout) || distM(pos.current.lat, pos.current.lng, c.lat, c.lng) <= CACHE_SEE_M;
+          if (el) el.style.display = seen ? "" : "none";
+        }
         if (c && distM(pos.current.lat, pos.current.lng, c.lat, c.lng) <= CACHE_GRAB_M) {
           cacheRef.current = null;
           c.marker.remove();
@@ -1669,7 +1676,7 @@ export function GameMap() {
       }
       for (const k of st.mapKeys) {
         if (seated) break;
-        if (canGrabMatch(foot, pos.current, k)) {
+        if (canGrabMatch(foot, pos.current, k, reachMult(st.scout))) {
           st.collectKey(k.id);
           noteCollected(k.id);
           const L = Lref.current;

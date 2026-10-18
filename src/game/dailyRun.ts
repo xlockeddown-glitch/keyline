@@ -4,7 +4,7 @@
  * Pure — the client, the server functions (dailyApi.ts) and the tests all use these rules,
  * so the route a player walks is the route the server checks.
  */
-import { CITIES, WALK_PACE } from "./data.ts";
+import { CITIES, MAX_PACE, WALK_PACE } from "./data.ts";
 import { distM } from "./geo.ts";
 import { TIER_VALUE } from "./rewards.ts";
 import { matchCap } from "./ticket.ts";
@@ -133,7 +133,8 @@ export function dailyRoute(cityId: CityId, day: string): DailyRoute {
 
 /** Every coat walks at the same pace. The server refuses anything faster. */
 export function dailyTopSpeed(): number {
-  return WALK_PACE;
+  // 0.0.96: the fastest coat (Penguin, ×1.2) sets the ceiling so no coat's honest walk is refused.
+  return WALK_PACE * MAX_PACE;
 }
 
 /** Straight-line lamp-to-lamp meters for leg `i` (lamp i-1 → lamp i), i = 1..4. */

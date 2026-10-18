@@ -1,3 +1,4 @@
+import { hasShield, streakRun } from "./scoutPerks.ts";
 import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
@@ -184,6 +185,12 @@ async function syncCore(sql: Sql, userId: string, local: LocalSnap, deviceId: st
  * Grade award. Before the first sync the ledger remembers the token but the coins stay
  * in the local save (the sync maxes them in). After that, the balance moves here.
  */
+function chicagoDay(at: unknown): string {
+  const d = at instanceof Date ? at : new Date(String(at));
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+}
+
 export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: Omit<GradePay, "prior"> & { prevNonce: string }): Promise<Applied> {
   const { id } = await canonicalWallet(sql, userId);
   const prevNonce = pay.prevNonce;
@@ -216,19 +223,23 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     dealtAt: pay.dealtAt,
     luckyHit: false,
     perfectBlue: pay.perfectBlue,
+    scout: pay.scout ?? null,
+    rummage: pay.rummage === true,
+    shellBack: pay.shellBack === true,
   };
   // 0.0.93: answer streak from the server's own grade rows (newest first): right answers since the last miss.
+  // 0.0.96 Tabby (Nine lives): the first miss of each day (Chicago) does not break the run.
+  const shield = hasShield(full.scout ?? null);
   const recent = full.correct
-    ? await sql<{ detail: string }>`
-        select detail from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
-        order by created_at desc limit 9
+    ? await sql<{ detail: string; created_at: unknown }>`
+        select detail, created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
+        order by created_at desc limit ${shield ? 40 : 9}
       `
     : [];
-  let run = 0;
-  for (const row of recent) {
-    if (String(row.detail).includes('"g":"miss"')) break;
-    run++;
-  }
+  const run = streakRun(
+    recent.map((row) => ({ miss: String(row.detail).includes('"g":"miss"'), day: chicagoDay(row.created_at) })),
+    shield,
+  );
   const streakTier = full.correct ? streakPrize(run + 1) : null;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   const detailOf = (award: AwardView) =>
@@ -256,6 +267,15 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     const grant = gradeGrant(base, full);
     if (!grant.ok) return grant;
     const detail = detailOf(grant.award ?? { coins: 0, keys: {}, boosts: [] });
+    // 0.0.96 Plate (Shell): a server-rolled 1 in 3 failed lamps hands the spent match back (overflow coin if full).
+    if (base.migrated && !full.correct && full.shellBack && full.clearTier) {
+      const p = payMatch(base.keys, full.clearTier);
+      const back = applyDelta(base, { coins: p.coin, keys: p.match ? { [full.clearTier]: 1 } : {} });
+      if (back.ok) {
+        const award = { coins: p.coin, keys: p.match ? { [full.clearTier]: 1 } : {}, boosts: ["Shell: match back"] };
+        return { ok: true, wallet: back.wallet, award, detail: detailOf(award) };
+      }
+    }
     if (!base.migrated || !full.correct) return { ok: true, wallet: base, award: grant.award, detail };
     if (streakTier && grant.ok) {
       const p = payMatch(grant.wallet.keys, streakTier);

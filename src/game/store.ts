@@ -169,6 +169,8 @@ export type GameState = {
   streak: number;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
   matchPop: MatchPop | null;
+  /** 0.0.96 Tabby (Nine lives): Chicago day the first miss was forgiven. */
+  shieldDay: string;
   bestStreak: number;
   vaultsOpened: number;
   correctByTier: Record<Tier, number>;
@@ -367,6 +369,17 @@ export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; co
 /** 0.0.95: show the match-reward pop (also sets a plain toast for screen readers / old paths). */
 export function popMatch(p: Omit<MatchPop, "id">) {
   useGame.setState({ matchPop: { ...p, id: Date.now() } });
+}
+
+/** 0.0.96: a wrong answer. The Tabby keeps its streak on the first miss of each (Chicago) day. */
+function missStreak(get: () => GameState): { streak: number; shieldDay: string } {
+  const st = get();
+  const day = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+  if (wornPerk(st.scout).shield && st.shieldDay !== day && st.streak > 0) {
+    window.setTimeout(() => useGame.setState({ toast: `Nine lives: your ${st.streak}-answer streak survives today's first miss.` }), 1600);
+    return { streak: st.streak, shieldDay: day };
+  }
+  return { streak: 0, shieldDay: st.shieldDay };
 }
 
 function bumpStreak(get: () => GameState): Pick<GameState, "streak" | "bestStreak" | "fireworks"> {
@@ -570,6 +583,7 @@ function persistable(s: GameState) {
     stack: s.stack,
     contract: s.contract,
     streak: s.streak,
+    shieldDay: s.shieldDay,
     bestStreak: s.bestStreak,
     vaultsOpened: s.vaultsOpened,
     correctByTier: s.correctByTier,
@@ -807,6 +821,7 @@ async function dealCard(
       lat: spot?.lat ?? 0,
       lng: spot?.lng ?? 0,
       prevToken,
+      scout: st.scout,
     },
   };
   try {
@@ -953,6 +968,7 @@ export const useGame = create<GameState>((set, get) => ({
   contract: saved?.contract ?? null,
   streak: saved?.streak ?? 0,
   matchPop: null,
+  shieldDay: saved?.shieldDay ?? "",
   bestStreak: saved?.bestStreak ?? 0,
   vaultsOpened: saved?.vaultsOpened ?? 0,
   correctByTier: { ...EMPTY_CORRECT, ...saved?.correctByTier },
@@ -1445,7 +1461,7 @@ export const useGame = create<GameState>((set, get) => ({
         const boost = rollBoosts(get, false, elapsed, ov.category);
         set({
           ...used,
-          streak: 0,
+          ...missStreak(get),
           charmDay: boost.charmDay,
           charmTopics: boost.charmTopics,
           asked,
@@ -1541,7 +1557,7 @@ export const useGame = create<GameState>((set, get) => ({
         sfx.wrong();
         const boost = rollBoosts(get, false, elapsed, ov.category);
         set({
-          streak: 0,
+          ...missStreak(get),
           charmDay: boost.charmDay,
           charmTopics: boost.charmTopics,
           asked,
@@ -1738,7 +1754,7 @@ export const useGame = create<GameState>((set, get) => ({
       const boost = rollBoosts(get, false, elapsed, ov.category);
       set({
         keys,
-        streak: 0,
+        ...missStreak(get),
         charmDay: boost.charmDay,
         charmTopics: boost.charmTopics,
         asked,
@@ -1920,7 +1936,7 @@ export const useGame = create<GameState>((set, get) => ({
         openVault: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
         toast: `Walked from ${series.name}. The match is spent.`,
-        streak: 0,
+        ...missStreak(get),
       });
       scheduleSave(get);
       window.setTimeout(() => {

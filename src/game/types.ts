@@ -131,6 +131,18 @@ export type ScoutPerk = {
   /** 0.0.51 Giraffe: multiplies the radius at which walking past a place names it in the atlas ("Visited ·").
    *  Client-side naming only — it never widens the open/fare/vault reach and nothing on the server reads it. */
   sight?: number;
+  /** 0.0.96 Raccoon: 1 in N lit lamps also drops a blue match (server-rolled). */
+  rummage?: number;
+  /** 0.0.96 Tabby: the first wrong answer each day does not break the answer streak. */
+  shield?: boolean;
+  /** 0.0.96 Owl: night-market multiplier on coin (2.5 instead of 2). */
+  market?: number;
+  /** 0.0.96 Owl: the match cache shows on the map from anywhere. */
+  cacheAnywhere?: boolean;
+  /** 0.0.96 Plate: 1 in N failed lamps refunds the spent match (server-rolled). */
+  shellBack?: number;
+  /** 0.0.96 Fox: one wrong option is crossed out on red/violet lamps (server picks it). */
+  strike?: boolean;
 };
 
 export type LootDrop = {

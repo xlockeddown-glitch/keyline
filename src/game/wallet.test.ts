@@ -1222,3 +1222,59 @@ test("0.0.95 Beth B.'s Corgi restore: owned once, duplicate purchases refunded, 
   assert.deepEqual(await grantScoutGifts(sql, "zed"), []);
   assert.ok(!(await ownedOf(sql, "zed")).scouts.includes("corgi"));
 });
+
+test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin, Fox/Penguin +10%", () => {
+  const plain = gradeGrant(emptyWallet(), pay());
+  const rum = gradeGrant(emptyWallet(), pay({ scout: "raccoon", rummage: true }));
+  assert.ok(plain.ok && rum.ok);
+  assert.equal((rum.award!.keys.blue ?? 0) - (plain.award!.keys.blue ?? 0), 1, "Rummager adds one blue");
+  const fullBlue = { ...emptyWallet(), keys: { ...emptyWallet().keys, blue: matchCap("blue") + 5 } };
+  const rumFull = gradeGrant(fullBlue, pay({ scout: "raccoon", rummage: true, clearTier: "white", poiTier: "white" }));
+  const plainFull = gradeGrant(fullBlue, pay({ clearTier: "white", poiTier: "white" }));
+  assert.equal(rumFull.award!.coins - plainFull.award!.coins, TIER_VALUE.blue, "full blue pocket pays overflow coin");
+  const fox = gradeGrant(emptyWallet(), pay({ scout: "fox", loot: 1.1 }));
+  assert.ok(fox.award!.coins > plain.award!.coins);
+
+  const now = Date.now();
+  const m = marketAt("austin", now);
+  assert.ok(m);
+  const pt = { lat: m!.street.lines[0]![0]!, lng: m!.street.lines[0]![1]! };
+  const onMkt = pay({ dealtAt: now, poiId: "", lat: pt.lat, lng: pt.lng });
+  const two = gradeGrant(emptyWallet(), onMkt);
+  const owl = gradeGrant(emptyWallet(), { ...onMkt, scout: "owl" });
+  const off = gradeGrant(emptyWallet(), { ...onMkt, scout: "owl", lat: 0, lng: 0 });
+  const offPlain = gradeGrant(emptyWallet(), { ...onMkt, lat: 0, lng: 0 });
+  assert.ok(owl.award!.coins > two.award!.coins, "Owl market pays more");
+  // lampCoin×2 → ×2.5: the extra is a quarter of the ×2 lamp coin (perfect refund/boost unchanged).
+  assert.equal(off.award!.coins, offPlain.award!.coins, "off the market the Owl pays the same");
+});
+
+test("0.0.96 Plate refunds 1 in 3 failed lamps (server roll); Tabby keeps a streak through the day's first miss", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "shl", snap({ coins: 100, keys: { blue: 2 } }), "shlphone1");
+  const spent = await spendDealt(sql, "shl", "f1", "blue");
+  assert.equal(spent.wallet.keys.blue, 1);
+  const miss = await awardGrade(sql, "shl", "f1", { ...pay({ correct: false, scout: "turtle", shellBack: true }), prevNonce: "" });
+  assert.equal(miss.wallet.keys.blue, 2, "match back");
+  const missAgain = await awardGrade(sql, "shl", "f1", { ...pay({ correct: false, scout: "turtle", shellBack: true }), prevNonce: "" });
+  assert.equal(missAgain.replay, true);
+  assert.equal(missAgain.wallet.keys.blue, 2);
+  await spendDealt(sql, "shl", "f2", "blue");
+  const noRoll = await awardGrade(sql, "shl", "f2", { ...pay({ correct: false, scout: "turtle", shellBack: false }), prevNonce: "" });
+  assert.equal(noRoll.wallet.keys.blue, 1);
+  await spendDealt(sql, "shl", "f3", "blue");
+  const otherCoat = await awardGrade(sql, "shl", "f3", { ...pay({ correct: false, scout: "raccoon", shellBack: false }), prevNonce: "" });
+  assert.equal(otherCoat.wallet.keys.blue, 0);
+
+  // Tabby: four right, one miss (today's first), then the fifth right pays the 5-in-a-row white.
+  await syncPlayer(sql, "tab", snap({ coins: 100, keys: { blue: 9 } }), "tabphone1");
+  for (let i = 0; i < 4; i++) await awardGrade(sql, "tab", `t${i}`, { ...pay({ scout: "cat" }), prevNonce: "" });
+  await awardGrade(sql, "tab", "tmiss", { ...pay({ correct: false, scout: "cat" }), prevNonce: "" });
+  const fifth = await awardGrade(sql, "tab", "t5", { ...pay({ scout: "cat" }), prevNonce: "" });
+  assert.ok(fifth.award?.boosts.includes("5 in a row"), "streak survived the first miss");
+  await syncPlayer(sql, "rac", snap({ coins: 100, keys: { blue: 9 } }), "racphone1");
+  for (let i = 0; i < 4; i++) await awardGrade(sql, "rac", `r${i}`, { ...pay({ scout: "raccoon" }), prevNonce: "" });
+  await awardGrade(sql, "rac", "rmiss", { ...pay({ correct: false, scout: "raccoon" }), prevNonce: "" });
+  const rf = await awardGrade(sql, "rac", "r5", { ...pay({ scout: "raccoon" }), prevNonce: "" });
+  assert.ok(!rf.award?.boosts.includes("5 in a row"), "other coats lose the streak");
+});
