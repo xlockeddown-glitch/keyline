@@ -3595,7 +3595,7 @@ h3 {
 .scout-marker[data-scout="turtle"],
 .scout-marker[data-scout="turtle"].is-idle,
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/turtle-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3603,7 +3603,7 @@ h3 {
 .scout-marker[data-scout="cat"],
 .scout-marker[data-scout="cat"].is-idle,
 .scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/cat-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3611,7 +3611,7 @@ h3 {
 .scout-marker[data-scout="fox"],
 .scout-marker[data-scout="fox"].is-idle,
 .scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/fox-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3619,7 +3619,7 @@ h3 {
 .scout-marker[data-scout="corgi"],
 .scout-marker[data-scout="corgi"].is-idle,
 .scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/corgi-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3627,7 +3627,7 @@ h3 {
 .scout-marker[data-scout="sloth"],
 .scout-marker[data-scout="sloth"].is-idle,
 .scout-marker[data-scout="sloth"].is-idle.is-side {
-  background-image: url("/sprites/scouts/sloth-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/sloth-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3635,7 +3635,7 @@ h3 {
 .scout-marker[data-scout="raccoon"],
 .scout-marker[data-scout="raccoon"].is-idle,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
-  background-image: url("/sprites/scouts/raccoon-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/raccoon-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3643,7 +3643,7 @@ h3 {
 .scout-marker[data-scout="owl"],
 .scout-marker[data-scout="owl"].is-idle,
 .scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/owl-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3651,7 +3651,7 @@ h3 {
 .scout-marker[data-scout="giraffe"],
 .scout-marker[data-scout="giraffe"].is-idle,
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/giraffe-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3659,7 +3659,7 @@ h3 {
 .scout-marker[data-scout="lynx"],
 .scout-marker[data-scout="lynx"].is-idle,
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-v2.png?v=k94a");
+  background-image: url("/sprites/scouts/lynx-v2.png?v=k95a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3726,22 +3726,26 @@ h3 {
 }
 .cache-pin {
   position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(160deg, #8fd0ff, #3a7bd5 55%, #2d5a2f);
-  box-shadow: 0 0 0 2px #fff4c2, 0 0 18px 8px rgb(143 208 255 / 0.6);
-  animation: cache-glow 1.6s ease-in-out infinite;
+  width: 46px;
+  height: 50px;
+  filter: drop-shadow(0 0 7px rgb(255 176 64 / 0.75));
+  animation: cache-glow 1.8s ease-in-out infinite;
 }
-.cache-pin i {
-  position: absolute;
-  inset: 9px 7px;
-  border-radius: 3px;
-  background: repeating-linear-gradient(90deg, #f4f0e6 0 4px, #5f9ad0 4px 8px, #5fb36a 8px 12px);
+.cache-pin svg {
+  overflow: visible;
+  display: block;
+}
+.cache-pin .cache-flame {
+  transform-origin: 23px 3px;
+  animation: cache-flicker 0.9s ease-in-out infinite alternate;
 }
 @keyframes cache-glow {
-  50% { box-shadow: 0 0 0 2px #fff4c2, 0 0 26px 12px rgb(143 208 255 / 0.85); }
+  50% { filter: drop-shadow(0 0 14px rgb(255 176 64 / 0.95)); }
 }
+@keyframes cache-flicker {
+  to { transform: scale(0.82, 1.12); opacity: 0.85; }
+}
+
 .goal-row {
   position: relative;
   display: flex;
@@ -3777,7 +3781,7 @@ h3 {
   color: var(--color-fg-muted);
 }
 @media (prefers-reduced-motion: reduce) {
-  .quest-pin.is-alert .quest-bang, .quest-arrow, .cache-pin { animation: none; }
+  .quest-pin.is-alert .quest-bang, .quest-arrow, .cache-pin, .cache-pin .cache-flame { animation: none; }
 }
 .goals-card {
   display: grid;

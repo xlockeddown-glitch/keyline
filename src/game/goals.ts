@@ -54,15 +54,23 @@ export function cachePrize(player: string, day: string): Tier[] {
 }
 
 /** Pay a list of matches with overflow coin. */
+export const STEP_TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
+
+/**
+ * The cache always pays (0.0.95): a rolled colour whose pocket is full steps up to the next
+ * tier with room (white → blue → … → violet); only when every tier from there up is full does
+ * it pay overflow coin (the rolled tier's value).
+ */
 export function payMatches(keys: Record<Tier, number>, tiers: Tier[]): { keys: Record<Tier, number>; coin: number; got: Tier[] } {
   let k = keys;
   let coin = 0;
   const got: Tier[] = [];
   for (const t of tiers) {
-    const p = payMatch(k, t);
-    k = p.keys;
-    coin += p.coin;
-    if (p.match) got.push(t);
+    const room = STEP_TIERS.slice(STEP_TIERS.indexOf(t)).find((x) => (k[x] ?? 0) < matchCap(x));
+    if (room) {
+      k = { ...k, [room]: (k[room] ?? 0) + 1 };
+      got.push(room);
+    } else coin += TIER_VALUE[t];
   }
   return { keys: k, coin, got };
 }

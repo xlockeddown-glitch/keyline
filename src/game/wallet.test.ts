@@ -40,7 +40,8 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet, rowToState } from "./walletSql.ts";
-import { DEVICE_CAP, applyClientOp, awardGrade, grantPassGift, spendDealt, syncPlayer } from "./walletApply.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, grantMatchGifts, grantPassGift, spendDealt, syncPlayer } from "./walletApply.ts";
+import { MATCH_GIFTS } from "./matchGift.ts";
 import { tokenNonce } from "./walletClient.ts";
 
 function sqlOf(db: PGlite): Sql {
@@ -1124,4 +1125,53 @@ test("0.0.93 cache and daily goals: once a day, 2-3 white/blue/green matches; go
   assert.ok(all.ok);
   assert.equal(all.wallet.coins - coins0, 3 * 60);
   assert.equal(all.wallet.keys.green, (c1.wallet.keys.green ?? 0) + 1);
+});
+
+test("0.0.95 cache always pays: full colours step up to the next tier with room; all full pays coin", async () => {
+  const sql = await db();
+  const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
+  await syncPlayer(sql, "cfull", snap({ cities }), "cfullphone1");
+  const cap = (t: string) => matchCap(t as never);
+  await sql.query(`update player_wallets set white = $2, blue = $3, green = $4 where user_id = $1`, ["cfull", cap("white"), cap("blue"), cap("green")]);
+  const r = await applyClientOp(sql, "cfull", { kind: "cache", city: "austin" });
+  assert.ok(r.ok);
+  assert.ok(r.cache!.got.length >= 2, "still paid matches");
+  assert.ok(r.cache!.got.every((t) => t === "amber" || t === "red" || t === "violet"), `stepped up: ${r.cache!.got}`);
+  assert.equal(r.cache!.coin, 0);
+
+  await syncPlayer(sql, "call", snap({ cities }), "callphone1");
+  await sql.query(`update player_wallets set white = $2, blue = $3, green = $4, amber = $5, red = $6, violet = $7 where user_id = $1`, [
+    "call", cap("white"), cap("blue"), cap("green"), cap("amber"), cap("red"), cap("violet"),
+  ]);
+  const all = await applyClientOp(sql, "call", { kind: "cache", city: "austin" });
+  assert.ok(all.ok);
+  assert.deepEqual(all.cache!.got, []);
+  assert.ok(all.cache!.coin > 0, "every pocket full: overflow coin");
+});
+
+test("0.0.95 Amanda's make-up gift: 2 red once, idempotent, only her account, overflow coin when full", async () => {
+  const sql = await db();
+  const g = MATCH_GIFTS.find((x) => x.key === "gift:amanda-red-0095")!;
+  assert.equal(g.userId, "j9k4J0Lv4ffeRdJF9577cNY6qZaOcWv6");
+  assert.equal(g.note, "A make-up gift: 2 red matches.");
+  const first = await syncPlayer(sql, g.userId, snap({}), "amandaphone1");
+  assert.deepEqual(first.giftNotes, [g.note]);
+  assert.equal(first.wallet.keys.red, 2);
+  const again = await syncPlayer(sql, g.userId, snap({}), "amandaphone1");
+  assert.equal(again.giftNotes, undefined, "note once");
+  assert.equal(again.wallet.keys.red, 2, "paid once");
+  assert.deepEqual(await grantMatchGifts(sql, g.userId), [], "direct replay pays nothing");
+  assert.equal((await canonicalWallet(sql, g.userId)).wallet.keys.red, 2);
+  const other = await syncPlayer(sql, "someone-else", snap({}), "otherphone1");
+  assert.equal(other.giftNotes, undefined);
+  assert.equal(other.wallet.keys.red ?? 0, 0);
+  // Pocket full: the gift pays overflow coin instead.
+  const list = [{ ...g, key: "gift:test-full", userId: "fullred" }];
+  await syncPlayer(sql, "fullred", snap({}), "fullphone1");
+  await sql.query(`update player_wallets set red = $2 where user_id = $1`, ["fullred", matchCap("red")]);
+  const before = (await canonicalWallet(sql, "fullred")).wallet.coins;
+  assert.deepEqual(await grantMatchGifts(sql, "fullred", list), [g.note]);
+  const after = (await canonicalWallet(sql, "fullred")).wallet;
+  assert.equal(after.keys.red, matchCap("red"));
+  assert.ok(after.coins > before, "overflow coin");
 });

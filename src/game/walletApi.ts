@@ -130,6 +130,8 @@ export type SyncWire = {
   migrated: boolean;
   revised: boolean;
   playerId: string;
+  /** 0.0.95: notes for one-time gifts the server paid on this sync. */
+  giftNotes?: string[];
 };
 
 export const syncWallet = createServerFn({ method: "POST" })
@@ -147,6 +149,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       migrated: r.wallet.migrated,
       revised: r.deviceClosed,
       playerId: r.playerId,
+      ...(r.giftNotes?.length ? { giftNotes: r.giftNotes } : {}),
     };
   });
 

@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.94";
+export const APP_VERSION = "0.0.95";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k94a";
+export const PUBLISH_STAMP = "k95a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -97,3 +97,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.92: the Mystery Wheel v2: bright tier-coloured match slices, brass coin and ink ingredient slices with icons, rim lights, a pointer that clicks on every peg, an ease-out that sails a little past and settles back, a burst and glow on the winning slice (reduced motion lands at once); new match prizes (a pair, and a rare match one tier up; violet only on a violet wheel), paid by the server too; signed in, Spin claims on the server first and the wheel lands on the slice the server paid; the Cut slice is now two half slices: Take all (every other prize on the wheel at once, server-paid) and Nothing (k92a).
 // 0.0.93: answer streaks (5 in a row pays a white match, 10 a blue; server-paid), a daily match cache per city off the main roads (2-3 white/blue/green matches once a day), three daily goals replace the errand (all three pay a green match), and a Quest Board near each start with a "!" glow, a first-play arrow and a journal shortcut; the lantern result is emblems + amounts with a big rating word (count-up, pop-in, Perfect sparkles); street matches no longer pause at 7+ held (k93a).
 // 0.0.94: rides cap at 8 min with a gentler distance line (median ~7 min, was ~9.5; max 8, was 11), pay table rebased to a six-minute ride and the long-haul blue at 7 min; each ride round runs a little faster (+6%/round, up to +30%) and the first round dealt past halfway is a bonus round (+10% pace, win = +2 white, server-paid); desktop rides show whole-game top-5 boards (lanterns lit right, distance walked) with your own rank pinned when off the top 5; the street map cap stays 16 until 15+ held (k94a).
+// 0.0.95: the match cache always pays: a full colour steps up to the next tier with room (white → blue → green → amber → red → violet), overflow coin only when every pocket is full (server-paid); the cache marker is a brass-banded crate with a lit match and a warm glow; a one-time make-up gift of 2 red matches for Amanda G. (server-paid once under gift:amanda-red-0095, note shown once) (k95a).

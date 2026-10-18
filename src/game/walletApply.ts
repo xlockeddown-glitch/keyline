@@ -40,6 +40,7 @@ import {
 import { CITIES, type KioskId } from "./data.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
 import { rideRamp } from "./rideGames.ts";
+import { MATCH_GIFTS, giftsFor, type MatchGift } from "./matchGift.ts";
 import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
@@ -63,7 +64,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[] };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -79,8 +80,35 @@ export async function grantPassGift(sql: Sql, userId: string): Promise<MutateRes
   );
 }
 
+/** 0.0.95: pay any one-time match gift addressed to this player (session or primary id). Notes for gifts paid just now. */
+export async function grantMatchGifts(sql: Sql, userId: string, list: readonly MatchGift[] = MATCH_GIFTS): Promise<string[]> {
+  const { id } = await canonicalWallet(sql, userId);
+  const notes: string[] = [];
+  for (const g of giftsFor([userId, id], list)) {
+    const r = await mutateWallet(sql, userId, g.key, (w) => {
+      let keys = w.keys;
+      let coin = 0;
+      for (let i = 0; i < g.n; i++) {
+        const p = payMatch(keys, g.tier);
+        keys = p.keys;
+        coin += p.coin;
+      }
+      const add: Partial<Record<Tier, number>> = { [g.tier]: (keys[g.tier] ?? 0) - (w.keys[g.tier] ?? 0) };
+      return applyDelta(w, { keys: add, coins: coin });
+    });
+    if (r.ok && !r.replay) notes.push(g.note);
+  }
+  return notes;
+}
+
 export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
   await grantPassGift(sql, userId);
+  const giftNotes = await grantMatchGifts(sql, userId);
+  const done = await syncCore(sql, userId, local, deviceId);
+  return giftNotes.length ? { ...done, giftNotes } : done;
+}
+
+async function syncCore(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
   const { id, wallet } = await canonicalWallet(sql, userId);
   if (!DEVICE_RE.test(deviceId)) return { ...applied({ ok: false, replay: false, reason: "device", wallet }), deviceClosed: true, playerId: id };
   const rows = await sql<{ op_key: string }>`

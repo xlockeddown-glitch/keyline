@@ -39,3 +39,17 @@ test("daily goals: three distinct, progress counts, claimable", () => {
   assert.ok(!goalsClaimable(g));
   assert.equal(noteGoal(g, defs[0]!.kind, 1, "2026-10-19").day, "2026-10-19", "a new day starts fresh");
 });
+
+test("0.0.95 payMatches steps a full colour up to the next tier with room, coin only when all are full", async () => {
+  const { payMatches } = await import("./goals.ts");
+  const { matchCap } = await import("./ticket.ts");
+  const z = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
+  const full = (ts: string[]) => ({ ...z, ...Object.fromEntries(ts.map((t) => [t, matchCap(t as never)])) });
+  assert.deepEqual(payMatches(full(["white"]), ["white"]).got, ["blue"]);
+  assert.deepEqual(payMatches(full(["white", "blue", "green"]), ["blue"]).got, ["amber"]);
+  assert.deepEqual(payMatches(full(["green"]), ["green", "green"]).got, ["amber", "amber"].slice(0, 2));
+  assert.deepEqual(payMatches(z, ["white"]).got, ["white"], "room: pays the rolled colour");
+  const none = payMatches(full(["white", "blue", "green", "amber", "red", "violet"]), ["white", "blue"]);
+  assert.deepEqual(none.got, []);
+  assert.ok(none.coin > 0);
+});

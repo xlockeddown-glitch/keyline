@@ -62,12 +62,15 @@ export function WalletSync() {
       try {
         const id = deviceId();
         let r: SyncWire = await syncWallet({ data: { ...snapOf(), deviceId: id } });
+        const notes = [...(r.giftNotes ?? [])];
         if (!live) return;
         // Second call only while this device's revise is still open. It reads the pocket as it
         // is now, including anything earned during the first round trip, and then closes the door.
         if (!r.revised) r = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         if (!live) return;
         useGame.getState().adoptWallet(r);
+        notes.push(...(r.giftNotes ?? []));
+        if (notes.length) useGame.setState({ toast: [...new Set(notes)].join(" ") });
         setStreetPlayer(r.playerId);
         setWalletLive(true);
         useGame.getState().bindStreet();

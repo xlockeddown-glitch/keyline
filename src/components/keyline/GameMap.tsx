@@ -1882,7 +1882,26 @@ export function GameMap() {
     });
   }
 
-  // 0.0.93: the day's match cache, the Quest Board's "!" and the first-play arrow to it.
+  // 0.0.95: the match cache marker: a brass-banded wooden crate with a lit match on the lid and a warm glow.
+const CACHE_PIN_HTML =
+  '<div class="cache-pin" data-testid="cache-pin" title="Match cache">' +
+  '<svg viewBox="0 0 46 50" width="46" height="50" aria-hidden="true">' +
+  '<ellipse cx="23" cy="44" rx="15" ry="3.5" fill="rgba(0,0,0,.45)"/>' +
+  '<path d="M6 20h34v20a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" fill="#7a4a24" stroke="#3b2210" stroke-width="1.5"/>' +
+  '<path d="M6 25h34M6 31h34M6 37h34" stroke="#5c3518" stroke-width="1"/>' +
+  '<path d="M4 15h38v6H4z" fill="#8f5a2c" stroke="#3b2210" stroke-width="1.5"/>' +
+  '<path d="M11 15v28M35 15v28" stroke="#d9a441" stroke-width="3.2"/>' +
+  '<path d="M11 15v28M35 15v28" stroke="#fff1b8" stroke-width="0.8" opacity=".7"/>' +
+  '<circle cx="11" cy="24" r="1.2" fill="#3b2210"/><circle cx="35" cy="24" r="1.2" fill="#3b2210"/>' +
+  '<circle cx="11" cy="36" r="1.2" fill="#3b2210"/><circle cx="35" cy="36" r="1.2" fill="#3b2210"/>' +
+  '<rect x="19" y="26" width="8" height="9" rx="1.5" fill="#d9a441" stroke="#3b2210" stroke-width="1"/>' +
+  '<circle cx="23" cy="30" r="1.3" fill="#3b2210"/>' +
+  '<g class="cache-match"><path d="M23 14V4.5" stroke="#e8d3a8" stroke-width="2.4" stroke-linecap="round"/>' +
+  '<ellipse cx="23" cy="4" rx="2.4" ry="3" fill="#c0392b"/>' +
+  '<path class="cache-flame" d="M23 -4c2.6 2.6 3 5 0 7.4c-3-2.4-2.6-4.8 0-7.4z" fill="#ffcf4a"/></g>' +
+  "</svg></div>";
+
+// 0.0.93: the day's match cache, the Quest Board's "!" and the first-play arrow to it.
   useEffect(() => {
     if (streets !== "ready") return;
     const L = Lref.current;
@@ -1894,7 +1913,7 @@ export function GameMap() {
       const seed = cacheSeed(cityId, day, city.start ?? city.spawn);
       const at = quietDrop(seed);
       const marker = L.marker([at.lat, at.lng], {
-        icon: L.divIcon({ className: "", html: '<div class="cache-pin" data-testid="cache-pin" title="Match cache"><i></i></div>', iconSize: [36, 36], iconAnchor: [18, 18] }),
+        icon: L.divIcon({ className: "", html: CACHE_PIN_HTML, iconSize: [46, 50], iconAnchor: [23, 40] }),
         interactive: false,
         keyboard: false,
         zIndexOffset: 450,

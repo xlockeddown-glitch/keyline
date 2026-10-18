@@ -2428,7 +2428,9 @@ export const useGame = create<GameState>((set, get) => ({
     const d = today();
     if (get().cacheDay === d) return;
     const say = (got: Tier[], coin: number) =>
-      `Match cache! ${got.length ? got.map((t) => TIER_LABEL[t]).join(", ") : "No room"}${coin ? ` + ${coin} coin (pocket full)` : ""}.`;
+      got.length
+        ? `Match cache! ${got.map((t) => TIER_LABEL[t]).join(", ")}${coin ? ` + ${coin} coin (pockets full)` : ""}.`
+        : `Match cache! Every pocket is full: +${coin} coin.`;
     set({ cacheDay: d });
     sfx.pickup();
     if (walletLive()) {
