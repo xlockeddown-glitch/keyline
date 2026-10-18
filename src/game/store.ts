@@ -167,6 +167,8 @@ export type GameState = {
   stack: StreetRun | null;
   contract: { ids: string[]; done: string[]; nonces?: string[] } | null;
   streak: number;
+  /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
+  matchPop: MatchPop | null;
   bestStreak: number;
   vaultsOpened: number;
   correctByTier: Record<Tier, number>;
@@ -358,6 +360,12 @@ export type GameState = {
   /** The player pressed Stop mid-round: forfeit it. Idle pay still stands. */
   dropRideRound: () => void;
 };
+
+export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" };
+/** 0.0.95: show the match-reward pop (also sets a plain toast for screen readers / old paths). */
+export function popMatch(p: Omit<MatchPop, "id">) {
+  useGame.setState({ matchPop: { ...p, id: Date.now() } });
+}
 
 function bumpStreak(get: () => GameState): Pick<GameState, "streak" | "bestStreak" | "fireworks"> {
   const prev = get().streak;
@@ -942,6 +950,7 @@ export const useGame = create<GameState>((set, get) => ({
   stack: saved?.stack ?? placeRun(savedCity),
   contract: saved?.contract ?? null,
   streak: saved?.streak ?? 0,
+  matchPop: null,
   bestStreak: saved?.bestStreak ?? 0,
   vaultsOpened: saved?.vaultsOpened ?? 0,
   correctByTier: { ...EMPTY_CORRECT, ...saved?.correctByTier },
@@ -2439,13 +2448,14 @@ export const useGame = create<GameState>((set, get) => ({
           set({ cacheDay: "", toast: "The cache is stuck. Try again in a moment." });
           return;
         }
-        set({ toast: say(r.cache?.got ?? [], r.cache?.coin ?? 0) });
+        popMatch({ kind: "cache", big: "Match cache!", sub: say(r.cache?.got ?? [], r.cache?.coin ?? 0).replace(/^Match cache! /, ""), tiers: r.cache?.got ?? [], coin: r.cache?.coin ?? 0 });
         saveNow(get);
       });
       return;
     }
     const paid = payMatches(get().keys, cachePrize(streetPlayer() || "guest", d));
-    set({ keys: paid.keys, points: get().points + paid.coin, toast: say(paid.got, paid.coin) });
+    set({ keys: paid.keys, points: get().points + paid.coin });
+    popMatch({ kind: "cache", big: "Match cache!", sub: say(paid.got, paid.coin).replace(/^Match cache! /, ""), tiers: paid.got, coin: paid.coin });
     scheduleSave(get);
   },
   spinWheel: async () => {
@@ -2858,7 +2868,8 @@ if (typeof window !== "undefined") {
           const p = payMatch(s.keys, tier);
           useGame.setState({ keys: p.keys, points: s.points + p.coin });
         }
-        window.setTimeout(() => useGame.setState({ toast: streakLine(s.streak, tier) }), 900);
+        const run = s.streak;
+        window.setTimeout(() => popMatch({ kind: "streak", big: `${run} in a row!`, sub: streakLine(run, tier).replace(/^\d+ in a row! /, ""), tiers: [tier], coin: 0 }), 900);
       }
     }
   });

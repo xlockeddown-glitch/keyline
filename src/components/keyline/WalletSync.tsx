@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 import { syncWallet, type SyncWire } from "@/game/walletApi";
 import { deviceId, setStreetPlayer, setWalletLive } from "@/game/walletClient";
-import { useGame } from "@/game/store";
+import { useGame, popMatch } from "@/game/store";
 import { FARES_CAP } from "@/game/ticket";
 
 function pressStock(pantry: Partial<Record<string, number>>) {
@@ -70,7 +70,12 @@ export function WalletSync() {
         if (!live) return;
         useGame.getState().adoptWallet(r);
         notes.push(...(r.giftNotes ?? []));
-        if (notes.length) useGame.setState({ toast: [...new Set(notes)].join(" ") });
+        if (notes.length) {
+          const text = [...new Set(notes)].join(" ");
+          // 0.0.95: the gift note uses the same emblem pop as streaks and the cache (2 red for Amanda's gift).
+          const reds = /(\d+) red match/.exec(text);
+          popMatch({ kind: "gift", big: "A gift!", sub: text, tiers: reds ? Array.from({ length: Number(reds[1]) }, () => "red" as const) : [], coin: 0 });
+        }
         setStreetPlayer(r.playerId);
         setWalletLive(true);
         useGame.getState().bindStreet();

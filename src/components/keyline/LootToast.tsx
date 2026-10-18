@@ -22,10 +22,12 @@ export function LootToast() {
     return () => window.clearTimeout(id);
   }, [loot, miss, hold, dismissLoot]);
 
-  if (!loot && !miss && !toast) return null;
+  const matchPop = useGame((s) => s.matchPop);
+  if (!loot && !miss && !toast && !matchPop) return null;
 
   return (
     <>
+      {matchPop && !loot && !miss ? <MatchPopView key={matchPop.id} pop={matchPop} /> : null}
       {loot || miss ? (
         <div className="pointer-events-none absolute inset-0 z-[850] flex items-center justify-center px-4 pb-32">
           <button
@@ -47,7 +49,7 @@ export function LootToast() {
             )}
           </button>
         </div>
-      ) : toast ? (
+      ) : toast && !matchPop ? (
         <div className="pointer-events-none absolute inset-x-0 top-20 z-[850] flex justify-center px-3">
           <div className="panel px-4 py-2 text-sm">{toast}</div>
         </div>
@@ -55,6 +57,67 @@ export function LootToast() {
     </>
   );
 }
+/** 0.0.95: celebratory match-reward pop: tier-coloured emblems bounce in with a flame/sparkle burst, the big
+ *  line ("5 in a row!", "Match cache!", "A gift!"), then the emblems fly toward the match pocket. Static when
+ *  reduced motion is on. */
+function MatchPopView({ pop }: { pop: import("@/game/store").MatchPop }) {
+  const [fly, setFly] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const quiet = still();
+    const t1 = window.setTimeout(() => {
+      if (quiet) return;
+      const belt = document.querySelector(".key-belt")?.getBoundingClientRect();
+      const me = document.querySelector("[data-testid=match-pop] .mp-emblems")?.getBoundingClientRect();
+      if (belt && me) setFly({ x: belt.left + belt.width / 2 - (me.left + me.width / 2), y: belt.top + belt.height / 2 - (me.top + me.height / 2) });
+    }, 1500);
+    const t2 = window.setTimeout(() => {
+      if (useGame.getState().matchPop?.id === pop.id) useGame.setState({ matchPop: null });
+    }, quiet ? 3200 : 2500);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [pop.id]);
+  const tone = pop.tiers[0] ?? "amber";
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[860] flex items-center justify-center px-4 pb-32">
+      <button
+        type="button"
+        data-testid="match-pop"
+        data-kind={pop.kind}
+        className={`match-pop pointer-events-auto is-${tone} ${fly ? "is-flying" : ""}`}
+        onClick={() => useGame.setState({ matchPop: null })}
+        aria-live="polite"
+      >
+        <span className="mp-burst" aria-hidden>
+          {Array.from({ length: 12 }, (_, i) => (
+            <i key={i} style={{ "--a": `${i * 30}deg` } as React.CSSProperties} />
+          ))}
+        </span>
+        <span className="mp-flame" aria-hidden>🔥</span>
+        <p className="mp-big font-display">{pop.big}</p>
+        <span
+          className="mp-emblems"
+          style={fly ? ({ "--fx": `${fly.x}px`, "--fy": `${fly.y}px` } as React.CSSProperties) : undefined}
+        >
+          {pop.tiers.map((t, i) => (
+            <span key={i} className={`mp-emblem is-${t}`} style={{ animationDelay: `${140 + i * 110}ms` }}>
+              <ItemIcon item={t} size={44} />
+            </span>
+          ))}
+          {pop.coin ? (
+            <span className="mp-emblem is-coin" style={{ animationDelay: `${140 + pop.tiers.length * 110}ms` }}>
+              <ItemIcon item="coin" size={40} />
+              <b className="tabular-nums">+{pop.coin}</b>
+            </span>
+          ) : null}
+        </span>
+        <p className="mp-sub text-sm">{pop.sub}</p>
+      </button>
+    </div>
+  );
+}
+
 const RATING: Record<LootDrop["grade"], string> = { perfect: "Perfect!", great: "Great!", good: "Good" };
 
 function still() {
