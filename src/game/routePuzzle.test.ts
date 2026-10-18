@@ -125,13 +125,13 @@ test("outcome: win at 2 points of 3 (shortest 1, close ½); 3 of 3 is perfect", 
 });
 
 test("pay: the standard ride table, scaled, with the perfect +1 white", () => {
-  // Eight minutes is the table itself: idle 1, played 3, win 5 → 7.
-  assert.deepEqual(rideReward(8 * MIN, { kind: "idle" }), { white: 1, blue: 0 });
-  assert.deepEqual(rideReward(8 * MIN, routeOutcome(T(1))), { white: 3, blue: 0 });
-  assert.deepEqual(rideReward(8 * MIN, routeOutcome(T(2))), { white: 5, blue: 0 });
-  assert.deepEqual(rideReward(8 * MIN, routeOutcome(T(2, 1))), { white: 6, blue: 0 });
+  // Six minutes is the table itself (0.0.94 base, was eight): idle 1, played 3, win 5 → 7.
+  assert.deepEqual(rideReward(6 * MIN, { kind: "idle" }), { white: 1, blue: 0 });
+  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(1))), { white: 3, blue: 0 });
+  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(2))), { white: 5, blue: 0 });
+  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(2, 1))), { white: 6, blue: 0 });
   // A clean sheet is a strong win (7 → 4 white + 1 blue) plus the flat perfect white.
-  assert.deepEqual(rideReward(8 * MIN, routeOutcome(T(3))), { white: 4 + RIDE_PERFECT_BONUS, blue: 1 });
+  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(3))), { white: 4 + RIDE_PERFECT_BONUS, blue: 1 });
   for (const m of [6, 7, 10, 12, 14]) {
     const v = (t: RouteTally) => rideValue(rideReward(m * MIN, routeOutcome(t)));
     assert.ok(v(T(0)) > rideValue(rideReward(m * MIN, { kind: "idle" })), `${m}m played > idle`);

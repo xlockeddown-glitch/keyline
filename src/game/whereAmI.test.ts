@@ -124,10 +124,10 @@ test("scoring → reward: a clean sheet beats four of five beats played beats id
     assert.ok(v(3) >= idle, `${m}m: played at least idle`);
     assert.ok(v(5) >= 1);
   }
-  // Four-minute ride: idle 1, played 2, 4/5 = 3 whites, 5/5 = 4 whites (strong win, no blue under 5) + 1 perfect bonus.
-  assert.deepEqual(rideReward(4 * MIN, whereOutcome({ asked: 5, right: 3, total: 5 })), { white: 2, blue: 0 });
-  assert.deepEqual(rideReward(4 * MIN, whereOutcome({ asked: 5, right: 4, total: 5 })), { white: 3, blue: 0 });
-  assert.deepEqual(rideReward(4 * MIN, whereOutcome({ asked: 5, right: 5, total: 5 })), { white: 5, blue: 0 });
+  // Three-minute ride (0.0.94: was four, the base is now six minutes): idle 1, played 2, 4/5 = 3 whites, 5/5 = 4 whites (strong win, no blue under 5) + 1 perfect bonus.
+  assert.deepEqual(rideReward(3 * MIN, whereOutcome({ asked: 5, right: 3, total: 5 })), { white: 2, blue: 0 });
+  assert.deepEqual(rideReward(3 * MIN, whereOutcome({ asked: 5, right: 4, total: 5 })), { white: 3, blue: 0 });
+  assert.deepEqual(rideReward(3 * MIN, whereOutcome({ asked: 5, right: 5, total: 5 })), { white: 5, blue: 0 });
 });
 
 test("perfect round: 5/5 pays the base strong win plus one flat white; 4/5 is unchanged", () => {
