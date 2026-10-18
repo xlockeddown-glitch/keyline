@@ -154,11 +154,22 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           </p>
             </div>
           </div>
-          {hud.routeStops > 1 ? (
-            <button type="button" className="fare-hint pointer-events-auto mt-1" onClick={onRoute}>
-              <span className="kicker mr-1.5">Route</span>
-              {hud.routeHold ? `Next stop · ${hud.routeStops - 1} left` : `${hud.routeStops} stops`}
-            </button>
+          {hud.routeStops >= 1 ? (
+            <div className="route-row mt-1">
+              <button type="button" className="fare-hint pointer-events-auto" onClick={onRoute}>
+                <span className="kicker mr-1.5">Route</span>
+                {hud.routeHold ? `Next stop · ${hud.routeStops - 1} left` : hud.routeStops === 1 ? "1 stop" : `${hud.routeStops} stops`}
+              </button>
+              <button
+                type="button"
+                className="route-cancel pointer-events-auto"
+                data-testid="route-cancel"
+                aria-label="Cancel route"
+                onClick={() => useGame.getState().cancelRoute()}
+              >
+                ✕
+              </button>
+            </div>
           ) : null}
           {fares > 0 && !canPunch ? (
             <button type="button" className="fare-hint pointer-events-auto mt-1" onClick={onDesk}>

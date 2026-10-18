@@ -9,7 +9,7 @@ import { freshUnlocks } from "./cityPass.ts";
 import { rewardPoints } from "./rewards.ts";
 import { CITIES } from "./data.ts";
 import { surveyProven } from "./survey.ts";
-import { STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
+import { SEED, STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
 import { marketAt, marketMatches } from "./nightMarket.ts";
 import { FARES_CAP, matchCap, transitLoot } from "./ticket.ts";
 import { rideReward } from "./rideGames.ts";
@@ -760,7 +760,7 @@ test("a market spot pays two matches while the market is open, and a kiosk name 
   const now = Date.now();
   assert.ok(marketAt("austin", now), "austin has a market open on the server clock");
   let market: ReturnType<typeof streetSpot> = null;
-  for (let i = 9; i < STREET_DAY_CAP; i++) {
+  for (let i = SEED.length; i < STREET_DAY_CAP; i++) {
     const s = streetSpot("str", "austin", day, i);
     if (s?.market && (s.tier === "white" || s.tier === "blue")) {
       market = s;
@@ -788,7 +788,7 @@ test("a market spot pays two matches while the market is open, and a kiosk name 
   const { id } = await canonicalWallet(sql, "str");
   const rows = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"street:sk:austin:" + day + ":%"}`;
   assert.equal(Number(rows[0]?.n), 2);
-  const stale = streetSpot("str", "austin", "1999-01-01", 9);
+  const stale = streetSpot("str", "austin", "1999-01-01", SEED.length);
   const old = await applyClientOp(sql, "str", { kind: "street", id: stale!.id, tier: "white", city: "austin", lat: 0, lng: 0 });
   assert.equal(old.ok, false);
   const poi = CITIES.austin.pois[0]!.id;

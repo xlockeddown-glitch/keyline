@@ -6,7 +6,7 @@ import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
 import { commitWallet, streetPlayer, tokenNonce, walletLive } from "./walletClient";
-import { parseStreetId, takeStreetSpot } from "./streetSpots";
+import { SEED, parseStreetId, takeStreetSpot } from "./streetSpots";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
 import { sfx } from "./audio";
@@ -33,6 +33,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
+import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
@@ -178,6 +179,10 @@ export type GameState = {
   blitzTake: number;
   blitzMatches: Tier[];
   blitzOpen: boolean;
+  /** 0.0.90: the crate pop-up after the day's first answer, the blitz offer queued behind it, and the day it was offered. */
+  cratePop: { day: number; line: string } | null;
+  blitzOffer: boolean;
+  lastBlitzOfferDay: string;
   sparkDay: string;
   sparkN: number;
   sparkLamps: string[];
@@ -230,6 +235,12 @@ export type GameState = {
   /** 0.0.56: unlock a city with the free second pick or one city pass (train station). Null on success, else why not. */
   unlockCity: (id: CityId) => string | null;
   setHud: (h: Partial<Hud>) => void;
+  /** 0.0.90: bumped by the HUD's route ✕; GameMap clears the whole route when it changes. */
+  routeCancel: number;
+  cancelRoute: () => void;
+  /** 0.0.90 "I'm stuck": close everything, re-sync; GameMap puts the scout back at the walk start when `unstuck` changes. */
+  unstuck: number;
+  unstick: () => void;
   addDistance: (m: number) => void;
   stampPlaces: (ids: string[]) => void;
   collectKey: (id: string) => void;
@@ -246,7 +257,11 @@ export type GameState = {
   /** Apply a server-graded answer to the open card (rewards, streak, seen memory). Internal to the lamp flow. */
   settleAnswer: (out: Graded, now: number) => void;
   closeVault: () => void;
-  claimCrate: () => void;
+  claimCrate: (auto?: boolean) => void;
+  /** 0.0.90: close the crate pop-up; queues the blitz offer once a day when it is due. */
+  dismissCratePop: () => void;
+  /** 0.0.90: answer the blitz offer (Play now opens the blitz; Later leaves it on the notice board). */
+  answerBlitzOffer: (play: boolean) => void;
   claimPulse: () => void;
   /** Open Daily Blitz if today's run hasn't started. */
   openBlitz: () => void;
@@ -436,7 +451,8 @@ function placeRun(cityId: CityId): StreetRun {
 }
 
 function streetKeyCap(pocket: number): number {
-  return pocket >= 5 ? 5 : 8;
+  // 0.0.90: doubled (was 5 / 8).
+  return pocket >= 5 ? 10 : 16;
 }
 
 /** A little rarer the longer this session has been going. Violet stays off the curb. */
@@ -458,7 +474,7 @@ function streetKeyTier(playMin: number): Tier {
   return "white";
 }
 
-function seedKeys(cityId: CityId, n = 9): MapKey[] {
+function seedKeys(cityId: CityId, n = SEED.length): MapKey[] {
   if (walletLive() && streetPlayer()) {
     const issued: MapKey[] = [];
     for (let i = 0; i < n; i++) {
@@ -470,7 +486,7 @@ function seedKeys(cityId: CityId, n = 9): MapKey[] {
   }
   const c = CITIES[cityId];
   const out: MapKey[] = [];
-  const tiers: Tier[] = ["white", "blue", "white", "white", "blue", "white", "white", "blue", "white"];
+  const tiers = SEED;
   for (let i = 0; i < n; i++) {
     const around = c.spawn;
     const p = streetDrop(around, 160 + i * 90, 2100);
@@ -532,6 +548,7 @@ function persistable(s: GameState) {
     crateStreak: s.crateStreak,
     lastPulseDay: s.lastPulseDay,
     lastBlitzDay: s.lastBlitzDay,
+    lastBlitzOfferDay: s.lastBlitzOfferDay,
     blitzTake: s.blitzTake,
     blitzMatches: s.blitzMatches,
     sparkDay: s.sparkDay,
@@ -914,6 +931,9 @@ export const useGame = create<GameState>((set, get) => ({
   blitzTake: typeof saved?.blitzTake === "number" && saved.blitzTake > 0 ? Math.floor(saved.blitzTake) : 0,
   blitzMatches: cleanBlitzMatches(saved?.blitzMatches),
   blitzOpen: false,
+  cratePop: null,
+  blitzOffer: false,
+  lastBlitzOfferDay: typeof saved?.lastBlitzOfferDay === "string" ? saved.lastBlitzOfferDay : "",
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
   sparkLamps: saved?.sparkLamps ?? [],
@@ -1040,6 +1060,16 @@ export const useGame = create<GameState>((set, get) => ({
     return null;
   },
   setHud: (h) => set({ hud: { ...get().hud, ...h } }),
+  routeCancel: 0,
+  cancelRoute: () => set({ routeCancel: get().routeCancel + 1 }),
+  unstuck: 0,
+  unstick: () => {
+    // Same as a reload, nothing lost: no cooldown, card, coin or match changes. An open card is closed the
+    // normal way (its match comes back, like Esc), then panels close and the street/wallet re-binds.
+    if (get().openVault) get().closeVault();
+    set({ hqOpen: false, invOpen: false, shopOpen: false, errandOpen: null, guideOpen: false, blitzOpen: false, cratePop: null, blitzOffer: false, unstuck: get().unstuck + 1 });
+    get().bindStreet();
+  },
   addDistance: (m) => {
     const distanceM = get().distanceM + m;
     const tutorial = get().tutorial === 0 && distanceM >= 25 ? 1 : get().tutorial;
@@ -1097,7 +1127,8 @@ export const useGame = create<GameState>((set, get) => ({
     const pocket = pocketStreet(get().keys);
     if (pocket >= 7) return;
     const cap = streetKeyCap(pocket);
-    const interval = Math.max(28_000, 78_000 - playMin * 900);
+    // 0.0.90: twice as often (was max(28s, 78s − play·0.9s)).
+    const interval = Math.max(14_000, 39_000 - playMin * 450);
     if (get().mapKeys.length >= cap) return;
     if (now - get().lastKeyAt < interval) return;
     if (walletLive()) {
@@ -1345,6 +1376,8 @@ export const useGame = create<GameState>((set, get) => ({
     const series = seriesOf(ov.poiId);
     const poi = series ? seriesPoi(series) : allPois(city, get().blanks).find((p) => p.id === ov.poiId);
     if (!poi) return;
+    // 0.0.90: the day's first graded answer (right or wrong) claims the morning crate.
+    if (autoCrateDue(get().lastCrateDay, today())) get().claimCrate(true);
     // 0.0.53: right/wrong and the answer time come from the server's grade (gradeTrivia), not the client.
     const elapsed = out.elapsed;
     const correct = out.correct;
@@ -1844,7 +1877,7 @@ export const useGame = create<GameState>((set, get) => ({
   },
   closeShop: () => set({ shopOpen: false, errandOpen: null }),
   closeErrand: () => set({ errandOpen: null }),
-  claimCrate: () => {
+  claimCrate: (auto) => {
     const d = today();
     if (get().lastCrateDay === d) return;
     const day = nextCrateStreak(get().lastCrateDay, get().crateStreak, d);
@@ -1858,13 +1891,24 @@ export const useGame = create<GameState>((set, get) => ({
       lastCrateDay: d,
       crateStreak: day,
       keys,
-      toast: `Day ${day} crate. ${crateLine(loot)}.`,
+      ...(auto ? { cratePop: { day, line: crateLine(loot) } } : { toast: `Day ${day} crate. ${crateLine(loot)}.` }),
     });
     pushOp({ kind: "crate" });
     scheduleSave(get);
+    if (auto) return;
     window.setTimeout(() => {
       if (get().toast?.includes("crate")) set({ toast: null });
     }, 2400);
+  },
+  dismissCratePop: () => {
+    const d = today();
+    const offer = blitzOfferDue(get().lastBlitzOfferDay, get().lastBlitzDay, d);
+    set({ cratePop: null, ...(offer ? { blitzOffer: true, lastBlitzOfferDay: d } : {}) });
+    if (offer) scheduleSave(get);
+  },
+  answerBlitzOffer: (play) => {
+    set({ blitzOffer: false });
+    if (play) get().openBlitz();
   },
   claimPulse: () => {
     const d = today();

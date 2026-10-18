@@ -58,6 +58,7 @@ import { WardCounter } from "./WardCounter";
 import { NoticeBoard } from "./NoticeBoard";
 import { Fireworks } from "./Fireworks";
 import { Timetable } from "./Timetable";
+import { DailyPop } from "./DailyPop";
 import { Tutorial } from "./Tutorial";
 import { FieldGuide } from "./FieldGuide";
 import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
@@ -129,6 +130,9 @@ function warmSheets(scout: string, coat: string | null) {
   probe.remove();
 }
 
+/** 0.0.90: re-plans a wedged walker gets on one leg before the route is dropped. */
+const MAX_STUCK_REPLANS = 3;
+
 export function GameMap() {
   useWalkPoster();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -148,6 +152,8 @@ export function GameMap() {
   const routeAlong = useRef(0);
   const stuckFor = useRef(0);
   const skips = useRef(0);
+  /** 0.0.90: stuck re-plans on this leg. Each re-plan reset `skips`, so a walker wedged on a Lantern Run leg retried forever. */
+  const replans = useRef(0);
   const lastRouteTry = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const destSeq = useRef(0);
@@ -444,6 +450,7 @@ export function GameMap() {
     routeAlong.current = 0;
     stuckFor.current = 0;
     skips.current = 0;
+    replans.current = 0;
     routeLine.current?.remove();
     routeLine.current = null;
     waypoint.current = null;
@@ -458,7 +465,19 @@ export function GameMap() {
   }
 
   /** The live stop is done. Pick up a match before moving on. A door waits until you leave it. */
+  /** A stuck walker re-plans the leg a few times, then gives up instead of standing there re-planning forever. */
+  function replanStuck(wp: { lat: number; lng: number }) {
+    replans.current += 1;
+    if (replans.current > MAX_STUCK_REPLANS) {
+      clearRoute();
+      flash("Can't get through here. Tap a street nearby.");
+      return;
+    }
+    void setDestination(wp.lat, wp.lng, legDoor.current, true);
+  }
+
   function endLeg() {
+    replans.current = 0;
     const wasDrive = routeMode.current === "drive" && Boolean(cabRef.current?.seated);
     if (wasDrive) {
       clearRoute();
@@ -996,6 +1015,7 @@ export function GameMap() {
       return;
     }
     if (!keepQueue) {
+      replans.current = 0;
       queue.current = [];
       routeHold.current = false;
       legKey.current = keyId ?? null;
@@ -1163,7 +1183,7 @@ export function GameMap() {
           if (!reachable) {
             clearRoute();
             flash("No street that way.");
-          } else void setDestination(wp.lat, wp.lng, legDoor.current, true);
+          } else replanStuck(wp);
         }
       }
     }
@@ -1347,11 +1367,13 @@ export function GameMap() {
         useGame.getState().toggleHq();
       }
       if (e.code === "Escape") {
-        useGame.getState().toggleHq(false);
-        useGame.getState().toggleInv(false);
-        useGame.getState().closeVault();
+        // 0.0.90: Esc closes an open panel first; with nothing open it cancels the whole route.
+        const s = useGame.getState();
+        const panel = s.hqOpen || s.invOpen || s.guideOpen;
+        s.toggleHq(false);
+        s.toggleInv(false);
         setBoardOpen(false);
-        clearRoute();
+        if (!panel) clearRoute();
       }
       unlockAudio();
     };
@@ -1483,8 +1505,7 @@ export function GameMap() {
       if (auto && followRoute(dt, max)) {
         if (routeMode.current !== "drive" && skips.current >= 4 && waypoint.current) {
           skips.current = 0;
-          const wp = waypoint.current;
-          void setDestination(wp.lat, wp.lng, legDoor.current, true);
+          replanStuck(waypoint.current);
         }
       } else {
         const want = throttle * max;
@@ -1746,9 +1767,26 @@ export function GameMap() {
         legDoor.current = false;
         endLeg();
       }
-      if (s.fares > p.fares) {
-        const desk = fareDesk(CITIES[s.cityId]);
-        void setDestination(desk.lat, desk.lng);
+      // 0.0.90: earning a train ticket no longer auto-routes to the station (players were marched off mid-play).
+      // The HUD "Train · Walk to …" pill and T still route there on a deliberate tap.
+      if (s.routeCancel !== p.routeCancel) clearRoute();
+      if (s.unstuck !== p.unstuck) {
+        // 0.0.90 "I'm stuck": what a reload does to the walker — out of the cab, no route, no held keys, back at the start.
+        exitCab();
+        clearRoute();
+        keysHeld.current.clear();
+        stick.current = { x: 0, y: 0 };
+        follow.current = true;
+        const city = CITIES[s.cityId];
+        const start = city.start ?? city.spawn;
+        const g = graphRef.current;
+        pos.current.lat = start.lat;
+        pos.current.lng = start.lng;
+        if (g) placeOnStreet(g, start.lat, start.lng);
+        pos.current.speed = 0;
+        playerMarker.current?.setLatLng([pos.current.lat, pos.current.lng]);
+        mapRef.current?.setView([pos.current.lat, pos.current.lng], mapRef.current.getZoom());
+        useGame.getState().setHud({ seated: false });
       }
       if (s.mapKeys !== p.mapKeys || s.vaults !== p.vaults || s.run !== p.run || s.stack !== p.stack || s.fares !== p.fares) {
         const g = graphRef.current;
@@ -1858,6 +1896,7 @@ export function GameMap() {
       <FriendTickets />
       <GiftNote />
       <DailyBlitz />
+      <DailyPop />
       <MysteryWheel />
       <VaultModal />
       <Satchel />

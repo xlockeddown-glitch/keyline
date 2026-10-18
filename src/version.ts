@@ -1,7 +1,7 @@
 /** Bump ZZ by 1 on each publish: 0.0.01 → 0.0.02 → … → 0.0.99 → 0.1.00. Keep in sync with package.json "version". */
-export const APP_VERSION = "0.0.89";
+export const APP_VERSION = "0.0.90";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k89a";
+export const PUBLISH_STAMP = "k90a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -92,3 +92,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.0.87: the Owl and the Penguin (scout id lynx, the Super Legendary) are redrawn on the v2 sheet with coat layers; the Owl loses its 1.28x scale-up. v2 sprite stamp k87a (k87a).
 // 0.0.88: the Giraffe is redrawn on the v2 sheet (head and neck animate from the collar, ruby coat); every scout is now v2. v2 sprite stamp k88a (k88a).
 // 0.0.89: Mystery Wheel hotfix — a refused signed-in claim (server counts fewer graded answers than the device, e.g. answers before sign-in) no longer re-shows the same landed wheel forever; it closes, marks that color caught up, and a network failure retries later. The wheel card has a ✕ (Later) so nobody can be trapped. v2 sprite stamp k89a (k89a).
+// 0.0.90: the morning crate opens itself on the first answer of the day (pop-up with pay and streak day), then the Daily Blitz is offered once (Play now / Later); a two-line, three-card tutorial; a ✕ beside the Route pill (and Esc) cancels the whole route; earning a train ticket no longer auto-walks you to the station; street matches doubled (18 opening, cap 16/10, spawns every 14–39s, 80 claims a city-day); an "I'm stuck" button in Help puts you back at the start with nothing lost, and a walker wedged on a route leg gives up after 3 re-plans instead of retrying forever (k90a).

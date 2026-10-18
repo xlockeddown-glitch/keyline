@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { X } from "lucide-react";
 import { TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -11,6 +12,7 @@ export function FieldGuide() {
   const toggleGuide = useGame((s) => s.toggleGuide);
   const replay = useGame((s) => s.replayTutorial);
   const clears = useGame((s) => s.correctByTier);
+  const [askStuck, setAskStuck] = useState(false);
   useSheetOpen(open);
   if (!open) return null;
   const rows = lampPayRows();
@@ -78,6 +80,31 @@ export function FieldGuide() {
               </p>
             ))}
           </div>
+        </div>
+        <div className="shrink-0 border-t border-border px-5 py-3">
+          {askStuck ? (
+            <div className="flex items-center gap-2" data-testid="stuck-confirm">
+              <p className="flex-1 text-sm">Back to the start? You keep everything.</p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  sfx.ui();
+                  setAskStuck(false);
+                  useGame.getState().unstick();
+                }}
+              >
+                Yes
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setAskStuck(false)}>
+                No
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="btn btn-ghost w-full" data-testid="stuck" onClick={() => setAskStuck(true)}>
+              I'm stuck
+            </button>
+          )}
         </div>
         <footer className="flex shrink-0 gap-2 border-t border-border px-5 py-3">
           <button

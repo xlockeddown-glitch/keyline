@@ -50,7 +50,7 @@ export function WardCounter() {
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <div className="grid gap-3">
-            <button type="button" className="hq-row w-full text-left disabled:opacity-70" disabled={claimed} onClick={claimCrate}>
+            <button type="button" className="hq-row w-full text-left disabled:opacity-70" disabled={claimed} onClick={() => claimCrate()}>
               <ItemIcon item="crate" size={40} />
               <div className="hq-row-copy">
                 <p className="hq-row-title">{claimed ? `Day ${crateDay} claimed` : `Claim day ${crateDay} crate`}</p>

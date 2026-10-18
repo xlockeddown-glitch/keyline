@@ -504,6 +504,11 @@ h3 {
 .fare-hint:hover{
   color:var(--color-fg);
 }
+/* 0.0.90: one-tap cancel for the whole walk route (44px tap target on phones). */
+.route-row{display:flex;align-items:center;gap:6px;min-width:0}
+.route-row .fare-hint{min-width:0}
+.route-cancel{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:-12px -10px -12px -4px;font-size:14px;line-height:1;color:var(--color-fg-muted);background:none;border:0;cursor:pointer}
+.route-cancel:hover{color:var(--color-fg)}
 @keyframes run-pulse{
   50%{
     filter:drop-shadow(0 0 16px color-mix(in oklab, var(--glow) 90%, transparent));
@@ -1439,7 +1444,7 @@ h3 {
 }
 
 /* 0.0.37: standing still after walking left or right keeps the side profile (2x2: row 0 left, row 1 right). */
-/* 0.0.89: the Raccoon is on the v2 sheet; player-*.png stay as the fallback for a marker without data-scout. */
+/* 0.0.90: the Raccoon is on the v2 sheet; player-*.png stay as the fallback for a marker without data-scout. */
 .scout-marker.is-idle.is-side {
   background-image: url("/sprites/player-idle-side.png?v=k81p");
   background-size: 200% 200%;
@@ -3528,7 +3533,7 @@ h3 {
 .scout-marker[data-scout="turtle"],
 .scout-marker[data-scout="turtle"].is-idle,
 .scout-marker[data-scout="turtle"].is-idle.is-side {
-  background-image: url("/sprites/scouts/turtle-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/turtle-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3536,7 +3541,7 @@ h3 {
 .scout-marker[data-scout="cat"],
 .scout-marker[data-scout="cat"].is-idle,
 .scout-marker[data-scout="cat"].is-idle.is-side {
-  background-image: url("/sprites/scouts/cat-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/cat-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3544,7 +3549,7 @@ h3 {
 .scout-marker[data-scout="fox"],
 .scout-marker[data-scout="fox"].is-idle,
 .scout-marker[data-scout="fox"].is-idle.is-side {
-  background-image: url("/sprites/scouts/fox-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/fox-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3552,7 +3557,7 @@ h3 {
 .scout-marker[data-scout="corgi"],
 .scout-marker[data-scout="corgi"].is-idle,
 .scout-marker[data-scout="corgi"].is-idle.is-side {
-  background-image: url("/sprites/scouts/corgi-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/corgi-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3560,15 +3565,15 @@ h3 {
 .scout-marker[data-scout="sloth"],
 .scout-marker[data-scout="sloth"].is-idle,
 .scout-marker[data-scout="sloth"].is-idle.is-side {
-  background-image: url("/sprites/scouts/sloth-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/sloth-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
-/* 0.0.89: the Raccoon. */
+/* 0.0.90: the Raccoon. */
 .scout-marker[data-scout="raccoon"],
 .scout-marker[data-scout="raccoon"].is-idle,
 .scout-marker[data-scout="raccoon"].is-idle.is-side {
-  background-image: url("/sprites/scouts/raccoon-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/raccoon-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3576,7 +3581,7 @@ h3 {
 .scout-marker[data-scout="owl"],
 .scout-marker[data-scout="owl"].is-idle,
 .scout-marker[data-scout="owl"].is-idle.is-side {
-  background-image: url("/sprites/scouts/owl-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/owl-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3584,7 +3589,7 @@ h3 {
 .scout-marker[data-scout="giraffe"],
 .scout-marker[data-scout="giraffe"].is-idle,
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
-  background-image: url("/sprites/scouts/giraffe-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/giraffe-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
@@ -3592,7 +3597,7 @@ h3 {
 .scout-marker[data-scout="lynx"],
 .scout-marker[data-scout="lynx"].is-idle,
 .scout-marker[data-scout="lynx"].is-idle.is-side {
-  background-image: url("/sprites/scouts/lynx-v2.png?v=k89a");
+  background-image: url("/sprites/scouts/lynx-v2.png?v=k90a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }

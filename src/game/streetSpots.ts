@@ -1,18 +1,23 @@
 import type { CityId, Tier } from "./types.ts";
 
-/** One city-day of street matches. A guest spawning at the 28s floor for a full day lands near this. */
-export const STREET_CAP = 3200;
+/** One city-day of street matches. A guest spawning at the 14s floor for a full day lands near this (0.0.90: was 3200 at 28s). */
+export const STREET_CAP = 6400;
 /**
  * Claims one player may file in one city on one UTC day.
- * The curb opens with 9 (`seedKeys`). After that `maybeSpawnKey` waits
- * `max(28s, 78s − play)`, so forty is the opening deal plus the picks one
- * walk through a ward actually makes. The 28s floor run for a full day is a script.
+ * The curb opens with 18 (`seedKeys`). After that `maybeSpawnKey` waits
+ * `max(14s, 39s − play)`, so eighty is the opening deal plus the picks one
+ * walk through a ward actually makes. The 14s floor run for a full day is a script.
+ * 0.0.90: every street number doubled (was 9 / 28s–78s / 40).
  */
-export const STREET_DAY_CAP = 40;
+export const STREET_DAY_CAP = 80;
 /** A claim has to follow a walk post or a dealt card in this city inside this window. */
 export const STREET_FRESH_MS = 5 * 60_000;
 
-const SEED: Tier[] = ["white", "blue", "white", "white", "blue", "white", "white", "blue", "white"];
+/** The opening deal, same 2:1 white/blue pattern twice over (0.0.90: 18, was 9). */
+export const SEED: Tier[] = [
+  "white", "blue", "white", "white", "blue", "white", "white", "blue", "white",
+  "white", "blue", "white", "white", "blue", "white", "white", "blue", "white",
+];
 
 export type StreetSpot = {
   id: string;
@@ -20,7 +25,7 @@ export type StreetSpot = {
   day: string;
   index: number;
   tier: Tier;
-  /** Half of the spots after the opening nine. The server pays the market double only while that city's market is open. */
+  /** Half of the spots after the opening deal. The server pays the market double only while that city's market is open. */
   market: boolean;
 };
 
@@ -70,7 +75,8 @@ export function streetSpot(playerId: string, city: CityId, day: string, index: n
   const id = `sk:${city}:${day}:${index}`;
   if (index < SEED.length) return { id, city, day, index, tier: SEED[index]!, market: false };
   const rnd = mulberry32(hash32(`${playerId}|${city}|${day}|${index}`));
-  const playMin = (index - SEED.length) * 0.5;
+  // Spots come twice as often since 0.0.90, so each one is half the play time: the tier weights per minute are unchanged.
+  const playMin = (index - SEED.length) * 0.25;
   return { id, city, day, index, tier: tierAt(playMin, rnd), market: rnd() < 0.5 };
 }
 

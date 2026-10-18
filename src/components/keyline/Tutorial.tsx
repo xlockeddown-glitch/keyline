@@ -1,36 +1,19 @@
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 
+// 0.0.90: kept as short as possible. Everything else is found by playing, or in Help.
 const STEPS = [
   {
-    title: "Walk",
-    lines: [
-      "You're on a real map of a real city.",
-      "Press W A S D to move. W is up the screen (north).",
-      "You can also use the stick, or tap the map to walk there.",
-    ],
+    title: "Move",
+    lines: ["Tap the map to walk there.", "Or use the stick, or W A S D."],
   },
   {
     title: "Lamps",
-    lines: [
-      "The glowing lamps ask trivia.",
-      "Walk up to one and press E, or tap it.",
-      "You'll get a question. Pick A, B, C, or D.",
-      "A right answer gives you coins. You still spend a match if you're wrong.",
-      "Start with a white lamp. You already have those matches.",
-    ],
+    lines: ["Tap a glowing lamp.", "Answer the question to earn coins."],
   },
   {
-    title: "More",
-    lines: [
-      "Matches on the ground: walk over them. The street stays thin — spend them or they stop appearing.",
-      "F calls a cab. Park and get out before you light a lamp.",
-      "Light 3 lamps and you get a train ticket.",
-      "Two green globes stacked: four questions. The bright amber ring: three.",
-      "The train sign is the station. Walk there and press T to board a train to another city. Play a round on the way and the ride pays better.",
-      "The brass awning is a coat shop. Walk up and press E to hire a scout, print, or mix paint. The street counter sells matches and holds the morning crate. The notice board posts contracts and the day's blitz. The journal only keeps the record.",
-      "The Help button lists what each colour of lamp pays: coins, paint, brass, and how often it comes back.",
-    ],
+    title: "That's it",
+    lines: ["The rest you'll find as you play.", "Tap Help any time."],
   },
 ] as const;
 
