@@ -248,6 +248,28 @@ function boardFromAggs(kind: StandingKind, scope: "all" | "city", city: CityId |
   return board;
 }
 
+/** 0.0.98: level, title and name colour on every board row. Never fails the board. */
+async function tagBoard(board: StandingBoard): Promise<StandingBoard> {
+  try {
+    const rows = [...board.distance, ...Object.values(board.byTier).flat()];
+    const ids = [...new Set(rows.map((r) => r.userId))];
+    if (!ids.length) return board;
+    const { levelTags } = await import("./levelsServer.ts");
+    const tags = await levelTags(await getSql(), ids);
+    for (const r of rows) {
+      const t = tags.get(r.userId);
+      if (t) {
+        r.level = t.level;
+        r.title = t.title;
+        r.color = t.color;
+      }
+    }
+  } catch {
+    /* untagged */
+  }
+  return board;
+}
+
 /** Telemetry standings: cards / fastest / accuracy, all cities or one city. */
 export const fetchStandings = createServerFn({ method: "GET" })
   .validator((u: unknown) =>
@@ -258,7 +280,7 @@ export const fetchStandings = createServerFn({ method: "GET" })
       })
       .parse(u ?? {}),
   )
-  .handler(async ({ data }): Promise<StandingBoard> => {
+  .handler(async ({ data }): Promise<StandingBoard> => tagBoard(await (async (): Promise<StandingBoard> => {
     const kind = data.kind;
     const city = data.city ?? null;
     const scope = city ? "city" : "all";
@@ -316,7 +338,7 @@ export const fetchStandings = createServerFn({ method: "GET" })
     } catch {
       return emptyStandingBoard(kind, scope, city);
     }
-  });
+  })()));
 
 // ── 0.0.94: whole-game boards for the ride side panel ───────────────────
 

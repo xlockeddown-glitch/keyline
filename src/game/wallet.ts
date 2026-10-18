@@ -105,6 +105,19 @@ export type WalletMeta = {
   schematic: number;
   press: number;
   patterns: number;
+  /** 0.0.98 levels: the level rewards are paid through (first look sets the baseline, no retro pay). */
+  lvl: number;
+  lvlInit: boolean;
+  /** Cached for the boards: level and XP at the last server look. */
+  xp: number;
+  title: string;
+  color: string;
+  /** Held tokens: 15-min double streak pay, and matches to send a friend. */
+  boosts: number;
+  gifts: number;
+  boostUntil: number;
+  /** Server time of the newest friend gift already shown. */
+  giftSeen: number;
 };
 
 export type WalletState = {
@@ -183,6 +196,15 @@ const emptyMeta = (): WalletMeta => ({
   schematic: 0,
   press: 0,
   patterns: 0,
+  lvl: 0,
+  lvlInit: false,
+  xp: 0,
+  title: "",
+  color: "",
+  boosts: 0,
+  gifts: 0,
+  boostUntil: 0,
+  giftSeen: 0,
 });
 
 export function emptyWallet(): WalletState {
@@ -251,6 +273,15 @@ export function cleanMeta(raw: unknown): WalletMeta {
     schematic: num(m.schematic, SCHEMATIC_CAP),
     press: num(m.press, PRESS_CAP),
     patterns: num(m.patterns, PATTERN_CAP),
+    lvl: num(m.lvl, 100),
+    lvlInit: m.lvlInit === true,
+    xp: num(m.xp, Number.MAX_SAFE_INTEGER),
+    title: typeof m.title === "string" ? m.title.slice(0, 40) : "",
+    color: typeof m.color === "string" ? m.color.slice(0, 16) : "",
+    boosts: num(m.boosts, 99),
+    gifts: num(m.gifts, 99),
+    boostUntil: num(m.boostUntil, Number.MAX_SAFE_INTEGER),
+    giftSeen: num(m.giftSeen, Number.MAX_SAFE_INTEGER),
   };
 }
 

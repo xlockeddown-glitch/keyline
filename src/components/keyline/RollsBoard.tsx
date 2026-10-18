@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { LevelChip } from "./Levels";
+import { nameColorHex } from "@/game/levels";
 import { Trophy, X } from "lucide-react";
 import { SignInGate } from "@/lib/auth/gates";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -372,7 +374,9 @@ function RollRow({ kind, row, mine }: { kind: StandingKind; row: StandingRow; mi
     <li className={`rolls-row ${mine ? "is-me" : ""}`}>
       <span className="rolls-rank tabular-nums">{row.rank}</span>
       <span className="min-w-0 truncate font-medium">
-        {standingName(row.name)}
+        <LevelChip level={row.level} color={row.color} />
+        <span style={row.color ? { color: nameColorHex(row.color) ?? undefined } : undefined}>{standingName(row.name)}</span>
+        {row.title ? <span className="lvl-title ml-1.5">{row.title}</span> : null}
         {mine ? <span className="kicker ml-2">You</span> : null}
       </span>
       <span className="ml-auto flex items-center gap-1.5 tabular-nums text-fg">

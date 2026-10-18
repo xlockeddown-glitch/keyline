@@ -4018,3 +4018,33 @@ h3 {
 /* 0.0.96 Fox (Clever): the wrong option the server crossed out. */
 .plate-choice.is-struck { opacity: 0.45; text-decoration: line-through; text-decoration-thickness: 2px; cursor: not-allowed; }
 .ability-name { display: inline-block; padding: 0 0.45em; margin-right: 0.15em; border-radius: 999px; background: color-mix(in oklab, var(--color-accent, #e0a33a) 22%, transparent); font-weight: 700; letter-spacing: 0.01em; }
+
+/* 0.0.98 levels and titles */
+.lvl-hud { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.lvl-badge { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 999px; background: linear-gradient(180deg, #f5c451, #d18a1c); color: #2a1a00; font-weight: 800; font-size: 12px; box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.5); }
+.lvl-badge.is-big { min-width: 44px; height: 44px; font-size: 20px; }
+.lvl-bar { position: relative; display: block; width: 72px; height: 4px; border-radius: 999px; background: rgba(127,127,127,.28); overflow: hidden; }
+.lvl-bar.is-wide { width: 100%; height: 6px; margin: 4px 0 2px; }
+.lvl-bar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #f5c451, #ef8a2a); border-radius: inherit; }
+.lvl-chip { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 5px; margin-right: 6px; border-radius: 999px; background: #c99a2e; color: #fff; font-size: 10px; font-weight: 800; vertical-align: 1px; }
+.lvl-title { font-size: 11px; font-weight: 600; color: var(--color-accent, #c77d1a); font-style: italic; }
+.lvl-panel { border: 1px solid var(--color-border, rgba(0,0,0,.12)); border-radius: 14px; padding: 12px; }
+.lvl-btn { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--color-border, rgba(127,127,127,.35)); background: rgba(127,127,127,.12); color: inherit; min-height: 34px; }
+.lvl-btn:disabled { opacity: .5; }
+.lvl-select { font-size: 12px; padding: 6px; border-radius: 8px; border: 1px solid var(--color-border, rgba(127,127,127,.35)); background: rgba(127,127,127,.12); color: inherit; }
+.lvl-swatch { min-width: 28px; height: 28px; border-radius: 999px; border: 2px solid transparent; font-size: 11px; padding: 0 6px; background: rgba(127,127,127,.2); color: inherit; }
+.lvl-swatch.is-on { border-color: currentColor; }
+.lvl-ladder { margin-top: 8px; }
+.lvl-ladder-name { font-size: 12px; font-weight: 700; }
+.lvl-draft { margin-left: 6px; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; padding: 1px 5px; border-radius: 4px; background: rgba(127,127,127,.2); color: var(--color-fg-muted, #666); }
+.lvl-rungs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
+.lvl-rung { display: grid; gap: 3px; text-align: left; padding: 6px 7px; border-radius: 10px; border: 1px solid var(--color-border, rgba(127,127,127,.3)); background: rgba(127,127,127,.08); color: inherit; min-height: 44px; }
+.lvl-rung:not(.is-earned) { opacity: .6; }
+.lvl-rung.is-earned { border-color: #d6a33a; }
+.lvl-rung.is-earned { background: rgba(214,163,58,.12); }
+.lvl-rung.is-on { background: rgba(214,163,58,.32); box-shadow: 0 0 0 2px #d6a33a inset; }
+.lvl-rung-name { font-size: 11px; font-weight: 700; line-height: 1.1; }
+.lvl-rung-bar { position: relative; height: 3px; border-radius: 999px; background: rgba(127,127,127,.25); overflow: hidden; }
+.lvl-rung-bar > i { position: absolute; inset: 0 auto 0 0; background: #d6a33a; }
+.lvl-rung-n { font-size: 10px; color: var(--color-fg-muted, #666); }
+

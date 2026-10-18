@@ -3013,6 +3013,20 @@ export function rarityCensus() {
  * Every card a lamp can deal (banks, city and region sets, place topics), for server lookups by id
  * (friend tickets, 0.0.50). Door quizzes on named lamps live in data.ts and are added by friendCards.ts.
  */
+/** 0.0.98: every card with its trivia category (city and place cards count as their own cat; place cards as local). */
+export function everyCardCat(): [TriviaQ, TriviaCat][] {
+	const out: [TriviaQ, TriviaCat][] = [];
+	for (const cat of ALL_CATS) {
+		const lists = [GENERAL[cat], ...Object.values(CITY).map((c) => c[cat]), ...Object.values(CITY_EXTRA).map((c) => c[cat]), ...Object.values(REGION).map((c) => c[cat])];
+		for (const l of lists) if (l) for (const q of l) out.push([q, cat]);
+	}
+	for (const topic of Object.values(PLACE)) {
+		if (!topic) continue;
+		for (const list of Object.values(topic)) if (list) for (const q of list) out.push([q, "local"]);
+	}
+	return out;
+}
+
 export function everyCard(): TriviaQ[] {
 	const out: TriviaQ[] = [];
 	const add = (list: TriviaQ[] | undefined) => {

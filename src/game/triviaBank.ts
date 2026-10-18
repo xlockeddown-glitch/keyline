@@ -2,9 +2,9 @@ import { randomBytes } from "node:crypto";
 import { CITIES, seriesOf, seriesPoi } from "./data";
 import { DOOR_QUIZZES } from "./doorQuizzes";
 import { sealPlate } from "./rarity";
-import { everyCard, pickTrivia } from "./trivia";
+import { everyCard, everyCardCat, pickTrivia } from "./trivia";
 import { publicCardId, type TriviaDeps } from "./triviaService";
-import type { CityId, Poi, TriviaQ } from "./types";
+import type { CityId, Poi, TriviaCat, TriviaQ } from "./types";
 
 /**
  * 0.0.53 — SERVER-ONLY card index (the whole bank plus door quizzes), by raw id and by public id. Imported only
@@ -29,6 +29,26 @@ function build(): Map<string, TriviaQ> {
 export function cardAny(id: string): TriviaQ | null {
   byId ??= build();
   return byId.get(id) ?? null;
+}
+
+let catById: Map<string, TriviaCat> | null = null;
+
+/** 0.0.98: a card's trivia category by raw or public id (door quizzes count as local). Server-only. */
+export function cardCat(id: string): TriviaCat | null {
+  if (!catById) {
+    const m = new Map<string, TriviaCat>();
+    for (const [c, cat] of everyCardCat()) {
+      if (!m.has(c.id)) m.set(c.id, cat);
+      const pub = publicCardId(c);
+      if (!m.has(pub)) m.set(pub, cat);
+    }
+    for (const seeds of Object.values(DOOR_QUIZZES)) for (const s of seeds) {
+      const c = sealPlate(s, { city: true });
+      if (!m.has(c.id)) m.set(c.id, "local");
+    }
+    catById = m;
+  }
+  return catById.get(id) ?? null;
 }
 
 function namedPoi(city: CityId, poiId: string): Poi | null {
