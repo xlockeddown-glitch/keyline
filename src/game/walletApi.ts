@@ -89,6 +89,8 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("blitz"), step: z.number().int().min(0).max(5), nonces: z.array(z.string().regex(/^[A-Za-z0-9_-]{8,80}$/)).min(1).max(8) }),
   z.object({ kind: z.literal("wheel"), tier: Tier, city: City }),
   z.object({ kind: z.literal("board"), from: City, to: City }),
+  z.object({ kind: z.literal("cache"), city: City }),
+  z.object({ kind: z.literal("dgoal"), i: z.number().int().min(0).max(3) }),
   z.object({
     kind: z.literal("ride"),
     watch: z.boolean().optional(),
@@ -117,6 +119,7 @@ export type WalletWire = {
   ingredient?: { id: string; n: number };
   line?: string;
   wheelWin?: number;
+  cache?: { got: Tier[]; coin: number };
   rideDeal?: RideDeal;
 };
 
@@ -165,6 +168,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       ingredient: r.ingredient,
       line: r.line,
       wheelWin: r.wheelWin,
+      cache: r.cache,
       rideDeal: r.rideDeal,
     };
   });

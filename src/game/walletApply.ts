@@ -1,3 +1,4 @@
+import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
 import { groupIds } from "./playerLinks.ts";
@@ -147,6 +148,19 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     luckyHit: false,
     perfectBlue: pay.perfectBlue,
   };
+  // 0.0.93: answer streak from the server's own grade rows (newest first): right answers since the last miss.
+  const recent = full.correct
+    ? await sql<{ detail: string }>`
+        select detail from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
+        order by created_at desc limit 9
+      `
+    : [];
+  let run = 0;
+  for (const row of recent) {
+    if (String(row.detail).includes('"g":"miss"')) break;
+    run++;
+  }
+  const streakTier = full.correct ? streakPrize(run + 1) : null;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   const detailOf = (award: AwardView) =>
     JSON.stringify({
@@ -174,6 +188,17 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     if (!grant.ok) return grant;
     const detail = detailOf(grant.award ?? { coins: 0, keys: {}, boosts: [] });
     if (!base.migrated || !full.correct) return { ok: true, wallet: base, award: grant.award, detail };
+    if (streakTier && grant.ok) {
+      const p = payMatch(grant.wallet.keys, streakTier);
+      const extra = applyDelta(grant.wallet, { coins: p.coin, keys: p.match ? { [streakTier]: 1 } : {} });
+      if (extra.ok) {
+        const award = grant.award ?? { coins: 0, keys: {}, boosts: [] };
+        const keys = { ...award.keys };
+        if (p.match) keys[streakTier] = (keys[streakTier] ?? 0) + 1;
+        const streakAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, `${run + 1} in a row`] };
+        return { ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) };
+      }
+    }
     return { ...grant, detail };
   });
   return applied(r);
@@ -231,6 +256,8 @@ export type ClientOp =
   | { kind: "blitz"; step: number; nonces: string[] }
   | { kind: "wheel"; tier: Tier; city: CityId }
   | { kind: "board"; from: CityId; to: CityId }
+  | { kind: "cache"; city: CityId }
+  | { kind: "dgoal"; i: number }
   | {
       kind: "ride";
       watch?: boolean;
@@ -247,6 +274,8 @@ export type ClientResult = Applied & {
   line?: string;
   /** 0.0.92: index of the slice the server rolled and paid (the client animates to it). */
   wheelWin?: number;
+  /** 0.0.93: the matches a cache paid (the rest became coin). */
+  cache?: { got: Tier[]; coin: number };
   rideDeal?: RideDeal;
 };
 
@@ -339,6 +368,52 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       };
     });
     return { ...applied(r), ingredient, line, wheelWin: offer.win };
+  }
+
+  // 0.0.93: the day's match cache. Once per player per day (any city); the prize is seeded per player and day.
+  if (op.kind === "cache") {
+    const day = today();
+    if (!wallet.cities.unlocked.includes(op.city)) return refused(wallet, "locked");
+    const tiers = cachePrize(id, day);
+    let got: Tier[] = [];
+    let coin = 0;
+    const r = await mutateWallet(sql, sessionUserId, `cache:${day}`, (w) => {
+      const paid = payMatches(w.keys, tiers);
+      got = paid.got;
+      coin = paid.coin;
+      const keys: Partial<Record<Tier, number>> = {};
+      for (const t of got) keys[t] = (keys[t] ?? 0) + 1;
+      const delta = applyDelta(w, { coins: paid.coin, keys });
+      return delta.ok ? { ...delta, detail: JSON.stringify({ got, coin }) } : delta;
+    });
+    return { ...applied(r), cache: { got, coin } };
+  }
+
+  // 0.0.93: daily goals. i = 0..2 pays GOAL_COIN once each; i = 3 (all three paid) pays a green match. The server
+  // can't see the goals themselves, so it asks for proof of play: graded right answers today.
+  if (op.kind === "dgoal") {
+    const day = today();
+    const i = op.i;
+    if (!Number.isInteger(i) || i < 0 || i > 3) return refused(wallet, "unproven");
+    const rows = await sql<{ n: number }>`
+      select count(*)::int as n from wallet_ledger
+      where user_id = ${id} and op_key like ${"grade:%"} and created_at >= ${day + "T00:00:00Z"}
+        and detail not like ${'%"g":"miss"%'}
+    `;
+    const right = Number(rows[0]?.n) || 0;
+    if (right < (i === 3 ? GOAL_ALL_PROOF_RIGHT : GOAL_PROOF_RIGHT)) return { ...refused(wallet, "unproven"), authoritative: true };
+    if (i === 3) {
+      const three = await sql<{ n: number }>`
+        select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key in (${`goal:${day}:0`}, ${`goal:${day}:1`}, ${`goal:${day}:2`})
+      `;
+      if ((Number(three[0]?.n) || 0) < 3) return { ...refused(wallet, "unproven"), authoritative: true };
+    }
+    const r = await mutateWallet(sql, sessionUserId, `goal:${day}:${i}`, (w) => {
+      if (i < 3) return applyDelta(w, { coins: GOAL_COIN });
+      const p = payMatch(w.keys, GOAL_ALL_TIER);
+      return applyDelta(w, { coins: p.coin, keys: p.match ? { [GOAL_ALL_TIER]: 1 } : {} });
+    });
+    return applied(r);
   }
 
   if (op.kind === "street") {
