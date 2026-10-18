@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LevelPanel } from "./Levels";
 import { RecentRewards } from "./RecentRewards";
 import { StreakBoardSection } from "./RideBoards";
+import { PrintPanel } from "./Prints";
 import { X } from "lucide-react";
 import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
@@ -283,6 +284,7 @@ export function HqPanel() {
             <div className="grid gap-4 text-sm">
               <LevelPanel />
               <RecentRewards />
+              <PrintPanel />
               <DailyGoals act={false} />
               <div>
                 <p className="kicker">Quests</p>
