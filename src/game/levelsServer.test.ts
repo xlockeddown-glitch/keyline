@@ -107,3 +107,15 @@ test("boost token: 15 minutes, one at a time; gifts move a token to a friend's m
   assert.equal((await levelLook(sql, "b", cat)).giftsIn.length, 0, "note shows once");
   assert.ok(rewardFor(4).boost);
 });
+
+test("level reward matches go through the 0.0.97 pocket rule (full pocket → merge credits)", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "full", snap(), "fullphone1");
+  await sql.query(`update player_wallets set white = 30, meta = meta || '{"lvl":1,"lvlInit":true}'::jsonb where user_id = 'full'`);
+  await answers(sql, "full", 6, "blue", "x"); // 120 XP: level 2 pays 2 whites
+  const v = await levelLook(sql, "full", cat);
+  assert.deepEqual(v.paid.map((r) => r.level), [2]);
+  const w = (await canonicalWallet(sql, "full")).wallet;
+  assert.equal(w.keys.white, 30);
+  assert.deepEqual(w.meta.credit, { white: 2 });
+});
