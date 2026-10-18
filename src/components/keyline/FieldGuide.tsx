@@ -95,7 +95,8 @@ export function FieldGuide() {
               <li><span className="emb-badge is-streak">🔥 5</span><span>Answer streak: right answers in a row (5 pays a white, 10 a blue).</span></li>
               <li><span className="emb-badge is-boost">⚡2</span><span>Boosts applied (charm, ride reward, scout ability). Tap it to see which.</span></li>
               <li><span className="badge-ico"><ItemIcon item="blue" size={22} /><b>↺</b></span><span>Perfect score: your match comes back.</span></li>
-              <li><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Match back, but the pocket was full, so coin instead.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>Pocket full: the match steps up to the next colour with room.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Every pocket above is full, so coin instead.</span></li>
               <li><span className="badge-ico"><ItemIcon item="coin" size={20} /><ItemIcon item="white" size={20} /><ItemIcon item="brass" size={20} /><b>+N</b></span><span>Items earned: coin, matches, brass, ink, vellum, schematic, ingredient, paint.</span></li>
             </ul>
           </section>

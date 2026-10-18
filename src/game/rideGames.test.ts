@@ -156,7 +156,7 @@ test("forfeit keeps an earlier best", () => {
 });
 
 test("ride pocket holds a whole 14-minute win; other sources keep the old pocket", () => {
-  assert.equal(RIDE_WHITE_POCKET, 15);
+  assert.equal(RIDE_WHITE_POCKET, 22);
   assert.equal(matchCap("white"), WHITE_POCKET);
   const best = rideReward(10.5 * MIN - 1, won(0.74));
   assert.equal(best.blue, 0);
@@ -164,7 +164,7 @@ test("ride pocket holds a whole 14-minute win; other sources keep the old pocket
   const got = pocketRide(full, { white: best.white, blue: 0, green: 0 });
   assert.equal(got.add.white, best.white, "a full street pocket plus the biggest win is not cut");
   assert.ok(got.keys.white <= RIDE_WHITE_POCKET);
-  const over = pocketRide({ ...empty(), white: 14 }, { white: 5, blue: 0, green: 0 });
+  const over = pocketRide({ ...empty(), white: 21 }, { white: 5, blue: 0, green: 0 });
   assert.equal(over.keys.white, RIDE_WHITE_POCKET);
 });
 

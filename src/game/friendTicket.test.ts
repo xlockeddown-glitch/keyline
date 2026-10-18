@@ -1,3 +1,4 @@
+import { payMatchesOf } from "./goals.ts";
 // 0.0.50 friend tickets: the reward and anti-abuse rules on their own.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -120,9 +121,9 @@ test("dealt order is a permutation of the card's four choices", () => {
 test("payFriend: +1 white; a full white pocket pays 30 coin instead", () => {
   const keys = { white: 1, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
   assert.deepEqual(payFriend(keys, 100, 1, matchCap("white")), { keys: { ...keys, white: 2 }, points: 100, added: 1, coins: 0 });
-  const full = { ...keys, white: 4 };
-  assert.deepEqual(payFriend(full, 100, 1, matchCap("white")), { keys: full, points: 130, added: 0, coins: 30 });
-  assert.deepEqual(payFriend({ ...keys, white: 3 }, 0, 2, matchCap("white")), { keys: { ...keys, white: 4 }, points: 30, added: 1, coins: 30 });
+  const full = { ...keys, white: 6 };
+  assert.deepEqual(payFriend(full, 100, 1, matchCap("white"), payMatchesOf), { keys: { ...full, blue: 1 }, points: 100, added: 1, coins: 0 });
+  assert.deepEqual(payFriend({ ...keys, white: 5 }, 0, 2, matchCap("white"), payMatchesOf), { keys: { ...keys, white: 6, blue: 1 }, points: 0, added: 2, coins: 0 });
 });
 
 test("markFriendPaid: a reward lands in a save once, however often the news repeats", () => {

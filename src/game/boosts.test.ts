@@ -138,12 +138,12 @@ test("creditWhite respects the white pocket", () => {
   const one = creditWhite(keys, 1);
   assert.equal(one.added, 1);
   assert.equal(one.keys.white, 4);
-  const full = creditWhite(one.keys, 1);
-  assert.equal(full.added, 0);
+  const full = creditWhite({ ...keys, white: WHITE_POCKET }, 1);
+  assert.equal(full.added, 1, "0.0.96: match ↑");
   assert.equal(full.keys.white, WHITE_POCKET);
-  const two = creditWhite(keys, 2);
-  assert.equal(two.added, 1);
-  assert.equal(two.keys.white, WHITE_POCKET);
+  assert.equal(full.keys.blue, 1);
+  const two = creditWhite({ ...keys, white: WHITE_POCKET - 1 }, 2);
+  assert.deepEqual([two.keys.white, two.keys.blue, two.coins], [WHITE_POCKET, 1, 0]);
 });
 
 test("no topic means no Category charm", () => {

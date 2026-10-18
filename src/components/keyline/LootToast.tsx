@@ -164,8 +164,10 @@ export function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }
   if (loot.refund) {
     list.push(
       loot.refund.match
-        ? { key: "back", title: PERFECT_REFUND_LINE, node: <ItemIcon item={loot.refund.tier} size={26} />, amt: "↺", cls: "is-back", testid: "perfect-refund" }
-        : { key: "back", title: `${PERFECT_REFUND_LINE}: pocket full, +${loot.refund.coin} coin`, node: <ItemIcon item="coin" size={30} />, amt: <>↺ +{loot.refund.coin}</>, cls: "is-back is-full", testid: "perfect-refund" },
+        ? loot.refund.up
+          ? { key: "back", title: `${PERFECT_REFUND_LINE}: pocket full, stepped up to ${loot.refund.tier}`, node: <ItemIcon item={loot.refund.tier} size={26} />, amt: "↑", cls: "is-back is-up", testid: "perfect-refund" }
+          : { key: "back", title: PERFECT_REFUND_LINE, node: <ItemIcon item={loot.refund.tier} size={26} />, amt: "↺", cls: "is-back", testid: "perfect-refund" }
+        : { key: "back", title: `${PERFECT_REFUND_LINE}: every pocket full, +${loot.refund.coin} coin`, node: <ItemIcon item="coin" size={30} />, amt: <>↺ +{loot.refund.coin}</>, cls: "is-back is-full", testid: "perfect-refund" },
     );
   }
   if (loot.brass) list.push({ key: "brass", title: "brass", node: <ItemIcon item="brass" size={32} />, amt: `+${loot.brass}` });

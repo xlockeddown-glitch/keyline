@@ -4,10 +4,10 @@
  * Pure — the client, the server functions (dailyApi.ts) and the tests all use these rules,
  * so the route a player walks is the route the server checks.
  */
+import { payMatchesOf } from "./goals.ts";
 import { CITIES, MAX_PACE, WALK_PACE } from "./data.ts";
 import { distM } from "./geo.ts";
 import { TIER_VALUE } from "./rewards.ts";
-import { matchCap } from "./ticket.ts";
 import type { CityId, Poi, Tier } from "./types";
 
 export const DAILY_LAMPS = 5;
@@ -334,14 +334,15 @@ export function payDaily(keys: Record<Tier, number>, points: number) {
   const next = { ...keys };
   let coins = 0;
   const added: Partial<Record<Tier, number>> = {};
+  let cur = next;
   for (const [t, c] of Object.entries(DAILY_REWARD) as [Tier, number][]) {
-    const room = Math.max(0, matchCap(t) - (next[t] ?? 0));
-    const fit = Math.min(room, c);
-    next[t] = (next[t] ?? 0) + fit;
-    if (fit) added[t] = fit;
-    coins += (c - fit) * TIER_VALUE[t];
+    // 0.0.96: full pocket steps up (match ↑); coin only when every tier above is full.
+    const paid = payMatchesOf(cur, t, c);
+    cur = paid.keys;
+    for (const [u, k] of Object.entries(paid.add) as [Tier, number][]) added[u] = (added[u] ?? 0) + k;
+    coins += paid.coin;
   }
-  return { keys: next, points: points + coins, added, coins };
+  return { keys: cur, points: points + coins, added, coins };
 }
 
 export function formatRunTime(ms: number | null | undefined): string {

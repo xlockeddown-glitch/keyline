@@ -1121,10 +1121,11 @@ test("0.0.93 cache and daily goals: once a day, 2-3 white/blue/green matches; go
   for (const i of [0, 1, 2]) assert.ok((await applyClientOp(sql, "cac", { kind: "dgoal", i })).ok);
   const twice = await applyClientOp(sql, "cac", { kind: "dgoal", i: 0 });
   assert.equal(twice.replay, true);
+  const green0 = (await canonicalWallet(sql, "cac")).wallet.keys.green ?? 0;
   const all = await applyClientOp(sql, "cac", { kind: "dgoal", i: 3 });
   assert.ok(all.ok);
   assert.equal(all.wallet.coins - coins0, 3 * 60);
-  assert.equal(all.wallet.keys.green, (c1.wallet.keys.green ?? 0) + 1);
+  assert.equal(all.wallet.keys.green, green0 + 1);
 });
 
 test("0.0.95 cache always pays: full colours step up to the next tier with room; all full pays coin", async () => {
@@ -1165,15 +1166,19 @@ test("0.0.95 Amanda's make-up gift: 2 red once, idempotent, only her account, ov
   const other = await syncPlayer(sql, "someone-else", snap({}), "otherphone1");
   assert.equal(other.giftNotes, undefined);
   assert.equal(other.wallet.keys.red ?? 0, 0);
-  // Pocket full: the gift pays overflow coin instead.
+  // 0.0.96: red full steps up to violet (match ↑); red and violet full pays coin.
   const list = [{ ...g, key: "gift:test-full", userId: "fullred" }];
   await syncPlayer(sql, "fullred", snap({}), "fullphone1");
   await sql.query(`update player_wallets set red = $2 where user_id = $1`, ["fullred", matchCap("red")]);
-  const before = (await canonicalWallet(sql, "fullred")).wallet.coins;
   assert.deepEqual(await grantMatchGifts(sql, "fullred", list), [g.note]);
-  const after = (await canonicalWallet(sql, "fullred")).wallet;
-  assert.equal(after.keys.red, matchCap("red"));
-  assert.ok(after.coins > before, "overflow coin");
+  const up = (await canonicalWallet(sql, "fullred")).wallet;
+  assert.equal(up.keys.red, matchCap("red"));
+  assert.equal(up.keys.violet, 2, "match ↑ to violet");
+  await syncPlayer(sql, "fullall", snap({}), "fullall1");
+  await sql.query(`update player_wallets set red = $2, violet = $2 where user_id = $1`, ["fullall", matchCap("red")]);
+  const before = (await canonicalWallet(sql, "fullall")).wallet.coins;
+  await grantMatchGifts(sql, "fullall", [{ ...g, key: "gift:test-full2", userId: "fullall" }]);
+  assert.ok((await canonicalWallet(sql, "fullall")).wallet.coins > before, "coin only when every tier above is full");
 });
 
 test("0.0.95 purchases live on the account: a scout bought on one device shows on another after logout", async () => {
@@ -1231,7 +1236,8 @@ test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin,
   const fullBlue = { ...emptyWallet(), keys: { ...emptyWallet().keys, blue: matchCap("blue") + 5 } };
   const rumFull = gradeGrant(fullBlue, pay({ scout: "raccoon", rummage: true, clearTier: "white", poiTier: "white" }));
   const plainFull = gradeGrant(fullBlue, pay({ clearTier: "white", poiTier: "white" }));
-  assert.equal(rumFull.award!.coins - plainFull.award!.coins, TIER_VALUE.blue, "full blue pocket pays overflow coin");
+  assert.equal(rumFull.award!.coins, plainFull.award!.coins, "0.0.96: full blue steps up, no coin");
+  assert.equal((rumFull.award!.keys.green ?? 0) - (plainFull.award!.keys.green ?? 0), 1, "Rummager blue steps up to green");
   const fox = gradeGrant(emptyWallet(), pay({ scout: "fox", loot: 1.1 }));
   assert.ok(fox.award!.coins > plain.award!.coins);
 

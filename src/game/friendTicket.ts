@@ -149,7 +149,19 @@ export function rewardLine(why: RewardWhy | null, from: string): string {
  * Land `n` friend-ticket whites in a save; a full pocket pays the white's ladder value in coin (as the Daily
  * run does). `cap` is the white pocket (ticket.ts matchCap), passed in so the /t page never loads the city data.
  */
-export function payFriend(keys: Record<Tier, number>, points: number, n: number, cap: number) {
+export function payFriend(
+  keys: Record<Tier, number>,
+  points: number,
+  n: number,
+  cap: number,
+  step?: (keys: Record<Tier, number>, tier: Tier, n: number) => { keys: Record<Tier, number>; add: Partial<Record<Tier, number>>; coin: number },
+) {
+  if (step) {
+    // 0.0.96: full white pocket steps up (match ↑); coin only when every tier above is full.
+    const paid = step(keys, FRIEND_REWARD, Math.max(0, n));
+    const added = Object.values(paid.add).reduce((a, b) => a + (b ?? 0), 0);
+    return { keys: paid.keys, points: points + paid.coin, added, coins: paid.coin };
+  }
   const next = { ...keys };
   const room = Math.max(0, cap - (next[FRIEND_REWARD] ?? 0));
   const fit = Math.min(room, Math.max(0, n));

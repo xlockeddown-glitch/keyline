@@ -1,5 +1,5 @@
 import { hasShield, streakRun } from "./scoutPerks.ts";
-import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, streakPrize } from "./goals.ts";
+import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
 import { groupIds } from "./playerLinks.ts";
@@ -88,15 +88,8 @@ export async function grantMatchGifts(sql: Sql, userId: string, list: readonly M
   const notes: string[] = [];
   for (const g of giftsFor([userId, id], list)) {
     const r = await mutateWallet(sql, userId, g.key, (w) => {
-      let keys = w.keys;
-      let coin = 0;
-      for (let i = 0; i < g.n; i++) {
-        const p = payMatch(keys, g.tier);
-        keys = p.keys;
-        coin += p.coin;
-      }
-      const add: Partial<Record<Tier, number>> = { [g.tier]: (keys[g.tier] ?? 0) - (w.keys[g.tier] ?? 0) };
-      return applyDelta(w, { keys: add, coins: coin });
+      const paid = payMatchesOf(w.keys, g.tier, g.n);
+      return applyDelta(w, { keys: paid.add, coins: paid.coin });
     });
     if (r.ok && !r.replay) notes.push(g.note);
   }
@@ -270,20 +263,21 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     // 0.0.96 Plate (Shell): a server-rolled 1 in 3 failed lamps hands the spent match back (overflow coin if full).
     if (base.migrated && !full.correct && full.shellBack && full.clearTier) {
       const p = payMatch(base.keys, full.clearTier);
-      const back = applyDelta(base, { coins: p.coin, keys: p.match ? { [full.clearTier]: 1 } : {} });
+      const k = p.tier ? { [p.tier]: 1 } : {};
+      const back = applyDelta(base, { coins: p.coin, keys: k });
       if (back.ok) {
-        const award = { coins: p.coin, keys: p.match ? { [full.clearTier]: 1 } : {}, boosts: ["Shell: match back"] };
+        const award = { coins: p.coin, keys: k, boosts: p.up ? ["Shell: match back ↑"] : ["Shell: match back"] };
         return { ok: true, wallet: back.wallet, award, detail: detailOf(award) };
       }
     }
     if (!base.migrated || !full.correct) return { ok: true, wallet: base, award: grant.award, detail };
     if (streakTier && grant.ok) {
       const p = payMatch(grant.wallet.keys, streakTier);
-      const extra = applyDelta(grant.wallet, { coins: p.coin, keys: p.match ? { [streakTier]: 1 } : {} });
+      const extra = applyDelta(grant.wallet, { coins: p.coin, keys: p.tier ? { [p.tier]: 1 } : {} });
       if (extra.ok) {
         const award = grant.award ?? { coins: 0, keys: {}, boosts: [] };
         const keys = { ...award.keys };
-        if (p.match) keys[streakTier] = (keys[streakTier] ?? 0) + 1;
+        if (p.tier) keys[p.tier] = (keys[p.tier] ?? 0) + 1;
         const streakAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, `${run + 1} in a row`] };
         return { ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) };
       }
@@ -500,7 +494,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     const r = await mutateWallet(sql, sessionUserId, `goal:${day}:${i}`, (w) => {
       if (i < 3) return applyDelta(w, { coins: GOAL_COIN });
       const p = payMatch(w.keys, GOAL_ALL_TIER);
-      return applyDelta(w, { coins: p.coin, keys: p.match ? { [GOAL_ALL_TIER]: 1 } : {} });
+      return applyDelta(w, { coins: p.coin, keys: p.tier ? { [p.tier]: 1 } : {} });
     });
     return applied(r);
   }

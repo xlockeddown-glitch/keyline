@@ -1,5 +1,5 @@
 import type { Tier, TriviaCat } from "./types";
-import { matchCap } from "./ticket.ts";
+import { payMatchesOf } from "./goals.ts";
 
 /** Consecutive correct answers that pay a white match. Resets on a miss. */
 export const STREAK_SPARK_N = 3;
@@ -63,11 +63,9 @@ export function applyTriviaBoosts(input: {
 export function creditWhite(
   keys: Record<Tier, number>,
   n: number,
-): { keys: Record<Tier, number>; added: number } {
-  const want = Math.max(0, Math.floor(n));
-  const have = keys.white ?? 0;
-  const room = Math.max(0, matchCap("white") - have);
-  const added = Math.min(want, room);
-  if (!added) return { keys, added: 0 };
-  return { keys: { ...keys, white: have + added }, added };
+): { keys: Record<Tier, number>; added: number; coins: number; up: number } {
+  // 0.0.96: a full pocket steps the match up (shared payMatchesOf); coin only when every tier above is full.
+  const paid = payMatchesOf(keys, "white", Math.max(0, Math.floor(n)));
+  const added = Object.values(paid.add).reduce((a, b) => a + (b ?? 0), 0);
+  return { keys: added ? paid.keys : keys, added, coins: paid.coin, up: paid.up };
 }

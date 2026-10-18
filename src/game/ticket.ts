@@ -5,14 +5,15 @@ import type { City, CityId, Journey, Poi, Tier } from "./types";
 
 export const VAULTS_PER_FARE = 3;
 export const FARES_CAP = 2;
-export const WHITE_POCKET = 4;
-export const BLUE_POCKET = 4;
-export const GREEN_POCKET = 1;
+/** 0.0.96: pockets ~50% bigger (white 4→6, blue 4→6, green 1→2, amber/red/violet 99→150). */
+export const WHITE_POCKET = 6;
+export const BLUE_POCKET = 6;
+export const GREEN_POCKET = 2;
 /**
  * Ride grants alone may fill whites this far, so a 14-minute win lands whole.
  * Every other source still stops at WHITE_POCKET.
  */
-export const RIDE_WHITE_POCKET = 15;
+export const RIDE_WHITE_POCKET = 22; // 0.0.96: was 15 (~50% bigger, keeps a full street pocket + the biggest win)
 export const SPARK_DAY = 6;
 /** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line.
  *  0.0.94: 8 min (was 11) and a gentler distance line, so most rides land around 6-8 min. */
@@ -43,11 +44,13 @@ export function sparkState(day: string, n: number, lamps: string[], today: strin
   return { sparkDay: today, sparkN: 0, sparkLamps: [] as string[] };
 }
 
+export const HIGH_POCKET = 150;
+
 export function matchCap(tier: import("./types").Tier) {
   if (tier === "white") return WHITE_POCKET;
   if (tier === "blue") return BLUE_POCKET;
   if (tier === "green") return GREEN_POCKET;
-  return 99;
+  return HIGH_POCKET;
 }
 
 /** How many more lamps this city wants before it prints a train ticket. */

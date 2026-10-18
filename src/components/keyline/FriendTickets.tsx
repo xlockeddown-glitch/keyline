@@ -333,7 +333,7 @@ function FriendNews() {
 
 function newsLine(items: { role: "sender" | "friend"; name: string }[], added: number, coins: number): string {
   const n = items.length;
-  const tail = added && coins ? ` · +${added} White, +${coins} coin (pocket full)` : coins ? ` · +${coins} coin (pocket full)` : ` · +${n} White match${n === 1 ? "" : "es"}`;
+  const tail = added && coins ? ` · +${added} match${added === 1 ? "" : "es"} (match ↑), +${coins} coin (every pocket full)` : coins ? ` · +${coins} coin (every pocket full)` : ` · +${n} White match${n === 1 ? "" : "es"}`;
   if (n === 1) {
     const it = items[0]!;
     return it.role === "sender" ? `${it.name} got your friend ticket right${tail}` : `Friend ticket from ${it.name}${tail}`;

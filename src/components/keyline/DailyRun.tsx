@@ -383,7 +383,7 @@ export function DailyFinishCard() {
                 ))}
                 {finish.reward.coins ? (
                   <span className="flex items-center gap-1 text-sm tabular-nums">
-                    <ItemIcon item="coin" size={18} />+{finish.reward.coins} (pocket full)
+                    <ItemIcon item="coin" size={18} />+{finish.reward.coins} (every pocket full)
                   </span>
                 ) : null}
               </>

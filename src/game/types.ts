@@ -151,7 +151,7 @@ export type LootDrop = {
   diff: TriviaDiff;
   keys: Partial<Record<Tier, number>>;
   /** 0.0.90: perfect lamp gave the spent match back (or overflow coin when the pocket was full). */
-  refund?: { tier: Tier; match: number; coin: number };
+  refund?: { tier: Tier; match: number; coin: number; up?: boolean };
   brass: number;
   ink: number;
   vellum: number;

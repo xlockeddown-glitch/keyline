@@ -1,4 +1,4 @@
-import { matchCap } from "./ticket.ts";
+import { payMatchesOf } from "./goals.ts";
 import type { CityId, Tier, TriviaCat, TriviaQ } from "./types";
 
 export const CAFE_MS = 40_000;
@@ -53,10 +53,10 @@ export function cafeTick(acc: number, dt: number, visible: boolean, focused: boo
 }
 
 export function creditCafeWhite(keys: Record<Tier, number>, n: number) {
-  const room = Math.max(0, matchCap("white") - (keys.white ?? 0));
-  const added = Math.min(Math.max(0, n), room);
-  if (!added) return { keys, added: 0 };
-  return { keys: { ...keys, white: (keys.white ?? 0) + added }, added };
+  // 0.0.96: a full pocket steps the match up (shared payMatchesOf); coin only when every tier above is full.
+  const paid = payMatchesOf(keys, "white", Math.max(0, Math.floor(n)));
+  const added = Object.values(paid.add).reduce((a, b) => a + (b ?? 0), 0);
+  return { keys: added ? paid.keys : keys, added, coins: paid.coin, up: paid.up };
 }
 
 export type CityCardBank = Partial<Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>>>;

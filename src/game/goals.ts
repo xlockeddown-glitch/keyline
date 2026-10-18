@@ -19,11 +19,42 @@ export function streakLine(run: number, tier: Tier): string {
   return `${run} in a row! A ${tier} match.`;
 }
 
-/** One match into the pocket, or that tier's coin value when the pocket is full. */
-export function payMatch(keys: Record<Tier, number>, tier: Tier): { keys: Record<Tier, number>; coin: number; match: boolean } {
-  const have = keys[tier] ?? 0;
-  if (have < matchCap(tier)) return { keys: { ...keys, [tier]: have + 1 }, coin: 0, match: true };
-  return { keys, coin: TIER_VALUE[tier], match: false };
+/**
+ * 0.0.96: THE shared pocket rule. A match goes in its own tier; a full tier steps it up to the next tier with
+ * room (white → blue → green → amber → red → violet). Violet is only reached from red (or violet) — never from a
+ * lower tier in one go. Coin (the tier's value) only when every allowed tier above is full.
+ */
+export function stepMatch(keys: Record<Tier, number>, tier: Tier): { tier: Tier | null; coin: number } {
+  const from = STEP_TIERS.indexOf(tier);
+  for (let i = from; i < STEP_TIERS.length; i++) {
+    const t = STEP_TIERS[i]!;
+    if (t === "violet" && tier !== "red" && tier !== "violet") break;
+    if ((keys[t] ?? 0) < matchCap(t)) return { tier: t, coin: 0 };
+  }
+  return { tier: null, coin: TIER_VALUE[tier] };
+}
+
+/** One match into the pocket (stepped up when full), or coin when nothing above has room. `tier` is where it landed. */
+export function payMatch(keys: Record<Tier, number>, tier: Tier): { keys: Record<Tier, number>; coin: number; match: boolean; tier: Tier | null; up: boolean } {
+  const s = stepMatch(keys, tier);
+  if (!s.tier) return { keys, coin: s.coin, match: false, tier: null, up: false };
+  return { keys: { ...keys, [s.tier]: (keys[s.tier] ?? 0) + 1 }, coin: 0, match: true, tier: s.tier, up: s.tier !== tier };
+}
+
+/** Several matches of one tier through the shared rule; the per-tier tally of what landed, plus any coin. */
+export function payMatchesOf(keys: Record<Tier, number>, tier: Tier, n: number): { keys: Record<Tier, number>; add: Partial<Record<Tier, number>>; coin: number; up: number } {
+  let k = keys;
+  let coin = 0;
+  let up = 0;
+  const add: Partial<Record<Tier, number>> = {};
+  for (let i = 0; i < n; i++) {
+    const p = payMatch(k, tier);
+    k = p.keys;
+    coin += p.coin;
+    if (p.tier) add[p.tier] = (add[p.tier] ?? 0) + 1;
+    if (p.up) up++;
+  }
+  return { keys: k, add, coin, up };
 }
 
 /* ---------------------------------------------------------------- match cache */
@@ -68,11 +99,10 @@ export function payMatches(keys: Record<Tier, number>, tiers: Tier[]): { keys: R
   let coin = 0;
   const got: Tier[] = [];
   for (const t of tiers) {
-    const room = STEP_TIERS.slice(STEP_TIERS.indexOf(t)).find((x) => (k[x] ?? 0) < matchCap(x));
-    if (room) {
-      k = { ...k, [room]: (k[room] ?? 0) + 1 };
-      got.push(room);
-    } else coin += TIER_VALUE[t];
+    const p = payMatch(k, t);
+    k = p.keys;
+    if (p.tier) got.push(p.tier);
+    coin += p.coin;
   }
   return { keys: k, coin, got };
 }

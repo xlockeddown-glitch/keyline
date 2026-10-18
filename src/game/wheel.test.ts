@@ -42,14 +42,16 @@ test("rarer vaults pay more coin and lean toward matches", () => {
   assert.equal(spun.slices.length, 10);
 });
 
-test("a full match pocket pays coin instead of a wasted key", () => {
-  const keys = { white: 4, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
-  const paid = grantWheelPrize(
-    { kind: "key", tier: "white", n: 1, face: "Match", label: "A white match" },
-    { keys, points: 10, pantry: {} },
-  );
-  assert.equal(paid.keys.white, 4);
+test("0.0.96: a full match pocket steps up (match ↑); coin only when every tier above is full", () => {
+  const prize = { kind: "key", tier: "white", n: 1, face: "Match", label: "A white match" } as const;
+  const keys = { white: 6, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
+  const up = grantWheelPrize(prize, { keys, points: 10, pantry: {} });
+  assert.deepEqual([up.keys.white, up.keys.blue, up.points], [6, 1, 10]);
+  assert.match(up.line, /Match ↑/);
+  const all = { white: 6, blue: 6, green: 2, amber: 150, red: 150, violet: 0 };
+  const paid = grantWheelPrize(prize, { keys: all, points: 10, pantry: {} });
   assert.ok(paid.points > 10);
+  assert.equal(paid.keys.violet, 0, "violet only from red");
   assert.match(paid.line, /coin/i);
 });
 
@@ -120,7 +122,8 @@ test("0.0.92 wheel prizes: a pair into a nearly full pocket pays what fits plus 
   const keys = { white: matchCap("white") - 1, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
   const paid = grantWheelPrize(pair, { keys, points: 0, pantry: {} });
   assert.equal(paid.keys.white, matchCap("white"));
-  assert.ok(paid.points > 0, "the one that didn't fit came back as coin");
+  assert.equal(paid.keys.blue, 1, "the one that didn't fit stepped up");
+  assert.equal(paid.points, 0);
 });
 
 test("0.0.92 wheel spin: eases out past the winner, settles back exactly on it, never runs backwards early", async () => {

@@ -8,7 +8,7 @@ import { SURVEY_GOALS, isPlace } from "./survey.ts";
 import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
-import { payMatch } from "./goals.ts";
+import { payMatch, payMatchesOf } from "./goals.ts";
 import type { ScoutId } from "./types";
 import { clothCoin, type ClothId } from "./quests.ts";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards.ts";
@@ -19,7 +19,7 @@ import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay.ts";
 import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
 import { betterOutcome, bonusDue, IDLE, RIDE_BONUS_WHITE, rideRamp, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
-import { perfectRefund } from "./perfectRefund.ts";
+import { perfectBack, perfectRefund } from "./perfectRefund.ts";
 import { FARE_MAX_MS, FARES_CAP, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
 /**
@@ -458,7 +458,7 @@ export function dailyOp(w: WalletState, _day: string, cityId: CityId): OpResult 
 }
 
 export function friendOp(w: WalletState, n: number): OpResult {
-  const paid = payFriend(w.keys, w.coins, n, matchCap("white"));
+  const paid = payFriend(w.keys, w.coins, n, matchCap("white"), payMatchesOf);
   return applyDelta(w, { coins: paid.points - w.coins, keys: keyDiff(w.keys, paid.keys) });
 }
 
@@ -646,9 +646,11 @@ export function streetOp(w: WalletState, city: CityId, tier: Tier, market = fals
   const open = market && marketAt(city, at) != null;
   if (!open) return applyDelta(w, { keys: { [tier]: 1 } });
   const have = w.keys[tier] ?? 0;
-  const add = marketMatches(have, Math.max(matchCap(tier), have + 1), MARKET_MULT);
-  const coin = marketOverflowCoin(tier, MARKET_MULT, add);
-  return applyDelta(w, { coins: coin, keys: { [tier]: add } });
+  // 0.0.96: the first street match always lands; the market's second goes through the shared pocket rule.
+  const first = { ...w.keys, [tier]: have + 1 };
+  const second = payMatchesOf(first, tier, MARKET_MULT - 1);
+  const keys: Partial<Record<Tier, number>> = { ...second.add, [tier]: (second.add[tier] ?? 0) + 1 };
+  return applyDelta(w, { coins: second.coin, keys });
 }
 
 type StockCost = { brass?: number; ink?: number; vellum?: number; schematic?: number; press?: number; patterns?: number };
@@ -782,6 +784,12 @@ function withBoost(w: WalletState, coins: number, keys: Partial<Record<Tier, num
   return { ...applied, award };
 }
 
+function sumKeys(have: Record<Tier, number>, add: Partial<Record<Tier, number>>): Record<Tier, number> {
+  const out = { ...have };
+  for (const [t, n] of Object.entries(add) as [Tier, number][]) out[t] = (out[t] ?? 0) + (n ?? 0);
+  return out;
+}
+
 function addKeys(have: Record<Tier, number>, add: Record<Tier, number>): Record<Tier, number> {
   const out = { ...have };
   for (const t of TIERS) if (add[t]) out[t] = (out[t] ?? 0) + add[t]!;
@@ -805,10 +813,12 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     const cap = matchCap(tier);
     const mult = marketMult(p.city, p.dealtAt, spot);
     const owl = owlMatchCoin(p.scout ?? null, mult, tier);
-    if (have >= cap) return withBoost(w, 12 * mult + owlExtraCoin(p.scout ?? null, mult, 12), {}, boost);
-    const add = marketMatches(have, cap, mult);
-    const coin = mult > 1 && have < cap ? marketOverflowCoin(tier, mult, add) : 0;
-    return withBoost(w, coin + owl, { [tier]: add }, boost);
+    // 0.0.96: the wick's match(es) go through the shared pocket rule: a full tier steps up (match ↑),
+    // coin only when every allowed tier above is full.
+    void have;
+    void cap;
+    const paid = payMatchesOf(w.keys, tier, mult);
+    return withBoost(w, paid.coin + owl, paid.add, boost);
   }
 
   if (p.series) {
@@ -829,9 +839,9 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     const pay = marketPay(seriesCoin, baseKeys, sMult);
     pay.coin += owlExtraCoin(p.scout ?? null, sMult, seriesCoin);
     // 0.0.90: reaching the last card means every card was right: the spent match comes back (not violet).
-    const back = perfectRefund(def.cost, (w.keys[def.cost] ?? 0) + (pay.keys[def.cost] ?? 0), matchCap(def.cost));
+    const back = perfectBack(def.cost, sumKeys(w.keys, pay.keys));
     const sKeys = { ...pay.keys };
-    if (back.match) sKeys[def.cost] = (sKeys[def.cost] ?? 0) + back.match;
+    if (back.match) sKeys[back.tier] = (sKeys[back.tier] ?? 0) + back.match;
     return withBoost(w, pay.coin + back.coin, sKeys, boost);
   }
 
@@ -850,16 +860,16 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   pay.coin += owlExtraCoin(p.scout ?? null, lampMult, lampCoin);
   const lit = lampLit(w.cities, p.poiTier);
   // 0.0.90: a single-question lamp answered right is a perfect lamp: match back, same tier (not violet).
-  const back = perfectRefund(p.poiTier, (w.keys[p.poiTier] ?? 0) + (pay.keys[p.poiTier] ?? 0), matchCap(p.poiTier));
+  const back = perfectBack(p.poiTier, sumKeys(w.keys, pay.keys));
   const lKeys = { ...pay.keys };
-  if (back.match) lKeys[p.poiTier] = (lKeys[p.poiTier] ?? 0) + back.match;
+  if (back.match) lKeys[back.tier] = (lKeys[back.tier] ?? 0) + back.match;
   // 0.0.96 Raccoon (Rummager): a server-rolled blue match on top (overflow coin when the blue pocket is full).
   let rummageCoin = 0;
   if (p.rummage) {
     const have = { ...w.keys };
     for (const [t, n] of Object.entries(lKeys) as [Tier, number][]) have[t] = (have[t] ?? 0) + (n ?? 0);
     const r = payMatch(have, "blue");
-    if (r.match) lKeys.blue = (lKeys.blue ?? 0) + 1;
+    if (r.tier) lKeys[r.tier] = (lKeys[r.tier] ?? 0) + 1;
     rummageCoin = r.coin;
   }
   return withBoost(w, pay.coin + tip + back.coin + rummageCoin, lKeys, boost, lit.u);

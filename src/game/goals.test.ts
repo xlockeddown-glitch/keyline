@@ -7,8 +7,8 @@ test("streak prizes: 5 white, 10 blue, round again", () => {
   assert.deepEqual([1, 4, 5, 9, 10, 15, 20, 25].map(streakPrize), [null, null, "white", null, "blue", "white", "blue", "white"]);
 });
 
-test("full pocket pays overflow coin", () => {
-  const keys = { white: matchCap("white"), blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
+test("0.0.96: coin only when every pocket above is full", () => {
+  const keys = { white: matchCap("white"), blue: matchCap("blue"), green: matchCap("green"), amber: matchCap("amber"), red: matchCap("red"), violet: 0 };
   const p = payMatch(keys, "white");
   assert.equal(p.match, false);
   assert.ok(p.coin > 0);
@@ -52,4 +52,25 @@ test("0.0.95 payMatches steps a full colour up to the next tier with room, coin 
   const none = payMatches(full(["white", "blue", "green", "amber", "red", "violet"]), ["white", "blue"]);
   assert.deepEqual(none.got, []);
   assert.ok(none.coin > 0);
+});
+
+test("0.0.96: pockets ~50% bigger and one shared step-up rule (violet only from red)", async () => {
+  const { matchCap } = await import("./ticket.ts");
+  const { stepMatch, payMatch, payMatchesOf } = await import("./goals.ts");
+  assert.deepEqual(["white", "blue", "green", "amber", "red", "violet"].map((t) => matchCap(t as never)), [6, 6, 2, 150, 150, 150]);
+  const z = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
+  assert.equal(stepMatch({ ...z, white: 6 }, "white").tier, "blue");
+  assert.equal(stepMatch({ ...z, white: 6, blue: 6, green: 2 }, "white").tier, "amber");
+  // Violet is never reached from white/blue/green/amber.
+  const fullToRed = { white: 6, blue: 6, green: 2, amber: 150, red: 150, violet: 0 };
+  const w = stepMatch(fullToRed, "white");
+  assert.equal(w.tier, null);
+  assert.ok(w.coin > 0);
+  assert.equal(stepMatch(fullToRed, "red").tier, "violet");
+  const p = payMatch({ ...z, blue: 6 }, "blue");
+  assert.equal(p.tier, "green");
+  assert.equal(p.up, true);
+  assert.equal(p.coin, 0);
+  const many = payMatchesOf({ ...z, white: 5 }, "white", 3);
+  assert.deepEqual(many.add, { white: 1, blue: 2 });
 });

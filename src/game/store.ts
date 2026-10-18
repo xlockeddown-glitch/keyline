@@ -34,8 +34,8 @@ import type {
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
-import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDone, noteGoal, payMatch, payMatches, streakLine, streakPrize, type GoalDay, type GoalKind } from "./goals";
-import { perfectRefund } from "./perfectRefund.ts";
+import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, streakLine, streakPrize, type GoalDay, type GoalKind } from "./goals";
+import { perfectBack, perfectRefund } from "./perfectRefund.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
@@ -1166,9 +1166,11 @@ export const useGame = create<GameState>((set, get) => ({
     if (!k) return;
     const mult = marketMult(get().cityId, Date.now(), { kind: "match", lat: k.lat, lng: k.lng });
     // A street match always lands (as before); the market's second one respects the pocket cap and pays coin if it's full.
-    const add = mult > 1 ? marketMatches(get().keys[k.tier], Math.max(matchCap(k.tier), get().keys[k.tier] + 1), mult) : 1;
-    const coin = mult > 1 ? marketOverflowCoin(k.tier, mult, add) : 0;
-    const keys = { ...get().keys, [k.tier]: get().keys[k.tier] + add };
+    const firstKeys = { ...get().keys, [k.tier]: get().keys[k.tier] + 1 };
+    const second = mult > 1 ? payMatchesOf(firstKeys, k.tier, mult - 1) : { keys: firstKeys, coin: 0, add: {}, up: 0 };
+    const add = 1 + (second.add[k.tier] ?? 0);
+    const coin = second.coin;
+    const keys = second.keys;
     get().noteGoalKind("street");
     sfx.pickup();
     set({
@@ -1178,7 +1180,7 @@ export const useGame = create<GameState>((set, get) => ({
       lastKeyAt: Date.now(),
       toast:
         mult > 1
-          ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}${coin ? ` + ${coin} coin (pocket full)` : ""}`
+          ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}${coin ? ` + ${coin} coin (every pocket full)` : ""}`
           : `${TIER_LABEL[k.tier]} match`,
     });
     pushOp({ kind: "street", id: k.id, tier: k.tier, city: get().cityId, lat: k.lat, lng: k.lng });
@@ -1483,14 +1485,17 @@ export const useGame = create<GameState>((set, get) => ({
       const sparkCoin = sparkMult > 1 && have < cap ? marketOverflowCoin(poi.tier, sparkMult, sparkAdd) : 0;
       const sparkTag =
         sparkMult > 1
-          ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} match${sparkAdd === 1 ? "" : "es"} from the wick${sparkCoin ? ` + ${sparkCoin} coin (pocket full)` : ""}.`
+          ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} match${sparkAdd === 1 ? "" : "es"} from the wick${sparkCoin ? ` + ${sparkCoin} coin (every pocket full)` : ""}.`
           : null;
       const spun = foldWheel(get, poi.tier);
       const boost = rollBoosts(get, true, elapsed, ov.category);
       const questHit = cleared(get, answered(get, true, elapsed <= 3000), poi);
       if (have >= cap) {
         sfx.correct();
-        const paid = payBoosts(get().keys, get().points + 12 * sparkMult, boost);
+        // 0.0.96: a full tier steps the wick's match up (match ↑); coin only when every tier above is full.
+        const stepped = payMatchesOf(get().keys, poi.tier, sparkMult);
+        const paid = payBoosts(stepped.keys, get().points + stepped.coin, boost);
+        const upTiers = (Object.keys(stepped.add) as Tier[]).map((t) => TIER_LABEL[t]).join(", ");
         set({
           ...used,
           ...bumpStreak(get),
@@ -1506,7 +1511,7 @@ export const useGame = create<GameState>((set, get) => ({
           miss: null,
           ...spun,
           toast: [
-            sparkMult > 1 ? `Pocket full. The spark paid ${12 * sparkMult} coin. ${MARKET_TAG}.` : "Pocket full. The spark paid in coin.",
+            upTiers ? `Match ↑ ${upTiers}.${sparkMult > 1 ? ` ${MARKET_TAG}.` : ""}` : `Every pocket is full: +${stepped.coin} coin.`,
             paid.boosts.length ? `${paid.boosts.join(" · ")}.` : null,
           ]
             .filter(Boolean)
@@ -1687,11 +1692,11 @@ export const useGame = create<GameState>((set, get) => ({
       let nextKeys = { ...get().keys };
       for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) nextKeys[t] += n;
       // 0.0.90: every card right (a miss breaks the run) gives back the spent match. Not violet.
-      const sBack = perfectRefund(series.cost, nextKeys[series.cost] ?? 0, matchCap(series.cost));
-      if (sBack.match) nextKeys[series.cost] = (nextKeys[series.cost] ?? 0) + sBack.match;
+      const sBack = perfectBack(series.cost, nextKeys);
+      if (sBack.match) nextKeys[sBack.tier] = (nextKeys[sBack.tier] ?? 0) + sBack.match;
       if (sBack.match || sBack.coin) {
         loot.points += sBack.coin;
-        loot.refund = { tier: series.cost, ...sBack };
+        loot.refund = { tier: sBack.tier, match: sBack.match, coin: sBack.coin, up: sBack.up };
       }
       const surveyHit = takeSurvey({
         atlas: get().atlas,
@@ -1826,11 +1831,11 @@ export const useGame = create<GameState>((set, get) => ({
       nextKeys[t] += n;
     }
     // 0.0.90: a lamp answered right is a perfect lamp: the spent match comes back, same tier. Not violet.
-    const lBack = perfectRefund(poi.tier, nextKeys[poi.tier] ?? 0, matchCap(poi.tier));
-    if (lBack.match) nextKeys[poi.tier] = (nextKeys[poi.tier] ?? 0) + lBack.match;
+    const lBack = perfectBack(poi.tier, nextKeys);
+    if (lBack.match) nextKeys[lBack.tier] = (nextKeys[lBack.tier] ?? 0) + lBack.match;
     if (lBack.match || lBack.coin) {
       loot.points += lBack.coin;
-      loot.refund = { tier: poi.tier, ...lBack };
+      loot.refund = { tier: lBack.tier, match: lBack.match, coin: lBack.coin, up: lBack.up };
     }
     const atlas = { ...get().atlas, [poi.id]: true as const };
     const surveyHit = takeSurvey({
@@ -2054,7 +2059,7 @@ export const useGame = create<GameState>((set, get) => ({
   payFriendTickets: (ids) => {
     const marked = markFriendPaid(get().friendPaid, ids);
     if (!marked.fresh.length) return { fresh: [], added: 0, coins: 0 };
-    const paid = payFriend(get().keys, get().points, marked.fresh.length, matchCap("white"));
+    const paid = payFriend(get().keys, get().points, marked.fresh.length, matchCap("white"), payMatchesOf);
     sfx.pickup();
     set({ friendPaid: marked.paid, keys: paid.keys, points: paid.points });
     if (walletLive()) {
@@ -2455,7 +2460,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     if (all) {
       const p = payMatch(get().keys, GOAL_ALL_TIER);
-      set({ keys: p.keys, points: get().points + p.coin, goals: mark(), toast: p.match ? line : `All three goals! Pocket full: +${p.coin} coin.` });
+      set({ keys: p.keys, points: get().points + p.coin, goals: mark(), toast: p.match ? (p.up ? `${line} ↑ ${TIER_LABEL[p.tier!]}` : line) : `All three goals! Every pocket is full: +${p.coin} coin.` });
     } else set({ points: get().points + GOAL_COIN, goals: mark(), toast: line });
     sfx.pickup();
     scheduleSave(get);

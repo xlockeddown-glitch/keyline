@@ -1,6 +1,6 @@
+import { payMatchesOf } from "./goals.ts";
 import { TIER_LABEL } from "./data.ts";
 import { cityStaple, ingredientName, INGREDIENTS, type IngredientId } from "./ingredients.ts";
-import { matchCap } from "./ticket.ts";
 import type { CityId, Tier } from "./types.ts";
 
 export const WHEEL_EVERY = 25;
@@ -145,19 +145,13 @@ export function grantWheelPrize(
     const pantry = { ...bag.pantry, [prize.id]: (bag.pantry[prize.id] ?? 0) + prize.n };
     return { ...bag, pantry, line: prize.label };
   }
-  const have = bag.keys[prize.tier] ?? 0;
-  const room = Math.max(0, matchCap(prize.tier) - have);
-  const give = Math.min(prize.n, room);
-  if (give <= 0) {
-    const coin = 30 * (RANK[prize.tier] + 1);
-    return { ...bag, points: bag.points + coin, line: `Pocket full. ${coin} coin instead.` };
-  }
-  const keys = { ...bag.keys, [prize.tier]: have + give };
-  if (give < prize.n) {
-    const coin = 30 * (RANK[prize.tier] + 1);
-    return { keys, points: bag.points + coin, pantry: bag.pantry, line: `${prize.label}. Pocket full, so ${coin} coin too.` };
-  }
-  return { keys, points: bag.points, pantry: bag.pantry, line: prize.label };
+  // 0.0.96: the shared pocket rule: a full tier steps the match up (match ↑); coin only when every tier above is full.
+  const paid = payMatchesOf(bag.keys as Record<Tier, number>, prize.tier, prize.n);
+  const keys = paid.keys;
+  const ups = (Object.entries(paid.add) as [Tier, number][]).filter(([t]) => t !== prize.tier);
+  const upLine = ups.length ? ` Match ↑ ${ups.map(([t, n]) => `${n} ${t}`).join(", ")}.` : "";
+  if (paid.coin) return { keys, points: bag.points + paid.coin, pantry: bag.pantry, line: `${prize.label}.${upLine} Every pocket is full: +${paid.coin} coin.` };
+  return { keys, points: bag.points, pantry: bag.pantry, line: `${prize.label}.${upLine}`.replace(/\.\.$/, ".") };
 }
 
 /** True when this color has a spin earned locally that has not been claimed yet. */
