@@ -24,6 +24,7 @@ import { GENERAL_BANK } from "@/game/banks/general";
 import { MATH_BANK } from "@/game/banks/math";
 import { MATH_MORE } from "@/game/banks/math_more";
 import { rescoreMath } from "./math-diff";
+import { MATH_DIFF, generatedMath, ladderCard } from "./mathLadder";
 import { SCIENCE_BANK } from "@/game/banks/science";
 import { SCIENCE_MORE } from "@/game/banks/science_more";
 import { SCIENCE_LIFE } from "@/game/banks/science_life";
@@ -349,7 +350,8 @@ const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009), WEEKLY_POLITICAL_20261016), LEVEL_POLITICAL_20261016),
 	food: mergeCat(mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []), WEEKLY_FOOD_20261006),
 	arts: mergeCat(mergeCat(mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []), WEEKLY_ARTS_20261006), WEEKLY_ARTS_20261009),
-	math: mergeCat(MATH_BANK, MATH_MORE).map(rescoreMath),
+	// 0.0.99: each sum sits on its ladder colour (mathLadder.ts); non-head-math sums are trimmed; generated cards fill amber+.
+	math: [...mergeCat(MATH_BANK, MATH_MORE).map(rescoreMath).flatMap((x) => ladderCard(x) ?? []), ...generatedMath()],
 	science: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE), WEEKLY_SCIENCE_20261002), WEEKLY_SCIENCE_20261006), WEEKLY_SCIENCE_20261009),
 	history: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY), WEEKLY_HISTORY_20261002), WEEKLY_HISTORY_20261006),
 	nature: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE), WEEKLY_NATURE_20261002), WEEKLY_NATURE_20261006),
@@ -2590,9 +2592,7 @@ function preferDiff(tier?: Tier): TriviaDiff {
 	return 3;
 }
 function preferMathDiff(tier?: Tier): TriviaDiff {
-	if (tier === "green") return 2;
-	if (tier === "amber" || tier === "red" || tier === "violet") return 3;
-	return 1;
+	return MATH_DIFF[tier ?? "white"];
 }
 function binWeights(tier?: Tier): [number, number, number] {
 	if (tier === "white") return [
@@ -2876,7 +2876,7 @@ export function pickTrivia(
 	const color: Tier = tier ?? poi?.tier ?? "white";
 	const mathLamp = cat === "math";
 	const prefer = want ?? (mathLamp ? preferMathDiff(color) : preferDiff(color));
-	const strict = want != null || (mathLamp && (color === "amber" || color === "red" || color === "violet"));
+	const strict = want != null;
 	const seen = seenSet(avoid);
 	const placeQs = collectPlaceQs(cityId, cat, poi);
 	const cityPool = mergeCat(mergeCat(placeQs, cityQs), regionQs);
@@ -2885,7 +2885,8 @@ export function pickTrivia(
 			? (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId))
 			: (GENERAL[cat] ?? []);
 	// 0.0.81: a blue math lamp draws its easy and medium blue cards alike (it only ever dealt the easy half).
-	const mathSoft = mathLamp && color === "blue" && want == null ? undefined : mathLamp ? prefer : want;
+	// 0.0.99: math cards carry their ladder colour as rarity, so the colour alone picks them.
+	const mathSoft = mathLamp ? want : want;
 	const hit = pickUnseenRarity(color, cityPool, globalPool, seen, mathSoft);
 	if (hit) return hit.plate;
 
