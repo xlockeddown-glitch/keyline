@@ -48,7 +48,7 @@ import {
   type StreetGraph,
 } from "@/game/streets";
 import { fareDesk, isFareDesk } from "@/game/ticket";
-import { planStop, type PlanStop } from "@/game/routePlan";
+import { tapAction, type PlanStop } from "@/game/routePlan";
 import { clampWard, inWard, wardFrom, wardRing, type Ward } from "@/game/ward";
 import { Hud } from "./Hud";
 import { VaultModal } from "./VaultModal";
@@ -550,22 +550,13 @@ export function GameMap() {
       void setDestination(lat, lng, door);
       return;
     }
-    const stop: PlanStop = { lat, lng, door, keyId };
-    const decided = planStop(queue.current, waypoint.current, stop);
-    if (decided.action === "start") {
-      queue.current = [];
-      void setDestination(lat, lng, door, false, keyId);
-      return;
-    }
-    if (decided.action === "same") return;
-    if (decided.action === "full") {
-      flash("Eight stops is the route.");
-      return;
-    }
-    queue.current = decided.queue;
-    paintQueue();
-    const n = 1 + queue.current.length;
-    flash(decided.action === "drop" ? (n > 1 ? `Dropped. ${n} stops left.` : "Dropped.") : `${n} stops.`);
+    // 0.0.95: a new tap replaces the route (it used to queue up to eight stops, so repeated taps on a slow
+    // or wedged walk built a long route the walker kept following instead of the latest tap).
+    const decided = tapAction(waypoint.current, { lat, lng, keyId });
+    if (decided === "same") return;
+    queue.current = [];
+    routeHold.current = false;
+    void setDestination(lat, lng, door, false, keyId);
   }
 
   function drawRoute(L: LModule, map: LMap, path: Pt[]) {
@@ -1010,6 +1001,13 @@ export function GameMap() {
     const prior = waypoint.current;
     if (!keepQueue && prior && distM(prior.lat, prior.lng, target.lat, target.lng) < 14 && (routeRef.current?.length ?? 0) >= 2) {
       return;
+    }
+    // 0.0.95: a fresh tap drops the old line at once, so the walker never keeps marching on the stale leg
+    // while the new route is still being planned (that read as "stuck / ignoring my taps").
+    if (!keepQueue) {
+      routeRef.current = null;
+      routeLine.current?.remove();
+      routeLine.current = null;
     }
     const seq = ++destSeq.current;
     const from = { lat: pos.current.lat, lng: pos.current.lng };

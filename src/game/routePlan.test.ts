@@ -63,3 +63,11 @@ test("a second tap on the same corner does not stack a stop", () => {
   const again = planStop([], corner, { lat: corner.lat + 0.00002, lng: corner.lng });
   assert.equal(again.action, "same");
 });
+
+test("0.0.95: a new tap replaces the route; tapping the live stop again does nothing", async () => {
+  const { tapAction } = await import("./routePlan.ts");
+  assert.equal(tapAction(null, here), "replace");
+  assert.equal(tapAction(here, { lat: here.lat + 0.00005, lng: here.lng }), "same");
+  assert.equal(tapAction(here, { lat: here.lat + 0.01, lng: here.lng }), "replace");
+  assert.equal(tapAction({ ...here, keyId: "a" }, { ...here, keyId: "b" }), "replace");
+});

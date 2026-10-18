@@ -69,12 +69,14 @@ export function WalletSync() {
         if (!r.revised) r = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         if (!live) return;
         useGame.getState().adoptWallet(r);
+        if (r.owned) useGame.getState().adoptOwned(r.owned);
         notes.push(...(r.giftNotes ?? []));
         if (notes.length) {
           const text = [...new Set(notes)].join(" ");
           // 0.0.95: the gift note uses the same emblem pop as streaks and the cache (2 red for Amanda's gift).
           const reds = /(\d+) red match/.exec(text);
-          popMatch({ kind: "gift", big: "A gift!", sub: text, tiers: reds ? Array.from({ length: Number(reds[1]) }, () => "red" as const) : [], coin: 0 });
+          const corgi = /Corgi is back/.test(text);
+          popMatch({ kind: "gift", big: corgi ? "Corgi restored!" : "A gift!", sub: text, tiers: reds ? Array.from({ length: Number(reds[1]) }, () => "red" as const) : [], coin: 0 });
         }
         setStreetPlayer(r.playerId);
         setWalletLive(true);

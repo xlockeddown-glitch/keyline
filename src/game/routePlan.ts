@@ -27,3 +27,11 @@ export function planStop(queue: readonly PlanStop[], current: PlanStop | null, s
   if (queue.length + 1 >= ROUTE_CAP) return { action: "full" as const, queue: [...queue] };
   return { action: "append" as const, queue: [...queue, stop] };
 }
+
+/**
+ * 0.0.95: what a map tap does. Tapping the live stop again is a no-op; any other tap replaces the whole
+ * route (never queues onto it).
+ */
+export function tapAction(current: PlanStop | null, stop: PlanStop): "same" | "replace" {
+  return current && sameStop(current, stop) ? "same" : "replace";
+}

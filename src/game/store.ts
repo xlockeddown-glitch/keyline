@@ -315,6 +315,8 @@ export type GameState = {
   adoptWardrobe: (w: Wardrobe) => void;
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks }) => void;
+  /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[] }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -2197,6 +2199,15 @@ export const useGame = create<GameState>((set, get) => ({
     });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 1800);
+  },
+  adoptOwned: (o) => {
+    const st = get();
+    const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
+    const charms = Array.from(new Set([...st.charms, ...(o.charms as typeof st.charms)]));
+    const cloths = Array.from(new Set([...(st.quests.cloths ?? []), ...(o.cloths as typeof st.quests.cloths)]));
+    if (scouts.length === st.scouts.length && charms.length === st.charms.length && cloths.length === (st.quests.cloths ?? []).length) return;
+    set({ scouts, charms, quests: { ...st.quests, cloths } });
+    saveNow(get);
   },
   grantGiftScout: (id) => {
     if (!(id in SCOUTS) || get().scouts.includes(id)) return false;

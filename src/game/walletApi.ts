@@ -132,6 +132,8 @@ export type SyncWire = {
   playerId: string;
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
+  /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
+  owned?: { scouts: string[]; charms: string[]; cloths: string[] };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })
@@ -150,6 +152,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       revised: r.deviceClosed,
       playerId: r.playerId,
       ...(r.giftNotes?.length ? { giftNotes: r.giftNotes } : {}),
+      ...(r.owned ? { owned: r.owned } : {}),
     };
   });
 

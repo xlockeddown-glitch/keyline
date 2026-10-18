@@ -40,8 +40,8 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet, rowToState } from "./walletSql.ts";
-import { DEVICE_CAP, applyClientOp, awardGrade, grantMatchGifts, grantPassGift, spendDealt, syncPlayer } from "./walletApply.ts";
-import { MATCH_GIFTS } from "./matchGift.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, spendDealt, syncPlayer } from "./walletApply.ts";
+import { MATCH_GIFTS, SCOUT_GIFTS } from "./matchGift.ts";
 import { tokenNonce } from "./walletClient.ts";
 
 function sqlOf(db: PGlite): Sql {
@@ -1174,4 +1174,51 @@ test("0.0.95 Amanda's make-up gift: 2 red once, idempotent, only her account, ov
   const after = (await canonicalWallet(sql, "fullred")).wallet;
   assert.equal(after.keys.red, matchCap("red"));
   assert.ok(after.coins > before, "overflow coin");
+});
+
+test("0.0.95 purchases live on the account: a scout bought on one device shows on another after logout", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "buy", snap({ coins: 20000 }), "buyphone1");
+  const bought = await applyClientOp(sql, "buy", { kind: "scout", id: "corgi" });
+  assert.equal(bought.ok, true);
+  const coinsAfter = bought.wallet.coins;
+  // Second device / after a logout wiped the save: the sync hands back what the account owns.
+  const other = await syncPlayer(sql, "buy", snap({ coins: 0 }), "buylaptop1");
+  assert.ok(other.owned?.scouts.includes("corgi"));
+  // Buying again on the device that forgot it is a replay: no second charge.
+  const again = await applyClientOp(sql, "buy", { kind: "scout", id: "corgi" });
+  assert.equal(again.replay, true);
+  assert.equal(again.wallet.coins, coinsAfter);
+  const o = await ownedOf(sql, "buy");
+  assert.deepEqual(o.scouts, ["corgi"]);
+});
+
+test("0.0.95 Beth B.'s Corgi restore: owned once, duplicate purchases refunded, idempotent, only her", async () => {
+  const g = SCOUT_GIFTS.find((x) => x.key === "gift:bethb-corgi-0095")!;
+  assert.equal(g.userId, "b4kKJFQyhu9Muu04I70TirgSafJyY64S");
+  const sql = await db();
+  const beth = g.userId;
+  await syncPlayer(sql, beth, snap({ coins: 20000 }), "bethphone1");
+  const first = await grantScoutGifts(sql, beth);
+  assert.deepEqual(first, []);
+  // (already granted by the sync above) — check ownership and no coin moved without a duplicate.
+  const o = await ownedOf(sql, beth);
+  assert.ok(o.scouts.includes("corgi"));
+  // A second account with a legacy duplicate row gets the refund once.
+  const list = [{ ...g, key: "gift:test-corgi", userId: "dup" }];
+  await syncPlayer(sql, "dup", snap({ coins: 20000 }), "dupphone1");
+  await applyClientOp(sql, "dup", { kind: "scout", id: "corgi" });
+  const { id } = await canonicalWallet(sql, "dup");
+  await sql`insert into wallet_ledger (user_id, op_key) values (${id}, 'scout:corgi:legacy')`;
+  const before = (await canonicalWallet(sql, "dup")).wallet.coins;
+  const notes = await grantScoutGifts(sql, "dup", list);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0]!, /Corgi is back.*\+9,600 coin/);
+  assert.equal((await canonicalWallet(sql, "dup")).wallet.coins, before + 9600);
+  assert.deepEqual(await grantScoutGifts(sql, "dup", list), [], "idempotent");
+  assert.equal((await canonicalWallet(sql, "dup")).wallet.coins, before + 9600);
+  // Someone else is untouched.
+  await syncPlayer(sql, "zed", snap({ coins: 5 }), "zedphone1");
+  assert.deepEqual(await grantScoutGifts(sql, "zed"), []);
+  assert.ok(!(await ownedOf(sql, "zed")).scouts.includes("corgi"));
 });

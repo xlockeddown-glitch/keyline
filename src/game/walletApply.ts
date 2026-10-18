@@ -37,10 +37,11 @@ import {
   type OpResult,
   type WalletState,
 } from "./wallet.ts";
-import { CITIES, type KioskId } from "./data.ts";
+import { CITIES, SCOUTS, type KioskId } from "./data.ts";
+import type { ScoutId } from "./types.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
 import { rideRamp } from "./rideGames.ts";
-import { MATCH_GIFTS, giftsFor, type MatchGift } from "./matchGift.ts";
+import { SCOUT_GIFTS, type ScoutGift, MATCH_GIFTS, giftsFor, type MatchGift } from "./matchGift.ts";
 import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
@@ -64,7 +65,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[] };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[] } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -101,11 +102,50 @@ export async function grantMatchGifts(sql: Sql, userId: string, list: readonly M
   return notes;
 }
 
+/** 0.0.95: restore a gifted scout once, refunding duplicate server-recorded purchases of it. */
+export async function grantScoutGifts(sql: Sql, userId: string, list: readonly ScoutGift[] = SCOUT_GIFTS): Promise<string[]> {
+  const { id } = await canonicalWallet(sql, userId);
+  const notes: string[] = [];
+  for (const g of list.filter((x) => x.userId === userId || x.userId === id)) {
+    const rows = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"scout:" + g.scout + "%"}`;
+    const dupes = Math.max(0, Number(rows[0]?.n ?? 0) - 1);
+    const coin = dupes * g.refund;
+    const r = await mutateWallet(sql, userId, g.key, (w) => ({ ...applyDelta(w, { coins: coin }), detail: JSON.stringify({ scout: g.scout, dupes, coin }) }));
+    if (r.ok && !r.replay) notes.push(coin ? `${g.note} Refund for ${dupes} extra purchase${dupes === 1 ? "" : "s"}: +${coin.toLocaleString("en-US")} coin.` : g.note);
+  }
+  return notes;
+}
+
+/**
+ * 0.0.95: what this account owns, from the server's own records, so a purchase survives logout and shows on
+ * every device: scouts bought (scout:<id>) or restored (scout gifts), charms crafted (charm:<id>), cloths in meta.
+ */
+export async function ownedOf(sql: Sql, userId: string): Promise<{ scouts: ScoutId[]; charms: string[]; cloths: string[] }> {
+  const { id, wallet } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string }>`
+    select op_key from wallet_ledger where user_id = ${id} and (op_key like ${"scout:%"} or op_key like ${"charm:%"} or op_key like ${"gift:%"})
+  `;
+  const scouts = new Set<ScoutId>();
+  const charms = new Set<string>();
+  for (const { op_key: k } of rows) {
+    if (k.startsWith("scout:")) {
+      const s = k.slice(6);
+      if (s in SCOUTS) scouts.add(s as ScoutId);
+    } else if (k.startsWith("charm:")) charms.add(k.slice(6));
+    else {
+      const g = SCOUT_GIFTS.find((x) => x.key === k);
+      if (g) scouts.add(g.scout);
+    }
+  }
+  return { scouts: [...scouts], charms: [...charms], cloths: [...(wallet.meta.cloths ?? [])] };
+}
+
 export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
   await grantPassGift(sql, userId);
-  const giftNotes = await grantMatchGifts(sql, userId);
+  const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId))];
   const done = await syncCore(sql, userId, local, deviceId);
-  return giftNotes.length ? { ...done, giftNotes } : done;
+  const owned = await ownedOf(sql, userId);
+  return giftNotes.length ? { ...done, owned, giftNotes } : { ...done, owned };
 }
 
 async function syncCore(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {

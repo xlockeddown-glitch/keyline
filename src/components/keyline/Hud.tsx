@@ -124,7 +124,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             : `Need a ${TIER_LABEL[nearest.tier]} match`;
     }
     else if (armed) cue = "At the lamp · E or tap";
-    else cue = hud.routeStops > 0 ? `${formatDist(hud.nearestDist)} · click a point to add it` : `${formatDist(hud.nearestDist)} · click to walk`;
+    else cue = hud.routeStops > 0 ? `${formatDist(hud.nearestDist)} · tap to go there instead` : `${formatDist(hud.nearestDist)} · click to walk`;
   }
 
   return (
@@ -154,7 +154,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           </p>
             </div>
           </div>
-          {hud.routeStops >= 1 ? (
+          {hud.routeStops >= 1 || hud.waypoint ? (
             <div className="route-row mt-1">
               <button type="button" className="fare-hint pointer-events-auto" onClick={onRoute}>
                 <span className="kicker mr-1.5">Route</span>
@@ -164,10 +164,10 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
                 type="button"
                 className="route-cancel pointer-events-auto"
                 data-testid="route-cancel"
-                aria-label="Cancel route"
+                aria-label="Stop walking (cancel route)"
                 onClick={() => useGame.getState().cancelRoute()}
               >
-                ✕
+                <span aria-hidden>■</span> Stop
               </button>
             </div>
           ) : null}
