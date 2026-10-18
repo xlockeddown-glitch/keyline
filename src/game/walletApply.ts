@@ -317,7 +317,9 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     // Roll once. A compare-and-swap retry must not land a different prize.
     const offer = buildWheel(op.tier, op.city, Math.random());
     const prize = offer.slices[offer.win]!;
-    const ingredient = prize.kind === "ingredient" ? { id: prize.id, n: prize.n } : undefined;
+    // 0.0.92: Take all carries the wheel's one ingredient slice (Stock) too.
+    const ing = prize.kind === "ingredient" ? prize : prize.kind === "all" ? prize.parts.find((p) => p.kind === "ingredient") : undefined;
+    const ingredient = ing && ing.kind === "ingredient" ? { id: ing.id, n: ing.n } : undefined;
     let line = "";
     const r = await mutateWallet(sql, sessionUserId, `wheel:${op.tier}:${claimed}`, (w) => {
       if ((w.meta.wheel[op.tier] ?? 0) !== claimed) return { ok: false, reason: "busy" };

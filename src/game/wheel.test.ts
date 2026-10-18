@@ -39,7 +39,7 @@ test("rarer vaults pay more coin and lean toward matches", () => {
   assert.ok(violetKey > whiteKey);
   const spun = buildWheel("amber", "austin", 0);
   assert.equal(spun.win, 0);
-  assert.equal(spun.slices.length, 9);
+  assert.equal(spun.slices.length, 10);
 });
 
 test("a full match pocket pays coin instead of a wasted key", () => {
@@ -107,7 +107,8 @@ test("0.0.92 wheel prizes: white wheel pays white and blue matches; red never vi
   for (const s of wheelSlices("blue", "austin")) {
     const tone = wheelSliceTone(s.prize);
     if (s.prize.kind === "key") assert.equal(tone, s.prize.tier);
-    else assert.equal(tone, s.prize.kind === "coins" ? "brass" : "ink");
+    else if (s.prize.kind === "coins") assert.equal(tone, "brass");
+    else if (s.prize.kind === "ingredient") assert.equal(tone, "ink");
   }
 });
 
@@ -145,4 +146,36 @@ test("0.0.92 signed-in wheel lands on the server's slice: Spin claims first, the
   assert.match(ui, /const win = paid\?\.win \?\? wheel\.win;/);
   assert.match(store, /wheelPaid: \{ win: r\.wheelWin, line \}/);
   assert.match(store, /if \(!walletLive\(\)\) return offer\.win;/, "guests keep their own roll");
+});
+
+test("0.0.92 Take all / Nothing: half of the old Cut weight each; Take all pays every other prize; Nothing pays nothing", async () => {
+  const { wheelSlices, wheelSliceTone, WHEEL_NOTHING_LINE } = await import("./wheel.ts");
+  for (const tier of ["white", "blue", "green", "amber", "red", "violet"] as const) {
+    const s = wheelSlices(tier, "austin");
+    const r = ["white", "blue", "green", "amber", "red", "violet"].indexOf(tier);
+    const all = s.find((x) => x.prize.kind === "all")!;
+    const none = s.find((x) => x.prize.kind === "nothing")!;
+    assert.equal(all.w, (5 + r * 2) / 2);
+    assert.equal(none.w, (5 + r * 2) / 2);
+    assert.ok(!s.some((x) => x.prize.face === "Cut"));
+    assert.equal(wheelSliceTone(all.prize), "jackpot");
+    assert.equal(wheelSliceTone(none.prize), "blank");
+    if (all.prize.kind === "all") {
+      assert.equal(all.prize.parts.length, s.length - 2, "every other prize, not itself or the blank");
+      if (tier !== "violet") assert.ok(!all.prize.parts.some((p) => p.kind === "key" && p.tier === "violet"), `${tier}: no violet`);
+    }
+  }
+  const empty = { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
+  const w = wheelSlices("white", "austin");
+  const nothing = grantWheelPrize(w.find((x) => x.prize.kind === "nothing")!.prize, { keys: empty, points: 7, pantry: {} });
+  assert.deepEqual(nothing.keys, empty);
+  assert.equal(nothing.points, 7);
+  assert.equal(nothing.line, WHEEL_NOTHING_LINE);
+  const take = grantWheelPrize(w.find((x) => x.prize.kind === "all")!.prize, { keys: empty, points: 0, pantry: {} });
+  // White wheel: 20 + 45 + 80 + 140 coin, white ×1 + white ×2 (Pair) + blue ×1 (Rare), and the city staple.
+  assert.equal(take.points, 285);
+  assert.equal(take.keys.white, 3);
+  assert.equal(take.keys.blue, 1);
+  assert.equal(Object.values(take.pantry).reduce((a, b) => a + (b ?? 0), 0), 1);
+  console.log("white take-all:", take.line);
 });

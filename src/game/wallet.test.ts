@@ -1039,3 +1039,40 @@ test("0.0.92 server wheel: a rare slice pays a match one tier up, once per earne
     Math.random = real;
   }
 });
+
+test("0.0.92 server wheel: Take all pays the combined prizes and reports its slice; Nothing pays nothing", async () => {
+  const { buildWheel } = await import("./wheel.ts");
+  const find = (face: string) => {
+    let roll = 0;
+    while (roll < 1 && buildWheel("white", "austin", roll).slices[buildWheel("white", "austin", roll).win]!.face !== face) roll += 0.0005;
+    return roll;
+  };
+  const real = Math.random;
+  try {
+    for (const [who, face] of [["tak", "Take all"], ["nob", "Nothing"]] as const) {
+      const sql = await db(["0002_vault_clears.sql"]);
+      await sql`create view vault_clears_by_player as select user_id, tier, correct from vault_clears`;
+      await sql`insert into vault_clears (user_id, display_name, tier, correct) values (${who}, 'X', 'white', 25)`;
+      await syncPlayer(sql, who, snap(), `${who}phone1`);
+      const before = (await canonicalWallet(sql, who)).wallet;
+      const roll = find(face);
+      Math.random = () => roll;
+      const r = await applyClientOp(sql, who, { kind: "wheel", tier: "white", city: "austin" });
+      Math.random = real;
+      assert.ok(r.ok);
+      assert.equal(buildWheel("white", "austin", 0).slices[r.wheelWin!]!.face, face, "shown == paid");
+      if (face === "Take all") {
+        assert.equal(r.wallet.coins - before.coins, 285);
+        assert.equal(r.wallet.keys.white - before.keys.white, 3);
+        assert.equal(r.wallet.keys.blue - before.keys.blue, 1);
+        assert.ok(r.ingredient, "the staple rides along");
+      } else {
+        assert.equal(r.wallet.coins, before.coins);
+        assert.deepEqual(r.wallet.keys, before.keys);
+        assert.equal(r.line, "Nothing this time");
+      }
+    }
+  } finally {
+    Math.random = real;
+  }
+});

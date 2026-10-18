@@ -19,7 +19,13 @@ const RANK: Record<Tier, number> = {
 export type WheelPrize =
   | { kind: "coins"; n: number; face: string; label: string }
   | { kind: "key"; tier: Tier; n: number; face: string; label: string }
-  | { kind: "ingredient"; id: IngredientId; n: number; face: string; label: string };
+  | { kind: "ingredient"; id: IngredientId; n: number; face: string; label: string }
+  /** 0.0.92: every other prize on this wheel at once. */
+  | { kind: "all"; parts: WheelPrize[]; face: string; label: string }
+  /** 0.0.92: a blank. */
+  | { kind: "nothing"; face: string; label: string };
+
+export const WHEEL_NOTHING_LINE = "Nothing this time";
 
 export type WheelOffer = {
   tier: Tier;
@@ -46,13 +52,6 @@ export function owedTier(correct: Record<Tier, number>, claimed: Record<Tier, nu
   return null;
 }
 
-function cityCut(cityId: CityId): IngredientId | null {
-  const staple = cityStaple(cityId);
-  for (const ing of Object.values(INGREDIENTS)) {
-    if (ing.cityId === cityId && ing.id !== staple) return ing.id;
-  }
-  return null;
-}
 
 function coins(n: number, face: string): WheelPrize {
   return { kind: "coins", n, face, label: `${n.toLocaleString()} coin` };
@@ -82,9 +81,8 @@ export function wheelSlices(tier: Tier, cityId: CityId): { prize: WheelPrize; w:
   const r = RANK[tier];
   const step = r + 1;
   const staple = cityStaple(cityId);
-  const cut = cityCut(cityId);
   const lesser = TIERS[Math.max(0, r - 1)]!;
-  return [
+  const base: { prize: WheelPrize; w: number }[] = [
     { prize: coins(20 * step, "Coin"), w: Math.max(8, 28 - r * 3) },
     { prize: keyPrize(tier, 1), w: 6 + r * 3 },
     { prize: coins(45 * step, "Pile"), w: 16 },
@@ -95,13 +93,19 @@ export function wheelSlices(tier: Tier, cityId: CityId): { prize: WheelPrize; w:
     // 0.0.90: the rare one: a match one tier up (white wheel → blue).
     { prize: { ...keyPrize(wheelUpTier(tier), 1), face: "Rare" }, w: 3 + r },
     { prize: coins(140 * step, "Jackpot"), w: 3 + r * 2 },
-    { prize: cut && r >= 2 ? stock(cut, 1, "Cut") : coins(55 * step, "Cut"), w: 5 + r * 2 },
   ];
+  // 0.0.92 (Ryan): the old "Cut" slice (weight 5 + 2r) split in two half slices: Take all, and Nothing.
+  const half = (5 + r * 2) / 2;
+  const all: WheelPrize = { kind: "all", parts: base.map((s) => s.prize), face: "Take all", label: "Take all: everything on the wheel" };
+  const nothing: WheelPrize = { kind: "nothing", face: "Nothing", label: WHEEL_NOTHING_LINE };
+  return [...base, { prize: all, w: half }, { prize: nothing, w: half }];
 }
 
 /** 0.0.90: slice colour. A match slice wears its tier; coin is brass, an ingredient is ink. */
-export function wheelSliceTone(p: WheelPrize): Tier | "brass" | "ink" {
+export function wheelSliceTone(p: WheelPrize): Tier | "brass" | "ink" | "jackpot" | "blank" {
   if (p.kind === "key") return p.tier;
+  if (p.kind === "all") return "jackpot";
+  if (p.kind === "nothing") return "blank";
   return p.kind === "coins" ? "brass" : "ink";
 }
 
@@ -124,6 +128,16 @@ export function grantWheelPrize(
   prize: WheelPrize,
   bag: { keys: Record<Tier, number>; points: number; pantry: Partial<Record<IngredientId, number>> },
 ): { keys: Record<Tier, number>; points: number; pantry: Partial<Record<IngredientId, number>>; line: string } {
+  if (prize.kind === "nothing") return { ...bag, line: WHEEL_NOTHING_LINE };
+  if (prize.kind === "all") {
+    let cur = { ...bag, line: "" };
+    const lines: string[] = [];
+    for (const part of prize.parts) {
+      cur = grantWheelPrize(part, cur);
+      lines.push(cur.line);
+    }
+    return { keys: cur.keys, points: cur.points, pantry: cur.pantry, line: `Take all! ${lines.join(" · ")}` };
+  }
   if (prize.kind === "coins") {
     return { ...bag, points: bag.points + prize.n, line: prize.label };
   }

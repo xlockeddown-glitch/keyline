@@ -18,6 +18,8 @@ const FILL: Record<string, [string, string]> = {
   violet: ["#9c84d8", "#160f2a"],
   brass: ["#7a5a2c", "#fbe7bf"],
   ink: ["#2f3a4a", "#e6eef8"],
+  jackpot: ["url(#wheel-gold)", "#3a2304"],
+  blank: ["#8b8f96", "#2b2e33"],
 };
 
 function point(deg: number, r: number) {
@@ -25,10 +27,9 @@ function point(deg: number, r: number) {
   return [R + r * Math.cos(a), R + r * Math.sin(a)] as const;
 }
 
-function slicePath(i: number, n: number) {
-  const s = 360 / n;
-  const [x1, y1] = point(i * s, R - 6);
-  const [x2, y2] = point((i + 1) * s, R - 6);
+function slicePath(from: number, to: number) {
+  const [x1, y1] = point(from, R - 6);
+  const [x2, y2] = point(to, R - 6);
   return `M${R},${R} L${x1.toFixed(2)},${y1.toFixed(2)} A${R - 6},${R - 6} 0 0 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`;
 }
 
@@ -39,6 +40,18 @@ function Icon({ prize, color }: { prize: WheelPrize; color: string }) {
       <g>
         <rect x={-1.6} y={-2} width={3.2} height={13} rx={1.2} fill={color} />
         <path d="M0,-11 C4,-7 3.5,-3 0,-2 C-3.5,-3 -4,-7 0,-11 Z" fill="#ffb347" stroke={color} strokeWidth={0.8} />
+      </g>
+    );
+  }
+  if (prize.kind === "all") {
+    // Take all: a star.
+    return <path d="M0,-9 L2.6,-2.8 L9,-2.8 L3.8,1.2 L5.8,7.6 L0,3.8 L-5.8,7.6 L-3.8,1.2 L-9,-2.8 L-2.6,-2.8 Z" fill="#fff4c2" stroke={color} strokeWidth={1.1} />;
+  }
+  if (prize.kind === "nothing") {
+    return (
+      <g>
+        <circle r={7} fill="none" stroke={color} strokeWidth={1.6} />
+        <line x1={-4.5} y1={4.5} x2={4.5} y2={-4.5} stroke={color} strokeWidth={1.6} />
       </g>
     );
   }
@@ -85,12 +98,23 @@ export function MysteryWheel() {
 
   if (!wheel || loot || miss || openVault) return null;
 
-  const n = wheel.slices.length;
-  const slice = 360 / n;
+  // 0.0.92: Take all and Nothing are half slices; everything else is a whole one.
+  const units = wheel.slices.map((s) => (s.kind === "all" || s.kind === "nothing" ? 0.5 : 1));
+  const unit = 360 / units.reduce((a, b) => a + b, 0);
+  const starts: number[] = [];
+  units.reduce((acc, u) => (starts.push(acc), acc + u * unit), 0);
+  const widthOf = (i: number) => units[i]! * unit;
+  const midOf = (i: number) => starts[i]! + widthOf(i) / 2;
+  const underPointer = (a: number) => {
+    const p = (((360 - (a % 360)) % 360) + 360) % 360;
+    let k = 0;
+    for (let i = 0; i < starts.length; i++) if (p >= starts[i]!) k = i;
+    return k;
+  };
   const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // 0.0.92: signed in, land on the slice the server rolled and paid; a guest's own roll otherwise.
   const win = paid?.win ?? wheel.win;
-  const targetFor = (i: number) => TURNS * 360 + (360 - (i * slice + slice / 2));
+  const targetFor = (i: number) => TURNS * 360 + (360 - midOf(i));
   const target = targetFor(win);
   const prize = wheel.slices[win]!;
 
@@ -127,7 +151,7 @@ export function MysteryWheel() {
       const t = Math.min(1, (now - t0) / SPIN_MS);
       const a = wheelAngle(t, to);
       // The pointer sits on the slice edges' pegs: a click each time an edge passes under it.
-      const peg = Math.floor((a + slice / 2) / slice);
+      const peg = underPointer(a);
       if (peg !== lastPeg) {
         lastPeg = peg;
         tickPointer();
@@ -165,17 +189,25 @@ export function MysteryWheel() {
             ))}
           </div>
           <svg className="wheel-disc" data-testid="wheel-disc" viewBox={`0 0 ${2 * R} ${2 * R}`} style={{ transform: `rotate(${angle}deg)` }} aria-hidden>
+            <defs>
+              <linearGradient id="wheel-gold" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#fff1a8" />
+                <stop offset="0.5" stopColor="#f2b51e" />
+                <stop offset="1" stopColor="#b8780a" />
+              </linearGradient>
+            </defs>
             <circle cx={R} cy={R} r={R - 1} fill="#1a140e" />
             {wheel.slices.map((s, i) => {
               const tone = wheelSliceTone(s);
               const [fill, ink] = FILL[tone]!;
-              const mid = i * slice + slice / 2;
+              const mid = midOf(i);
+              const narrow = units[i]! < 1;
               const [ix, iy] = point(mid, R * 0.8);
               const [tx, ty] = point(mid, R * 0.56);
               const won = landed && i === win;
               return (
                 <g key={i} data-testid={`wheel-slice-${i}`} data-tone={tone} className={won ? "wheel-won" : undefined}>
-                  <path d={slicePath(i, n)} fill={fill} stroke="#fff8e8" strokeWidth={1.6} />
+                  <path d={slicePath(starts[i]!, starts[i]! + widthOf(i))} fill={fill} stroke="#fff8e8" strokeWidth={1.6} />
                   <g transform={`translate(${ix.toFixed(2)},${iy.toFixed(2)}) rotate(${mid})`}>
                     <Icon prize={s} color={ink} />
                   </g>
@@ -188,7 +220,7 @@ export function MysteryWheel() {
                     textAnchor="middle"
                     dominantBaseline="middle"
                     letterSpacing="0.06em"
-                    transform={`rotate(${mid} ${tx.toFixed(2)} ${ty.toFixed(2)})`}
+                    transform={`rotate(${narrow ? mid - 90 : mid} ${tx.toFixed(2)} ${ty.toFixed(2)})`}
                   >
                     {s.face.toUpperCase()}
                   </text>
