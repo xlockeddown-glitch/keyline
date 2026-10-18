@@ -3803,14 +3803,17 @@ export function seriesPoi(s: SeriesDef): import("./types").Poi {
 export const RUN_POI: import("./types").Poi = seriesPoi(SERIES.run);
 export const STACK_POI: import("./types").Poi = seriesPoi(SERIES.stack);
 
-export const WALK_PACE = 92;
+/** 0.0.90: +15% (was 92). The Lantern Run's server floor (dailyTopSpeed) follows this. */
+export const WALK_PACE = 92 * 1.15;
+/** 0.0.90: the cab is +25% (grid 184 → 230, arterial 230 → 287.5); its base no longer rides on the walk pace. */
+export const CAB_PACE = 92 * 1.25;
 
 export function walkSpeed() {
   return WALK_PACE;
 }
 
 export function cabSpeed(arterial: boolean) {
-  return WALK_PACE * (arterial ? 2.5 : 2);
+  return CAB_PACE * (arterial ? 2.5 : 2);
 }
 
 export const SUPER_LEGENDARY_LABEL = "Super Legendary";

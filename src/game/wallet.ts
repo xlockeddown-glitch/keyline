@@ -16,6 +16,7 @@ import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay.ts";
 import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
 import { betterOutcome, IDLE, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
+import { perfectRefund } from "./perfectRefund.ts";
 import { FARE_MAX_MS, FARES_CAP, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
 /**
@@ -801,7 +802,11 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     else if (p.lucky && p.luckyHit) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
     const sMult = marketMult(p.city, p.dealtAt, { kind: "series", lat: p.lat, lng: p.lng });
     const pay = marketPay(seriesCoin, baseKeys, sMult);
-    return withBoost(w, pay.coin, pay.keys, boost);
+    // 0.0.90: reaching the last card means every card was right: the spent match comes back (not violet).
+    const back = perfectRefund(def.cost, (w.keys[def.cost] ?? 0) + (pay.keys[def.cost] ?? 0), matchCap(def.cost));
+    const sKeys = { ...pay.keys };
+    if (back.match) sKeys[def.cost] = (sKeys[def.cost] ?? 0) + back.match;
+    return withBoost(w, pay.coin + back.coin, sKeys, boost);
   }
 
   const lampCoin = rewardPoints(p.poiTier, {
@@ -817,7 +822,11 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const lampMult = marketMult(p.city, p.dealtAt, spot);
   const pay = marketPay(lampCoin, baseKeys, lampMult);
   const lit = lampLit(w.cities, p.poiTier);
-  return withBoost(w, pay.coin + tip, pay.keys, boost, lit.u);
+  // 0.0.90: a single-question lamp answered right is a perfect lamp: match back, same tier (not violet).
+  const back = perfectRefund(p.poiTier, (w.keys[p.poiTier] ?? 0) + (pay.keys[p.poiTier] ?? 0), matchCap(p.poiTier));
+  const lKeys = { ...pay.keys };
+  if (back.match) lKeys[p.poiTier] = (lKeys[p.poiTier] ?? 0) + back.match;
+  return withBoost(w, pay.coin + tip + back.coin, lKeys, boost, lit.u);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */

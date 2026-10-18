@@ -7,9 +7,11 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { rewardPoints } from "./rewards.ts";
-import { CITIES } from "./data.ts";
+import { CITIES, SERIES } from "./data.ts";
 import { surveyProven } from "./survey.ts";
 import { SEED, STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
+import { perfectRefund } from "./perfectRefund.ts";
+import { TIER_VALUE } from "./rewards.ts";
 import { marketAt, marketMatches } from "./nightMarket.ts";
 import { FARES_CAP, matchCap, transitLoot } from "./ticket.ts";
 import { rideReward } from "./rideGames.ts";
@@ -966,4 +968,36 @@ test("a failed unlock reply rolls the local city list back", () => {
   const body = Buffer.from(JSON.stringify({ n: "nonceaaaa", t: Date.UTC(2026, 9, 16, 12) })).toString("base64url");
   assert.equal(tokenNonce(`${body}.sig`), "nonceaaaa");
   assert.equal(tokenNonce("nope"), null);
+});
+
+// 0.0.90: perfect lamp refunds the spent match, same tier; violet excluded; a miss refunds nothing.
+test("0.0.90 perfect refund: single lamp gets its match back", () => {
+  const w = emptyWallet();
+  const g = gradeGrant(w, pay({ elapsedMs: 9000, mult: 0.7 }));
+  assert.equal(g.award?.keys.blue, 1);
+});
+
+test("0.0.90 perfect refund: a Run/Stack cleared gets the cost match back on the last card only", () => {
+  const def = SERIES.stack;
+  const mid = gradeGrant(emptyWallet(), pay({ series: "stack", step: 0, steps: def.steps, clearTier: def.cost, poiTier: def.cost }));
+  assert.equal(mid.award?.keys[def.cost] ?? 0, 0);
+  const last = gradeGrant(
+    emptyWallet(),
+    pay({ series: "stack", step: def.steps - 1, steps: def.steps, prior: Array(def.steps - 1).fill("great"), clearTier: def.cost, poiTier: def.cost, elapsedMs: 9000 }),
+  );
+  const expected = (def.pay === def.cost ? 1 : 0) + 1;
+  assert.equal(last.award?.keys[def.cost], expected);
+});
+
+test("0.0.90 perfect refund: a miss refunds nothing", () => {
+  const g = gradeGrant(emptyWallet(), pay({ correct: false }));
+  assert.deepEqual(g.award?.keys, {});
+});
+
+test("0.0.90 perfect refund: violet never refunds; full pocket pays overflow coin", () => {
+  assert.deepEqual(perfectRefund("violet", 0, 9), { match: 0, coin: 0 });
+  const v = gradeGrant(emptyWallet(), pay({ clearTier: "violet", poiTier: "violet" }));
+  assert.equal(v.award?.keys.violet ?? 0, 0);
+  assert.deepEqual(perfectRefund("blue", 5, 5), { match: 0, coin: TIER_VALUE.blue });
+  assert.deepEqual(perfectRefund("blue", 4, 5), { match: 1, coin: 0 });
 });

@@ -1,3 +1,4 @@
+import { PERFECT_REFUND_LINE } from "@/game/perfectRefund";
 import { useEffect } from "react";
 import { useGame } from "@/game/store";
 import type { Tier } from "@/game/types";
@@ -68,6 +69,11 @@ export function LootToast() {
                   )}
                 </div>
                 {toast ? <p className="mt-2 text-xs text-fg-muted">{toast}</p> : null}
+                {loot.refund ? (
+                  <p className="mt-1 text-xs font-semibold text-fg" data-testid="perfect-refund">
+                    {loot.refund.match ? PERFECT_REFUND_LINE : `${PERFECT_REFUND_LINE} · pocket full, +${loot.refund.coin} coin`}
+                  </p>
+                ) : null}
                 {loot.boosts?.length ? (
                   <p className="mt-1 text-xs text-fg-muted">{loot.boosts.join(" · ")}</p>
                 ) : null}

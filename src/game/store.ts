@@ -33,6 +33,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
+import { perfectRefund } from "./perfectRefund.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
@@ -1621,6 +1622,13 @@ export const useGame = create<GameState>((set, get) => ({
       };
       let nextKeys = { ...get().keys };
       for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) nextKeys[t] += n;
+      // 0.0.90: every card right (a miss breaks the run) gives back the spent match. Not violet.
+      const sBack = perfectRefund(series.cost, nextKeys[series.cost] ?? 0, matchCap(series.cost));
+      if (sBack.match) nextKeys[series.cost] = (nextKeys[series.cost] ?? 0) + sBack.match;
+      if (sBack.match || sBack.coin) {
+        loot.points += sBack.coin;
+        loot.refund = { tier: series.cost, ...sBack };
+      }
       const surveyHit = takeSurvey({
         atlas: get().atlas,
         distanceM: get().distanceM,
@@ -1752,6 +1760,13 @@ export const useGame = create<GameState>((set, get) => ({
     let nextKeys = { ...keys };
     for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) {
       nextKeys[t] += n;
+    }
+    // 0.0.90: a lamp answered right is a perfect lamp: the spent match comes back, same tier. Not violet.
+    const lBack = perfectRefund(poi.tier, nextKeys[poi.tier] ?? 0, matchCap(poi.tier));
+    if (lBack.match) nextKeys[poi.tier] = (nextKeys[poi.tier] ?? 0) + lBack.match;
+    if (lBack.match || lBack.coin) {
+      loot.points += lBack.coin;
+      loot.refund = { tier: poi.tier, ...lBack };
     }
     const atlas = { ...get().atlas, [poi.id]: true as const };
     const surveyHit = takeSurvey({
