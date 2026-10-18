@@ -9,6 +9,9 @@ import { reach, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
+  snapReachable,
+  walkableTarget,
+  walkReach,
   canGrabMatch,
   bootstrapDrive,
   bootstrapStreets,
@@ -706,11 +709,13 @@ export function GameMap() {
     const w = wardRef.current;
     let changed = false;
     const next = keys.map((k) => {
-      let p = onStreet(g, k.lat, k.lng);
+      // 0.0.90: only the walk you can reach from the city start (no islands, blocks or freeways).
+      const reach = walkReach();
+      let p = snapReachable(g, k, reach);
       if (w && !inWard(w, p.lat, p.lng)) {
-        p = randomOnStreet(g, { lat: pos.current.lat, lng: pos.current.lng }, 40, 640);
+        p = randomOnStreet(g, { lat: pos.current.lat, lng: pos.current.lng }, 40, 640, reach);
         const held = clampWard(w, p.lat, p.lng);
-        p = onStreet(g, held.lat, held.lng);
+        p = snapReachable(g, held, reach);
       }
       if (distM(k.lat, k.lng, p.lat, p.lng) > 1.5) {
         changed = true;
@@ -904,7 +909,7 @@ export function GameMap() {
       .then((g) => {
         if (cancelled) return;
         graphRef.current = g;
-        bindWalkGraph(g);
+        bindWalkGraph(g, city.start ?? city.spawn);
         placeOnStreet(g, dock.lat, dock.lng, true);
         snapKeys(g);
         setStreets("ready");
@@ -980,9 +985,22 @@ export function GameMap() {
     const g = graphRef.current;
     const w = wardRef.current;
     let target = { lat, lng };
-    if (w && !inWard(w, lat, lng)) {
+    const outside = Boolean(w && !inWard(w, lat, lng));
+    if (w && outside) {
       target = clampWard(w, lat, lng);
       bumpFence();
+    }
+    // 0.0.90: a tap past the box, or on a walk you can't reach (Windsor from Detroit), walks to the nearest
+    // reachable spot on your side instead of refusing.
+    let edge = false;
+    if (g && !cabRef.current?.seated && !door) {
+      const near = walkableTarget(g, target, { lat: pos.current.lat, lng: pos.current.lng }, outside);
+      if (near) {
+        const held = w ? clampWard(w, near.lat, near.lng) : near;
+        target = w && !inWard(w, near.lat, near.lng) ? (nearest(g, held.lat, held.lng, 220) ?? held) : near;
+        edge = true;
+        flash("That's as close as you can walk. Heading there.");
+      }
     }
     const prior = waypoint.current;
     if (!keepQueue && prior && distM(prior.lat, prior.lng, target.lat, target.lng) < 14 && (routeRef.current?.length ?? 0) >= 2) {
@@ -1010,7 +1028,7 @@ export function GameMap() {
       snapGap = distM(snapped.lat, snapped.lng, target.lat, target.lng);
     }
     // No street within a door-step: drawing the route would stop on a far curb and leave the pin behind.
-    if (!cut && snapGap > (seated ? 140 : WALK_REACH_M)) {
+    if (!cut && !edge && snapGap > (seated ? 140 : WALK_REACH_M)) {
       flash(seated ? "No road that way." : "No street that way.");
       return;
     }
@@ -1820,7 +1838,7 @@ export function GameMap() {
     void bootstrapStreets(city.id, city.spawn.lat, city.spawn.lng, city.pois, abort.signal)
       .then((g) => {
         graphRef.current = g;
-        bindWalkGraph(g);
+        bindWalkGraph(g, city.start ?? city.spawn);
         placeOnStreet(g, pos.current.lat, pos.current.lng);
         snapKeys(g);
         setStreets("ready");

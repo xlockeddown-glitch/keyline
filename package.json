@@ -1,7 +1,7 @@
 {
   "name": "app-builder-workspace",
   "private": true,
-  "version": "0.0.90",
+  "version": "0.0.91",
   "sideEffects": false,
   "type": "module",
   "overrides": {
@@ -27,6 +27,7 @@
     "qa:sprites": "python3 scripts/qa-sprites.py",
     "qa:stands": "node --experimental-strip-types scripts/qa-stand-reach.ts",
     "qa:walk-routes": "node --experimental-strip-types scripts/qa-walk-routes.ts",
+    "qa:street-spawns": "node --experimental-strip-types scripts/qa-street-spawns.ts",
     "qa:hud-mobile": "node scripts/qa-hud-mobile.mjs",
     "qa:no-answers": "node scripts/qa-no-answers.mjs",
     "qa:deal-repeats": "node scripts/qa-deal-repeats.mjs",

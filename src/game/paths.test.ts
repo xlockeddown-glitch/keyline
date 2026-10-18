@@ -540,3 +540,30 @@ test("Camp Mabry has no street within a door-step, so the west curb is not the d
   assert.ok(distM(end, pin) > WALK_REACH_M, "the route ends on the curb, not at the pin");
 });
 
+
+// 0.0.90 (item 13): Detroit → a tap in Windsor. Windsor's streets are in the walk graph but on their own
+// component (the Ambassador Bridge and the tunnel are not walkable), and the box's south edge cuts through it.
+// Before: the tap snapped to a Windsor street with no route (refused / "outside the ward"). Now it walks to
+// the nearest reachable spot on the Detroit side, inside the box.
+test("0.0.90: a tap across the river (Windsor) or past the box walks to the nearest reachable point", async () => {
+  const { walkableTarget, startReach, routeOnGraph } = await import("./streets.ts");
+  const { wardFrom, inWard, clampWard } = await import("./ward.ts");
+  const { CITIES } = await import("./data.ts");
+  const f = fixture("daily-detroit");
+  const g = createGraph(f.area.lat, f.area.lng);
+  ingestOsmWays(g, f.ways.map((w) => ({ tags: w.tags, geometry: Array.from({ length: w.line.length / 2 }, (_, i) => ({ lat: w.line[2 * i]!, lon: w.line[2 * i + 1]! })) })));
+  const c = CITIES.detroit;
+  const ward = wardFrom([c.spawn, ...c.pois]);
+  const r = startReach(g, c.spawn)!;
+  for (const tap of [{ lat: 42.3205, lng: -83.033 }, { lat: 42.3175, lng: -83.042 }]) {
+    const outside = !inWard(ward, tap.lat, tap.lng);
+    const held = outside ? clampWard(ward, tap.lat, tap.lng) : tap;
+    const p = walkableTarget(g, held, c.spawn, outside);
+    assert.ok(p, `tap ${tap.lat},${tap.lng} should be redirected`);
+    const s = nearest(g, p.lat, p.lng, 3)!;
+    assert.equal(r.labels[g.segs[s.seg]!.a], r.id, "lands on the Detroit walk");
+    assert.ok(routeOnGraph(g, c.spawn, p), "and a walk route exists");
+  }
+  // A normal Detroit tap is left alone.
+  assert.equal(walkableTarget(g, { lat: 42.3235, lng: -83.05 }, c.spawn, false), null);
+});

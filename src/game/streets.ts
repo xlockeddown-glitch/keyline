@@ -493,7 +493,71 @@ export function onStreet(g: StreetGraph, lat: number, lng: number): Pt {
   return best ? { lat: best.lat, lng: best.lng } : { lat, lng };
 }
 
-export function randomOnStreet(g: StreetGraph, near: Pt, minM = 60, maxM = 900): Pt {
+export type Reach = { labels: Int32Array; id: number };
+
+/**
+ * 0.0.90: the walk component you can reach on foot from the city start. Of the graph nodes within `maxM` of
+ * the start, the one on the biggest connected walk (same rule as spawnComponent in nightMarket.ts), so an
+ * island footway, a plaza loop or a fenced-off path never counts. Falls back to the biggest component.
+ */
+export function startReach(g: StreetGraph, start: Pt, maxM = 250): Reach | null {
+  if (!g.segs.length) return null;
+  const labels = ensureComp(g);
+  const size = new Map<number, number>();
+  for (let i = 0; i < labels.length; i++) if (labels[i]! >= 0) size.set(labels[i]!, (size.get(labels[i]!) ?? 0) + 1);
+  let id = -1;
+  for (let i = 0; i < g.nodes.length; i++) {
+    const c = labels[i]!;
+    if (c < 0) continue;
+    const n = g.nodes[i]!;
+    if (Math.abs(n.lat - start.lat) > 0.004 || distM(start.lat, start.lng, n.lat, n.lng) > maxM) continue;
+    if (id < 0 || size.get(c)! > size.get(id)!) id = c;
+  }
+  if (id < 0) for (const [c, n] of size) if (id < 0 || n > size.get(id)!) id = c;
+  return id < 0 ? null : { labels, id };
+}
+
+export function segReachable(g: StreetGraph, sid: number, r: Reach): boolean {
+  const seg = g.segs[sid]!;
+  return r.labels[seg.a] === r.id && r.labels[seg.b] === r.id;
+}
+
+/** 0.0.90: the nearest point on the reachable walk. Never an island, a freeway (not in the walk graph) or a block. */
+export function snapReachable(g: StreetGraph, p: Pt, r: Reach | null): Pt {
+  if (!r) return onStreet(g, p.lat, p.lng);
+  const close = nearest(g, p.lat, p.lng, 400, r.labels, r.id);
+  if (close && segReachable(g, close.seg, r)) return { lat: close.lat, lng: close.lng };
+  let best: Snap | null = null;
+  for (let i = 0; i < g.segs.length; i++) {
+    if (!segReachable(g, i, r)) continue;
+    const snap = projectToSeg(g, p.lat, p.lng, g.segs[i]!);
+    snap.seg = i;
+    if (!best || snap.dist < best.dist) best = snap;
+  }
+  return best ? { lat: best.lat, lng: best.lng } : onStreet(g, p.lat, p.lng);
+}
+
+/**
+ * 0.0.90: where a tap should walk to. `t` is the tap, already held inside the playable box; `outside` says the
+ * tap was past it. When the tap was outside the box, or the street it lands on is on a walk the player can't
+ * reach (Windsor across the Detroit River: no walkable bridge or tunnel, so it is its own component), the walk
+ * goes to the nearest point on the player's own walk instead of being refused. Null means "nothing to fix".
+ */
+export function walkableTarget(g: StreetGraph, t: Pt, from: Pt, outside: boolean): Pt | null {
+  if (!g.segs.length) return null;
+  const start = nearest(g, from.lat, from.lng, 180);
+  if (!start) return null;
+  const labels = ensureComp(g);
+  const r: Reach = { labels, id: labels[g.segs[start.seg]!.a]! };
+  const any = nearest(g, t.lat, t.lng, 220);
+  if (!outside) {
+    if (!any) return null;
+    if (segReachable(g, any.seg, r) || labels[g.segs[any.seg]!.a] === r.id || labels[g.segs[any.seg]!.b] === r.id) return null;
+  }
+  return snapReachable(g, t, r);
+}
+
+export function randomOnStreet(g: StreetGraph, near: Pt, minM = 60, maxM = 900, reach?: Reach | null): Pt {
   if (!g.segs.length) return near;
   const { x, y } = toXY(g, near.lat, near.lng);
   const cx = Math.floor(x / g.cell);
@@ -510,11 +574,13 @@ export function randomOnStreet(g: StreetGraph, near: Pt, minM = 60, maxM = 900):
       for (const id of list) {
         if (seen.has(id)) continue;
         seen.add(id);
+        if (reach && !segReachable(g, id, reach)) continue;
         ids.push(id);
       }
     }
   }
-  const pool = ids.length ? ids : g.segs.map((_, i) => i);
+  const pool = ids.length ? ids : g.segs.map((_, i) => i).filter((i) => !reach || segReachable(g, i, reach));
+  if (!pool.length) return near;
   const id = pool[(Math.random() * pool.length) | 0]!;
   const seg = g.segs[id]!;
   const t = 0.12 + Math.random() * 0.76;
@@ -522,16 +588,40 @@ export function randomOnStreet(g: StreetGraph, near: Pt, minM = 60, maxM = 900):
 }
 
 let walkGraph: StreetGraph | null = null;
+let walkStart: Pt | null = null;
+let reachCache: { g: StreetGraph; gen: number; start: Pt; r: Reach | null } | null = null;
 
-export function bindWalkGraph(g: StreetGraph | null) {
+/** `start` is the city start: street matches only drop on the walk reachable from it (0.0.90). */
+export function bindWalkGraph(g: StreetGraph | null, start?: Pt) {
   walkGraph = g;
+  if (start) walkStart = start;
+}
+
+function boundReach(): Reach | null {
+  const g = walkGraph;
+  if (!g || !walkStart) return null;
+  const c = reachCache;
+  if (c && c.g === g && c.gen === g.segs.length && c.start === walkStart) return c.r;
+  const r = startReach(g, walkStart);
+  reachCache = { g, gen: g.segs.length, start: walkStart, r };
+  return r;
 }
 
 export function streetDrop(near: Pt, minM = 80, maxM = 860): Pt {
-  if (walkGraph?.segs.length) return randomOnStreet(walkGraph, near, minM, maxM);
+  if (walkGraph?.segs.length) return randomOnStreet(walkGraph, near, minM, maxM, boundReach());
   const ang = Math.random() * Math.PI * 2;
   const r = minM + Math.random() * Math.max(10, maxM - minM);
   return dest(near.lat, near.lng, Math.cos(ang) * r, Math.sin(ang) * r);
+}
+
+/** 0.0.90: snap any spawn (a night-market point, a saved match) onto the reachable walk once the graph is in. */
+export function reachableDrop(p: Pt): Pt {
+  if (!walkGraph?.segs.length) return p;
+  return snapReachable(walkGraph, p, boundReach());
+}
+
+export function walkReach(): Reach | null {
+  return boundReach();
 }
 
 function headingNE(yaw: number) {

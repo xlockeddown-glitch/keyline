@@ -25,7 +25,18 @@ export const MARKET_CURB_M = 30;
 /** A candidate needs at least this much street inside the radius, so the market is a real walk. */
 export const MARKET_MIN_LEN_M = 150;
 /** Street classes a market may sit on — walkable streets with a name (no service alleys, tracks or paths). */
-export const MARKET_CLASSES = new Set(["pedestrian", "living_street", "residential", "unclassified", "tertiary", "secondary", "primary"]);
+export const MARKET_CLASSES = new Set(["pedestrian", "living_street", "residential", "unclassified", "tertiary", "secondary", "primary", "footway", "path"]);
+/** 0.0.90: a market street wants at least this many lamps within MARKET_LAMP_M… */
+export const MARKET_MIN_LAMPS = 3;
+/** …and when a city has fewer than this many such streets, it takes its best-lit streets instead. */
+export const MARKET_MIN_STREETS = 4;
+/** 0.0.90: lamps on the open market street relight this many times faster. */
+export const MARKET_RELIGHT = 3;
+
+/** A lamp's dark time: a third while it stands on the open market (mult > 1). */
+export function marketCoolMs(baseMs: number, mult: number): number {
+  return mult > 1 ? Math.round(baseMs / MARKET_RELIGHT) : baseMs;
+}
 /** Names that say freeway even where a stretch is tagged as a surface road (service drives along the trench). */
 export const FREEWAY_NAME = /\b(freeway|expressway|motorway|interstate|turnpike|service drive)\b/i;
 
@@ -191,7 +202,7 @@ export function marketLamps(pois: Poi[]) {
   return pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board");
 }
 
-export type EligibleWhy = "ok" | "unnamed" | "class" | "freeway" | "unwalkable" | "underground" | "unreachable" | "short" | "no-lamps";
+export type EligibleWhy = "ok" | "unnamed" | "class" | "freeway" | "unwalkable" | "underground" | "unreachable" | "short" | "no-lamps" | "few-lamps";
 
 /** Tunnels and lower decks (Lower Wacker, the 2nd Street Tunnel): walkable, but no place for a lit market the map can show. */
 export function underground(tags: OsmWay["tags"]): boolean {
@@ -207,7 +218,9 @@ export function underground(tags: OsmWay["tags"]): boolean {
  *  - is never a freeway: no way with that name is a motorway/trunk/ramp, and the name isn't a freeway's,
  *  - is reachable on foot from the city start (same walk component as spawn) — unreachable stretches are dropped,
  *  - keeps MARKET_MIN_LEN_M of street within MARKET_RADIUS_M of spawn,
- *  - has at least one lamp (named mark) within MARKET_LAMP_M.
+ *  - has at least MARKET_MIN_LAMPS lamps (named marks) within MARKET_LAMP_M — or, in a city with fewer than
+ *    MARKET_MIN_STREETS such streets, is one of its MARKET_MIN_STREETS best-lit streets (0.0.90; was one lamp).
+ * Named footways and paths count too (0.0.90), still only if they pass isWalkableWay; never freeways or service drives.
  * Streets are grouped by OSM name; the result is sorted by name so the bake is stable.
  */
 export function eligibleStreets(
@@ -278,8 +291,15 @@ export function eligibleStreets(
     why.set(name, "ok");
     streets.push({ name, hw: [...g.hw].sort(), lines: g.lines.map((l) => simplifyLine(l)), lamps: on.sort(), lenM: Math.round(lenM) });
   }
-  streets.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-  return { streets, why };
+  const lit = streets.filter((s) => s.lamps.length >= MARKET_MIN_LAMPS);
+  let keep = lit;
+  if (lit.length < MARKET_MIN_STREETS) {
+    const best = [...streets].sort((a, b) => b.lamps.length - a.lamps.length || b.lenM - a.lenM || (a.name < b.name ? -1 : 1));
+    keep = best.slice(0, Math.max(MARKET_MIN_STREETS, lit.length));
+  }
+  for (const s of streets) if (!keep.includes(s)) why.set(s.name, "few-lamps");
+  keep.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  return { streets: keep, why };
 }
 
 // ───────────────────────── schedule (runtime, shared) ─────────────────────────
@@ -309,9 +329,23 @@ export function marketSeed(city: CityId, hour: number): number {
   return hash32(`keyline-night-market|${city}|${hourLabel(hour)}`);
 }
 
-/** That city-hour's seeded street, stepping forward past any index in `skip`. */
-function draw(city: CityId, hour: number, n: number, skip: Set<number>): number {
-  const start = marketSeed(city, hour) % n;
+/**
+ * That city-hour's seeded street, stepping forward past any index in `skip`. With `weights` (0.0.90: lamp
+ * counts) the seed lands on a street in proportion to its weight, so better-lit streets run more often.
+ */
+function draw(city: CityId, hour: number, n: number, skip: Set<number>, weights?: readonly number[]): number {
+  let start = marketSeed(city, hour) % n;
+  if (weights && weights.length === n) {
+    const total = weights.reduce((a, w) => a + Math.max(1, w), 0);
+    let r = marketSeed(city, hour) % total;
+    for (let i = 0; i < n; i++) {
+      r -= Math.max(1, weights[i]!);
+      if (r < 0) {
+        start = i;
+        break;
+      }
+    }
+  }
   for (let k = 0; k < n; k++) {
     const i = (start + k) % n;
     if (!skip.has(i)) return i;
@@ -325,13 +359,13 @@ function draw(city: CityId, hour: number, n: number, skip: Set<number>): number 
  * market never sits on the same street two hours running, and any hour can be worked out
  * from its own seed and its neighbours' (no chain back to the epoch, no server).
  */
-export function marketIndex(city: CityId, hour: number, n: number): number {
+export function marketIndex(city: CityId, hour: number, n: number, weights?: readonly number[]): number {
   if (n <= 1) return 0;
   if (n === 2) return hour % 2;
-  if (hour % 2 === 0) return draw(city, hour, n, new Set());
-  const prev = draw(city, hour - 1, n, new Set());
-  const next = draw(city, hour + 1, n, new Set());
-  return draw(city, hour, n, new Set([prev, next]));
+  if (hour % 2 === 0) return draw(city, hour, n, new Set(), weights);
+  const prev = draw(city, hour - 1, n, new Set(), weights);
+  const next = draw(city, hour + 1, n, new Set(), weights);
+  return draw(city, hour, n, new Set([prev, next]), weights);
 }
 
 export type NightMarket = {
@@ -350,7 +384,7 @@ export function marketStreets(city: CityId): MarketStreet[] {
 export function marketAt(city: CityId, at: number, streets: MarketStreet[] = marketStreets(city)): NightMarket | null {
   if (!streets.length) return null;
   const hour = utcHour(at);
-  const street = streets[marketIndex(city, hour, streets.length)]!;
+  const street = streets[marketIndex(city, hour, streets.length, streets.map((s) => s.lamps.length))]!;
   return { city, hour, street, startsAt: hour * MARKET_HOUR_MS, endsAt: (hour + 1) * MARKET_HOUR_MS };
 }
 

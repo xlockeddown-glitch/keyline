@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
-import { streetDrop } from "./streets";
-import { MARKET_MULT, MARKET_TAG, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
+import { reachableDrop, streetDrop } from "./streets";
+import { MARKET_MULT, MARKET_TAG, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
@@ -411,7 +411,7 @@ function issuedKey(cityId: CityId, held: { id: string }[]): MapKey | null {
   const spot = takeStreetSpot(player, cityId, Date.now(), streetFloor(cityId, held));
   if (!spot) return null;
   const m = spot.market ? marketAt(cityId, Date.now()) : null;
-  const p = m ? pointOnMarket(m.street) : streetDrop(CITIES[cityId].spawn, 220, 2200);
+  const p = m ? reachableDrop(pointOnMarket(m.street)) : streetDrop(CITIES[cityId].spawn, 220, 2200);
   return { id: spot.id, lat: p.lat, lng: p.lng, tier: spot.tier };
 }
 
@@ -431,7 +431,7 @@ function placeKey(cityId: CityId, tier: Tier): MapKey {
 function marketKey(cityId: CityId, tier: Tier, now: number): MapKey | null {
   const m = marketAt(cityId, now);
   if (!m || Math.random() < 0.5) return null;
-  const p = pointOnMarket(m.street);
+  const p = reachableDrop(pointOnMarket(m.street));
   return { id: `k-${cityId}-m${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`, lat: p.lat, lng: p.lng, tier };
 }
 
@@ -1793,7 +1793,8 @@ export const useGame = create<GameState>((set, get) => ({
     loot.keys = extraKeys;
     loot.points = paid.points - get().points;
     loot.boosts = paid.boosts.length ? paid.boosts : undefined;
-    const coolMs = lampCoolMs(poi.tier);
+    // 0.0.90: a lamp on the open night market relights three times as fast.
+    const coolMs = marketCoolMs(lampCoolMs(poi.tier), lampMult);
     const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + coolMs } };
     let contract = get().contract;
     let contractToast: string | null = null;

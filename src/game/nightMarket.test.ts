@@ -15,6 +15,10 @@ import {
   MARKET_DOUBLES,
   MARKET_HOUR_MS,
   MARKET_LAMP_M,
+  MARKET_MIN_LAMPS,
+  MARKET_MIN_STREETS,
+  MARKET_RELIGHT,
+  marketCoolMs,
   MARKET_MULT,
   MARKET_RADIUS_M,
   MARKET_TAG,
@@ -179,7 +183,7 @@ test("eligibility on real OSM (Detroit downtown snapshot): no freeway, every pic
   const fx = JSON.parse(readFileSync(new URL("./fixtures/paths-daily-detroit.json", import.meta.url), "utf8")) as { ways: OsmWay[] };
   const city = CITIES.detroit;
   const { streets, why } = eligibleStreets(fx.ways, city.spawn, city.pois);
-  assert.ok(streets.length >= 5, `only ${streets.length} streets`);
+  assert.ok(streets.length >= MARKET_MIN_STREETS, `only ${streets.length} streets`);
   const { comp, root } = spawnComponent(fx.ways, city.spawn);
   for (const s of streets) {
     const named = fx.ways.filter((w) => w.tags.name === s.name);
@@ -232,7 +236,7 @@ test("baked market streets agree with the offline OSM snapshots (reachable on fo
       assert.ok(named.every((w) => !isFreeway(w.tags)), `${city} ${s.name}: freeway stretch`);
       assert.ok(named.some((w) => isWalkableWay(w.tags) && wayReachable(w, comp, root)), `${city} ${s.name}: unreachable in snapshot`);
     }
-    assert.ok(checked >= 5, `${city}: only ${checked} streets checked`);
+    assert.ok(checked >= MARKET_MIN_STREETS, `${city}: only ${checked} streets checked`);
   }
 });
 
@@ -318,4 +322,41 @@ test("doubling scope: Daily Lantern Run, print shop prices, the bank and the loc
   const from = src.indexOf("const lampMarket");
   const lampBody = src.slice(from, src.indexOf("closeVault: () => {", from));
   assert.equal((lampBody.match(/postClear\(/g) ?? []).length, 1);
+});
+
+// ───────── 0.0.90: better-lit markets, faster relight ─────────
+
+test("0.0.90: markets want 3+ lamps (best-lit fallback), named paths count, lamp-weighted pick, same for everyone", () => {
+  const o = { lat: 43.65, lng: -79.38 };
+  const mk = (name: string, y: number, hw = "residential"): OsmWay => ({ tags: { highway: hw, name }, line: line(o, [[-300, y], [0, y], [300, y]]) });
+  const ways: OsmWay[] = [mk("A Street", 0), mk("B Street", 200), mk("C Path", 400, "footway"), mk("D Street", 600), mk("E Street", 800), mk("F Street", 1000)];
+  ways.push({ tags: { highway: "footway" }, line: line(o, [[0, 0], [0, 200], [0, 400], [0, 600], [0, 800], [0, 1000]]) }); // joins them up
+  const lamps = (y: number, n: number, tag: string) => Array.from({ length: n }, (_, i) => lamp(`${tag}${i}`, o, -200 + i * 80, y + 10));
+  // Few streets have 3+: fall back to the best-lit MARKET_MIN_STREETS.
+  const few = eligibleStreets(ways, o, [...lamps(0, 3, "a"), ...lamps(200, 2, "b"), ...lamps(400, 2, "c"), ...lamps(600, 1, "d"), ...lamps(800, 1, "e")], { minLenM: 100 });
+  assert.equal(few.streets.length, MARKET_MIN_STREETS);
+  assert.ok(few.streets.some((s) => s.name === "C Path"), "a named footway can host the market");
+  assert.ok(!few.streets.some((s) => s.name === "F Street"), "no lamp, no market");
+  // Enough streets with 3+: only those.
+  const many = eligibleStreets(ways, o, [0, 200, 400, 600, 800].flatMap((y, k) => lamps(y, k === 4 ? 1 : 3 + k, String.fromCharCode(97 + k))), { minLenM: 100 });
+  assert.deepEqual(many.streets.map((s) => s.name), ["A Street", "B Street", "C Path", "D Street"]);
+  assert.ok(many.streets.every((s) => s.lamps.length >= MARKET_MIN_LAMPS));
+  assert.equal(many.why.get("E Street"), "few-lamps");
+  // Lamp-weighted pick: over a year of hours the best-lit street runs most, and the seed is shared.
+  const weights = [1, 1, 1, 9];
+  const count = [0, 0, 0, 0];
+  for (let h = H0; h < H0 + 24 * 365; h += 2) count[marketIndex("austin", h, 4, weights)]!++;
+  assert.ok(count[3]! > count[0]! * 3, `weighted: ${count}`);
+  assert.equal(marketIndex("austin", H0 + 10, 4, weights), marketIndex("austin", H0 + 10, 4, weights));
+  for (let h = H0; h < H0 + 200; h++) assert.notEqual(marketIndex("austin", h, 4, weights), marketIndex("austin", h + 1, 4, weights));
+  // The bake keeps every city at MARKET_MIN_STREETS or more.
+  for (const city of ALL) assert.ok(marketStreets(city).length >= MARKET_MIN_STREETS, city);
+});
+
+test("0.0.90: a lamp on the open market relights three times as fast; off the market, unchanged", () => {
+  assert.equal(MARKET_RELIGHT, 3);
+  assert.equal(marketCoolMs(300_000, MARKET_MULT), 100_000);
+  assert.equal(marketCoolMs(300_000, 1), 300_000);
+  const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.match(src, /const coolMs = marketCoolMs\(lampCoolMs\(poi\.tier\), lampMult\);/);
 });
