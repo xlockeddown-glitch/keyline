@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CITY_LIST, cityBoard, cityBoards, cityCounter, cityCounters, cityShop } from "./data.ts";
+import { CITY_LIST, cityBoard, cityBoards, cityCounter, cityCounters, cityShop, isQuestBoard } from "./data.ts";
 import { distM } from "./geo.ts";
 
 /** Compact cities keep one of each. Bigger maps get two or three, spread across the lamps. */
@@ -25,7 +25,8 @@ const WANT: Record<string, number> = {
 test("counters and notice boards are spread across the city, with more in the big ones", () => {
   for (const city of CITY_LIST) {
     const counters = cityCounters(city.id);
-    const boards = cityBoards(city.id);
+    // 0.0.93: the Quest Board sits by the start lamp on purpose; the spread rule is for the errand boards.
+    const boards = cityBoards(city.id).filter((p) => !isQuestBoard(p));
     const shop = cityShop(city.id);
     const lamps = city.pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board" && p.kind !== "station");
     assert.equal(counters.length, WANT[city.id], `${city.id} counters`);

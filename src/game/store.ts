@@ -1163,7 +1163,7 @@ export const useGame = create<GameState>((set, get) => ({
   maybeSpawnKey: (now) => {
     const playMin = (now - get().sessionAt) / 60_000 + get().vaultsOpened * 0.35;
     const pocket = pocketStreet(get().keys);
-    if (pocket >= 7) return;
+    // 0.0.93: no pause at 7+ held matches any more; the map cap and the 80/day cap still apply.
     const cap = streetKeyCap(pocket);
     // 0.0.90: twice as often (was max(28s, 78s − play·0.9s)).
     const interval = Math.max(14_000, 39_000 - playMin * 450);

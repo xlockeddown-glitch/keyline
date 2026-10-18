@@ -101,7 +101,7 @@ test("street matches doubled: 18 opening, cap 16 (10 at pocket 5+), 14s–39s sp
   const s = src("./store.ts");
   assert.match(s, /return pocket >= 5 \? 10 : 16;/);
   assert.match(s, /Math\.max\(14_000, 39_000 - playMin \* 450\)/);
-  assert.match(s, /if \(pocket >= 7\) return;/, "pocket>=7 stop rule kept");
+  assert.doesNotMatch(s, /if \(pocket >= 7\) return;/, "0.0.93: the pocket>=7 spawn pause is gone");
   assert.match(s, /function seedKeys\(cityId: CityId, n = SEED\.length\)/);
 });
 
