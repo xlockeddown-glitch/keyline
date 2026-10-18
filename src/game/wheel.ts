@@ -173,3 +173,19 @@ export function wheelClaimFailed(
   }
   return { wheelClaimed: claimed, toast: WHEEL_RETRY_LINE };
 }
+
+/** 0.0.92: how far the wheel sails past the winning slice before it settles back, and the share of time settling. */
+export const WHEEL_OVERSHOOT_DEG = 7;
+const SETTLE = 0.14;
+
+/** Where the disc is (degrees) at t in [0, 1]: a long ease-out past the target, then a short settle back onto it. */
+export function wheelAngle(t: number, target: number): number {
+  const main = 1 - SETTLE;
+  if (t <= main) {
+    const u = Math.max(0, t) / main;
+    return (target + WHEEL_OVERSHOOT_DEG) * (1 - Math.pow(1 - u, 3));
+  }
+  const v = Math.min(1, (t - main) / SETTLE);
+  const smooth = v * v * (3 - 2 * v);
+  return target + WHEEL_OVERSHOOT_DEG - WHEEL_OVERSHOOT_DEG * smooth;
+}

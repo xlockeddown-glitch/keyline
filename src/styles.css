@@ -1461,43 +1461,105 @@ h3 {
 }
 .wheel-stage {
   position: relative;
-  height: 240px;
+  height: 262px;
 }
+/* 0.0.92: a pointer that kicks on every peg, rim lights, a glow and a burst on the landing slice. */
 .wheel-pointer {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   left: 50%;
-  top: 6px;
+  top: 2px;
   width: 0;
   height: 0;
-  transform: translateX(-50%);
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 14px solid var(--color-vault-amber);
+  margin-left: -11px;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 22px solid #f6d27a;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.6));
+  transform-origin: 50% 0;
+}
+.wheel-pointer.is-tick {
+  animation: wheel-tick 110ms ease-out;
+}
+@keyframes wheel-tick {
+  0% { transform: rotate(0deg); }
+  35% { transform: rotate(-16deg); }
+  100% { transform: rotate(0deg); }
+}
+.wheel-rim {
+  position: absolute;
+  left: 50%;
+  top: 131px;
+  width: 0;
+  height: 0;
+}
+.wheel-bulb {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffe7a3;
+  box-shadow: 0 0 6px 2px rgb(255 214 120 / 0.75);
+  animation: wheel-bulb 1.2s steps(1) infinite;
+}
+.wheel-bulb.is-odd {
+  animation-delay: 0.6s;
+}
+.wheel-stage.is-spinning .wheel-bulb {
+  animation-duration: 0.3s;
+}
+.wheel-stage.is-spinning .wheel-bulb.is-odd {
+  animation-delay: 0.15s;
+}
+@keyframes wheel-bulb {
+  0% { opacity: 1; }
+  50% { opacity: 0.25; }
 }
 .wheel-disc {
   position: absolute;
   left: 50%;
-  top: 18px;
-  width: 210px;
-  height: 210px;
-  margin-left: -105px;
+  top: 23px;
+  width: 216px;
+  height: 216px;
+  margin-left: -108px;
   border-radius: 50%;
-  border: 3px solid color-mix(in oklab, var(--color-vault-amber) 55%, #1a140e);
-  box-shadow: inset 0 0 0 8px #1a140e;
+  box-shadow: 0 0 0 5px #3a2a18, 0 0 0 8px #e9c27a, 0 10px 24px rgb(0 0 0 / 0.5);
+  will-change: transform;
 }
-.wheel-face {
+.wheel-won path {
+  stroke: #fff3c4;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px #ffe08a) brightness(1.15);
+  animation: wheel-won 0.9s ease-in-out 2;
+}
+@keyframes wheel-won {
+  50% { filter: drop-shadow(0 0 12px #ffe08a) brightness(1.35); }
+}
+.wheel-burst {
   position: absolute;
+  z-index: 2;
   left: 50%;
-  top: 14px;
+  top: 22px;
   width: 64px;
+  height: 64px;
   margin-left: -32px;
-  transform-origin: 50% 91px;
-  text-align: center;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #f3e6d0;
+  margin-top: -20px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgb(255 236 170 / 0.95) 0 18%, transparent 19%),
+    repeating-conic-gradient(from 0deg, rgb(255 214 120 / 0.9) 0 8deg, transparent 8deg 30deg);
+  -webkit-mask: radial-gradient(circle, #000 0 62%, transparent 70%);
+  mask: radial-gradient(circle, #000 0 62%, transparent 70%);
+  animation: wheel-burst 0.8s ease-out forwards;
+}
+@keyframes wheel-burst {
+  0% { transform: scale(0.2) rotate(0deg); opacity: 1; }
+  100% { transform: scale(2.6) rotate(25deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wheel-bulb, .wheel-pointer.is-tick, .wheel-won path { animation: none; }
 }
 
 .scout-marker.is-seated {

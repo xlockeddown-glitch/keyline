@@ -1014,3 +1014,25 @@ test("0.0.90 pass gift: new player gets 1, a second grant is a no-op, existing p
   assert.equal(giftPass({ ...freshUnlocks(), passes: 4 }).passes, 5);
   assert.equal(giftPass({ ...freshUnlocks(), passes: 25 }).passes, 25);
 });
+
+test("0.0.92 server wheel: a rare slice pays a match one tier up, once per earned spin", async () => {
+  const { buildWheel } = await import("./wheel.ts");
+  const sql = await db(["0002_vault_clears.sql"]);
+  await sql`create view vault_clears_by_player as select user_id, tier, correct from vault_clears`;
+  await sql`insert into vault_clears (user_id, display_name, tier, correct) values ('wil', 'Wil', 'white', 25)`;
+  await syncPlayer(sql, "wil", snap(), "wilphone1");
+  let roll = 0;
+  while (roll < 1 && buildWheel("white", "austin", roll).slices[buildWheel("white", "austin", roll).win]!.face !== "Rare") roll += 0.001;
+  const real = Math.random;
+  Math.random = () => roll;
+  try {
+    const r = await applyClientOp(sql, "wil", { kind: "wheel", tier: "white", city: "austin" });
+    assert.ok(r.ok, JSON.stringify(r));
+    assert.equal(r.wallet.keys.blue, 1);
+    const again = await applyClientOp(sql, "wil", { kind: "wheel", tier: "white", city: "austin" });
+    assert.equal(again.ok, false);
+    assert.equal(again.wallet.keys.blue, 1);
+  } finally {
+    Math.random = real;
+  }
+});

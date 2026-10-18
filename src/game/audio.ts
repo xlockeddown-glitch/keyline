@@ -377,6 +377,8 @@ export const sfx = {
     setTimeout(() => beep(523, 0.16, "triangle", 0.22), 90);
   },
   ui: () => beep(640, 0.05, "square", 0.12),
+  /** 0.0.92: the wheel pointer clicking past a slice peg. */
+  tick: () => beep(1700, 0.022, "square", 0.07),
   fireworks: (kind: "mini" | "grand") => {
     if (!ctx || !sfxBus || muted) return;
     const t0 = ctx.currentTime;

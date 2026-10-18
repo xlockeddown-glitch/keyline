@@ -92,3 +92,48 @@ test("0.0.89: the wheel never re-shows a failed offer and always has a close but
   // A fresh offer resets the spin state instead of opening already landed.
   assert.match(ui, /\}, \[wheel\]\);/);
 });
+
+// 0.0.92: match prizes on every wheel, tier-sensible, colour-coded.
+test("0.0.92 wheel prizes: white wheel pays white and blue matches; red never violet; violet wheel can", async () => {
+  const { wheelSlices, wheelSliceTone, wheelUpTier } = await import("./wheel.ts");
+  const tiersOf = (t: Parameters<typeof wheelSlices>[0]) =>
+    new Set(wheelSlices(t, "austin").flatMap((s) => (s.prize.kind === "key" ? [s.prize.tier] : [])));
+  assert.deepEqual([...tiersOf("white")].sort(), ["blue", "white"]);
+  assert.ok(tiersOf("green").has("amber") && tiersOf("green").has("green"));
+  assert.ok(!tiersOf("red").has("violet"), "a red wheel never pays violet");
+  assert.ok(tiersOf("violet").has("violet"));
+  assert.equal(wheelUpTier("red"), "red");
+  assert.equal(wheelUpTier("white"), "blue");
+  for (const s of wheelSlices("blue", "austin")) {
+    const tone = wheelSliceTone(s.prize);
+    if (s.prize.kind === "key") assert.equal(tone, s.prize.tier);
+    else assert.equal(tone, s.prize.kind === "coins" ? "brass" : "ink");
+  }
+});
+
+test("0.0.92 wheel prizes: a pair into a nearly full pocket pays what fits plus overflow coin", async () => {
+  const { wheelSlices } = await import("./wheel.ts");
+  const { matchCap } = await import("./ticket.ts");
+  const pair = wheelSlices("white", "austin").find((s) => s.prize.face === "Pair")!.prize;
+  assert.equal(pair.kind, "key");
+  const keys = { white: matchCap("white") - 1, blue: 0, green: 0, amber: 0, red: 0, violet: 0 };
+  const paid = grantWheelPrize(pair, { keys, points: 0, pantry: {} });
+  assert.equal(paid.keys.white, matchCap("white"));
+  assert.ok(paid.points > 0, "the one that didn't fit came back as coin");
+});
+
+test("0.0.92 wheel spin: eases out past the winner, settles back exactly on it, never runs backwards early", async () => {
+  const { wheelAngle, WHEEL_OVERSHOOT_DEG } = await import("./wheel.ts");
+  const target = 6 * 360 + 120;
+  assert.equal(wheelAngle(0, target), 0);
+  assert.equal(wheelAngle(1, target), target);
+  let peak = 0;
+  let prev = 0;
+  for (let i = 1; i <= 860; i++) {
+    const a = wheelAngle(i / 1000, target);
+    assert.ok(a >= prev - 1e-9, `backwards at ${i}`);
+    prev = a;
+    peak = Math.max(peak, a);
+  }
+  assert.ok(Math.abs(peak - (target + WHEEL_OVERSHOOT_DEG)) < 1e-6, "overshoots by the set amount");
+});
