@@ -1,5 +1,5 @@
 /**
- * 0.0.97 city prints: exclusive coat patterns, earned per city (never bought). A print is purely visual and
+ * 0.0.99 city prints: exclusive coat patterns, earned per city (never bought). A print is purely visual and
  * wearable on any scout. Each city has a LIST of prints: major cities 2-3, smaller 1-2, every city at least
  * one. Each print carries its own goal; later prints in a city can ask for more.
  *
@@ -33,8 +33,12 @@ export type CityPrint = {
   swatch: string;
 };
 
-/** DRAFT targets: pending Ryan's lock (see report). First print in a city; later prints step up. */
+/** 0.0.99 (Ryan): print 1 = 500 right answers in the city + 150 km walked there; print 2 = 300 km; print 3 = 500 km. Walking only. */
 export const PRINT_GOAL_FIRST: PrintGoal = { correct: 500, meters: 150_000 };
+export const PRINT_GOAL_SECOND: PrintGoal = { correct: 500, meters: 300_000 };
+export const PRINT_GOAL_THIRD: PrintGoal = { correct: 500, meters: 500_000 };
+/** Major cities get up to 3 prints, smaller ones up to 2. */
+export const PRINT_GOALS: readonly PrintGoal[] = [PRINT_GOAL_FIRST, PRINT_GOAL_SECOND, PRINT_GOAL_THIRD];
 
 const AUSTIN_BLUEBONNET: CityPrint = {
   id: "print-austin-bluebonnet",
@@ -106,38 +110,40 @@ const CHICAGO_L: CityPrint = {
   ],
 };
 
-const DETROIT_PLAID: CityPrint = {
-  id: "print-detroit-plaid",
+/** 0.0.99: Ryan rejected the plaid; Detroit is now the assembly line (Motor City). */
+const DETROIT_ASSEMBLY: CityPrint = {
+  id: "print-detroit-assembly",
   city: "detroit",
-  name: "Motor City Plaid",
-  blurb: "Assembly-line tartan: Detroit red, Motor navy and a chrome stripe.",
+  name: "Assembly Line",
+  blurb: "Motor City: red coupes rolling down a chrome-studded line on a navy shop floor.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
-  swatch: "#a8323a",
+  scale: 2,
+  swatch: "#b8323a",
   palette: {
-    R: { L: 40, C: 56, h: 28 }, // red
-    N: { L: 24, C: 26, h: 270 }, // navy
-    M: { L: 30, C: 40, h: 330 }, // red × navy crossing
-    c: { L: 85, C: 3, h: 250 }, // chrome stripe
-    k: { L: 14, C: 6, h: 270 }, // black thread
+    ".": { L: 22, C: 22, h: 268 }, // navy shop floor
+    R: { L: 44, C: 58, h: 28 }, // coupe red
+    h: { L: 60, C: 50, h: 34 }, // body highlight
+    w: { L: 82, C: 16, h: 230 }, // glass
+    k: { L: 12, C: 4, h: 270 }, // tyres / belt
+    c: { L: 88, C: 3, h: 250 }, // chrome
   },
   tile: [
-    "RRRRNNNNRRRcRRRR",
-    "RRRRNNNNRRRcRRRR",
-    "RRRRNNNNRRRcRRRR",
-    "RRRRNNNNRRRcRRRR",
-    "NNNNkkkkNNNcNNNN",
-    "NNNNkkkkNNNcNNNN",
-    "NNNNkkkkNNNcNNNN",
-    "NNNNkkkkNNNcNNNN",
-    "RRRRNNNNRRRcRRRR",
-    "RRRRNNNNRRRcRRRR",
-    "RRRRNNNNRRRcRRRR",
-    "cccccccccccccccc",
-    "RRRRNNNNRRRcRRRR",
-    "RRRRNNNNRRRcRRRR",
-    "MMMMNNNNMMMcMMMM",
-    "RRRRNNNNRRRcRRRR",
+    "................",
+    "....hhhh........",
+    "...RwwwwR.......",
+    ".hRRRRRRRRh.....",
+    ".RRRRRRRRRRc....",
+    "..kk....kk......",
+    "kkkkkkkkkkkkkkkk",
+    "c...c...c...c...",
+    "................",
+    "............hhhh",
+    "...........RwwwR",
+    "R.........hRRRRR",
+    "Rc........RRRRRR",
+    "k.........kk....",
+    "kkkkkkkkkkkkkkkk",
+    "..c...c...c...c.",
   ],
 };
 
@@ -145,11 +151,11 @@ const DETROIT_PLAID: CityPrint = {
 export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>> = {
   austin: [AUSTIN_BLUEBONNET],
   chicago: [CHICAGO_L],
-  detroit: [DETROIT_PLAID],
+  detroit: [DETROIT_ASSEMBLY],
 };
 
 /**
- * Cities whose first print is still being drawn (3-5 a day after 0.0.97). cityPrints.test.ts fails if a
+ * Cities whose first print is still being drawn (3-5 a day after 0.0.99). cityPrints.test.ts fails if a
  * city has no print and is not listed here, and if a listed city already has one: new cities cannot ship
  * without a print, and this list can only shrink.
  */

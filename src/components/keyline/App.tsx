@@ -1,5 +1,6 @@
 import { useGame } from "@/game/store";
 import { LevelSync } from "./Levels";
+import { PrintSync } from "./Prints";
 import { TitleScreen } from "./TitleScreen";
 import { CitySelect } from "./CitySelect";
 import { GameMap } from "./GameMap";
@@ -17,6 +18,7 @@ export function KeylineApp() {
       <WalletSync />
       <DyeSync />
       <LevelSync />
+      <PrintSync />
       {view}
     </>
   );

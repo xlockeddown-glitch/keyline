@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { DYE_TARGETS, recolorSheet, type SheetKind } from "@/game/dyeRecolor";
 import { V2_DEFAULT_COAT, V2_PALETTE, V2_SCOUTS, applyCoatLayer, v2MaskUrl, v2SheetUrl } from "@/game/coatLayer";
 import { visibleCoat } from "@/game/paint";
+import { ALL_PRINTS, applyPrintLayer } from "@/game/cityPrints";
 import { useGame } from "@/game/store";
 
 /**
@@ -85,6 +86,13 @@ async function cssForV2(scout: string, cancel: () => boolean): Promise<void> {
   const lines: string[] = [];
   // The coat being worn first, so it is on screen in one step; the rest follow for the print shop.
   const worn = visibleCoat(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat);
+  // 0.0.99 city prints: few and small, so they go first (a worn print is on screen right away).
+  for (const p of ALL_PRINTS) {
+    const url = toUrl(applyPrintLayer(base.data, mask.data, base.w, p, def), base.w, base.h);
+    const sel = `.scout-marker[data-scout="${scout}"][data-coat="${p.id}"]`;
+    lines.push(`${sel},${sel}.is-idle,${sel}.is-idle.is-side{background-image:url("${url}")}`);
+  }
+  if (lines.length) publish(lines.join("\n"));
   const order = Object.entries(V2_PALETTE).sort(([a], [b]) => Number(b === worn) - Number(a === worn));
   for (const [coat, tgt] of order) {
     await new Promise((r) => setTimeout(r, 0));

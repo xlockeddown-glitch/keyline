@@ -109,7 +109,7 @@ function MatchPopView({ pop }: { pop: import("@/game/store").MatchPop }) {
             <i key={i} style={{ "--a": `${i * 30}deg` } as React.CSSProperties} />
           ))}
         </span>
-        <span className="mp-flame" aria-hidden>{pop.kind === "level" ? "⭐" : pop.kind === "streak" ? "🔥" : "🎉"}</span>
+        <span className="mp-flame" aria-hidden>{pop.kind === "level" ? "⭐" : pop.kind === "print" ? "🧵" : pop.kind === "streak" ? "🔥" : "🎉"}</span>
         <p className="mp-big font-display">{pop.big}</p>
         <span
           className="mp-emblems"
