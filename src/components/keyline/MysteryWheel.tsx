@@ -162,8 +162,8 @@ export function MysteryWheel() {
               const tone = wheelSliceTone(s);
               const [fill, ink] = FILL[tone]!;
               const mid = i * slice + slice / 2;
-              const [ix, iy] = point(mid, R * 0.66);
-              const [tx, ty] = point(mid, R * 0.4);
+              const [ix, iy] = point(mid, R * 0.8);
+              const [tx, ty] = point(mid, R * 0.56);
               const won = landed && i === wheel.win;
               return (
                 <g key={i} data-testid={`wheel-slice-${i}`} data-tone={tone} className={won ? "wheel-won" : undefined}>
@@ -175,7 +175,7 @@ export function MysteryWheel() {
                     x={tx}
                     y={ty}
                     fill={ink}
-                    fontSize={8.5}
+                    fontSize={7}
                     fontWeight={700}
                     textAnchor="middle"
                     dominantBaseline="middle"
