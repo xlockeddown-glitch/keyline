@@ -165,7 +165,7 @@ function row(over: Partial<RunRow> = {}): RunRow {
 
 test("time floors: straight line at the one walk pace, under any honest walk", () => {
   const r = dailyRoute("detroit", "2026-10-02");
-  assert.equal(dailyTopSpeed(), 92 * 1.15, "0.0.90: the floor follows the +15% walk");
+  assert.equal(dailyTopSpeed(), 92 * 1.15 * 1.2, "0.0.96: the floor follows the fastest coat (Penguin ×1.2) over the +15% walk");
   for (let i = 1; i < r.lamps.length; i++) {
     assert.ok(legFloorMs(r, i) > 0);
     assert.ok(legFloorMs(r, i) < (legMeters(r, i) / dailyTopSpeed()) * 1000, "floor is faster than the walk");
