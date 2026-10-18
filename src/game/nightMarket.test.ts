@@ -268,9 +268,10 @@ test("doubling: on-street test — baked lamps, measured blanks/series/matches, 
     assert.ok(onMarket(m, { kind: "series", ...on }));
     // 200 m north of every point of the street is off it.
     const off = { lat: on.lat + 0.01, lng: on.lng };
-    if (distToStreet(off.lat, off.lng, s) > MARKET_CURB_M) assert.ok(!onMarket(m, { kind: "match", ...off }));
+    if (distToStreet(off.lat, off.lng, s) > MARKET_CURB_M && distM(off.lat, off.lng, m.zone.lat, m.zone.lng) > m.zone.r) assert.ok(!onMarket(m, { kind: "match", ...off }));
     // A lamp that isn't on this hour's street pays ×1 (unless it also stands on it).
-    const other = CITIES[city].pois.find((p) => p.kind !== "shop" && !s.lamps.includes(p.id) && distToStreet(p.lat, p.lng, s) > MARKET_LAMP_M)!;
+    // 0.1.00: …and outside the market zone.
+    const other = CITIES[city].pois.find((p) => p.kind !== "shop" && !s.lamps.includes(p.id) && distToStreet(p.lat, p.lng, s) > MARKET_LAMP_M && distM(p.lat, p.lng, m.zone.lat, m.zone.lng) > m.zone.r && !m.zone.lamps.includes(p.id))!;
     assert.equal(marketMult(city, at(H0 + 3, 10), { kind: "lamp", poiId: other.id, lat: other.lat, lng: other.lng }), 1);
     assert.ok(!onMarket(null, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }));
   }
@@ -356,4 +357,25 @@ test("0.0.90: a lamp on the open market relights three times as fast; off the ma
   assert.equal(marketCoolMs(300_000, 1), 300_000);
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(src, /const coolMs = marketCoolMs\(lampCoolMs\(poi\.tier\), lampMult\);/);
+});
+
+test("0.1.00 market zones: every city's every market zone holds enough lamps and area (no tiny markets)", async () => {
+  const { marketZone, ZONE_MIN_LAMPS, ZONE_MIN_R, marketStreets: ms } = await import("./nightMarket.ts");
+  const rows: string[] = [];
+  for (const id of Object.keys(CITIES) as CityId[]) {
+    const streets = ms(id);
+    assert.ok(streets.length > 0, id);
+    let min = Infinity;
+    const floor = streets.filter((s) => marketZone(s, CITIES[id].pois).lamps.length >= ZONE_MIN_LAMPS).length;
+    assert.ok(floor >= 1, `${id}: no market zone clears the floor`);
+    for (const s of streets) {
+      const z = marketZone(s, CITIES[id].pois);
+      assert.ok(z.r >= ZONE_MIN_R, `${id} ${s.name} radius`);
+      assert.ok(Math.PI * z.r * z.r >= 0.12e6, `${id} ${s.name} area`);
+      assert.ok(z.lamps.length >= (floor >= 3 ? ZONE_MIN_LAMPS : 2), `${id} ${s.name}: ${z.lamps.length} lamps in ${z.r} m`);
+      min = Math.min(min, z.lamps.length);
+    }
+    rows.push(`${id}:${min}`);
+  }
+  console.log("zone min lamps", rows.join(" "));
 });

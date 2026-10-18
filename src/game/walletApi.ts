@@ -68,6 +68,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("goal"), cityId: City }),
   z.object({ kind: z.literal("bank"), dir: z.enum(["up", "down"]), tier: Tier }),
   z.object({ kind: z.literal("scout"), id: z.string().min(1).max(40) }),
+  z.object({ kind: z.literal("light"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
   z.object({ kind: z.literal("print"), id: z.enum(COSMETICS) }),
   z.object({ kind: z.literal("refund"), token: z.string().min(10).max(2000) }),
@@ -135,7 +136,7 @@ export type SyncWire = {
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
   /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
-  owned?: { scouts: string[]; charms: string[]; cloths: string[] };
+  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[] };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })

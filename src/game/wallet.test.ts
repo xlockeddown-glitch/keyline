@@ -40,8 +40,9 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet, rowToState } from "./walletSql.ts";
-import { DEVICE_CAP, applyClientOp, awardGrade, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, spendDealt, syncPlayer } from "./walletApply.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer } from "./walletApply.ts";
 import { MATCH_GIFTS, SCOUT_GIFTS } from "./matchGift.ts";
+import { MARKET_COIN_CAP, lightOf, marketCoinX } from "./marketLights.ts";
 import { tokenNonce } from "./walletClient.ts";
 
 function sqlOf(db: PGlite): Sql {
@@ -1256,6 +1257,35 @@ test("0.0.98 regression: a gift-owned scout is never charged or refused on re-bu
   const b = await applyClientOp(sql, "buyer", { kind: "scout", id: "corgi" });
   assert.equal(b.ok, true);
   assert.ok((await canonicalWallet(sql, "buyer")).wallet.coins < 20000);
+});
+
+test("0.1.00 market lights: server sells them in order for coin, and the grade's market coin follows the owned light (Owl stacks, cap ×3)", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "lit", snap({ coins: 0 }), "litphone1");
+  assert.equal((await applyClientOp(sql, "lit", { kind: "light", id: "jade" })).ok, false, "no coin");
+  await sql`update player_wallets set coins = 100000 where user_id = ${(await canonicalWallet(sql, "lit")).id}`;
+  const skip = await applyClientOp(sql, "lit", { kind: "light", id: "rose" });
+  assert.equal(skip.ok, false, "must buy jade first");
+  assert.equal((await applyClientOp(sql, "lit", { kind: "light", id: "jade" })).ok, true);
+  assert.equal((await canonicalWallet(sql, "lit")).wallet.coins, 100000 - 2500);
+  assert.equal((await applyClientOp(sql, "lit", { kind: "light", id: "jade" })).ok, true, "replay is free");
+  assert.equal((await canonicalWallet(sql, "lit")).wallet.coins, 100000 - 2500);
+  assert.deepEqual((await lightsOf(sql, "lit")).best, "jade");
+
+  const now = Date.now();
+  const m = marketAt("austin", now)!;
+  const onMkt = pay({ dealtAt: now, poiId: "", lat: m.zone.lat, lng: m.zone.lng });
+  const coin = (x: Partial<typeof onMkt>) => gradeGrant(emptyWallet(), { ...onMkt, ...x }).award!.coins;
+  const amber = coin({});
+  const rainbow = coin({ light: "rainbow" });
+  const owlRainbow = coin({ light: "rainbow", scout: "owl" });
+  const owlAmber = coin({ scout: "owl" });
+  assert.ok(rainbow > amber, "rainbow pays more than amber");
+  assert.equal(owlAmber, rainbow, "Owl on amber (2.0+0.5) = rainbow (2.5)");
+  assert.ok(owlRainbow > rainbow, "Owl stacks on rainbow");
+  assert.equal(marketCoinX(true, lightOf("rainbow"), 2.5), MARKET_COIN_CAP);
+  assert.equal(marketCoinX(true, lightOf("rainbow"), 9), MARKET_COIN_CAP, "cap");
+  assert.equal(marketCoinX(false, lightOf("rainbow"), 2.5), 1, "off the market");
 });
 
 test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin, Fox/Penguin +10%", () => {

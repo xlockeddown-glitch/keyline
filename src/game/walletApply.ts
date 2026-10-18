@@ -43,6 +43,7 @@ import { CITIES, SCOUTS, type KioskId } from "./data.ts";
 import type { ScoutId } from "./types.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
 import { rideRamp } from "./rideGames.ts";
+import { MARKET_LIGHTS, bestLight, nextLight, type LightId } from "./marketLights.ts";
 import { SCOUT_GIFTS, type ScoutGift, MATCH_GIFTS, giftsFor, type MatchGift } from "./matchGift.ts";
 import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
@@ -67,7 +68,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[] } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[] } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -135,11 +136,19 @@ export async function ownedOf(sql: Sql, userId: string): Promise<{ scouts: Scout
   return { scouts: [...scouts], charms: [...charms], cloths: [...(wallet.meta.cloths ?? [])] };
 }
 
+/** 0.1.00: market lights this account bought (light:<id> ledger rows); amber is free. */
+export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId[]; best: LightId }> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"light:%"}`;
+  const ids: LightId[] = ["amber", ...rows.map((r) => r.op_key.slice(6) as LightId).filter((x) => MARKET_LIGHTS.some((l) => l.id === x))];
+  return { ids: [...new Set(ids)], best: bestLight(ids).id };
+}
+
 export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
   await grantPassGift(sql, userId);
   const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId))];
   const done = await syncCore(sql, userId, local, deviceId);
-  const owned = await ownedOf(sql, userId);
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids };
   return giftNotes.length ? { ...done, owned, giftNotes } : { ...done, owned };
 }
 
@@ -220,6 +229,7 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     scout: pay.scout ?? null,
     rummage: pay.rummage === true,
     shellBack: pay.shellBack === true,
+    light: (await lightsOf(sql, id)).best,
   };
   // 0.0.93: answer streak from the server's own grade rows (newest first): right answers since the last miss.
   // 0.0.96 Tabby (Nine lives): the first miss of each day (Chicago) does not break the run.
@@ -347,6 +357,7 @@ export type ClientOp =
   | { kind: "board"; from: CityId; to: CityId }
   | { kind: "cache"; city: CityId }
   | { kind: "dgoal"; i: number }
+  | { kind: "light"; id: string }
   | {
       kind: "ride";
       watch?: boolean;
@@ -480,6 +491,18 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
 
   // 0.0.93: daily goals. i = 0..2 pays GOAL_COIN once each; i = 3 (all three paid) pays a green match. The server
   // can't see the goals themselves, so it asks for proof of play: graded right answers today.
+  // 0.1.00: market lights are bought in ladder order with coin; the server owns the list.
+  if (op.kind === "light") {
+    const owned = await lightsOf(sql, sessionUserId);
+    if ((owned.ids as string[]).includes(op.id)) return applied({ ok: true, replay: true, wallet });
+    const next = nextLight(owned.ids);
+    if (!next || next.id !== op.id) return refused(wallet, "not-next");
+    const r = await mutateWallet(sql, sessionUserId, `light:${next.id}`, (w) =>
+      w.coins < next.price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -next.price }), detail: JSON.stringify({ light: next.id }) },
+    );
+    return applied(r);
+  }
+
   if (op.kind === "dgoal") {
     const day = today();
     const i = op.i;

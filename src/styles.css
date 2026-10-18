@@ -4076,3 +4076,22 @@ h3 {
 .print-leg { display: grid; grid-template-columns: 1fr; gap: 0.12rem; font-size: 0.7rem; opacity: 0.9; }
 .print-bar { display: block; height: 6px; border-radius: 3px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
 .print-bar > i { display: block; height: 100%; background: linear-gradient(90deg, #e0a030, #d4af37); }
+
+/* 0.1.00 night market zone, quieter sign, market lights */
+.leaflet-container { --mlight: #ff8a4c; }
+.leaflet-container[data-market-light="jade"] { --mlight: #3fd6a0; }
+.leaflet-container[data-market-light="rose"] { --mlight: #ff6f9c; }
+.leaflet-container[data-market-light="violet"] { --mlight: #a77bff; }
+.leaflet-container[data-market-light="ice"] { --mlight: #9be8ff; }
+.leaflet-container[data-market-light="rainbow"] { --mlight: #ffe066; }
+.market-zone { stroke: var(--mlight); fill: var(--mlight); filter: blur(1.5px) drop-shadow(0 0 6px var(--mlight)); }
+.market-glow { stroke: var(--mlight); }
+.market-line { stroke: color-mix(in oklab, var(--mlight) 45%, white); filter: drop-shadow(0 0 3px var(--mlight)); }
+.leaflet-container[data-market-light="rainbow"] .market-line { animation: market-rainbow 6s linear infinite; }
+@keyframes market-rainbow { 0% { stroke: #ff5f5f; } 20% { stroke: #ffb347; } 40% { stroke: #ffe066; } 60% { stroke: #3fd6a0; } 80% { stroke: #5fb0ff; } 100% { stroke: #a77bff; } }
+@media (prefers-reduced-motion: reduce) { .leaflet-container[data-market-light="rainbow"] .market-line { animation: none; } }
+.market-pin { transform: translate(-50%, -100%) translateY(-10px) scale(var(--market-sign, 1)); transform-origin: 50% 100%; transition: transform 0.25s ease, opacity 0.4s ease; border-color: var(--mlight); }
+.leaflet-container.is-in-market .market-pin { opacity: 0.18; }
+.market-chip { justify-self: start; align-self: flex-start; width: fit-content; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; border: 1px solid #ff8a4c; background: color-mix(in oklab, #ff8a4c 14%, var(--color-bg-elevated)); }
+.light-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; }
+.light-dot { width: 18px; height: 18px; border-radius: 999px; flex: none; box-shadow: 0 0 8px currentColor; }

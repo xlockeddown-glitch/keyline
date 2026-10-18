@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Map as LMap, Marker, Polygon, Polyline } from "leaflet";
+import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
@@ -71,7 +71,7 @@ import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
 import { DailyBlitz } from "./DailyBlitz";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
-import { MARKET_TAG, closestOnStreet, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
+import { MARKET_TAG, closestOnStreet, inZone, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
 import { visibleCoat } from "@/game/paint";
 
 /** 0.0.99: a worn city print shows over any coat or paint. */
@@ -205,7 +205,7 @@ export function GameMap() {
   const dailyKey = useRef("");
   const dailyShow = useDaily((s) => s.show);
   const dailyLit = useDaily((s) => activeProgress(s.runs, cityId)?.lit ?? 0);
-  const marketLayers = useRef<(Polyline | Marker)[]>([]);
+  const marketLayers = useRef<(Polyline | Marker | Circle)[]>([]);
   const marketKey = useRef("");
 
   function strokeColor() {
@@ -696,9 +696,12 @@ export function GameMap() {
       for (let i = 0; i + 1 < ln.length; i += 2) pts.push([ln[i]!, ln[i + 1]!]);
       return pts;
     });
+    // 0.1.00: the market is a zone round a square; a soft glowing edge, every lamp inside counts.
+    const zone = L.circle([m.zone.lat, m.zone.lng], { radius: m.zone.r, className: "market-zone", interactive: false, weight: 3, fillOpacity: 0.08 }).addTo(map);
     const glow = L.polyline(lines, { weight: 18, opacity: 0.5, className: "market-glow", interactive: false, lineCap: "round", lineJoin: "round" }).addTo(map);
     const core = L.polyline(lines, { weight: 4, opacity: 0.95, className: "market-line", interactive: false, dashArray: "1 10", lineCap: "round" }).addTo(map);
-    const at = marketAnchor(m.street);
+    const at = { lat: m.zone.lat, lng: m.zone.lng };
+    void marketAnchor;
     const safe = m.street.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
     const pin = L.marker([at.lat, at.lng], {
       icon: L.divIcon({
@@ -711,7 +714,20 @@ export function GameMap() {
       keyboard: false,
       zIndexOffset: 650,
     }).addTo(map);
-    marketLayers.current = [glow, core, pin];
+    marketLayers.current = [zone, glow, core, pin];
+    fitMarketSign();
+  }
+
+  /** 0.1.00: the sign shrinks as you zoom in and fades once you're inside the zone. */
+  function fitMarketSign() {
+    const map = mapRef.current;
+    const box = map?.getContainer();
+    if (!map || !box) return;
+    const z = map.getZoom();
+    box.style.setProperty("--market-sign", String(Math.max(0.55, Math.min(1, 1 - (z - 15) * 0.15))));
+    const m = marketAt(useGame.getState().cityId, Date.now());
+    box.classList.toggle("is-in-market", Boolean(m && inZone(m.zone, pos.current.lat, pos.current.lng)));
+    box.dataset.marketLight = useGame.getState().marketLight;
   }
 
   function walkToMarket() {
@@ -979,6 +995,9 @@ export function GameMap() {
 
       rebuildPins(L, map);
       paintMarket();
+      map.on("zoomend", fitMarketSign);
+      const signTick = window.setInterval(fitMarketSign, 1500);
+      map.once("unload", () => window.clearInterval(signTick));
     });
 
     void bootstrapStreets(city.id, dock.lat, dock.lng, city.pois, abort.signal)

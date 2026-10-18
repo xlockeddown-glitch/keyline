@@ -11,6 +11,7 @@ import { distM, metersPerDegLng } from "./geo.ts";
 import { isFreeway, isWalkableWay, type WayTags } from "./walkable.ts";
 import { MARKET_STREETS } from "./marketStreets.ts";
 import type { CityId, Poi, Tier } from "./types";
+import { CITIES } from "./data.ts";
 
 export const MARKET_HOUR_MS = 60 * 60_000;
 /** Market rewards pay this many times over. */
@@ -367,10 +368,60 @@ export function marketIndex(city: CityId, hour: number, n: number, weights?: rea
   return draw(city, hour, n, new Set([prev, next]), weights);
 }
 
+/** 0.1.00: a market is a zone (2-4 blocks) around a square/park by the market street; every lamp inside counts. */
+export type MarketZone = { lat: number; lng: number; r: number; lamps: string[]; plaza: string | null };
+export const ZONE_MIN_R = 200;
+export const ZONE_MAX_R = 400;
+/** Sparse downtowns may stretch to this to reach the floor. */
+export const ZONE_STRETCH_R = 600;
+/** A zone grows (up to ZONE_MAX_R) until it holds ZONE_GROW_LAMPS lamps. */
+export const ZONE_GROW_LAMPS = 5;
+/** Size floor: a market whose zone ends with fewer lamps than this is never picked. */
+export const ZONE_MIN_LAMPS = 3;
+const PLAZA_NEAR_M = 300;
+
+export function marketZone(s: MarketStreet, pois: readonly Poi[]): MarketZone {
+  const lamps = marketLamps([...pois]);
+  const count = (c: { lat: number; lng: number }, rr: number) => lamps.filter((p) => distM(c.lat, c.lng, p.lat, p.lng) <= rr).length;
+  // Candidate centres: parks/squares near the street (preferred on ties), then points along the street.
+  const along: { lat: number; lng: number; plaza: string | null }[] = [];
+  for (const l of s.lines) for (let i = 0; i + 1 < l.length; i += 2) along.push({ lat: l[i]!, lng: l[i + 1]!, plaza: null });
+  const parks = pois
+    .filter((p) => p.kind === "park" && along.some((q) => distM(q.lat, q.lng, p.lat, p.lng) <= PLAZA_NEAR_M))
+    .map((p) => ({ lat: p.lat, lng: p.lng, plaza: p.name as string | null }));
+  let best = parks[0] ?? { ...marketAnchor(s), plaza: null };
+  let bestN = count(best, ZONE_MIN_R) + (best.plaza ? 0.5 : 0);
+  for (const c of [...parks, ...along]) {
+    const n = count(c, ZONE_MIN_R) + (c.plaza ? 0.5 : 0);
+    if (n > bestN) [best, bestN] = [c, n];
+  }
+  let r = ZONE_MIN_R;
+  while (r < ZONE_MAX_R && count(best, r) < ZONE_GROW_LAMPS) r += 25;
+  while (r < ZONE_STRETCH_R && count(best, r) < ZONE_MIN_LAMPS) r += 25;
+  const inside = lamps.filter((p) => distM(best.lat, best.lng, p.lat, p.lng) <= r).map((p) => p.id);
+  return { lat: best.lat, lng: best.lng, r, lamps: inside, plaza: best.plaza };
+}
+
+const ZONES = new Map<string, MarketZone>();
+export function zoneOf(city: CityId, s: MarketStreet): MarketZone {
+  const k = `${city}|${s.name}`;
+  let z = ZONES.get(k);
+  if (!z) {
+    z = marketZone(s, CITIES[city]?.pois ?? []);
+    ZONES.set(k, z);
+  }
+  return z;
+}
+
+export function inZone(z: MarketZone, lat: number, lng: number): boolean {
+  return distM(z.lat, z.lng, lat, lng) <= z.r;
+}
+
 export type NightMarket = {
   city: CityId;
   hour: number;
   street: MarketStreet;
+  zone: MarketZone;
   startsAt: number;
   endsAt: number;
 };
@@ -429,7 +480,12 @@ const FITTED = new Map<CityId, MarketStreet[]>();
 export function marketStreets(city: CityId): MarketStreet[] {
   let s = FITTED.get(city);
   if (!s) {
-    s = fitMarketStreets(MARKET_STREETS[city] ?? []);
+    const fit = fitMarketStreets(MARKET_STREETS[city] ?? []);
+    // 0.1.00: prefer markets whose zone clears the lamp floor; keep 3 so the hour rotates (best-lit fill-ins).
+    const pois = CITIES[city]?.pois ?? [];
+    const lit = (x: MarketStreet) => marketZone(x, pois).lamps.length;
+    const ok = fit.filter((x) => lit(x) >= ZONE_MIN_LAMPS);
+    s = ok.length >= 3 || ok.length === fit.length ? ok : [...fit].sort((a, b) => lit(b) - lit(a)).slice(0, Math.min(3, fit.length));
     FITTED.set(city, s);
   }
   return s;
@@ -440,7 +496,7 @@ export function marketAt(city: CityId, at: number, streets: MarketStreet[] = mar
   if (!streets.length) return null;
   const hour = utcHour(at);
   const street = streets[marketIndex(city, hour, streets.length, streets.map((s) => s.lamps.length))]!;
-  return { city, hour, street, startsAt: hour * MARKET_HOUR_MS, endsAt: (hour + 1) * MARKET_HOUR_MS };
+  return { city, hour, street, zone: zoneOf(city, street), startsAt: hour * MARKET_HOUR_MS, endsAt: (hour + 1) * MARKET_HOUR_MS };
 }
 
 /** The next hour's market (for the Journal's "next" line). */
@@ -521,6 +577,8 @@ export type MarketSpot =
 export function onMarket(m: NightMarket | null, spot: MarketSpot): boolean {
   if (!m) return false;
   if (spot.kind === "lamp" && m.street.lamps.includes(spot.poiId)) return true;
+  // 0.1.00: anything inside the market zone counts.
+  if (m.zone && (inZone(m.zone, spot.lat, spot.lng) || (spot.kind === "lamp" && m.zone.lamps.includes(spot.poiId)))) return true;
   const reach = spot.kind === "lamp" ? MARKET_LAMP_M : MARKET_CURB_M;
   return distToStreet(spot.lat, spot.lng, m.street) <= reach;
 }

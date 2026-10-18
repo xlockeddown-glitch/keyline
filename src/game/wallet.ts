@@ -8,6 +8,7 @@ import { SURVEY_GOALS, isPlace } from "./survey.ts";
 import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
+import { lightOf, type LightId } from "./marketLights.ts";
 import { cleanCredit, payMatch, payMatchesOf } from "./goals.ts";
 import type { ScoutId } from "./types";
 import { clothCoin, type ClothId } from "./quests.ts";
@@ -782,6 +783,8 @@ export type GradePay = {
   scout?: ScoutId | null;
   rummage?: boolean;
   shellBack?: boolean;
+  /** 0.1.00: the market light the SERVER found in this account's ledger (never from the client). */
+  light?: LightId;
 };
 
 function gradeLetter(ms: number): "perfect" | "great" | "good" {
@@ -845,7 +848,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     const have = w.keys[tier] ?? 0;
     const cap = matchCap(tier);
     const mult = marketMult(p.city, p.dealtAt, spot);
-    const owl = owlMatchCoin(p.scout ?? null, mult, tier);
+    const owl = owlMatchCoin(p.scout ?? null, mult, tier, lightOf(p.light));
     // 0.0.96: the wick's match(es) go through the shared pocket rule: a full tier steps up (match ↑),
     // coin only when every allowed tier above is full.
     void have;
@@ -870,7 +873,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     else if (p.lucky && p.luckyHit) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
     const sMult = marketMult(p.city, p.dealtAt, { kind: "series", lat: p.lat, lng: p.lng });
     const pay = marketPay(seriesCoin, baseKeys, sMult);
-    pay.coin += owlExtraCoin(p.scout ?? null, sMult, seriesCoin);
+    pay.coin += owlExtraCoin(p.scout ?? null, sMult, seriesCoin, lightOf(p.light));
     // 0.0.90: reaching the last card means every card was right: the spent match comes back (not violet).
     const back = perfectBack(def.cost, sumKeys(w.keys, pay.keys));
     const sKeys = { ...pay.keys };
@@ -890,7 +893,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   if (gradeLetter(p.elapsedMs) === "perfect" && p.perfectBlue) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
   const lampMult = marketMult(p.city, p.dealtAt, spot);
   const pay = marketPay(lampCoin, baseKeys, lampMult);
-  pay.coin += owlExtraCoin(p.scout ?? null, lampMult, lampCoin);
+  pay.coin += owlExtraCoin(p.scout ?? null, lampMult, lampCoin, lightOf(p.light));
   const lit = lampLit(w.cities, p.poiTier);
   // 0.0.90: a single-question lamp answered right is a perfect lamp: match back, same tier (not violet).
   const back = perfectBack(p.poiTier, sumKeys(w.keys, pay.keys));

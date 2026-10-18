@@ -2,6 +2,7 @@
 // the deal's pay context (like loot always has); every chance below is rolled by the server, never the client.
 import { SCOUTS } from "./data.ts";
 import { TIER_VALUE } from "./rewards.ts";
+import { MARKET_LIGHTS, marketCoinX, type MarketLight } from "./marketLights.ts";
 import type { ScoutId, Tier } from "./types";
 
 export function scoutOf(id: unknown): ScoutId | null {
@@ -24,21 +25,21 @@ export function shellBackHit(id: ScoutId | null, roll: number): boolean {
   return Boolean(n && roll < 1 / n);
 }
 
-/** Owl: the night-market multiplier on coin for this coat (2 for everyone else). */
-export function marketCoinMult(id: ScoutId | null, mult: number): number {
+/** Night-market coin multiplier for this coat and market light (0.1.00: light ×2.0-2.5, Owl +0.5, cap ×3). */
+export function marketCoinMult(id: ScoutId | null, mult: number, light: MarketLight = MARKET_LIGHTS[0]!): number {
   if (mult <= 1) return mult;
-  return perkOf(id)?.market ?? mult;
+  return marketCoinX(true, light, perkOf(id)?.market);
 }
 
-/** Extra coin the Owl's market adds on top of the ordinary ×2 (`coin` is the market-paid coin at ×2). */
-export function owlExtraCoin(id: ScoutId | null, mult: number, baseCoin: number): number {
-  const m = marketCoinMult(id, mult);
+/** Coin the market adds on top of the ordinary ×2 (Owl and the market light); `baseCoin` is pre-market. */
+export function owlExtraCoin(id: ScoutId | null, mult: number, baseCoin: number, light?: MarketLight): number {
+  const m = marketCoinMult(id, mult, light);
   return m > mult ? Math.round(baseCoin * (m - mult)) : 0;
 }
 
-/** Owl's extra on a spark/street market match: half a match's ladder value in coin. */
-export function owlMatchCoin(id: ScoutId | null, mult: number, tier: Tier): number {
-  const m = marketCoinMult(id, mult);
+/** The extra above ×2 on a spark/street market match, in coin: (m − 2) × the match's ladder value. */
+export function owlMatchCoin(id: ScoutId | null, mult: number, tier: Tier, light?: MarketLight): number {
+  const m = marketCoinMult(id, mult, light);
   return m > mult ? Math.round((m - mult) * TIER_VALUE[tier]) : 0;
 }
 

@@ -7,6 +7,7 @@ import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
 import { RECENT_MAX, pushRecent, type RecentReward, type RewardSource } from "./recentRewards";
+import { bestLight, nextLight, type LightId } from "./marketLights";
 import { commitWallet, streetPlayer, tokenNonce, walletLive } from "./walletClient";
 import { SEED, parseStreetId, takeStreetSpot } from "./streetSpots";
 import { poiName, takeSurvey } from "./survey";
@@ -167,6 +168,9 @@ export type GameState = {
   printWorn: string | null;
   /** 0.0.99: prints whose earn moment has been shown. */
   printsSeen: string[];
+  /** 0.1.00: market lights owned (server-reported) and the colour shown on the market string lights. */
+  lightsOwned: string[];
+  marketLight: string;
   /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
   paints: PaintBench;
   atlas: Record<string, true>;
@@ -314,6 +318,8 @@ export type GameState = {
   wearCloth: (id: ClothId | null) => void;
   printPattern: () => void;
   buyScout: (id: ScoutId) => void;
+  /** 0.1.00: buy the next market light (signed in; the server checks order and coin). */
+  buyLight: (id: LightId) => void;
   wearScout: (id: ScoutId) => void;
   /** 0.0.54 gift: add a scout to the save for free (no coins). Returns true if it was newly added. */
   grantGiftScout: (id: ScoutId) => boolean;
@@ -328,7 +334,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[] }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[] }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -593,6 +599,8 @@ function persistable(s: GameState) {
     recent: s.recent,
     printWorn: s.printWorn,
     printsSeen: s.printsSeen,
+    lightsOwned: s.lightsOwned,
+    marketLight: s.marketLight,
     paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
@@ -982,6 +990,8 @@ export const useGame = create<GameState>((set, get) => ({
   scout: saved?.scout ?? "raccoon",
   wardrobe: cleanWardrobe(saved?.wardrobe),
   recent: Array.isArray(saved?.recent) ? saved.recent.slice(0, RECENT_MAX) : [],
+  lightsOwned: Array.isArray(saved?.lightsOwned) ? saved.lightsOwned.filter((x: unknown) => typeof x === "string") : ["amber"],
+  marketLight: typeof saved?.marketLight === "string" ? saved.marketLight : "amber",
   printWorn: typeof saved?.printWorn === "string" ? saved.printWorn : null,
   printsSeen: Array.isArray(saved?.printsSeen) ? saved.printsSeen.filter((x: unknown) => typeof x === "string") : [],
   paints: cleanPaint(saved?.paints),
@@ -2215,6 +2225,23 @@ export const useGame = create<GameState>((set, get) => ({
     flashToast(set, get, "Night glass printed.", 1600);
     scheduleSave(get);
   },
+  buyLight: (id) => {
+    const next = nextLight(get().lightsOwned);
+    if (!next || next.id !== id) return;
+    if (!walletLive()) {
+      flashToast(set, get, "Sign in to buy market lights.", 1600);
+      return;
+    }
+    if (get().points < next.price) {
+      flashToast(set, get, "Need more coins.", 1400);
+      return;
+    }
+    const before = get().lightsOwned;
+    set({ points: get().points - next.price, lightsOwned: [...before, id], marketLight: id });
+    pushOp({ kind: "light", id }, () => set({ lightsOwned: before, marketLight: bestLight(before).id }));
+    flashToast(set, get, `${next.label} market lights: night markets pay ×${next.mult.toFixed(1)}.`, 2000);
+    scheduleSave(get);
+  },
   buyScout: (id) => {
     if (get().scouts.includes(id)) {
       set({ scout: id });
@@ -2251,6 +2278,7 @@ export const useGame = create<GameState>((set, get) => ({
   },
   adoptOwned: (o) => {
     for (const x of o.scouts) serverOwnedScouts.add(x);
+    if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
     const st = get();
     const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
     const charms = Array.from(new Set([...st.charms, ...(o.charms as typeof st.charms)]));
