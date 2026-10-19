@@ -1276,9 +1276,9 @@ test("0.1.00 market lights: server sells them in order for coin, and the grade's
   const skip = await applyClientOp(sql, "lit", { kind: "light", id: "rose" });
   assert.equal(skip.ok, false, "must buy jade first");
   assert.equal((await applyClientOp(sql, "lit", { kind: "light", id: "jade" })).ok, true);
-  assert.equal((await canonicalWallet(sql, "lit")).wallet.coins, 100000 - 2500);
+  assert.equal((await canonicalWallet(sql, "lit")).wallet.coins, 100000 - 15000);
   assert.equal((await applyClientOp(sql, "lit", { kind: "light", id: "jade" })).ok, true, "replay is free");
-  assert.equal((await canonicalWallet(sql, "lit")).wallet.coins, 100000 - 2500);
+  assert.equal((await canonicalWallet(sql, "lit")).wallet.coins, 100000 - 15000);
   assert.deepEqual((await lightsOf(sql, "lit")).best, "jade");
 
   const now = Date.now();

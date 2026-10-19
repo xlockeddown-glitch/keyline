@@ -9,11 +9,11 @@ export type MarketLight = { id: LightId; label: string; mult: number; price: num
 
 export const MARKET_LIGHTS: readonly MarketLight[] = [
   { id: "amber", label: "Amber", mult: 2.0, price: 0, color: "#ffb347" },
-  { id: "jade", label: "Jade", mult: 2.1, price: 2_500, color: "#3fd6a0" },
-  { id: "rose", label: "Rose", mult: 2.2, price: 5_000, color: "#ff6f9c" },
-  { id: "violet", label: "Violet", mult: 2.3, price: 9_000, color: "#a77bff" },
-  { id: "ice", label: "Ice", mult: 2.4, price: 15_000, color: "#9be8ff" },
-  { id: "rainbow", label: "Rainbow", mult: 2.5, price: 25_000, color: "linear-gradient(90deg,#ff5f5f,#ffb347,#ffe066,#3fd6a0,#5fb0ff,#a77bff)" },
+  { id: "jade", label: "Jade", mult: 2.1, price: 15_000, color: "#3fd6a0" },
+  { id: "rose", label: "Rose", mult: 2.2, price: 30_000, color: "#ff6f9c" },
+  { id: "violet", label: "Violet", mult: 2.3, price: 60_000, color: "#a77bff" },
+  { id: "ice", label: "Ice", mult: 2.4, price: 105_000, color: "#9be8ff" },
+  { id: "rainbow", label: "Rainbow", mult: 2.5, price: 180_000, color: "linear-gradient(90deg,#ff5f5f,#ffb347,#ffe066,#3fd6a0,#5fb0ff,#a77bff)" },
 ];
 
 /** Combined market coin multiplier never passes this (rainbow ×2.5 + Owl's +0.5 = ×3.0). */
