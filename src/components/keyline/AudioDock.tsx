@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Music, Volume2, VolumeX } from "lucide-react";
 import { BED_NAME, isMusicOn, isMuted, subscribeAudio, toggleMusic, toggleMuted, unlockAudio } from "@/game/audio";
 import { useGame } from "@/game/store";
+import { SkyToggle } from "./Sky";
 
 export function useAudioUi() {
   const [, setN] = useState(0);
@@ -40,6 +41,7 @@ export function AudioDock() {
       >
         {muted ? <VolumeX className="size-4 text-fg-muted" strokeWidth={1.75} /> : <Volume2 className="size-4" strokeWidth={1.75} />}
       </button>
+      <SkyToggle />
     </div>
   );
 }

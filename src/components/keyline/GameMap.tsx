@@ -1,3 +1,4 @@
+import { SkyLayer } from "./Sky";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
@@ -2066,6 +2067,7 @@ const CACHE_PIN_HTML =
     >
       <div ref={hostRef} className="absolute inset-0 touch-none" />
       <div ref={nightRef} className="night-veil bg-bg" />
+      <SkyLayer />
       <Hud
         onVector={(x, y) => {
           stick.current = { x, y };

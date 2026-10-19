@@ -1,3 +1,4 @@
+import { SkyChip } from "./Sky";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, CircleHelp } from "lucide-react";
 import { creditHint } from "@/game/goals";
@@ -197,6 +198,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           ) : null}
           <DailyHudLine />
           <MarketHudLine onWalk={onMarketWalk} />
+          <SkyChip />
         </div>
 
         <div className="hud-kits flex shrink-0 items-center gap-2 self-end sm:self-auto">

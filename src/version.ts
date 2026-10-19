@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.5";
+export const APP_VERSION = "0.1.6";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k105a";
+export const PUBLISH_STAMP = "k106a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -110,3 +110,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.3: plain-language pass on Help, pop-ups, toasts and the miss card (short words: what to do and why; no mechanics change); scout celebrations on the pop queue — hop at 5 in a row, jump + spin at 10, party with confetti at 25 and every 25 after, and a violet party for a perfect on a violet lamp (CSS, ~1.6 s, still pose with reduced motion) (k103a).
 // 0.1.4: plain-language pass, part 2 — walkthrough, Journal (Places, Supplies, Progress milestones, scarf checklist, cloth), satchel, print shop, notice board, material blurbs and the Help paint odds ("1 in 2 chance of paint"). Text only (k104a).
 // 0.1.5: Music trivia category — 301 cards (banks/music.ts) across eras and genres, easy hits on white/blue and deep cuts on red/violet; music venues now offer Music first; title ladder Air Guitarist / Roadie / Headliner at 250 / 1,000 / 2,000; quotas count the music bank as its own topic (k105a).
+// 0.1.6: weather and sky (cosmetic) — each city's real local time tints dawn / day / dusk / night with the sun or the moon (phase from the date) on an arc; real weather (clear, cloudy, rain, snow, fog, storm) from Open-Meteo, cached 15 min per city on the server, clear when unreachable; HUD chip with weather and local time; cloud button turns it off; never takes taps; still with reduced motion (k106a).
