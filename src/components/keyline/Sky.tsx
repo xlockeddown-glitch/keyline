@@ -84,8 +84,9 @@ function moonPath(p: number): { d: string; flip: boolean } {
 export function SkyLayer() {
   const v = useSky();
   if (!v.on) return null;
-  const x = 8 + v.arc * 84;
-  const y = 30 - Math.sin(v.arc * Math.PI) * 18;
+  // Under the HUD plate on a phone the top of the map is covered, so the arc rides 31–42% down.
+  const x = 10 + v.arc * 80;
+  const y = 42 - Math.sin(v.arc * Math.PI) * 11;
   const veiled = v.weather !== "clear";
   const m = moonPath(v.moon);
   return (
