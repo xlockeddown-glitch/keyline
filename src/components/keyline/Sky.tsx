@@ -113,10 +113,16 @@ function SkyGlyph({ v }: { v: SkyView }) {
 export function SkyChip() {
   const v = useSky();
   return (
-    <p className="sky-chip mt-1 truncate text-xs text-fg-muted" data-testid="sky-chip">
+    <button
+      type="button"
+      className="sky-chip pointer-events-auto mt-1 block max-w-full truncate text-left text-xs text-fg-muted"
+      data-testid="sky-chip"
+      onClick={toggleSky}
+      title={v.on ? "Tap to turn off sky and weather" : "Tap to turn on sky and weather"}
+    >
       <SkyGlyph v={v} /> {WEATHER_LABEL[v.weather]}
       {v.tempF != null ? ` · ${v.tempF}°F` : ""} · {v.clock} here
-    </p>
+    </button>
   );
 }
 
@@ -125,7 +131,7 @@ export function SkyToggle() {
   return (
     <button
       type="button"
-      className="hud-plate is-kit pointer-events-auto size-11 justify-center p-0"
+      className="hud-plate is-kit pointer-events-auto size-11 justify-center p-0 max-[379px]:hidden"
       data-testid="sky-toggle"
       onClick={toggleSky}
       aria-label={v.on ? "Turn off sky and weather" : "Turn on sky and weather"}
