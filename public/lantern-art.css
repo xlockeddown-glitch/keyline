@@ -1,15 +1,16 @@
+/* 0.0.99: cap, rim and post read the lantern skin (wardrobe.css sets --skin-*; brass when none). */
 
 
 .lantern-cap,
 .stack-lamp .lantern-cap{
-  background:linear-gradient(180deg,#e0c788 0%,#c9a35e 42%,#8a6a38 100%);
-  box-shadow:0 1px 0 #5a4528
+  background:linear-gradient(180deg,var(--skin-cap-hi,#e0c788) 0%,var(--skin-cap-mid,#c9a35e) 42%,var(--skin-cap-lo,#8a6a38) 100%);
+  box-shadow:0 1px 0 var(--skin-cap-shadow,#5a4528)
 }
 
 .lantern-frame,
 .stack-globe{
   background:#12100e;
-  border-color:#8a7348;
+  border-color:var(--skin-rim,#8a7348);
   box-shadow:inset 0 0 0 1px #2a2218
 }
 
@@ -134,11 +135,11 @@
 
 .lantern-post,
 .stack-lamp .lantern-post{
-  background:linear-gradient(90deg,#3a3224,#6a5738,#3a3224)
+  background:linear-gradient(90deg,var(--skin-post-dk,#3a3224),var(--skin-post-lt,#6a5738),var(--skin-post-dk,#3a3224))
 }
 .lantern-post::after,
 .stack-lamp .lantern-post::after{
-  background:linear-gradient(180deg,#5a4a32,#3a3224)
+  background:linear-gradient(180deg,var(--skin-foot,#5a4a32),var(--skin-post-dk,#3a3224))
 }
 
 @keyframes glass-flicker{
@@ -173,8 +174,8 @@
 }
 
 .shop-awning{
-  background:linear-gradient(180deg,#e0c788 0%,#c9a35e 42%,#8a6a38 100%);
-  box-shadow:0 1px 0 #5a4528;
+  background:linear-gradient(180deg,var(--skin-cap-hi,#e0c788) 0%,var(--skin-cap-mid,#c9a35e) 42%,var(--skin-cap-lo,#8a6a38) 100%);
+  box-shadow:0 1px 0 var(--skin-cap-shadow,#5a4528);
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))
 }
 .shop-pin.near .shop-awning{
@@ -182,7 +183,7 @@
 }
 
 .shop-body{
-  border-color:#8a7348;
+  border-color:var(--skin-rim,#8a7348);
   box-shadow:inset 0 0 0 1px #2a2218
 }
 
@@ -234,7 +235,7 @@
 }
 
 .panel:has(.hq-tabs){
-  border-color:#8a7348;
+  border-color:var(--skin-rim,#8a7348);
   box-shadow:
     0 0 0 1px color-mix(in oklab, #c9a35e 40%, transparent),
     inset 0 0 0 1px #2a2218,

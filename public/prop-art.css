@@ -34,17 +34,22 @@
   box-shadow:none
 }
 
-[data-lantern="copper"] .lantern{ background-image:url("/sprites/lanterns/copper.png") }
-[data-lantern="iron"] .lantern{ background-image:url("/sprites/lanterns/iron.png") }
-[data-lantern="verdigris"] .lantern{ background-image:url("/sprites/lanterns/verdigris.png") }
-[data-lantern="nickel"] .lantern{ background-image:url("/sprites/lanterns/nickel.png") }
+[data-lantern="copper"] .lantern{ background-image:url("/sprites/lanterns/copper.png?v=k99a") }
+[data-lantern="iron"] .lantern{ background-image:url("/sprites/lanterns/iron.png?v=k99a") }
+[data-lantern="verdigris"] .lantern{ background-image:url("/sprites/lanterns/verdigris.png?v=k99a") }
+[data-lantern="nickel"] .lantern{ background-image:url("/sprites/lanterns/nickel.png?v=k99a") }
 
 .skin-swatch{
   width:64px;
   height:88px
 }
 .skin-swatch .vault-pin{
-  transform:none
+  transform:scale(1.55);
+  transform-origin:50% 55%
+}
+/* 0.0.99: a softer glow in the shop preview so the metal reads. */
+.skin-swatch .lantern{
+  filter:drop-shadow(0 1px 1px #0000008c) drop-shadow(0 0 2px var(--glow))
 }
 
 .match-pin{

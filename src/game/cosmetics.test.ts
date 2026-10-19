@@ -160,6 +160,9 @@ test("art wiring: the coat palette, the generated coat CSS and the lantern-skin 
   }
   // Skins never touch the tier-coloured parts of a lamp.
   assert.doesNotMatch(skins, /\.lantern-glass|--glow|::before\s*\{[^}]*--glow/);
+  // 0.0.99: the lamp art must actually read the skin (it was hard-coded brass, so no skin ever showed).
+  const art = read("../../public/lantern-art.css");
+  for (const v of ["--skin-cap-hi", "--skin-cap-mid", "--skin-cap-lo", "--skin-rim", "--skin-post-dk", "--skin-post-lt", "--skin-foot"]) assert.ok(art.includes(`var(${v},`), v);
   const root = read("../routes/__root.tsx");
   assert.ok(root.indexOf("/lantern-art.css") < root.indexOf("/wardrobe.css"), "skins load after the lantern art");
   assert.ok(root.includes("/coats.css"));

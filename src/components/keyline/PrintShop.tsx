@@ -7,7 +7,8 @@ import type { CharmId } from "@/game/types";
 import { CostIcons, ItemIcon } from "./ItemIcon";
 import { PaintVat } from "./PaintVat";
 
-const LAMP = vaultPinHtml({ tier: "blue" });
+// 0.0.99: warm amber glass so the metal reads; the wrapper's data-lantern re-cases this lamp exactly like the street ones.
+const LAMP = vaultPinHtml({ tier: "amber" });
 
 function LampSwatch({ skin }: { skin: string }) {
   return (
