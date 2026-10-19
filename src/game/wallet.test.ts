@@ -1,6 +1,6 @@
 // 0.0.78 server wallet: first sync keeps the higher pocket (once), a grade pays from the server's
 // own formula, the same token pays once, and a spend that isn't in the pocket is refused.
-import { test } from "node:test";
+import { mock, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
@@ -107,6 +107,13 @@ function pay(over: Partial<GradePay> = {}): GradePay {
     perfectBlue: false,
     ...over,
   };
+}
+
+/** 0.1.2: markets are dark 5 of every 15 minutes; pin Date inside an open window for market tests. */
+function inOpenMarket() {
+  const cycle = 15 * 60_000;
+  mock.timers.enable({ apis: ["Date"], now: Math.floor(Date.now() / cycle) * cycle + 5 * 60_000 });
+  return () => mock.timers.reset();
 }
 
 test("a lamp grant matches the street coin formula and a short pocket can't spend", () => {
@@ -460,7 +467,7 @@ test("a ride pays the idle schedule from the server clock and never a client win
 
 test("a scored ride pays the guest win only after play spans half the ride", () => {
   const at = 1_700_000_000_000;
-  const rideMs = 8 * 60_000;
+  const rideMs = 5 * 60_000; // 0.1.2 cap
   const perfect = { kind: "won" as const, perf: 1, perfect: true };
   const early = rideOp(emptyWallet(), { departAt: at, arriveAt: at + rideMs, now: at + 1_000, touch: true, outcome: perfect });
   assert.equal(early.ok, true);
@@ -777,7 +784,8 @@ test("a dealt ride is scored from the server seed and does not pay a win in one 
   assert.equal(replay.wallet.meta.rideRank, 2);
 });
 
-test("a market spot pays two matches while the market is open, and a kiosk name counts as a visit", async () => {
+test("a market spot pays two matches while the market is open, and a kiosk name counts as a visit", async (t) => {
+  t.after(inOpenMarket());
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false };
   await syncPlayer(sql, "str", snap({ coins: 3000, cities }), "strphone1");
@@ -1259,7 +1267,8 @@ test("0.0.98 regression: a gift-owned scout is never charged or refused on re-bu
   assert.ok((await canonicalWallet(sql, "buyer")).wallet.coins < 20000);
 });
 
-test("0.1.00 market lights: server sells them in order for coin, and the grade's market coin follows the owned light (Owl stacks, cap ×3)", async () => {
+test("0.1.00 market lights: server sells them in order for coin, and the grade's market coin follows the owned light (Owl stacks, cap ×3)", async (t) => {
+  t.after(inOpenMarket());
   const sql = await db();
   await syncPlayer(sql, "lit", snap({ coins: 0 }), "litphone1");
   assert.equal((await applyClientOp(sql, "lit", { kind: "light", id: "jade" })).ok, false, "no coin");
@@ -1288,7 +1297,8 @@ test("0.1.00 market lights: server sells them in order for coin, and the grade's
   assert.equal(marketCoinX(false, lightOf("rainbow"), 2.5), 1, "off the market");
 });
 
-test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin, Fox/Penguin +10%", () => {
+test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin, Fox/Penguin +10%", (t) => {
+  t.after(inOpenMarket());
   const plain = gradeGrant(emptyWallet(), pay());
   const rum = gradeGrant(emptyWallet(), pay({ scout: "raccoon", rummage: true }));
   assert.ok(plain.ok && rum.ok);

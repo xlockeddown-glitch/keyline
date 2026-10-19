@@ -69,6 +69,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("bank"), dir: z.enum(["up", "down"]), tier: Tier }),
   z.object({ kind: z.literal("scout"), id: z.string().min(1).max(40) }),
   z.object({ kind: z.literal("light"), id: z.string().min(1).max(20) }),
+  z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
   z.object({ kind: z.literal("print"), id: z.enum(COSMETICS) }),
   z.object({ kind: z.literal("refund"), token: z.string().min(10).max(2000) }),
@@ -122,6 +123,7 @@ export type WalletWire = {
   wheelWin?: number;
   cache?: { got: Tier[]; coin: number };
   rideDeal?: RideDeal;
+  hurry?: { arriveAt: number; cost: number };
 };
 
 export type SyncWire = {
@@ -180,6 +182,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       wheelWin: r.wheelWin,
       cache: r.cache,
       rideDeal: r.rideDeal,
+      hurry: r.hurry,
     };
   });
 

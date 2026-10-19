@@ -38,6 +38,8 @@ import {
 import type { CityId, Journey } from "./types.ts";
 
 const MIN = 60_000;
+/** 0.1.2: ride pay tables are kept in old minutes (rides now run 5/8 as long for the same pay). */
+const OLD = 37_500;
 const T0 = 1_790_000_000_000;
 
 function perms<T>(xs: T[]): T[][] {
@@ -126,18 +128,18 @@ test("outcome: win at 2 points of 3 (shortest 1, close ½); 3 of 3 is perfect", 
 
 test("pay: the standard ride table, scaled, with the perfect +1 white", () => {
   // Six minutes is the table itself (0.0.94 base, was eight): idle 1, played 3, win 5 → 7.
-  assert.deepEqual(rideReward(6 * MIN, { kind: "idle" }), { white: 1, blue: 0 });
-  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(1))), { white: 3, blue: 0 });
-  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(2))), { white: 5, blue: 0 });
-  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(2, 1))), { white: 6, blue: 0 });
+  assert.deepEqual(rideReward(6 * OLD, { kind: "idle" }), { white: 1, blue: 0 });
+  assert.deepEqual(rideReward(6 * OLD, routeOutcome(T(1))), { white: 3, blue: 0 });
+  assert.deepEqual(rideReward(6 * OLD, routeOutcome(T(2))), { white: 5, blue: 0 });
+  assert.deepEqual(rideReward(6 * OLD, routeOutcome(T(2, 1))), { white: 6, blue: 0 });
   // A clean sheet is a strong win (7 → 4 white + 1 blue) plus the flat perfect white.
-  assert.deepEqual(rideReward(6 * MIN, routeOutcome(T(3))), { white: 4 + RIDE_PERFECT_BONUS, blue: 1 });
+  assert.deepEqual(rideReward(6 * OLD, routeOutcome(T(3))), { white: 4 + RIDE_PERFECT_BONUS, blue: 1 });
   for (const m of [6, 7, 10, 12, 14]) {
-    const v = (t: RouteTally) => rideValue(rideReward(m * MIN, routeOutcome(t)));
-    assert.ok(v(T(0)) > rideValue(rideReward(m * MIN, { kind: "idle" })), `${m}m played > idle`);
+    const v = (t: RouteTally) => rideValue(rideReward(m * OLD, routeOutcome(t)));
+    assert.ok(v(T(0)) > rideValue(rideReward(m * OLD, { kind: "idle" })), `${m}m played > idle`);
     assert.ok(v(T(2)) >= v(T(0)) && v(T(2, 1)) >= v(T(2)) && v(T(3)) > v(T(2, 1)), `${m}m pay climbs`);
-    const base = rideReward(m * MIN, { kind: "won", perf: 1 });
-    assert.deepEqual(rideReward(m * MIN, routeOutcome(T(3))), { white: base.white + RIDE_PERFECT_BONUS, blue: base.blue });
+    const base = rideReward(m * OLD, { kind: "won", perf: 1 });
+    assert.deepEqual(rideReward(m * OLD, routeOutcome(T(3))), { white: base.white + RIDE_PERFECT_BONUS, blue: base.blue });
   }
   // The ride keeps its best round: a perfect round after a played one pays perfect.
   const j = markRound(markRound({} as Journey, routeOutcome(T(1))), routeOutcome(T(3)));
@@ -151,13 +153,13 @@ test("round length: up to two minutes, none under one, and it ends before the pl
   assert.equal(rideRoundMs("route-puzzle", 90_000), 90_000 - ARRIVAL_BUFFER_MS);
 });
 
-test("bands: Route puzzle owns six minutes and up, fares cap at 14:00 so capped rides get it too", () => {
-  for (const m of [6, 6.5, 9, 13.99, 14, 20]) {
+test("bands (0.1.2): Route puzzle owns 3:45 and up, so capped 5-minute rides get it too", () => {
+  for (const m of [3.75, 4, 5, 9, 20]) {
     assert.deepEqual(bandGames(m * MIN), ["route-puzzle"], `${m}m`);
     assert.equal(dealForRide(m * MIN, ["route-puzzle", "route-puzzle", "route-puzzle"]), "route-puzzle", "one-game band: no run rule");
   }
-  assert.deepEqual([...bandGames(5.99 * MIN)].sort(), ["match-sorter", "where-am-i"]);
-  assert.deepEqual(bandGames(1.99 * MIN), ["lamplighter"]);
+  assert.deepEqual([...bandGames(3.74 * MIN)].sort(), ["match-sorter", "where-am-i"]);
+  assert.deepEqual(bandGames(1.24 * MIN), ["lamplighter"]);
   assert.equal(pickRideGame(9 * MIN, undefined, T0), "route-puzzle");
 });
 
@@ -168,7 +170,7 @@ test("old saves: rides already under way keep their game, histories with any gam
   // Boarded before 0.0.35, no stored game: the old pick, which was Lamplighter past six minutes.
   const k34: Journey = { from: "austin", to: "chicago", departAt: T0, arriveAt: T0 + 9 * MIN };
   assert.equal(rideGameFor(k34), "lamplighter");
-  assert.ok(["where-am-i", "match-sorter"].includes(rideGameFor({ ...k34, arriveAt: T0 + 4 * MIN })));
+  assert.ok(["where-am-i", "match-sorter"].includes(rideGameFor({ ...k34, arriveAt: T0 + 3 * MIN })));
   // A ride boarded now stores Route puzzle.
   assert.equal(rideGameFor({ ...k34, rideGame: dealForRide(9 * MIN, loadRideHistory(undefined)) }), "route-puzzle");
   assert.deepEqual(loadRideHistory(["lamplighter", "route-puzzle", "where-am-i"]), ["lamplighter", "route-puzzle", "where-am-i"]);

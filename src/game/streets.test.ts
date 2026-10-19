@@ -4,6 +4,9 @@ import { dest, distM } from "./geo.ts";
 import {
   canCutBuildings,
   clearCorner,
+  curbAfterCab,
+  pullToStreet,
+  startReach,
   createGraph,
   finishPath,
   ingestLine,
@@ -132,4 +135,21 @@ test("routeWalk/routeDrive resolve null once aborted, never a stale offline path
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test("0.1.2: leaving a cab lands on the main walk, not a nearby island (stuck by the Zilker counter)", () => {
+  const { g, o } = blockGraph();
+  // A short footway island 15 m from where the player steps out; the block's west side is 60 m away.
+  const out = dest(o.lat, o.lng, 40, -60);
+  ingestLine(g, [dest(o.lat, o.lng, 30, -75), dest(o.lat, o.lng, 50, -75)]);
+  const old = pullToStreet(g, out.lat, out.lng, 40);
+  assert.ok(Math.abs(distM(old.lat, old.lng, o.lat, o.lng - 0) - distM(out.lat, out.lng, o.lat, o.lng)) < 80, "old pull: sanity");
+  const main = startReach(g, o, 250)!;
+  const curb = curbAfterCab(g, out, main);
+  // On the block's west side (x = 0), not the island at x = -75.
+  const west = dest(o.lat, o.lng, 40, 0);
+  assert.ok(distM(curb.lat, curb.lng, west.lat, west.lng) < 25, `curb ${distM(curb.lat, curb.lng, west.lat, west.lng)} m from the main walk`);
+  // Without a reach it still prefers the bigger walk nearby.
+  const loose = curbAfterCab(g, out, null);
+  assert.ok(distM(loose.lat, loose.lng, west.lat, west.lng) < 25);
 });

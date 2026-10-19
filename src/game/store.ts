@@ -45,7 +45,7 @@ import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
-import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
+import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, hurryCost, hurryTarget, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
 import { bonusDue, rideRamp, chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
@@ -366,6 +366,8 @@ export type GameState = {
   tickJourney: () => void;
   /** Pick this ride's game (0.0.41). Stored on the ride so a reload and every screen agree. */
   chooseRideGame: (game: RideGameId) => void;
+  /** 0.1.2 Hurry up: skip `min` minutes of the ride for coin (30 s floor). Returns a refusal line or null. */
+  hurryRide: (min: number) => string | null;
   /**
    * Start a ride-game round of `game` (default: the ride's current game) and store it as the pick.
    * Returns its length, pace and whether it is the midway bonus round (0.0.94), or null if that game no longer fits before the platform.
@@ -2706,6 +2708,26 @@ export const useGame = create<GameState>((set, get) => ({
       return null;
     }
     go();
+    return null;
+  },
+  hurryRide: (min) => {
+    const j = get().journey;
+    const now = Date.now();
+    if (!j || now >= j.arriveAt) return "You're already there.";
+    const target = hurryTarget(j.departAt, j.arriveAt, now, min);
+    if (target == null) return "The train can't go any faster.";
+    const cost = hurryCost(j.arriveAt - target);
+    if (get().points < cost) return `Need ${cost} coin to hurry.`;
+    const before = { journey: j, points: get().points };
+    const fullMs = j.fullMs ?? j.arriveAt - j.departAt;
+    set({ points: get().points - cost, journey: { ...j, arriveAt: target, fullMs } });
+    saveNow(get);
+    if (walletLive()) {
+      void commitWallet({ kind: "hurry", min }).then((r) => {
+        if (r && !r.ok) set(before);
+        else if (r?.hurry && get().journey?.departAt === j.departAt) set({ journey: { ...get().journey!, arriveAt: r.hurry.arriveAt, fullMs } });
+      });
+    }
     return null;
   },
   chooseRideGame: (game) => {

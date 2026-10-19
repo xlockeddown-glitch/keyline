@@ -18,10 +18,10 @@ test("every ward has a desk", () => {
   }
 });
 
-test("nearby wards are under two minutes", () => {
+test("nearby wards are under 75 s (0.1.2)", () => {
   const ms = fareMs("austin", "temple");
-  assert.ok(ms >= 48_000);
-  assert.ok(ms < 120_000, String(ms));
+  assert.ok(ms >= 30_000);
+  assert.ok(ms < 75_000, String(ms));
 });
 
 test("cross-country is capped at eleven minutes", () => {
@@ -47,9 +47,10 @@ test("open tab no longer trickles extra whites", () => {
 });
 
 test("an idle ride pays its idle rate, not more per minute", () => {
-  assert.equal(transitLoot(4 * 60_000, 0, 4 * 60_000).white, 1);
-  assert.equal(transitLoot(8 * 60_000, 0, 8 * 60_000).white, 1);
-  assert.equal(transitLoot(14 * 60_000, 0, 14 * 60_000).white, 2);
+  // 0.1.2: old minutes × 5/8.
+  assert.equal(transitLoot(4 * 37_500, 0, 4 * 37_500).white, 1);
+  assert.equal(transitLoot(8 * 37_500, 0, 8 * 37_500).white, 1);
+  assert.equal(transitLoot(14 * 37_500, 0, 14 * 37_500).white, 2);
 });
 
 test("ten minutes is a blue, green only if the tab sat the haul", () => {

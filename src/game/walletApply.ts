@@ -51,7 +51,7 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
-import { fareMs, FARES_CAP, VAULTS_PER_FARE } from "./ticket.ts";
+import { fareMs, FARES_CAP, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 
@@ -358,6 +358,7 @@ export type ClientOp =
   | { kind: "cache"; city: CityId }
   | { kind: "dgoal"; i: number }
   | { kind: "light"; id: string }
+  | { kind: "hurry"; min: number }
   | {
       kind: "ride";
       watch?: boolean;
@@ -377,6 +378,8 @@ export type ClientResult = Applied & {
   /** 0.0.93: the matches a cache paid (the rest became coin). */
   cache?: { got: Tier[]; coin: number };
   rideDeal?: RideDeal;
+  /** 0.1.2: the arrival and charge the server set for a Hurry up. */
+  hurry?: { arriveAt: number; cost: number };
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -602,6 +605,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
 
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
   if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op);
+  if (op.kind === "hurry") return hurryRide(sql, sessionUserId, id, wallet, op.min);
 
   // 0.0.98: a scout the account already owns on the server (bought under any key, or restored by a gift such as
   // gift:bethb-corgi-0095) is never charged again and never refused, so a device that hasn't caught up can't
@@ -879,12 +883,42 @@ function nextRound(w: WalletState, departAt: number) {
   return w.meta.rideOpenN + 1;
 }
 
+/** 0.1.2: the arrival Hurry up set for this ticket, if any (latest wins; each hurry only ever moves it earlier). */
+async function hurriedArrive(sql: Sql, id: string, at: number): Promise<number | null> {
+  const rows = await sql<{ detail: string }>`
+    select detail from wallet_ledger where user_id = ${id} and op_key like ${`hurry:${at}:%`} order by created_at desc limit 1
+  `;
+  try {
+    const d = JSON.parse(rows[0]?.detail ?? "") as { arrive?: number };
+    return typeof d.arrive === "number" ? d.arrive : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 0.1.2 Hurry up: skip whole minutes of the open ride for coin. The server sets the new arrival (30 s floor, never before now) and charges it. */
+async function hurryRide(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, min: number): Promise<ClientResult> {
+  const ticket = await latestTicket(sql, id);
+  const now = Date.now();
+  if (!ticket) return refused(wallet, "no-ticket");
+  const cur = (await hurriedArrive(sql, id, ticket.at)) ?? ticket.at + ticket.ms;
+  if (now >= cur) return refused(wallet, "arrived");
+  const target = hurryTarget(ticket.at, cur, now, min);
+  if (target == null) return refused(wallet, "nothing-to-skip");
+  const cost = hurryCost(cur - target);
+  const r = await mutateWallet(sql, sessionUserId, `hurry:${ticket.at}:${cur}`, (w) =>
+    w.coins < cost ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -cost }), detail: JSON.stringify({ arrive: target, full: ticket.ms, cost }) },
+  );
+  return { ...applied(r), hurry: r.ok ? { arriveAt: target, cost } : undefined };
+}
+
 /** Pay the open ticket from the server clock. A win is scored here from the dealt seed and the submitted moves. */
 async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, op: Extract<ClientOp, { kind: "ride" }>): Promise<ClientResult> {
   const ticket = await latestTicket(sql, id);
   if (!ticket) return refused(wallet, "no-ticket");
   const now = Date.now();
-  const clock = { departAt: ticket.at, arriveAt: ticket.at + ticket.ms, now };
+  const hurried = await hurriedArrive(sql, id, ticket.at);
+  const clock = { departAt: ticket.at, arriveAt: hurried ?? ticket.at + ticket.ms, now, fullMs: ticket.ms };
   const watch = op.watch === true;
   if (op.deal) {
     const seed = rideSeed(id, ticket.at);

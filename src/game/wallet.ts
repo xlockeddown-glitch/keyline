@@ -21,7 +21,7 @@ import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
 import { betterOutcome, bonusDue, IDLE, RIDE_BONUS_WHITE, rideRamp, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
-import { FARE_MAX_MS, FARES_CAP, matchCap, pocketRide, transitLoot } from "./ticket.ts";
+import { FARE_MAX_MS, FARES_CAP, hurriedLoot, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
 /**
  * 0.0.78 server wallet. Coins, matches (`keys`), city unlocks and city passes.
@@ -571,6 +571,8 @@ export function rideOp(
     touch?: boolean;
     deal?: RideDealInput;
     outcome?: RideOutcome | null;
+    /** 0.1.2: booked length when Hurry up shortened the ride (server ledger), for seat pay. */
+    fullMs?: number;
   },
 ): OpResult {
   const departAt = num(input.departAt, Number.MAX_SAFE_INTEGER);
@@ -624,7 +626,7 @@ export function rideOp(
   const span = hi > lo ? hi - lo : 0;
   const playedOk = touch && hi > lo && span >= rideLen * 0.5;
   const paying: RideOutcome = !playedOk ? IDLE : best.kind === "won" ? best : { kind: "played" };
-  const due0 = transitLoot(wallMs, open, rideLen, paying);
+  const due0 = hurriedLoot(wallMs, open, rideLen, Math.min(FARE_MAX_MS, num(input.fullMs ?? rideLen, FARE_MAX_MS)), paying);
   const due = { ...due0, white: due0.white + (bonusWon ? RIDE_BONUS_WHITE : 0) };
   const have = same ? { white: w.meta.rideWhite, blue: w.meta.rideBlue, green: w.meta.rideGreen } : { white: 0, blue: 0, green: 0 };
   const owe = {

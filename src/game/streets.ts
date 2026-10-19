@@ -538,6 +538,16 @@ export function snapReachable(g: StreetGraph, p: Pt, r: Reach | null): Pt {
 }
 
 /**
+ * 0.1.2: where a player stands after leaving a cab. The old 40 m curb pull could land on a footway island or a
+ * fenced path off the main walk (Ryan stuck by the Zilker counter), so every tap after that was unroutable.
+ * Now: the nearest point on the walk reachable from the city start, searched as wide as it takes.
+ */
+export function curbAfterCab(g: StreetGraph, p: Pt, reach: Reach | null): Pt {
+  if (!g.segs.length) return p;
+  return snapReachable(g, p, reach ?? startReach(g, p, 400));
+}
+
+/**
  * 0.0.90: where a tap should walk to. `t` is the tap, already held inside the playable box; `outside` says the
  * tap was past it. When the tap was outside the box, or the street it lands on is on a walk the player can't
  * reach (Windsor across the Detroit River: no walkable bridge or tunnel, so it is its own component), the walk

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CITIES } from "@/game/data";
 import { useGame } from "@/game/store";
-import { MARKET_TAG, marketAt, marketLeft, nextMarket, type NightMarket } from "@/game/nightMarket";
+import { MARKET_TAG, clock, marketAt, marketLeft, nextMarket, type NightMarket } from "@/game/nightMarket";
 import type { CityId } from "@/game/types";
 import { MARKET_COIN_CAP, MARKET_LIGHTS, bestLight, nextLight } from "@/game/marketLights";
 
@@ -9,7 +9,7 @@ import { MARKET_COIN_CAP, MARKET_LIGHTS, bestLight, nextLight } from "@/game/mar
 export function useMarket(cityId: CityId): { market: NightMarket | null; now: number } {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 5_000);
+    const id = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(id);
   }, []);
   return { market: marketAt(cityId, now), now };
@@ -28,12 +28,21 @@ export function MarketHudLine({ onWalk }: { onWalk: () => void }) {
     const t = window.setTimeout(() => setOpen(false), 5000);
     return () => window.clearTimeout(t);
   }, [hour]);
-  if (!market) return null;
+  if (!market) {
+    // 0.1.2: dark 5 minutes between markets: count down to the next one and hint where.
+    const nx = nextMarket(cityId, now);
+    if (!nx) return null;
+    return (
+      <span className="market-chip is-dark pointer-events-auto mt-1" data-testid="market-next">
+        🏮 next market in {clock(nx.startsAt - now)} · near {nx.zone.plaza ?? nx.street.name}
+      </span>
+    );
+  }
   const x = bestLight(light).mult.toFixed(1).replace(/\.0$/, "");
   if (!open) {
     return (
       <button type="button" className="market-chip pointer-events-auto mt-1" onClick={() => setOpen(true)} aria-label={`Night market ×${x}. Show details.`} data-testid="market-chip">
-        🏮 ×{x}
+        🏮 ×{x} · {clock(market.endsAt - now)}
       </button>
     );
   }
@@ -105,9 +114,9 @@ export function MarketJournalRow() {
         </p>
         <p className="hq-row-title">{market.street.name}</p>
         <p className="hq-row-sub">
-          Lamps, trivia cards and matches in the market zone pay double for the hour
+          Lamps, trivia cards and matches in the market zone pay double while it's open (10 minutes, then 5 dark before it opens somewhere new)
           {named.length ? ` — ${named.join(", ")}.` : "."} Every walker in {city.name} shares the same market.
-          {next ? ` Next hour: ${next.street.name}.` : ""}
+          {next ? ` Next: ${next.street.name}.` : ""}
         </p>
       </div>
     </li>

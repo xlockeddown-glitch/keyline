@@ -9,7 +9,7 @@ export type RideOutcome = { kind: "idle" } | { kind: "played" } | { kind: "won";
 export const IDLE: RideOutcome = { kind: "idle" };
 
 /** Payout table is written for a six-minute ride and scaled from there (0.0.94: was eight; rides got shorter, pay per ride holds). */
-export const RIDE_BASE_MS = 6 * 60_000;
+export const RIDE_BASE_MS = Math.round(3.75 * 60_000); // 0.1.2: 6 min × 5/8, so rides pay the same under the 5-min cap
 export const BASE_IDLE = 1;
 export const BASE_PLAYED = 3;
 export const BASE_WON_LOW = 5;
@@ -17,7 +17,7 @@ export const BASE_WON_HIGH = 7;
 /** A win at or above this performance is strong: it can trade three whites for a blue. */
 export const STRONG_WIN = 0.75;
 /** Rides this long can trade twice (0.0.94: 9 min, was 12, scaled with the six-minute base). */
-export const LONG_RIDE_MS = 9 * 60_000;
+export const LONG_RIDE_MS = Math.round(5.625 * 60_000); // 0.1.2: 9 min × 5/8
 export const BLUE_IN_WHITES = 3;
 /** Flat whites a perfect round adds on top of the ride's pay. Not scaled by ride length. */
 export const RIDE_PERFECT_BONUS = 1;
@@ -150,8 +150,9 @@ export const RIDE_GAME_NAME: Record<RideGameId, string> = {
  * puzzle (with time for several rounds) rather than dropping back to Lamplighter.
  */
 export const RIDE_GAME_BANDS: { underMs: number; games: RideGameId[] }[] = [
-  { underMs: 2 * 60_000, games: ["lamplighter"] },
-  { underMs: 6 * 60_000, games: ["where-am-i", "match-sorter"] },
+  // 0.1.2: bands scaled by 5/8 with the 5-minute ride cap (Lamplighter under 75 s, Route puzzle from 3:45).
+  { underMs: 2 * 37_500, games: ["lamplighter"] },
+  { underMs: 6 * 37_500, games: ["where-am-i", "match-sorter"] },
   { underMs: Number.POSITIVE_INFINITY, games: ["route-puzzle"] },
 ];
 

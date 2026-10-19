@@ -13,7 +13,10 @@ import { MARKET_STREETS } from "./marketStreets.ts";
 import type { CityId, Poi, Tier } from "./types";
 import { CITIES } from "./data.ts";
 
-export const MARKET_HOUR_MS = 60 * 60_000;
+/** 0.1.2: a market cycle is 15 minutes: open 10, dark 5, then it reopens at a new spot. "hour" fields now count cycles. */
+export const MARKET_OPEN_MS = 10 * 60_000;
+export const MARKET_DARK_MS = 5 * 60_000;
+export const MARKET_HOUR_MS = MARKET_OPEN_MS + MARKET_DARK_MS;
 /** Market rewards pay this many times over. */
 export const MARKET_MULT = 2;
 /** Candidate streets come from the city's walk within this distance of spawn (same reach as the Lantern Run). */
@@ -319,9 +322,9 @@ export function utcHour(at: number): number {
   return Math.floor(at / MARKET_HOUR_MS);
 }
 
-/** "2026-10-03T10" — the UTC hour label that seeds a market. */
+/** "2026-10-03T10:15" — the UTC start of the cycle that seeds a market. */
 export function hourLabel(hour: number): string {
-  return new Date(hour * MARKET_HOUR_MS).toISOString().slice(0, 13);
+  return new Date(hour * MARKET_HOUR_MS).toISOString().slice(0, 16);
 }
 
 /** The seed for one city in one UTC hour. */
@@ -380,7 +383,9 @@ export const ZONE_GROW_LAMPS = 5;
 export const ZONE_MIN_LAMPS = 3;
 const PLAZA_NEAR_M = 300;
 
-export function marketZone(s: MarketStreet, pois: readonly Poi[]): MarketZone {
+/** Zones of one city sit at least this far apart, so the rotation actually moves (Chicago's streets all met at Crown Fountain). */
+export const ZONE_APART_M = 500;
+export function marketZone(s: MarketStreet, pois: readonly Poi[], avoid: readonly { lat: number; lng: number }[] = []): MarketZone {
   const lamps = marketLamps([...pois]);
   const count = (c: { lat: number; lng: number }, rr: number) => lamps.filter((p) => distM(c.lat, c.lng, p.lat, p.lng) <= rr).length;
   // Candidate centres: parks/squares near the street (preferred on ties), then points along the street.
@@ -389,9 +394,12 @@ export function marketZone(s: MarketStreet, pois: readonly Poi[]): MarketZone {
   const parks = pois
     .filter((p) => p.kind === "park" && along.some((q) => distM(q.lat, q.lng, p.lat, p.lng) <= PLAZA_NEAR_M))
     .map((p) => ({ lat: p.lat, lng: p.lng, plaza: p.name as string | null }));
-  let best = parks[0] ?? { ...marketAnchor(s), plaza: null };
-  let bestN = count(best, ZONE_MIN_R) + (best.plaza ? 0.5 : 0);
-  for (const c of [...parks, ...along]) {
+  const clear = (c: { lat: number; lng: number }) => avoid.every((a) => distM(a.lat, a.lng, c.lat, c.lng) >= ZONE_APART_M);
+  const cands = [...parks, ...along].filter(clear);
+  const pool = cands.length ? cands : [...parks, ...along];
+  let best = pool[0] ?? { ...marketAnchor(s), plaza: null };
+  let bestN = -1;
+  for (const c of pool) {
     const n = count(c, ZONE_MIN_R) + (c.plaza ? 0.5 : 0);
     if (n > bestN) [best, bestN] = [c, n];
   }
@@ -407,7 +415,15 @@ export function zoneOf(city: CityId, s: MarketStreet): MarketZone {
   const k = `${city}|${s.name}`;
   let z = ZONES.get(k);
   if (!z) {
-    z = marketZone(s, CITIES[city]?.pois ?? []);
+    // Zones are laid out once per city, street by street in name order, each kept clear of the ones before.
+    const pois = CITIES[city]?.pois ?? [];
+    const placed: MarketZone[] = [];
+    for (const st of marketStreets(city)) {
+      const zz = marketZone(st, pois, placed);
+      placed.push(zz);
+      ZONES.set(`${city}|${st.name}`, zz);
+    }
+    z = ZONES.get(k) ?? marketZone(s, pois);
     ZONES.set(k, z);
   }
   return z;
@@ -495,21 +511,32 @@ export function marketStreets(city: CityId): MarketStreet[] {
 export function marketAt(city: CityId, at: number, streets: MarketStreet[] = marketStreets(city)): NightMarket | null {
   if (!streets.length) return null;
   const hour = utcHour(at);
-  const street = streets[marketIndex(city, hour, streets.length, streets.map((s) => s.lamps.length))]!;
-  return { city, hour, street, zone: zoneOf(city, street), startsAt: hour * MARKET_HOUR_MS, endsAt: (hour + 1) * MARKET_HOUR_MS };
+  // 0.1.2: dark for the last 5 minutes of each cycle (the server's wallet checks this same clock).
+  if (at - hour * MARKET_HOUR_MS >= MARKET_OPEN_MS) return null;
+  return cycleMarket(city, hour, streets);
 }
 
-/** The next hour's market (for the Journal's "next" line). */
+function cycleMarket(city: CityId, hour: number, streets: MarketStreet[]): NightMarket {
+  const street = streets[marketIndex(city, hour, streets.length, streets.map((s) => s.lamps.length))]!;
+  return { city, hour, street, zone: zoneOf(city, street), startsAt: hour * MARKET_HOUR_MS, endsAt: hour * MARKET_HOUR_MS + MARKET_OPEN_MS };
+}
+
+/** The next market to open (the one after this cycle, open or dark). */
 export function nextMarket(city: CityId, at: number, streets: MarketStreet[] = marketStreets(city)) {
-  return marketAt(city, (utcHour(at) + 1) * MARKET_HOUR_MS, streets);
+  if (!streets.length) return null;
+  return cycleMarket(city, utcHour(at) + 1, streets);
+}
+
+/** "m:ss" countdown. */
+export function clock(ms: number): string {
+  const t = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 }
 
 /** "42 min left" / "under a minute". */
 export function marketLeft(m: NightMarket, at: number): string {
   const ms = Math.max(0, m.endsAt - at);
-  const min = Math.floor(ms / 60_000);
-  if (min < 1) return "under a minute left";
-  return `${min} min left`;
+  return `closes in ${clock(ms)}`;
 }
 
 /** Midpoint of the market's longest line — where the map marker sits. */

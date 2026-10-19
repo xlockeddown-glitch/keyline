@@ -18,9 +18,9 @@ export const RIDE_WHITE_POCKET = WHITE_POCKET;
 export const SPARK_DAY = 6;
 /** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line.
  *  0.0.94: 8 min (was 11) and a gentler distance line, so most rides land around 6-8 min. */
-export const FARE_MAX_MS = 8 * 60_000;
+export const FARE_MAX_MS = 5 * 60_000; // 0.1.2: 5 min (was 8)
 /** 0.0.94: the long-haul blue (and the sat-it-out green) now come at 7 min (was 10, unreachable once rides cap at 8). */
-export const HAUL_MS = 7 * 60_000;
+export const HAUL_MS = 7 * 37_500; // 0.1.2: 7 old minutes × 5/8 (4 min 22.5 s), scaled with the 5-min cap
 /** A violet lamp stays dark for six hours after it pays. */
 export const VIOLET_COOL_MS = 6 * 60 * 60_000;
 
@@ -77,7 +77,8 @@ export function fareMs(from: CityId, to: CityId) {
   const a = CITIES[from].spawn;
   const b = CITIES[to].spawn;
   const km = distM(a.lat, a.lng, b.lat, b.lng) / 1000;
-  return Math.round(Math.min(FARE_MAX_MS, Math.max(48_000, 40_000 + km * 170)));
+  // 0.1.2: the 0.0.94 line scaled by 5/8 (min 30 s), so near wards stay short and only far ones hit the cap.
+  return Math.round(Math.min(FARE_MAX_MS, Math.max(HURRY_MIN_RIDE_MS, 25_000 + km * 106)));
 }
 
 export function formatEta(ms: number) {
@@ -97,6 +98,39 @@ export function otherWards(from: CityId) {
  * finished round), due once the train has run 12s; strong wins may carry swapped blues.
  * 7+ min (HAUL_MS) is a blue; sitting the whole haul with the tab open is a green.
  */
+/** 0.1.2 Hurry up: a ride never lasts less than this in total. */
+export const HURRY_MIN_RIDE_MS = 30_000;
+/** Coin per minute skipped (a started minute counts whole). */
+export const HURRY_COIN_PER_MIN = 25;
+export function hurryCost(skipMs: number): number {
+  return Math.max(0, Math.ceil(Math.max(0, skipMs) / 60_000)) * HURRY_COIN_PER_MIN;
+}
+/** New arrival after skipping `min` minutes: never under the 30 s floor, never before now. Null when nothing is left to skip. */
+export function hurryTarget(departAt: number, arriveAt: number, now: number, min: number): number | null {
+  const want = arriveAt - Math.max(1, Math.floor(min)) * 60_000;
+  const t = Math.max(want, departAt + HURRY_MIN_RIDE_MS, now + 1_000);
+  return t < arriveAt - 1_000 ? t : null;
+}
+
+/**
+ * 0.1.2: pay for a hurried ride. Seat pay (idle whites, the long-haul blue, the sat-it-out green) is worked out on the
+ * full booked ride; the ride-game part on top only counts the ride actually sat, so skipping forfeits the game bonus
+ * for the skipped stretch. Unhurried rides (fullMs <= rideMs) pay exactly as transitLoot.
+ */
+export function hurriedLoot(wallMs: number, openMs: number, rideMs: number, fullMs: number, outcome: RideOutcome = IDLE) {
+  if (!(fullMs > rideMs)) return transitLoot(wallMs, openMs, rideMs, outcome);
+  const arrived = wallMs >= rideMs;
+  const k = fullMs / Math.max(1, rideMs);
+  const seat = transitLoot(arrived ? fullMs : wallMs, Math.min(fullMs, openMs * k), fullMs, IDLE);
+  const real = transitLoot(wallMs, openMs, rideMs, outcome);
+  const realIdle = transitLoot(wallMs, openMs, rideMs, IDLE);
+  return {
+    white: seat.white + Math.max(0, real.white - realIdle.white),
+    blue: seat.blue + Math.max(0, real.blue - realIdle.blue),
+    green: seat.green,
+  };
+}
+
 export function transitLoot(wallMs: number, openMs: number, rideMs = wallMs, outcome: RideOutcome = IDLE) {
   const pay = rideReward(rideMs, outcome);
   const started = wallMs >= 12_000 || outcome.kind !== "idle";
@@ -134,7 +168,7 @@ export function settleRide(j: Journey, keys: Record<Tier, number>, now: number, 
   const openMs = (j.openMs ?? 0) + (watching ? dt : 0);
   const wallMs = Math.max(0, clipped - j.departAt);
   const rideMs = Math.max(0, j.arriveAt - j.departAt);
-  const due0 = transitLoot(wallMs, openMs, rideMs, journeyOutcome(j));
+  const due0 = hurriedLoot(wallMs, openMs, rideMs, j.fullMs ?? rideMs, journeyOutcome(j));
   const due = { ...due0, white: due0.white + (j.bonusWon ? RIDE_BONUS_WHITE : 0) };
   const have = { white: j.grantedWhite ?? 0, blue: j.grantedBlue ?? 0, green: j.grantedGreen ?? 0 };
   const owe = {

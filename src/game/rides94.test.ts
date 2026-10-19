@@ -11,15 +11,15 @@ import type { Journey, Tier } from "./types.ts";
 
 const MIN = 60_000;
 
-test("every ride is 8 min or less, and most land between 4 and 8", () => {
-  assert.equal(FARE_MAX_MS, 8 * MIN);
+test("0.1.2: every ride is 5 min or less, and most land between 3:45 and 5", () => {
+  assert.equal(FARE_MAX_MS, 5 * MIN);
   const v: number[] = [];
   for (const a of CITY_LIST) for (const b of CITY_LIST) if (a.id !== b.id) v.push(fareMs(a.id, b.id));
   v.sort((x, y) => x - y);
-  assert.ok(v[v.length - 1]! <= 8 * MIN);
-  assert.ok(v[0]! >= 48_000);
+  assert.ok(v[v.length - 1]! <= 5 * MIN);
+  assert.ok(v[0]! >= 30_000);
   const med = v[Math.floor(v.length / 2)]!;
-  assert.ok(med >= 6 * MIN && med <= 8 * MIN, `median ${med}`);
+  assert.ok(med >= 3.75 * MIN && med <= 5 * MIN, `median ${med}`);
   assert.equal(transitLoot(HAUL_MS, 0, HAUL_MS).blue, 1, "the long-haul blue is reachable");
 });
 

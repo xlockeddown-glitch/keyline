@@ -25,7 +25,7 @@ import {
 import { BLUE_POCKET, RIDE_WHITE_POCKET, WHITE_POCKET, matchCap, pocketRide, settleRide, transitLoot } from "./ticket.ts";
 import type { Journey, Tier } from "./types.ts";
 
-const MIN = 60_000;
+const MIN = 37_500; // 0.1.2: tables kept in old minutes; rides now run 5/8 as long and pay the same per ride
 const played: RideOutcome = { kind: "played" };
 const won = (perf: number): RideOutcome => ({ kind: "won", perf });
 const whites = (ms: number, o: RideOutcome) => rideValue(rideReward(ms, o));
@@ -293,7 +293,7 @@ test("the deal works for any number of games in a band", () => {
   assert.equal(dealRideGame(["where-am-i", "match-sorter"], ["where-am-i", "where-am-i"], () => 0), "match-sorter", "two in a row forces a change");
   // A Lamplighter hop in between doesn't reset the run.
   assert.equal(dealRideGame(["where-am-i", "match-sorter"], ["match-sorter", "lamplighter", "match-sorter"], () => 0), "where-am-i");
-  assert.equal(dealForRide(90_000, ["lamplighter", "lamplighter"]), "lamplighter", "short rides stay Lamplighter");
+  assert.equal(dealForRide(60_000, ["lamplighter", "lamplighter"]), "lamplighter", "short rides stay Lamplighter");
 });
 
 test("the dealt game is stored on the ride and survives a reload", () => {

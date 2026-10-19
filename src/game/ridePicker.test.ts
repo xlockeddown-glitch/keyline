@@ -89,7 +89,7 @@ test("picker lists exactly the games that fit the time left", () => {
 
 test("the default selection is the suggested pick", () => {
   // The 0.0.35 varied deal still picks the suggestion, and the picker starts on it.
-  for (const rideMs of [90 * SEC, 3 * MIN, 5 * MIN, 8 * MIN, 14 * MIN]) {
+  for (const rideMs of [60 * SEC, 3 * MIN, 5 * MIN, 8 * MIN, 14 * MIN]) {
     for (const rnd of [() => 0, () => 0.49, () => 0.51, () => 0.99]) {
       const j = boarded(rideMs, [], rnd);
       assert.equal(suggestedRideGame(j), j.rideGame);
@@ -98,9 +98,9 @@ test("the default selection is the suggested pick", () => {
       assert.ok(ridePickerGames(rideMs).includes(j.rideGame!));
     }
   }
-  // Bands are unchanged: short Lamplighter, 2–6 Where am I?/Match sorter, 6+ Route puzzle.
-  assert.equal(boarded(90 * SEC).rideGame, "lamplighter");
-  assert.ok(["where-am-i", "match-sorter"].includes(boarded(4 * MIN).rideGame!));
+  // 0.1.2 bands: under 75 s Lamplighter, 75 s–3:45 Where am I?/Match sorter, 3:45+ Route puzzle.
+  assert.equal(boarded(60 * SEC).rideGame, "lamplighter");
+  assert.ok(["where-am-i", "match-sorter"].includes(boarded(3 * MIN).rideGame!));
   assert.equal(boarded(8 * MIN).rideGame, "route-puzzle");
   // A pick, once made, is what the picker shows next.
   const j = chooseRideGame(boarded(8 * MIN), "match-sorter");

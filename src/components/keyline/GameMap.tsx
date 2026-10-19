@@ -12,6 +12,7 @@ import { startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
   snapReachable,
+  curbAfterCab,
   quietDrop,
   walkableTarget,
   walkReach,
@@ -299,7 +300,8 @@ export function GameMap() {
       -Math.sin(pos.current.yaw + Math.PI / 2) * 7,
     );
     const g = graphRef.current;
-    const curb = g ? offFreeway(g, pullToStreet(g, side.lat, side.lng, 40)) : side;
+    // 0.1.2: snap to the main walk (wider than the old 40 m pull, never an island), so the player can always route.
+    const curb = g ? curbAfterCab(g, side, walkReach()) : side;
     pos.current.lat = curb.lat;
     pos.current.lng = curb.lng;
     pos.current.speed = 0;

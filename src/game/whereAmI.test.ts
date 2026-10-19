@@ -34,6 +34,8 @@ import {
 import type { Poi } from "./types.ts";
 
 const MIN = 60_000;
+/** 0.1.2: ride pay tables are kept in old minutes (rides now run 5/8 as long for the same pay). */
+const OLD = 37_500;
 const cities = Object.values(CITIES);
 
 test("every city has enough clues for a full round", () => {
@@ -116,7 +118,7 @@ test("scoring: four of five wins, five is a strong win, short or incomplete is p
 
 test("scoring → reward: a clean sheet beats four of five beats played beats idle", () => {
   for (const m of [2, 3, 4, 5.9]) {
-    const ms = m * MIN;
+    const ms = m * OLD;
     const v = (right: number, asked = 5) => rideValue(rideReward(ms, whereOutcome({ asked, right, total: 5 })));
     const idle = rideValue(rideReward(ms, { kind: "idle" }));
     assert.ok(v(5) > v(3), `${m}m: 5/5 beats 3/5`);
@@ -125,9 +127,9 @@ test("scoring → reward: a clean sheet beats four of five beats played beats id
     assert.ok(v(5) >= 1);
   }
   // Three-minute ride (0.0.94: was four, the base is now six minutes): idle 1, played 2, 4/5 = 3 whites, 5/5 = 4 whites (strong win, no blue under 5) + 1 perfect bonus.
-  assert.deepEqual(rideReward(3 * MIN, whereOutcome({ asked: 5, right: 3, total: 5 })), { white: 2, blue: 0 });
-  assert.deepEqual(rideReward(3 * MIN, whereOutcome({ asked: 5, right: 4, total: 5 })), { white: 3, blue: 0 });
-  assert.deepEqual(rideReward(3 * MIN, whereOutcome({ asked: 5, right: 5, total: 5 })), { white: 5, blue: 0 });
+  assert.deepEqual(rideReward(3 * OLD, whereOutcome({ asked: 5, right: 3, total: 5 })), { white: 2, blue: 0 });
+  assert.deepEqual(rideReward(3 * OLD, whereOutcome({ asked: 5, right: 4, total: 5 })), { white: 3, blue: 0 });
+  assert.deepEqual(rideReward(3 * OLD, whereOutcome({ asked: 5, right: 5, total: 5 })), { white: 5, blue: 0 });
 });
 
 test("perfect round: 5/5 pays the base strong win plus one flat white; 4/5 is unchanged", () => {
@@ -178,7 +180,7 @@ test("Where am I? rounds fit 30–75s and end before the platform", () => {
     assert.ok(ms + ARRIVAL_BUFFER_MS <= left);
   }
   assert.equal(rideRoundMs("where-am-i", 4 * MIN), WHERE_ROUND_MAX_MS);
-  assert.equal(rideRoundMs(pickRideGame(90_000, undefined, 12345), 90_000), 60_000);
+  assert.equal(rideRoundMs(pickRideGame(60_000, undefined, 12345), 90_000), 60_000);
 });
 
 test("Temple and Tucson carry NYC-sized clue pools; noClue marks never show up as clues or decoys", () => {

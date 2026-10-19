@@ -39,6 +39,7 @@ import {
   onMarket,
   spawnComponent,
   utcHour,
+  zoneOf,
   wayReachable,
   type MarketStreet,
   type OsmWay,
@@ -51,23 +52,23 @@ const at = (h: number, min = 0) => h * MARKET_HOUR_MS + min * 60_000;
 
 // ───────── seed determinism ─────────
 
-test("seed: city + UTC hour, nothing else — every walker in a city sees the same market all hour", () => {
-  assert.equal(hourLabel(H0 + 10), "2026-10-03T10");
-  // Pinned so a refactor can't silently reshuffle everyone's market.
-  assert.equal(hash32("keyline-night-market|detroit|2026-10-03T10"), marketSeed("detroit", H0 + 10));
-  assert.equal(marketSeed("detroit", H0 + 10), 4213043524);
+test("seed: city + 15-minute cycle, nothing else — every walker in a city sees the same market while it's open", () => {
+  assert.equal(hourLabel(H0 + 10), "2026-10-03T02:30");
+  assert.equal(hash32("keyline-night-market|detroit|2026-10-03T02:30"), marketSeed("detroit", H0 + 10));
   for (const city of ALL) {
     for (let h = H0; h < H0 + 72; h++) {
       const a = marketAt(city, at(h, 0))!;
-      const b = marketAt(city, at(h, 59) + 59_999)!;
-      assert.equal(a.street.name, b.street.name, `${city} ${hourLabel(h)} same street all hour`);
+      const b = marketAt(city, at(h, 9) + 59_999)!;
+      assert.equal(a.street.name, b.street.name, `${city} ${hourLabel(h)} same street all 10 minutes`);
       assert.equal(a.startsAt, at(h));
-      assert.equal(a.endsAt, at(h + 1));
-      assert.deepEqual(marketAt(city, at(h, 30)), marketAt(city, at(h, 30)));
+      assert.equal(a.endsAt, at(h, 10));
+      assert.equal(marketAt(city, at(h, 10)), null, "dark from minute 10");
+      assert.equal(marketAt(city, at(h, 14) + 59_999), null, "still dark at 14:59");
+      assert.deepEqual(marketAt(city, at(h, 5)), marketAt(city, at(h, 5)));
     }
   }
   // Two "players" in different zones at the same instant: same hour, same street (the seed is UTC).
-  const instant = Date.parse("2026-10-03T15:20:00-05:00");
+  const instant = Date.parse("2026-10-03T15:20:00-05:00"); // minute 5 of a cycle
   assert.equal(marketAt("chicago", instant)!.street.name, marketAt("chicago", Date.parse("2026-10-03T20:20:00Z"))!.street.name);
   assert.notEqual(marketSeed("detroit", H0), marketSeed("austin", H0));
   assert.notEqual(marketSeed("detroit", H0), marketSeed("detroit", H0 + 1));
@@ -81,9 +82,9 @@ test("seed: over a week every city's market moves around many streets", () => {
   }
 });
 
-test("next market is the following hour's draw", () => {
+test("next market (asked while dark) is the following cycle's draw, at a new spot", () => {
   for (const city of ALL) {
-    const n = nextMarket(city, at(H0 + 5, 42))!;
+    const n = nextMarket(city, at(H0 + 5, 12))!;
     assert.equal(n.hour, H0 + 6);
     assert.equal(n.street.name, marketAt(city, at(H0 + 6))!.street.name);
   }
@@ -262,7 +263,7 @@ test("doubling: on-street test — baked lamps, measured blanks/series/matches, 
     const s: MarketStreet = m.street;
     const poi = CITIES[city].pois.find((p) => p.id === s.lamps[0])!;
     assert.ok(onMarket(m, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }));
-    assert.equal(marketMult(city, at(H0 + 3, 10), { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }), 2);
+    assert.equal(marketMult(city, at(H0 + 3, 5), { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }), 2);
     const on = { lat: s.lines[0]![0]!, lng: s.lines[0]![1]! };
     assert.ok(onMarket(m, { kind: "match", ...on }));
     assert.ok(onMarket(m, { kind: "series", ...on }));
@@ -272,7 +273,7 @@ test("doubling: on-street test — baked lamps, measured blanks/series/matches, 
     // A lamp that isn't on this hour's street pays ×1 (unless it also stands on it).
     // 0.1.00: …and outside the market zone.
     const other = CITIES[city].pois.find((p) => p.kind !== "shop" && !s.lamps.includes(p.id) && distToStreet(p.lat, p.lng, s) > MARKET_LAMP_M && distM(p.lat, p.lng, m.zone.lat, m.zone.lng) > m.zone.r && !m.zone.lamps.includes(p.id))!;
-    assert.equal(marketMult(city, at(H0 + 3, 10), { kind: "lamp", poiId: other.id, lat: other.lat, lng: other.lng }), 1);
+    assert.equal(marketMult(city, at(H0 + 3, 5), { kind: "lamp", poiId: other.id, lat: other.lat, lng: other.lng }), 1);
     assert.ok(!onMarket(null, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }));
   }
 });
@@ -378,4 +379,12 @@ test("0.1.00 market zones: every city's every market zone holds enough lamps and
     rows.push(`${id}:${min}`);
   }
   console.log("zone min lamps", rows.join(" "));
+});
+
+test("0.1.2: every city has at least 2 market zones to rotate between, and consecutive cycles move", () => {
+  for (const city of ALL) {
+    const zones = new Set(marketStreets(city).map((s) => { const z = zoneOf(city, s); return `${z.lat.toFixed(4)},${z.lng.toFixed(4)}`; }));
+    assert.ok(zones.size >= 2, `${city}: ${zones.size} zone(s)`);
+    for (let h = H0; h < H0 + 96; h++) assert.notEqual(marketAt(city, at(h))!.street.name, marketAt(city, at(h + 1))!.street.name, `${city} same spot twice running`);
+  }
 });

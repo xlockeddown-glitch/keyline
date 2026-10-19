@@ -190,4 +190,6 @@ export type Journey = {
   grantedWhite?: number;
   grantedBlue?: number;
   grantedGreen?: number;
+  /** 0.1.2: the booked ride length, set once Hurry up has shortened arriveAt (seat pay stays on this). */
+  fullMs?: number;
 } & RideGameMark;

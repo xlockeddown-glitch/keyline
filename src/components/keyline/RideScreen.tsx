@@ -1,7 +1,7 @@
 import { RideBoardsPanel } from "./RideBoards";
 import { useEffect, useState } from "react";
 import { CITIES } from "@/game/data";
-import { formatEta } from "@/game/ticket";
+import { HURRY_COIN_PER_MIN, formatEta, hurryCost, hurryTarget } from "@/game/ticket";
 import { useGame } from "@/game/store";
 import { Boxes, Check, Lamp, MapPin, Route, type LucideIcon } from "lucide-react";
 import {
@@ -251,6 +251,7 @@ export function RideScreen() {
           <i style={{ width: `${Math.min(100, gone * 100)}%` }} />
         </div>
         {lootLine(journey) ? <p className="ride-loot">{lootLine(journey)}</p> : null}
+        <HurryUp />
 
         {round ? (
           <p className={`ride-round-tag${round.bonus ? " is-bonus" : ""}`} data-testid={round.bonus ? "ride-bonus" : "ride-round"}>
@@ -326,6 +327,34 @@ export function RideScreen() {
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+/** 0.1.2 Hurry up: skip a minute (or straight to the 30 s floor) for coin. Seat pay stays; the game bonus for the skipped part is lost. */
+function HurryUp() {
+  const journey = useGame((s) => s.journey);
+  const coins = useGame((s) => s.points);
+  const hurry = useGame((s) => s.hurryRide);
+  const [msg, setMsg] = useState<string | null>(null);
+  if (!journey) return null;
+  const now = Date.now();
+  const one = hurryTarget(journey.departAt, journey.arriveAt, now, 1);
+  const all = hurryTarget(journey.departAt, journey.arriveAt, now, 5);
+  if (one == null) return null;
+  const c1 = hurryCost(journey.arriveAt - one);
+  const cAll = all == null ? 0 : hurryCost(journey.arriveAt - all);
+  return (
+    <div className="ride-hurry" data-testid="ride-hurry">
+      <button type="button" className="btn-secondary" disabled={coins < c1} onClick={() => setMsg(hurry(1))}>
+        Hurry up 1 min · {c1} coin
+      </button>
+      {all != null && all < one ? (
+        <button type="button" className="btn-secondary" disabled={coins < cAll} onClick={() => setMsg(hurry(5))}>
+          Skip to {formatEta(all - now)} · {cAll} coin
+        </button>
+      ) : null}
+      <p className="ride-hurry-note">{msg ?? `${HURRY_COIN_PER_MIN} coin a minute. You keep the seat pay; the game bonus for the skipped part is lost.`}</p>
     </div>
   );
 }
