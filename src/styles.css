@@ -4097,3 +4097,5 @@ h3 {
 .light-dot { width: 18px; height: 18px; border-radius: 999px; flex: none; box-shadow: 0 0 8px currentColor; }
 .market-chip.is-dark { border-color: var(--color-border); background: var(--color-bg-elevated); opacity: .85; font-variant-numeric: tabular-nums; }
 .ride-hurry { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; } .ride-hurry button { font-size: 0.8rem; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--color-border); } .ride-hurry button:disabled { opacity: .5; } .ride-hurry-note { flex-basis: 100%; font-size: 0.72rem; opacity: .7; margin: 0; }
+/* 0.1.2: the market line now folds to a small chip; keep the status plate at its readable width. */
+[data-testid="hud-status"] { min-width: min(200px, calc(100vw - 32px)); }
