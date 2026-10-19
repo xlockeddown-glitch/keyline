@@ -163,6 +163,9 @@ test("art wiring: the coat palette, the generated coat CSS and the lantern-skin 
   // 0.0.99: the lamp art must actually read the skin (it was hard-coded brass, so no skin ever showed).
   const art = read("../../public/lantern-art.css");
   for (const v of ["--skin-cap-hi", "--skin-cap-mid", "--skin-cap-lo", "--skin-rim", "--skin-post-dk", "--skin-post-lt", "--skin-foot"]) assert.ok(art.includes(`var(${v},`), v);
+  // 0.1.1: shop previews must out-rank the worn skin on <html> (all previews showed the worn one).
+  const props = read("../../public/prop-art.css");
+  for (const id of [...Object.keys(LANTERN_SKINS), "brass"]) assert.ok(props.includes(`.skin-swatch[data-lantern="${id}"] .lantern{`), id);
   const root = read("../routes/__root.tsx");
   assert.ok(root.indexOf("/lantern-art.css") < root.indexOf("/wardrobe.css"), "skins load after the lantern art");
   assert.ok(root.includes("/coats.css"));
