@@ -20,7 +20,7 @@ export type PoiKind =
 
 export type CityId = "austin" | "temple" | "nyc" | "sf" | "london" | "chicago" | "detroit" | "tucson" | "toronto" | "la" | "boston" | "nola" | "seattle" | "denver" | "nashville";
 
-export type TriviaCat = "sports" | "local" | "political" | "food" | "arts" | "math" | "science" | "history" | "nature" | "games" | "celebrity";
+export type TriviaCat = "sports" | "local" | "political" | "food" | "arts" | "math" | "science" | "history" | "nature" | "games" | "celebrity" | "music";
 
 export type TriviaDiff = 1 | 2 | 3;
 

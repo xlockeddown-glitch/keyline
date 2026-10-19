@@ -36,6 +36,7 @@ import { NATURE_MORE } from "@/game/banks/nature_more";
 import { NATURE_LIFE } from "@/game/banks/nature_life";
 import { GAMES_BANK } from "@/game/banks/games";
 import { CELEBRITY_BANK } from "@/game/banks/celebrity";
+import { MUSIC_BANK } from "@/game/banks/music";
 import { CITY_EXTRA } from "@/game/banks/cities";
 import {
   WEEKLY_HISTORY,
@@ -357,6 +358,7 @@ const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	nature: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE), WEEKLY_NATURE_20261002), WEEKLY_NATURE_20261006),
 	games: mergeCat(GAMES_BANK, WEEKLY_GAMES_20261006),
 	celebrity: mergeCat(CELEBRITY_BANK, WEEKLY_CELEBRITY_20261006),
+	music: MUSIC_BANK,
 };
 const TEXAS_LOCAL = [
 	q("The current Texas Capitol in Austin opened in which decade?", [

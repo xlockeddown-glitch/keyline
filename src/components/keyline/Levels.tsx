@@ -9,7 +9,7 @@ import type { Tier, TriviaCat } from "@/game/types";
 
 const TIER_LABEL: Record<Tier, string> = { white: "White", blue: "Blue", green: "Green", amber: "Amber", red: "Red", violet: "Violet" };
 const CAT_LABEL: Record<TriviaCat, string> = {
-  celebrity: "Celebrities", history: "History", science: "Science", math: "Math", games: "Games", local: "Local cards",
+  celebrity: "Celebrities", music: "Music", history: "History", science: "Science", math: "Math", games: "Games", local: "Local cards",
   sports: "Sports", political: "Political", food: "Food", arts: "Arts", nature: "Nature",
 };
 

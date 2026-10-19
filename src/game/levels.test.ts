@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { BONUS_TITLES, CAT_LADDERS, DRAFT_LADDERS, bestRun, colorsAt, levelMatch, levelOf, needFor, rewardFor, titleName, titleRows, xpOf } from "./levels.ts";
-const ALL_CATS = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity"] as const;
+const ALL_CATS = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music"] as const;
 
 test("0.0.98 curve: fast early, slower later, monotonic", () => {
   assert.equal(needFor(1), 100);

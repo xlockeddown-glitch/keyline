@@ -9,7 +9,7 @@ import type { Tier, TriviaDiff } from "./types";
 export const SEEN_MAX = 2400;
 const TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
 const CITY_IDS = ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville"] as const;
-const CATS = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity"] as const;
+const CATS = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music"] as const;
 const KINDS = ["landmark", "museum", "park", "library", "theatre", "stadium", "food", "civic", "station", "campus", "water", "shop"] as const;
 const IdIn = z.string().min(1).max(80).regex(/^[A-Za-z0-9_:.~-]+$/);
 

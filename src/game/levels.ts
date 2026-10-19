@@ -117,6 +117,7 @@ export const TITLE_RUNGS = [250, 1000, 2000] as const;
 /** Per-category ladders. sports/political/food/arts/nature are DRAFTS for Ryan to rename. */
 export const CAT_LADDERS: Readonly<Record<TriviaCat, readonly [string, string, string]>> = {
   celebrity: ["Fan Club", "Paparazzo", "Media Lover"],
+  music: ["Air Guitarist", "Roadie", "Headliner"],
   history: ["Time Tourist", "Time Traveler", "Living Legend"],
   science: ["Lab Rat", "Mad Scientist", "Big Brain"],
   math: ["Number Cruncher", "Human Calculator", "Mathlete Supreme"],
