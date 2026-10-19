@@ -7,6 +7,7 @@ import { GameMap } from "./GameMap";
 import { RideScreen } from "./RideScreen";
 import { DyeSync } from "./DyeSync";
 import { WardrobeSync } from "./WardrobeSync";
+import { WornScoutSync } from "./WornScoutSync";
 import { WalletSync } from "./WalletSync";
 
 export function KeylineApp() {
@@ -15,6 +16,7 @@ export function KeylineApp() {
   return (
     <>
       <WardrobeSync />
+      <WornScoutSync />
       <WalletSync />
       <DyeSync />
       <LevelSync />
