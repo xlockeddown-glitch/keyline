@@ -148,7 +148,6 @@ export const PLUS_FOOD_20261019: TriviaQ[] = [
   q("Vanilla comes from the pods of a kind of…", ["palm", "orchid", "bean plant", "lily"], "orchid", 3),
   q("The taste called umami was first named by a scientist from…", ["China", "Japan", "Korea", "France"], "Japan", 3),
   q("Nachos are topped most often with melted…", ["butter", "cheese", "chocolate", "marshmallow"], "cheese", 1),
-  q("Which fruit is used to make guava jelly?", ["guava", "grape", "apple", "plum"], "guava", 1),
   q("Sauerkraut is made from…", ["cucumbers", "cabbage", "onions", "carrots"], "cabbage", 1),
   q("Pickles are most often made from…", ["zucchini", "cucumbers", "peppers", "beans"], "cucumbers", 1),
   q("Ketchup is made mostly from…", ["red peppers", "tomatoes", "beets", "strawberries"], "tomatoes", 1),
