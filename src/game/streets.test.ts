@@ -5,6 +5,7 @@ import {
   canCutBuildings,
   clearCorner,
   curbAfterCab,
+  roadsInCircle,
   pullToStreet,
   startReach,
   createGraph,
@@ -152,4 +153,19 @@ test("0.1.2: leaving a cab lands on the main walk, not a nearby island (stuck by
   // Without a reach it still prefers the bigger walk nearby.
   const loose = curbAfterCab(g, out, null);
   assert.ok(distM(loose.lat, loose.lng, west.lat, west.lng) < 25);
+});
+
+test("0.1.6: the market lights only road inside its circle, clipped at the edge", () => {
+  const o = { lat: 30.27, lng: -97.74 };
+  const g = createGraph(o.lat, o.lng);
+  // A long east-west street through the centre, one road wholly outside the circle.
+  ingestLine(g, [dest(o.lat, o.lng, 0, -500), dest(o.lat, o.lng, 0, 500)]);
+  ingestLine(g, [dest(o.lat, o.lng, 400, -100), dest(o.lat, o.lng, 400, 100)]);
+  const lit = roadsInCircle(g, { ...o, r: 150 });
+  let total = 0;
+  for (const [a, b] of lit) {
+    assert.ok(distM(a[0], a[1], o.lat, o.lng) <= 151 && distM(b[0], b[1], o.lat, o.lng) <= 151, "inside the circle");
+    total += distM(a[0], a[1], b[0], b[1]);
+  }
+  assert.ok(Math.abs(total - 300) < 3, `about 300 m of road lit, got ${total}`);
 });

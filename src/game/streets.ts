@@ -1581,3 +1581,28 @@ export function pointAlongPath(path: Pt[], meters: number): Pt {
   }
   return path[path.length - 1]!;
 }
+
+/**
+ * 0.1.6: every road piece inside a circle, clipped at its edge, as [lat, lng] pairs for one Leaflet polyline.
+ * The night market lights these so it reads as one zone (it used to glow along a single street past the circle).
+ */
+export function roadsInCircle(g: StreetGraph, c: { lat: number; lng: number; r: number }): [number, number][][] {
+  const ky = 111_320, kx = metersPerDegLng(c.lat);
+  const out: [number, number][][] = [];
+  const back = (x: number, y: number): [number, number] => [c.lat + y / ky, c.lng + x / kx];
+  for (const s of g.segs) {
+    const A = g.nodes[s.a]!, B = g.nodes[s.b]!;
+    const ax = (A.lng - c.lng) * kx, ay = (A.lat - c.lat) * ky, bx = (B.lng - c.lng) * kx, by = (B.lat - c.lat) * ky;
+    const dx = bx - ax, dy = by - ay;
+    const qa = dx * dx + dy * dy;
+    if (qa === 0) continue;
+    const qb = 2 * (ax * dx + ay * dy), qc = ax * ax + ay * ay - c.r * c.r;
+    const disc = qb * qb - 4 * qa * qc;
+    if (disc <= 0) continue;
+    const sq = Math.sqrt(disc);
+    const t0 = Math.max(0, (-qb - sq) / (2 * qa)), t1 = Math.min(1, (-qb + sq) / (2 * qa));
+    if (t1 <= t0) continue;
+    out.push([back(ax + dx * t0, ay + dy * t0), back(ax + dx * t1, ay + dy * t1)]);
+  }
+  return out;
+}

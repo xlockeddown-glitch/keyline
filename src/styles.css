@@ -4158,3 +4158,8 @@ h3 {
   .sky-clouds, .sky-rain, .sky-snow, .sky-fog, .sky-flash { animation: none; }
   .sky-flash { display: none; }
 }
+
+/* 0.1.6: the market is just its circle; every road inside it is lit (GameMap clips them to the circle). */
+.market-roads { stroke: var(--mlight, #ff8a4c); filter: drop-shadow(0 0 4px var(--mlight, #ff8a4c)); pointer-events: none; animation: market-breathe 2.6s ease-in-out infinite; }
+.leaflet-container[data-market-light="rainbow"] .market-roads { animation: market-rainbow 6s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .market-roads, .leaflet-container[data-market-light="rainbow"] .market-roads { animation: none; stroke-opacity: 0.55; } }

@@ -14,6 +14,7 @@ import {
   bindWalkGraph,
   snapReachable,
   curbAfterCab,
+  roadsInCircle,
   quietDrop,
   walkableTarget,
   walkReach,
@@ -676,7 +677,7 @@ export function GameMap() {
     marketKey.current = "";
   }
 
-  /** Night market: a warm glow along the market street and a ×2 lantern sign at its middle. Repaints on the hour. */
+  /** Night market: a glowing circle, its roads lit, and a ×2 lantern sign at its centre. Repaints each market and when streets load. */
   function paintMarket() {
     const L = Lref.current;
     const map = mapRef.current;
@@ -684,7 +685,7 @@ export function GameMap() {
     const cid = useGame.getState().cityId;
     const now = Date.now();
     const m = marketAt(cid, now);
-    const key = m ? `${cid}|${m.hour}` : "";
+    const key = m ? `${cid}|${m.hour}|${graphRef.current?.segs.length ?? 0}` : "";
     const sign = marketLayers.current.find((l): l is Marker => l instanceof L.Marker);
     if (marketKey.current === key) {
       const el = sign?.getElement()?.querySelector(".market-pin-left");
@@ -694,15 +695,12 @@ export function GameMap() {
     clearMarket();
     if (!m) return;
     marketKey.current = key;
-    const lines = m.street.lines.map((ln) => {
-      const pts: [number, number][] = [];
-      for (let i = 0; i + 1 < ln.length; i += 2) pts.push([ln[i]!, ln[i + 1]!]);
-      return pts;
-    });
+    // 0.1.6: the market is just the circle. Every road inside it glows (clipped at the edge); the old dotted line
+    // along one street, running past the circle, is gone. One polyline, no events, so it is cheap and never takes a tap.
+    const roads = graphRef.current ? roadsInCircle(graphRef.current, m.zone) : [];
     // 0.1.00: the market is a zone round a square; a soft glowing edge, every lamp inside counts.
     const zone = L.circle([m.zone.lat, m.zone.lng], { radius: m.zone.r, className: "market-zone", interactive: false, weight: 3, fillOpacity: 0.08 }).addTo(map);
-    const glow = L.polyline(lines, { weight: 18, opacity: 0.5, className: "market-glow", interactive: false, lineCap: "round", lineJoin: "round" }).addTo(map);
-    const core = L.polyline(lines, { weight: 4, opacity: 0.95, className: "market-line", interactive: false, dashArray: "1 10", lineCap: "round" }).addTo(map);
+    const glow = L.polyline(roads, { weight: 9, opacity: 0.55, className: "market-roads", interactive: false, lineCap: "round", lineJoin: "round" }).addTo(map);
     const at = { lat: m.zone.lat, lng: m.zone.lng };
     void marketAnchor;
     const safe = m.street.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
@@ -717,7 +715,7 @@ export function GameMap() {
       keyboard: false,
       zIndexOffset: 650,
     }).addTo(map);
-    marketLayers.current = [zone, glow, core, pin];
+    marketLayers.current = [zone, glow, pin];
     fitMarketSign();
   }
 
