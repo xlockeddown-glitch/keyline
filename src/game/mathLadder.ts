@@ -117,6 +117,11 @@ export function mathTier(s: Shape): Tier | "trim" {
   const n = s.nums.length;
   const addSub = s.ops.every((o) => o === "+" || o === "−");
   const big = Math.max(...s.nums);
+  // A bare square is a times-table fact: up to 10² green, 11²-15² red, 16²-25² violet (only with work to do is a square violet otherwise).
+  if (n === 1 && s.ops.length === 0 && s.pow.length === 1 && s.pow[0] === 2 && !s.parens) {
+    const b = s.nums[0]!;
+    return b <= 10 ? "green" : b <= 15 ? "red" : b <= 25 ? "violet" : "trim";
+  }
   if (s.parens || s.pow.length) {
     if (s.pow.some((e) => e > 3) && !(s.nums[0] === 2 && s.pow.every((e) => e <= 10))) return "trim";
     if (s.pow.includes(2) && s.nums.some((x, k) => s.pow.length && x > 25 && k === 0)) return "trim";
@@ -219,7 +224,7 @@ export function genPrompt(tier: Tier, r: () => number): string {
     }
     default: {
       const k = r();
-      if (k < 0.35) return `What is ${int(r, 11, 25)}²?`;
+      if (k < 0.35) return `What is ${int(r, 16, 25)}²?`;
       if (k < 0.7) return `What is (${int(r, 6, 20)} + ${int(r, 3, 15)}) × ${int(r, 3, 9)}?`;
       return `What is ${int(r, 4, 12)}² − ${int(r, 2, 9)} × ${int(r, 3, 9)}?`;
     }

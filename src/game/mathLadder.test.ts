@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { MATH_LADDER, generateFor, ladderCard, mathShape, mathTier, type Shape } from "./mathLadder.ts";
 import type { Tier } from "./types";
 
+const bareSq = (s: Shape) => s.nums.length === 1 && s.ops.length === 0 && s.pow.length === 1 && s.pow[0] === 2;
+
 /** Independent bounds per tier: the operands and operations each colour may use. */
 function fits(t: Tier, s: Shape): boolean {
   const n = s.nums, ops = s.ops, big = Math.max(...n);
@@ -11,10 +13,10 @@ function fits(t: Tier, s: Shape): boolean {
   switch (t) {
     case "white": return addSub && n.length === 2 && big <= 20 && s.value <= 20 && !s.pct || (ops[0] === "×" && Math.min(...n) <= 1 && s.value <= 20);
     case "blue": return !s.pct && !s.parens && !s.pow.length && ((addSub && n.length <= 3 && big <= 999) || (ops[0] === "×" && Math.min(...n) <= 1));
-    case "green": return !s.pct && !s.parens && ((ops.length === 1 && ops[0] === "×" && big <= 12) || (ops.length === 1 && ops[0] === "÷" && n[1]! <= 12 && s.value <= 12) || (addSub && n.length <= 4 && big <= 99) || (ops.every((o) => o === "×") && big <= 12));
+    case "green": return !s.pct && !s.parens && ((bareSq(s) && n[0]! <= 10) || (ops.length === 1 && ops[0] === "×" && big <= 12) || (ops.length === 1 && ops[0] === "÷" && n[1]! <= 12 && s.value <= 12) || (addSub && n.length <= 4 && big <= 99) || (ops.every((o) => o === "×") && big <= 12));
     case "amber": return !s.pct && !s.parens && !s.pow.length && n.length <= 3 && big <= 999 && (ops.includes("×") || ops.includes("÷")) && (ops[0] !== "×" || n.length > 2 || Math.min(...n) <= 9);
-    case "red": return !s.parens && !s.pow.length && (!!s.pct || n.length <= 6) && (s.pct ? [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90].includes(s.pct.p) : big <= 999);
-    case "violet": return (s.parens || s.pow.length > 0) && n.length <= 5 && big <= 100;
+    case "red": return (bareSq(s) && n[0]! >= 11 && n[0]! <= 15) || !s.parens && !s.pow.length && (!!s.pct || n.length <= 6) && (s.pct ? [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90].includes(s.pct.p) : big <= 999);
+    case "violet": return bareSq(s) ? n[0]! >= 16 && n[0]! <= 25 : (s.parens || s.pow.length > 0) && n.length <= 5 && big <= 100;
   }
 }
 
@@ -51,6 +53,12 @@ test("examples land where Ryan set them", () => {
   assert.equal(tier("15% of 240 is…"), "red");
   assert.equal(tier("What is (6 + 14) × 3?"), "violet");
   assert.equal(tier("What is 18²?"), "violet");
+  for (let b = 2; b <= 10; b++) {
+    assert.equal(tier(`What is ${b}²?`), "green", `${b}² is times-table level`);
+    assert.equal(fits("violet", mathShape(`What is ${b}²?`)!), false, `a bare ${b}² on violet must fail`);
+  }
+  for (let b = 11; b <= 15; b++) assert.equal(tier(`What is ${b}²?`), "red");
+  assert.equal(tier("What is 8² − 9 × 5?"), "violet", "multi-step with a square stays violet");
   assert.equal(tier("What is 2.5 × 4?"), "trim", "no decimals");
   assert.equal(tier("12% of 50 is…"), "trim", "only clean percents");
   assert.equal(tier("What is 3^5?"), "trim");
