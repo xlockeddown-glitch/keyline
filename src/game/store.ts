@@ -12,6 +12,7 @@ import { commitWallet, streetPlayer, tokenNonce, walletLive } from "./walletClie
 import { SEED, parseStreetId, takeStreetSpot } from "./streetSpots";
 import { poiName, takeSurvey } from "./survey";
 import { migratePoiIds } from "./retired";
+import { adoptScout, savedScout } from "./scoutMemory";
 import { sfx } from "./audio";
 import { legacyDailyPaid, markDailyPaid, payDaily } from "./dailyRun";
 import { markFriendPaid, payFriend } from "./friendTicket";
@@ -2951,7 +2952,14 @@ if (typeof window !== "undefined") {
       patch.points = pocket.points;
       patch.cities = pocket.cities;
     }
-    if (patch.keys || patch.points != null || patch.cities) useGame.setState(patch);
+    // 0.1.6: and the scout it put on, so this tab doesn't write the old one back (Beth B.'s Corgi kept coming off).
+    const worn = savedScout(e.newValue, (x) => x in SCOUTS);
+    const scoutPatch = worn ? adoptScout(cur, worn) : null;
+    if (scoutPatch) {
+      patch.scout = scoutPatch.scout as ScoutId;
+      patch.scouts = scoutPatch.scouts as ScoutId[];
+    }
+    if (patch.keys || patch.points != null || patch.cities || patch.scout) useGame.setState(patch);
     // 0.0.58: and the cards it was dealt, so this tab doesn't deal them again.
     const seen = savedSeen(e.newValue);
     if (!seen) return;
