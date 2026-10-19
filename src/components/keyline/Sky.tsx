@@ -84,22 +84,9 @@ function moonPath(p: number): { d: string; flip: boolean } {
 export function SkyLayer() {
   const v = useSky();
   if (!v.on) return null;
-  // Under the HUD plate on a phone the top of the map is covered, so the arc rides 31–42% down.
-  const x = 10 + v.arc * 80;
-  const y = 42 - Math.sin(v.arc * Math.PI) * 11;
-  const veiled = v.weather !== "clear";
-  const m = moonPath(v.moon);
   return (
     <div className={`sky-layer is-${v.phase} is-${v.weather}`} data-testid="sky" data-phase={v.phase} data-weather={v.weather} aria-hidden>
       <div className="sky-tint" />
-      {v.isDay ? (
-        <span className={`sky-sun ${veiled ? "is-veiled" : ""}`} style={{ left: `${x}%`, top: `${y}%` }} />
-      ) : (
-        <svg className={`sky-moon ${veiled ? "is-veiled" : ""}`} style={{ left: `${x}%`, top: `${y}%` }} viewBox="-1.1 -1.1 2.2 2.2" data-moon={moonName(v.moon)}>
-          <circle r="1" className="sky-moon-dark" />
-          <path d={m.d} className="sky-moon-lit" transform={m.flip ? "scale(-1,1)" : undefined} />
-        </svg>
-      )}
       {v.weather === "cloudy" || v.weather === "storm" || v.weather === "rain" ? <div className="sky-clouds" /> : null}
       {v.weather === "rain" || v.weather === "storm" ? <div className="sky-rain" /> : null}
       {v.weather === "snow" ? <div className="sky-snow" /> : null}
@@ -109,12 +96,25 @@ export function SkyLayer() {
   );
 }
 
+/** 0.1.6: the sun or today's moon as a small, soft glyph in the HUD line, so it never sits on map content. */
+function SkyGlyph({ v }: { v: SkyView }) {
+  if (v.weather !== "clear") return <span aria-hidden>{WEATHER_ICON[v.weather]}</span>;
+  if (v.isDay) return <span className="sky-glyph sky-sun" aria-hidden data-testid="sky-sun" />;
+  const m = moonPath(v.moon);
+  return (
+    <svg className="sky-glyph sky-moon" viewBox="-1.1 -1.1 2.2 2.2" aria-hidden data-testid="sky-moon" data-moon={moonName(v.moon)}>
+      <circle r="1" className="sky-moon-dark" />
+      <path d={m.d} className="sky-moon-lit" transform={m.flip ? "scale(-1,1)" : undefined} />
+    </svg>
+  );
+}
+
 /** HUD line: the city's weather and its own local time. */
 export function SkyChip() {
   const v = useSky();
   return (
     <p className="sky-chip mt-1 truncate text-xs text-fg-muted" data-testid="sky-chip">
-      <span aria-hidden>{v.isDay || v.weather !== "clear" ? WEATHER_ICON[v.weather] : "☾"}</span> {WEATHER_LABEL[v.weather]}
+      <SkyGlyph v={v} /> {WEATHER_LABEL[v.weather]}
       {v.tempF != null ? ` · ${v.tempF}°F` : ""} · {v.clock} here
     </p>
   );

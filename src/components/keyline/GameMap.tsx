@@ -700,7 +700,7 @@ export function GameMap() {
     const roads = graphRef.current ? roadsInCircle(graphRef.current, m.zone) : [];
     // 0.1.00: the market is a zone round a square; a soft glowing edge, every lamp inside counts.
     const zone = L.circle([m.zone.lat, m.zone.lng], { radius: m.zone.r, className: "market-zone", interactive: false, weight: 3, fillOpacity: 0.08 }).addTo(map);
-    const glow = L.polyline(roads, { weight: 9, opacity: 0.55, className: "market-roads", interactive: false, lineCap: "round", lineJoin: "round" }).addTo(map);
+    const glow = L.polyline(roads, { weight: 2.5, opacity: 0.6, className: "market-roads", interactive: false, lineCap: "round", lineJoin: "round" }).addTo(map);
     const at = { lat: m.zone.lat, lng: m.zone.lng };
     void marketAnchor;
     const safe = m.street.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
@@ -1009,6 +1009,7 @@ export function GameMap() {
         placeOnStreet(g, dock.lat, dock.lng, true);
         snapKeys(g);
         setStreets("ready");
+        paintMarket(); // 0.1.6: the lit roads need the street graph
         const L = Lref.current;
         const m = mapRef.current;
         if (L && m) rebuildPins(L, m);
@@ -1971,6 +1972,7 @@ export function GameMap() {
         placeOnStreet(g, pos.current.lat, pos.current.lng);
         snapKeys(g);
         setStreets("ready");
+        paintMarket(); // 0.1.6: the lit roads need the street graph
         void fillSurroundings(g, city.spawn.lat, city.spawn.lng, city.pois, abort.signal).then(() => {
           snapKeys(g);
           fillWardLamps(g);
