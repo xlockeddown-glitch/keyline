@@ -37,7 +37,7 @@ import type {
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
-import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, streakLine, streakPrize, type GoalDay, type GoalKind } from "./goals";
+import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
@@ -383,7 +383,7 @@ export type GameState = {
   dropRideRound: () => void;
 };
 
-export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" | "level" | "print" };
+export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" | "level" | "print" | "perfect"; cheer?: Cheer | null };
 /** 0.0.95: show the match-reward pop (also sets a plain toast for screen readers / old paths). */
 /** 0.0.99: pops that arrive while one is showing wait their turn instead of replacing it. */
 const popQueue: MatchPop[] = [];
@@ -1510,7 +1510,7 @@ export const useGame = create<GameState>((set, get) => ({
           openVault: null,
           loot: null,
           miss: { answer: out.reveal, fact: out.fact },
-          toast: "The spark dies.",
+          toast: "Not quite. The lamp goes dark for now.",
           quests: answered(get, false, false),
         });
         scheduleSave(get);
@@ -1922,6 +1922,9 @@ export const useGame = create<GameState>((set, get) => ({
     }
     if (grade === "perfect") sfx.perfect();
     else sfx.correct();
+    if (grade === "perfect" && poi.tier === "violet") {
+      popMatch({ kind: "perfect", big: "Perfect on violet!", sub: "The hardest lamp, answered fast. Well done!", tiers: [], coin: 0, cheer: "violet" });
+    }
     const spun = foldWheel(get, poi.tier);
     const wornCloth = get().quests.worn;
     const clothLine = tip > 0 && wornCloth ? `${clothName(wornCloth)} +${tip}.` : null;
@@ -1978,7 +1981,7 @@ export const useGame = create<GameState>((set, get) => ({
       set({
         openVault: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
-        toast: `Walked from ${series.name}. The match is spent.`,
+        toast: `You walked away from ${series.name}, so that match is used up.`,
         ...missStreak(get),
       });
       scheduleSave(get);
@@ -2114,12 +2117,12 @@ export const useGame = create<GameState>((set, get) => ({
     if (!spec) return;
     const next = applyBank(get().keys, spec, matchCap);
     if (!next) {
-      set({ toast: "The bank won't take that pocket." });
+      set({ toast: "You don't have enough of that colour to trade." });
       window.setTimeout(() => set({ toast: null }), 1600);
       return;
     }
     sfx.pickup();
-    set({ keys: next, toast: `Four ${TIER_LABEL[spec.pay]} for one ${TIER_LABEL[spec.get]}. Tax paid.` });
+    set({ keys: next, toast: `Traded 4 ${TIER_LABEL[spec.pay]} for 1 ${TIER_LABEL[spec.get]}.` });
     pushOp({ kind: "bank", dir: "up", tier });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 2000);
@@ -2134,7 +2137,7 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     sfx.pickup();
-    set({ keys: next, toast: `One ${TIER_LABEL[spec.pay]} for three ${TIER_LABEL[spec.get]}. No tax.` });
+    set({ keys: next, toast: `Traded 1 ${TIER_LABEL[spec.pay]} for 3 ${TIER_LABEL[spec.get]}.` });
     pushOp({ kind: "bank", dir: "down", tier });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 2000);
@@ -2981,7 +2984,7 @@ if (typeof window !== "undefined") {
           useGame.setState({ keys: p.keys, points: s.points + p.coin });
         }
         const run = s.streak;
-        window.setTimeout(() => popMatch({ kind: "streak", big: `${run} in a row!`, sub: streakLine(run, tier).replace(/^\d+ in a row! /, ""), tiers: [tier], coin: 0 }), 900);
+        window.setTimeout(() => popMatch({ kind: "streak", big: `${run} in a row!`, sub: streakSub(tier), tiers: [tier], coin: 0, cheer: cheerFor(run) }), 900);
       }
     }
   });

@@ -123,12 +123,12 @@ export function paintFromClears(clears: number, paintIn: number): string | null 
 }
 
 export const PAY_NOTES = [
-  "Coins run from a slow answer to a perfect one, on an ordinary question. No streak, no night market. An easy question pays about 70% of that. A hard one pays about 45% more. A streak can add up to 40%.",
-  "You spend one match of this colour to ask the lamp. A perfect answer is 1 in 10 for an extra blue match. With the Lucky charm on, about 1 in 7 lamps also drop a match of their own colour.",
+  "These coin amounts are for a normal question. Easy questions pay about 70% of that. Hard questions pay about 45% more. Answering several right in a row adds up to 40% more.",
+  "Opening a lamp uses one match of its colour. A very fast right answer has a 1 in 10 chance of a free blue match. With the Lucky charm on, about 1 in 7 lamps also give back a match of their colour.",
   `Paint is that lamp's colour. Prism is separate: any lamp, about 1 in ${ULTRA_DROP_IN.toLocaleString()}, and it can land with the colour can.`,
   "Green and up drop this city's press stock every time. Amber and up, at a named ward, drop that ward's cut instead.",
-  "Ink is 1, or 2 at a museum, library, or theatre. A park or a campus drops 2 vellum. Other lamps drop 1 vellum about 2 in 5 times. The brass range is an ordinary question, then a hard one.",
-  "The Run and The Stack pay their own match and more brass. A night market doubles the coin and any bonus match. It does not double paint, brass, ink, or stock.",
+  "Ink is 1, or 2 at a museum, library, or theatre. A park or a campus drops 2 vellum. Other lamps drop 1 vellum about 2 in 5 times. Brass shows two numbers: what a normal question gives, then what a hard one gives.",
+  "The Run and The Stack give a match and extra brass. Lamps inside a night market pay double coin and double bonus matches (not paint, brass, ink or stock).",
 ] as const;
 
 /** Ladder check used by the guide test: a perfect ordinary clear is the tier's coin value. */

@@ -4099,3 +4099,22 @@ h3 {
 .ride-hurry { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; } .ride-hurry button { font-size: 0.8rem; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--color-border); } .ride-hurry button:disabled { opacity: .5; } .ride-hurry-note { flex-basis: 100%; font-size: 0.72rem; opacity: .7; margin: 0; }
 /* 0.1.2: the market line now folds to a small chip; keep the status plate at its readable width. */
 [data-testid="hud-status"] { min-width: min(200px, calc(100vw - 32px)); }
+
+/* 0.1.3 celebrations: the player's scout cheers above the pop. hop (5 in a row), jump + spin (10), party with confetti (25, 50…), violet perfect. ~1.6 s, CSS only. */
+.mp-cheer { position: absolute; top: -5.2rem; left: 50%; width: 5rem; height: 5rem; margin-left: -2.5rem; pointer-events: none; }
+.mp-cheer-body { position: absolute; inset: 0; display: grid; place-items: center; transform-origin: 50% 100%; }
+.mp-cheer .scout-marker { width: 5rem; height: 5rem; position: static; }
+.mp-cheer.is-hop .mp-cheer-body { animation: cheer-hop 520ms ease-out 2 both; }
+.mp-cheer.is-jump .mp-cheer-body { animation: cheer-jump 1.4s cubic-bezier(.3,.7,.4,1) both; }
+.mp-cheer.is-party .mp-cheer-body, .mp-cheer.is-violet .mp-cheer-body { animation: cheer-party 1.6s ease-in-out both; }
+.mp-cheer.is-violet .mp-cheer-body { filter: drop-shadow(0 0 14px #b67cff); }
+.mp-confetti { position: absolute; left: 50%; top: 45%; width: 7px; height: 11px; border-radius: 2px; background: hsl(calc(var(--a) * 1) 90% 62%); opacity: 0; animation: cheer-confetti 1.3s ease-out var(--d) both; }
+.mp-cheer.is-violet .mp-confetti { background: hsl(calc(270deg + var(--a) / 8) 90% 70%); }
+@keyframes cheer-hop { 0%, 100% { transform: none; } 40% { transform: translateY(-22px) scaleY(1.05); } 80% { transform: translateY(0) scale(1.08, 0.92); } }
+@keyframes cheer-jump { 0% { transform: none; } 15% { transform: scale(1.1, 0.88); } 45% { transform: translateY(-36px) rotate(180deg); } 75% { transform: translateY(0) rotate(360deg) scale(1.1, 0.9); } 100% { transform: rotate(360deg); } }
+@keyframes cheer-party { 0% { transform: none; } 12% { transform: translateY(-26px) rotate(-12deg); } 25% { transform: none; } 37% { transform: translateY(-30px) rotate(12deg); } 50% { transform: none; } 70% { transform: translateY(-40px) rotate(360deg) scale(1.15); } 90%, 100% { transform: rotate(360deg); } }
+@keyframes cheer-confetti { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-90px) rotate(240deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .mp-cheer-body { animation: none !important; }
+  .mp-confetti { animation: none; opacity: 0.85; transform: rotate(var(--a)) translateY(-56px); }
+}

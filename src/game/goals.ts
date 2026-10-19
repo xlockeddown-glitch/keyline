@@ -15,6 +15,21 @@ export function streakPrize(run: number): Tier | null {
   return null;
 }
 
+/** 0.1.3 celebrations: the scout cheers at these streaks (then every 25). Bigger streak, bigger cheer. */
+export const CHEER_STREAKS = [5, 10, 25] as const;
+export type Cheer = "hop" | "jump" | "party" | "violet";
+export function cheerFor(run: number): Cheer | null {
+  if (!Number.isInteger(run) || run < 5) return null;
+  if (run === 5) return "hop";
+  if (run === 10) return "jump";
+  return run % 25 === 0 ? "party" : null;
+}
+
+/** The plain line under a streak pop: what you won and what it is for. */
+export function streakSub(tier: Tier): string {
+  return `You won a ${tier} match. Use it on a ${tier} lamp.`;
+}
+
 export function streakLine(run: number, tier: Tier): string {
   return `${run} in a row! A ${tier} match.`;
 }

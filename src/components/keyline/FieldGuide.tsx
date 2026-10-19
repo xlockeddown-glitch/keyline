@@ -45,7 +45,7 @@ export function FieldGuide() {
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <p className="text-sm text-pretty text-fg-muted">
-            A right answer on an ordinary question. Slow is over 10 seconds. Perfect is under 3. The bar is that coin band, drawn so a violet lamp can sit next to a white one.
+            Answer right to earn coin. Answer in under 3 seconds for the most coin. Taking over 10 seconds pays the least. Each bar shows a lamp's coin, so you can compare colours.
           </p>
           <ul className="mt-3 grid gap-2">
             {rows.map((row) => {
@@ -55,7 +55,7 @@ export function FieldGuide() {
                 <div className="flex items-center gap-2">
                   <ItemIcon item={row.tier} size={28} />
                   <p className="min-w-0 flex-1 font-display text-lg leading-tight">{TIER_LABEL[row.tier]}</p>
-                  <p className="shrink-0 text-xs text-fg-subtle">Recast {row.recast}</p>
+                  <p className="shrink-0 text-xs text-fg-subtle">Lights again in {row.recast}</p>
                 </div>
                 <p className="mt-1 text-sm tabular-nums">
                   {row.slow.toLocaleString()}–{row.perfect.toLocaleString()} coin
@@ -94,9 +94,9 @@ export function FieldGuide() {
             <ul className="badge-help mt-2 grid gap-1.5 text-sm">
               <li><span className="emb-badge is-market">🏮 ×2</span><span>Night market: everything on its street pays ×N.</span></li>
               <li><span className="emb-badge is-streak">🔥 5</span><span>Answer streak: right answers in a row (5 pays a white, 10 a blue).</span></li>
-              <li><span className="emb-badge is-boost">⚡2</span><span>Boosts applied (charm, ride reward, scout ability). Tap it to see which.</span></li>
+              <li><span className="emb-badge is-boost">⚡2</span><span>Extra rewards you got from a charm, a ride or your scout. Tap to see which.</span></li>
               <li><span className="badge-ico"><ItemIcon item="blue" size={22} /><b>↺</b></span><span>Perfect score: your match comes back.</span></li>
-              <li><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>Pockets hold 30 of each colour. Extras on a full pocket count toward the next colour: 3 extras merge into 1 match of the next colour (white→blue→green→amber→red→violet). The pocket shows “2/3” while it fills.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>You can carry 30 matches of each colour. When you have 30, every 3 more turn into 1 match of the next colour (white→blue→green→amber→red→violet). “2/3” means you need one more.</span></li>
               <li><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Violet pocket full: extra violets pay coin instead.</span></li>
               <li><span className="badge-ico"><ItemIcon item="coin" size={20} /><ItemIcon item="white" size={20} /><ItemIcon item="brass" size={20} /><b>+N</b></span><span>Items earned: coin, matches, brass, ink, vellum, schematic, ingredient, paint.</span></li>
             </ul>

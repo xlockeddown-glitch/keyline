@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.2";
+export const APP_VERSION = "0.1.3";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k102a";
+export const PUBLISH_STAMP = "k103a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -107,3 +107,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.1: lantern-skin previews in the Journal and the shop each show their own metal again (they all showed the skin you were wearing) (k101a).
 // 0.1.2: night markets become a zone (2-4 blocks round a square or park by the market street, soft glowing edge; every lamp inside counts; zones grow to 5 lamps and never pick a market under 3 where a city has 3+ that clear it); the map sign shrinks as you zoom in and fades inside the zone; the HUD line folds to a 🏮 chip after 5 s (tap to unfold); market lights bought with coin in order (jade 2,500, rose 5,000, violet 9,000, ice 15,000, rainbow 25,000) raise market coin ×2.0→×2.5 (matches stay ×2), Owl stacks, combined cap ×3, server-checked; the chosen colour lights the market (k102a).
 // 0.1.2: night markets run 10 minutes open, 5 dark, then reopen at a new zone (every city has at least 2 zones, kept 500 m apart); the HUD chip counts down "×2 · m:ss" while open and "next market in m:ss · near …" while dark; market lights ladder (amber free, jade 15,000, rose 30,000, violet 60,000, ice 105,000, rainbow 180,000 coin; ×2.0 → ×2.5 market coin, Owl stacks, cap ×3); rides cap at 5 minutes (distance line, pay base, long-haul blue and game bands scaled by 5/8, so a ride pays as before); Hurry up skips ride time for 25 coin a minute down to a 30 s minimum, checked and charged on the server, keeping seat pay but losing the game bonus for the skipped part; leaving a cab now always lands on the main walk (no more stranded spots) (k102a).
+// 0.1.3: plain-language pass on Help, pop-ups, toasts and the miss card (short words: what to do and why; no mechanics change); scout celebrations on the pop queue — hop at 5 in a row, jump + spin at 10, party with confetti at 25 and every 25 after, and a violet party for a perfect on a violet lamp (CSS, ~1.6 s, still pose with reduced motion) (k103a).

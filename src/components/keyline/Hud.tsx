@@ -124,7 +124,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       else cue = `${formatDist(hud.nearestDist)} · ${seriesNear.kicker}`;
     } else if (recasting) {
       const left = (vaults[nearest.id]?.coolUntil ?? 0) - Date.now();
-      cue = left > 45 * 60_000 ? `Dark for ${formatCool(left)}` : "Recasting — come back later";
+      cue = left > 45 * 60_000 ? `Dark for ${formatCool(left)}` : "Resting. Come back soon to try it again.";
     } else if (inReach && !haveKey) {
       cue = canSpark
         ? `Strike a spark · E — earn a ${TIER_LABEL[nearest.tier]} match`

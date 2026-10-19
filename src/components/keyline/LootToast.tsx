@@ -1,3 +1,4 @@
+import { visibleCoat } from "@/game/paint";
 import { PERFECT_REFUND_LINE } from "@/game/perfectRefund";
 import { useEffect, useState } from "react";
 import { useGame } from "@/game/store";
@@ -55,9 +56,9 @@ export function LootToast() {
               <LootEmblems loot={loot} streak={streak} />
             ) : (
               <>
-                <p className="kicker">Spent</p>
-                <p className="font-display mt-1 text-3xl leading-none">Miss</p>
-                <p className="mt-3 text-sm text-fg-muted">The match is spent. The trivia card read:</p>
+                <p className="kicker">Wrong answer</p>
+                <p className="font-display mt-1 text-3xl leading-none">Not quite</p>
+                <p className="mt-3 text-sm text-fg-muted">Not this time (the match is used up). The right answer was:</p>
                 <p className="mt-1 text-base font-medium text-pretty">{miss!.answer}</p>
                 {miss!.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{miss!.fact}</p> : null}
               </>
@@ -109,7 +110,8 @@ function MatchPopView({ pop }: { pop: import("@/game/store").MatchPop }) {
             <i key={i} style={{ "--a": `${i * 30}deg` } as React.CSSProperties} />
           ))}
         </span>
-        <span className="mp-flame" aria-hidden>{pop.kind === "level" ? "⭐" : pop.kind === "print" ? "🧵" : pop.kind === "streak" ? "🔥" : "🎉"}</span>
+        {pop.cheer ? <Cheerer cheer={pop.cheer} /> : null}
+        <span className="mp-flame" aria-hidden>{pop.kind === "level" ? "⭐" : pop.kind === "print" ? "🧵" : pop.kind === "streak" ? "🔥" : pop.kind === "perfect" ? "💜" : "🎉"}</span>
         <p className="mp-big font-display">{pop.big}</p>
         <span
           className="mp-emblems"
@@ -130,6 +132,22 @@ function MatchPopView({ pop }: { pop: import("@/game/store").MatchPop }) {
         <p className="mp-sub text-sm">{pop.sub}</p>
       </button>
     </div>
+  );
+}
+
+/** 0.1.3: the player's own scout cheers on top of the pop (CSS only, about 1.6 s; a still pose with reduced motion). */
+function Cheerer({ cheer }: { cheer: NonNullable<import("@/game/store").MatchPop["cheer"]> }) {
+  const scout = useGame((s) => s.scout);
+  const coat = useGame((s) => s.printWorn ?? visibleCoat(s.paints.wornCoat, s.wardrobe.coat));
+  return (
+    <span className={`mp-cheer is-${cheer}`} data-testid="cheer" data-cheer={cheer} aria-hidden>
+      <span className="mp-cheer-body">
+        <span className="scout-marker is-idle" data-scout={scout} {...(coat ? { "data-coat": coat } : {})} data-row="0" data-col="0" />
+      </span>
+      {cheer === "party" || cheer === "violet"
+        ? Array.from({ length: 10 }, (_, i) => <i key={i} className="mp-confetti" style={{ "--a": `${i * 36}deg`, "--d": `${(i % 3) * 60}ms` } as React.CSSProperties} />)
+        : null}
+    </span>
   );
 }
 
