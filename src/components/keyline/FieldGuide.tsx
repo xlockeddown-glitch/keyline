@@ -59,7 +59,7 @@ export function FieldGuide() {
                 </div>
                 <p className="mt-1 text-sm tabular-nums">
                   {row.slow.toLocaleString()}–{row.perfect.toLocaleString()} coin
-                  <span className="text-fg-muted"> · paint {paintOddsLine(row.tier)}</span>
+                  <span className="text-fg-muted"> · {paintOddsLine(row.tier)} chance of paint</span>
                 </p>
                 <div className="pay-track" aria-hidden>
                   <i

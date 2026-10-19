@@ -14,25 +14,25 @@ export const MATERIALS: Record<
   brass: {
     id: "brass",
     name: "Brass",
-    blurb: "Stamped blanks from the print shop. Pays for clips, straps, and fittings.",
+    blurb: "Metal from lamps. Spend it at the outfitter shop.",
     src: "/sprites/items/brass.png",
   },
   ink: {
     id: "ink",
     name: "Ink",
-    blurb: "Carbon black in a stopper bottle. Recipes that rewrite a lamp need it.",
+    blurb: "Ink from lamps. Some shop items need it.",
     src: "/sprites/items/ink.png",
   },
   vellum: {
     id: "vellum",
     name: "Vellum",
-    blurb: "Scraped hide, dry and loud. Good for straps and field notes.",
+    blurb: "Paper from lamps. Some shop items need it.",
     src: "/sprites/items/vellum.png",
   },
   schematic: {
     id: "schematic",
     name: "Schematic",
-    blurb: "A printed working. One per charm. Rare in the higher lamps.",
+    blurb: "A rare plan from lamps. Each charm needs one.",
     src: "/sprites/items/schematic.png",
   },
 };

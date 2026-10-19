@@ -84,11 +84,11 @@ test("the ordinary band is a standard question, and the notes match easy and har
 
 test("a player's clears turn into an honest paint expectation", () => {
   assert.equal(paintFromClears(0, 2), null);
-  assert.equal(paintFromClears(298, 2), "Lit 298 · about 149 cans");
-  assert.equal(paintFromClears(68, 15), "Lit 68 · about 4.5 cans");
-  assert.equal(paintFromClears(16, 45), "Lit 16 · one can is about 1 in 3 at this count");
-  assert.equal(paintFromClears(4, 150), "Lit 4 · one can is about 1 in 38 at this count");
-  assert.equal(paintFromClears(1, 500), "Lit 1 · one can is about 1 in 500 at this count");
+  assert.equal(paintFromClears(298, 2), "You've lit 298 · that's about 149 cans of paint");
+  assert.equal(paintFromClears(68, 15), "You've lit 68 · that's about 4.5 cans of paint");
+  assert.equal(paintFromClears(16, 45), "You've lit 16 · so far, about a 1 in 3 chance of a can");
+  assert.equal(paintFromClears(4, 150), "You've lit 4 · so far, about a 1 in 38 chance of a can");
+  assert.equal(paintFromClears(1, 500), "You've lit 1 · so far, about a 1 in 500 chance of a can");
 });
 
 test("match and vellum notes stay tied to the roll", () => {

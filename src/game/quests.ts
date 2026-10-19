@@ -269,9 +269,9 @@ export function clothShelf(log: QuestLog, cityId: CityId): ClothId[] {
 }
 
 export const LONG_COPY: Record<LongId, { title: string; sub: string }> = {
-  hundred: { title: "Clean hundred", sub: "100 perfect answers. A title under the coat." },
-  unbroken: { title: "Unbroken", sub: "10 perfects in a row. Pays a schematic." },
-  walk: { title: "The long walk", sub: "10 km on foot. Road-dust cloth." },
-  violet: { title: "Night mark", sub: "Open one violet. Pays a print pattern." },
-  redbook: { title: "The Red Book", sub: "A red vault in every city. Rare cloth." },
+  hundred: { title: "Clean hundred", sub: "Give 100 perfect (very fast, right) answers. Earns a title shown under your name." },
+  unbroken: { title: "Unbroken", sub: "Give 10 perfect answers in a row. Earns a schematic." },
+  walk: { title: "The long walk", sub: "Walk 10 km. Earns the Road-dust cloth." },
+  violet: { title: "Night mark", sub: "Light one violet lamp. Earns a coat pattern." },
+  redbook: { title: "The Red Book", sub: "Light a red lamp in every city. Earns a rare cloth." },
 };

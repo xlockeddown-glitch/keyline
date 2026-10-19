@@ -72,7 +72,7 @@ export function NoticeBoard() {
                 <p className="hq-row-title">{blitzReady ? "Daily Blitz" : "Daily Blitz done"}</p>
                 <p className="hq-row-sub">
                   {blitzReady
-                    ? `Six lanterns, white to violet. Coin and a match each. A miss keeps both. Full clear ${BLITZ_FULL}.`
+                    ? `Six lamps in a row, white to violet. Each right answer pays coin and a match. A wrong answer ends it, but you keep what you won. All six: ${BLITZ_FULL}.`
                     : blitzTake > 0 || blitzMatches.length > 0
                       ? `+${blitzTakeLine(blitzTake, blitzMatches)} today. The next ladder is tomorrow.`
                       : "Played today. The next ladder is tomorrow."}

@@ -5,15 +5,15 @@ import { useGame } from "@/game/store";
 const STEPS = [
   {
     title: "Move",
-    lines: ["Tap the map to walk there.", "Or use the stick, or W A S D."],
+    lines: ["Tap the map to walk there.", "Or drag the on-screen stick, or press W A S D."],
   },
   {
     title: "Lamps",
-    lines: ["Tap a glowing lamp.", "Answer the question to earn coins."],
+    lines: ["Tap a glowing lamp.", "Answer its question to earn coins. Each lamp uses one match of its colour."],
   },
   {
     title: "That's it",
-    lines: ["Follow the arrow to the Quest Board for today's goals.", "Tap Help any time."],
+    lines: ["Follow the arrow to the Quest Board to see today's goals.", "Tap Help any time."],
   },
 ] as const;
 

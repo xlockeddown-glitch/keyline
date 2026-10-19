@@ -115,11 +115,11 @@ export function paintFromClears(clears: number, paintIn: number): string | null 
   if (!Number.isFinite(clears) || clears < 1 || !Number.isFinite(paintIn) || paintIn < 1) return null;
   const n = Math.floor(clears);
   const expected = n / paintIn;
-  const lit = `Lit ${n.toLocaleString()}`;
-  if (expected >= 10) return `${lit} · about ${Math.round(expected).toLocaleString()} cans`;
-  if (expected >= 1) return `${lit} · about ${expected.toFixed(1)} cans`;
+  const lit = `You've lit ${n.toLocaleString()}`;
+  if (expected >= 10) return `${lit} · that's about ${Math.round(expected).toLocaleString()} cans of paint`;
+  if (expected >= 1) return `${lit} · that's about ${expected.toFixed(1)} cans of paint`;
   const per = Math.max(2, Math.round(paintIn / n));
-  return `${lit} · one can is about 1 in ${per.toLocaleString()} at this count`;
+  return `${lit} · so far, about a 1 in ${per.toLocaleString()} chance of a can`;
 }
 
 export const PAY_NOTES = [

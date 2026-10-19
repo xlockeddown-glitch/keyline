@@ -158,9 +158,9 @@ export function HqPanel() {
                           : p.kind === "shop"
                             ? "Look for the brass awning on the street."
                             : p.kind === "counter"
-                              ? "A street counter. Matches, the crate, and the exchange."
+                              ? "A street counter. Get matches, open your daily crate, or trade matches."
                               : p.kind === "board"
-                                ? "A notice board. Contracts and the day's blitz."
+                                ? "A notice board. Pick up jobs and play the Daily Blitz."
                                 : "Walk up to it to add it to Places."}
                       </p>
                     </div>
@@ -186,7 +186,7 @@ export function HqPanel() {
                 ))}
               </ul>
               <p className="kicker mt-2">Press stock</p>
-              <p className="hq-row-sub">Green vaults and up drop this city's ingredient. Print, paint, and charms are at {cityShop(cityId)?.name ?? "the outfitter"}.</p>
+              <p className="hq-row-sub">Green, amber, red and violet lamps give this city's ingredient. Spend it on prints, paint and charms at {cityShop(cityId)?.name ?? "the outfitter"}.</p>
               <ul className="grid gap-2">
                 {(Object.keys(pantry) as IngredientId[])
                   .filter((id) => (pantry[id] ?? 0) > 0 && !isPaintId(id))
@@ -444,7 +444,7 @@ export function QuestDesk({
             <p className="hq-row-sub">
               {cityCircuit?.claimed
                 ? "Scarf claimed."
-                : `Red ${cityCircuit?.red ? "yes" : "no"} · ward ${cityCircuit?.ward ? "yes" : "no"} · ${stapleName} ${staple}/3 · charm ${cityCircuit?.printed || charms > 0 ? "yes" : "no"}.`}
+                : `To get the scarf: light a red lamp ${cityCircuit?.red ? "✓" : "✗"} · light a lamp in a named area ${cityCircuit?.ward ? "✓" : "✗"} · have 3 ${stapleName} (${staple}/3) · make a charm ${cityCircuit?.printed || charms > 0 ? "✓" : "✗"}`}
             </p>
             {cityCircuit?.claimed || !act ? null : (
               <div className="hq-row-actions">
@@ -454,7 +454,7 @@ export function QuestDesk({
               </div>
             )}
             {!act && !cityCircuit?.claimed ? (
-              <p className="hq-row-sub">{circuit ? "Ready at the notice board." : "Still out."}</p>
+              <p className="hq-row-sub">{circuit ? "Ready at the notice board." : "Not done yet."}</p>
             ) : null}
           </div>
         </div>
@@ -483,7 +483,7 @@ export function QuestDesk({
         })}
       </div>
       <p className="kicker mt-4">Cloth</p>
-      <p className="mt-1 text-xs text-fg-muted">Wear one. The perk is coin on a clear, not a new coat.</p>
+      <p className="mt-1 text-xs text-fg-muted">Wear one to get extra coin each time you light a lamp. It doesn't change how you look.</p>
       <div className="mt-2 grid gap-2">
         {clothShelf(quests, cityId).map((id) => {
           const owned = quests.cloths.includes(id);

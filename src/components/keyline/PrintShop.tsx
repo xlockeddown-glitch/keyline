@@ -158,7 +158,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
         <div className="hq-row items-center">
           <div className="hq-row-copy">
             <p className="hq-row-title">Your pocket</p>
-            <p className="hq-row-sub">Prints are paid in matches, a few at a time if you like — the shop keeps what you've paid against each item.</p>
+            <p className="hq-row-sub">Pay for prints with matches. You can pay a little at a time; the shop remembers what you've paid.</p>
           </div>
           <span className="inline-flex items-center gap-3 text-sm tabular-nums">
             <span className="inline-flex items-center gap-1">
@@ -172,8 +172,8 @@ export function PrintShop({ counter }: { counter: boolean }) {
           </span>
         </div>
       ) : null}
-      {section("coat", "Coats", "Dyed and re-cut for whoever you walk as. Every character wears it, walking and standing. Looks only — no perk.")}
-      {section("lantern", "Lantern skins", "Re-cases every street lamp in a new metal. The glass keeps its match colour, so a lamp's cost still reads at a glance.")}
+      {section("coat", "Coats", "A new coat for your character. It only changes how you look.")}
+      {section("lantern", "Lantern skins", "Gives every street lamp a new metal frame. The glass keeps its colour, so you can still tell which match a lamp needs.")}
       <PaintVat counter={counter} />
       {counter ? <CharmPress /> : null}
     </div>

@@ -106,7 +106,7 @@ export function Satchel() {
                     </li>
                   ))}
                 {Object.values(pantry).every((n) => !n) || (Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || isPaintId(id)) ? (
-                  <li className="text-sm text-fg-muted">Green vaults and up. Print spends one.</li>
+                  <li className="text-sm text-fg-muted">Light green or higher lamps to find these. Making a print uses one.</li>
                 ) : null}
               </ul>
             </section>
@@ -123,7 +123,7 @@ export function Satchel() {
                     </li>
                   ))}
                 {(Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || !isPaintId(id)) ? (
-                  <li className="text-sm text-fg-muted">The vault's own colour, or prism — about 1 in 10,000, from any vault. Mix it at the outfitter.</li>
+                  <li className="text-sm text-fg-muted">Lamps sometimes give paint in their colour (rare rainbow “prism” paint: about 1 in 10,000). Use it at the outfitter shop.</li>
                 ) : null}
               </ul>
             </section>
@@ -192,7 +192,7 @@ export function Satchel() {
             ) : null}
 
             {isMaterial(sel) ? (
-              <p className="mt-4 text-xs text-fg-subtle">Spent at the outfitter's print shop.</p>
+              <p className="mt-4 text-xs text-fg-subtle">Use these at the outfitter shop.</p>
             ) : null}
           </aside>
         </div>
