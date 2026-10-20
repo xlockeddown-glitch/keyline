@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
 import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
+import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
@@ -1893,10 +1894,13 @@ export const useGame = create<GameState>((set, get) => ({
     loot.points = paid.points - get().points;
     loot.boosts = paid.boosts.length ? paid.boosts : undefined;
     // 0.1.6: a lamp on the open night market rests four times as long (was 3x faster in 0.0.90 — players camped it).
-    const coolMs = marketCoolMs(lampCoolMs(poi.tier), lampMult);
+    // 0.1.7: and each open of the same lamp today rests longer: 1x, 2x, 3x… (resets at the city's midnight).
+    const openDay = cityDay(get().cityId, Date.now());
+    const opens = openNumber(get().vaults[poi.id], openDay);
+    const coolMs = stackedCoolMs(marketCoolMs(lampCoolMs(poi.tier), lampMult), opens);
     // 0.1.7: a market lantern opens once per market — it stays dark until its market closes (and then it is gone).
     const lanternLeft = isMarketLantern(poi.id) ? Math.max(coolMs, lanternCycleEnd(poi.id) - Date.now()) : coolMs;
-    const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + lanternLeft } };
+    const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + lanternLeft, opens, openDay } };
     let contract = get().contract;
     let contractToast: string | null = null;
     if (contract && contract.ids.includes(poi.id) && !contract.done.includes(poi.id)) {

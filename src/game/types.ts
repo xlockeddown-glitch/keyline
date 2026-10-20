@@ -106,6 +106,9 @@ export type City = {
 export type VaultRuntime = {
   state: "locked" | "cooling";
   coolUntil: number;
+  /** 0.1.7: opens of this lamp today (the city's local day, `openDay` as YYYY-MM-DD); the nth open rests n times as long. */
+  opens?: number;
+  openDay?: string;
 };
 
 export type MapKey = {

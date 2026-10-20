@@ -360,7 +360,7 @@ test("0.1.6: a lamp on the open market rests four times as long (no camping); of
   assert.ok(MARKET_MULT / MARKET_REST < 1 && 2.5 / MARKET_REST < 1);
   assert.equal(marketCoolMs(300_000, 1), 300_000);
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
-  assert.match(src, /const coolMs = marketCoolMs\(lampCoolMs\(poi\.tier\), lampMult\);/);
+  assert.match(src, /const coolMs = stackedCoolMs\(marketCoolMs\(lampCoolMs\(poi\.tier\), lampMult\), opens\);/); // 0.1.7 stacks on top
 });
 
 test("0.1.00 market zones: every city's every market zone holds enough lamps and area (no tiny markets)", async () => {
