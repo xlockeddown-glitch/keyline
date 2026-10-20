@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keyline — houses design mock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/node_modules/leaflet/dist/leaflet.css" />
+<style>
+  :root {
+    --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Fraunces", "Times New Roman", serif;
+    --color-bg: #0e1014;
+    --color-bg-elevated: #161a20;
+    --color-bg-subtle: #1e242c;
+    --color-fg: #e6e8ec;
+    --color-fg-muted: #9aa3ae;
+    --color-fg-subtle: #6d7682;
+    --color-accent: #cba56c;
+    --color-accent-fg: #121418;
+    --color-border: color-mix(in oklab, var(--color-fg) 12%, transparent);
+    --color-border-strong: color-mix(in oklab, var(--color-fg) 22%, transparent);
+    --color-night: #14151a;
+    --color-vault-white: #d6d1c7;
+    --color-vault-blue: #6e8fa8;
+    --color-vault-green: #6f8f72;
+    --color-vault-amber: #c9a35e;
+    --radius-md: 10px;
+    --radius-xl: 14px;
+    --shadow-panel: 0 18px 40px rgb(0 0 0 / 0.45);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-sans); font-size: 15px; line-height: 1.45; }
+  button { font: inherit; color: inherit; }
+  button:not(:disabled) { cursor: pointer; }
+  #map { position: absolute; inset: 0; background: #12151a; }
+  .leaflet-container { background: var(--color-bg); font-family: var(--font-sans); }
+  .leaflet-control-zoom a {
+    background: var(--color-bg-elevated) !important;
+    color: var(--color-fg) !important;
+    border-color: var(--color-border) !important;
+    width: 36px !important; height: 36px !important; line-height: 36px !important;
+  }
+  .leaflet-control-attribution {
+    background: color-mix(in oklab, var(--color-bg) 80%, transparent) !important;
+    color: var(--color-fg-subtle) !important;
+    font-size: 10px !important;
+  }
+  .night-veil {
+    pointer-events: none; position: absolute; inset: 0; z-index: 400;
+    background: var(--color-bg); opacity: 0.38; mix-blend-mode: multiply;
+  }
+  .hud {
+    pointer-events: none; position: absolute; inset: 0; z-index: 500;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 12px;
+  }
+  .hud-top { display: flex; flex-direction: column-reverse; gap: 8px; padding-left: 48px; }
+  .hud-plate {
+    background: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+    padding: 10px 14px;
+  }
+  .kicker {
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--color-fg-subtle); font-size: 11px; font-weight: 500; line-height: 1.3; margin: 0;
+  }
+  .lvl { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .lvl b {
+    display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px;
+    border-radius: 999px; background: linear-gradient(180deg, #f5c451, #d18a1c); color: #2a1a00;
+    font-weight: 800; font-size: 12px;
+  }
+  .lvl span { font-size: 11px; font-weight: 600; color: var(--color-accent); font-style: italic; }
+  .coins {
+    font-family: var(--font-display); font-size: 30px; line-height: 1; margin: 2px 0 0;
+    display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums;
+  }
+  .coins img { width: 28px; height: 28px; }
+  .coins i { font-style: normal; font-family: var(--font-sans); font-size: 14px; color: var(--color-fg-muted); }
+  .kits { display: flex; gap: 6px; align-self: flex-end; }
+  .kit {
+    width: 40px; height: 40px; display: grid; place-items: center;
+    background: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    border: 1px solid var(--color-border); border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+  }
+  .kit img { width: 22px; height: 22px; }
+  .hud-bottom { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .door-btn {
+    pointer-events: auto; padding: 8px 14px; border-radius: 999px;
+    border: 1px solid #e8c77a; background: rgb(21 24 33 / 0.94); color: #f3e6c4;
+    font-size: 13px; box-shadow: 0 0 14px rgb(232 199 122 / 0.35);
+  }
+  .door-btn .kicker { color: #e8c77a; margin-right: 6px; }
+  .dock { align-self: stretch; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+  .cue {
+    margin: 0; font-size: 12px; color: var(--color-fg-muted);
+    background: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    border: 1px solid var(--color-border); border-radius: 999px; padding: 6px 10px;
+    backdrop-filter: blur(10px);
+  }
+  .belt {
+    display: flex; gap: 4px; align-items: flex-end;
+    background: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    border: 1px solid var(--color-border); border-radius: var(--radius-md);
+    padding: 6px 8px; backdrop-filter: blur(10px);
+  }
+  .slot { display: flex; flex-direction: column; align-items: center; min-width: 28px; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .slot img { height: 22px; width: auto; }
+  .cab {
+    height: 36px; padding: 0 12px; border-radius: var(--radius-md);
+    border: 1px solid var(--color-accent); color: var(--color-accent);
+    background: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    backdrop-filter: blur(10px); font-size: 13px; font-weight: 600;
+  }
+  .pin-wrap { background: none !important; border: none !important; }
+  .house-pin { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 88px; }
+  .house-pin img {
+    width: 54px; height: 46px; object-fit: cover; object-position: center 62%;
+    border-radius: 7px; border: 2px solid #e8c77a;
+    box-shadow: 0 0 10px rgb(232 199 122 / 0.45), 0 2px 6px rgb(0 0 0 / 0.5);
+    background: #1b2030;
+  }
+  .house-pin span {
+    font-size: 11px; font-weight: 600; color: #f3e6c4; white-space: nowrap;
+    padding: 1px 6px; border-radius: 999px; background: rgb(15 18 26 / 0.82);
+    border: 1px solid rgb(232 199 122 / 0.5);
+  }
+  .scout-marker {
+    width: 56px; height: 56px; background: url("/public/sprites/scouts/fox-v2.png") no-repeat;
+    background-size: 800% 600%; background-position: 0% 80%;
+    filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+  }
+  .vault-pin { width: 32px; height: 46px; display: grid; place-items: end center; }
+  .lantern { position: relative; display: block; width: 18px; height: 34px; filter: drop-shadow(0 0 6px var(--glow)); }
+  .lantern-cap { position: absolute; left: 2px; top: 0; width: 14px; height: 6px; background: #c5cbc8; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .lantern-frame { position: absolute; left: 3px; top: 6px; width: 12px; height: 16px; border: 1px solid #8a8680; border-radius: 1px; background: #16181b; }
+  .lantern-glass { display: block; width: 100%; height: 100%; margin-top: 1px; border-radius: 1px; background: var(--glow); box-shadow: inset 0 0 3px #fff8, 0 0 8px var(--glow); }
+  .lantern-post { position: absolute; left: 8px; top: 21px; width: 2px; height: 11px; background: #2e3034; }
+  .lantern-post::after { content: ""; position: absolute; left: -4px; bottom: 0; width: 10px; height: 2px; border-radius: 1px; background: #3a3c40; }
+  .tier-white { --glow: var(--color-vault-white); }
+  .tier-blue { --glow: var(--color-vault-blue); }
+  .tier-amber { --glow: var(--color-vault-amber); }
+  .shade {
+    position: absolute; inset: 0; z-index: 600;
+    background: color-mix(in oklab, var(--color-bg) 60%, transparent);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  body[data-screen="desk"] .shade { align-items: center; padding: 28px; }
+  body[data-screen="map"] .shade { display: none; }
+  .panel {
+    width: 100%; max-width: 32rem; max-height: 92dvh;
+    background: var(--color-bg-elevated); color: var(--color-fg);
+    border: 1px solid var(--color-border); border-radius: 16px 16px 0 0;
+    box-shadow: var(--shadow-panel);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  body[data-screen="desk"] .panel { border-radius: 16px; max-height: min(92dvh, 760px); }
+  .panel header {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    padding: 16px 18px 12px; border-bottom: 1px solid var(--color-border);
+  }
+  .panel h2 { font-family: var(--font-display); font-size: 26px; font-weight: 560; line-height: 1.1; margin: 2px 0 0; }
+  .panel header p.lede { margin: 6px 0 0; color: var(--color-fg-muted); font-size: 13.5px; line-height: 1.4; text-wrap: pretty; }
+  .x {
+    width: 44px; height: 44px; flex: none; border-radius: 10px; border: 0;
+    background: transparent; color: var(--color-fg-muted); display: grid; place-items: center;
+  }
+  .sheet { padding: 12px 16px 14px; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+  .card {
+    display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: center;
+    padding: 7px; border-radius: 12px; border: 1px solid var(--color-border);
+    background: color-mix(in oklab, var(--color-bg-subtle) 60%, transparent);
+  }
+  .card.is-star {
+    border-color: #e8c77a;
+    background: linear-gradient(160deg, rgb(232 199 122 / 0.16), transparent 62%), color-mix(in oklab, var(--color-bg-subtle) 60%, transparent);
+    box-shadow: 0 0 18px rgb(232 199 122 / 0.16);
+  }
+  .card img.art {
+    width: 92px; height: 76px; object-fit: cover; object-position: center 58%;
+    border-radius: 8px; background: #141820;
+  }
+  .card h3 { font-family: var(--font-display); font-size: 17px; font-weight: 560; line-height: 1.1; margin: 0; }
+  .card .blurb { margin: 1px 0 0; color: var(--color-fg-muted); font-size: 12px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .perk { margin: 3px 0 0; font-size: 12px; color: var(--color-fg); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .perk img { height: 16px; width: auto; }
+  .buyrow { margin-top: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .need { margin: 2px 0 0; font-size: 11px; color: var(--color-fg-subtle); font-variant-numeric: tabular-nums; }
+  .price { margin: 0; display: flex; align-items: center; gap: 5px; font-weight: 650; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .price img { width: 16px; height: 16px; }
+  .btn {
+    min-height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid transparent;
+    font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-primary { background: var(--color-accent); color: var(--color-accent-fg); }
+  .btn-quiet { background: var(--color-bg-subtle); color: var(--color-fg); border-color: var(--color-border); }
+  .btn:disabled { opacity: 0.85; }
+  .foot { margin: 2px 2px 0; color: var(--color-fg-subtle); font-size: 12px; line-height: 1.4; text-wrap: pretty; }
+  .hero { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border); }
+  .hero img.art { display: block; width: 100%; height: 168px; object-fit: cover; object-position: center 60%; }
+  .hero .tag {
+    position: absolute; left: 10px; top: 10px;
+    background: rgb(15 18 26 / 0.82); color: #f3e6c4; border: 1px solid rgb(232 199 122 / 0.55);
+    border-radius: 999px; padding: 3px 8px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .drive {
+    margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 10px; border-radius: 12px; border: 1px solid var(--color-border);
+    background: color-mix(in oklab, var(--color-bg-subtle) 60%, transparent);
+  }
+  .drive img { width: 148px; height: 48px; object-fit: contain; object-position: left center; }
+  .drive p { margin: 0; }
+  .drive .who { font-family: var(--font-display); font-size: 16px; line-height: 1.15; }
+  .drive .sub { color: var(--color-fg-muted); font-size: 12.5px; }
+  .keybox {
+    margin-top: 8px; padding: 12px; border-radius: 12px; border: 1px solid var(--color-border);
+    background: color-mix(in oklab, #c9a35e 8%, var(--color-bg-subtle));
+  }
+  .keybox h3 { font-family: var(--font-display); font-size: 20px; margin: 2px 0 0; font-weight: 560; }
+  .keybox p { margin: 4px 0 0; color: var(--color-fg-muted); font-size: 13px; text-wrap: pretty; }
+  .keybox .go { margin-top: 10px; width: 100%; min-height: 44px; font-size: 15px; }
+  .step {
+    margin-top: 8px; display: flex; align-items: center; gap: 10px;
+    padding: 8px; border-radius: 12px; border: 1px solid #e8c77a33;
+  }
+  .step img.art { width: 72px; height: 56px; object-fit: cover; object-position: center 60%; border-radius: 8px; }
+  .step h3 { font-family: var(--font-display); font-size: 16px; margin: 0; font-weight: 560; }
+  .step p { margin: 2px 0 0; color: var(--color-fg-muted); font-size: 12.5px; }
+  body[data-screen="desk"] .hud-top { flex-direction: row; align-items: flex-start; justify-content: space-between; padding-left: 48px; }
+  body[data-screen="desk"] .kits { align-self: flex-start; }
+  .kit-label { display: none; }
+  body[data-screen="desk"] .kit { width: auto; height: auto; padding: 8px 12px; display: flex; gap: 8px; align-items: center; }
+  body[data-screen="desk"] .kit-label { display: block; }
+  body[data-screen="map"] .sheet-only, body[data-screen="buy"] .map-only-label { }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="night-veil"></div>
+<div class="hud">
+  <div class="hud-top">
+    <div class="hud-plate">
+      <div class="lvl"><b>12</b><span>Headliner</span></div>
+      <p class="kicker" id="city-line">Austin · ticket 2/3</p>
+      <p class="coins"><img src="/public/sprites/items/coin.png" alt="" /> <span id="coin-n">34,420</span> <i>×4</i></p>
+    </div>
+    <div class="kits">
+      <div class="kit" aria-hidden="true"><img src="/public/sprites/items/satchel.png" alt="" /></div>
+      <div class="kit" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa3ae" stroke-width="1.75"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5V21"/></svg>
+        <span class="kit-label"><span class="kicker">Journal</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="hud-bottom map-chrome">
+    <button type="button" class="door-btn" id="door-btn"><span class="kicker">Your door</span> Townhouse · turn the key</button>
+    <div class="dock">
+      <p class="cue" id="cue">At the door · 12 m</p>
+      <div class="belt" aria-label="Matches">
+        <span class="slot"><img src="/public/sprites/matches/white.png" alt="" />6</span>
+        <span class="slot"><img src="/public/sprites/matches/blue.png" alt="" />4</span>
+        <span class="slot"><img src="/public/sprites/matches/green.png" alt="" />2</span>
+      </div>
+      <button type="button" class="cab">Car</button>
+    </div>
+  </div>
+</div>
+<div class="shade" id="shade">
+  <div class="panel" role="dialog" aria-label="House">
+    <header>
+      <div>
+        <p class="kicker" id="sheet-kicker">House · for sale</p>
+        <h2 id="sheet-title">West Avenue</h2>
+        <p class="lede" id="sheet-lede">One door in this city. Walk here after three lamps and turn the key: a small purse once a day, and a match on the hook. Then go back to the street. Standing on the porch pays nothing more.</p>
+      </div>
+      <button class="x" type="button" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="sheet" id="sheet"></div>
+  </div>
+</div>
+<script src="/node_modules/leaflet/dist/leaflet.js"></script>
+<script>
+const ART = {
+  cottage: "art/cottage.png",
+  row: "art/row.png",
+  town: "art/town.png",
+  villa: "art/villa.png",
+};
+const screen = new URLSearchParams(location.search).get("s") || "map";
+document.body.dataset.screen = screen;
+
+const coin = document.getElementById("coin-n");
+const kicker = document.getElementById("sheet-kicker");
+const title = document.getElementById("sheet-title");
+const lede = document.getElementById("sheet-lede");
+const sheet = document.getElementById("sheet");
+const door = document.getElementById("door-btn");
+const cue = document.getElementById("cue");
+
+const TIERS = [
+  { id: "cottage", name: "Lamp cottage", blurb: "Brick, a red door, one lantern.", perk: "350 a day", match: "white", matchName: "white", price: "20,000", btn: "Buy", kind: "primary" },
+  { id: "row", name: "Row house", blurb: "A stoop and a hanging lamp.", perk: "700 a day", match: "blue", matchName: "blue", price: "65,000", btn: "Buy", kind: "primary" },
+  { id: "town", name: "Townhouse", blurb: "Three floors of pale stone.", perk: "1,200 a day", match: "green", matchName: "green", price: "150,000", btn: "Buy", kind: "primary" },
+  { id: "villa", name: "Villa", blurb: "Stucco, set back on a drive.", perk: "2,400 a day", match: "amber", matchName: "amber", price: "600,000", btn: "Not yet", kind: "quiet", star: true, disabled: true, need: "Need 415,580 more" },
+];
+
+function coinImg() {
+  return '<img src="/public/sprites/items/coin.png" alt="" />';
+}
+function matchImg(id) {
+  return `<img src="/public/sprites/matches/${id}.png" alt="" />`;
+}
+
+function buySheet() {
+  coin.textContent = "184,420";
+  kicker.textContent = "House · for sale";
+  title.textContent = "West Avenue";
+  lede.textContent = "One door in Austin. Buy any tier; a later step-up costs the difference. The purse is once a day, after three lamps here.";
+  door.innerHTML = '<span class="kicker">House</span> West Avenue · for sale';
+  cue.textContent = "At the lot · 18 m";
+  sheet.innerHTML = TIERS.map((t) => `
+    <article class="card${t.star ? " is-star" : ""}">
+      <img class="art" src="${ART[t.id]}" alt="" />
+      <div>
+        ${t.star ? '<p class="kicker" style="color:#e8c77a">The one to want</p>' : '<p class="kicker">Austin</p>'}
+        <h3>${t.name}</h3>
+        <p class="blurb">${t.blurb}</p>
+        <p class="perk">${coinImg()} ${t.perk} · ${matchImg(t.match)} ${t.matchName} match</p>
+        <div class="buyrow">
+          <p class="price">${coinImg()} ${t.price}</p>
+          <button class="btn btn-${t.kind}" type="button" ${t.disabled ? "disabled" : ""}>${t.btn}</button>
+        </div>
+        ${t.need ? `<p class="need">${t.need}</p>` : ""}
+      </div>
+    </article>`).join("") + `<p class="foot">Paid once. The house stays in this city. The drive shows the car you are driving, in its paint.</p>`;
+}
+
+function ownedSheet() {
+  coin.textContent = "34,420";
+  kicker.textContent = "Your door · Austin";
+  title.textContent = "Townhouse";
+  lede.textContent = "Three lamps lit today. The key is in the door. Turn it, take the purse and the match, then walk. The porch stays lit until midnight and pays nothing else.";
+  door.innerHTML = '<span class="kicker">Your door</span> Townhouse · turn the key';
+  cue.textContent = "At the door · 12 m";
+  sheet.innerHTML = `
+    <div class="hero">
+      <img class="art" src="${ART.town}" alt="" />
+      <span class="tag">Home · today</span>
+    </div>
+    <div class="drive">
+      <img src="/public/sprites/cars/paint/civic-red-side.png" alt="" />
+      <div>
+        <p class="who">In the drive</p>
+        <p class="sub">Civic · Rallye Red</p>
+      </div>
+    </div>
+    <div class="keybox">
+      <p class="kicker">Homecoming</p>
+      <h3>The key is in the door</h3>
+      <p>1,200 coin, once today for your whole account, and a green match on this city’s hook.</p>
+      <button class="btn btn-primary go" type="button">Turn the key</button>
+    </div>
+    <div class="step">
+      <img class="art" src="${ART.villa}" alt="" />
+      <div>
+        <p class="kicker" style="color:#e8c77a">Step up</p>
+        <h3>Villa · 450,000 more</h3>
+        <p>Same door, longer drive, an amber match. Purse stays once a day.</p>
+      </div>
+    </div>
+    <p class="foot">Market lamps are untouched. The house does not shorten a rest and does not speed the walk.</p>`;
+}
+
+if (screen === "buy" || screen === "desk") buySheet();
+else if (screen === "owned") ownedSheet();
+else {
+  coin.textContent = "34,420";
+  cue.textContent = "200 m · your door";
+  door.innerHTML = '<span class="kicker">Your door</span> Townhouse';
+  document.getElementById("shade").style.display = "none";
+}
+
+const house = [30.26472, -97.74695];
+const player = [30.2629, -97.7462];
+const map = L.map("map", { zoomControl: true, attributionControl: true }).setView(screen === "desk" ? [30.2646, -97.7382] : [30.2639, -97.7466], screen === "desk" ? 16 : 17);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap",
+}).addTo(map);
+
+function pin(html, ll, size, anchor) {
+  const icon = L.divIcon({ className: "pin-wrap", html, iconSize: size, iconAnchor: anchor });
+  return L.marker(ll, { icon, interactive: false }).addTo(map);
+}
+const houseArt = screen === "buy" || screen === "desk" ? ART.cottage : ART.town;
+const houseLabel = screen === "buy" || screen === "desk" ? "For sale" : "Home";
+pin(`<div class="house-pin"><img src="${houseArt}" alt="" /><span>${houseLabel}</span></div>`, house, [88, 78], [44, 74]);
+pin(`<div class="scout-marker"></div>`, player, [56, 56], [28, 52]);
+
+function lantern(tier) {
+  return `<div class="vault-pin tier-${tier}"><span class="lantern"><i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"></i></i><i class="lantern-post"></i></span></div>`;
+}
+pin(lantern("white"), [30.26535, -97.74755], [32, 46], [16, 46]);
+pin(lantern("blue"), [30.26385, -97.74555], [32, 46], [16, 46]);
+pin(lantern("amber"), [30.26505, -97.74515], [32, 46], [16, 46]);
+
+let tiles = 0;
+map.on("load", () => { window.__tiles = true; });
+map.eachLayer((layer) => {
+  if (layer.on) layer.on("load", () => {
+    tiles += 1;
+    if (tiles >= 1) window.__ready = true;
+  });
+});
+setTimeout(() => { window.__ready = true; }, 2500);
+</script>
+</body>
+</html>
