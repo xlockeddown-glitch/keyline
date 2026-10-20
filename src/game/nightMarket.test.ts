@@ -17,7 +17,7 @@ import {
   MARKET_LAMP_M,
   MARKET_MIN_LAMPS,
   MARKET_MIN_STREETS,
-  MARKET_RELIGHT,
+  MARKET_REST,
   marketCoolMs,
   MARKET_MULT,
   MARKET_RADIUS_M,
@@ -352,9 +352,12 @@ test("0.0.90: markets want 3+ lamps (best-lit fallback), named paths count, lamp
   for (const city of ALL) assert.ok((MARKET_STREETS[city] ?? []).length >= MARKET_MIN_STREETS && marketStreets(city).length >= 3, city); // 0.0.95: the 300 m stretch rule may drop a short one
 });
 
-test("0.0.90: a lamp on the open market relights three times as fast; off the market, unchanged", () => {
-  assert.equal(MARKET_RELIGHT, 3);
-  assert.equal(marketCoolMs(300_000, MARKET_MULT), 100_000);
+test("0.1.6: a lamp on the open market rests four times as long (no camping); off the market, unchanged", () => {
+  assert.equal(MARKET_REST, 4);
+  assert.equal(marketCoolMs(300_000, MARKET_MULT), 1_200_000);
+  assert.equal(marketCoolMs(90_000, 2.5), 360_000); // Owl's ×2.5 market too
+  // Per minute, a market lamp now pays less than a normal one, so parking in the circle never beats walking on.
+  assert.ok(MARKET_MULT / MARKET_REST < 1 && 2.5 / MARKET_REST < 1);
   assert.equal(marketCoolMs(300_000, 1), 300_000);
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(src, /const coolMs = marketCoolMs\(lampCoolMs\(poi\.tier\), lampMult\);/);

@@ -128,7 +128,7 @@ export const PAY_NOTES = [
   `Paint is that lamp's colour. Prism is separate: any lamp, about 1 in ${ULTRA_DROP_IN.toLocaleString()}, and it can land with the colour can.`,
   "Green and up drop this city's press stock every time. Amber and up, at a named ward, drop that ward's cut instead.",
   "Ink is 1, or 2 at a museum, library, or theatre. A park or a campus drops 2 vellum. Other lamps drop 1 vellum about 2 in 5 times. Brass shows two numbers: what a normal question gives, then what a hard one gives.",
-  "The Run and The Stack give a match and extra brass. Lamps inside a night market pay double coin and double bonus matches (not paint, brass, ink or stock).",
+  "The Run and The Stack give a match and extra brass. Lamps inside a night market pay double coin and double bonus matches (not paint, brass, ink or stock), then rest four times as long.",
 ] as const;
 
 /** Ladder check used by the guide test: a perfect ordinary clear is the tier's coin value. */

@@ -131,7 +131,7 @@ export function SkyToggle() {
   return (
     <button
       type="button"
-      className="hud-plate is-kit pointer-events-auto size-11 justify-center p-0 max-[379px]:hidden"
+      className="hud-plate is-kit pointer-events-auto size-11 justify-center p-0"
       data-testid="sky-toggle"
       onClick={toggleSky}
       aria-label={v.on ? "Turn off sky and weather" : "Turn on sky and weather"}

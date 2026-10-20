@@ -33,12 +33,14 @@ export const MARKET_CLASSES = new Set(["pedestrian", "living_street", "residenti
 export const MARKET_MIN_LAMPS = 3;
 /** …and when a city has fewer than this many such streets, it takes its best-lit streets instead. */
 export const MARKET_MIN_STREETS = 4;
-/** 0.0.90: lamps on the open market street relight this many times faster. */
-export const MARKET_RELIGHT = 3;
+/** 0.1.6: lamps on the open market rest this many times LONGER (0.0.90 had them relight 3x faster, which made
+ * camping the circle the best play). With the ×2 pay, a market lamp now earns half as much per minute as a normal
+ * lamp — worth one pass through the market, not an evening parked in it. */
+export const MARKET_REST = 4;
 
-/** A lamp's dark time: a third while it stands on the open market (mult > 1). */
+/** A lamp's dark time: four times as long while it stands on the open market (mult > 1). */
 export function marketCoolMs(baseMs: number, mult: number): number {
-  return mult > 1 ? Math.round(baseMs / MARKET_RELIGHT) : baseMs;
+  return mult > 1 ? Math.round(baseMs * MARKET_REST) : baseMs;
 }
 /** Names that say freeway even where a stretch is tagged as a surface road (service drives along the trench). */
 export const FREEWAY_NAME = /\b(freeway|expressway|motorway|interstate|turnpike|service drive)\b/i;

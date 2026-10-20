@@ -1892,7 +1892,7 @@ export const useGame = create<GameState>((set, get) => ({
     loot.keys = extraKeys;
     loot.points = paid.points - get().points;
     loot.boosts = paid.boosts.length ? paid.boosts : undefined;
-    // 0.0.90: a lamp on the open night market relights three times as fast.
+    // 0.1.6: a lamp on the open night market rests four times as long (was 3x faster in 0.0.90 — players camped it).
     const coolMs = marketCoolMs(lampCoolMs(poi.tier), lampMult);
     const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + coolMs } };
     let contract = get().contract;

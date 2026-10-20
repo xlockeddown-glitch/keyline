@@ -162,7 +162,7 @@ const measure = (page) =>
       height: innerHeight,
       status: r(document.querySelector('[data-testid="hud-status"]')),
       row: r(document.querySelector(".hud-kits")),
-      kits: [...document.querySelectorAll(".hud-kits .hud-plate.is-kit")].map(r),
+      kits: [...document.querySelectorAll(".hud-kits .hud-plate.is-kit")].filter((e) => getComputedStyle(e).display !== "none").map(r), // 0.1.6: a kit hidden on purpose (sky toggle under 380 px) is not squeezed
       zoom: r(document.querySelector(".leaflet-control-zoom")),
       sight: r(document.querySelector('[data-testid="hud-sight"]')),
       sightName: r(document.querySelector('[data-testid="hud-sight"] .sight-name')),
