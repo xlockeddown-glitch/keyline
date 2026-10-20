@@ -1128,14 +1128,14 @@ test("0.0.93 streaks: 5 right in a row pays a white match on the server; a miss 
   assert.equal(after.wallet.keys.white, fifth.wallet.keys.white, "a miss reset the run");
 });
 
-test("0.0.93 cache and daily goals: once a day, 2-3 white/blue/green matches; goals need proof of play", async () => {
+test("0.0.93 cache and daily goals: once a day, 2-3 amber/red/violet matches (0.1.7); goals need proof of play", async () => {
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
   await syncPlayer(sql, "cac", snap({ cities }), "cacphone1");
   const c1 = await applyClientOp(sql, "cac", { kind: "cache", city: "austin" });
   assert.ok(c1.ok);
   const got = c1.cache!.got;
-  assert.ok(got.length >= 2 && got.length <= 3 && got.every((t) => t === "white" || t === "blue" || t === "green"));
+  assert.ok(got.length >= 2 && got.length <= 3 && got.every((t) => t === "amber" || t === "red" || t === "violet"), "0.1.7: the server pays amber and up only");
   const c2 = await applyClientOp(sql, "cac", { kind: "cache", city: "austin" });
   assert.equal(c2.replay, true);
   assert.deepEqual(c2.wallet.keys, c1.wallet.keys, "once per day");

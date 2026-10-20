@@ -127,7 +127,9 @@ export function payMatchesOf(keys: Record<Tier, number>, tier: Tier, n: number):
 export const CACHE_GRAB_M = 30;
 /** 0.0.96: how close you must be to see the cache on the map (the Owl sees it from anywhere). */
 export const CACHE_SEE_M = 450;
-const CACHE_TIERS: Tier[] = ["white", "blue", "green"];
+/** 0.1.7 (Ryan): a cache only holds high matches — amber and up. The old 60 / 30 / 10 split over white / blue / green
+ * moves up three steps unchanged: 60% amber, 30% red, 10% violet. */
+const CACHE_TIERS: Tier[] = ["amber", "red", "violet"];
 
 /** Same raw spot for everyone in a city on a day (the client snaps it onto the reachable walk, off main roads). */
 export function cacheSeed(city: string, day: string, start: { lat: number; lng: number }): { lat: number; lng: number } {
@@ -139,7 +141,7 @@ export function cacheSeed(city: string, day: string, start: { lat: number; lng: 
   return { lat: start.lat + dLat, lng: start.lng + dLng };
 }
 
-/** 2–3 matches, white/blue/green only (never violet). Seeded per player and day so a retry pays the same. */
+/** 2–3 matches, amber / red / violet only (never white, blue or green). Seeded per player and day so a retry pays the same. */
 export function cachePrize(player: string, day: string): Tier[] {
   const h = fnv1a(`cache-pay|${player}|${day}`);
   const n = 2 + (h % 2);
