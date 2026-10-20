@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
 import { DEALER_REACH_M, carOf, carPace, dealerOf } from "@/game/cars";
+import { factoryColor } from "@/game/carPaint";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
@@ -99,9 +100,16 @@ function faceFromYaw(yaw: number): CabFace {
   return cabFace(yaw);
 }
 
+/** 0.1.9: the colour your car is painted (empty = factory paint, the base art). */
+function paintOn(): string {
+  const st = useGame.getState();
+  const c = st.carOn ? st.carPaint[st.carOn] : undefined;
+  return st.carOn && c && c !== factoryColor(st.carOn) ? c : "";
+}
+
 function cabMarkup(face: CabFace, lamps: boolean) {
   const car = useGame.getState().carOn ?? "";
-  return `<div class="cab-sprite${lamps ? " is-lamps" : ""}" data-face="${face}" data-car="${car}"><i class="cab-lamp a"></i><i class="cab-lamp b"></i><i class="cab-cone"></i></div>`;
+  return `<div class="cab-sprite${lamps ? " is-lamps" : ""}" data-face="${face}" data-car="${car}" data-paint="${paintOn()}"><i class="cab-lamp a"></i><i class="cab-lamp b"></i><i class="cab-cone"></i></div>`;
 }
 
 type Cab = {
@@ -289,6 +297,7 @@ export function GameMap() {
       else cabEl.setAttribute("hidden", "");
       cabEl.dataset.face = faceFromYaw(pos.current.yaw);
       cabEl.dataset.car = useGame.getState().carOn ?? ""; // 0.1.8: your own car, or the city cab
+      cabEl.dataset.paint = paintOn(); // 0.1.9: its colour (empty = factory)
       cabEl.classList.toggle("is-lamps", false);
     }
     root?.querySelector(".scout-marker")?.classList.toggle("is-seated", seated);

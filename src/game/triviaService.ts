@@ -432,6 +432,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   const blitz = t.x?.pi?.startsWith("blitz-") === true;
   let wallet: ServerWallet | undefined;
   let award: ServerAward | undefined;
+  let can: { car: string; color: string } | undefined;
   if (signedIn && (credited || replay) && deps.sql && !blitz) {
     try {
       const sql = await deps.sql();
@@ -465,10 +466,12 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         scout: scoutOf(x?.sc),
         rummage: rummageHit(scoutOf(x?.sc), rand()),
         shellBack: shellBackHit(scoutOf(x?.sc), rand()),
+        canRoll: [rand(), rand()],
       });
       if (awarded.authoritative) {
         wallet = awarded.view;
         award = awarded.award;
+        can = awarded.can;
       }
     } catch (e) {
       console.warn("[trivia] wallet award failed", e instanceof Error ? e.message : e);
@@ -488,5 +491,6 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     replay,
     ...(paints !== undefined ? { paints } : {}),
     ...(wallet ? { wallet, ...(award ? { award } : {}) } : {}),
+    ...(can ? { can } : {}),
   };
 }

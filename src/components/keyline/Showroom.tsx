@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { X } from "lucide-react";
+import { CAR_COLORS, carSprite, factoryColor, paintPrice } from "@/game/carPaint";
 import { CARS, carBoost, dealerOf } from "@/game/cars";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -15,6 +17,10 @@ export function Showroom() {
   const carOn = useGame((s) => s.carOn);
   const buyCar = useGame((s) => s.buyCar);
   const driveCar = useGame((s) => s.driveCar);
+  const cans = useGame((s) => s.carCans);
+  const paint = useGame((s) => s.carPaint);
+  const paintCar = useGame((s) => s.paintCar);
+  const [painting, setPainting] = useState<string | null>(null);
   useSheetOpen(open);
   if (!open) return null;
   const lot = dealerOf(cityId);
@@ -42,7 +48,7 @@ export function Showroom() {
               const short = points < c.price;
               return (
                 <div key={c.id} className={`car-card${c.star ? " is-star" : ""}`} data-testid={`car-${c.id}`}>
-                  <img className="car-art" src={`/sprites/cars/${c.id}-side.png`} alt="" width={192} height={64} />
+                  <img className="car-art" src={carSprite(c.id, "side", mine ? paint[c.id] : null)} alt="" width={192} height={64} />
                   <div className="flex items-end justify-between gap-3">
                     <div className="min-w-0">
                       {c.star ? <p className="kicker car-star">The one to want</p> : null}
@@ -54,6 +60,7 @@ export function Showroom() {
                     </div>
                     <div className="shrink-0 text-right">
                       {mine ? (
+                        <div className="flex flex-col items-end gap-1">
                         <button
                           type="button"
                           className={`btn ${driving ? "btn-primary" : "btn-ghost"} px-3 text-xs`}
@@ -64,6 +71,18 @@ export function Showroom() {
                         >
                           {driving ? "Driving" : "Drive this"}
                         </button>
+                        <button
+                          type="button"
+                          className="btn btn-quiet px-3 text-xs"
+                          data-testid={`paint-${c.id}`}
+                          onClick={() => {
+                            sfx.ui();
+                            setPainting(painting === c.id ? null : c.id);
+                          }}
+                        >
+                          Paint{cans.some((x) => x.startsWith(`${c.id}:`)) ? " ·  can ready" : ""}
+                        </button>
+                        </div>
                       ) : (
                         <>
                           <p className="flex items-center justify-end gap-1.5 text-sm font-semibold tabular-nums">
@@ -82,6 +101,37 @@ export function Showroom() {
                       )}
                     </div>
                   </div>
+                  {mine && painting === c.id ? (
+                    <div className="paint-shop mt-3 border-t border-border pt-3" data-testid={`paint-dialog-${c.id}`}>
+                      <p className="kicker mb-1">Paint shop · {paintPrice(c.id).toLocaleString()} coin and one can</p>
+                      <ul className="grid gap-1.5">
+                        {CAR_COLORS[c.id].map((p) => {
+                          const n = cans.filter((x) => x === `${c.id}:${p.id}`).length;
+                          const on = (paint[c.id] ?? factoryColor(c.id)) === p.id;
+                          const short = points < paintPrice(c.id);
+                          return (
+                            <li key={p.id} className="flex items-center justify-between gap-2 text-sm">
+                              <span className="flex items-center gap-2">
+                                <i className="paint-chip" style={{ background: p.hex }} />
+                                {p.name}
+                                {p.id === factoryColor(c.id) ? <span className="text-xs text-fg-subtle">factory</span> : null}
+                              </span>
+                              {on ? (
+                                <span className="text-xs text-fg-muted">On the car</span>
+                              ) : n ? (
+                                <button type="button" className={`btn ${short ? "btn-quiet" : "btn-primary"} px-3 text-xs`} disabled={short} onClick={() => paintCar(c.id, p.id)}>
+                                  {short ? "Need more coin" : `Paint (${n} can${n > 1 ? "s" : ""})`}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-fg-subtle">No can</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <p className="mt-2 text-xs text-fg-subtle">Paint cans turn up in amber and red vaults and in the daily match cache.</p>
+                    </div>
+                  ) : null}
                 </div>
               );
             })}

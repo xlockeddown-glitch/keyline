@@ -1,6 +1,7 @@
 import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
+import { CAN_ODDS, canId, colorOf, paintPrice, parseCan, rollCan, type Can } from "./carPaint.ts";
 import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
@@ -69,7 +70,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[] } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>> } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -144,6 +145,47 @@ export async function carsOf(sql: Sql, userId: string): Promise<CarId[]> {
   return [...new Set(rows.map((r) => r.op_key.slice(4)).filter(isCarId))];
 }
 
+/**
+ * 0.1.9: paint cans this account holds (can:* rows not yet spent by a paint:<can key> row) and each car's colour
+ * (the newest paint row per car). Ledger only, like cars: nothing to migrate.
+ */
+export async function paintOf(sql: Sql, userId: string): Promise<{ cans: { key: string; can: Can }[]; paint: Partial<Record<CarId, string>> }> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string; detail: string }>`
+    select op_key, detail from wallet_ledger where user_id = ${id} and (op_key like ${"can:%"} or op_key like ${"paint:%"}) order by created_at asc, op_key asc
+  `;
+  const spent = new Set<string>();
+  const paint: Partial<Record<CarId, string>> = {};
+  for (const r of rows) {
+    if (!r.op_key.startsWith("paint:")) continue;
+    spent.add(r.op_key.slice(6));
+    const c = canOfDetail(r.detail);
+    if (c) paint[c.car] = c.color;
+  }
+  const cans = rows.filter((r) => r.op_key.startsWith("can:") && !spent.has(r.op_key)).flatMap((r) => {
+    const can = canOfDetail(r.detail);
+    return can ? [{ key: r.op_key, can }] : [];
+  });
+  return { cans, paint };
+}
+
+function canOfDetail(detail: string): Can | null {
+  try {
+    const d = JSON.parse(detail || "null") as { can?: string } | null;
+    return parseCan(d?.can);
+  } catch {
+    return null;
+  }
+}
+
+/** 0.1.9: maybe drop a paint can (server roll). key is can:<source>, so a replay never drops a second one. */
+export async function grantCan(sql: Sql, userId: string, source: string, odds: number, roll: number, pick: number): Promise<Can | null> {
+  if (!(roll < odds)) return null;
+  const can = rollCan(pick);
+  const r = await mutateWallet(sql, userId, `can:${source}`, (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify({ can: canId(can) }) }));
+  return r.ok && !r.replay ? can : null;
+}
+
 /** 0.1.00: market lights this account bought (light:<id> ledger rows); amber is free. */
 export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId[]; best: LightId }> {
   const { id } = await canonicalWallet(sql, userId);
@@ -156,7 +198,8 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   await grantPassGift(sql, userId);
   const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId))];
   const done = await syncCore(sql, userId, local, deviceId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId) };
+  const pt = await paintOf(sql, userId);
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint };
   return giftNotes.length ? { ...done, owned, giftNotes } : { ...done, owned };
 }
 
@@ -202,7 +245,12 @@ function chicagoDay(at: unknown): string {
   return d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
 }
 
-export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: Omit<GradePay, "prior"> & { prevNonce: string }): Promise<Applied> {
+export async function awardGrade(
+  sql: Sql,
+  userId: string,
+  nonce: string,
+  pay: Omit<GradePay, "prior"> & { prevNonce: string; canRoll?: [number, number] },
+): Promise<Applied & { can?: Can }> {
   const { id } = await canonicalWallet(sql, userId);
   const prevNonce = pay.prevNonce;
   const prior = pay.series && pay.step > 0 && prevNonce ? await priorGrades(sql, userId, prevNonce, 6) : [];
@@ -308,6 +356,12 @@ export async function awardGrade(sql: Sql, userId: string, nonce: string, pay: O
     }
     return { ...grant, detail };
   });
+  // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.
+  const odds = full.clearTier === "amber" ? CAN_ODDS.amber : full.clearTier === "red" ? CAN_ODDS.red : 0;
+  if (r.ok && !r.replay && r.wallet.migrated && full.correct && odds && pay.canRoll) {
+    const can = await grantCan(sql, userId, `g:${nonce}`, odds, pay.canRoll[0], pay.canRoll[1]);
+    if (can) return { ...applied(r), can };
+  }
   return applied(r);
 }
 
@@ -367,6 +421,7 @@ export type ClientOp =
   | { kind: "dgoal"; i: number }
   | { kind: "light"; id: string }
   | { kind: "car"; id: string }
+  | { kind: "paint"; car: string; color: string }
   | { kind: "hurry"; min: number }
   | {
       kind: "ride";
@@ -389,6 +444,8 @@ export type ClientResult = Applied & {
   rideDeal?: RideDeal;
   /** 0.1.2: the arrival and charge the server set for a Hurry up. */
   hurry?: { arriveAt: number; cost: number };
+  /** 0.1.9: a paint can found (cache), or the colour a paint op set. */
+  can?: Can;
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -498,7 +555,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       const delta = applyDelta(w, { coins: paid.coin, keys });
       return delta.ok ? { ...delta, detail: JSON.stringify({ got, coin }) } : delta;
     });
-    return { ...applied(r), cache: { got, coin } };
+    const can = r.ok && !r.replay ? await grantCan(sql, sessionUserId, `c:${day}`, CAN_ODDS.cache, Math.random(), Math.random()) : null;
+    return { ...applied(r), cache: { got, coin }, ...(can ? { can } : {}) };
   }
 
   // 0.0.93: daily goals. i = 0..2 pays GOAL_COIN once each; i = 3 (all three paid) pays a green match. The server
@@ -524,6 +582,20 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       w.coins < car.price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -car.price }), detail: JSON.stringify({ car: car.id }) },
     );
     return applied(r);
+  }
+
+  // 0.1.9: repaint a car you own with a can of its colour, for 10% of its price. The can is spent by key.
+  if (op.kind === "paint") {
+    const car = carOf(op.car);
+    if (!car || !colorOf(car.id, op.color)) return refused(wallet, "unknown");
+    if (!(await carsOf(sql, sessionUserId)).includes(car.id)) return refused(wallet, "no-car");
+    const held = (await paintOf(sql, sessionUserId)).cans.find((c) => c.can.car === car.id && c.can.color === op.color);
+    if (!held) return refused(wallet, "no-can");
+    const price = paintPrice(car.id);
+    const r = await mutateWallet(sql, sessionUserId, `paint:${held.key}`, (w) =>
+      w.coins < price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -price }), detail: JSON.stringify({ can: canId(held.can) }) },
+    );
+    return { ...applied(r), ...(r.ok ? { can: held.can } : {}) };
   }
 
   if (op.kind === "dgoal") {

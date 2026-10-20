@@ -40,7 +40,7 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet, rowToState } from "./walletSql.ts";
-import { DEVICE_CAP, applyClientOp, awardGrade, carsOf, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer } from "./walletApply.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, carsOf, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer, grantCan, paintOf } from "./walletApply.ts";
 import { MATCH_GIFTS, SCOUT_GIFTS } from "./matchGift.ts";
 import { MARKET_COIN_CAP, lightOf, marketCoinX } from "./marketLights.ts";
 import { tokenNonce } from "./walletClient.ts";
@@ -1401,4 +1401,32 @@ test("0.1.8 cars: the server sells each car once at its own price, any order, an
   assert.deepEqual((await carsOf(sql, "car")).sort(), ["f150", "mustang"]);
   const s = await syncPlayer(sql, "car", snap({ coins: 0 }), "carphone1");
   assert.deepEqual([...(s.owned?.cars ?? [])].sort(), ["f150", "mustang"]);
+});
+
+test("0.1.9 car paint: cans drop server-side once per source, paint needs the car, a matching can and 10% coin", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "pnt", snap({ coins: 0 }), "pntphone1");
+  const wid = (await canonicalWallet(sql, "pnt")).id;
+  assert.equal(await grantCan(sql, "pnt", "g:n1", 0.08, 0.5, 0), null, "missed roll: no can");
+  const a = await grantCan(sql, "pnt", "g:n2", 0.08, 0.01, 0.5);
+  assert.ok(a, "a hit drops a can");
+  assert.equal(await grantCan(sql, "pnt", "g:n2", 0.08, 0.01, 0.9), null, "same source never drops twice");
+  // A known can: civic red (pick lands on index 3 of 30).
+  await grantCan(sql, "pnt", "c:2026-10-20", 0.2, 0, 3.5 / 30);
+  assert.ok((await paintOf(sql, "pnt")).cans.some((c) => c.can.car === "civic" && c.can.color === "red"));
+  assert.equal((await applyClientOp(sql, "pnt", { kind: "paint", car: "civic", color: "red" })).reason, "no-car");
+  await sql`update player_wallets set coins = 31000 where user_id = ${wid}`;
+  assert.equal((await applyClientOp(sql, "pnt", { kind: "car", id: "civic" })).ok, true);
+  assert.equal((await applyClientOp(sql, "pnt", { kind: "paint", car: "civic", color: "blue" })).reason, "no-can");
+  assert.equal((await applyClientOp(sql, "pnt", { kind: "paint", car: "civic", color: "red" })).reason, "short-coins", "1,000 < 3,000");
+  await sql`update player_wallets set coins = 3000 where user_id = ${wid}`;
+  const r = await applyClientOp(sql, "pnt", { kind: "paint", car: "civic", color: "red" });
+  assert.equal(r.ok, true);
+  assert.equal((await canonicalWallet(sql, "pnt")).wallet.coins, 0, "10% of 30,000");
+  const after = await paintOf(sql, "pnt");
+  assert.equal(after.paint.civic, "red");
+  assert.ok(!after.cans.some((c) => c.can.car === "civic" && c.can.color === "red"), "the can is spent");
+  assert.equal((await applyClientOp(sql, "pnt", { kind: "paint", car: "civic", color: "red" })).reason, "no-can", "one can, one paint job");
+  const s = await syncPlayer(sql, "pnt", snap({ coins: 0 }), "pntphone1");
+  assert.equal(s.owned?.paint?.civic, "red");
 });

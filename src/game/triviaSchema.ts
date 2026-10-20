@@ -84,6 +84,8 @@ export type GradeResult =
       clearTier: Tier | null;
       /** True when the server recorded this card for a signed-in walker (plate event, and the clear if right). */
       credited: boolean;
+      /** 0.1.9: a paint can this right answer turned up (amber / red vault, server-rolled). */
+      can?: { car: string; color: string };
       /** True when this token had already been graded: the first result stands and nothing is credited. */
       replay: boolean;
       /**

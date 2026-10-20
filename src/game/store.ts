@@ -4,6 +4,7 @@ import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactR
 import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { carOf, isCarId, type CarId } from "./cars";
+import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
@@ -177,6 +178,9 @@ export type GameState = {
   /** 0.1.8: cars owned (server-reported) and the one you drive (null = the city cab). Showroom open at the dealer. */
   carsOwned: CarId[];
   carOn: CarId | null;
+  /** 0.1.9: paint cans held ("civic:red", one per can) and each car's colour (absent = factory). Server-owned when signed in. */
+  carCans: string[];
+  carPaint: Partial<Record<CarId, string>>;
   dealerOpen: boolean;
   dealerNear: boolean;
   /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
@@ -330,6 +334,7 @@ export type GameState = {
   buyLight: (id: LightId) => void;
   /** 0.1.8: buy a car (signed in; the server checks the price) and pick which one to drive. */
   buyCar: (id: CarId) => void;
+  paintCar: (id: CarId, color: string) => void;
   driveCar: (id: CarId | null) => void;
   setDealerOpen: (open: boolean) => void;
   setDealerNear: (near: boolean) => void;
@@ -347,7 +352,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[] }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string> }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -618,6 +623,8 @@ function persistable(s: GameState) {
     marketLight: s.marketLight,
     carsOwned: s.carsOwned,
     carOn: s.carOn,
+    carCans: s.carCans,
+    carPaint: s.carPaint,
     paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
@@ -905,6 +912,24 @@ function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boo
 /** 0.0.98: scouts the server reported as owned on sign-in; a refused buy never rolls these back. */
 const serverOwnedScouts = new Set<string>();
 
+/** 0.1.9: a paint can the server just handed over (vault or cache): into the satchel, with a toast. */
+function gotCan(c: { car: string; color: string }) {
+  const can = parseCan(`${c.car}:${c.color}`);
+  if (!can) return;
+  const st = useGame.getState();
+  useGame.setState({ carCans: [...st.carCans, canId(can)] });
+  window.setTimeout(() => {
+    useGame.setState({ toast: `Found a paint can: ${carOf(can.car)?.name} · ${colorOf(can.car, can.color)?.name}. Paint it at a car lot.` });
+    window.setTimeout(() => useGame.setState({ toast: null }), 2600);
+  }, 1800);
+}
+
+function cleanCarPaint(v: unknown): Partial<Record<CarId, string>> {
+  const out: Partial<Record<CarId, string>> = {};
+  if (v && typeof v === "object") for (const [k, c] of Object.entries(v as Record<string, unknown>)) if (isCarId(k) && typeof c === "string" && colorOf(k, c)) out[k] = c;
+  return out;
+}
+
 function pushOp(op: Parameters<typeof commitWallet>[0], undo?: () => void) {
   if (!walletLive()) return;
   void commitWallet(op).then((r) => {
@@ -1011,6 +1036,8 @@ export const useGame = create<GameState>((set, get) => ({
   marketLight: typeof saved?.marketLight === "string" ? saved.marketLight : "amber",
   carsOwned: Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [],
   carOn: isCarId(saved?.carOn) ? saved.carOn : null,
+  carCans: Array.isArray(saved?.carCans) ? saved.carCans.filter((x: unknown) => parseCan(x)) : [],
+  carPaint: cleanCarPaint(saved?.carPaint),
   dealerOpen: false,
   dealerNear: false,
   printWorn: typeof saved?.printWorn === "string" ? saved.printWorn : null,
@@ -1490,6 +1517,7 @@ export const useGame = create<GameState>((set, get) => ({
         const contractBefore = get().contract;
         get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited, paints: res.paints }, performance.now());
         if (res.wallet) applyServerGrade(res.wallet, res.award, surveyBefore, goalsBefore, contractBefore);
+        if (res.can) gotCan(res.can);
       })
       .catch(() => lost());
   },
@@ -2271,6 +2299,28 @@ export const useGame = create<GameState>((set, get) => ({
     flashToast(set, get, `${car.name} is yours. Tap CAB and it's at the curb.`, 2200);
     scheduleSave(get);
   },
+  paintCar: (id, color) => {
+    const car = carOf(id);
+    const col = car ? colorOf(car.id, color) : null;
+    const can = `${id}:${color}`;
+    const st = get();
+    if (!car || !col || !st.carsOwned.includes(id) || !st.carCans.includes(can)) return;
+    if (!walletLive()) {
+      flashToast(set, get, "Sign in to paint a car.", 1600);
+      return;
+    }
+    const price = paintPrice(id);
+    if (st.points < price) {
+      flashToast(set, get, "Need more coins.", 1400);
+      return;
+    }
+    const before = { carCans: st.carCans, carPaint: st.carPaint, points: st.points };
+    const i = st.carCans.indexOf(can);
+    set({ points: st.points - price, carCans: [...st.carCans.slice(0, i), ...st.carCans.slice(i + 1)], carPaint: { ...st.carPaint, [id]: color } });
+    pushOp({ kind: "paint", car: id, color }, () => set(before));
+    flashToast(set, get, `${car.name} painted ${col.name}.`, 2000);
+    scheduleSave(get);
+  },
   driveCar: (id) => {
     if (id && !get().carsOwned.includes(id)) return;
     set({ carOn: id });
@@ -2332,6 +2382,8 @@ export const useGame = create<GameState>((set, get) => ({
   adoptOwned: (o) => {
     for (const x of o.scouts) serverOwnedScouts.add(x);
     if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
+    if (o.cans) set({ carCans: o.cans.filter((x) => parseCan(x)) });
+    if (o.paint) set({ carPaint: cleanCarPaint(o.paint) });
     if (o.cars) {
       const cars = Array.from(new Set([...get().carsOwned, ...o.cars.filter(isCarId)]));
       set({ carsOwned: cars, carOn: get().carOn && cars.includes(get().carOn!) ? get().carOn : null });
@@ -2595,6 +2647,7 @@ export const useGame = create<GameState>((set, get) => ({
           set({ cacheDay: "", toast: "The cache is stuck. Try again in a moment." });
           return;
         }
+        if (r.can) gotCan(r.can);
         popMatch({ kind: "cache", big: "Match cache!", sub: say(r.cache?.got ?? [], r.cache?.coin ?? 0).replace(/^Match cache! /, ""), tiers: r.cache?.got ?? [], coin: r.cache?.coin ?? 0 });
         saveNow(get);
       });

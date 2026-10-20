@@ -13,6 +13,8 @@ import {
 } from "@/game/items";
 import { INGREDIENTS, isPaintId, type IngredientId } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
+import { carOf } from "@/game/cars";
+import { colorOf, parseCan } from "@/game/carPaint";
 import { useGame } from "@/game/store";
 import { vaultColorNote } from "@/game/vaultNote";
 import type { CharmId } from "@/game/types";
@@ -34,6 +36,7 @@ export function Satchel() {
   const cityId = useGame((s) => s.cityId);
   const atlas = useGame((s) => s.atlas);
   const vaults = useGame((s) => s.vaults);
+  const carCans = useGame((s) => s.carCans);
   const [sel, setSel] = useState<ItemId>("blue");
   const city = CITIES[cityId];
   const have = { brass, ink, vellum, schematics };
@@ -125,6 +128,29 @@ export function Satchel() {
                 {(Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || !isPaintId(id)) ? (
                   <li className="text-sm text-fg-muted">Lamps sometimes give paint in their colour (rare rainbow “prism” paint: about 1 in 10,000). Use it at the outfitter shop.</li>
                 ) : null}
+              </ul>
+            </section>
+
+            <section data-testid="car-cans">
+              <p className="kicker mb-2">Car paint</p>
+              <ul className="grid gap-2">
+                {[...new Set(carCans)].map((id) => {
+                  const c = parseCan(id);
+                  const col = c ? colorOf(c.car, c.color) : null;
+                  if (!c || !col) return null;
+                  return (
+                    <li key={id} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="flex items-center gap-2">
+                        <i className="paint-chip" style={{ background: col.hex }} />
+                        {col.name} · {carOf(c.car)?.name}
+                      </span>
+                      <span className="tabular-nums text-fg-muted">×{carCans.filter((x) => x === id).length}</span>
+                    </li>
+                  );
+                })}
+                {carCans.length ? null : (
+                  <li className="text-sm text-fg-muted">Paint cans turn up in amber and red vaults and the daily match cache. Bring one to a car lot to repaint a car you own.</li>
+                )}
               </ul>
             </section>
 
