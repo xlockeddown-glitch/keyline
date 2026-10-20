@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 116" width="120" height="116">
+<defs><linearGradient id="hroadster2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9aa2"/><stop offset=".4" stop-color="#e21b2c"/><stop offset="1" stop-color="#7a0a16"/></linearGradient>
+<linearGradient id="vroadster2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6f8aa6"/><stop offset=".55" stop-color="#141c28"/><stop offset="1" stop-color="#0c1118"/></linearGradient><clipPath id="froadster2"><path d="M9.780000000000001 90 L9.780000000000001 66 Q9.780000000000001 60 17.78 58 L31.48 36 Q33.480000000000004 28 41.480000000000004 28 L78.52 28 Q86.52 28 88.52 36 L102.22 58 Q110.22 60 110.22 66 L110.22 90 Q110.22 96 104.22 96 L15.780000000000001 96 Q9.780000000000001 96 9.780000000000001 90 Z"/></clipPath></defs>
+<ellipse cx="60" cy="106" rx="56.22" ry="6" fill="#000" opacity=".32"/>
+<rect x="12.780000000000001" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/><rect x="93.22" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/>
+<path d="M9.780000000000001 90 L9.780000000000001 66 Q9.780000000000001 60 17.78 58 L31.48 36 Q33.480000000000004 28 41.480000000000004 28 L78.52 28 Q86.52 28 88.52 36 L102.22 58 Q110.22 60 110.22 66 L110.22 90 Q110.22 96 104.22 96 L15.780000000000001 96 Q9.780000000000001 96 9.780000000000001 90 Z" fill="url(#hroadster2)"/>
+<path d="M36.480000000000004 35 L83.52 35 L98.22 56 L21.78 56 Z" fill="url(#vroadster2)" stroke="#21160f" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M40.480000000000004 38 L56 38 L29.78 53" stroke="#cfe0f0" stroke-opacity=".4" stroke-width="2" fill="none"/>
+<rect x="13.780000000000001" y="66" width="20.1" height="8" rx="3" fill="#dff4ff" stroke="#21160f" stroke-width="2"/><rect x="86.1" y="66" width="20.1" height="8" rx="3" fill="#dff4ff" stroke="#21160f" stroke-width="2"/>
+<path d="M15.780000000000001 90 L104.22 90" stroke="#7a0a16" stroke-width="3"/>
+<path d="M9.780000000000001 90 L9.780000000000001 66 Q9.780000000000001 60 17.78 58 L31.48 36 Q33.480000000000004 28 41.480000000000004 28 L78.52 28 Q86.52 28 88.52 36 L102.22 58 Q110.22 60 110.22 66 L110.22 90 Q110.22 96 104.22 96 L15.780000000000001 96 Q9.780000000000001 96 9.780000000000001 90 Z" fill="none" stroke="#21160f" stroke-width="3.5" stroke-linejoin="round"/>
+</svg>

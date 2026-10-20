@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 116" width="120" height="116">
+<defs><linearGradient id="hmustang" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a7a"/><stop offset=".4" stop-color="#cf2a2a"/><stop offset="1" stop-color="#7e1414"/></linearGradient>
+<linearGradient id="vmustang" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6f8aa6"/><stop offset=".55" stop-color="#1d2733"/><stop offset="1" stop-color="#0c1118"/></linearGradient><clipPath id="fmustang"><path d="M11.64 90 L11.64 66 Q11.64 60 19.64 58 L32.72 36 Q34.72 28 42.72 28 L77.28 28 Q85.28 28 87.28 36 L100.36 58 Q108.36 60 108.36 66 L108.36 90 Q108.36 96 102.36 96 L17.64 96 Q11.64 96 11.64 90 Z"/></clipPath></defs>
+<ellipse cx="60" cy="106" rx="54.36" ry="6" fill="#000" opacity=".32"/>
+<rect x="14.64" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/><rect x="91.36" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/>
+<path d="M11.64 90 L11.64 66 Q11.64 60 19.64 58 L32.72 36 Q34.72 28 42.72 28 L77.28 28 Q85.28 28 87.28 36 L100.36 58 Q108.36 60 108.36 66 L108.36 90 Q108.36 96 102.36 96 L17.64 96 Q11.64 96 11.64 90 Z" fill="url(#hmustang)"/><g clip-path="url(#fmustang)"><rect x="52" y="0" width="5" height="120" fill="#141414"/><rect x="63" y="0" width="5" height="120" fill="#141414"/></g>
+<path d="M37.72 35 L82.28 35 L96.36 56 L23.64 56 Z" fill="url(#vmustang)" stroke="#21160f" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M41.72 38 L56 38 L31.64 53" stroke="#cfe0f0" stroke-opacity=".4" stroke-width="2" fill="none"/>
+<rect x="15.64" y="66" width="19.3" height="8" rx="3" fill="#ffe6a8" stroke="#21160f" stroke-width="2"/><rect x="85.0" y="66" width="19.3" height="8" rx="3" fill="#ffe6a8" stroke="#21160f" stroke-width="2"/><rect x="39.7" y="67" width="40.6" height="9" rx="3" fill="#1a1c22" stroke="#21160f" stroke-width="2"/><circle cx="60" cy="71.5" r="2.5" fill="#d9b44a"/>
+<path d="M17.64 90 L102.36 90" stroke="#7e1414" stroke-width="3"/>
+<path d="M11.64 90 L11.64 66 Q11.64 60 19.64 58 L32.72 36 Q34.72 28 42.72 28 L77.28 28 Q85.28 28 87.28 36 L100.36 58 Q108.36 60 108.36 66 L108.36 90 Q108.36 96 102.36 96 L17.64 96 Q11.64 96 11.64 90 Z" fill="none" stroke="#21160f" stroke-width="3.5" stroke-linejoin="round"/>
+</svg>

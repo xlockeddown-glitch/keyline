@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 116" width="120" height="116">
+<defs><linearGradient id="hroadster" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fe0b0"/><stop offset=".4" stop-color="#2e8a5a"/><stop offset="1" stop-color="#18533a"/></linearGradient>
+<linearGradient id="vroadster" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6f8aa6"/><stop offset=".55" stop-color="#1c2a30"/><stop offset="1" stop-color="#0c1118"/></linearGradient><clipPath id="froadster"><path d="M19.08 90 L19.08 66 Q19.08 60 27.08 58 L38.3 42 Q40.3 34 48.3 34 L71.7 34 Q79.7 34 81.7 42 L92.92 58 Q100.92 60 100.92 66 L100.92 90 Q100.92 96 94.92 96 L25.08 96 Q19.08 96 19.08 90 Z"/></clipPath></defs>
+<ellipse cx="60" cy="106" rx="46.92" ry="6" fill="#000" opacity=".32"/>
+<rect x="22.08" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/><rect x="83.92" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/>
+<path d="M19.08 90 L19.08 66 Q19.08 60 27.08 58 L38.3 42 Q40.3 34 48.3 34 L71.7 34 Q79.7 34 81.7 42 L92.92 58 Q100.92 60 100.92 66 L100.92 90 Q100.92 96 94.92 96 L25.08 96 Q19.08 96 19.08 90 Z" fill="url(#hroadster)"/>
+<path d="M42.3 40 L77.7 40 L86.92 54 L33.08 54 Z" fill="url(#vroadster)" stroke="#21160f" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M47.3 44 L56 44 L39.08 53" stroke="#cfe0f0" stroke-opacity=".4" stroke-width="2" fill="none"/>
+<rect x="23.08" y="66" width="16.4" height="8" rx="3" fill="#c0392b" stroke="#21160f" stroke-width="2"/><rect x="80.6" y="66" width="16.4" height="8" rx="3" fill="#c0392b" stroke="#21160f" stroke-width="2"/><rect x="46" y="78" width="28" height="8" rx="1.5" fill="#efe9d6" stroke="#21160f" stroke-width="1.5"/>
+<path d="M25.08 90 L94.92 90" stroke="#18533a" stroke-width="3"/>
+<path d="M19.08 90 L19.08 66 Q19.08 60 27.08 58 L38.3 42 Q40.3 34 48.3 34 L71.7 34 Q79.7 34 81.7 42 L92.92 58 Q100.92 60 100.92 66 L100.92 90 Q100.92 96 94.92 96 L25.08 96 Q19.08 96 19.08 90 Z" fill="none" stroke="#21160f" stroke-width="3.5" stroke-linejoin="round"/>
+</svg>
