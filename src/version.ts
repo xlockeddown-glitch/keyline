@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.9";
+export const APP_VERSION = "0.1.10";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k109a";
+export const PUBLISH_STAMP = "k110a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -120,3 +120,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.7: opening the same lamp again the same day makes it stay dark longer — 1x the usual rest after the 1st open, 2x after the 2nd, 3x after the 3rd… (market lamps start from their 4x rest); the count is kept with the lamp's cooldown in the save and starts over at the city's local midnight (k107a).
 // 0.1.8: car dealerships — one real car lot per city (from OpenStreetMap) sells five cars for coin: Used Honda Civic Hatchback 30,000, Ford F-150 50,000, Shelby GT500 150,000, Tesla Roadster 600,000 and the Tesla Roadster 2.0 2,400,000. A car is your own cab: tap Car and it's at the curb (no waiting for a cab), and it drives 5% / 8% / 15% / 22% / 30% faster than the city cab. Lamps, shops and the Lantern Run are still on foot, and walking speed is unchanged. Bought once, kept on your account (server-checked like market lights; no new table) (k108a). Cars are painted raster sprites (front/back/side palette PNGs keyed off magenta, scout pipeline) — scripts/art/cars-process.py.
 // 0.1.9: car paint — find paint cans (one car, one real factory colour each: six per car) in amber vaults (8% of right answers), red vaults (15%) and the daily match cache (20%), rolled by the server. At a car lot, a car you own plus a can of its colour repaints it for 10% of the car's price (Civic 3,000 · F-150 5,000 · GT500 15,000 · Roadster 60,000 · Roadster 2.0 240,000). The colour shows on the showroom card and the map car and stays on your account (ledger rows can:* and paint:*; no new table) (k109a). Recolours: scripts/art/cars-paint.py.
+// 0.1.10: the title screen is a full night street — a painted backdrop (the skyline of your last-played city: Chicago, New York or San Francisco, else a generic downtown) with lit brass lanterns and a glowing vault down the road, the Corgi, Penguin and Fox by the signpost and your car (in its paint) at the curb, a lit brass KEYLINE marquee with the Pick a city sign hanging under it. Lantern flicker, passing headlights, and fireflies or rain from the live weather; all still under reduced motion (k110a).

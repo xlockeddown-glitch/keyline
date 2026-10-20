@@ -4280,3 +4280,60 @@ h3 {
 .cab-sprite[data-car]:not([data-car=""])[data-face="left"] { transform: scaleX(-1); }
 .cab-sprite[data-car="roadster2"] { filter: drop-shadow(0 0 5px rgb(255 90 110 / 0.6)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.45)); }
 .cab-sprite[data-car]:not([data-car=""]) .cab-lamp, .cab-sprite[data-car]:not([data-car=""]) .cab-cone { display: none; }
+
+/* 0.1.10 title: full night street. The painted backdrop (public/title/street-<city>.webp, 16:9) is laid out in its own
+   frame so lamp, vault and headlight overlays sit on the painting at any size; the cast stands on the pavement. */
+.title-night.is-blade.is-street { justify-content: flex-start; background: #07090f; }
+.title-night.is-street > :not(.ts-scene) { position: relative; z-index: 2; }
+.title-night.is-street .title-audio, .title-night.is-street .title-account { position: absolute; z-index: 6; }
+.ts-scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  background: linear-gradient(180deg, #000a24 0, #010c29 20dvh, #0b0f1c 70dvh, #0a0b10 100%); }
+.ts-frame { position: absolute; left: 50%; top: 0; height: max(66dvh, 56.25vw); aspect-ratio: 16 / 9; transform: translateX(-50%); }
+@media (max-aspect-ratio: 3/4) { .ts-frame { top: 21dvh; } .ts-frame::before { content: ""; position: absolute; z-index: 1; inset: -1px 0 auto; height: 14%; background: linear-gradient(180deg, #010c29, transparent); } }
+.ts-frame::after { content: ""; position: absolute; inset: auto 0 -1px; height: 30%; background: linear-gradient(180deg, transparent, #0a0b10); }
+.ts-back { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ts-vault { position: absolute; left: 50.6%; top: 45.5%; width: 17%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 196 92 / 0.55), rgb(255 160 60 / 0.18) 55%, transparent); mix-blend-mode: screen; animation: ts-vault 4.5s ease-in-out infinite; }
+.ts-lamp { position: absolute; width: 7.5%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 214 140 / 0.7), rgb(255 170 70 / 0.22) 50%, transparent); mix-blend-mode: screen; animation: ts-flicker 3.1s steps(1) infinite; }
+.ts-lamp.is-far { width: 3.6%; }
+.ts-headlights { position: absolute; top: 57%; left: -30%; width: 26%; height: 9%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 246 214 / 0.55), rgb(255 230 170 / 0.12) 60%, transparent); mix-blend-mode: screen; opacity: 0; animation: ts-pass 13s linear infinite 3s; }
+.ts-flies i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #ffe9a6; box-shadow: 0 0 6px 2px rgb(255 220 120 / 0.6); opacity: 0; animation: ts-fly 7s ease-in-out infinite; }
+.ts-scene.is-wet .ts-back { filter: saturate(0.85) brightness(0.9); }
+.ts-scene .sky-layer { z-index: 1; }
+.ts-cast { position: absolute; z-index: 2; left: 50%; bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem)); transform: translateX(-50%);
+  display: flex; align-items: flex-end; gap: clamp(0.1rem, 1vw, 0.9rem); filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.55)); }
+.ts-car { width: clamp(118px, 30vw, 300px); height: auto; margin-right: clamp(0.2rem, 2vw, 2.5rem); }
+.ts-scout { height: clamp(62px, 10dvh, 130px); width: auto; }
+.ts-scout.is-penguin { transform: translateY(-2px); }
+.ts-marquee { position: relative; display: flex; gap: 0.12em; margin: 0 0 0; padding: 0.32em 0.6em 0.26em; font-family: var(--font-display, serif);
+  font-size: clamp(2.3rem, 11vw, 4.6rem); font-weight: 800; line-height: 1; letter-spacing: 0.04em; color: #fff4d0;
+  text-shadow: 0 0 6px rgb(255 205 110 / 0.95), 0 0 18px rgb(255 160 60 / 0.65), 0 2px 0 #6b4310;
+  background: linear-gradient(180deg, #3a2a14, #22180b); border: 4px solid #c99a45; border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 2px #6f4f1d, inset 0 0 24px rgb(0 0 0 / 0.6), 0 0 28px rgb(255 170 70 / 0.35), 0 8px 18px rgb(0 0 0 / 0.6); }
+.ts-marquee::before { content: ""; position: absolute; inset: 5px; border-radius: 0.3rem; pointer-events: none;
+  background: radial-gradient(circle, #fff1c2 0 2.2px, rgb(255 200 90 / 0.5) 3px, transparent 4.5px) 0 0 / 16px 16px;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% 8px no-repeat, linear-gradient(#000 0 0) bottom / 100% 8px no-repeat;
+  mask: linear-gradient(#000 0 0) top / 100% 8px no-repeat, linear-gradient(#000 0 0) bottom / 100% 8px no-repeat; animation: ts-bulbs 1.4s steps(2) infinite; }
+.ts-marquee span { position: relative; }
+.is-street .blade-mast { padding-top: 1.5rem; }
+.is-street .blade-pole { display: none; }
+.is-street .blade-mast::before, .is-street .blade-mast::after { content: ""; position: absolute; top: -0.2rem; height: 1.9rem; width: 3px;
+  background: repeating-linear-gradient(180deg, #d4a957 0 4px, #6b4c1d 4px 6px); }
+.is-street .blade-mast::before { left: 22%; }
+.is-street .blade-mast::after { right: 22%; }
+.is-street .city-blade { box-shadow: 0 2px 0 #042615, 0 0 22px rgb(255 190 90 / 0.25), 0 10px 22px rgb(0 0 0 / 0.55); }
+.is-street .book-links { padding: 0.2rem 0.8rem; border-radius: 999px; background: rgb(8 10 18 / 0.62); backdrop-filter: blur(3px); }
+.is-street .blade-stage .title-more { color: #e3e8ef; }
+.is-street .book-ver, .is-street .book-coin, .is-street .blade-note { color: #cdd5df; text-shadow: 0 1px 3px #000; }
+@keyframes ts-flicker { 0%, 100% { opacity: 1; } 37% { opacity: 0.82; } 41% { opacity: 1; } 68% { opacity: 0.9; } 71% { opacity: 1; } }
+@keyframes ts-vault { 0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.96); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); } }
+@keyframes ts-pass { 0% { left: -30%; opacity: 0; } 4% { opacity: 1; } 30% { opacity: 1; } 34% { left: 104%; opacity: 0; } 100% { left: 104%; opacity: 0; } }
+@keyframes ts-fly { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 0.9; } 50% { transform: translate(14px, -18px); opacity: 0.6; } 75% { opacity: 0.9; transform: translate(-8px, -30px); } }
+@keyframes ts-bulbs { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) {
+  .ts-scene *, .ts-marquee::before { animation: none !important; }
+  .ts-headlights, .ts-flies { display: none; }
+}
+@media (min-width: 900px) { .is-street .blade-stage { margin-top: 1vh; } .ts-cast { gap: 1rem; } }
