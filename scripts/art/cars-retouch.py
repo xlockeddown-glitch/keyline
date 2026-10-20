@@ -5,8 +5,8 @@ def disc(im,x,y,r,col): ImageDraw.Draw(im).ellipse((x-r,y-r,x+r,y+r),fill=col)
 for v in ['side','front','back']:
     im=Image.open(f'{D}/roadster2-{v}-src-orig.jpg').convert('RGB'); a=np.asarray(im).astype(float)
     H=a.shape[0]; r,g,b=a[...,0],a[...,1],a[...,2]
-    yl=(r>120)&(g>80)&(b<0.7*g)&(r-b>60); yl[int(H*.5):]=False   # yellow/amber glass, upper half only
-    a[yl]=a[yl]*[.30,.26,.20]+[14,12,10]
+    yl=(r>60)&(g>b+20)&(r-b>35); yl[int(H*.5):]=False   # yellow/amber glass, upper half only
+    l=a[yl].mean(-1,keepdims=True)*.18+22; a[yl]=np.concatenate([l*.94,l*.98,l*1.08],-1)  # neutral dark glass, faint cool cast
     im=Image.fromarray(a.clip(0,255).astype('uint8'))
     if v=='side':
         for x in (287,984): disc(im,x,446,10,(28,28,30)); disc(im,x,446,4,(70,66,60))
