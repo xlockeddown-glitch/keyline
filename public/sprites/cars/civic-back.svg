@@ -1,12 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 116" width="120" height="116">
-<defs><linearGradient id="hcivic" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef2f6"/><stop offset=".4" stop-color="#c3c9d1"/><stop offset="1" stop-color="#7d8590"/></linearGradient>
-<linearGradient id="vcivic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6f8aa6"/><stop offset=".55" stop-color="#2b3d52"/><stop offset="1" stop-color="#0c1118"/></linearGradient><clipPath id="fcivic"><path d="M13.5 90 L13.5 66 Q13.5 60 21.5 58 L30.240000000000002 36 Q32.24 28 40.24 28 L79.75999999999999 28 Q87.75999999999999 28 89.75999999999999 36 L98.5 58 Q106.5 60 106.5 66 L106.5 90 Q106.5 96 100.5 96 L19.5 96 Q13.5 96 13.5 90 Z"/></clipPath></defs>
-<ellipse cx="60" cy="106" rx="52.5" ry="6" fill="#000" opacity=".32"/>
-<rect x="16.5" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/><rect x="89.5" y="92" width="14" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/>
-<path d="M13.5 90 L13.5 66 Q13.5 60 21.5 58 L30.240000000000002 36 Q32.24 28 40.24 28 L79.75999999999999 28 Q87.75999999999999 28 89.75999999999999 36 L98.5 58 Q106.5 60 106.5 66 L106.5 90 Q106.5 96 100.5 96 L19.5 96 Q13.5 96 13.5 90 Z" fill="url(#hcivic)"/>
-<path d="M35.24 35 L84.75999999999999 35 L94.5 56 L25.5 56 Z" fill="url(#vcivic)" stroke="#21160f" stroke-width="2.5" stroke-linejoin="round"/>
-<path d="M39.24 38 L56 38 L33.5 53" stroke="#cfe0f0" stroke-opacity=".4" stroke-width="2" fill="none"/>
-<rect x="17.5" y="66" width="18.6" height="8" rx="3" fill="#c0392b" stroke="#21160f" stroke-width="2"/><rect x="83.9" y="66" width="18.6" height="8" rx="3" fill="#c0392b" stroke="#21160f" stroke-width="2"/><rect x="46" y="78" width="28" height="8" rx="1.5" fill="#efe9d6" stroke="#21160f" stroke-width="1.5"/>
-<path d="M19.5 90 L100.5 90" stroke="#7d8590" stroke-width="3"/>
-<path d="M13.5 90 L13.5 66 Q13.5 60 21.5 58 L30.240000000000002 36 Q32.24 28 40.24 28 L79.75999999999999 28 Q87.75999999999999 28 89.75999999999999 36 L98.5 58 Q106.5 60 106.5 66 L106.5 90 Q106.5 96 100.5 96 L19.5 96 Q13.5 96 13.5 90 Z" fill="none" stroke="#21160f" stroke-width="3.5" stroke-linejoin="round"/>
+<defs><linearGradient id="hcivic" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f4f8"/><stop offset=".42" stop-color="#c3c9d1"/><stop offset="1" stop-color="#7a828d"/></linearGradient>
+<linearGradient id="vcivic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6f8aa6"/><stop offset=".55" stop-color="#2b3d52"/><stop offset="1" stop-color="#0c1118"/></linearGradient><clipPath id="fcivic"><path d="M16 90 L16 65 Q16 60 24 58 L30 40 Q32 32 40 32 L80 32 Q88 32 90 40 L96 58 Q104 60 104 65 L104 90 Q104 96 98 96 L22 96 Q16 96 16 90 Z"/></clipPath></defs>
+<ellipse cx="60" cy="106" rx="50" ry="6" fill="#000" opacity=".32"/>
+<rect x="19" y="91" width="15" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/><rect x="86" y="91" width="15" height="12" rx="3" fill="#141417" stroke="#21160f" stroke-width="2"/>
+
+<path d="M16 90 L16 65 Q16 60 24 58 L30 40 Q32 32 40 32 L80 32 Q88 32 90 40 L96 58 Q104 60 104 65 L104 90 Q104 96 98 96 L22 96 Q16 96 16 90 Z" fill="url(#hcivic)"/>
+<path d="M35 39 L85 39 L92 56 L28 56 Z" fill="url(#vcivic)" stroke="#21160f" stroke-width="2.4" stroke-linejoin="round"/><path d="M39 42 L54 42 L36 53" stroke="#cfe0f0" stroke-opacity=".4" stroke-width="2" fill="none"/><path d="M19 64 L42 64 L40 69 L24 69 L22 74 L19 74 Z M101 64 L78 64 L80 69 L96 69 L98 74 L101 74 Z" fill="#c0392b" stroke="#21160f" stroke-width="1.8"/><rect x="47" y="80" width="26" height="8" rx="1.5" fill="#efe9d6" stroke="#21160f" stroke-width="1.5"/>
+<path d="M22 93 L98 93" stroke="#7a828d" stroke-width="2"/>
+<path d="M16 90 L16 65 Q16 60 24 58 L30 40 Q32 32 40 32 L80 32 Q88 32 90 40 L96 58 Q104 60 104 65 L104 90 Q104 96 98 96 L22 96 Q16 96 16 90 Z" fill="none" stroke="#21160f" stroke-width="3.5" stroke-linejoin="round"/>
 </svg>
