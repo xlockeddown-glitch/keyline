@@ -42,3 +42,10 @@ test("0.1.8: a car never touches what pays — only the seated drive speed reads
   assert.ok(!/walkSpeed\([^)]*\) \* carPace/.test(map), "walking is untouched");
   assert.match(store, /buyCar:/);
 });
+
+test("0.1.11: the car lot sign survives a cab ride — only paintDealer replaces it", async () => {
+  const { readFileSync } = await import("node:fs");
+  const map = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
+  const cab = map.slice(map.indexOf("function paintCab()"), map.indexOf("function paintCab()") + 600);
+  assert.ok(!/dealerMarker/.test(cab), "paintCab must not touch the car lot marker");
+});

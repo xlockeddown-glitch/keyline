@@ -257,8 +257,6 @@ export function GameMap() {
     const cab = cabRef.current;
     if (!L || !map || !cab || cab.seated) {
       cabMarker.current?.remove();
-      dealerMarker.current?.remove();
-      dealerMarker.current = null;
       cabMarker.current = null;
       return;
     }
