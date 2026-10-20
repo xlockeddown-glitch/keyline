@@ -21,15 +21,15 @@ test("0.1.7 cache: same spot per city/day, 2-3 matches amber and up only, same p
   for (let d = 1; d <= 28; d++) {
     const p = cachePrize("pl", `2026-10-${String(d).padStart(2, "0")}`);
     assert.ok(p.length >= 2 && p.length <= 3);
-    assert.ok(p.every((t) => t === "amber" || t === "red" || t === "violet"));
+    assert.ok(p.every((t) => t === "amber" || t === "red"));
     assert.deepEqual(cachePrize("pl", `2026-10-${String(d).padStart(2, "0")}`), p);
   }
-  // The old 60 / 30 / 10 weights carry over to amber / red / violet.
+  // Amber 2 in 3, red 1 in 3, never violet.
   const n: Record<string, number> = {};
   let all = 0;
   for (let i = 0; i < 4000; i++) for (const t of cachePrize(`p${i}`, "2026-10-19")) { n[t] = (n[t] ?? 0) + 1; all++; }
-  assert.ok(Math.abs(n.amber! / all - 0.6) < 0.03 && Math.abs(n.red! / all - 0.3) < 0.03 && Math.abs(n.violet! / all - 0.1) < 0.02, JSON.stringify(n));
-  assert.equal((n.white ?? 0) + (n.blue ?? 0) + (n.green ?? 0), 0);
+  assert.ok(Math.abs(n.amber! / all - 2 / 3) < 0.03 && Math.abs(n.red! / all - 1 / 3) < 0.03, JSON.stringify(n));
+  assert.equal((n.white ?? 0) + (n.blue ?? 0) + (n.green ?? 0) + (n.violet ?? 0), 0);
 });
 
 test("daily goals: three distinct, progress counts, claimable", () => {
