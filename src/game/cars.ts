@@ -14,8 +14,8 @@ export type CarId = "civic" | "f150" | "mustang" | "roadster" | "roadster2";
 export type Car = { id: CarId; name: string; year: string; blurb: string; price: number; pace: number; star?: boolean };
 
 export const CARS: readonly Car[] = [
-  { id: "civic", name: "Used Honda Civic", year: "2011", blurb: "Dented, reliable, always starts.", price: 30_000, pace: 1.05 },
-  { id: "f150", name: "Ford F-150", year: "2016", blurb: "A pickup with room for the crates.", price: 50_000, pace: 1.08 },
+  { id: "civic", name: "Used Honda Civic Hatchback", year: "2017", blurb: "Dented, reliable, always starts.", price: 30_000, pace: 1.05 },
+  { id: "f150", name: "Ford F-150", year: "2026", blurb: "A pickup with room for the crates.", price: 50_000, pace: 1.08 },
   { id: "mustang", name: "Shelby GT500", year: "2020", blurb: "760 hp, silver, striped.", price: 150_000, pace: 1.15 },
   { id: "roadster", name: "Tesla Roadster", year: "2008", blurb: "The original electric roadster.", price: 600_000, pace: 1.22 },
   { id: "roadster2", name: "Tesla Roadster 2.0", year: "Next-gen", blurb: "The fastest thing in Keyline.", price: 2_400_000, pace: 1.3, star: true },
