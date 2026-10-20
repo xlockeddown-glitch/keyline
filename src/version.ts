@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.6";
+export const APP_VERSION = "0.1.7";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k106a";
+export const PUBLISH_STAMP = "k107a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -114,3 +114,5 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.6: the night market is just its circle — every road inside it is lit, clipped to the circle; the old dotted street-line glow is gone (k106a).
 // 0.1.6: trivia +477 cards (banks/plus_20261019.ts, from wip/trivia-plus50 8f998e4) (k106a).
 // 0.1.6: no more camping the night market — its lamps now rest 4x as long after a light (white 6 min, blue 9 min 20 s, green 14 min 40 s, amber/red 26 min 40 s) instead of relighting 3x faster (30 s / 47 s / 73 s / 2 min 13 s); still ×2 pay; worn scout saved on the account (0018_worn_scouts) (k106a).
+// 0.1.7: night market art pass — a warm pool of light inside a fine lit ring (no flat orange fill), roads as a faint warm thread, strings of small bulbs along them that twinkle out of step (still under reduced motion); never takes a tap (k107a).
+// 0.1.7: every night market hangs 3 extra lanterns inside its circle (1 white, 1 blue, 1 green) on the market street, clear of the city's lamps; ×2 market pay, each opens once per market and they vanish when it closes; the server deals them as real lamps (k107a).

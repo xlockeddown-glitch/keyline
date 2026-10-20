@@ -391,3 +391,45 @@ test("0.1.2: every city has at least 2 market zones to rotate between, and conse
     for (let h = H0; h < H0 + 96; h++) assert.notEqual(marketAt(city, at(h))!.street.name, marketAt(city, at(h + 1))!.street.name, `${city} same spot twice running`);
   }
 });
+
+test("0.1.7: every open market adds a white, a blue and a green lantern inside its circle, apart from the lamps", async () => {
+  const nm = await import("./nightMarket.ts");
+  const { CITIES } = await import("./data.ts");
+  const { distM } = await import("./geo.ts");
+  let checked = 0;
+  for (const city of Object.keys(CITIES) as (keyof typeof CITIES)[]) {
+    for (const hour of [H0, H0 + 1, H0 + 7]) {
+      const at = hour * MARKET_HOUR_MS + 60_000;
+      const m = nm.marketAt(city, at);
+      if (!m) continue;
+      const ls = nm.marketLanterns(m);
+      assert.deepEqual(ls.map((p) => p.tier), ["white", "blue", "green"], city);
+      for (const p of ls) {
+        assert.ok(distM(m.zone.lat, m.zone.lng, p.lat, p.lng) <= m.zone.r, `${p.id} inside the circle`);
+        assert.ok(nm.isMarketLantern(p.id));
+        assert.equal(nm.marketMult(city, at, { kind: "lamp", poiId: p.id, lat: p.lat, lng: p.lng }), MARKET_MULT, "normal market pay");
+        // Live while the market is open, gone once it closes or the next one opens.
+        assert.equal(nm.marketLanternById(city, p.id, at)?.tier, p.tier);
+        assert.equal(nm.marketLanternById(city, p.id, m.endsAt + 1), null);
+        assert.equal(nm.marketLanternById(city, p.id, at + MARKET_HOUR_MS), null);
+        assert.equal(nm.lanternCycleEnd(p.id), (m.hour + 1) * MARKET_HOUR_MS, "opened once per cycle");
+        assert.ok(nm.livePois(CITIES[city], [], at).some((q) => q.id === p.id));
+        assert.ok(!nm.livePois(CITIES[city], [], m.endsAt + 1).some((q) => q.id === p.id));
+      }
+      // Never on top of each other, and clear of the city's lamps wherever the street gives room.
+      for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) assert.ok(distM(ls[i]!.lat, ls[i]!.lng, ls[j]!.lat, ls[j]!.lng) >= 10, `${city} lanterns apart`);
+      const near = Math.min(...ls.flatMap((p) => CITIES[city].pois.map((q) => distM(p.lat, p.lng, q.lat, q.lng))));
+      assert.ok(near >= 10, `${city} ${hour}: a lantern sits ${near.toFixed(0)} m from a lamp`);
+      checked++;
+    }
+  }
+  assert.ok(checked > 20);
+});
+
+test("0.1.7: the server deals a live market lantern as a real lamp, and the device keeps it dark until its market ends", () => {
+  const bank = readFileSync(new URL("./triviaBank.ts", import.meta.url), "utf8");
+  assert.match(bank, /\?\? marketLanternById\(city, poiId, Date\.now\(\)\)/);
+  const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.match(store, /marketLanternById\(st\.cityId, poiId, Date\.now\(\)\)/);
+  assert.match(store, /isMarketLantern\(poi\.id\) \? Math\.max\(coolMs, lanternCycleEnd\(poi\.id\) - Date\.now\(\)\) : coolMs/);
+});

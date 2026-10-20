@@ -1,7 +1,8 @@
 import { SkyLayer } from "./Sky";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
-import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, allPois, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
+import { anyPois, livePois } from "@/game/nightMarket";
+import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
@@ -678,6 +679,16 @@ export function GameMap() {
   }
 
   /** Night market: a glowing circle, its roads lit, and a ×2 lantern sign at its centre. Repaints each market and when streets load. */
+  /** 0.1.7: the radial gradient the market circle fills with, added once to the overlay SVG. */
+  function ensureMarketPool(map: import("leaflet").Map) {
+    const svg = map.getPanes().overlayPane.querySelector("svg");
+    if (!svg || svg.querySelector("#market-pool")) return;
+    const ns = "http://www.w3.org/2000/svg";
+    const defs = document.createElementNS(ns, "defs");
+    defs.innerHTML = '<radialGradient id="market-pool"><stop offset="0" stop-opacity="0.22"/><stop offset="0.65" stop-opacity="0.09"/><stop offset="1" stop-opacity="0.02"/></radialGradient>';
+    svg.prepend(defs);
+  }
+
   function paintMarket() {
     const L = Lref.current;
     const map = mapRef.current;
@@ -693,14 +704,23 @@ export function GameMap() {
       return;
     }
     clearMarket();
-    if (!m) return;
+    // 0.1.7: the market's three lanterns come and go with it, so the lamp pins follow every market change.
+    rebuildPins(L, map);
     marketKey.current = key;
+    if (!m) return;
     // 0.1.6: the market is just the circle. Every road inside it glows (clipped at the edge); the old dotted line
     // along one street, running past the circle, is gone. One polyline, no events, so it is cheap and never takes a tap.
     const roads = graphRef.current ? roadsInCircle(graphRef.current, m.zone) : [];
     // 0.1.00: the market is a zone round a square; a soft glowing edge, every lamp inside counts.
-    const zone = L.circle([m.zone.lat, m.zone.lng], { radius: m.zone.r, className: "market-zone", interactive: false, weight: 3, fillOpacity: 0.08 }).addTo(map);
-    const glow = L.polyline(roads, { weight: 2.5, opacity: 0.6, className: "market-roads", interactive: false, lineCap: "round", lineJoin: "round" }).addTo(map);
+    // 0.1.7 art pass: a warm pool of light (radial gradient, no flat fill) inside a fine double ring, the roads as a
+    // faint warm thread, and strings of small bulbs along them — two dotted paths that twinkle out of step. Four SVG
+    // paths in all, no events: cheap on phones and never takes a tap. Purely cosmetic.
+    ensureMarketPool(map);
+    const zone = L.circle([m.zone.lat, m.zone.lng], { radius: m.zone.r, className: "market-zone", interactive: false, weight: 1.5, fillOpacity: 1 }).addTo(map);
+    const line = { interactive: false, lineCap: "round" as const, lineJoin: "round" as const };
+    const glow = L.polyline(roads, { ...line, weight: 2, opacity: 0.35, className: "market-roads" }).addTo(map);
+    const bulbsA = L.polyline(roads, { ...line, weight: 3.5, opacity: 1, dashArray: "0 14", className: "market-bulbs" }).addTo(map);
+    const bulbsB = L.polyline(roads, { ...line, weight: 3.5, opacity: 1, dashArray: "0 14", dashOffset: "7", className: "market-bulbs is-b" }).addTo(map);
     const at = { lat: m.zone.lat, lng: m.zone.lng };
     void marketAnchor;
     const safe = m.street.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
@@ -715,7 +735,7 @@ export function GameMap() {
       keyboard: false,
       zIndexOffset: 650,
     }).addTo(map);
-    marketLayers.current = [zone, glow, pin];
+    marketLayers.current = [zone, glow, bulbsA, bulbsB, pin];
     fitMarketSign();
   }
 
@@ -1318,7 +1338,7 @@ export function GameMap() {
     const now = Date.now();
     for (const m of vaultMarkers.current.values()) m.remove();
     vaultMarkers.current.clear();
-    for (const poi of allPois(city, st.blanks)) {
+    for (const poi of livePois(city, st.blanks)) {
       const v = st.vaults[poi.id];
       const cooling = Boolean(v && v.state === "cooling" && v.coolUntil > now);
       const desk = isFareDesk(poi);
@@ -1401,7 +1421,7 @@ export function GameMap() {
         ? { lat: run.lat, lng: run.lng }
         : poiId === STACK_ID && st.stack && st.stack.readyAt === 0
           ? { lat: st.stack.lat, lng: st.stack.lng }
-          : allPois(CITIES[st.cityId], st.blanks).find((p) => p.id === poiId);
+          : anyPois(CITIES[st.cityId], st.blanks).find((p) => p.id === poiId);
     if (!poi) return;
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
     if (d > reach() || cabRef.current?.seated) {
@@ -1762,7 +1782,7 @@ export function GameMap() {
 
       const city = CITIES[st.cityId];
       let nearestPoi = { id: "", d: Infinity, lat: pos.current.lat, lng: pos.current.lng };
-      for (const p of allPois(city, st.blanks)) {
+      for (const p of livePois(city, st.blanks)) {
         const d = distM(pos.current.lat, pos.current.lng, p.lat, p.lng);
         if (d < nearestPoi.d) nearestPoi = { id: p.id, d, lat: p.lat, lng: p.lng };
       }
@@ -1857,7 +1877,7 @@ export function GameMap() {
         const reachM = interactRadius(st.equipped === "lantern") * (SCOUTS[st.scout]?.perk.sight ?? 1);
         const fresh: string[] = [];
         if (!seated) {
-          for (const p of allPois(city, st.blanks)) {
+          for (const p of livePois(city, st.blanks)) {
             if (st.atlas[p.id]) continue;
             if (distM(pos.current.lat, pos.current.lng, p.lat, p.lng) <= reachM) fresh.push(p.id);
           }

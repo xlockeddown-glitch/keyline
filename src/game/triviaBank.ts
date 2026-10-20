@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { CITIES, seriesOf, seriesPoi } from "./data";
+import { marketLanternById } from "./nightMarket";
 import { DOOR_QUIZZES } from "./doorQuizzes";
 import { sealPlate } from "./rarity";
 import { everyCard, everyCardCat, pickTrivia } from "./trivia";
@@ -52,7 +53,8 @@ export function cardCat(id: string): TriviaCat | null {
 }
 
 function namedPoi(city: CityId, poiId: string): Poi | null {
-  return CITIES[city]?.pois.find((p) => p.id === poiId) ?? null;
+  // 0.1.7: the open market's three lanterns are real lamps while it is open (rebuilt from the baked street).
+  return CITIES[city]?.pois.find((p) => p.id === poiId) ?? marketLanternById(city, poiId, Date.now());
 }
 
 function series(poiId: string) {

@@ -4084,7 +4084,9 @@ h3 {
 .leaflet-container[data-market-light="violet"] { --mlight: #a77bff; }
 .leaflet-container[data-market-light="ice"] { --mlight: #9be8ff; }
 .leaflet-container[data-market-light="rainbow"] { --mlight: #ffe066; }
-.market-zone { stroke: var(--mlight); fill: var(--mlight); filter: blur(1.5px) drop-shadow(0 0 6px var(--mlight)); }
+/* 0.1.7 art pass: a warm pool of light and a fine lit ring instead of a flat orange fill (the gradient lives in GameMap). */
+.market-zone { stroke: color-mix(in oklab, var(--mlight) 70%, white); stroke-opacity: 0.75; fill: url(#market-pool); filter: drop-shadow(0 0 5px var(--mlight)); }
+#market-pool stop { stop-color: var(--mlight); }
 .market-glow { stroke: var(--mlight); }
 .market-line { stroke: color-mix(in oklab, var(--mlight) 45%, white); filter: drop-shadow(0 0 3px var(--mlight)); }
 .leaflet-container[data-market-light="rainbow"] .market-line { animation: market-rainbow 6s linear infinite; }
@@ -4159,8 +4161,12 @@ h3 {
 }
 
 /* 0.1.6: the market is just its circle; every road inside it is lit (GameMap clips them to the circle). */
-.market-roads { stroke: var(--mlight, #ff8a4c); filter: drop-shadow(0 0 2px var(--mlight, #ff8a4c)); pointer-events: none; animation: market-breathe 2.6s ease-in-out infinite; }
+/* 0.1.7: the roads are a faint warm thread; strings of small bulbs ride on them and twinkle out of step (two paths). */
+.market-roads { stroke: var(--mlight, #ff8a4c); filter: drop-shadow(0 0 3px var(--mlight, #ff8a4c)); pointer-events: none; }
+.market-bulbs { stroke: color-mix(in oklab, var(--mlight, #ff8a4c) 35%, #fff4d6); pointer-events: none; animation: market-twinkle 3.2s ease-in-out infinite; }
+.market-bulbs.is-b { animation-delay: -1.6s; }
+@keyframes market-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 .leaflet-container[data-market-light="rainbow"] .market-roads { animation: market-rainbow 6s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .market-roads, .leaflet-container[data-market-light="rainbow"] .market-roads { animation: none; stroke-opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .market-bulbs, .leaflet-container[data-market-light="rainbow"] .market-roads { animation: none; } }
 /* 0.1.6: on the narrowest phones the sky button would push the toolbar over the zoom; the HUD weather line toggles it there. */
 @media (max-width: 379px) { .hud-plate.is-kit[data-testid="sky-toggle"] { display: none; } }

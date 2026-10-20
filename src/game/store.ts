@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
-import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
+import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
-import { MARKET_MULT, MARKET_TAG, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
+import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
@@ -819,7 +819,7 @@ async function dealCard(
   const st = get();
   const city = CITIES[st.cityId];
   const series = seriesOf(poiId);
-  const named = series ? null : city.pois.find((p) => p.id === poiId);
+  const named = series ? null : (city.pois.find((p) => p.id === poiId) ?? marketLanternById(st.cityId, poiId, Date.now()));
   const blank = series || named ? undefined : st.blanks.find((p) => p.id === poiId);
   const dealBlank =
     blank && lampKind(blank.kind)
@@ -1304,7 +1304,7 @@ export const useGame = create<GameState>((set, get) => ({
   tryOpen: (poiId, now) => {
     const city = CITIES[get().cityId];
     const series = seriesOf(poiId);
-    const poi = series ? seriesPoi(series) : allPois(city, get().blanks).find((p) => p.id === poiId);
+    const poi = series ? seriesPoi(series) : livePois(city, get().blanks).find((p) => p.id === poiId);
     if (!poi) return "No lamp.";
     // 0.0.57: one lamp at a time. An answer with the server stays; any other open card is walked away from first (its held match comes back).
     if (get().openVault?.poiId === poiId) return null;
@@ -1383,7 +1383,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (!ov || ov.question || ov.pending) return;
     const series = seriesOf(ov.poiId);
     // 0.0.57: the tier this card costs (none for a spark). Re-checked here and taken atomically when the card lands.
-    const cost: Tier | null = ov.spark ? null : series ? series.cost : (allPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
+    const cost: Tier | null = ov.spark ? null : series ? series.cost : (anyPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
     if (!ov.spark && !cost) return;
     if (cost && !hasMatch(get().keys, cost)) {
       flashToast(set, get, `Need a ${TIER_LABEL[cost]} match.`, 2400);
@@ -1480,7 +1480,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (!ov?.question) return;
     const city = CITIES[get().cityId];
     const series = seriesOf(ov.poiId);
-    const poi = series ? seriesPoi(series) : allPois(city, get().blanks).find((p) => p.id === ov.poiId);
+    const poi = series ? seriesPoi(series) : anyPois(city, get().blanks).find((p) => p.id === ov.poiId);
     if (!poi) return;
     // 0.0.90: the day's first graded answer (right or wrong) claims the morning crate.
     if (autoCrateDue(get().lastCrateDay, today())) get().claimCrate(true);
@@ -1894,7 +1894,9 @@ export const useGame = create<GameState>((set, get) => ({
     loot.boosts = paid.boosts.length ? paid.boosts : undefined;
     // 0.1.6: a lamp on the open night market rests four times as long (was 3x faster in 0.0.90 — players camped it).
     const coolMs = marketCoolMs(lampCoolMs(poi.tier), lampMult);
-    const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + coolMs } };
+    // 0.1.7: a market lantern opens once per market — it stays dark until its market closes (and then it is gone).
+    const lanternLeft = isMarketLantern(poi.id) ? Math.max(coolMs, lanternCycleEnd(poi.id) - Date.now()) : coolMs;
+    const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + lanternLeft } };
     let contract = get().contract;
     let contractToast: string | null = null;
     if (contract && contract.ids.includes(poi.id) && !contract.done.includes(poi.id)) {

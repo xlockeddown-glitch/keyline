@@ -4,7 +4,8 @@ import { BookOpen, CircleHelp } from "lucide-react";
 import { creditHint } from "@/game/goals";
 import { CREDIT_CALM_MS, Calm } from "@/game/calm";
 import { LevelHudBadge } from "./Levels";
-import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, allPois, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
+import { livePois } from "@/game/nightMarket";
+import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
 import { formatCool, isFareDesk, SPARK_DAY, ticketHint, VAULTS_PER_FARE } from "@/game/ticket";
@@ -67,7 +68,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       ? { ...RUN_POI, lat: run.lat, lng: run.lng }
       : hud.nearestId === STACK_ID && stackLive && stack
         ? { ...STACK_POI, lat: stack.lat, lng: stack.lng }
-        : allPois(city, blanks).find((p) => p.id === hud.nearestId);
+        : livePois(city, blanks).find((p) => p.id === hud.nearestId);
   const reachM = interactRadius(equipped === "lantern");
   const service = Boolean(nearest && (isScoutShop(nearest) || isCounter(nearest) || isBoard(nearest)));
   const recasting = Boolean(nearest && !seriesNear && !service && (vaults[nearest.id]?.coolUntil ?? 0) > Date.now());

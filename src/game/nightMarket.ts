@@ -668,3 +668,91 @@ export function closestOnStreet(s: Pick<MarketStreet, "lines">, lat: number, lng
   }
   return best;
 }
+
+// ───────────────────────── 0.1.7 market lanterns ─────────────────────────
+/** 0.1.7: every open market adds three temporary lanterns inside its circle — one white, one blue, one green. */
+export const MARKET_LANTERN_TIERS = ["white", "blue", "green"] as const satisfies readonly Tier[];
+/** They keep at least this far from the city's lamps and from each other (when the street allows). */
+export const MARKET_LANTERN_GAP_M = 35;
+const LANTERN_ID = /^mkt-([a-z0-9-]+)-(\d+)-(white|blue|green)$/;
+const LANTERNS = new Map<string, Poi[]>();
+
+/**
+ * The market's three lanterns: on the market street (walkable, baked, the same on server and device), inside the
+ * circle, spread as far as possible from the city's lamps and from each other. Ids carry the city and the cycle, so a
+ * lantern is new (and openable) each market and gone when it closes. Deterministic — the server rebuilds the same.
+ */
+export function marketLanterns(m: NightMarket | null): Poi[] {
+  if (!m) return [];
+  const key = `${m.city}|${m.hour}`;
+  const hit = LANTERNS.get(key);
+  if (hit) return hit;
+  const z = m.zone;
+  const lamps = CITIES[m.city].pois.filter((p) => distM(z.lat, z.lng, p.lat, p.lng) <= z.r + MARKET_LANTERN_GAP_M);
+  const cands: { lat: number; lng: number }[] = [];
+  for (const ln of m.street.lines) {
+    for (let i = 0; i + 3 < ln.length; i += 2) {
+      const a = { lat: ln[i]!, lng: ln[i + 1]! }, b = { lat: ln[i + 2]!, lng: ln[i + 3]! };
+      const n = Math.max(1, Math.ceil(distM(a.lat, a.lng, b.lat, b.lng) / 10));
+      for (let k = 0; k <= n; k++) {
+        const p = { lat: a.lat + ((b.lat - a.lat) * k) / n, lng: a.lng + ((b.lng - a.lng) * k) / n };
+        if (distM(z.lat, z.lng, p.lat, p.lng) <= z.r * 0.9) cands.push(p);
+      }
+    }
+  }
+  // A street that barely crosses the circle still gets lanterns: a small ring round the centre.
+  for (let i = 0; cands.length < 3 && i < 6; i++) {
+    const t = (i / 6) * Math.PI * 2, d = z.r * 0.4;
+    cands.push({ lat: z.lat + (d * Math.sin(t)) / 111_320, lng: z.lng + (d * Math.cos(t)) / metersPerDegLng(z.lat) });
+  }
+  const picked: { lat: number; lng: number }[] = [];
+  for (let n = 0; n < MARKET_LANTERN_TIERS.length; n++) {
+    let best = -1, bestD = -1;
+    cands.forEach((c, i) => {
+      let d = Infinity;
+      for (const p of [...lamps, ...picked]) d = Math.min(d, distM(c.lat, c.lng, p.lat, p.lng));
+      if (d > bestD) { bestD = d; best = i; }
+    });
+    picked.push(cands.splice(best, 1)[0]!);
+  }
+  const out: Poi[] = picked.map((p, i) => {
+    const tier = MARKET_LANTERN_TIERS[i]!;
+    return { id: `mkt-${m.city}-${m.hour}-${tier}`, name: "Market lantern", kind: "landmark", tier, lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), lore: `A ${tier} lantern hung for tonight's market on ${m.street.name}. Gone when the market closes.`, noClue: true };
+  });
+  if (LANTERNS.size > 64) LANTERNS.clear();
+  LANTERNS.set(key, out);
+  return out;
+}
+
+export function isMarketLantern(id: string): boolean {
+  return LANTERN_ID.test(id);
+}
+
+/** The live lantern with this id, or null once its market has closed (or for any other id). */
+export function marketLanternById(city: CityId, id: string, at: number): Poi | null {
+  const hit = LANTERN_ID.exec(id);
+  if (!hit || hit[1] !== city) return null;
+  const m = marketAt(city, at);
+  if (!m || m.hour !== Number(hit[2])) return null;
+  return marketLanterns(m).find((p) => p.id === id) ?? null;
+}
+
+/** Every lamp on the map right now: the city's, the street blanks and the open market's lanterns. */
+export function livePois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], at = Date.now()): Poi[] {
+  const extra = marketLanterns(marketAt(city.id, at));
+  return extra.length || blanks.length ? [...city.pois, ...blanks, ...extra] : city.pois;
+}
+
+/** livePois plus the lanterns of a market that closed in the last few minutes, so a quiz opened just before the
+ * close still finds its lamp. For lookups by id only; the map shows livePois. */
+export function anyPois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], at = Date.now()): Poi[] {
+  const live = livePois(city, blanks, at);
+  const late = marketLanterns(marketAt(city.id, at - 10 * 60_000)).filter((p) => !live.some((q) => q.id === p.id));
+  return late.length ? [...live, ...late] : live;
+}
+
+/** When a lantern's market cycle ends (it stays dark until then once opened). 0 for any other id. */
+export function lanternCycleEnd(id: string): number {
+  const hit = LANTERN_ID.exec(id);
+  return hit ? (Number(hit[2]) + 1) * MARKET_HOUR_MS : 0;
+}
