@@ -2,6 +2,7 @@ import { SkyLayer } from "./Sky";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
+import { DEALER_REACH_M, carOf, carPace, dealerOf } from "@/game/cars";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
@@ -59,6 +60,7 @@ import { Hud } from "./Hud";
 import { VaultModal } from "./VaultModal";
 import { HqPanel } from "./HqPanel";
 import { ScoutShop } from "./ScoutShop";
+import { Showroom } from "./Showroom";
 import { LootToast } from "./LootToast";
 import { FriendTickets } from "./FriendTickets";
 import { GiftNote } from "./GiftNote";
@@ -98,7 +100,8 @@ function faceFromYaw(yaw: number): CabFace {
 }
 
 function cabMarkup(face: CabFace, lamps: boolean) {
-  return `<div class="cab-sprite${lamps ? " is-lamps" : ""}" data-face="${face}"><i class="cab-lamp a"></i><i class="cab-lamp b"></i><i class="cab-cone"></i></div>`;
+  const car = useGame.getState().carOn ?? "";
+  return `<div class="cab-sprite${lamps ? " is-lamps" : ""}" data-face="${face}" data-car="${car}"><i class="cab-lamp a"></i><i class="cab-lamp b"></i><i class="cab-cone"></i></div>`;
 }
 
 type Cab = {
@@ -211,6 +214,8 @@ export function GameMap() {
   const dailyLit = useDaily((s) => activeProgress(s.runs, cityId)?.lit ?? 0);
   const marketLayers = useRef<(Polyline | Marker | Circle)[]>([]);
   const marketKey = useRef("");
+  const dealerMarker = useRef<Marker | null>(null);
+  const dealerDoor = useRef<{ lat: number; lng: number } | null>(null);
 
   function strokeColor() {
     if (typeof document === "undefined") return "#c4a35a";
@@ -244,6 +249,8 @@ export function GameMap() {
     const cab = cabRef.current;
     if (!L || !map || !cab || cab.seated) {
       cabMarker.current?.remove();
+      dealerMarker.current?.remove();
+      dealerMarker.current = null;
       cabMarker.current = null;
       return;
     }
@@ -281,6 +288,7 @@ export function GameMap() {
       if (seated) cabEl.removeAttribute("hidden");
       else cabEl.setAttribute("hidden", "");
       cabEl.dataset.face = faceFromYaw(pos.current.yaw);
+      cabEl.dataset.car = useGame.getState().carOn ?? ""; // 0.1.8: your own car, or the city cab
       cabEl.classList.toggle("is-lamps", false);
     }
     root?.querySelector(".scout-marker")?.classList.toggle("is-seated", seated);
@@ -310,6 +318,34 @@ export function GameMap() {
     pos.current.speed = 0;
     routeMode.current = "walk";
     seatHud(false);
+  }
+
+  /** 0.1.8: your car drives a little faster than the city cab (1 when you have none). Seated driving only. */
+  function ownPace() {
+    return carPace(useGame.getState().carOn);
+  }
+
+  /** 0.1.8: the city's car lot — a sign on the map, its door snapped onto the walk. */
+  function paintDealer(snapTo?: StreetGraph | null) {
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    const d = dealerOf(useGame.getState().cityId);
+    const c = snapTo ? nearest(snapTo, d.lat, d.lng, 60) : null;
+    dealerDoor.current = c ? { lat: c.lat, lng: c.lng } : { lat: d.lat, lng: d.lng };
+    const safe = d.name.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    dealerMarker.current?.remove();
+    dealerMarker.current = L.marker([dealerDoor.current.lat, dealerDoor.current.lng], {
+      icon: L.divIcon({
+        className: "",
+        html: `<div class="dealer-pin" data-testid="dealer-pin" title="${safe}: car lot"><i class="dealer-sign" aria-hidden="true"></i><span class="dealer-name">${safe}</span></div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      }),
+      interactive: false,
+      keyboard: false,
+      zIndexOffset: 600,
+    }).addTo(map);
   }
 
   function enterCab() {
@@ -352,6 +388,16 @@ export function GameMap() {
     const cab = cabRef.current;
     if (cab && !cab.seated && distM(here.lat, here.lng, cab.lat, cab.lng) <= CAB_REACH) {
       enterCab();
+      return;
+    }
+    // 0.1.8: your own car is already at the curb — no cab driving over to fetch you.
+    const own = carOf(useGame.getState().carOn);
+    if (own) {
+      cabMarker.current?.remove();
+      cabMarker.current = null;
+      spawnCabAt(snap.lat, snap.lng, faceAlongStreet(drive, snap.lat, snap.lng));
+      enterCab();
+      flash(`${own.name}. Park at the curb to step out.`);
       return;
     }
     if (snap.dist <= 16) {
@@ -927,6 +973,9 @@ export function GameMap() {
           plan: (lat: number, lng: number, keyId?: string) => planWalk(lat, lng, false, keyId),
           daily: () => useDaily.getState(),
           market: () => marketAt(useGame.getState().cityId, Date.now()),
+          // 0.1.8 QA: the car lot's door and the CAB / Car button.
+          dealer: () => (dealerDoor.current ? { ...dealerDoor.current } : null),
+          cab: () => toggleCab(),
           place: (lat: number, lng: number) => {
             const g = graphRef.current;
             clearRoute();
@@ -1030,13 +1079,18 @@ export function GameMap() {
         snapKeys(g);
         setStreets("ready");
         paintMarket(); // 0.1.6: the lit roads need the street graph
+        paintDealer(g); // 0.1.8: and the car lot door snaps onto it
         const L = Lref.current;
         const m = mapRef.current;
         if (L && m) rebuildPins(L, m);
-        void fillSurroundings(g, dock.lat, dock.lng, city.pois, abort.signal).then(() => {
+        void fillSurroundings(g, dock.lat, dock.lng, city.pois, abort.signal).then(async () => {
           if (cancelled) return;
           snapKeys(g);
           fillWardLamps(g);
+          // 0.1.8: load the streets out to the car lot (a no-op when they are already in), then seat its door.
+          const d = dealerOf(city.id);
+          await expandGraph(g, d.lat, d.lng, 700, abort.signal).catch(() => g);
+          if (!cancelled) paintDealer(g);
         });
       })
       .catch(() => {
@@ -1047,7 +1101,10 @@ export function GameMap() {
     void bootstrapDrive(dock.lat, dock.lng, city.pois, abort.signal).then((dg) => {
       if (cancelled) return;
       driveRef.current = dg;
-      void fillSurroundings(dg, dock.lat, dock.lng, city.pois, abort.signal, true);
+      void fillSurroundings(dg, dock.lat, dock.lng, city.pois, abort.signal, true).then(() => {
+        const d = dealerOf(city.id);
+        return expandGraph(dg, d.lat, d.lng, 700, abort.signal, true).catch(() => dg);
+      });
     });
 
     return () => {
@@ -1622,7 +1679,7 @@ export function GameMap() {
       throttle = Math.max(-1, Math.min(1, throttle));
       const driveG = driveRef.current;
       const arterial = seated && onArterial(driveG, pos.current.lat, pos.current.lng);
-      const max = seated ? cabSpeed(arterial) : walkSpeed(useGame.getState().scout);
+      const max = seated ? cabSpeed(arterial) * ownPace() : walkSpeed(useGame.getState().scout);
       const rail = seated ? driveG : graphRef.current;
       const foot = graphRef.current;
       const turn = seated ? TURN_CAB : TURN;
@@ -1883,6 +1940,10 @@ export function GameMap() {
           }
           if (fresh.length) st.stampPlaces(fresh);
         }
+        // 0.1.8: on foot at the car lot's door → the Showroom button.
+        const door = dealerDoor.current;
+        const nearDealer = Boolean(door && !seated && distM(pos.current.lat, pos.current.lng, door.lat, door.lng) <= DEALER_REACH_M);
+        if (nearDealer !== st.dealerNear) st.setDealerNear(nearDealer);
         useDaily.getState().check({ lat: pos.current.lat, lng: pos.current.lng }, seated, (lat, lng) => {
           const g = graphRef.current;
           const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
@@ -1993,6 +2054,7 @@ export function GameMap() {
         snapKeys(g);
         setStreets("ready");
         paintMarket(); // 0.1.6: the lit roads need the street graph
+        paintDealer(g); // 0.1.8: and the car lot door snaps onto it
         void fillSurroundings(g, city.spawn.lat, city.spawn.lng, city.pois, abort.signal).then(() => {
           snapKeys(g);
           fillWardLamps(g);
@@ -2139,6 +2201,7 @@ const CACHE_PIN_HTML =
       <Satchel />
       <HqPanel />
       <ScoutShop />
+      <Showroom />
       <WardCounter />
       <NoticeBoard />
       <Fireworks />

@@ -40,7 +40,7 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet, rowToState } from "./walletSql.ts";
-import { DEVICE_CAP, applyClientOp, awardGrade, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer } from "./walletApply.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, carsOf, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer } from "./walletApply.ts";
 import { MATCH_GIFTS, SCOUT_GIFTS } from "./matchGift.ts";
 import { MARKET_COIN_CAP, lightOf, marketCoinX } from "./marketLights.ts";
 import { tokenNonce } from "./walletClient.ts";
@@ -1382,4 +1382,23 @@ test("0.0.97 server pocket: overflow credits persist on the server, merge 3→1 
   w = (await canonicalWallet(sql, "cred")).wallet;
   assert.equal(w.keys.amber, 150);
   assert.equal(w.meta.credit.amber, 1);
+});
+
+test("0.1.8 cars: the server sells each car once at its own price, any order, and the sync lists them", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "car", snap({ coins: 0 }), "carphone1");
+  assert.equal((await applyClientOp(sql, "car", { kind: "car", id: "civic" })).ok, false, "no coin");
+  assert.equal((await applyClientOp(sql, "car", { kind: "car", id: "batmobile" })).ok, false, "unknown car");
+  const wid = (await canonicalWallet(sql, "car")).id;
+  await sql`update player_wallets set coins = 200000 where user_id = ${wid}`;
+  assert.equal((await applyClientOp(sql, "car", { kind: "car", id: "mustang" })).ok, true, "any order");
+  assert.equal((await canonicalWallet(sql, "car")).wallet.coins, 200000 - 150000);
+  assert.equal((await applyClientOp(sql, "car", { kind: "car", id: "mustang" })).ok, true, "replay is free");
+  assert.equal((await canonicalWallet(sql, "car")).wallet.coins, 50000);
+  assert.equal((await applyClientOp(sql, "car", { kind: "car", id: "roadster2" })).ok, false, "2.4M is out of reach");
+  assert.equal((await applyClientOp(sql, "car", { kind: "car", id: "f150" })).ok, true);
+  assert.equal((await canonicalWallet(sql, "car")).wallet.coins, 0);
+  assert.deepEqual((await carsOf(sql, "car")).sort(), ["f150", "mustang"]);
+  const s = await syncPlayer(sql, "car", snap({ coins: 0 }), "carphone1");
+  assert.deepEqual([...(s.owned?.cars ?? [])].sort(), ["f150", "mustang"]);
 });

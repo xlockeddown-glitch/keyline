@@ -8,6 +8,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CITY_LIST, interactRadius, isService } from "../src/game/data.ts";
 import { STAND_AT } from "../src/game/standSpots.ts";
+import { DEALERS } from "../src/game/cars.ts";
+
+const DEALER_SNAP_M = 60;
 import { distM } from "../src/game/geo.ts";
 import { createGraph, ingestOsmWays, nearest, type StreetGraph } from "../src/game/streets.ts";
 import { FREEWAY_HIGHWAY_RE, WALK_HIGHWAY_RE, WALK_OVERPASS_FILTERS } from "../src/game/walkable.ts";
@@ -105,6 +108,18 @@ for (const city of CITY_LIST) {
       if (best) moved[p.id] = { lat: Math.round(best.lat * 1e5) / 1e5, lng: Math.round(best.lng * 1e5) / 1e5 };
     }
     console.log(fail ? "FAIL" : "ok  ", city.id.padEnd(9), p.kind.padEnd(7), p.id.padEnd(22), `${d.toFixed(0)} m to street`, p.name);
+  }
+  // 0.1.8: the car lot. Its door snaps onto the walk within DEALER_SNAP_M = 60 m (GameMap paintDealer), so the big
+  // street network must come that close to the lot.
+  {
+    const d0 = DEALERS[city.id];
+    const g = createGraph(d0.lat, d0.lng);
+    ingestOsmWays(g, (await ways(d0.lat, d0.lng)) as never);
+    const { comp, big } = bigComp(g);
+    const snap = nearest(g, d0.lat, d0.lng, R, comp, big);
+    const d = snap ? snap.dist : Infinity;
+    if (d > DEALER_SNAP_M) n++;
+    console.log(d > DEALER_SNAP_M ? "FAIL" : "ok  ", city.id.padEnd(9), "dealer ".padEnd(7), `dealer-${city.id}`.padEnd(22), `${d.toFixed(0)} m to street`, d0.name);
   }
   bad += n;
   perCity.push(`${city.id}:${n}`);

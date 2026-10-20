@@ -5,6 +5,7 @@ import { creditHint } from "@/game/goals";
 import { CREDIT_CALM_MS, Calm } from "@/game/calm";
 import { LevelHudBadge } from "./Levels";
 import { livePois } from "@/game/nightMarket";
+import { dealerOf } from "@/game/cars";
 import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
@@ -47,6 +48,9 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   useEffect(() => () => calm.current?.stop(), []);
   const points = useGame((s) => s.points);
   const hud = useGame((s) => s.hud);
+  const dealerNear = useGame((s) => s.dealerNear);
+  const setDealerOpen = useGame((s) => s.setDealerOpen);
+  const carOn = useGame((s) => s.carOn);
   const cityId = useGame((s) => s.cityId);
   const toggleHq = useGame((s) => s.toggleHq);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
@@ -249,6 +253,12 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
         </div>
       </div>
 
+      {busy || !dealerNear || hud.seated ? null : (
+        // 0.1.8: on foot at the car lot → the showroom.
+        <button type="button" className="dealer-btn pointer-events-auto" data-testid="dealer-btn" onClick={() => setDealerOpen(true)}>
+          <span className="kicker">Car lot</span> {dealerOf(cityId).name} · Showroom
+        </button>
+      )}
       {busy ? null : (
         <div className="hud-dock">
           <div className="hud-tools">
@@ -282,9 +292,9 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
               type="button"
               className={`cab-chip pointer-events-auto ${hud.seated ? "is-on" : ""}`}
               onClick={onCab}
-              aria-label={hud.seated ? "Park cab" : "Hail cab"}
+              aria-label={hud.seated ? (carOn ? "Park car" : "Park cab") : carOn ? "Drive your car" : "Hail cab"}
             >
-              <span className="kicker">{hud.seated ? "Park" : "Cab"}</span>
+              <span className="kicker">{hud.seated ? "Park" : carOn ? "Car" : "Cab"}</span>
             </button>
             </div>
             <TouchPad onVector={onVector} />

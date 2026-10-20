@@ -88,6 +88,13 @@ export function FieldGuide() {
               1 pass unlocks a new city (your second city is free). Earn a pass by lighting amber, red or violet lamps (amber 1 point, red 4, violet 10; 10 points = 1 pass), by finishing “All of” a city, or by doing 3 Lantern Runs in one city. Spend it at the train station: “Use pass”.
             </p>
           </section>
+          {/* 0.1.8: cars in plain words. */}
+          <section className="mt-5" data-testid="help-cars">
+            <h3 className="font-display text-lg leading-tight">Cars</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              Each city has a car lot on the map. Walk in to buy a car with coin. Your car is your own cab: tap Car and it's at the curb, and it drives a little faster than the city cab (5% for the Civic up to 30% for the Roadster 2.0). You still walk up to lamps and shops. You pay once and keep the car in every city.
+            </p>
+          </section>
           {/* 0.0.95: what the lantern result's badges and emblems mean. */}
           <section className="mt-5" data-testid="help-badges">
             <h3 className="font-display text-lg leading-tight">Prize badges</h3>

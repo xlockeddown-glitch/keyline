@@ -3,6 +3,7 @@ import { cleanCredit, creditHint, settlePocket } from "./goals";
 import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
+import { carOf, isCarId, type CarId } from "./cars";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
@@ -173,6 +174,11 @@ export type GameState = {
   /** 0.1.00: market lights owned (server-reported) and the colour shown on the market string lights. */
   lightsOwned: string[];
   marketLight: string;
+  /** 0.1.8: cars owned (server-reported) and the one you drive (null = the city cab). Showroom open at the dealer. */
+  carsOwned: CarId[];
+  carOn: CarId | null;
+  dealerOpen: boolean;
+  dealerNear: boolean;
   /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
   paints: PaintBench;
   atlas: Record<string, true>;
@@ -322,6 +328,11 @@ export type GameState = {
   buyScout: (id: ScoutId) => void;
   /** 0.1.00: buy the next market light (signed in; the server checks order and coin). */
   buyLight: (id: LightId) => void;
+  /** 0.1.8: buy a car (signed in; the server checks the price) and pick which one to drive. */
+  buyCar: (id: CarId) => void;
+  driveCar: (id: CarId | null) => void;
+  setDealerOpen: (open: boolean) => void;
+  setDealerNear: (near: boolean) => void;
   wearScout: (id: ScoutId) => void;
   /** 0.0.54 gift: add a scout to the save for free (no coins). Returns true if it was newly added. */
   grantGiftScout: (id: ScoutId) => boolean;
@@ -336,7 +347,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[] }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[] }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -605,6 +616,8 @@ function persistable(s: GameState) {
     printsSeen: s.printsSeen,
     lightsOwned: s.lightsOwned,
     marketLight: s.marketLight,
+    carsOwned: s.carsOwned,
+    carOn: s.carOn,
     paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
@@ -996,6 +1009,10 @@ export const useGame = create<GameState>((set, get) => ({
   recent: Array.isArray(saved?.recent) ? saved.recent.slice(0, RECENT_MAX) : [],
   lightsOwned: Array.isArray(saved?.lightsOwned) ? saved.lightsOwned.filter((x: unknown) => typeof x === "string") : ["amber"],
   marketLight: typeof saved?.marketLight === "string" ? saved.marketLight : "amber",
+  carsOwned: Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [],
+  carOn: isCarId(saved?.carOn) ? saved.carOn : null,
+  dealerOpen: false,
+  dealerNear: false,
   printWorn: typeof saved?.printWorn === "string" ? saved.printWorn : null,
   printsSeen: Array.isArray(saved?.printsSeen) ? saved.printsSeen.filter((x: unknown) => typeof x === "string") : [],
   paints: cleanPaint(saved?.paints),
@@ -2237,6 +2254,30 @@ export const useGame = create<GameState>((set, get) => ({
     flashToast(set, get, "Night glass printed.", 1600);
     scheduleSave(get);
   },
+  buyCar: (id) => {
+    const car = carOf(id);
+    if (!car || get().carsOwned.includes(id)) return;
+    if (!walletLive()) {
+      flashToast(set, get, "Sign in to buy a car.", 1600);
+      return;
+    }
+    if (get().points < car.price) {
+      flashToast(set, get, "Need more coins.", 1400);
+      return;
+    }
+    const before = { carsOwned: get().carsOwned, carOn: get().carOn };
+    set({ points: get().points - car.price, carsOwned: [...before.carsOwned, id], carOn: id });
+    pushOp({ kind: "car", id }, () => set(before));
+    flashToast(set, get, `${car.name} is yours. Tap CAB and it's at the curb.`, 2200);
+    scheduleSave(get);
+  },
+  driveCar: (id) => {
+    if (id && !get().carsOwned.includes(id)) return;
+    set({ carOn: id });
+    scheduleSave(get);
+  },
+  setDealerOpen: (open) => set({ dealerOpen: open }),
+  setDealerNear: (near) => set({ dealerNear: near, dealerOpen: near ? get().dealerOpen : false }),
   buyLight: (id) => {
     const next = nextLight(get().lightsOwned);
     if (!next || next.id !== id) return;
@@ -2291,6 +2332,10 @@ export const useGame = create<GameState>((set, get) => ({
   adoptOwned: (o) => {
     for (const x of o.scouts) serverOwnedScouts.add(x);
     if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
+    if (o.cars) {
+      const cars = Array.from(new Set([...get().carsOwned, ...o.cars.filter(isCarId)]));
+      set({ carsOwned: cars, carOn: get().carOn && cars.includes(get().carOn!) ? get().carOn : null });
+    }
     const st = get();
     const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
     const charms = Array.from(new Set([...st.charms, ...(o.charms as typeof st.charms)]));

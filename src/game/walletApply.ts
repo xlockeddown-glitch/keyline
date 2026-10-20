@@ -1,5 +1,6 @@
 import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
+import { carOf, isCarId, type CarId } from "./cars.ts";
 import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
@@ -68,7 +69,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[] } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[] } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -136,6 +137,13 @@ export async function ownedOf(sql: Sql, userId: string): Promise<{ scouts: Scout
   return { scouts: [...scouts], charms: [...charms], cloths: [...(wallet.meta.cloths ?? [])] };
 }
 
+/** 0.1.8: cars this account bought (car:<id> ledger rows). No table of its own, so nothing to migrate. */
+export async function carsOf(sql: Sql, userId: string): Promise<CarId[]> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"car:%"}`;
+  return [...new Set(rows.map((r) => r.op_key.slice(4)).filter(isCarId))];
+}
+
 /** 0.1.00: market lights this account bought (light:<id> ledger rows); amber is free. */
 export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId[]; best: LightId }> {
   const { id } = await canonicalWallet(sql, userId);
@@ -148,7 +156,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   await grantPassGift(sql, userId);
   const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId))];
   const done = await syncCore(sql, userId, local, deviceId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId) };
   return giftNotes.length ? { ...done, owned, giftNotes } : { ...done, owned };
 }
 
@@ -358,6 +366,7 @@ export type ClientOp =
   | { kind: "cache"; city: CityId }
   | { kind: "dgoal"; i: number }
   | { kind: "light"; id: string }
+  | { kind: "car"; id: string }
   | { kind: "hurry"; min: number }
   | {
       kind: "ride";
@@ -502,6 +511,17 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!next || next.id !== op.id) return refused(wallet, "not-next");
     const r = await mutateWallet(sql, sessionUserId, `light:${next.id}`, (w) =>
       w.coins < next.price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -next.price }), detail: JSON.stringify({ light: next.id }) },
+    );
+    return applied(r);
+  }
+
+  // 0.1.8: a car is bought once, any order, at the price the server knows; a second buy is a free replay.
+  if (op.kind === "car") {
+    const car = carOf(op.id);
+    if (!car) return refused(wallet, "unknown");
+    if ((await carsOf(sql, sessionUserId)).includes(car.id)) return applied({ ok: true, replay: true, wallet });
+    const r = await mutateWallet(sql, sessionUserId, `car:${car.id}`, (w) =>
+      w.coins < car.price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -car.price }), detail: JSON.stringify({ car: car.id }) },
     );
     return applied(r);
   }
