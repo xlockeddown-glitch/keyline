@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Calculator, FlaskConical, Gamepad2, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
+import { BookOpen, Calculator, FlaskConical, Gamepad2, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
 import { useGame } from "@/game/store";
@@ -23,6 +23,7 @@ const CAT_ICON: Record<TriviaCat, typeof Trophy> = {
   games: Gamepad2,
   celebrity: Star,
   music: Music,
+  books: BookOpen,
 };
 
 export function VaultModal() {

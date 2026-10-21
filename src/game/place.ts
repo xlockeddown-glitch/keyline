@@ -169,7 +169,7 @@ const TOPIC_CATS: Record<PlaceTopic, TriviaCat[]> = {
   history: ["history", "local", "political"],
   "natural-history": ["science", "history", "nature"],
   science: ["science", "math"],
-  library: ["arts", "history", "local"],
+  library: ["books", "arts", "history", "local"],
   campus: ["local", "history", "sports"],
   medicine: ["science", "history"],
   food: ["food", "local"],

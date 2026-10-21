@@ -118,6 +118,7 @@ export const TITLE_RUNGS = [250, 1000, 2000] as const;
 export const CAT_LADDERS: Readonly<Record<TriviaCat, readonly [string, string, string]>> = {
   celebrity: ["Fan Club", "Paparazzo", "Media Lover"],
   music: ["Air Guitarist", "Roadie", "Headliner"],
+  books: ["Bookworm", "Page Turner", "Literary Lion"],
   history: ["Time Tourist", "Time Traveler", "Living Legend"],
   science: ["Lab Rat", "Mad Scientist", "Big Brain"],
   math: ["Number Cruncher", "Human Calculator", "Mathlete Supreme"],

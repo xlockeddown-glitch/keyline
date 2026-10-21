@@ -191,6 +191,7 @@ export function classifyItem(item, path, quotas, niches) {
     else if (/history/i.test(hint)) topic = "history";
     else if (/nature/i.test(hint)) topic = "nature";
     else if (/^music\b/i.test(hint)) topic = "music";
+    else if (/^books?\b/i.test(hint)) topic = "books";
     else if (city) topic = "local";
     else topic = "local";
   }
