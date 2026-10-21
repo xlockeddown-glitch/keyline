@@ -289,6 +289,148 @@ const LONDON_ROUNDEL: CityPrint = {
   ],
 };
 
+/** 0.1.17: Tucson — saguaros of Saguaro National Park. */
+const TUCSON_SAGUARO: CityPrint = {
+  id: "print-tucson-saguaro",
+  city: "tucson",
+  name: "Saguaro Stand",
+  blurb: "Sonoran Desert: ribbed saguaros raising their arms over warm desert sand.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#3f7a4a",
+  palette: {
+    ".": { L: 78, C: 22, h: 70 }, // desert sand
+    G: { L: 46, C: 34, h: 140 }, // saguaro green
+    r: { L: 34, C: 28, h: 140 }, // rib shadow
+    f: { L: 92, C: 10, h: 95 }, // white bloom
+  },
+  tile: [
+    "......f.........",
+    ".....GrG........",
+    ".....GrG........",
+    "..G..GrG........",
+    "..G..GrG..G.....",
+    "..GrrGrG..G.....",
+    "...rrGrGrrG.....",
+    ".....GrGrr......",
+    ".....GrG........",
+    ".....GrG......f.",
+    ".....GrG.....GrG",
+    "...........G.GrG",
+    "...........GrGrG",
+    "............rGrG",
+    ".............GrG",
+    ".............GrG",
+  ],
+};
+
+/** 0.1.17: Toronto — the CN Tower. */
+const TORONTO_CN_TOWER: CityPrint = {
+  id: "print-toronto-cn-tower",
+  city: "toronto",
+  name: "CN Tower",
+  blurb: "The needle over the lake: concrete shaft, ringed pod and antenna against a Lake Ontario blue.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#2f5f8f",
+  palette: {
+    ".": { L: 40, C: 30, h: 250 }, // lake-sky blue
+    c: { L: 82, C: 4, h: 80 }, // concrete
+    s: { L: 64, C: 4, h: 80 }, // shaft shade
+    p: { L: 30, C: 6, h: 260 }, // pod glass
+    R: { L: 50, C: 60, h: 30 }, // beacon red
+  },
+  tile: [
+    "......R.........",
+    "......c.........",
+    "......c.........",
+    ".....ccc........",
+    "....ppppp.......",
+    "...ccccccc......",
+    "....ppppp.......",
+    ".....csc........",
+    ".....csc........",
+    ".....csc........",
+    ".....csc........",
+    "....ccscc.......",
+    "....ccscc.......",
+    "...cccsccc......",
+    "................",
+    "................",
+  ],
+};
+
+/** 0.1.17: Los Angeles — palm trees against a sunset. */
+const LA_PALMS: CityPrint = {
+  id: "print-la-palms",
+  city: "la",
+  name: "Sunset Palms",
+  blurb: "Tall fan palms silhouetted on an orange-to-pink Los Angeles sunset.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#e0784a",
+  palette: {
+    ".": { L: 70, C: 50, h: 55 }, // sunset orange
+    p: { L: 60, C: 40, h: 5 }, // pink sky
+    y: { L: 86, C: 50, h: 85 }, // low sun glow
+    k: { L: 18, C: 10, h: 300 }, // palm silhouette
+  },
+  tile: [
+    "pppppppppppppppp",
+    "pkpkkpkppppppppp",
+    "ppkkkkppppppppkp",
+    "pkkpkpkpppppkkkk",
+    "....k.........k.",
+    "....k........k..",
+    "....k........k..",
+    "....k........k..",
+    "....k.......k...",
+    "...k........k...",
+    "...k........k...",
+    "yyykyyyyyyyykyyy",
+    "yyykyyyyyyyykyyy",
+    "...k.........k..",
+    "....k........k..",
+    "....k........k..",
+  ],
+};
+
+/** 0.1.17: Boston — the Freedom Trail's red-brick line. */
+const BOSTON_FREEDOM_TRAIL: CityPrint = {
+  id: "print-boston-freedom-trail",
+  city: "boston",
+  name: "Freedom Trail",
+  blurb: "The red-brick line through the old city, set into grey cobbles with a bronze marker.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 2,
+  swatch: "#9e3b2c",
+  palette: {
+    ".": { L: 52, C: 4, h: 250 }, // cobble
+    m: { L: 40, C: 4, h: 250 }, // mortar
+    B: { L: 40, C: 42, h: 35 }, // brick red
+    b: { L: 32, C: 36, h: 35 }, // brick shade
+    o: { L: 62, C: 40, h: 75 }, // bronze marker
+  },
+  tile: [
+    "..m...m...m...m.",
+    "mmmmmmmmmmmmmmmm",
+    "m...m...m...m...",
+    "mmmmmmmmmmmmmmmm",
+    "BBBbBBBbBBBbBBBb",
+    "bbbbbbbbbbbbbbbb",
+    "BbBBBbBBBbBBBbBB",
+    "bbbbbbbbbbbbbbbb",
+    "BBBbBBBbBBBbBBBb",
+    "mmmmmmmmmmmmmmmm",
+    "..m...m.oo.m...m",
+    "mmmmmmmooooommmm",
+    "m...m...oo..m...",
+    "mmmmmmmmmmmmmmmm",
+    "..m...m...m...m.",
+    "mmmmmmmmmmmmmmmm",
+  ],
+};
+
 /** Every city's prints, in earn order. */
 export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>> = {
   austin: [AUSTIN_BLUEBONNET],
@@ -298,6 +440,10 @@ export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>
   nyc: [NYC_CHECKER],
   sf: [SF_GOLDEN_GATE],
   london: [LONDON_ROUNDEL],
+  tucson: [TUCSON_SAGUARO],
+  toronto: [TORONTO_CN_TOWER],
+  la: [LA_PALMS],
+  boston: [BOSTON_FREEDOM_TRAIL],
 };
 
 /**
@@ -306,7 +452,7 @@ export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>
  * without a print, and this list can only shrink.
  */
 export const PRINTS_PENDING: readonly CityId[] = [
-  "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville",
+  "nola", "seattle", "denver", "nashville",
 ];
 
 export const ALL_PRINTS: readonly CityPrint[] = Object.values(CITY_PRINTS).flatMap((l) => l ?? []);
