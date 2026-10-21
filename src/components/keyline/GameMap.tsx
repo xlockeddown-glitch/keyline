@@ -425,7 +425,18 @@ export function GameMap() {
       keyboard: false,
       zIndexOffset: 590,
     }).addTo(map);
-    m.on("click", () => useGame.getState().setHouseOpen(true));
+    // Same as the lot sign: open at the door, else walk you there; in a cab or car, step out first.
+    m.on("click", () => {
+      const door = houseDoor.current;
+      if (!door) return;
+      const d = distM(pos.current.lat, pos.current.lng, door.lat, door.lng);
+      if (cabRef.current?.seated) flash("Step out of the car to go home.");
+      else if (d <= HOUSE_REACH_M) useGame.getState().setHouseOpen(true);
+      else {
+        setDestination(door.lat, door.lng);
+        flash(useGame.getState().houses[useGame.getState().cityId] ? "Walking home. The door opens when you get there." : "Walking to the house for sale. It opens at the door.", 2200);
+      }
+    });
     houseMarker.current = m;
   }
 
