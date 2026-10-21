@@ -567,3 +567,39 @@ test("0.0.90: a tap across the river (Windsor) or past the box walks to the near
   // A normal Detroit tap is left alone.
   assert.equal(walkableTarget(g, { lat: 42.3235, lng: -83.05 }, c.spawn, false), null);
 });
+
+// 0.1.13: Ryan's Loop walk (Quincy/Wells → Clark/Washington) went up to Wacker by the Merchandise Mart and back.
+// The foot router's detour hugged our streets, so pickWalk took it over the graph's straight grid walk.
+function chicagoGraph() {
+  const g = createGraph(fixture("chicago").area.lat, fixture("chicago").area.lng);
+  ingestOsmWays(g, fixture("chicago").ways.map((w) => ({ geometry: geom(w), tags: w.tags })));
+  return g;
+}
+const plen = (p: Pt[]) => p.slice(1).reduce((n, q, i) => n + Math.hypot((q.lat - p[i]!.lat) * 111_320, (q.lng - p[i]!.lng) * 111_320 * Math.cos((q.lat * Math.PI) / 180)), 0);
+const crow = (a: Pt, b: Pt) => plen([a, b]);
+test("0.1.13: a hugging online detour (up to Wacker and back) loses to the graph's grid walk", () => {
+  const g = chicagoGraph();
+  const from = pullToStreet(g, 41.8787, -87.6339, 140);
+  const to = pullToStreet(g, 41.8833, -87.6311, 220, from);
+  const wacker = pullToStreet(g, 41.8866, -87.6355, 140);
+  const online = [...routeOnGraph(g, from, wacker)!, ...routeOnGraph(g, wacker, to)!.slice(1)];
+  assert.ok(plen(online) > 2 * crow(from, to), "the fake detour is a real zigzag");
+  const out = pickWalk(g, online, from, to)!;
+  assert.ok(plen(out) <= 1.6 * crow(from, to), `walk ${plen(out).toFixed(0)} m for ${crow(from, to).toFixed(0)} m straight`);
+});
+test("0.1.13: Loop grid walks stay near the straight line (route ÷ crow-flies ≤ 1.6)", () => {
+  const g = chicagoGraph();
+  const pairs: [number, number, number, number][] = [
+    [41.8787, -87.6339, 41.8833, -87.6311], // Quincy/Wells → Clark/Washington
+    [41.8787, -87.6339, 41.8857, -87.6311], // → Clark/Lake
+    [41.879, -87.6395, 41.8832, -87.6338], // Union Station → Washington/Wells
+    [41.8794, -87.6262, 41.8857, -87.6325], // Adams/Wabash → Lake/LaSalle
+    [41.8831, -87.6274, 41.8816, -87.6366], // State/Washington → Madison/Canal
+  ];
+  for (const [a, b, c, d] of pairs) {
+    const from = pullToStreet(g, a, b, 140);
+    const to = pullToStreet(g, c, d, 220, from);
+    const r = routeOnGraph(g, from, to)!;
+    assert.ok(r && plen(r) <= 1.6 * crow(from, to), `${a},${b} → ${c},${d}: ${r ? plen(r).toFixed(0) : "none"} m for ${crow(from, to).toFixed(0)} m`);
+  }
+});

@@ -1376,6 +1376,9 @@ export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?
  * online route that strays off it (a freeway, a ramp, a gap in the data) loses to the graph's route,
  * and only routes that hug the graph get stitched into it.
  */
+/** 0.1.13: an online walk longer than the graph's by this ratio (plus slack) is a detour; use the graph's. */
+export const WALK_DETOUR_RATIO = 1.2;
+export const WALK_DETOUR_SLACK_M = 40;
 export function pickWalk(g: StreetGraph | null, online: Pt[] | null, from: Pt, to: Pt): Pt[] | null {
   const local = g ? routeOnGraph(g, from, to) : null;
   if (online && online.length >= 2) {
@@ -1387,7 +1390,10 @@ export function pickWalk(g: StreetGraph | null, online: Pt[] | null, from: Pt, t
     // when we asked for the street beside it. A start that close to a freeway loses to the graph's walk.
     const start = online[0]!;
     const parked = local && distM(start.lat, start.lng, from.lat, from.lng) > 3 && besideFreeway(g, start);
-    if (!rides && !parked && routeHugsGraph(g, online, WALK_HUG_M)) {
+    // 0.1.13: the foot router sometimes sends a Loop walk up to Wacker and back (it hugs our streets, so it passed).
+    // When the graph has its own walk and the online one is clearly longer, the graph's walk wins.
+    const detour = local && pathLength(online) > pathLength(local) * WALK_DETOUR_RATIO + WALK_DETOUR_SLACK_M;
+    if (!rides && !parked && !detour && routeHugsGraph(g, online, WALK_HUG_M)) {
       ingestLine(g, online);
       return tidyPath(online);
     }

@@ -1,7 +1,7 @@
 // Live check: the online foot router's answers for the freeway cases in paths.test.ts stay off freeways.
 // node --experimental-strip-types scripts/qa-walk-routes.ts
 import { readFileSync } from "node:fs";
-import { clearOfFreeway, createGraph, ingestOsmWays, offFreeway, onFreeway, osrmRoute, pickWalk, pullToStreet } from "../src/game/streets.ts";
+import { clearOfFreeway, createGraph, ingestOsmWays, offFreeway, onFreeway, osrmRoute, pathLength, pickWalk, pullToStreet } from "../src/game/streets.ts";
 import { isFreeway, isWalkableWay } from "../src/game/walkable.ts";
 import { freewayGap, freewayRun } from "../src/game/pathCheck.ts";
 import { dailyRoute, utcDay } from "../src/game/dailyRun.ts";
@@ -88,6 +88,33 @@ for (const city of ["chicago", "detroit", "nyc", "austin", "la", "seattle", "den
     const fail = startBad || r.run >= 20;
     if (fail) bad++;
     console.log(fail ? "FAIL" : "ok  ", "chicago ", "picked walk:", name, `start ${startBad ? "ON FREEWAY" : `${freewayGap(from, fw).toFixed(0)} m off freeways`} (moved ${Math.round(Math.hypot((raw.lat - from.lat) * 111320, (raw.lng - from.lng) * 82900))} m), freeway ride ${r.run.toFixed(0)} m`, r.at ? `near ${r.at.lat.toFixed(5)},${r.at.lng.toFixed(5)}` : "");
+  }
+}
+// 0.1.13: detour check — Ryan's Loop walk went up to Wacker and back. For grid downtowns, the walk pickWalk hands
+// the map (live foot router + fixture graph) must stay within 1.6× the straight line.
+for (const [city, pairs] of [
+  ["chicago", [[41.8787, -87.6339, 41.8833, -87.6311], [41.8787, -87.6339, 41.8857, -87.6311], [41.879, -87.6395, 41.8832, -87.6338], [41.8794, -87.6262, 41.8857, -87.6325], [41.88313, -87.62741, 41.88162, -87.6366]]],
+  ["nyc", "auto"],
+  ["seattle", "auto"],
+] as [string, number[][] | "auto"][]) {
+  const f = JSON.parse(readFileSync(new URL(`../src/game/fixtures/paths-${city}.json`, import.meta.url), "utf8"));
+  const P = (w: { line: number[] }) => { const o = []; for (let i = 0; i + 1 < w.line.length; i += 2) o.push({ lat: w.line[i]!, lng: w.line[i + 1]! }); return o; };
+  const g = createGraph(f.area.lat, f.area.lng);
+  ingestOsmWays(g, f.ways.map((w: { line: number[]; tags: Record<string, string> }) => ({ geometry: P(w).map((p) => ({ lat: p.lat, lon: p.lng })), tags: w.tags })));
+  const c = f.area;
+  const list = pairs === "auto" ? [[-0.004, -0.004, 0.003, 0.004], [0.003, -0.003, -0.003, 0.004], [-0.002, 0.004, 0.004, -0.002]].map(([a, b, d, e]) => [c.lat + a!, c.lng + b!, c.lat + d!, c.lng + e!]) : pairs;
+  for (const [a, b, d, e] of list) {
+    const from = pullToStreet(g, a!, b!, 140);
+    const to = pullToStreet(g, d!, e!, 220, from);
+    const crow = Math.hypot((to.lat - from.lat) * 111320, (to.lng - from.lng) * 111320 * Math.cos((from.lat * Math.PI) / 180));
+    if (crow < 150) continue;
+    const online = await osrmRoute(from, to);
+    const path = pickWalk(g, online, from, to);
+    if (!path) { console.log("NO ROUTE", city, "detour", a, b); continue; }
+    const ratio = pathLength(path) / crow;
+    const fail = ratio > 1.6;
+    if (fail) bad++;
+    console.log(fail ? "FAIL" : "ok  ", city.padEnd(8), `detour ${a!.toFixed(4)},${b!.toFixed(4)} → ${d!.toFixed(4)},${e!.toFixed(4)}: walk ${pathLength(path).toFixed(0)} m / ${crow.toFixed(0)} m straight = ${ratio.toFixed(2)}${online ? ` (online ${(pathLength(online) / crow).toFixed(2)})` : ""}`);
   }
 }
 process.exit(bad ? 1 : 0);
