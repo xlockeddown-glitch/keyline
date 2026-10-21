@@ -2,7 +2,7 @@ import { SkyLayer } from "./Sky";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
-import { DEALER_REACH_M, carOf, carPace, dealerOf } from "@/game/cars";
+import { DEALER_REACH_M, carOf, carPace, dealerOf, dealerTap } from "@/game/cars";
 import { factoryColor } from "@/game/carPaint";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
@@ -349,10 +349,22 @@ export function GameMap() {
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       }),
-      interactive: false,
+      interactive: true,
       keyboard: false,
       zIndexOffset: 600,
     }).addTo(map);
+    // 0.1.12: the sign was tap-dead (players thought the lot "won't open"); now it opens, or walks you to the door.
+    dealerMarker.current.on("click", () => {
+      const door = dealerDoor.current;
+      if (!door) return;
+      const act = dealerTap(distM(pos.current.lat, pos.current.lng, door.lat, door.lng), Boolean(cabRef.current?.seated));
+      if (act === "open") useGame.getState().setDealerOpen(true);
+      else if (act === "seated") flash("Step out of the car to visit the lot.");
+      else {
+        setDestination(door.lat, door.lng);
+        flash("Walking to the car lot. The showroom opens at the door.", 2200);
+      }
+    });
   }
 
   function enterCab() {

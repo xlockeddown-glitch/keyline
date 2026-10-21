@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CARS, DEALERS, carPace, carOf, isCarId } from "./cars.ts";
+import { CARS, DEALERS, DEALER_REACH_M, dealerTap, carPace, carOf, isCarId } from "./cars.ts";
 import { CITIES } from "./data.ts";
 import { distM } from "./geo.ts";
 
@@ -48,4 +48,12 @@ test("0.1.11: the car lot sign survives a cab ride — only paintDealer replaces
   const map = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
   const cab = map.slice(map.indexOf("function paintCab()"), map.indexOf("function paintCab()") + 600);
   assert.ok(!/dealerMarker/.test(cab), "paintCab must not touch the car lot marker");
+});
+
+test("0.1.12 lot sign tap: opens at the door, walks you there from afar, asks you out of the cab", () => {
+  assert.equal(dealerTap(0, false), "open");
+  assert.equal(dealerTap(DEALER_REACH_M, false), "open");
+  assert.equal(dealerTap(DEALER_REACH_M + 1, false), "walk");
+  assert.equal(dealerTap(500, false), "walk");
+  assert.equal(dealerTap(5, true), "seated");
 });

@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.11";
+export const APP_VERSION = "0.1.12";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k111a";
+export const PUBLISH_STAMP = "k112a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -122,3 +122,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.9: car paint — find paint cans (one car, one real factory colour each: six per car) in amber vaults (8% of right answers), red vaults (15%) and the daily match cache (20%), rolled by the server. At a car lot, a car you own plus a can of its colour repaints it for 10% of the car's price (Civic 3,000 · F-150 5,000 · GT500 15,000 · Roadster 60,000 · Roadster 2.0 240,000). The colour shows on the showroom card and the map car and stays on your account (ledger rows can:* and paint:*; no new table) (k109a). Recolours: scripts/art/cars-paint.py.
 // 0.1.10: the title screen is a full night street — a painted backdrop (the skyline of your last-played city: Chicago, New York or San Francisco, else a generic downtown) with lit brass lanterns and a glowing vault down the road, the Corgi, Penguin and Fox by the signpost and your car (in its paint) at the curb, a lit brass KEYLINE marquee with the Pick a city sign hanging under it. Lantern flicker, passing headlights, and fireflies or rain from the live weather; all still under reduced motion (k110a).
 // 0.1.11: fix — the car lot sign vanished from the map (every city) the first time a cab was hailed, ridden or left: the cab painter removed the dealer marker along with its own when there was no cab out. It now only removes the cab (k111a).
+// 0.1.12: the car lot sign is tappable — opens the Showroom at the door (40 m), otherwise walks you there; in a cab it asks you to step out (k112a).
