@@ -4,7 +4,7 @@ import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
 import { DEALER_REACH_M, carOf, carPace, dealerOf } from "@/game/cars";
 import { factoryColor } from "@/game/carPaint";
-import { HOUSE_REACH_M, houseOf, housePin, lotOf } from "@/game/houses";
+import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
@@ -369,6 +369,21 @@ export function GameMap() {
     [],
   );
 
+  /** 0.1.12: house width in screen px for its real footprint at this zoom (scales with the map). */
+  function houseWidthPx(tier: HouseTier): number {
+    const map = mapRef.current;
+    const door = houseDoor.current;
+    if (!map || !door) return 48;
+    const mpp = (156543.03392 * Math.cos((door.lat * Math.PI) / 180)) / 2 ** map.getZoom();
+    // Drawn ×3 like the scouts and cars (true scale is a 20 px speck at street zoom); never smaller than a lamp.
+    return Math.round(Math.min(220, Math.max(34, (HOUSE_METERS[tier] * 3) / mpp)));
+  }
+  function sizeHouse() {
+    const el = houseMarker.current?.getElement()?.querySelector<HTMLElement>(".house-map");
+    const tier = (el?.dataset.tier || "cottage") as HouseTier;
+    if (el) el.style.setProperty("--house-w", `${houseWidthPx(tier)}px`);
+  }
+
   /** 0.1.12: the city's house lot — the cottage "For sale", or your tier with "Home". Only this replaces it (never paintCab). */
   function paintHouse(snapTo?: StreetGraph | null) {
     const L = Lref.current;
@@ -386,17 +401,20 @@ export function GameMap() {
     const tier = mine?.tier ?? "cottage";
     const chip = mine ? `Home · ${houseOf(tier)!.name}` : "For sale";
     houseMarker.current?.remove();
-    houseMarker.current = L.marker([houseDoor.current.lat, houseDoor.current.lng], {
+    // Drawn at building scale: the painted house (cutout) on a soft ground shadow with a warm window glow.
+    const m = L.marker([houseDoor.current.lat, houseDoor.current.lng], {
       icon: L.divIcon({
         className: "",
-        html: `<div class="house-pin${mine ? " is-home" : ""}" data-testid="house-pin" data-tier="${mine ? tier : ""}"><i class="house-pic" style="background-image:url('${housePin(tier)}')" aria-hidden="true"></i><span class="house-chip">${chip}</span></div>`,
+        html: `<div class="house-pin house-map${mine ? " is-home" : ""}" data-testid="house-pin" data-tier="${mine ? tier : ""}" style="--house-w:${houseWidthPx(tier)}px"><i class="house-shadow" aria-hidden="true"></i><i class="house-glow" aria-hidden="true"></i><img class="house-sprite" src="${houseMapArt(tier)}" alt="" draggable="false"><span class="house-chip">${chip}</span></div>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       }),
-      interactive: false,
+      interactive: true,
       keyboard: false,
       zIndexOffset: 590,
     }).addTo(map);
+    m.on("click", () => useGame.getState().setHouseOpen(true));
+    houseMarker.current = m;
   }
 
   function enterCab() {
@@ -1118,6 +1136,7 @@ export function GameMap() {
       rebuildPins(L, map);
       paintMarket();
       map.on("zoomend", fitMarketSign);
+      map.on("zoom zoomend", sizeHouse); // 0.1.12: the house keeps its real size
       const signTick = window.setInterval(fitMarketSign, 1500);
       map.once("unload", () => window.clearInterval(signTick));
     });

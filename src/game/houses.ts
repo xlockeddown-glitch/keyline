@@ -1,10 +1,9 @@
 /**
  * 0.1.12 houses (design: docs/design/houses.md). A house is one door in one city: four tiers, bought in any order,
- * a step-up costs the difference. Once a day, after three lamps lit in that city today, turning the key pays a purse
- * (once per account per local day, across all cities) and one match on the hook (once per city per local day).
+ * a step-up costs the difference. After three lamps lit in that city today, turning the key hangs the tier's match on
+ * the hook, once per city per local day. It pays no coin.
  * Server ledger only, like cars — no new table:
  *   house:<city>:<tier>     a buy or step-up (detail { city, tier, from })
- *   home:<local day>        the day's purse (detail { city, purse })
  *   hook:<city>:<local day> the city's match (detail { city, match })
  * Later (not v1): interiors decorated with trivia items. A house is `HouseState` so items can ride along without a
  * change of shape; they would be their own ledger rows (e.g. decor:<city>:<item>).
@@ -14,13 +13,13 @@ import type { CityId, Tier } from "./types";
 
 export type HouseTier = "cottage" | "row" | "town" | "villa";
 
-export type HouseDef = { id: HouseTier; name: string; blurb: string; price: number; purse: number; match: Tier; star?: boolean };
+export type HouseDef = { id: HouseTier; name: string; blurb: string; price: number; match: Tier; star?: boolean };
 
 export const HOUSES: readonly HouseDef[] = [
-  { id: "cottage", name: "Lamp cottage", blurb: "Red brick, a red door, one brass lantern.", price: 20_000, purse: 350, match: "white" },
-  { id: "row", name: "Row house", blurb: "A sooty terrace with an iron stoop.", price: 65_000, purse: 700, match: "blue" },
-  { id: "town", name: "Townhouse", blurb: "Three floors of limestone and ivy.", price: 150_000, purse: 1_200, match: "green" },
-  { id: "villa", name: "Villa", blurb: "Sand stucco, a gravel drive, amber in the glass.", price: 600_000, purse: 2_400, match: "amber", star: true },
+  { id: "cottage", name: "Lamp cottage", blurb: "Red brick, a red door, one brass lantern.", price: 20_000, match: "white" },
+  { id: "row", name: "Row house", blurb: "A sooty terrace with an iron stoop.", price: 65_000, match: "blue" },
+  { id: "town", name: "Townhouse", blurb: "Three floors of limestone and ivy.", price: 150_000, match: "green" },
+  { id: "villa", name: "Villa", blurb: "Sand stucco, a gravel drive, amber in the glass.", price: 600_000, match: "amber", star: true },
 ];
 
 /** What the account holds in one city. `items` is room for later (interior decor); v1 never sets it. */
@@ -86,3 +85,6 @@ export function atLot(city: CityId, lat: number, lng: number, door?: { lat: numb
 
 export const houseArt = (t: HouseTier) => `/houses/${t}.webp`;
 export const housePin = (t: HouseTier) => `/houses/${t}-pin.webp`;
+/** The map cutout (transparent) and its rough frontage in metres, so the house draws at building scale. */
+export const houseMapArt = (t: HouseTier) => `/houses/${t}-map.webp`;
+export const HOUSE_METERS: Record<HouseTier, number> = { cottage: 11, row: 8, town: 12, villa: 26 };

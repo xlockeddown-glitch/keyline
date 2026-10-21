@@ -2,6 +2,8 @@
 
 Design only, for the version after 0.1.9. Branch `wip/houses-design`, cut from `39e6a6a` (package `0.1.9`, car paint). Nothing here changes the game, the wallet, or `APP_VERSION`.
 
+> **As built in 0.1.12 (supersedes the purse sections below).** Ryan dropped the daily coin purse: turning the key pays **no coin**. It hangs the tier’s match (white / blue / green / amber), once per city per that city’s local day, after any three correct lamps in that city today (market lanterns count). Sign-in required; guests can’t buy. `COIN_CAP` is now 5,000,000 (a first sync still carries at most 250,000). The house is drawn on the map at its lot at building scale and opens the sheet when tapped. Ledger keys: `house:<city>:<tier>` and `hook:<city>:<local day>`; there is no `home:` row.
+
 Mockups (phone 390×844, plus one desktop) are rendered from the game’s tokens, type, and real sprites. The four exteriors are new paintings in the same brush as the v2 scouts and the v3 cars.
 
 | Screen | File |
@@ -21,7 +23,7 @@ The smallest version that is actually fun:
 
 **Homecoming.** Once each UTC day, after you have lit three lamps in that city today, walk to your door and turn the key.
 
-- **A purse of coin**, once per account per UTC day. The first door you turn that day pays it. Any other door the same day pays no coin.
+- ~~A purse of coin~~ — dropped in 0.1.12; the key pays no coin.
 - **One match on the hook**, once per city per that city’s local day. The colour depends on the tier. It uses the pocket you already have (30, then the usual overflow). It is an ordinary match.
 - **The car you are driving sits in the drive**, in the paint it already wears. Cosmetic. CAB is unchanged. No car, empty drive.
 
@@ -70,7 +72,7 @@ Before you own it, the marker is the cottage painting with a **For sale** chip (
 1. Walk to the lot. Within 40 m, on foot, a pill appears in the same place as the car-lot pill: `House · West Avenue` while it is for sale, `Your door · Townhouse` once you own it.
 2. The sheet opens. For sale: four tiers, prices, what the key pays. Owned: the painting, the car in the drive, the key, and the step-up if there is a higher tier.
 3. **Buy** spends coin and swaps the marker. The server checks the price.
-4. Later, after three correct lamps in that city today, **Turn the key**. You get the purse if you have not taken one today, and the city’s match if you have not taken that today. Toast, porch stays lit, sheet can close.
+4. Later, after three correct lamps in that city today, **Turn the key**. You get the city’s match if you have not taken that today. Toast, porch stays lit, sheet can close.
 5. CAB, lamps, the market, and the train are unchanged. You walk away.
 
 The buy mock shows a wallet of 184,420: cottage, row house, and townhouse are affordable; the villa says what is still missing. The owned mock is the moment after buying the townhouse (34,420 left), Civic in Rallye Red in the drive, key ready.
@@ -79,14 +81,14 @@ The buy mock shows a wallet of 184,420: cottage, row house, and townhouse are af
 
 Four tiers. Full price if it is your first house in that city. Step-up is the difference.
 
-| Tier | Price | Step-up from the one below | Purse, once a day | Match on the hook |
-| --- | ---: | ---: | ---: | --- |
-| Lamp cottage | 20,000 | — | 350 | white |
-| Row house | 65,000 | 45,000 | 700 | blue |
-| Townhouse | 150,000 | 85,000 | 1,200 | green |
-| Villa | 600,000 | 450,000 | 2,400 | amber |
+| Tier | Price | Step-up from the one below | Match on the hook |
+| --- | ---: | ---: | --- |
+| Lamp cottage | 20,000 | — | white |
+| Row house | 65,000 | 45,000 | blue |
+| Townhouse | 150,000 | 85,000 | green |
+| Villa | 600,000 | 450,000 | amber |
 
-The purse does not pay the house off. At one claim a day the cottage takes 57 days of purses to repay, the row house 93, the townhouse 125, the villa 250. You buy it because you want the door, not because it prints coin.
+The house pays no coin back. You buy it because you want the door, not because it prints coin.
 
 ### What a typical hour actually pays
 
@@ -160,7 +162,6 @@ type HouseDef = {
   name: string;
   blurb: string;
   price: number;   // full price
-  purse: number;   // coin, once per account per UTC day
   match: Tier;     // one match, once per city per local day
 };
 
@@ -171,14 +172,13 @@ const HOUSE_REACH_M = 40;
 // Guest save is irrelevant: buying requires sign-in, same as cars.
 // Server ledger (newest row per key wins; a repeat of the same key is a free replay):
 //   house:<city>:<tier>     buy or step-up. detail { city, tier, from: HouseTier | null }
-//   home:<utcDay>           the purse. detail { city, purse }
 //   hook:<city>:<localDay>  the match. detail { tier, match }
 ```
 
 Ops on the existing wallet pipe (`pushOp` → `walletApply`), not new HTTP routes:
 
 - `{ kind: "house", city, tier }` — refuse if the tier is unknown, if you already own that tier or a higher one, or if `coins < price - ownedPrice`. Write `house:<city>:<tier>`.
-- `{ kind: "home", city }` — own a house there; at least three correct `grade:` rows today whose poi is in that city (`poiCity`); no `home:<utcDay>` yet. Pay `purse` of the tier you own. The three-lamp count should ignore misses.
+- `{ kind: "home", city }` — own a house there; at least three correct `grade:` rows today whose poi is in that city (`poiCity`); no `hook:<city>:<local day>` yet. Hang the tier’s match; no coin. The three-lamp count should ignore misses.
 - `{ kind: "hook", city }` — own a house there; same three-lamp proof; no `hook:<city>:<localDay>` yet (`cityDay` from `vaultStack.ts`, the same midnight as lamp rests). Grant one match through `payMatch` / the pocket rule.
 
 Client state to mirror the ledger, the way `carsOwned` mirrors `car:` rows: `houses: Partial<Record<CityId, HouseTier>>`, plus today’s claim flags so the button can read “Already home” without a round trip. The server stays the authority.

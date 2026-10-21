@@ -26,7 +26,6 @@ export function HouseSheet() {
   const lot = lotOf(cityId);
   const owned = house ? houseOf(house.tier) : null;
   const day = cityDay(cityId, Date.now());
-  const purseTaken = claims.includes(`home:${day}`);
   const hookTaken = claims.includes(`hook:${cityId}:${day}`);
   const car = carOf(carOn);
 
@@ -38,7 +37,7 @@ export function HouseSheet() {
             <p className="kicker">{owned ? "Your door" : "House for sale"} · {lot.name}</p>
             <h2 className="font-display text-2xl">{owned ? owned.name : "A door in this city"}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
-              Light {HOME_LAMPS} lamps in this city today, then turn the key: a purse of coin (once a day, any city) and one match on the hook (once a day here).
+              Light {HOME_LAMPS} lamps in this city today, then turn the key: one match on the hook, once a day here.
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={() => close(false)} aria-label="Close">
@@ -59,19 +58,19 @@ export function HouseSheet() {
               </div>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <p className="text-sm text-fg-muted">
-                  Purse {owned.purse.toLocaleString()} coin{purseTaken ? " (taken today)" : ""} · {TIER_LABEL[owned.match]} match{hookTaken ? " (taken today)" : ""}
+                  {TIER_LABEL[owned.match]} match{hookTaken ? " (taken today)" : ""}
                 </p>
                 <button
                   type="button"
-                  className={`btn ${purseTaken && hookTaken ? "btn-quiet" : "btn-primary"} shrink-0 px-4 text-sm`}
+                  className={`btn ${hookTaken ? "btn-quiet" : "btn-primary"} shrink-0 px-4 text-sm`}
                   data-testid="turn-key"
-                  disabled={purseTaken && hookTaken}
+                  disabled={hookTaken}
                   onClick={() => {
                     sfx.ui();
                     turnKey(cityId);
                   }}
                 >
-                  {purseTaken && hookTaken ? "Already home" : "Turn the key"}
+                  {hookTaken ? "Already home" : "Turn the key"}
                 </button>
               </div>
             </div>
@@ -90,7 +89,7 @@ export function HouseSheet() {
                       <p className="font-display text-lg leading-tight">{h.name}</p>
                       <p className="text-sm text-fg-muted">{h.blurb}</p>
                       <p className="car-boost text-sm">
-                        Key pays {h.purse.toLocaleString()} coin + a {TIER_LABEL[h.match]} match
+                        Key hangs a {TIER_LABEL[h.match]} match
                       </p>
                     </div>
                     <div className="shrink-0 text-right">

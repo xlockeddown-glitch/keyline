@@ -6,7 +6,8 @@ import { COIN_CAP } from "./wallet.ts";
 
 test("house price ladder and step-up difference", () => {
   assert.deepEqual(HOUSES.map((h) => h.price), [20000, 65000, 150000, 600000]);
-  assert.deepEqual(HOUSES.map((h) => h.purse), [350, 700, 1200, 2400]);
+  assert.deepEqual(HOUSES.map((h) => h.match), ["white", "blue", "green", "amber"]);
+  assert.ok(HOUSES.every((h) => !("purse" in h)), "no coin purse");
   assert.equal(houseCost(null, "villa"), 600000);
   assert.equal(houseCost("cottage", "town"), 130000);
   assert.equal(houseCost("town", "town"), null);

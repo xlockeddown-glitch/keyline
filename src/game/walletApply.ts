@@ -202,11 +202,11 @@ export async function housesOf(sql: Sql, userId: string): Promise<Partial<Record
   return out;
 }
 
-/** 0.1.12: today's purse and hook claims (home:<day>, hook:<city>:<day> keys from the last two days). */
+/** 0.1.12: recent key claims (hook:<city>:<day> keys from the last two days). */
 export async function homeClaimsOf(sql: Sql, userId: string): Promise<string[]> {
   const { id } = await canonicalWallet(sql, userId);
   const rows = await sql<{ op_key: string }>`
-    select op_key from wallet_ledger where user_id = ${id} and (op_key like ${"home:%"} or op_key like ${"hook:%"})
+    select op_key from wallet_ledger where user_id = ${id} and op_key like ${"hook:%"}
       and created_at >= ${new Date(Date.now() - 50 * 3600_000).toISOString()}
   `;
   return rows.map((r) => r.op_key);
@@ -488,7 +488,7 @@ export type ClientResult = Applied & {
   /** 0.1.9: a paint can found (cache), or the colour a paint op set. */
   can?: Can;
   /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
-  home?: { purse: number; match: Tier | null; day: string };
+  home?: { match: Tier | null; day: string };
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -655,8 +655,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     return applied(r);
   }
 
-  // 0.1.12: turn the key. Needs a house here and three correct lamps in this city today. The purse is once per account
-  // per local day across every city (home:<day>); the match is once per city per local day (hook:<city>:<day>).
+  // 0.1.12: turn the key. Needs a house here and three correct lamps in this city today. Pays no coin: just the
+  // tier's match, once per city per local day (hook:<city>:<day>).
   if (op.kind === "home") {
     if (!(op.city in CITIES)) return refused(wallet, "unknown");
     const tier = (await housesOf(sql, sessionUserId))[op.city]?.tier;
@@ -664,7 +664,6 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if ((await lampsToday(sql, sessionUserId, op.city)) < HOME_LAMPS) return { ...refused(wallet, "unproven"), authoritative: true };
     const def = houseOf(tier)!;
     const day = cityDay(op.city, Date.now());
-    const purse = await mutateWallet(sql, sessionUserId, `home:${day}`, (w) => ({ ...applyDelta(w, { coins: def.purse }), detail: JSON.stringify({ city: op.city, purse: def.purse }) }));
     let match: Tier | null = null;
     const hook = await mutateWallet(sql, sessionUserId, `hook:${op.city}:${day}`, (w) => {
       const p = payMatch(w.keys, def.match);
@@ -672,8 +671,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       if (d.ok) match = def.match;
       return d.ok ? { ...d, detail: JSON.stringify({ city: op.city, match: def.match }) } : d;
     });
-    const paid = { purse: purse.ok && !purse.replay ? def.purse : 0, match: hook.ok && !hook.replay ? match : null, day };
-    return { ...applied(hook.ok ? hook : purse), home: paid };
+    return { ...applied(hook), home: { match: hook.ok && !hook.replay ? match : null, day } };
   }
 
   if (op.kind === "dgoal") {

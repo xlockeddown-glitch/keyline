@@ -1458,17 +1458,16 @@ test("0.1.12 houses: any tier first, step-up costs the difference, the key needs
   const before = (await canonicalWallet(sql, "hse")).wallet;
   const k = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
   assert.equal(k.ok, true);
-  assert.equal(k.home?.purse, 2400);
   assert.equal(k.home?.match, "amber");
   const after = (await canonicalWallet(sql, "hse")).wallet;
-  assert.equal(after.coins, before.coins + 2400);
+  assert.equal(after.coins, before.coins, "the key pays no coin");
   assert.equal(after.keys.amber, before.keys.amber + 1);
   const again = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
-  assert.deepEqual([again.home?.purse, again.home?.match], [0, null], "once a day");
+  assert.equal(again.home?.match, null, "once a day");
   assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, after.coins);
   const s = await syncPlayer(sql, "hse", snap({ coins: 0 }), "hsephone1");
   assert.equal(s.owned?.houses?.austin?.tier, "villa");
-  assert.ok(s.owned?.homeClaims?.some((x) => x.startsWith("home:")) && s.owned?.homeClaims?.some((x) => x.startsWith("hook:austin:")));
+  assert.ok(s.owned?.homeClaims?.some((x) => x.startsWith("hook:austin:")));
 });
 
 test("0.1.12: the wallet holds 5,000,000, but a first sync still carries at most 250,000 from a device", async () => {

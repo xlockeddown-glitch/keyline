@@ -182,7 +182,7 @@ export type GameState = {
   /** 0.1.9: paint cans held ("civic:red", one per can) and each car's colour (absent = factory). Server-owned when signed in. */
   carCans: string[];
   carPaint: Partial<Record<CarId, string>>;
-  /** 0.1.12: houses owned per city (server-owned) and today's key claims (home:<day>, hook:<city>:<day>). */
+  /** 0.1.12: houses owned per city (server-owned) and today's key claims (hook:<city>:<day>). */
   houses: Partial<Record<CityId, HouseState>>;
   homeClaims: string[];
   houseNear: boolean;
@@ -2379,10 +2379,10 @@ export const useGame = create<GameState>((set, get) => ({
       if (!r.ok) return flashToast(set, get, "The key stuck. Try again in a moment.", 2000);
       const h = r.home;
       const day = h?.day ?? cityDay(city, Date.now());
-      set({ homeClaims: Array.from(new Set([...get().homeClaims, `home:${day}`, `hook:${city}:${day}`])).slice(-40) });
-      const parts = [h?.purse ? `+${h.purse.toLocaleString()} coin` : "", h?.match ? `a ${TIER_LABEL[h.match]} match on the hook` : ""].filter(Boolean);
+      set({ homeClaims: Array.from(new Set([...get().homeClaims, `hook:${city}:${day}`])).slice(-40) });
+
       sfx.pickup();
-      flashToast(set, get, parts.length ? `Home. ${parts.join(" and ")}.` : "Home. You already took today's purse and match.", 2600);
+      flashToast(set, get, h?.match ? `Home. A ${TIER_LABEL[h.match]} match on the hook.` : "Home. You already took today's match.", 2600);
       saveNow(get);
     });
   },

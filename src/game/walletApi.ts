@@ -130,7 +130,7 @@ export type WalletWire = {
   hurry?: { arriveAt: number; cost: number };
   /** 0.1.9: paint can found (cache) or the can a paint op spent. */
   can?: { car: string; color: string };
-  home?: { purse: number; match: Tier | null; day: string };
+  home?: { match: Tier | null; day: string };
 };
 
 export type SyncWire = {
