@@ -2260,7 +2260,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Michigan"
 			], "Illinois", 3)
 		],
-		sports: [q("Guaranteed Rate Field (Comiskey's successor) is home to the…", [
+		sports: [q("Rate Field (Comiskey's successor) is home to the…", [
 			"Cubs",
 			"White Sox",
 			"Brewers",

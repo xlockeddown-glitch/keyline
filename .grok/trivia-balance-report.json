@@ -1,0 +1,346 @@
+{
+  "at": "2026-10-21T02:31:03.721Z",
+  "total": 9944,
+  "byTopic": {
+    "local": {
+      "count": 3141,
+      "share": 0.31586886564762673
+    },
+    "math": {
+      "count": 1772,
+      "share": 0.17819790828640386
+    },
+    "history": {
+      "count": 862,
+      "share": 0.08668543845534996
+    },
+    "science": {
+      "count": 761,
+      "share": 0.07652855993563958
+    },
+    "nature": {
+      "count": 759,
+      "share": 0.07632743362831858
+    },
+    "arts": {
+      "count": 719,
+      "share": 0.07230490748189863
+    },
+    "sports": {
+      "count": 682,
+      "share": 0.06858407079646017
+    },
+    "food": {
+      "count": 562,
+      "share": 0.05651649235720032
+    },
+    "political": {
+      "count": 381,
+      "share": 0.03831456154465004
+    },
+    "music": {
+      "count": 303,
+      "share": 0.030470635559131133
+    },
+    "celebrity": {
+      "count": 2,
+      "share": 0.00020112630732099757
+    }
+  },
+  "byNiche": {
+    "sports-franchise": {
+      "count": 153,
+      "share": 0.015386162510056315
+    },
+    "tarantula": {
+      "count": 132,
+      "share": 0.01327433628318584
+    },
+    "metrology": {
+      "count": 36,
+      "share": 0.0036202735317779565
+    },
+    "aerospace-ops": {
+      "count": 18,
+      "share": 0.0018101367658889783
+    },
+    "marine-deep": {
+      "count": 5,
+      "share": 0.000502815768302494
+    }
+  },
+  "byBank": {
+    "general": {
+      "count": 2235,
+      "share": 0.2247586484312148
+    },
+    "math_more": {
+      "count": 1643,
+      "share": 0.16522526146419952
+    },
+    "cities_part_e": {
+      "count": 671,
+      "share": 0.06747787610619468
+    },
+    "trivia": {
+      "count": 640,
+      "share": 0.06436041834271923
+    },
+    "plus_20261019": {
+      "count": 477,
+      "share": 0.04796862429605792
+    },
+    "cities_part_g": {
+      "count": 468,
+      "share": 0.04706355591311343
+    },
+    "nature_life": {
+      "count": 430,
+      "share": 0.04324215607401448
+    },
+    "cities_part_d": {
+      "count": 358,
+      "share": 0.03600160901045857
+    },
+    "science_life": {
+      "count": 334,
+      "share": 0.033588093322606594
+    },
+    "music": {
+      "count": 301,
+      "share": 0.030269509251810135
+    },
+    "history_life": {
+      "count": 266,
+      "share": 0.02674979887369268
+    },
+    "history": {
+      "count": 219,
+      "share": 0.022023330651649235
+    },
+    "celebrity": {
+      "count": 203,
+      "share": 0.020414320193081256
+    },
+    "games": {
+      "count": 203,
+      "share": 0.020414320193081256
+    },
+    "science_more": {
+      "count": 201,
+      "share": 0.020213193885760258
+    },
+    "nature_more": {
+      "count": 172,
+      "share": 0.01729686242960579
+    },
+    "history_more": {
+      "count": 155,
+      "share": 0.015587288817377313
+    },
+    "math": {
+      "count": 127,
+      "share": 0.012771520514883348
+    },
+    "place": {
+      "count": 87,
+      "share": 0.008748994368463395
+    },
+    "history_life_part_a": {
+      "count": 84,
+      "share": 0.008447304907481898
+    },
+    "science": {
+      "count": 83,
+      "share": 0.0083467417538214
+    },
+    "cities_part_c": {
+      "count": 74,
+      "share": 0.007441673370876911
+    },
+    "cities_part_a": {
+      "count": 71,
+      "share": 0.007139983909895414
+    },
+    "cities_part_b": {
+      "count": 68,
+      "share": 0.006838294448913918
+    },
+    "science_life_part_a": {
+      "count": 67,
+      "share": 0.006737731295253419
+    },
+    "cities_part_f": {
+      "count": 55,
+      "share": 0.0055309734513274336
+    },
+    "weekly_20261006": {
+      "count": 50,
+      "share": 0.00502815768302494
+    },
+    "nature_life_part_a": {
+      "count": 42,
+      "share": 0.004223652453740949
+    },
+    "weekly_20260922": {
+      "count": 35,
+      "share": 0.0035197103781174576
+    },
+    "nature": {
+      "count": 31,
+      "share": 0.0031174577634754627
+    },
+    "cities_weekly": {
+      "count": 24,
+      "share": 0.002413515687851971
+    },
+    "weekly_20261002": {
+      "count": 21,
+      "share": 0.0021118262268704745
+    },
+    "weekly_20261009": {
+      "count": 19,
+      "share": 0.001910699919549477
+    },
+    "weekly_20261016": {
+      "count": 18,
+      "share": 0.0018101367658889783
+    },
+    "level_20261016": {
+      "count": 12,
+      "share": 0.0012067578439259854
+    }
+  },
+  "byCity": {
+    "(shared)": {
+      "count": 7548,
+      "share": 0.7590506838294448
+    },
+    "chicago": {
+      "count": 181,
+      "share": 0.018201930812550282
+    },
+    "nyc": {
+      "count": 181,
+      "share": 0.018201930812550282
+    },
+    "sf": {
+      "count": 170,
+      "share": 0.017095736122284794
+    },
+    "boston": {
+      "count": 167,
+      "share": 0.016794046661303297
+    },
+    "detroit": {
+      "count": 166,
+      "share": 0.0166934835076428
+    },
+    "nola": {
+      "count": 161,
+      "share": 0.016190667739340307
+    },
+    "london": {
+      "count": 160,
+      "share": 0.016090104585679808
+    },
+    "nashville": {
+      "count": 160,
+      "share": 0.016090104585679808
+    },
+    "toronto": {
+      "count": 160,
+      "share": 0.016090104585679808
+    },
+    "la": {
+      "count": 159,
+      "share": 0.01598954143201931
+    },
+    "seattle": {
+      "count": 159,
+      "share": 0.01598954143201931
+    },
+    "denver": {
+      "count": 155,
+      "share": 0.015587288817377313
+    },
+    "temple": {
+      "count": 148,
+      "share": 0.014883346741753822
+    },
+    "austin": {
+      "count": 142,
+      "share": 0.014279967819790828
+    },
+    "tucson": {
+      "count": 127,
+      "share": 0.012771520514883348
+    }
+  },
+  "byRarity": {
+    "white": {
+      "count": 2245,
+      "share": 0.22576427996781978
+    },
+    "green": {
+      "count": 2087,
+      "share": 0.20987530168946097
+    },
+    "blue": {
+      "count": 2031,
+      "share": 0.20424376508447306
+    },
+    "amber": {
+      "count": 1935,
+      "share": 0.19458970233306516
+    },
+    "red": {
+      "count": 1030,
+      "share": 0.10358004827031375
+    },
+    "violet": {
+      "count": 616,
+      "share": 0.061946902654867256
+    }
+  },
+  "byDiff": {
+    "1": {
+      "count": 3486,
+      "share": 0.3505631536604988
+    },
+    "2": {
+      "count": 4932,
+      "share": 0.49597747385358004
+    },
+    "3": {
+      "count": 1526,
+      "share": 0.15345937248592115
+    }
+  },
+  "byScope": {
+    "general": {
+      "count": 6219,
+      "share": 0.625402252614642
+    },
+    "city": {
+      "count": 2396,
+      "share": 0.24094931617055512
+    },
+    "specialty": {
+      "count": 1242,
+      "share": 0.1248994368463395
+    },
+    "place": {
+      "count": 87,
+      "share": 0.008748994368463395
+    }
+  },
+  "specialty": 1244,
+  "flags": [],
+  "mathDraw": {
+    "lamps": 6000,
+    "offeredShare": 0.16816666666666666,
+    "randomPickShare": 0.0245,
+    "mathFirstShare": 0.16816666666666666
+  }
+}
