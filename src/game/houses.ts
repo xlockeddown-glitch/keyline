@@ -55,21 +55,22 @@ export type HouseLot = { city: CityId; name: string; lat: number; lng: number };
  * qualified, a fixed point near spawn; either way the client snaps the door onto the walk.
  */
 // Fixed fallback lots ~165 m north of spawn (Overpass unreachable at build time);
-// street names reverse-geocoded from OSM Nominatim.
+// street names reverse-geocoded from OSM Nominatim. Chicago, Boston and Seattle sit on the
+// nearest normal street to spawn (their north points landed on pedestrian-only ways).
 export const HOUSE_LOTS: Record<CityId, HouseLot> = {
   austin: { city: "austin", name: "West 3rd Street", lat: 30.2668, lng: -97.7487 },
   temple: { city: "temple", name: "South 7th Street", lat: 31.0972, lng: -97.3452 },
   nyc: { city: "nyc", name: "West 47th Street", lat: 40.7595, lng: -73.9855 },
   sf: { city: "sf", name: "Gold Street", lat: 37.7967, lng: -122.4028 },
   london: { city: "london", name: "Charing Cross Road", lat: 51.5095, lng: -0.1281 },
-  chicago: { city: "chicago", name: "Pedway", lat: 41.8842, lng: -87.6233 },
+  chicago: { city: "chicago", name: "North Michigan Avenue", lat: 41.8827, lng: -87.6245 },
   detroit: { city: "detroit", name: "Farmer Street", lat: 42.3329, lng: -83.0466 },
   tucson: { city: "tucson", name: "East Pennington Street", lat: 32.2234, lng: -110.969 },
   toronto: { city: "toronto", name: "Bay Street", lat: 43.6547, lng: -79.3832 },
   la: { city: "la", name: "West Temple Street", lat: 34.0551, lng: -118.2427 },
-  boston: { city: "boston", name: "Liberty Mall", lat: 42.357, lng: -71.0636 },
+  boston: { city: "boston", name: "Tremont Street", lat: 42.3545, lng: -71.0637 },
   nola: { city: "nola", name: "Dumaine Street", lat: 29.9591, lng: -90.063 },
-  seattle: { city: "seattle", name: "Westlake Center Plaza", lat: 47.612, lng: -122.3378 },
+  seattle: { city: "seattle", name: "3rd Avenue", lat: 47.6096, lng: -122.3377 },
   denver: { city: "denver", name: "17th Street", lat: 39.7491, lng: -104.9946 },
   nashville: { city: "nashville", name: "4th Avenue North", lat: 36.1622, lng: -86.7779 },
 };
