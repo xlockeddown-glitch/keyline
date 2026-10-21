@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
 import { DEALER_REACH_M, carOf, carPace, dealerOf, dealerTap } from "@/game/cars";
+import { lampFromRide, rideOf, trimToReach } from "@/game/carReach";
 import { factoryColor } from "@/game/carPaint";
 import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
@@ -24,6 +25,7 @@ import {
   walkableTarget,
   walkReach,
   canGrabMatch,
+  MATCH_GRAB_M,
   bootstrapDrive,
   bootstrapStreets,
   canCutBuildings,
@@ -119,6 +121,8 @@ type Cab = {
   lng: number;
   yaw: number;
   seated: boolean;
+  /** 0.1.14: the player's own car (lamps answer from inside it); false for the city cab. */
+  own?: boolean;
   hail: Pt[] | null;
   hailAlong: number;
 };
@@ -454,6 +458,12 @@ export function GameMap() {
     seatHud(true);
   }
 
+  /** 0.1.14: foot, your own car, or the city cab. */
+  function ride() {
+    const c = cabRef.current;
+    return rideOf(Boolean(c?.seated), Boolean(c?.own));
+  }
+
   function spawnCabAt(lat: number, lng: number, yaw: number) {
     cabRef.current = { lat, lng, yaw, seated: false, hail: null, hailAlong: 0 };
     paintCab();
@@ -488,8 +498,9 @@ export function GameMap() {
       cabMarker.current?.remove();
       cabMarker.current = null;
       spawnCabAt(snap.lat, snap.lng, faceAlongStreet(drive, snap.lat, snap.lng));
+      if (cabRef.current) cabRef.current.own = true;
       enterCab();
-      flash(`${own.name}. Park at the curb to step out.`);
+      flash(`${own.name}. Lamps answer from the car; park to step out.`);
       return;
     }
     if (snap.dist <= 16) {
@@ -636,6 +647,17 @@ export function GameMap() {
   function endLeg() {
     replans.current = 0;
     const wasDrive = routeMode.current === "drive" && Boolean(cabRef.current?.seated);
+    if (wasDrive && cabRef.current?.own) {
+      // 0.1.14: own car — stop at the curb, stay seated; a match on the leg is picked up from the window.
+      const keyId = legKey.current;
+      const match = keyId ? useGame.getState().mapKeys.find((k) => k.id === keyId) : null;
+      const door = legDoor.current;
+      clearRoute();
+      pos.current.speed = 0;
+      if (match && canGrabMatch(graphRef.current, pos.current, match, reachMult(useGame.getState().scout))) useGame.getState().collectKey(match.id);
+      else if (door) flash("At the curb. E to open from the car.", 1600);
+      return;
+    }
     if (wasDrive) {
       clearRoute();
       exitCab();
@@ -694,6 +716,11 @@ export function GameMap() {
    * one up drops it from the route.
    */
   function planWalk(lat: number, lng: number, door = false, keyId?: string) {
+    if (ride() === "own") {
+      // 0.1.14: drive there; the route stops at the curb within reach (setDestination) and you stay in the car.
+      void setDestination(lat, lng, door, false, keyId);
+      return;
+    }
     if (cabRef.current?.seated) {
       flash("Park at the curb. The door is on foot.", 1800);
       void setDestination(lat, lng, door);
@@ -1366,7 +1393,7 @@ export function GameMap() {
       if (street && (distM(street.lat, street.lng, from.lat, from.lng) <= 36 || !hopTouchesFreeway(g, from, street))) walkFrom = street;
     }
     const apply = (raw: Pt[] | null) => {
-      let path = seated ? raw : finishPath(raw, cut ? from : walkFrom, arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
+      let path = seated ? (raw && cabRef.current?.own && (door || keyId) ? trimToReach(raw, target, keyId ? MATCH_GRAB_M * 0.8 : reach() * 0.8) : raw) : finishPath(raw, cut ? from : walkFrom, arrive, { cutBuildings: cut, door: door && !cut && !seated, graph: g });
       if (!path || path.length < 2) return false;
       // Off the streets (a park, Camp Mabry): walk straight to the route if that line misses every freeway.
       if (!seated && g) {
@@ -1592,7 +1619,7 @@ export function GameMap() {
           : anyPois(CITIES[st.cityId], st.blanks).find((p) => p.id === poiId);
     if (!poi) return;
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
-    if (d > reach() || cabRef.current?.seated) {
+    if (d > reach() || !lampFromRide(ride())) {
       planWalk(poi.lat, poi.lng, true);
       return;
     }
@@ -1603,7 +1630,7 @@ export function GameMap() {
   function tryCollect(keyId: string) {
     const k = useGame.getState().mapKeys.find((x) => x.id === keyId);
     if (!k) return;
-    if (cabRef.current?.seated) {
+    if (!lampFromRide(ride())) {
       flash("Park at the curb. Matches are on foot.", 1800);
       void setDestination(k.lat, k.lng);
       return;
@@ -2089,6 +2116,7 @@ export function GameMap() {
           stamina: pos.current.stamina,
           night,
           seated,
+          ownCar: seated && Boolean(cabRef.current?.own),
           deskName: desk.name,
           deskDist: distM(pos.current.lat, pos.current.lng, desk.lat, desk.lng),
           aimDeg: (-aimYaw * 180) / Math.PI,

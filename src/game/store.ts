@@ -117,6 +117,8 @@ type Hud = {
   /** At a door, with more stops waiting. */
   routeHold: boolean;
   seated: boolean;
+  /** 0.1.14: seated in the player's own car (lamps answer from it). */
+  ownCar?: boolean;
   deskName: string;
   deskDist: number;
   aimDeg: number;

@@ -670,15 +670,15 @@ export function closestOnStreet(s: Pick<MarketStreet, "lines">, lat: number, lng
 }
 
 // ───────────────────────── 0.1.7 market lanterns ─────────────────────────
-/** 0.1.7: every open market adds three temporary lanterns inside its circle — one white, one blue, one green. */
-export const MARKET_LANTERN_TIERS = ["white", "blue", "green"] as const satisfies readonly Tier[];
+/** 0.1.7: every open market adds temporary lanterns inside its circle — white, blue, green; 0.1.14 adds amber (4). */
+export const MARKET_LANTERN_TIERS = ["white", "blue", "green", "amber"] as const satisfies readonly Tier[];
 /** They keep at least this far from the city's lamps and from each other (when the street allows). */
 export const MARKET_LANTERN_GAP_M = 35;
-const LANTERN_ID = /^mkt-([a-z0-9-]+)-(\d+)-(white|blue|green)$/;
+const LANTERN_ID = /^mkt-([a-z0-9-]+)-(\d+)-(white|blue|green|amber)$/;
 const LANTERNS = new Map<string, Poi[]>();
 
 /**
- * The market's three lanterns: on the market street (walkable, baked, the same on server and device), inside the
+ * The market's four lanterns (0.1.14; three before): on the market street (walkable, baked, the same on server and device), inside the
  * circle, spread as far as possible from the city's lamps and from each other. Ids carry the city and the cycle, so a
  * lantern is new (and openable) each market and gone when it closes. Deterministic — the server rebuilds the same.
  */
@@ -701,7 +701,7 @@ export function marketLanterns(m: NightMarket | null): Poi[] {
     }
   }
   // A street that barely crosses the circle still gets lanterns: a small ring round the centre.
-  for (let i = 0; cands.length < 3 && i < 6; i++) {
+  for (let i = 0; cands.length < MARKET_LANTERN_TIERS.length && i < 6; i++) {
     const t = (i / 6) * Math.PI * 2, d = z.r * 0.4;
     cands.push({ lat: z.lat + (d * Math.sin(t)) / 111_320, lng: z.lng + (d * Math.cos(t)) / metersPerDegLng(z.lat) });
   }

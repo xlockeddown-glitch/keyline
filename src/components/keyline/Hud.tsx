@@ -116,9 +116,10 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const canUnlock = atDesk && (freePick || passes > 0);
   const canDesk = canPunch || canUnlock;
 
-  let cue = hud.seated ? "Park at the curb. The door is on foot." : "Click the map to walk.";
+  const cabSeat = hud.seated && !hud.ownCar; // 0.1.14: your own car answers lamps; the cab still parks first
+  let cue = cabSeat ? "Park at the curb. The door is on foot." : hud.seated ? "Tap a lamp to drive to its curb." : "Click the map to walk.";
   if (nearest) {
-    if (hud.seated) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
+    if (cabSeat || (hud.seated && service)) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
     else if (canPunch) cue = `Board train · T · ${nearest.name}`;
     else if (canUnlock) cue = `Train station · T · unlock a city (${freePick ? "free pick" : `${passes} pass${passes === 1 ? "" : "es"}`})`;
     else if (atDesk && !fares) cue = `Train station. ${ticketHint(cityVaults)}.`;

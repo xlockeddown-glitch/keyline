@@ -403,7 +403,7 @@ test("0.1.7: every open market adds a white, a blue and a green lantern inside i
       const m = nm.marketAt(city, at);
       if (!m) continue;
       const ls = nm.marketLanterns(m);
-      assert.deepEqual(ls.map((p) => p.tier), ["white", "blue", "green"], city);
+      assert.deepEqual(ls.map((p) => p.tier), ["white", "blue", "green", "amber"], city); // 0.1.14: + amber
       for (const p of ls) {
         assert.ok(distM(m.zone.lat, m.zone.lng, p.lat, p.lng) <= m.zone.r, `${p.id} inside the circle`);
         assert.ok(nm.isMarketLantern(p.id));
@@ -417,7 +417,7 @@ test("0.1.7: every open market adds a white, a blue and a green lantern inside i
         assert.ok(!nm.livePois(CITIES[city], [], m.endsAt + 1).some((q) => q.id === p.id));
       }
       // Never on top of each other, and clear of the city's lamps wherever the street gives room.
-      for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) assert.ok(distM(ls[i]!.lat, ls[i]!.lng, ls[j]!.lat, ls[j]!.lng) >= 10, `${city} lanterns apart`);
+      for (let i = 0; i < ls.length; i++) for (let j = i + 1; j < ls.length; j++) assert.ok(distM(ls[i]!.lat, ls[i]!.lng, ls[j]!.lat, ls[j]!.lng) >= 10, `${city} lanterns apart`);
       const near = Math.min(...ls.flatMap((p) => CITIES[city].pois.map((q) => distM(p.lat, p.lng, q.lat, q.lng))));
       assert.ok(near >= 10, `${city} ${hour}: a lantern sits ${near.toFixed(0)} m from a lamp`);
       checked++;
