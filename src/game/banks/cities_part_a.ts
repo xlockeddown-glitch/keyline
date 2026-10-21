@@ -36,7 +36,7 @@ chicago: {
       q("Millennium Park's Cloud Gate is nicknamed…", ["the Spike", "the Bean", "the Arch", "the Onion"], "the Bean", 1),
       q("The Willis Tower was long called the…", ["Hancock only", "Sears Tower", "Tribune Tower only", "Marina City"], "Sears Tower", 1),
       q("Wrigley Field is in…", ["the Loop only", "the North Side", "Hyde Park only", "Midway"], "the North Side", 1),
-      q("Guaranteed Rate / Sox Park is on the…", ["North Side", "South Side", "in Evanston", "in Gary"], "South Side", 2),
+      q("Rate Field, the White Sox ballpark, is on the…", ["North Side", "South Side", "in Evanston", "in Gary"], "South Side", 2),
       q("Navy Pier juts into…", ["the Chicago River", "Lake Michigan", "the Sanitary Canal only", "Lake Superior"], "Lake Michigan", 1),
       q("The Magnificent Mile is along…", ["State Street only", "Michigan Avenue", "Lake Shore Drive's whole length as a shopping mall", "Halsted only"], "Michigan Avenue", 2),
       q("Hyde Park is home to the…", ["O'Hare airport terminals", "University of Chicago", "Wrigley Field ballpark", "Northwestern University campus"], "University of Chicago", 2),
