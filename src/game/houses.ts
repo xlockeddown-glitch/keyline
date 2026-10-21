@@ -16,10 +16,10 @@ export type HouseTier = "cottage" | "row" | "town" | "villa";
 export type HouseDef = { id: HouseTier; name: string; blurb: string; price: number; match: Tier; star?: boolean };
 
 export const HOUSES: readonly HouseDef[] = [
-  { id: "cottage", name: "Lamp cottage", blurb: "Red brick, a red door, one brass lantern.", price: 20_000, match: "white" },
-  { id: "row", name: "Row house", blurb: "A sooty terrace with an iron stoop.", price: 65_000, match: "blue" },
-  { id: "town", name: "Townhouse", blurb: "Three floors of limestone and ivy.", price: 150_000, match: "green" },
-  { id: "villa", name: "Villa", blurb: "Sand stucco, a gravel drive, amber in the glass.", price: 600_000, match: "amber", star: true },
+  { id: "cottage", name: "Lamp cottage", blurb: "Old brick, a green door, one brass lantern.", price: 40_000, match: "white" },
+  { id: "row", name: "Row house", blurb: "A sooty terrace with an iron stoop.", price: 130_000, match: "blue" },
+  { id: "town", name: "Townhouse", blurb: "Three floors of limestone and ivy.", price: 300_000, match: "green" },
+  { id: "villa", name: "Villa", blurb: "Sand stucco, a gravel drive, amber in the glass.", price: 1_200_000, match: "amber", star: true },
 ];
 
 /** What the account holds in one city. `items` is room for later (interior decor); v1 never sets it. */

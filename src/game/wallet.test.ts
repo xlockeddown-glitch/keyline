@@ -1438,13 +1438,13 @@ test("0.1.12 houses: any tier first, step-up costs the difference, the key needs
   const wid = (await canonicalWallet(sql, "hse")).id;
   assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "cottage" })).reason, "short-coins");
   assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "mansion" })).reason, "unknown");
-  await sql`update player_wallets set coins = 700000 where user_id = ${wid}`;
+  await sql`update player_wallets set coins = 1400000 where user_id = ${wid}`;
   assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "row" })).ok, true, "skip ahead");
-  assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, 635000);
+  assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, 1270000);
   assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "cottage" })).reason, "owned", "never down");
   assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "row" })).ok, true, "same tier is a free replay");
   assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "villa" })).ok, true);
-  assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, 635000 - 535000, "villa step-up is 600k - 65k");
+  assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, 1270000 - 1070000, "villa step-up is 1.2M - 130k");
   assert.deepEqual(await housesOf(sql, "hse"), { austin: { tier: "villa" } });
   // The key: no house in London, and Austin needs three correct lamps there today (misses and other cities don't count).
   assert.equal((await applyClientOp(sql, "hse", { kind: "home", city: "london" })).reason, "no-house");

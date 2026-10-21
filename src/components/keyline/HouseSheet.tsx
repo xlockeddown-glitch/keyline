@@ -85,7 +85,7 @@ export function HouseSheet() {
                 <div key={h.id} className={`car-card${h.star ? " is-star" : ""}`} data-testid={`house-${h.id}`}>
                   <img className="house-thumb" src={houseArt(h.id)} alt="" width={160} height={120} loading="lazy" />
                   <div className="flex items-end justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-display text-lg leading-tight">{h.name}</p>
                       <p className="text-sm text-fg-muted">{h.blurb}</p>
                       <p className="car-boost text-sm">
@@ -97,7 +97,7 @@ export function HouseSheet() {
                         <ItemIcon item="coin" size={16} />
                         {(cost ?? h.price).toLocaleString()}
                       </p>
-                      <button type="button" className={`btn ${short ? "btn-quiet" : "btn-primary"} mt-1 px-3 text-xs`} disabled={short} onClick={() => buyHouse(cityId, h.id)}>
+                      <button type="button" className={`btn ${short ? "btn-quiet" : "btn-primary"} mt-1 max-w-[7.5rem] whitespace-normal px-3 text-xs leading-tight`} disabled={short} onClick={() => buyHouse(cityId, h.id)}>
                         {short ? `Need ${((cost ?? 0) - points).toLocaleString()} more` : owned ? "Step up" : "Buy"}
                       </button>
                     </div>

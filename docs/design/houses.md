@@ -2,7 +2,7 @@
 
 Design only, for the version after 0.1.9. Branch `wip/houses-design`, cut from `39e6a6a` (package `0.1.9`, car paint). Nothing here changes the game, the wallet, or `APP_VERSION`.
 
-> **As built in 0.1.12 (supersedes the purse sections below).** Ryan dropped the daily coin purse: turning the key pays **no coin**. It hangs the tier’s match (white / blue / green / amber), once per city per that city’s local day, after any three correct lamps in that city today (market lanterns count). Sign-in required; guests can’t buy. `COIN_CAP` is now 5,000,000 (a first sync still carries at most 250,000). The house is drawn on the map at its lot at building scale and opens the sheet when tapped. Ledger keys: `house:<city>:<tier>` and `hook:<city>:<local day>`; there is no `home:` row.
+> **As built in 0.1.12 (supersedes the purse sections below).** Prices doubled (cottage 40,000 · row 130,000 · townhouse 300,000 · villa 1,200,000; a step-up is still the difference — the hours table below predates this and is at the old prices). Ryan dropped the daily coin purse: turning the key pays **no coin**. It hangs the tier’s match (white / blue / green / amber), once per city per that city’s local day, after any three correct lamps in that city today (market lanterns count). Sign-in required; guests can’t buy. `COIN_CAP` is now 5,000,000 (a first sync still carries at most 250,000). The house is drawn on the map at its lot at building scale and opens the sheet when tapped. Ledger keys: `house:<city>:<tier>` and `hook:<city>:<local day>`; there is no `home:` row.
 
 Mockups (phone 390×844, plus one desktop) are rendered from the game’s tokens, type, and real sprites. The four exteriors are new paintings in the same brush as the v2 scouts and the v3 cars.
 
@@ -83,10 +83,10 @@ Four tiers. Full price if it is your first house in that city. Step-up is the di
 
 | Tier | Price | Step-up from the one below | Match on the hook |
 | --- | ---: | ---: | --- |
-| Lamp cottage | 20,000 | — | white |
-| Row house | 65,000 | 45,000 | blue |
-| Townhouse | 150,000 | 85,000 | green |
-| Villa | 600,000 | 450,000 | amber |
+| Lamp cottage | 40,000 | — | white |
+| Row house | 130,000 | 90,000 | blue |
+| Townhouse | 300,000 | 170,000 | green |
+| Villa | 1,200,000 | 900,000 | amber |
 
 The house pays no coin back. You buy it because you want the door, not because it prints coin.
 
@@ -190,7 +190,7 @@ Grade rows today store `pi` (poi id) but not the city. `poiCity()` covers named 
 1. **The 250,000 cap.** Villa at 600,000 is unbuyable for the same reason the Roadster, the Roadster 2.0, and the Penguin are. Ship the villa as a listed price that waits, or hold it out of v1 until `COIN_CAP` moves?
 2. **Lots.** This pass did not bake 15 OSM doors. Confirm the rule: nearest `shop=estate_agent` or a house, inside 800 m of spawn, door on the walk, `qa:stands`. What should a city do when nothing qualifies?
 3. **Whose midnight.** The purse is once per UTC day so two cities cannot both pay. The match follows the city’s local midnight, like lamp rests. Should the purse follow the city too, with an explicit “one purse per account per UTC day” still on top?
-4. **Skipping tiers.** You can buy the townhouse first at 150,000, or buy the cottage and pay 45,000 then 85,000. Confirm skip-ahead is allowed, rather than a forced ladder like market lights.
+4. **Skipping tiers.** You can buy the townhouse first at 300,000, or buy the cottage and pay 90,000 then 170,000. Confirm skip-ahead is allowed, rather than a forced ladder like market lights.
 5. **Second cities.** Full price again, and no stacked purses. Is one purse a day too stingy once someone owns three doors, or is that the point of the anti-tour rule?
 6. **The three lamps.** Named pois via `poiCity`, or any correct grade while the server’s city is that city (needs `c` on the grade detail)? Do the three market lanterns count?
 7. **The drive.** The picture is whatever `carOn` is, in its paint. Confirm there is not a separately parked car. Empty drive when you are on the city cab.
