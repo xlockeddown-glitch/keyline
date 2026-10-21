@@ -50,6 +50,11 @@ export function sparkState(day: string, n: number, lamps: string[], today: strin
  * the six-a-day / once-per-lamp rule can't live only in the device save. `details` are today's spark grade rows
  * (ledger detail JSON carrying "sp":1 and "pi"). False = this spark pays nothing.
  */
+/** 0.1.19 (Ryan): violet lamps never spark, on the device or the server. */
+export function sparkTier(tier: string): boolean {
+  return tier !== "violet";
+}
+
 export function sparkAllowed(details: readonly string[], poiId: string): boolean {
   let n = 0;
   for (const d of details) {

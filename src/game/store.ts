@@ -50,7 +50,7 @@ import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
-import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, hurryCost, hurryTarget, lampCoolMs, matchCap, settleRide, sparkState, ticketHint } from "./ticket";
+import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareMs, formatCool, hurryCost, hurryTarget, lampCoolMs, matchCap, settleRide, sparkState, sparkTier, ticketHint } from "./ticket";
 import { bonusDue, rideRamp, chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
@@ -1434,6 +1434,8 @@ export const useGame = create<GameState>((set, get) => ({
     const clock = Date.now();
     if (v && v.state === "cooling" && v.coolUntil > clock) return `This lamp is dark for ${formatCool(v.coolUntil - clock)}.`;
     if (!hasMatch(get().keys, poi.tier)) {
+      // 0.1.19 (Ryan): violet never sparks; it needs a violet match.
+      if (!sparkTier(poi.tier)) return `Need a ${TIER_LABEL[poi.tier]} match.`;
       const spark = sparksNow(get);
       if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} match. Sparks are spent today.`;
       if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} match. This wick already sparked.`;

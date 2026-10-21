@@ -13,7 +13,7 @@ import { SEED, STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
 import { perfectRefund } from "./perfectRefund.ts";
 import { TIER_VALUE } from "./rewards.ts";
 import { marketAt, marketMatches } from "./nightMarket.ts";
-import { FARES_CAP, matchCap, transitLoot } from "./ticket.ts";
+import { FARES_CAP, matchCap, sparkTier, transitLoot } from "./ticket.ts";
 import { rideReward } from "./rideGames.ts";
 import { payDaily } from "./dailyRun.ts";
 import { rideSeed, scoreRide } from "./rideGrade.ts";
@@ -1494,4 +1494,22 @@ test("0.1.19: sparks (no match held) are capped on the server — six a day, onc
   const six = await awardGrade(sql, "beth", "s6", spark("det-lamp-6"));
   assert.equal(six.wallet.keys.red, 6, "only six sparks pay a day");
   assert.match(String(six.award?.boosts ?? ""), /Sparks are spent/);
+});
+
+test("0.1.19: violet never sparks on the server; red still does", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "vio", snap({ coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "detroit", unlocked: ["detroit"] } }), "viophone");
+  const spark = (tier: "violet" | "red", poiId: string) => ({ ...pay({ clearTier: null, poiTier: tier, poiId, city: "detroit", series: null }), prevNonce: "" });
+  const v = await awardGrade(sql, "vio", "v1", spark("violet", "det-violet"));
+  assert.equal(v.wallet.keys.violet ?? 0, 0, "a violet spark pays nothing");
+  assert.equal(v.wallet.coins, 0);
+  const r = await awardGrade(sql, "vio", "r1", spark("red", "det-red"));
+  assert.equal(r.wallet.keys.red, 1, "red still sparks");
+});
+
+test("0.1.19: the device offers no spark at a violet lamp", () => {
+  assert.equal(sparkTier("violet"), false);
+  for (const t of ["white", "blue", "green", "amber", "red"]) assert.equal(sparkTier(t), true);
+  const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.match(src, /if \(!sparkTier\(poi\.tier\)\) return `Need a \$\{TIER_LABEL\[poi\.tier\]\} match\.`;/);
 });

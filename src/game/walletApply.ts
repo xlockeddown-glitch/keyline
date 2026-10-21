@@ -56,7 +56,7 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
-import { fareMs, FARES_CAP, sparkAllowed, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
+import { fareMs, FARES_CAP, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 
@@ -355,7 +355,9 @@ export async function awardGrade(
   if (district) full.freshDistrict = isFreshDistrict(district, await districtsToday(sql, id, full.city));
   // 0.1.19: a spark (no match held) is capped on the server too: six a day, one per lamp (Chicago day).
   const spark = full.correct && full.clearTier == null && !full.series && !full.poiId.startsWith("blitz-");
-  const sparkOk = spark
+  const sparkOk = spark && !sparkTier(full.poiTier)
+    ? false
+    : spark
     ? sparkAllowed(
         (
           await sql<{ detail: string; created_at: unknown }>`
@@ -398,7 +400,7 @@ export async function awardGrade(
       base = spent.wallet;
     }
     if (!sparkOk) {
-      const award = { coins: 0, keys: {}, boosts: ["Sparks are spent today"] };
+      const award = { coins: 0, keys: {}, boosts: [sparkTier(full.poiTier) ? "Sparks are spent today" : "Violet needs a violet match"] };
       return { ok: true, wallet: base, award, detail: detailOf(award) };
     }
     const grant = gradeGrant(base, full);
