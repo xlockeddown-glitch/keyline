@@ -283,7 +283,7 @@ export function auditCraft(items) {
     }
     if (/ {2,}/.test(blob)) flag(errors, "punct", item, "Double spaces.");
     if (/ +[,.;:!?)]/.test(blob)) flag(errors, "punct", item, "Space before punctuation.");
-    if (/[(\[] /.test(q)) flag(warnings, "punct", item, "Space after an opening bracket.");
+    if (/[([] /.test(q)) flag(warnings, "punct", item, "Space after an opening bracket.");
     if (/\.{3,}$/.test(q.trim()) || !/[?….:!]$/.test(q.trim())) {
       flag(errors, "punct", item, "Prompt should end with ? or …");
     }

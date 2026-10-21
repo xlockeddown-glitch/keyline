@@ -133,6 +133,6 @@ test("a wedged walker re-plans at most 3 times on a leg, then the route drops (n
   assert.equal((g.match(/replanStuck\(/g) ?? []).length, 3, "definition + two stuck sites");
   assert.ok(!/else void setDestination\(wp\.lat, wp\.lng, legDoor\.current, true\);/.test(g));
   // The counter survives the re-plan itself (keepQueue) and resets on a new leg, a fresh tap or a cleared route.
-  assert.match(g, /function endLeg\(\) \{\n    replans\.current = 0;/);
-  assert.match(g, /if \(!keepQueue\) \{\n      replans\.current = 0;/);
+  assert.match(g, /function endLeg\(\) \{\n {4}replans\.current = 0;/);
+  assert.match(g, /if \(!keepQueue\) \{\n {6}replans\.current = 0;/);
 });

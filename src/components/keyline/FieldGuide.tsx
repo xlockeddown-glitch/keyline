@@ -99,7 +99,7 @@ export function FieldGuide() {
           <section className="mt-5" data-testid="help-cars">
             <h3 className="font-display text-lg leading-tight">Cars</h3>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
-              Each city has a car lot on the map. Walk in to buy a car with coin. Your car is your own cab: tap Car and it's at the curb, and it drives a little faster than the city cab (5% for the Civic up to 30% for the Roadster 2.0). You still walk up to lamps and shops. You pay once and keep the car in every city.
+              Each city has a car lot on the map. Walk in to buy a car with coin. Your car is your own cab: tap Car and it's at the curb, and it drives a little faster than the city cab (5% for the Civic up to 30% for the Roadster 2.0). In your own car you can open lamps and vaults and grab matches from the curb; the city cab parks you first, and shops, the car lot and your house are on foot. You pay once and keep the car in every city.
             </p>
           </section>
           {/* 0.0.95: what the lantern result's badges and emblems mean. */}

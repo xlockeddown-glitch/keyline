@@ -67,7 +67,7 @@ const esc = (s: string) =>
 
 /** Display names are interpolated into the text part. Strip header-like breaks and control chars. */
 function plainName(name: string): string {
-  return name.replace(/[\u0000-\u001f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  return name.replace(/[\u0000-\u001f]/g, " ") // eslint-disable-line no-control-regex -- strip control chars on purpose.replace(/\s+/g, " ").trim().slice(0, 80);
 }
 
 /**

@@ -3236,7 +3236,7 @@ useGame.subscribe((s, prev) => {
   const pop = s.matchPop && s.matchPop !== prev.matchPop ? s.matchPop.kind : null;
   const vault = prev.openVault ?? s.openVault;
   const poi = vault ? CITIES[s.cityId]?.pois.find((p) => p.id === (vault as { poiId?: string }).poiId) : undefined;
-  const src: RewardSource = pop === "level" ? "level" : pop === "gift" ? "gift" : pop === "cache" ? "cache" : pop === "streak" ? "streak" : poi ? "lamp" : "reward";
+  const src: RewardSource = pop === "level" ? "level" : pop === "gift" ? "gift" : pop === "cache" ? "cache" : pop === "streak" ? "streak" : poi ? "lamp" : s.mapKeys.length < prev.mapKeys.length ? "street" : "reward"; // 0.1.15: a street pick-up is a Street match
   const r: RecentReward = { at: Date.now(), src, ...(poi ? { where: poi.name } : {}), coins: Math.max(0, coins), keys, ...(Object.keys(credit).length ? { credit } : {}) };
   // Merge with the entry from the same moment (a reward often lands in two writes).
   const top = s.recent[0];

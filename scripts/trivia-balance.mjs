@@ -131,7 +131,7 @@ export function keyPathByLine(src) {
     const line = stripLineCommentsAndStrings(lines[li]);
     const exportConst = /export\s+const\s+([A-Za-z0-9_]+)/.exec(line);
     const keyOpen = /^\s*([A-Za-z0-9_]+)\s*:/.exec(line);
-    const opens = (line.match(/[{\[]/g) || []).length;
+    const opens = (line.match(/[{[]/g) || []).length;
     const closes = (line.match(/[}\]]/g) || []).length;
     if (opens) {
       const key = exportConst?.[1] ?? (keyOpen ? keyOpen[1] : "");

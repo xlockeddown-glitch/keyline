@@ -225,6 +225,9 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  */
 export function ensureDbReady(): Promise<void> {
   if (dbSource !== "pglite") return Promise.resolve();
+  // 0.1.15: a built server with no DATABASE_URL has only the PGLite stub (see vite.config.ts) — skip the
+  // bootstrap like scripts/migrate.mjs does instead of throwing at start. `vite dev` still uses PGLite.
+  if (import.meta.env?.PROD) return Promise.resolve();
   return getSql()
     .then(() => undefined)
     .catch((err) => {

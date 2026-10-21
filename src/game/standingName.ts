@@ -1,6 +1,6 @@
 /** Standings: First + last initial. Single-token names stay as the first token. */
 export function standingName(name: string | null | undefined): string {
-  const raw = (name ?? "").replace(/[\u0000-\u001f]/g, "").trim();
+  const raw = (name ?? "").replace(/[\u0000-\u001f]/g, "") // eslint-disable-line no-control-regex -- strip control chars on purpose.trim();
   if (!raw) return "Walker";
   const parts = raw.split(/\s+/).filter(Boolean);
   const first = (parts[0] ?? "Walker").slice(0, 24);

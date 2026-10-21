@@ -39,10 +39,15 @@ page.setDefaultTimeout(timeout);
 
 try {
   await page.goto(url, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Walk Austin/i }).waitFor({ timeout });
+  // 0.1.15: the title is the city blade now (was a "Walk Austin" button).
+  await page.locator(".city-blade:not([disabled])").waitFor({ timeout });
   await page.screenshot({ path: join(outDir, "title.png") });
 
-  await page.getByRole("button", { name: /Walk Austin/i }).click();
+  await page.locator(".city-blade").click();
+  const guest = page.getByRole("button", { name: "Continue as guest" });
+  if (await guest.isVisible().catch(() => false)) await guest.click();
+  const later = page.getByRole("button", { name: "Not now" });
+  if (await later.isVisible({ timeout: 3000 }).catch(() => false)) await later.click();
   const skip = page.getByRole("button", { name: "Skip" });
   if (await skip.isVisible().catch(() => false)) await skip.click();
 

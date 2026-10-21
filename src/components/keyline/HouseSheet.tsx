@@ -89,7 +89,7 @@ export function HouseSheet() {
                       <p className="font-display text-lg leading-tight">{h.name}</p>
                       <p className="text-sm text-fg-muted">{h.blurb}</p>
                       <p className="car-boost text-sm">
-                        Key hangs a {TIER_LABEL[h.match]} match
+                        Key hangs {/^[AEIOU]/i.test(TIER_LABEL[h.match]) ? "an" : "a"} {TIER_LABEL[h.match]} match
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
