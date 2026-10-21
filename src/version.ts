@@ -125,3 +125,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.12: houses — four tiers per city, a daily match (no coin) after three lamps; wallet cap raised to 5M.
 // 0.1.12: also the car lot sign is tappable — opens the Showroom at the door (40 m), otherwise walks you there; in a cab it asks you to step out (k112a).
 // 0.1.13: fix — walk routes no longer zigzag (Chicago Loop up to Wacker and back): the online foot router's walk was taken whenever it hugged our streets, however long; now the street graph's own walk wins when the online one is over 1.2× its length (k113a).
+// 0.1.13: also a center-on-me crosshair under the zoom buttons (C on a keyboard); Help lists the map keys.

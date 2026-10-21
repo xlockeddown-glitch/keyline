@@ -81,6 +81,13 @@ export function FieldGuide() {
             ))}
           </div>
           <p className="mt-4 text-sm text-pretty text-fg" data-testid="help-hold">Tap to walk somewhere; press and hold (or Shift+click) to add a stop.</p>
+          {/* 0.1.13: the map's buttons and keys. */}
+          <section className="mt-5" data-testid="help-keys">
+            <h3 className="font-display text-lg leading-tight">Map controls</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              The crosshair under + and − puts the map back on you. On a keyboard: WASD or arrows to walk, E or Space to open the nearest lamp, C to center on you, F for a cab or your car, T at the station for the train board, I for your satchel, Tab for HQ, Esc to close or cancel a route.
+            </p>
+          </section>
           {/* 0.0.95: city passes in plain words. */}
           <section className="mt-5" data-testid="help-pass">
             <h3 className="font-display text-lg leading-tight">City passes</h3>

@@ -4357,3 +4357,6 @@ h3 {
   transform: translate(-50%, 30%); border-radius: 50%; mix-blend-mode: screen; background: radial-gradient(closest-side, rgb(255 178 92 / 0.32), rgb(255 150 70 / 0.12) 55%, transparent); }
 .house-map .house-chip { position: relative; z-index: 3; }
 .house-map.is-home .house-sprite { filter: brightness(0.92) saturate(0.95) drop-shadow(0 0 calc(var(--house-w) * 0.08) rgb(255 200 110 / 0.5)); }
+
+/* 0.1.13: center-on-me button under the zoom controls */
+.leaflet-control-zoom a.leaflet-control-center { display: flex; align-items: center; justify-content: center; }

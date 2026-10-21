@@ -1089,6 +1089,22 @@ export function GameMap() {
       map.on("dragstart", () => {
         follow.current = false;
       });
+      // 0.1.13: "center on me" — a crosshair under the zoom buttons (and C on a keyboard) pans back to you.
+      const zoomBar = map.zoomControl?.getContainer();
+      if (zoomBar) {
+        const btn = L.DomUtil.create("a", "leaflet-control-center", zoomBar) as HTMLAnchorElement;
+        btn.href = "#";
+        btn.role = "button";
+        btn.title = "Center on me (C)";
+        btn.setAttribute("aria-label", "Center on me");
+        btn.dataset.testid = "center-me";
+        btn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>`;
+        L.DomEvent.disableClickPropagation(btn);
+        L.DomEvent.on(btn, "click", (ev) => {
+          L.DomEvent.preventDefault(ev);
+          centerOnMe();
+        });
+      }
       // 0.0.97: press and hold (~480 ms, finger still) adds a stop; a plain tap replaces the route.
       const PINS = ".vault-pin, .shop-pin, .counter-pin, .board-pin, .match-pin, .route-stop, .leaflet-control";
       let hold: { id: number; x: number; y: number; timer: number } | null = null;
@@ -1605,6 +1621,12 @@ export function GameMap() {
     if (L && map) rebuildPins(L, map);
   }
 
+  /** 0.1.13: pan back to the player and keep following (the map stops following once you drag it). */
+  function centerOnMe() {
+    follow.current = true;
+    mapRef.current?.panTo([pos.current.lat, pos.current.lng], { animate: true, duration: 0.35 });
+  }
+
   function interactNearest() {
     const id = useGame.getState().hud.nearestId;
     if (id) tryOpen(id);
@@ -1655,6 +1677,7 @@ export function GameMap() {
         }
         setBoardOpen((v) => !v);
       }
+      if (e.code === "KeyC") centerOnMe();
       if (e.code === "KeyI") {
         if (!useGame.getState().openVault) useGame.getState().toggleInv();
       }
