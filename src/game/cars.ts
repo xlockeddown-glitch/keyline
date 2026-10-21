@@ -66,6 +66,11 @@ export const DEALERS: Record<CityId, Dealer> = {
 
 /** Close enough, on foot, to walk into the showroom. */
 export const DEALER_REACH_M = 40;
+/** 0.1.12: what a tap on the lot sign does — open the showroom at the door, else walk there (in a cab: get out first). */
+export function dealerTap(distanceM: number, seated: boolean): "open" | "walk" | "seated" {
+  if (seated) return "seated";
+  return distanceM <= DEALER_REACH_M ? "open" : "walk";
+}
 
 export function dealerOf(city: CityId): Dealer {
   return DEALERS[city];
