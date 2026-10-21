@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.15";
+export const APP_VERSION = "0.1.16";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k115a";
+export const PUBLISH_STAMP = "k116a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -126,3 +126,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.12: also the car lot sign is tappable — opens the Showroom at the door (40 m), otherwise walks you there; in a cab it asks you to step out (k112a).
 // 0.1.14: lanterns and street matches spread across the city — new street matches keep 250 m from anything lit (area-uniform best-candidate, not street-segment density), 36 unnamed lamps by farthest-point fill inside 2.8 km (was 28, shuffled), 35 real outer landmarks in Nashville, Denver, Chicago, Seattle, Detroit, New Orleans, Tucson and L.A. (qa:spread); "New district" +25% lamp coin for the first right lamp in each 800 m square per city-day (server-paid, 6 a day, never on a market lamp); lamps, vaults and matches answer from inside your own car (drive stops at the curb in reach; the city cab, dealer and house stay on foot); night markets hang a 4th, amber lantern; trivia context tags and stale-fact fixes (k114a).
 // 0.1.15: Wednesday QA fixes — help and showroom say your own car answers lamps (the city cab parks first); guest street pick-ups log as Street match; house sheet says "an Amber match"; built server skips PGLite without DATABASE_URL and guards Nitro's remoteAddress redefine; package-lock version synced; lint errors fixed (k115a).
+// 0.1.16: four more city prints — Temple Santa Fe Warbonnet, New York Checker Cab, San Francisco Golden Gate, London Underground Roundel (same 16x16 tiles, first-print goal: 500 right + 150 km there); eight cities still pending (k116a).

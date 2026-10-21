@@ -147,11 +147,157 @@ const DETROIT_ASSEMBLY: CityPrint = {
   ],
 };
 
+/** 0.1.16: Temple was founded in 1881 by the Gulf, Colorado and Santa Fe Railway — the Santa Fe warbonnet livery. */
+const TEMPLE_WARBONNET: CityPrint = {
+  id: "print-temple-warbonnet",
+  city: "temple",
+  name: "Santa Fe Warbonnet",
+  blurb: "A Santa Fe rail town since 1881: warbonnet red and yellow sweeping over stainless silver, ties below.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#c23b2c",
+  palette: {
+    ".": { L: 74, C: 3, h: 250 }, // stainless silver
+    R: { L: 44, C: 60, h: 32 }, // warbonnet red
+    y: { L: 82, C: 62, h: 92 }, // yellow pinstripe
+    k: { L: 16, C: 4, h: 270 }, // black stripe
+    t: { L: 34, C: 18, h: 55 }, // tie
+    s: { L: 58, C: 4, h: 250 }, // rail steel
+  },
+  tile: [
+    "RRRRRRRRRRRRRRRR",
+    "yRRRRRRRRRRRRRRy",
+    "kyRRRRRRRRRRRRyk",
+    ".kyRRRRRRRRRRyk.",
+    "..kyRRRRRRRRyk..",
+    "...kyRRRRRRyk...",
+    "....kyRRRRyk....",
+    ".....kyRRyk.....",
+    "......kyyk......",
+    ".......kk.......",
+    "................",
+    "ssssssssssssssss",
+    ".t...t...t...t..",
+    ".t...t...t...t..",
+    "ssssssssssssssss",
+    "................",
+  ],
+};
+
+/** 0.1.16: New York — the yellow cab with its checker band. */
+const NYC_CHECKER: CityPrint = {
+  id: "print-nyc-checker",
+  city: "nyc",
+  name: "Checker Cab",
+  blurb: "Taxi yellow from fender to fender, with the black-and-white checker band down the side.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#f2c230",
+  palette: {
+    ".": { L: 80, C: 70, h: 88 }, // taxi yellow
+    d: { L: 68, C: 66, h: 80 }, // shaded yellow
+    k: { L: 12, C: 3, h: 270 }, // black check
+    w: { L: 95, C: 3, h: 90 }, // white check
+  },
+  tile: [
+    "................",
+    "................",
+    "dddddddddddddddd",
+    "................",
+    "kkwwkkwwkkwwkkww",
+    "kkwwkkwwkkwwkkww",
+    "wwkkwwkkwwkkwwkk",
+    "wwkkwwkkwwkkwwkk",
+    "................",
+    "dddddddddddddddd",
+    "................",
+    "................",
+    "................",
+    "................",
+    "dddddddddddddddd",
+    "................",
+  ],
+};
+
+/** 0.1.16: San Francisco — the Golden Gate Bridge in International Orange. */
+const SF_GOLDEN_GATE: CityPrint = {
+  id: "print-sf-golden-gate",
+  city: "sf",
+  name: "Golden Gate",
+  blurb: "International Orange towers and swooping cables over a fog-grey bay.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#c0362c",
+  palette: {
+    ".": { L: 70, C: 5, h: 240 }, // fog
+    b: { L: 40, C: 22, h: 235 }, // bay
+    O: { L: 50, C: 58, h: 38 }, // International Orange
+    c: { L: 42, C: 50, h: 36 }, // cable
+  },
+  tile: [
+    ".OO.............",
+    ".OO.............",
+    "OOOOc..........c",
+    ".OO..c........c.",
+    ".OO...c......c..",
+    "OOOO...cc..cc...",
+    ".OO......cc.....",
+    ".OO.............",
+    "OOOOOOOOOOOOOOOO",
+    "cOOccccccccccccc",
+    ".OO.............",
+    ".OO.............",
+    "bOObbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbb",
+  ],
+};
+
+/** 0.1.16: London — the Underground roundel. */
+const LONDON_ROUNDEL: CityPrint = {
+  id: "print-london-roundel",
+  city: "london",
+  name: "Underground Roundel",
+  blurb: "The Tube's red ring and blue bar, repeated down a cream station wall.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 2,
+  swatch: "#d2232a",
+  palette: {
+    ".": { L: 90, C: 10, h: 88 }, // cream tile
+    R: { L: 46, C: 66, h: 30 }, // roundel red
+    B: { L: 30, C: 52, h: 275 }, // bar blue
+    g: { L: 80, C: 8, h: 88 }, // grout
+  },
+  tile: [
+    "................",
+    ".....RRRRRR.....",
+    "...RRR....RRR...",
+    "..RR........RR..",
+    "..R..........R..",
+    "BBBBBBBBBBBBBBBB",
+    "BBBBBBBBBBBBBBBB",
+    "..R..........R..",
+    "..RR........RR..",
+    "...RRR....RRR...",
+    ".....RRRRRR.....",
+    "................",
+    "gggggggggggggggg",
+    "................",
+    "........g.......",
+    "........g.......",
+  ],
+};
+
 /** Every city's prints, in earn order. */
 export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>> = {
   austin: [AUSTIN_BLUEBONNET],
   chicago: [CHICAGO_L],
   detroit: [DETROIT_ASSEMBLY],
+  temple: [TEMPLE_WARBONNET],
+  nyc: [NYC_CHECKER],
+  sf: [SF_GOLDEN_GATE],
+  london: [LONDON_ROUNDEL],
 };
 
 /**
@@ -160,7 +306,7 @@ export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>
  * without a print, and this list can only shrink.
  */
 export const PRINTS_PENDING: readonly CityId[] = [
-  "temple", "nyc", "sf", "london", "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville",
+  "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville",
 ];
 
 export const ALL_PRINTS: readonly CityPrint[] = Object.values(CITY_PRINTS).flatMap((l) => l ?? []);
