@@ -496,21 +496,33 @@ function streetFloor(cityId: CityId, keys: { id: string }[]): number {
   return n;
 }
 
+/** 0.1.14: everything already lit in this city, so a new street match keeps its distance (SPREAD_MIN_M). */
+function litPoints(cityId: CityId, held: { lat: number; lng: number }[]): { lat: number; lng: number }[] {
+  let blanks: Poi[] = [];
+  try {
+    const st = useGame.getState();
+    if (st.cityId === cityId) blanks = st.blanks;
+  } catch {
+    /* the store is still being built (first seed) */
+  }
+  return [...CITIES[cityId].pois, ...blanks, ...held];
+}
+
 /** A spot from this player's city-day list. Guests, and a sync that has not landed, get null. */
-function issuedKey(cityId: CityId, held: { id: string }[]): MapKey | null {
+function issuedKey(cityId: CityId, held: MapKey[]): MapKey | null {
   const player = streetPlayer();
   if (!player || !walletLive()) return null;
   const spot = takeStreetSpot(player, cityId, Date.now(), streetFloor(cityId, held));
   if (!spot) return null;
   const m = spot.market ? marketAt(cityId, Date.now()) : null;
-  const p = m ? reachableDrop(pointOnMarket(m.street)) : streetDrop(CITIES[cityId].spawn, 220, 2200);
+  const p = m ? reachableDrop(pointOnMarket(m.street)) : streetDrop(CITIES[cityId].spawn, 220, 2200, litPoints(cityId, held));
   return { id: spot.id, lat: p.lat, lng: p.lng, tier: spot.tier };
 }
 
-function placeKey(cityId: CityId, tier: Tier): MapKey {
+function placeKey(cityId: CityId, tier: Tier, held: MapKey[] = []): MapKey {
   const c = CITIES[cityId];
   const around = c.spawn;
-  const p = streetDrop(around, 220, 2200);
+  const p = streetDrop(around, 220, 2200, litPoints(cityId, held));
   return {
     id: `k-${cityId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     lat: p.lat,
@@ -585,7 +597,7 @@ function seedKeys(cityId: CityId, n = SEED.length): MapKey[] {
   const tiers = SEED;
   for (let i = 0; i < n; i++) {
     const around = c.spawn;
-    const p = streetDrop(around, 160 + i * 90, 2100);
+    const p = streetDrop(around, 160 + i * 90, 2100, litPoints(cityId, out));
     out.push({
       id: `k-${cityId}-${i}-${Math.random().toString(36).slice(2, 6)}`,
       lat: p.lat,
@@ -1314,7 +1326,7 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     set({
-      mapKeys: [...get().mapKeys, marketKey(get().cityId, streetKeyTier(playMin), now) ?? placeKey(get().cityId, streetKeyTier(playMin))],
+      mapKeys: [...get().mapKeys, marketKey(get().cityId, streetKeyTier(playMin), now) ?? placeKey(get().cityId, streetKeyTier(playMin), get().mapKeys)],
       lastKeyAt: now,
     });
     scheduleSave(get);

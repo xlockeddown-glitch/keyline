@@ -1,5 +1,6 @@
 import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
+import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
 import { cityDay } from "./vaultStack.ts";
@@ -223,6 +224,17 @@ export async function lampsToday(sql: Sql, userId: string, city: CityId, now = D
   return rows.filter((r) => !String(r.detail).includes('"g":"miss"') && cityDay(city, new Date(String(r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at)).getTime()) === day).length;
 }
 
+/** 0.1.14: district squares of today's right lamps in this city (city-local day). `id` is the canonical wallet id. */
+async function districtsToday(sql: Sql, id: string, city: CityId, now = Date.now()): Promise<string[]> {
+  const rows = await sql<{ detail: string; created_at: unknown }>`
+    select detail, created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"}
+      and created_at >= ${new Date(now - 30 * 3600_000).toISOString()} and detail like ${`%"c":"${city}"%`}
+  `;
+  const day = cityDay(city, now);
+  const today = rows.filter((r) => cityDay(city, new Date(String(r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at)).getTime()) === day);
+  return districtsInDetails(today.map((r) => String(r.detail)));
+}
+
 /** 0.1.00: market lights this account bought (light:<id> ledger rows); amber is free. */
 export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId[]; best: LightId }> {
   const { id } = await canonicalWallet(sql, userId);
@@ -338,6 +350,9 @@ export async function awardGrade(
     shield,
   );
   const streakTier = full.correct ? streakPrize(run + 1) : null;
+  // 0.1.14: new-district bonus on a single lamp (not a series card): has this 800 m square been lit today here?
+  const district = full.correct && full.clearTier && !full.series ? districtOf(full.city, full.lat, full.lng) : "";
+  if (district) full.freshDistrict = isFreshDistrict(district, await districtsToday(sql, id, full.city));
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   const detailOf = (award: AwardView) =>
     JSON.stringify({
@@ -347,6 +362,7 @@ export async function awardGrade(
       ...(full.correct && full.poiId ? { pi: full.poiId } : {}),
       // 0.1.12: the city, so a house can count today's lamps there (market lanterns and unnamed spots included).
       ...(full.correct ? { c: full.city } : {}),
+      ...(district ? { d: district } : {}),
       // 0.0.98: night-market lamp, for the Night Owl title.
       ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
     });

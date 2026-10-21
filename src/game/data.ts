@@ -3096,6 +3096,13 @@ const CHICAGO_MARKS: Poi[] = [
   poi({ id: "civic-opera", name: "Civic Opera House", lat: 41.8826, lng: -87.6373, kind: "theatre", tier: "blue", lore: "Wacker Drive's throne. A blue plate at the river." }),
   poi({ id: "chi-history", name: "Chicago History Museum", lat: 41.912, lng: -87.6313, kind: "museum", tier: "blue", lore: "Lincoln Park's attic. The city's paper, a lamp in the court." }),
   poi({ id: "palmer-house", name: "Palmer House", lat: 41.8802, lng: -87.6267, kind: "landmark", tier: "blue", lore: "A Loop hotel with a frescoed lobby. Brownies were born in the kitchen." }),
+  poi({ id: "chi-soldier-field", name: "Soldier Field", lat: 41.86245, lng: -87.61672, kind: "stadium", tier: "blue", lore: "The Bears' lakefront stadium, its Doric colonnades from 1924." }),
+  poi({ id: "chi-old-st-pats", name: "Old St. Patrick's Church", lat: 41.87946, lng: -87.6445, kind: "civic", tier: "white", lore: "The city's oldest public building, survivor of the 1871 fire, at Adams and Desplaines." }),
+  poi({ id: "chi-washington-sq", name: "Washington Square Park", lat: 41.89948, lng: -87.63059, kind: "park", tier: "white", lore: "Bughouse Square, where soapbox speakers once drew crowds, across from the Newberry Library." }),
+  poi({ id: "chi-oak-st-beach", name: "Oak Street Beach", lat: 41.90298, lng: -87.62288, kind: "water", tier: "white", lore: "Sand at the north end of the Magnificent Mile, the Drake Hotel behind it." }),
+  poi({ id: "chi-glessner", name: "Glessner House", lat: 41.85772, lng: -87.62145, kind: "museum", tier: "white", lore: "H. H. Richardson's granite house on Prairie Avenue, finished in 1887." }),
+  poi({ id: "chi-northerly", name: "Northerly Island", lat: 41.8602, lng: -87.60828, kind: "park", tier: "white", lore: "The old Meigs Field runway, now prairie and a lagoon on the lake." }),
+  poi({ id: "chi-hull-house", name: "Jane Addams Hull-House Museum", lat: 41.87165, lng: -87.6474, kind: "museum", tier: "white", lore: "The 1889 settlement house on Halsted where Jane Addams worked." }),
 ];
 
 const DETROIT_MARKS: Poi[] = [
@@ -3115,6 +3122,9 @@ const DETROIT_MARKS: Poi[] = [
   poi({ id: "charles-wright", name: "Charles H. Wright Museum", lat: 42.3592, lng: -83.0607, kind: "museum", tier: "blue", lore: "African American history on the cultural center. A lamp in the rotunda." }),
   poi({ id: "pewabic", name: "Pewabic Pottery", lat: 42.3428, lng: -83.0147, kind: "museum", tier: "blue", lore: "East Jefferson's kiln. Iridescent tile, a blue lamp." }),
   poi({ id: "fisher-bldg", name: "Fisher Building", lat: 42.3695, lng: -83.0775, kind: "landmark", tier: "blue", lore: "New Center's cathedral of commerce. Gold leaf in the lobby." }),
+  poi({ id: "det-milliken", name: "Milliken State Park", lat: 42.33201, lng: -83.02775, kind: "park", tier: "white", lore: "Michigan's first urban state park, on the riverfront with a small lighthouse." }),
+  poi({ id: "det-elmwood", name: "Elmwood Cemetery", lat: 42.34899, lng: -83.01933, kind: "landmark", tier: "white", lore: "Founded in 1846, rolling grounds over Parent's Creek, site of the 1763 Battle of Bloody Run." }),
+  poi({ id: "det-masonic", name: "Masonic Temple", lat: 42.34161, lng: -83.0604, kind: "theatre", tier: "blue", lore: "The world's largest Masonic temple, a Gothic block facing Cass Park." }),
 ];
 
 const TUCSON_MARKS: Poi[] = [
@@ -3152,6 +3162,7 @@ const TUCSON_MARKS: Poi[] = [
     tier: "red",
     lore: "The south side's big guided-weapons plant by the airport, opened by Howard Hughes in 1951. It changed hands in 1997.",
   }),
+  poi({ id: "tuc-santa-rita", name: "Santa Rita Park", lat: 32.20818, lng: -110.96242, kind: "park", tier: "white", lore: "A neighborhood park south of downtown, with a ball field and old palms." }),
 ];
 
 const TORONTO_MARKS: Poi[] = [
@@ -3190,6 +3201,12 @@ const LA_MARKS: Poi[] = [
   poi({ id: "philippes", name: "Philippe the Original", lat: 34.0595, lng: -118.237, kind: "food", tier: "blue", lore: "French dip, sawdust, a counter north of Union Station." }),
   poi({ id: "farmers-mkt-la", name: "Farmers Market — Fairfax", lat: 34.0714, lng: -118.3607, kind: "food", tier: "blue", lore: "Third and Fairfax. Stalls since 1934, The Grove next door." }),
   poi({ id: "urban-light", name: "Urban Light", lat: 34.0633, lng: -118.3591, kind: "landmark", tier: "white", lore: "Chris Burden's lamps on Wilshire. LACMA's front porch." }),
+  poi({ id: "la-state-historic", name: "Los Angeles State Historic Park", lat: 34.06848, lng: -118.23154, kind: "park", tier: "white", lore: "The Cornfield: an old rail yard below Chinatown turned into a long lawn." }),
+  poi({ id: "la-sixth-viaduct", name: "Sixth Street Viaduct", lat: 34.03763, lng: -118.22356, kind: "landmark", tier: "white", lore: "The 2022 bridge of lit arches over the L.A. River, Arts District to Boyle Heights." }),
+  poi({ id: "la-hauser-wirth", name: "Hauser & Wirth", lat: 34.04611, lng: -118.23465, kind: "museum", tier: "white", lore: "A gallery in a former flour mill in the Arts District, with a courtyard garden." }),
+  poi({ id: "la-flower-market", name: "Flower Market", lat: 34.0413, lng: -118.24993, kind: "food", tier: "white", lore: "The wholesale flower district on Wall and Maple, open before dawn." }),
+  poi({ id: "la-mariachi-plaza", name: "Mariachi Plaza", lat: 34.04748, lng: -118.21908, kind: "landmark", tier: "white", lore: "Boyle Heights' bandstand, where mariachis wait to be hired." }),
+  poi({ id: "la-chinatown-plaza", name: "Chinatown Central Plaza", lat: 34.0653, lng: -118.23757, kind: "landmark", tier: "white", lore: "The 1938 plaza of gates, lanterns and a Bruce Lee statue on North Broadway." }),
 ];
 
 const BOSTON_MARKS: Poi[] = [
@@ -3228,6 +3245,9 @@ const NOLA_MARKS: Poi[] = [
   poi({ id: "nola-tremé", name: "St. Augustine Church", lat: 29.9642, lng: -90.0718, kind: "civic", tier: "blue", lore: "Tremé. One of the oldest African-American Catholic parishes in the country." }),
   poi({ id: "nola-riverfront", name: "Riverfront Streetcar", lat: 29.9532, lng: -90.0624, kind: "station", tier: "white", lore: "The cars along the levee. The Quarter on one side, the Mississippi on the other." }),
   poi({ id: "nola-antoines", name: "Antoine's", lat: 29.9564, lng: -90.0666, kind: "food", tier: "blue", lore: "St. Louis Street, 1840. Oysters Rockefeller was born in this dining room." }),
+  poi({ id: "nola-crescent-park", name: "Crescent Park", lat: 29.96108, lng: -90.04286, kind: "park", tier: "white", lore: "A riverfront strip through the Marigny and Bywater, reached by the rusted arch over the tracks." }),
+  poi({ id: "nola-st-roch", name: "St. Roch Market", lat: 29.96942, lng: -90.05217, kind: "food", tier: "white", lore: "An 1875 market hall on St. Claude Avenue, restored as a food hall." }),
+  poi({ id: "nola-lafitte-greenway", name: "Lafitte Greenway", lat: 29.96449, lng: -90.0768, kind: "park", tier: "white", lore: "A trail along an old canal and rail line from Tremé to Mid-City." }),
 ];
 
 const SEATTLE_MARKS: Poi[] = [
@@ -3250,6 +3270,11 @@ const SEATTLE_MARKS: Poi[] = [
   poi({ id: "sea-denny", name: "Denny Park", lat: 47.61912, lng: -122.34105, kind: "park", tier: "white", lore: "Seattle's first city park, given by the pioneer David Denny. Old trees in South Lake Union." }),
   poi({ id: "sea-arctic", name: "Arctic Club", lat: 47.60375, lng: -122.33196, kind: "landmark", tier: "white", lore: "A 1917 club for men back from the Klondike. Terra-cotta walrus heads ring the walls." }),
   poi({ id: "sea-pier62", name: "Pier 62", lat: 47.6085, lng: -122.34482, kind: "water", tier: "white", lore: "A rebuilt public pier on the waterfront. Benches, the bay, the ferries crossing." }),
+  poi({ id: "sea-cal-anderson", name: "Cal Anderson Park", lat: 47.61704, lng: -122.31917, kind: "park", tier: "white", lore: "Capitol Hill's green, with a reservoir fountain and a bermed lawn." }),
+  poi({ id: "sea-lake-union", name: "Lake Union Park", lat: 47.62702, lng: -122.33716, kind: "park", tier: "white", lore: "The south shore of Lake Union: historic ships and MOHAI in the old Naval Reserve Armory." }),
+  poi({ id: "sea-seattle-u", name: "Seattle University", lat: 47.6095, lng: -122.3188, kind: "campus", tier: "blue", lore: "A Jesuit campus on First Hill, home of the Chapel of St. Ignatius." }),
+  poi({ id: "sea-kerry-park", name: "Kerry Park", lat: 47.62936, lng: -122.3599, kind: "park", tier: "white", lore: "A slim lookout on Queen Anne Hill, the postcard view of the Space Needle." }),
+  poi({ id: "sea-rizal-park", name: "Dr. Jose Rizal Park", lat: 47.59263, lng: -122.31853, kind: "park", tier: "white", lore: "A hilltop on Beacon Hill named for the Filipino patriot, with a wide view of the skyline." }),
 ];
 
 const DENVER_MARKS: Poi[] = [
@@ -3271,6 +3296,12 @@ const DENVER_MARKS: Poi[] = [
   poi({ id: "den-aquarium", name: "Downtown Aquarium", lat: 39.75234, lng: -105.01341, kind: "museum", tier: "blue", lore: "An aquarium and restaurant across the Platte from downtown." }),
   poi({ id: "den-mca", name: "Museum of Contemporary Art Denver", lat: 39.75233, lng: -105.0043, kind: "museum", tier: "blue", lore: "A David Adjaye box of glass and dark panels near Commons Park." }),
   poi({ id: "den-boettcher", name: "Boettcher Concert Hall", lat: 39.74393, lng: -104.99855, kind: "theatre", tier: "blue", lore: "The Colorado Symphony's hall, seating the audience in the round." }),
+  poi({ id: "den-five-points", name: "Five Points", lat: 39.75466, lng: -104.97799, kind: "landmark", tier: "white", lore: "Welton Street's jazz corridor, once called the Harlem of the West." }),
+  poi({ id: "den-mile-high", name: "Empower Field at Mile High", lat: 39.74395, lng: -105.01922, kind: "stadium", tier: "blue", lore: "The Broncos' stadium west of the Platte. A white horse rears on the scoreboard." }),
+  poi({ id: "den-elitch", name: "Elitch Gardens", lat: 39.74732, lng: -105.01409, kind: "landmark", tier: "white", lore: "A downtown amusement park on the Platte. The coasters rise beside the stadium lots." }),
+  poi({ id: "den-cheesman", name: "Cheesman Park", lat: 39.73198, lng: -104.96645, kind: "park", tier: "white", lore: "A long lawn on old cemetery ground, with a marble pavilion at its east end." }),
+  poi({ id: "den-benedict", name: "Benedict Fountain Park", lat: 39.7481, lng: -104.98234, kind: "park", tier: "white", lore: "A small triangle park off Tremont with a fountain and old trees." }),
+  poi({ id: "den-curtis-park", name: "Curtis Park", lat: 39.76047, lng: -104.97681, kind: "park", tier: "white", lore: "Denver's oldest park, in a district of Victorian rowhouses." }),
 ];
 
 const NASHVILLE_MARKS: Poi[] = [
@@ -3289,6 +3320,10 @@ const NASHVILLE_MARKS: Poi[] = [
   poi({ id: "nash-arcade", name: "The Arcade", lat: 36.16427, lng: -86.78014, kind: "landmark", tier: "white", lore: "A 1903 two-level covered shopping street between Fourth and Fifth avenues." }),
   poi({ id: "nash-riverpark", name: "Riverfront Park", lat: 36.16301, lng: -86.7736, kind: "park", tier: "white", lore: "The lawn and steps along the Cumberland at the foot of Broadway." }),
   poi({ id: "nash-tpac", name: "Tennessee Performing Arts Center", lat: 36.16438, lng: -86.78215, kind: "theatre", tier: "blue", lore: "Three halls under the state office tower: touring Broadway, opera and ballet." }),
+  poi({ id: "nash-fisk", name: "Fisk University", lat: 36.16707, lng: -86.80391, kind: "campus", tier: "blue", lore: "Founded in 1866. The Jubilee Singers toured the world to pay for Jubilee Hall." }),
+  poi({ id: "nash-fort-negley", name: "Fort Negley", lat: 36.14501, lng: -86.77457, kind: "landmark", tier: "white", lore: "A Union stone fort on St. Cloud Hill, built in 1862 largely by conscripted Black laborers." }),
+  poi({ id: "nash-rolling-mill", name: "Rolling Mill Hill", lat: 36.15692, lng: -86.76595, kind: "park", tier: "white", lore: "Old city works on the bluff south of downtown, now lofts and a lawn over the Cumberland." }),
+  poi({ id: "nash-first-horizon", name: "First Horizon Park", lat: 36.17252, lng: -86.7846, kind: "stadium", tier: "blue", lore: "The Nashville Sounds' ballpark in Germantown, with a guitar-shaped scoreboard in right field." }),
 ];
 
 export const CITIES: Record<CityId, City> = {

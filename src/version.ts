@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.13";
+export const APP_VERSION = "0.1.14";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k113a";
+export const PUBLISH_STAMP = "k114a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -124,5 +124,3 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.11: fix — the car lot sign vanished from the map (every city) the first time a cab was hailed, ridden or left: the cab painter removed the dealer marker along with its own when there was no cab out. It now only removes the cab (k111a).
 // 0.1.12: houses — four tiers per city, a daily match (no coin) after three lamps; wallet cap raised to 5M.
 // 0.1.12: also the car lot sign is tappable — opens the Showroom at the door (40 m), otherwise walks you there; in a cab it asks you to step out (k112a).
-// 0.1.13: fix — walk routes no longer zigzag (Chicago Loop up to Wacker and back): the online foot router's walk was taken whenever it hugged our streets, however long; now the street graph's own walk wins when the online one is over 1.2× its length (k113a).
-// 0.1.13: also a center-on-me crosshair under the zoom buttons (C on a keyboard); Help lists the map keys.

@@ -9,6 +9,7 @@ import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, m
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
 import { lightOf, type LightId } from "./marketLights.ts";
+import { FRESH_DISTRICT_TAG, freshDistrictCoin } from "./district.ts";
 import { cleanCredit, payMatch, payMatchesOf } from "./goals.ts";
 import type { ScoutId } from "./types";
 import { clothCoin, type ClothId } from "./quests.ts";
@@ -791,6 +792,8 @@ export type GradePay = {
   shellBack?: boolean;
   /** 0.1.00: the market light the SERVER found in this account's ledger (never from the client). */
   light?: LightId;
+  /** 0.1.14: first right lamp today in this 800 m square (server-decided from its grade rows, see district.ts). */
+  freshDistrict?: boolean;
 };
 
 function gradeLetter(ms: number): "perfect" | "great" | "good" {
@@ -914,7 +917,10 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     if (r.tier) lKeys[r.tier] = (lKeys[r.tier] ?? 0) + 1;
     rummageCoin = r.coin;
   }
-  return withBoost(w, pay.coin + tip + back.coin + rummageCoin, lKeys, boost, lit.u);
+  // 0.1.14: new-district bonus, a quarter of the base lamp coin. Never on a market lamp (no camping reward).
+  const fresh = p.freshDistrict && lampMult === 1 ? freshDistrictCoin(lampCoin) : 0;
+  const tagged = fresh ? { ...boost, labels: [...boost.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : boost;
+  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh, lKeys, tagged, lit.u);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */

@@ -617,8 +617,38 @@ function boundReach(): Reach | null {
   return r;
 }
 
-export function streetDrop(near: Pt, minM = 80, maxM = 860): Pt {
-  if (walkGraph?.segs.length) return randomOnStreet(walkGraph, near, minM, maxM, boundReach());
+/** 0.1.14: a new street match keeps at least this far from anything already lit (matches, lamps, vaults). */
+export const SPREAD_MIN_M = 250;
+const SPREAD_TRIES = 14;
+
+/**
+ * 0.1.14: a point on the reachable walk, uniform by AREA in the ring (not by street segment, which piled matches
+ * into the dense downtown grid), best of a few tries for distance from `avoid` (Mitchell's best-candidate).
+ */
+export function spreadDrop(g: StreetGraph, near: Pt, minM: number, maxM: number, reach: Reach | null, avoid: Pt[] = []): Pt {
+  let best: Pt | null = null;
+  let bestScore = -1;
+  for (let i = 0; i < SPREAD_TRIES; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(minM * minM + Math.random() * (maxM * maxM - minM * minM));
+    const raw = dest(near.lat, near.lng, Math.cos(ang) * r, Math.sin(ang) * r);
+    const snap = nearest(g, raw.lat, raw.lng, 160, reach?.labels, reach?.id);
+    const p = snap && (!reach || segReachable(g, snap.seg, reach)) ? { lat: snap.lat, lng: snap.lng } : randomOnStreet(g, near, minM, maxM, reach);
+    let gap = Infinity;
+    for (const a of avoid) gap = Math.min(gap, distM(a.lat, a.lng, p.lat, p.lng));
+    // Past twice the floor, farther is no better: the match should spread, not hug the map edge.
+    const score = Math.min(gap, SPREAD_MIN_M * 2);
+    if (score > bestScore) {
+      best = p;
+      bestScore = score;
+      if (score >= SPREAD_MIN_M * 2) break;
+    }
+  }
+  return best ?? near;
+}
+
+export function streetDrop(near: Pt, minM = 80, maxM = 860, avoid: Pt[] = []): Pt {
+  if (walkGraph?.segs.length) return spreadDrop(walkGraph, near, minM, maxM, boundReach(), avoid);
   const ang = Math.random() * Math.PI * 2;
   const r = minM + Math.random() * Math.max(10, maxM - minM);
   return dest(near.lat, near.lng, Math.cos(ang) * r, Math.sin(ang) * r);
@@ -670,7 +700,10 @@ function lerpSeg(g: StreetGraph, seg: Seg, t: number): Pt {
 }
 
 const BLANK_CELL = 380;
-const BLANK_CAP = 28;
+/** 0.1.14: 36 (was 28), so the outer neighborhoods get lamps too. */
+const BLANK_CAP = 36;
+/** 0.1.14: lamps stay inside the play area around the spawn, not out where the dealer or house fetch reached. */
+const BLANK_REACH_M = 2800;
 const BLANK_CLEAR = 210;
 const DIRS = ["North", "Northeast", "East", "Southeast", "South", "Southwest", "West", "Northwest"] as const;
 
@@ -745,16 +778,23 @@ export function scatterStreetLamps(g: StreetGraph, hubs: Pt[], cityId: string): 
     if (list) list.push(p);
     else buckets.set(k, [p]);
   }
-  const keys = shuffleInPlace([...buckets.keys()]);
   const origin = hubs[0] ?? { lat: g.originLat, lng: g.originLng };
   const used = hubs.map((h) => ({ lat: h.lat, lng: h.lng }));
   const names = new Set<string>();
   const out: Poi[] = [];
-  for (const k of keys) {
-    if (out.length >= BLANK_CAP) break;
-    const cand = buckets.get(k)!;
-    const p = cand[(Math.random() * cand.length) | 0]!;
-    if (used.some((u) => distM(u.lat, u.lng, p.lat, p.lng) < BLANK_CLEAR)) continue;
+  // 0.1.14: farthest-point fill (was a shuffled pass), so each lamp lands in the emptiest block left.
+  const pool = shuffleInPlace([...buckets.values()].map((cand) => cand[(Math.random() * cand.length) | 0]!)).filter(
+    (p) => distM(origin.lat, origin.lng, p.lat, p.lng) <= BLANK_REACH_M,
+  );
+  const gap = pool.map((p) => Math.min(Infinity, ...used.map((u) => distM(u.lat, u.lng, p.lat, p.lng))));
+  while (out.length < BLANK_CAP && pool.length) {
+    let bi = 0;
+    for (let j = 1; j < pool.length; j++) if (gap[j]! > gap[bi]!) bi = j;
+    if (gap[bi]! < BLANK_CLEAR) break;
+    const p = pool[bi]!;
+    pool.splice(bi, 1);
+    gap.splice(bi, 1);
+    for (let j = 0; j < pool.length; j++) gap[j] = Math.min(gap[j]!, distM(p.lat, p.lng, pool[j]!.lat, pool[j]!.lng));
     const i = out.length;
     const tier: Tier = i % 12 === 0 ? "green" : i % 4 === 0 ? "blue" : "white";
     out.push({
@@ -772,7 +812,7 @@ export function scatterStreetLamps(g: StreetGraph, hubs: Pt[], cityId: string): 
 }
 
 /** Spread points across empty street cells. */
-export function spreadOnGraph(g: StreetGraph, avoid: Pt[], n: number, minSep = 160): Pt[] {
+export function spreadOnGraph(g: StreetGraph, avoid: Pt[], n: number, minSep = SPREAD_MIN_M): Pt[] {
   if (!g.segs.length || n <= 0) return [];
   const occupied = new Set<string>();
   for (const h of avoid) occupied.add(cellAt(g, h.lat, h.lng, BLANK_CELL));
@@ -794,6 +834,7 @@ export function spreadOnGraph(g: StreetGraph, avoid: Pt[], n: number, minSep = 1
     const cand = buckets.get(k)!;
     const p = cand[(Math.random() * cand.length) | 0]!;
     if (used.some((u) => distM(u.lat, u.lng, p.lat, p.lng) < minSep)) continue;
+    if (avoid[0] && distM(avoid[0].lat, avoid[0].lng, p.lat, p.lng) > BLANK_REACH_M) continue; // 0.1.14: stay in the play area
     out.push(p);
     used.push(p);
   }
