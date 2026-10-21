@@ -531,7 +531,8 @@ test("lucky and cloth are granted only when the craft spends its cost", async ()
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
   await syncPlayer(sql, "lux", snap({ cities }), "luxphone1");
   const graded = await awardGrade(sql, "lux", "luck1", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
-  assert.equal(graded.wallet.coins, plain.award?.coins);
+  // 0.1.14: the account's first right lamp in this 800 m square today also pays the new-district bonus (luck2 below, same square, does not).
+  assert.equal(graded.wallet.coins, gradeGrant(emptyWallet(), pay({ freshDistrict: true })).award?.coins);
   const freeCharm = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
   assert.equal(freeCharm.ok, false);
   assert.equal(freeCharm.reason, "short");
