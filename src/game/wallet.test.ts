@@ -1481,3 +1481,17 @@ test("0.1.12: the wallet holds 5,000,000, but a first sync still carries at most
   await mutateWallet(sql, "big", "t:big", (w) => applyDelta(w, { coins: 5000 }));
   assert.equal((await canonicalWallet(sql, "big")).wallet.coins, COIN_CAP);
 });
+
+test("0.1.19: sparks (no match held) are capped on the server — six a day, once per lamp", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "beth", snap({ coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "detroit", unlocked: ["detroit"] } }), "bethphone");
+  const spark = (poiId: string) => ({ ...pay({ clearTier: null, poiTier: "red", poiId, city: "detroit", series: null }), prevNonce: "" });
+  const first = await awardGrade(sql, "beth", "s0", spark("det-lamp-0"));
+  assert.equal(first.wallet.keys.red, 1, "a spark pays the lamp's colour");
+  const again = await awardGrade(sql, "beth", "s0b", spark("det-lamp-0"));
+  assert.equal(again.wallet.keys.red, 1, "the same lamp can't spark twice in a day");
+  for (let i = 1; i < 6; i++) await awardGrade(sql, "beth", `s${i}`, spark(`det-lamp-${i}`));
+  const six = await awardGrade(sql, "beth", "s6", spark("det-lamp-6"));
+  assert.equal(six.wallet.keys.red, 6, "only six sparks pay a day");
+  assert.match(String(six.award?.boosts ?? ""), /Sparks are spent/);
+});

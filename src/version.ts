@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.18";
+export const APP_VERSION = "0.1.19";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k118a";
+export const PUBLISH_STAMP = "k119a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -129,3 +129,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.16: four more city prints — Temple Santa Fe Warbonnet, New York Checker Cab, San Francisco Golden Gate, London Underground Roundel (same 16x16 tiles, first-print goal: 500 right + 150 km there); eight cities still pending (k116a).
 // 0.1.17: four more city prints — Tucson Saguaro Stand, Toronto CN Tower, Los Angeles Sunset Palms, Boston Freedom Trail (same 16x16 tiles, first-print goal); four cities still pending: New Orleans, Seattle, Denver, Nashville (k117a).
 // 0.1.18: Books trivia category (~150 cards: classics, bestsellers, children's/YA, authors, opening lines, characters, series, awards), Bookworm / Page Turner / Literary Lion ladder; libraries offer Books (k118a).
+// 0.1.19: sparks (a lamp answered with no match of its colour, which pays that colour) are now capped on the server as well as the device: six a day, once per lamp per Chicago day; a seventh or repeat spark grades but pays nothing (k119a).

@@ -45,6 +45,21 @@ export function sparkState(day: string, n: number, lamps: string[], today: strin
   return { sparkDay: today, sparkN: 0, sparkLamps: [] as string[] };
 }
 
+/**
+ * 0.1.19: the server's own spark gate. A spark (a lamp answered with no match of its colour) pays that colour, so
+ * the six-a-day / once-per-lamp rule can't live only in the device save. `details` are today's spark grade rows
+ * (ledger detail JSON carrying "sp":1 and "pi"). False = this spark pays nothing.
+ */
+export function sparkAllowed(details: readonly string[], poiId: string): boolean {
+  let n = 0;
+  for (const d of details) {
+    if (!d.includes('"sp":1')) continue;
+    n++;
+    if (d.includes(`"pi":${JSON.stringify(poiId)}`)) return false;
+  }
+  return n < SPARK_DAY;
+}
+
 export const HIGH_POCKET = 30;
 
 export function matchCap(tier: import("./types").Tier) {

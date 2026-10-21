@@ -56,7 +56,7 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
-import { fareMs, FARES_CAP, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
+import { fareMs, FARES_CAP, sparkAllowed, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 
@@ -353,6 +353,21 @@ export async function awardGrade(
   // 0.1.14: new-district bonus on a single lamp (not a series card): has this 800 m square been lit today here?
   const district = full.correct && full.clearTier && !full.series ? districtOf(full.city, full.lat, full.lng) : "";
   if (district) full.freshDistrict = isFreshDistrict(district, await districtsToday(sql, id, full.city));
+  // 0.1.19: a spark (no match held) is capped on the server too: six a day, one per lamp (Chicago day).
+  const spark = full.correct && full.clearTier == null && !full.series && !full.poiId.startsWith("blitz-");
+  const sparkOk = spark
+    ? sparkAllowed(
+        (
+          await sql<{ detail: string; created_at: unknown }>`
+            select detail, created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
+              and created_at >= ${new Date(Date.now() - 30 * 3600_000).toISOString()} and detail like ${'%"sp":1%'}
+          `
+        )
+          .filter((row) => chicagoDay(row.created_at) === chicagoDay(new Date()))
+          .map((row) => String(row.detail)),
+        full.poiId,
+      )
+    : true;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   const detailOf = (award: AwardView) =>
     JSON.stringify({
@@ -363,6 +378,7 @@ export async function awardGrade(
       // 0.1.12: the city, so a house can count today's lamps there (market lanterns and unnamed spots included).
       ...(full.correct ? { c: full.city } : {}),
       ...(district ? { d: district } : {}),
+      ...(spark && sparkOk ? { sp: 1 } : {}),
       // 0.0.98: night-market lamp, for the Night Owl title.
       ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
     });
@@ -380,6 +396,10 @@ export async function awardGrade(
         return { ok: true, wallet: w, award, detail: detailOf(award) };
       }
       base = spent.wallet;
+    }
+    if (!sparkOk) {
+      const award = { coins: 0, keys: {}, boosts: ["Sparks are spent today"] };
+      return { ok: true, wallet: base, award, detail: detailOf(award) };
     }
     const grant = gradeGrant(base, full);
     if (!grant.ok) return grant;
