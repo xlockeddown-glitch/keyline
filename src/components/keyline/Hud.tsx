@@ -6,6 +6,7 @@ import { CREDIT_CALM_MS, Calm } from "@/game/calm";
 import { LevelHudBadge } from "./Levels";
 import { livePois } from "@/game/nightMarket";
 import { dealerOf } from "@/game/cars";
+import { houseOf, lotOf } from "@/game/houses";
 import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
@@ -50,6 +51,9 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const hud = useGame((s) => s.hud);
   const dealerNear = useGame((s) => s.dealerNear);
   const setDealerOpen = useGame((s) => s.setDealerOpen);
+  const houseNear = useGame((s) => s.houseNear);
+  const setHouseOpen = useGame((s) => s.setHouseOpen);
+  const myHouse = useGame((s) => s.houses[s.cityId]);
   const carOn = useGame((s) => s.carOn);
   const cityId = useGame((s) => s.cityId);
   const toggleHq = useGame((s) => s.toggleHq);
@@ -253,6 +257,12 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
         </div>
       </div>
 
+      {busy || !houseNear || hud.seated ? null : (
+        // 0.1.12: on foot at the house lot → the house sheet.
+        <button type="button" className="dealer-btn pointer-events-auto" data-testid="house-btn" onClick={() => setHouseOpen(true)}>
+          {myHouse ? <><span className="kicker">Your door</span> {houseOf(myHouse.tier)?.name}</> : <><span className="kicker">House</span> {lotOf(cityId).name}</>}
+        </button>
+      )}
       {busy || !dealerNear || hud.seated ? null : (
         // 0.1.8: on foot at the car lot → the showroom.
         <button type="button" className="dealer-btn pointer-events-auto" data-testid="dealer-btn" onClick={() => setDealerOpen(true)}>

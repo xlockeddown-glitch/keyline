@@ -4337,3 +4337,12 @@ h3 {
   .ts-headlights, .ts-flies { display: none; }
 }
 @media (min-width: 900px) { .is-street .blade-stage { margin-top: 1vh; } .ts-cast { gap: 1rem; } }
+/* 0.1.12 houses */
+.house-pin { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; }
+.house-pic { display: block; width: 44px; height: 35px; border-radius: 6px; border: 2px solid #e8c77a; background: #1b2030 center / cover no-repeat; box-shadow: 0 0 10px rgb(232 199 122 / 0.45), 0 2px 6px rgb(0 0 0 / 0.5); }
+.house-pin.is-home .house-pic { border-color: #9fe0a8; box-shadow: 0 0 12px rgb(255 200 110 / 0.6), 0 2px 6px rgb(0 0 0 / 0.5); }
+.house-chip { font-size: 11px; font-weight: 600; color: #f3e6c4; white-space: nowrap; padding: 1px 6px; border-radius: 999px; background: rgb(15 18 26 / 0.82); border: 1px solid rgb(232 199 122 / 0.5); }
+.house-art { display: block; width: 100%; height: auto; border-radius: 10px; }
+.house-thumb { float: right; width: 96px; height: 72px; object-fit: cover; border-radius: 8px; margin: 0 0 6px 10px; }
+.house-drive { display: flex; align-items: center; gap: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgb(255 255 255 / 0.04); border: 1px dashed rgb(232 199 122 / 0.35); }
+.house-drive img { width: 168px; height: auto; }

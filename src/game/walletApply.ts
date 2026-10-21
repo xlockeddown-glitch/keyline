@@ -1,6 +1,8 @@
 import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
+import { HOME_LAMPS, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
+import { cityDay } from "./vaultStack.ts";
 import { CAN_ODDS, canId, colorOf, paintPrice, parseCan, rollCan, type Can } from "./carPaint.ts";
 import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
@@ -70,7 +72,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>> } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[] } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -186,6 +188,41 @@ export async function grantCan(sql: Sql, userId: string, source: string, odds: n
   return r.ok && !r.replay ? can : null;
 }
 
+/** 0.1.12: houses this account owns (house:<city>:<tier> rows; the highest tier per city wins). */
+export async function housesOf(sql: Sql, userId: string): Promise<Partial<Record<CityId, HouseState>>> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"house:%"}`;
+  const out: Partial<Record<CityId, HouseState>> = {};
+  for (const r of rows) {
+    const [, city, tier] = r.op_key.split(":");
+    if (!city || !(city in CITIES) || !isHouseTier(tier)) continue;
+    const c = city as CityId;
+    if (houseRank(tier) > houseRank(out[c]?.tier)) out[c] = { tier };
+  }
+  return out;
+}
+
+/** 0.1.12: today's purse and hook claims (home:<day>, hook:<city>:<day> keys from the last two days). */
+export async function homeClaimsOf(sql: Sql, userId: string): Promise<string[]> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string }>`
+    select op_key from wallet_ledger where user_id = ${id} and (op_key like ${"home:%"} or op_key like ${"hook:%"})
+      and created_at >= ${new Date(Date.now() - 50 * 3600_000).toISOString()}
+  `;
+  return rows.map((r) => r.op_key);
+}
+
+/** 0.1.12: correct lamps in this city on its local day (grade rows carry c = city from 0.1.12). */
+export async function lampsToday(sql: Sql, userId: string, city: CityId, now = Date.now()): Promise<number> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ detail: string; created_at: unknown }>`
+    select detail, created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"}
+      and created_at >= ${new Date(now - 30 * 3600_000).toISOString()} and detail like ${`%"c":"${city}"%`}
+  `;
+  const day = cityDay(city, now);
+  return rows.filter((r) => !String(r.detail).includes('"g":"miss"') && cityDay(city, new Date(String(r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at)).getTime()) === day).length;
+}
+
 /** 0.1.00: market lights this account bought (light:<id> ledger rows); amber is free. */
 export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId[]; best: LightId }> {
   const { id } = await canonicalWallet(sql, userId);
@@ -199,7 +236,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId))];
   const done = await syncCore(sql, userId, local, deviceId);
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId) };
   return giftNotes.length ? { ...done, owned, giftNotes } : { ...done, owned };
 }
 
@@ -308,6 +345,8 @@ export async function awardGrade(
       g: full.correct ? letter : "miss",
       pv: prevNonce,
       ...(full.correct && full.poiId ? { pi: full.poiId } : {}),
+      // 0.1.12: the city, so a house can count today's lamps there (market lanterns and unnamed spots included).
+      ...(full.correct ? { c: full.city } : {}),
       // 0.0.98: night-market lamp, for the Night Owl title.
       ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
     });
@@ -422,6 +461,8 @@ export type ClientOp =
   | { kind: "light"; id: string }
   | { kind: "car"; id: string }
   | { kind: "paint"; car: string; color: string }
+  | { kind: "house"; city: CityId; tier: string }
+  | { kind: "home"; city: CityId }
   | { kind: "hurry"; min: number }
   | {
       kind: "ride";
@@ -446,6 +487,8 @@ export type ClientResult = Applied & {
   hurry?: { arriveAt: number; cost: number };
   /** 0.1.9: a paint can found (cache), or the colour a paint op set. */
   can?: Can;
+  /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
+  home?: { purse: number; match: Tier | null; day: string };
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -596,6 +639,41 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       w.coins < price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -price }), detail: JSON.stringify({ can: canId(held.can) }) },
     );
     return { ...applied(r), ...(r.ok ? { can: held.can } : {}) };
+  }
+
+  // 0.1.12: buy a house, or step up: any order, the difference in price, never down. Signed-in only (sync above).
+  if (op.kind === "house") {
+    const def = houseOf(op.tier);
+    if (!def || !(op.city in CITIES)) return refused(wallet, "unknown");
+    const owned = (await housesOf(sql, sessionUserId))[op.city]?.tier ?? null;
+    if (owned === def.id) return applied({ ok: true, replay: true, wallet });
+    const cost = houseCost(owned, def.id);
+    if (cost === null) return refused(wallet, "owned");
+    const r = await mutateWallet(sql, sessionUserId, `house:${op.city}:${def.id}`, (w) =>
+      w.coins < cost ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -cost }), detail: JSON.stringify({ city: op.city, tier: def.id, from: owned }) },
+    );
+    return applied(r);
+  }
+
+  // 0.1.12: turn the key. Needs a house here and three correct lamps in this city today. The purse is once per account
+  // per local day across every city (home:<day>); the match is once per city per local day (hook:<city>:<day>).
+  if (op.kind === "home") {
+    if (!(op.city in CITIES)) return refused(wallet, "unknown");
+    const tier = (await housesOf(sql, sessionUserId))[op.city]?.tier;
+    if (!tier) return refused(wallet, "no-house");
+    if ((await lampsToday(sql, sessionUserId, op.city)) < HOME_LAMPS) return { ...refused(wallet, "unproven"), authoritative: true };
+    const def = houseOf(tier)!;
+    const day = cityDay(op.city, Date.now());
+    const purse = await mutateWallet(sql, sessionUserId, `home:${day}`, (w) => ({ ...applyDelta(w, { coins: def.purse }), detail: JSON.stringify({ city: op.city, purse: def.purse }) }));
+    let match: Tier | null = null;
+    const hook = await mutateWallet(sql, sessionUserId, `hook:${op.city}:${day}`, (w) => {
+      const p = payMatch(w.keys, def.match);
+      const d = applyDelta(w, { coins: p.coin, keys: p.tier ? { [p.tier]: 1 } : {} });
+      if (d.ok) match = def.match;
+      return d.ok ? { ...d, detail: JSON.stringify({ city: op.city, match: def.match }) } : d;
+    });
+    const paid = { purse: purse.ok && !purse.replay ? def.purse : 0, match: hook.ok && !hook.replay ? match : null, day };
+    return { ...applied(hook.ok ? hook : purse), home: paid };
   }
 
   if (op.kind === "dgoal") {

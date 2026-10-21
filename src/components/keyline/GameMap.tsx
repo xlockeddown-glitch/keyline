@@ -4,6 +4,8 @@ import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
 import { DEALER_REACH_M, carOf, carPace, dealerOf } from "@/game/cars";
 import { factoryColor } from "@/game/carPaint";
+import { HOUSE_REACH_M, houseOf, housePin, lotOf } from "@/game/houses";
+import { HouseSheet } from "./HouseSheet";
 import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
@@ -224,6 +226,9 @@ export function GameMap() {
   const marketKey = useRef("");
   const dealerMarker = useRef<Marker | null>(null);
   const dealerDoor = useRef<{ lat: number; lng: number } | null>(null);
+  const houseMarker = useRef<Marker | null>(null);
+  const houseDoor = useRef<{ lat: number; lng: number } | null>(null);
+  const houseGraph = useRef<StreetGraph | null>(null);
 
   function strokeColor() {
     if (typeof document === "undefined") return "#c4a35a";
@@ -352,6 +357,45 @@ export function GameMap() {
       interactive: false,
       keyboard: false,
       zIndexOffset: 600,
+    }).addTo(map);
+  }
+
+  // 0.1.12: buying or stepping up swaps the house marker straight away.
+  useEffect(
+    () =>
+      useGame.subscribe((st, prev) => {
+        if (st.houses !== prev.houses && houseMarker.current) paintHouse();
+      }),
+    [],
+  );
+
+  /** 0.1.12: the city's house lot — the cottage "For sale", or your tier with "Home". Only this replaces it (never paintCab). */
+  function paintHouse(snapTo?: StreetGraph | null) {
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    if (snapTo !== undefined) houseGraph.current = snapTo;
+    const st = useGame.getState();
+    const lot = lotOf(st.cityId);
+    // Re-snap only when a graph is handed in; a repaint (bought / stepped up) keeps the door where you stand.
+    if (snapTo !== undefined || !houseDoor.current) {
+      const c = houseGraph.current ? nearest(houseGraph.current, lot.lat, lot.lng, 80) : null;
+      houseDoor.current = c ? { lat: c.lat, lng: c.lng } : { lat: lot.lat, lng: lot.lng };
+    }
+    const mine = st.houses[st.cityId];
+    const tier = mine?.tier ?? "cottage";
+    const chip = mine ? `Home · ${houseOf(tier)!.name}` : "For sale";
+    houseMarker.current?.remove();
+    houseMarker.current = L.marker([houseDoor.current.lat, houseDoor.current.lng], {
+      icon: L.divIcon({
+        className: "",
+        html: `<div class="house-pin${mine ? " is-home" : ""}" data-testid="house-pin" data-tier="${mine ? tier : ""}"><i class="house-pic" style="background-image:url('${housePin(tier)}')" aria-hidden="true"></i><span class="house-chip">${chip}</span></div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      }),
+      interactive: false,
+      keyboard: false,
+      zIndexOffset: 590,
     }).addTo(map);
   }
 
@@ -982,6 +1026,7 @@ export function GameMap() {
           market: () => marketAt(useGame.getState().cityId, Date.now()),
           // 0.1.8 QA: the car lot's door and the CAB / Car button.
           dealer: () => (dealerDoor.current ? { ...dealerDoor.current } : null),
+          house: () => (houseDoor.current ? { ...houseDoor.current } : null),
           cab: () => toggleCab(),
           place: (lat: number, lng: number) => {
             const g = graphRef.current;
@@ -1087,6 +1132,7 @@ export function GameMap() {
         setStreets("ready");
         paintMarket(); // 0.1.6: the lit roads need the street graph
         paintDealer(g); // 0.1.8: and the car lot door snaps onto it
+        paintHouse(g); // 0.1.12: and the house lot
         const L = Lref.current;
         const m = mapRef.current;
         if (L && m) rebuildPins(L, m);
@@ -1951,6 +1997,9 @@ export function GameMap() {
         const door = dealerDoor.current;
         const nearDealer = Boolean(door && !seated && distM(pos.current.lat, pos.current.lng, door.lat, door.lng) <= DEALER_REACH_M);
         if (nearDealer !== st.dealerNear) st.setDealerNear(nearDealer);
+        const hd = houseDoor.current;
+        const nearHouse = Boolean(hd && !seated && distM(pos.current.lat, pos.current.lng, hd.lat, hd.lng) <= HOUSE_REACH_M);
+        if (nearHouse !== st.houseNear) st.setHouseNear(nearHouse);
         useDaily.getState().check({ lat: pos.current.lat, lng: pos.current.lng }, seated, (lat, lng) => {
           const g = graphRef.current;
           const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
@@ -2062,6 +2111,7 @@ export function GameMap() {
         setStreets("ready");
         paintMarket(); // 0.1.6: the lit roads need the street graph
         paintDealer(g); // 0.1.8: and the car lot door snaps onto it
+        paintHouse(g); // 0.1.12: and the house lot
         void fillSurroundings(g, city.spawn.lat, city.spawn.lng, city.pois, abort.signal).then(() => {
           snapKeys(g);
           fillWardLamps(g);
@@ -2209,6 +2259,7 @@ const CACHE_PIN_HTML =
       <HqPanel />
       <ScoutShop />
       <Showroom />
+      <HouseSheet />
       <WardCounter />
       <NoticeBoard />
       <Fireworks />

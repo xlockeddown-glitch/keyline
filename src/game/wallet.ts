@@ -30,7 +30,11 @@ import { FARE_MAX_MS, FARES_CAP, hurriedLoot, matchCap, pocketRide, transitLoot 
  */
 
 /** First sync clamps each device to these before it can raise the server pocket. */
-export const COIN_CAP = 250_000;
+/** 0.1.12: the wallet holds up to 5,000,000 (Ryan raised it from 250,000 so the villa and the Roadster fit). */
+export const COIN_CAP = 5_000_000;
+/** A device's own save still carries at most the old 250,000 into its first sync: raising the wallet cap must not
+ * let an edited local save mint more. */
+export const FIRST_SYNC_COIN_CAP = 250_000;
 export const KEY_CAP = 300;
 export const PASS_CAP = 25;
 export const RUN_CAP = 9_999;
@@ -353,7 +357,7 @@ export function mergeFirstSync(server: WalletState, local: LocalSnap): WalletSta
   const lk = cleanKeys(local.keys);
   const keys = cleanKeys(null);
   for (const t of TIERS) keys[t] = Math.min(KEY_CAP, Math.max(server.keys[t] ?? 0, lk[t] ?? 0));
-  const coins = Math.min(COIN_CAP, Math.max(server.coins, num(local.coins, COIN_CAP)));
+  const coins = Math.min(COIN_CAP, Math.max(server.coins, Math.min(FIRST_SYNC_COIN_CAP, num(local.coins, FIRST_SYNC_COIN_CAP))));
   const a = server.cities;
   const unlocked = [...a.unlocked];
   for (const id of cleanUnlocks(local.cities).unlocked) {

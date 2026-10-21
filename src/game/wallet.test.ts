@@ -21,6 +21,7 @@ import { whereRound } from "./whereAmI.ts";
 import {
   CLOTH_CAP,
   COIN_CAP,
+  FIRST_SYNC_COIN_CAP,
   KEY_CAP,
   PASS_CAP,
   WALK_CAP,
@@ -40,7 +41,7 @@ import {
   type LocalSnap,
 } from "./wallet.ts";
 import { canonicalWallet, rowToState } from "./walletSql.ts";
-import { DEVICE_CAP, applyClientOp, awardGrade, carsOf, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer, grantCan, paintOf } from "./walletApply.ts";
+import { DEVICE_CAP, applyClientOp, awardGrade, carsOf, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer, grantCan, paintOf, housesOf, lampsToday } from "./walletApply.ts";
 import { MATCH_GIFTS, SCOUT_GIFTS } from "./matchGift.ts";
 import { MARKET_COIN_CAP, lightOf, marketCoinX } from "./marketLights.ts";
 import { tokenNonce } from "./walletClient.ts";
@@ -145,7 +146,7 @@ test("first sync keeps the higher of each balance, capped, and unions cities", (
   });
   const merged = mergeFirstSync(server, local);
   assert.equal(merged.migrated, true);
-  assert.equal(merged.coins, COIN_CAP);
+  assert.equal(merged.coins, FIRST_SYNC_COIN_CAP);
   assert.equal(merged.keys.white, 4);
   assert.equal(merged.keys.blue, KEY_CAP);
   assert.equal(merged.keys.green, 2);
@@ -183,7 +184,7 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   assert.equal(sameDevice.wallet.coins, revised.wallet.coins);
   const cheated = await syncPlayer(sql, "ann-x", snap({ coins: COIN_CAP, keys: { white: KEY_CAP, violet: 50 } }), "annxphon1");
   // Not linked yet: ann-x is a different walker, so this sync is theirs, not Ann's.
-  assert.equal(cheated.wallet.coins, COIN_CAP);
+  assert.equal(cheated.wallet.coins, FIRST_SYNC_COIN_CAP);
 
   await sql`insert into player_links (alias_id, primary_id, how) values ('ann-y', 'ann', 'code')`;
   const linked = await syncPlayer(sql, "ann-y", snap({ coins: 1, keys: { white: 1, violet: 80 } }), "annyphon1");
@@ -324,7 +325,7 @@ test("a sixth device cannot mint coins", async () => {
 });
 
 test("each device is clamped to the first-sync caps", () => {
-  assert.equal(COIN_CAP, 250_000);
+  assert.equal(COIN_CAP, 5_000_000);
   assert.equal(KEY_CAP, 300);
   assert.equal(PASS_CAP, 25);
   const merged = mergeFirstSync(
@@ -335,7 +336,7 @@ test("each device is clamped to the first-sync caps", () => {
       cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], passes: 80, freePick: false },
     }),
   );
-  assert.equal(merged.coins, COIN_CAP);
+  assert.equal(merged.coins, FIRST_SYNC_COIN_CAP);
   for (const tier of ["white", "blue", "green", "amber", "red", "violet"] as const) assert.equal(merged.keys[tier], KEY_CAP);
   assert.equal(merged.cities.passes, 0);
   const keptVisit = CITIES.austin.pois[0]!.id;
@@ -965,7 +966,7 @@ test("a 50M pocket reads back inside the caps, and atlas visits count", async ()
     }),
     "atlphone1",
   );
-  assert.equal(synced.wallet.coins, COIN_CAP);
+  assert.equal(synced.wallet.coins, FIRST_SYNC_COIN_CAP);
   assert.equal(synced.wallet.keys.white, KEY_CAP);
   assert.equal(synced.wallet.cities.passes, 1, "0.0.90: only the one-time free pass");
   assert.equal(synced.wallet.meta.walkM, 0);
@@ -1429,4 +1430,54 @@ test("0.1.9 car paint: cans drop server-side once per source, paint needs the ca
   assert.equal((await applyClientOp(sql, "pnt", { kind: "paint", car: "civic", color: "red" })).reason, "no-can", "one can, one paint job");
   const s = await syncPlayer(sql, "pnt", snap({ coins: 0 }), "pntphone1");
   assert.equal(s.owned?.paint?.civic, "red");
+});
+
+test("0.1.12 houses: any tier first, step-up costs the difference, the key needs three lamps here and pays once a day", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "hse", snap({ coins: 0 }), "hsephone1");
+  const wid = (await canonicalWallet(sql, "hse")).id;
+  assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "cottage" })).reason, "short-coins");
+  assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "mansion" })).reason, "unknown");
+  await sql`update player_wallets set coins = 700000 where user_id = ${wid}`;
+  assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "row" })).ok, true, "skip ahead");
+  assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, 635000);
+  assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "cottage" })).reason, "owned", "never down");
+  assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "row" })).ok, true, "same tier is a free replay");
+  assert.equal((await applyClientOp(sql, "hse", { kind: "house", city: "austin", tier: "villa" })).ok, true);
+  assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, 635000 - 535000, "villa step-up is 600k - 65k");
+  assert.deepEqual(await housesOf(sql, "hse"), { austin: { tier: "villa" } });
+  // The key: no house in London, and Austin needs three correct lamps there today (misses and other cities don't count).
+  assert.equal((await applyClientOp(sql, "hse", { kind: "home", city: "london" })).reason, "no-house");
+  assert.equal((await applyClientOp(sql, "hse", { kind: "home", city: "austin" })).reason, "unproven");
+  await awardGrade(sql, "hse", "h1", { ...pay(), prevNonce: "" });
+  await awardGrade(sql, "hse", "h2", { ...pay({ correct: false }), prevNonce: "" });
+  await awardGrade(sql, "hse", "h3", { ...pay({ city: "london", poiId: "" }), prevNonce: "" });
+  await awardGrade(sql, "hse", "h4", { ...pay({ poiId: "" }), prevNonce: "" });
+  assert.equal(await lampsToday(sql, "hse", "austin"), 2, "an unnamed spot (market lantern) counts; a miss and London don't");
+  await awardGrade(sql, "hse", "h5", { ...pay(), prevNonce: "" });
+  const before = (await canonicalWallet(sql, "hse")).wallet;
+  const k = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
+  assert.equal(k.ok, true);
+  assert.equal(k.home?.purse, 2400);
+  assert.equal(k.home?.match, "amber");
+  const after = (await canonicalWallet(sql, "hse")).wallet;
+  assert.equal(after.coins, before.coins + 2400);
+  assert.equal(after.keys.amber, before.keys.amber + 1);
+  const again = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
+  assert.deepEqual([again.home?.purse, again.home?.match], [0, null], "once a day");
+  assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, after.coins);
+  const s = await syncPlayer(sql, "hse", snap({ coins: 0 }), "hsephone1");
+  assert.equal(s.owned?.houses?.austin?.tier, "villa");
+  assert.ok(s.owned?.homeClaims?.some((x) => x.startsWith("home:")) && s.owned?.homeClaims?.some((x) => x.startsWith("hook:austin:")));
+});
+
+test("0.1.12: the wallet holds 5,000,000, but a first sync still carries at most 250,000 from a device", async () => {
+  const sql = await db();
+  const s = await syncPlayer(sql, "big", snap({ coins: 4_000_000 }), "bigphone1");
+  assert.equal(s.wallet.coins, FIRST_SYNC_COIN_CAP);
+  const wid = (await canonicalWallet(sql, "big")).id;
+  await sql`update player_wallets set coins = 4999000 where user_id = ${wid}`;
+  const { mutateWallet } = await import("./walletSql.ts");
+  await mutateWallet(sql, "big", "t:big", (w) => applyDelta(w, { coins: 5000 }));
+  assert.equal((await canonicalWallet(sql, "big")).wallet.coins, COIN_CAP);
 });
