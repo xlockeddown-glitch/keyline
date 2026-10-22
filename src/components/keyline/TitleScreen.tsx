@@ -8,6 +8,7 @@ import { AuthChip } from "./AuthChip";
 import { FirstLoginOverlay, useEnterGate } from "./FirstLogin";
 import { RollsOverlay } from "./RollsBoard";
 import { APP_VERSION } from "@/version";
+import { TRIVIA_COUNT, triviaCountLabel } from "@/game/triviaCount";
 import { carSprite } from "@/game/carPaint";
 import { SkyLayer, useSky } from "./Sky";
 
@@ -128,6 +129,7 @@ export function TitleScreen() {
         </div>
         <p className="book-ver">v{APP_VERSION}</p>
       </div>
+      {TRIVIA_COUNT > 0 ? <p className="title-trivia-count tabular-nums">{triviaCountLabel(TRIVIA_COUNT)}</p> : null}
       {rollsOpen ? (
         <RollsOverlay
           onClose={() => {

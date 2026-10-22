@@ -12,6 +12,7 @@ import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
 import { PUBLISH_STAMP } from "./src/version.ts";
+import { triviaCardCount } from "./scripts/trivia-count.mjs";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -168,6 +169,8 @@ function authPopupPlugin(): Plugin {
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
 export default defineConfig(({ command, isPreview }) => ({
+  // 0.1.30: title-page trivia tracker; only the number ships, the bank stays server-side.
+  define: { __TRIVIA_COUNT__: JSON.stringify(triviaCardCount()) },
   server: {
     host: "0.0.0.0",
     port: 8080,

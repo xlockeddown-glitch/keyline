@@ -1918,6 +1918,18 @@ h3 {
   letter-spacing: 0.08em;
   color: var(--color-fg-subtle);
 }
+/* 0.1.30: trivia tracker, bottom-left of the title page, in the version label's type. */
+.title-trivia-count {
+  position: absolute;
+  left: max(0.75rem, env(safe-area-inset-left));
+  bottom: max(0.6rem, env(safe-area-inset-bottom));
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--color-fg-subtle);
+  pointer-events: none;
+  z-index: 2;
+}
 .corner-stage {
   position: relative;
   min-height: 100dvh;
@@ -4283,6 +4295,9 @@ h3 {
    frame so lamp, vault and headlight overlays sit on the painting at any size; the cast stands on the pavement. */
 .title-night.is-blade.is-street { justify-content: flex-start; background: #07090f; }
 .title-night.is-street > :not(.ts-scene) { position: relative; z-index: 2; }
+.title-night.is-street > .title-trivia-count { position: absolute; color: #cdd5df; text-shadow: 0 1px 3px #000; }
+/* Phones: the cast (car + scouts) sits 0.75rem+ off the bottom and reaches the left edge, so the tracker drops under it. */
+@media (max-width: 640px) { .title-night.is-street > .title-trivia-count { bottom: max(0.15rem, calc(env(safe-area-inset-bottom, 0px) + 0.05rem)); font-size: 0.65rem; line-height: 1; } }
 .title-night.is-street .title-audio, .title-night.is-street .title-account { position: absolute; z-index: 6; }
 .ts-scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
   background: linear-gradient(180deg, #000a24 0, #010c29 20dvh, #0b0f1c 70dvh, #0a0b10 100%); }
