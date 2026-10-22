@@ -22,35 +22,21 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
         const owned = scouts.includes(s.id);
         const wearing = scout === s.id;
         return (
-          <div key={s.id} className="flex items-start gap-3 rounded-md border border-border bg-bg-subtle/50 p-4">
+          <div key={s.id} className="scout-row flex items-start gap-3 rounded-md border border-border bg-bg-subtle/50 p-4">
             <div className="scout-hire" aria-hidden>
               <span className="scout-marker is-idle" data-scout={s.id} data-row="0" data-col="0" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-lg leading-tight">{s.name}</p>
-                  <p className="text-sm text-pretty text-fg-muted">{s.blurb}</p>
-                  {/* 0.0.96: the ability's short name, then what it does. */}
-                  <p className="mt-1 text-sm" data-testid={`ability-${s.id}`}>
-                    <span className="ability-name">{s.perk.label.split(" · ")[0]}</span>
-                    <span className="text-fg-muted"> {s.perk.label.split(" · ").slice(1).join(" · ")}</span>
-                  </p>
-                  {s.id === SUPER_LEGENDARY_ID ? (
-                    <p className="mt-1 kicker">{SUPER_LEGENDARY_LABEL}</p>
-                  ) : s.coins >= 50000 ? (
-                    <p className="mt-1 kicker">Legendary hire</p>
-                  ) : null}
-                  {wearing ? <p className="mt-1 kicker">{s.bed}</p> : null}
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-display text-lg leading-tight">{s.name}</p>
                 {owned ? (
                   hire ? (
                     <button
                       type="button"
-                      className={`btn ${wearing ? "btn-primary" : "btn-ghost"} px-3 text-xs`}
+                      className={`btn ${wearing ? "btn-ghost is-worn" : "btn-ghost"} shrink-0 px-3 text-xs`}
                       onClick={() => wearScout(s.id)}
                     >
-                      {wearing ? "Walking" : "Walk"}
+                      {wearing ? "✓ Walking" : "Walk"}
                     </button>
                   ) : (
                     <p className="shrink-0 self-center text-xs text-fg-subtle">
@@ -71,13 +57,21 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
                   </p>
                 )}
               </div>
-              {owned || !hire ? null : (
-                <p className="mt-2 flex items-center gap-1.5 text-sm tabular-nums text-fg-muted">
-                  <ItemIcon item="coin" size={18} />
-                  {s.coins.toLocaleString()}
-                  {points < s.coins ? <span className="text-xs text-fg-subtle">· short</span> : null}
-                </p>
-              )}
+              <div className="scout-copy">
+                  <p className="text-sm text-pretty text-fg-muted">{s.blurb}</p>
+                  {/* 0.0.96: the ability's short name, then what it does. */}
+                  <p className="mt-1 text-sm" data-testid={`ability-${s.id}`}>
+                    <span className="ability-name">{s.perk.label.split(" · ")[0]}</span>
+                    <span className="text-fg-muted"> {s.perk.label.split(" · ").slice(1).join(" · ")}</span>
+                  </p>
+                  {s.id === SUPER_LEGENDARY_ID ? (
+                    <p className="mt-1 kicker">{SUPER_LEGENDARY_LABEL}</p>
+                  ) : s.coins >= 50000 ? (
+                    <p className="mt-1 kicker">Legendary hire</p>
+                  ) : null}
+                  {wearing ? <p className="mt-1 kicker">{s.bed}</p> : null}
+              </div>
+              {owned || !hire || points >= s.coins ? null : <p className="mt-1 text-xs text-fg-subtle">Not enough coin yet</p>}
             </div>
           </div>
         );
@@ -97,7 +91,7 @@ export function ScoutShop() {
 
   return (
     <div className="absolute inset-0 z-[700] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
-      <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
+      <div className="panel errand-lit sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Outfitter</p>

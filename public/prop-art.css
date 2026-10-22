@@ -100,7 +100,9 @@
 .shop-pin{
   width:44px;
   height:66px;
-  background:url("/sprites/print-shop.png") center bottom / contain no-repeat
+  /* 0.1.27: redrawn in the lantern/vault style (iron, brass trim, lit window). */
+  background:url("/sprites/outfitter-front.png?v=k127a") center bottom / contain no-repeat;
+  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
 }
 .shop-awning,
 .shop-body{
@@ -110,14 +112,14 @@
 .board-pin{
   width:32px;
   height:64px;
-  background:url("/sprites/notice-board.png") center bottom / contain no-repeat;
-  filter:drop-shadow(0 2px 1px #0000008c)
+  background:url("/sprites/notice-board-v2.png?v=k127a") center bottom / contain no-repeat;
+  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
 }
 .counter-pin{
   width:46px;
   height:58px;
-  background:url("/sprites/street-counter.png") center bottom / contain no-repeat;
-  filter:drop-shadow(0 2px 1px #0000008c)
+  background:url("/sprites/street-counter-v2.png?v=k127a") center bottom / contain no-repeat;
+  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
 }
 .board-pin .service-sign,
 .board-pin .service-post,

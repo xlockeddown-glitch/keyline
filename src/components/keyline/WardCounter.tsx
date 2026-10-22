@@ -37,7 +37,7 @@ export function WardCounter() {
 
   return (
     <div className="absolute inset-0 z-[700] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
-      <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
+      <div className="panel errand-lit sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Counter · {city.name}</p>
@@ -97,8 +97,7 @@ export function WardCounter() {
                         className={`btn shrink-0 px-3 text-xs ${points >= item.cost ? "btn-primary" : "btn-quiet"}`}
                         onClick={() => buyKiosk(item.id)}
                       >
-                        <ItemIcon item="coin" size={18} />
-                        {item.cost.toLocaleString()}
+                        Buy · {item.cost.toLocaleString()}
                       </button>
                     </div>
                   </div>
