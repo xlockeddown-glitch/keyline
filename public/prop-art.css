@@ -109,20 +109,12 @@
   display:none
 }
 
-.board-pin{
-  width:32px;
-  height:64px;
-  background:url("/sprites/notice-board-v2.png?v=k127a") center bottom / contain no-repeat;
-  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
-}
 .counter-pin{
   width:46px;
   height:58px;
   background:url("/sprites/street-counter-v2.png?v=k127a") center bottom / contain no-repeat;
   filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
 }
-.board-pin .service-sign,
-.board-pin .service-post,
 .counter-pin .service-sign,
 .counter-pin .service-post{
   display:none
