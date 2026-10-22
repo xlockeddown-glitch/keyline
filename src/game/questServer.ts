@@ -4,7 +4,7 @@
 import type { Sql } from "../lib/db.ts";
 import { CITIES } from "./data.ts";
 import { payMatchesOf } from "./goals.ts";
-import { LUCKY_OWNED_COIN, questDef, questProgress, questsOf, type QuestEvent, type QuestId, type QuestReward, type QuestRow } from "./questBoard.ts";
+import { BONUS, LUCKY_OWNED_COIN, questDef, questProgress, questSet, type QuestCtx, type QuestDef, type QuestEvent, type QuestReward, type QuestRow } from "./questBoard.ts";
 import { claimOpen, currentPeriod, monthKey, nextMonthKey, periodOf, previousPeriod, QUEST_GRACE_MS, type Period, type PeriodKind } from "./questPeriods.ts";
 import type { CityId, Tier, TriviaCat } from "./types.ts";
 import { applyDelta, type OpResult, type WalletState } from "./wallet.ts";
@@ -48,6 +48,7 @@ export async function questEvents(sql: Sql, id: string, start: number, end: numb
         city: typeof d.c === "string" && d.c in CITIES ? (d.c as CityId) : null,
         topic: typeof d.tp === "string" && d.tp ? (d.tp as TriviaCat) : null,
         market: d.mk === 1,
+        district: typeof d.d === "string" && d.d ? d.d : null,
       });
     }
   }
@@ -69,7 +70,25 @@ export async function questEvents(sql: Sql, id: string, start: number, end: numb
       if (g) out.push({ k: "ride", at: at(r.created_at), game: g });
     }
   }
+  // 0.1.22 banks: the daily match cache (cache:<day>), street matches (street:sk:…), a house key (hook:<city>:<day>).
+  const other = await sql<{ op_key: string; created_at: unknown }>`
+    select op_key, created_at from wallet_ledger
+    where user_id = ${id} and (op_key like ${"cache:%"} or op_key like ${"street:sk:%"} or op_key like ${"hook:%"})
+      and created_at >= ${iso(start)} and created_at < ${iso(end)}
+  `;
+  for (const o of other) {
+    const t = at(o.created_at);
+    if (o.op_key.startsWith("cache:")) out.push({ k: "cache", at: t });
+    else if (o.op_key.startsWith("street:")) out.push({ k: "street", at: t });
+    else out.push({ k: "hook", at: t, day: o.op_key.split(":")[2] ?? "" });
+  }
   return out.sort((a, b) => a.at - b.at);
+}
+
+/** What this account can do, so a quest it can't finish (a house key with no house) is never in its set. */
+export async function questCtx(sql: Sql, id: string): Promise<QuestCtx> {
+  const rows = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"house:%"}`;
+  return { house: (Number(rows[0]?.n) || 0) > 0 };
 }
 
 export type QuestPeriodView = { key: string; kind: PeriodKind; start: number; end: number; grace: boolean; rows: Array<QuestRow & { paid: boolean }> };
@@ -82,21 +101,27 @@ async function paidKeys(sql: Sql, id: string, keys: string[]): Promise<Set<strin
   return new Set(rows.map((r) => r.op_key).filter((k) => want.has(k)));
 }
 
-async function periodView(sql: Sql, id: string, p: Period, now: number): Promise<QuestPeriodView> {
-  const rows = questProgress(p.kind, await questEvents(sql, id, p.start, Math.min(p.end, now + 1)));
+async function periodRows(sql: Sql, id: string, p: Period, now: number, ctx: QuestCtx): Promise<{ set: QuestDef[]; rows: QuestRow[] }> {
+  const set = questSet(p.kind, id, p.key, ctx);
+  return { set, rows: questProgress(p.kind, set, await questEvents(sql, id, p.start, Math.min(p.end, now + 1))) };
+}
+
+async function periodView(sql: Sql, id: string, p: Period, now: number, ctx: QuestCtx): Promise<QuestPeriodView> {
+  const { rows } = await periodRows(sql, id, p, now, ctx);
   const paid = await paidKeys(sql, id, rows.map((r) => `quest:${p.key}:${r.id}`));
   return { key: p.key, kind: p.kind, start: p.start, end: p.end, grace: now >= p.end, rows: rows.map((r) => ({ ...r, paid: paid.has(`quest:${p.key}:${r.id}`) })) };
 }
 
-/** This week and this month; last week / last month too while their 24 h grace runs and something is left to collect. */
+/** Today, this week and this month; the one before too while its 24 h grace runs and something is left to collect. */
 export async function questStatus(sql: Sql, userId: string, now = Date.now()): Promise<QuestStatus> {
   const { id, wallet } = await canonicalWallet(sql, userId);
+  const ctx = await questCtx(sql, id);
   const periods: QuestPeriodView[] = [];
-  for (const kind of ["week", "month"] as const) {
-    periods.push(await periodView(sql, id, currentPeriod(kind, now), now));
+  for (const kind of ["day", "week", "month"] as const) {
+    periods.push(await periodView(sql, id, currentPeriod(kind, now), now, ctx));
     const prev = previousPeriod(kind, now);
     if (claimOpen(prev.key, now)) {
-      const v = await periodView(sql, id, prev, now);
+      const v = await periodView(sql, id, prev, now, ctx);
       if (v.rows.some((r) => r.done && !r.paid)) periods.push(v);
     }
   }
@@ -128,7 +153,7 @@ export function payQuest(w: WalletState, reward: QuestReward, periodKey: string)
   return { ...r, award: { coins, keys: add, boosts }, detail: JSON.stringify({ coins, keys: add, boosts, ...(lucky ? { lucky } : {}) }), lucky };
 }
 
-export type QuestClaim = MutateResult & { quest?: { id: QuestId; period: string; lucky?: string } };
+export type QuestClaim = MutateResult & { quest?: { id: string; period: string; lucky?: string } };
 
 /** Claim one quest. Refused unless the server's own recount says it is done in that period's window. */
 export async function claimQuest(sql: Sql, userId: string, periodKey: string, questId: string, now = Date.now()): Promise<QuestClaim> {
@@ -137,7 +162,9 @@ export async function claimQuest(sql: Sql, userId: string, periodKey: string, qu
   const p = periodOf(periodKey);
   if (!def || !p || p.kind !== def.kind) return { ok: false, replay: false, reason: "unknown", wallet };
   if (!claimOpen(periodKey, now)) return { ok: false, replay: false, reason: "closed", wallet };
-  const rows = questProgress(p.kind, await questEvents(sql, id, p.start, Math.min(p.end, now + 1)));
+  const { set, rows } = await periodRows(sql, id, p, now, await questCtx(sql, id));
+  // Only this player's own set (and its bonus) for that period can be claimed.
+  if (def.id !== BONUS[p.kind].id && !set.some((d) => d.id === def.id)) return { ok: false, replay: false, reason: "not-yours", wallet };
   if (!rows.find((r) => r.id === def.id)?.done) return { ok: false, replay: false, reason: "unproven", wallet };
   let lucky: string | undefined;
   const r = await mutateWallet(sql, userId, `quest:${periodKey}:${def.id}`, (w) => {
@@ -154,7 +181,6 @@ export function luckyLive(meta: { lucky: boolean; luckyMonth: string }, now = Da
   return meta.lucky || (meta.luckyMonth !== "" && meta.luckyMonth === monthKey(now));
 }
 
-export { questsOf };
 
 /* ------------------------------------------------------------------ legacy (milestones + charms) */
 

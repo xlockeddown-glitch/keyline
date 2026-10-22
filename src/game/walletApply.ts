@@ -6,7 +6,8 @@ import { HOME_LAMPS, houseCost, houseOf, isHouseTier, houseRank, type HouseState
 import { cityDay } from "./vaultStack.ts";
 import { CAN_ODDS, canId, colorOf, paintPrice, parseCan, rollCan, type Can } from "./carPaint.ts";
 import { LONG_IDS, applyLegacy, claimQuest, luckyLive, type LegacyGrant, type LegacyIn, type LongId } from "./questServer.ts";
-import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
+import { periodOf } from "./questPeriods.ts";
+import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, goalDay, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
 import { groupIds } from "./playerLinks.ts";
@@ -725,12 +726,14 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "dgoal") {
-    const day = today();
+    // 0.1.22: the goals' day is the Chicago day (was UTC), the same clock as quests.
+    const day = goalDay();
+    const dayStart = periodOf(`D${day}`)!.start;
     const i = op.i;
     if (!Number.isInteger(i) || i < 0 || i > 3) return refused(wallet, "unproven");
     const rows = await sql<{ n: number }>`
       select count(*)::int as n from wallet_ledger
-      where user_id = ${id} and op_key like ${"grade:%"} and created_at >= ${day + "T00:00:00Z"}
+      where user_id = ${id} and op_key like ${"grade:%"} and created_at >= ${new Date(dayStart).toISOString()}
         and detail not like ${'%"g":"miss"%'}
     `;
     const right = Number(rows[0]?.n) || 0;

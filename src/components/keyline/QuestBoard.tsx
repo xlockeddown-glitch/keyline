@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchQuests } from "@/game/walletApi";
-import { QUESTS, questDef, rewardLine, type QuestDef } from "@/game/questBoard";
+import { BONUS, questDef, questSet, rewardLine, type QuestDef } from "@/game/questBoard";
 import { currentPeriod, type PeriodKind } from "@/game/questPeriods";
 import type { QuestStatus } from "@/game/questServer";
 import { luckyOn, useGame } from "@/game/store";
@@ -17,13 +17,13 @@ function left(end: number, now: number): string {
   return d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`;
 }
 
-const RESET: Record<PeriodKind, string> = { week: "Resets Monday 00:00 Chicago time", month: "Resets on the 1st, 00:00 Chicago time" };
+const RESET: Record<PeriodKind, string> = { day: "Resets at midnight Chicago time", week: "Resets Monday 00:00 Chicago time", month: "Resets on the 1st, 00:00 Chicago time" };
 
 /**
  * 0.1.22 Journal · Progress and the notice board: this week's and this month's quests. The server counts
  * every number here from its own lamp, ride and market records; sparks never count. Guests see the list.
  */
-export function QuestBoard() {
+export function QuestBoard({ kinds = ["week", "month"], heading = true }: { kinds?: PeriodKind[]; heading?: boolean } = {}) {
   const user = useCurrentUser();
   const points = useGame((s) => s.points);
   const claim = useGame((s) => s.claimQuest);
@@ -53,7 +53,7 @@ export function QuestBoard() {
     const end = cur?.end ?? currentPeriod(kind, now).end;
     return (
       <div key={kind} data-testid={`quests-${kind}`}>
-        <p className="kicker mt-2">{kind === "week" ? "This week" : "This month"}</p>
+        <p className="kicker mt-2">{kind === "day" ? "Today" : kind === "week" ? "This week" : "This month"}</p>
         <p className="mt-1 text-xs text-fg-muted">
           {RESET[kind]} · {left(end, now)} left
         </p>
@@ -65,7 +65,7 @@ export function QuestBoard() {
             </p>
           ))}
         <div className="mt-2 grid gap-2">
-          {(signed ? views.flatMap((v) => v.rows.map((r) => ({ ...r, period: v.key, grace: v.grace }))) : QUESTS.filter((q) => q.kind === kind).map((q) => ({ id: q.id, have: 0, need: q.need, done: false, paid: false, note: undefined, period: "", grace: false }))).map((r) => {
+          {(signed ? views.flatMap((v) => v.rows.map((r) => ({ ...r, period: v.key, grace: v.grace }))) : [...questSet(kind, "guest", currentPeriod(kind, now).key, { house: false }), BONUS[kind]].map((q) => ({ id: q.id, have: 0, need: q.need, done: false, paid: false, note: undefined, period: "", grace: false }))).map((r) => {
             const def = questDef(r.id) as QuestDef;
             const key = `${r.period}:${r.id}`;
             return (
@@ -108,9 +108,10 @@ export function QuestBoard() {
     );
   };
   return (
-    <div data-testid="quest-board">
-      <p className="kicker mt-2">Quests</p>
+    <div data-testid={heading ? "quest-board" : "quest-board-day"}>
+      {heading ? <p className="kicker mt-2">Quests</p> : null}
       <p className="mt-1 text-xs text-fg-muted">
+        {!signed ? "A sample set: every player draws their own each period. " : "Your own set for each period, drawn fresh at each reset. "}
         {signed
           ? "Counted by the server from your lamps (a match spent, never a spark), rides and night markets. Collect anywhere."
           : "Sign in to track and collect quests. Progress is counted on the server, so guest play doesn't count."}
@@ -120,8 +121,7 @@ export function QuestBoard() {
           <ItemIcon item="coin" size={14} /> Lucky is on{forever ? " for good" : " this month"}: about 1 in 7 lamps give back a match of their colour.
         </p>
       ) : null}
-      {section("week")}
-      {section("month")}
+      {kinds.map((k) => section(k))}
     </div>
   );
 }

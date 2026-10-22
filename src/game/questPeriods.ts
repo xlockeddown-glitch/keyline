@@ -1,10 +1,11 @@
-// 0.1.22: one clock for weekly and monthly quests, America/Chicago. A week starts Monday 00:00 CT,
-// a month on the 1st at 00:00 CT. Keys are shared by everyone: "W2026-10-19" (the Monday) and "M2026-11".
+// 0.1.22: one clock for daily, weekly and monthly quests, America/Chicago. A day starts 00:00 CT, a week
+// Monday 00:00 CT, a month on the 1st at 00:00 CT. Keys are shared by everyone: "D2026-10-21", "W2026-10-19"
+// (the Monday) and "M2026-11".
 const TZ = "America/Chicago";
 /** A finished period can still be claimed for this long after it ends. */
 export const QUEST_GRACE_MS = 24 * 3600_000;
 
-export type PeriodKind = "week" | "month";
+export type PeriodKind = "day" | "week" | "month";
 
 type Ymd = { y: number; m: number; d: number };
 
@@ -52,6 +53,16 @@ function addDays({ y, m, d }: Ymd, n: number): Ymd {
   return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
 }
 
+/** The Chicago calendar date, "2026-10-21" (daily goals and the daily quest use this day). */
+export function chicagoDay(ms: number): string {
+  const { y, m, d } = chicagoDate(ms);
+  return `${y}-${pad(m)}-${pad(d)}`;
+}
+
+export function dayKey(ms: number): string {
+  return `D${chicagoDay(ms)}`;
+}
+
 export function weekKey(ms: number): string {
   const day = chicagoDate(ms);
   const mon = addDays(day, -isoDow(day));
@@ -64,16 +75,25 @@ export function monthKey(ms: number): string {
 }
 
 export function periodKey(kind: PeriodKind, ms: number): string {
-  return kind === "week" ? weekKey(ms) : monthKey(ms);
+  return kind === "day" ? dayKey(ms) : kind === "week" ? weekKey(ms) : monthKey(ms);
 }
 
 export type Period = { key: string; kind: PeriodKind; start: number; end: number };
 
+const DAY_RE = /^D(\d{4})-(\d{2})-(\d{2})$/;
 const WEEK_RE = /^W(\d{4})-(\d{2})-(\d{2})$/;
 const MONTH_RE = /^M(\d{4})-(\d{2})$/;
 
 /** The window [start, end) of a key, or null if the key is not a real period. */
 export function periodOf(key: string): Period | null {
+  const dd = DAY_RE.exec(key);
+  if (dd) {
+    const day = { y: Number(dd[1]), m: Number(dd[2]), d: Number(dd[3]) };
+    const t = new Date(Date.UTC(day.y, day.m - 1, day.d));
+    if (t.getUTCMonth() + 1 !== day.m || t.getUTCDate() !== day.d) return null;
+    const next = addDays(day, 1);
+    return { key, kind: "day", start: chicagoMidnight(day.y, day.m, day.d), end: chicagoMidnight(next.y, next.m, next.d) };
+  }
   const w = WEEK_RE.exec(key);
   if (w) {
     const day = { y: Number(w[1]), m: Number(w[2]), d: Number(w[3]) };

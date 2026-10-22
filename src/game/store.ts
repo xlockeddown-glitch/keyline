@@ -41,7 +41,7 @@ import type {
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
-import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
+import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
@@ -1111,7 +1111,7 @@ export const useGame = create<GameState>((set, get) => ({
   cratePop: null,
   blitzOffer: false,
   lastBlitzOfferDay: typeof saved?.lastBlitzOfferDay === "string" ? saved.lastBlitzOfferDay : "",
-  goals: cleanGoals(saved?.goals, new Date().toISOString().slice(0, 10)),
+  goals: cleanGoals(saved?.goals, goalDay()),
   cacheDay: typeof saved?.cacheDay === "string" ? saved.cacheDay : "",
   questOpen: false,
   questWalk: 0,
@@ -2680,16 +2680,16 @@ export const useGame = create<GameState>((set, get) => ({
   },
   dismissLoot: () => set({ loot: null, miss: null, toast: null }),
   noteGoalKind: (kind, amount = 1) => {
-    const g = noteGoal(get().goals, kind, amount, today());
+    const g = noteGoal(get().goals, kind, amount, goalDay());
     if (g !== get().goals) set({ goals: g });
   },
   walkToQuest: () => set({ questWalk: get().questWalk + 1, hqOpen: false, invOpen: false, guideOpen: false }),
   openQuest: (open) => {
-    set({ questOpen: open, ...(open ? { questVisited: true, goals: { ...noteGoal(get().goals, "right", 0, today()), seen: true } } : {}) });
+    set({ questOpen: open, ...(open ? { questVisited: true, goals: { ...noteGoal(get().goals, "right", 0, goalDay()), seen: true } } : {}) });
     if (open) scheduleSave(get);
   },
   claimGoal: (i) => {
-    const g = noteGoal(get().goals, "right", 0, today());
+    const g = noteGoal(get().goals, "right", 0, goalDay());
     const all = i === 3;
     if (all ? !(g.paid.every(Boolean) && !g.all) : !goalDone(g, i) || g.paid[i]) return;
     const mark = (): GoalDay => (all ? { ...g, all: true } : { ...g, paid: g.paid.map((p, k) => p || k === i) as GoalDay["paid"] });

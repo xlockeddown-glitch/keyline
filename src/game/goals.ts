@@ -1,6 +1,7 @@
 // 0.0.93: answer streaks, the daily match cache, and the three daily goals. Pure rules shared by the
 // client and the server wallet (walletApply.ts).
 import { fnv1a } from "./rarity.ts";
+import { chicagoDay } from "./questPeriods.ts";
 import { TIER_VALUE } from "./rewards.ts";
 import { matchCap } from "./ticket.ts";
 import type { Tier } from "./types.ts";
@@ -246,6 +247,11 @@ export function goalsClaimable(g: GoalDay): boolean {
 }
 
 /** The Quest Board glows with "!" on a new day, until today's goals are looked at, and while something is ready. */
-export function questAlert(g: GoalDay, day = new Date().toISOString().slice(0, 10)): boolean {
+/** 0.1.22: the daily goals' day is the Chicago calendar day (was the UTC date), the same clock as quests. */
+export function goalDay(ms = Date.now()): string {
+  return chicagoDay(ms);
+}
+
+export function questAlert(g: GoalDay, day = goalDay()): boolean {
   return g.day !== day || !g.seen || goalsClaimable(g);
 }

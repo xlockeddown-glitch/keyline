@@ -271,3 +271,14 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 - **Known gap, found while building:**
   - Server wallet craft stock (`meta.brass`/`press`/…) is never credited by any server write. So the old `charm:lucky` op and the server-side Night-glass/scarf `cloth` ops were always refused as "short" in production, and the server never paid Lucky or those cloth tips.
   - This is why the legacy move grants Lucky to a device that reports a printed Lucky bit (device-trusted, once per account), and grants proven milestone cloths without spending stock.
+
+## Quest banks (0.1.22, built)
+
+Daily goals became server-counted day quests, and every period draws from a bank. `questSet(kind, account, periodKey, {house})`
+enumerates every set of SET_SIZE (day 4, week 5, month 4) from the eligible bank, keeps the ones inside FAIR (effort sum and
+reward value: coin + TIER_VALUE of the matches), and picks `fnv1a("quests|account|period") % count`. No storage; the server
+and device agree; the set is fixed for the period. Effort/value bands: day 6–7 / 550–800, week 8–9 / 7,900–10,000,
+month 9–10 / 57,000–69,000. House quests need a `house:%` row; there is no daily night-market quest (markets aren't
+always scheduled; m-night and m-hop have a month to happen). Guests see the set for account "guest", house off.
+Claims outside your set: `not-yours`. New event sources: `cache:%`, `street:sk:%`, `hook:<city>:<day>`, and the grade `d` district.
+Deploy note: the day key moves from the UTC date to the Chicago date, so the legacy dgoal path may pay once more on deploy evening.
