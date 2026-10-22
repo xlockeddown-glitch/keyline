@@ -4,7 +4,7 @@ import { Ticket } from "lucide-react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { SignInActions } from "@/components/keyline/AuthChip";
 import { answerFriendTicket, openFriendTicket, peekFriendTicket } from "@/game/friendApi";
-import { CARD_MS, LADDER, ladderNextLine, rewardLine, type LadderPay } from "@/game/friendTicket";
+import { CARD_MS, ladderNextLine, rewardLine, tooEasyLine, type LadderPay } from "@/game/friendTicket";
 import type { TriviaDiff } from "@/game/types";
 
 export const Route = createFileRoute("/t/$token")({
@@ -108,7 +108,7 @@ function FriendTicketPage() {
             </p>
             <h1 className="font-display mt-2 text-2xl leading-tight text-balance">{view.from} sent you a trivia card</h1>
             <p className="mt-2 text-sm text-pretty text-fg-muted">
-              One card, {Math.round(CARD_MS / 1000)} seconds on the wick. Get it right and you each get a match. Every right ticket between you two climbs a color: White, Blue, Green, Amber, Red.
+              One question, {Math.round(CARD_MS / 1000)} seconds. Get it right and you each get a match. Each right answer between you two moves your streak up a color: White, Blue, Green, Amber, Red.
             </p>
             <p className="mt-1 text-xs text-pretty text-fg-subtle">A one-card preview: it plays even if its city isn't unlocked in your game yet.</p>
             {user ? (
@@ -136,7 +136,7 @@ function FriendTicketPage() {
         ) : null}
 
         <Link to="/" className="title-more">
-          {view.kind === "result" && view.result.rewarded ? "Walk the street — your match is waiting" : "Back to the street"}
+          {view.kind === "result" && view.result.rewarded ? "Open Keyline — your match is waiting" : "Open Keyline"}
         </Link>
       </main>
     </div>
@@ -197,8 +197,7 @@ export function PlayCard({ play, onAnswer }: { play: Play; onAnswer: (choice: st
       </p>
       {play.next ? (
         <p className="mt-1 text-xs text-fg-muted" data-testid="friend-next">
-          {ladderNextLine(play.next.tier, play.next.floor)} · rung {play.next.rung + 1}/{LADDER.length}
-          {play.diff < play.next.floor ? " · this card is too easy, so it pays White" : ""}
+          {play.diff < play.next.floor ? tooEasyLine(play.next.tier) : ladderNextLine(play.next.tier, play.next.rung)}
         </p>
       ) : null}
       <p className="plate-q">{play.q}</p>
@@ -221,8 +220,8 @@ export function ResultCard({ from, result }: { from: string; result: Result }) {
     <section className={`plate p-5 ft-result ${result.correct ? "is-hit" : "is-miss"}`} data-testid="friend-result">
       <p className="kicker">{result.correct ? "Right" : result.choice == null ? "Out of time" : "Miss"}</p>
       <h1 className="font-display mt-1 text-2xl leading-tight text-balance">{rewardLine(why, from, result.pay)}</h1>
-      {result.rewarded ? <p className="mt-2 text-sm text-fg-muted">Yours lands in your pocket when you open the street. {from} sees it next time they look.</p> : null}
-      <p className="mt-3 text-sm text-fg-muted">The trivia card read:</p>
+      {result.rewarded ? <p className="mt-2 text-sm text-fg-muted">Your match will be in your pocket the next time you open Keyline. {from} gets theirs next time they play.</p> : null}
+      <p className="mt-3 text-sm text-fg-muted">The answer was:</p>
       <p className="mt-1 text-base font-medium text-pretty">{result.answer}</p>
       {result.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{result.fact}</p> : null}
     </section>

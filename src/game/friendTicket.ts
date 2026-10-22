@@ -25,7 +25,7 @@ export const TOKEN_RE = /^[A-Za-z0-9_-]{24}$/;
 export const FRIEND_REWARD: Tier = "white";
 
 /**
- * 0.1.25 friend ladder (Ryan). Each friend PAIR (either direction) climbs a rung with every rewarded ticket:
+ * 0.1.26 friend ladder (Ryan). Each friend PAIR (either direction) climbs a rung with every rewarded ticket:
  * white → blue → green → amber → red, then back to white. Both sides get the current rung's match.
  *  - a wrong or late answer resets the pair to white
  *  - a right answer blocked by a cap (pair once a day, sender three a day) leaves the rung where it is
@@ -74,10 +74,16 @@ export function ladderNext(st: LadderState, now: number): { rung: number; tier: 
   return { rung, tier: LADDER[rung]!, floor: LADDER_FLOOR[rung]! };
 }
 
-/** "Next: Amber (needs medium+)". */
-export function ladderNextLine(tier: Tier, floor: number): string {
-  const name = tier[0]!.toUpperCase() + tier.slice(1);
-  return `Next: ${name}${floor >= 3 ? " (needs hard)" : floor >= 2 ? " (needs medium+)" : ""}`;
+const cap = (t: Tier) => t[0]!.toUpperCase() + t.slice(1);
+
+/** "Get this right for an Amber match each. Streak 4 of 5." (0.1.26 plain words). */
+export function ladderNextLine(tier: Tier, rung: number): string {
+  return `Get this right for ${/^[AEIOU]/i.test(tier) ? "an" : "a"} ${cap(tier)} match each. Streak ${rung + 1} of ${LADDER.length}.`;
+}
+
+/** Shown under the card when its difficulty is below the streak's floor. */
+export function tooEasyLine(tier: Tier): string {
+  return `This card is too easy for ${cap(tier)}, so it pays White.`;
 }
 
 export function utcDay(at: number): string {
@@ -193,12 +199,11 @@ export function rewardDecision(p: { correct: boolean; late: boolean; senderRewar
 }
 
 export function rewardLine(why: RewardWhy | null, from: string, pay: LadderPay = { tier: FRIEND_REWARD, rung: 0 }): string {
-  const name = pay.tier[0]!.toUpperCase() + pay.tier.slice(1);
-  if (why == null) return `+1 ${name} match for you and ${from.replace(/\.$/, "")} (rung ${pay.rung + 1}/${LADDER.length})`;
-  if (why === "pair-cap") return `Right! You two already shared a ticket match today, so this one is for bragging rights. Your rung stays.`;
-  if (why === "sender-cap") return `Right! ${from} has had their three friend-ticket matches today, so no match this time. Your rung stays.`;
-  if (why === "late") return "The wick burned out before the answer landed.";
-  return "Not this time.";
+  if (why == null) return `You and ${from} each got ${/^[AEIOU]/i.test(pay.tier) ? "an" : "a"} ${cap(pay.tier)} match. Streak ${pay.rung + 1} of ${LADDER.length}.`;
+  if (why === "pair-cap") return `Right! You two already got a friend ticket match today, so no match this time. Your streak stays.`;
+  if (why === "sender-cap") return `Right! ${from} already got three friend ticket matches today, so no match this time. Your streak stays.`;
+  if (why === "late") return "Time ran out before your answer arrived. Your streak starts over at White.";
+  return "Not this time. Your streak starts over at White.";
 }
 
 /**
@@ -214,7 +219,7 @@ export function payFriend(
   tier: Tier = FRIEND_REWARD,
 ) {
   if (step) {
-    // 0.0.96: full pocket steps up (match ↑); coin only when every tier above is full. 0.1.25: the ladder's colour.
+    // 0.0.96: full pocket steps up (match ↑); coin only when every tier above is full. 0.1.26: the ladder's colour.
     const paid = step(keys, LADDER.includes(tier) ? tier : FRIEND_REWARD, Math.max(0, n));
     const added = Object.values(paid.add).reduce((a, b) => a + (b ?? 0), 0);
     return { keys: paid.keys, points: points + paid.coin, added, coins: paid.coin };

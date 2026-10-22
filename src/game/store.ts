@@ -2194,7 +2194,7 @@ export const useGame = create<GameState>((set, get) => ({
   payFriendTickets: (ids, tiers = {}) => {
     const marked = markFriendPaid(get().friendPaid, ids);
     if (!marked.fresh.length) return { fresh: [], added: 0, coins: 0 };
-    // 0.1.25: each ticket lands its ladder colour as the server reported it (the server wallet pays its own replay).
+    // 0.1.26: each ticket lands its ladder colour as the server reported it (the server wallet pays its own replay).
     let paid = { keys: get().keys, points: get().points, added: 0, coins: 0 };
     for (const id of marked.fresh) {
       const p = payFriend(paid.keys, paid.points, 1, matchCap("white"), payMatchesOf, tiers[id] ?? "white");
