@@ -49,7 +49,7 @@ export const CAR_COLORS: Record<CarId, readonly PaintColor[]> = {
     { id: "silver", name: "Quicksilver", hex: "#b9bcc0" },
     { id: "red", name: "Ultra Red", hex: "#b3121a" },
     { id: "blue", name: "Deep Blue", hex: "#1b3a7a" },
-    { id: "sig", name: "Stealth Grey", hex: "#4a4e55" },
+    { id: "sig", name: "Stealth Gray", hex: "#4a4e55" },
   ],
 };
 

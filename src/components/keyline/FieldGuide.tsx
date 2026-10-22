@@ -110,7 +110,7 @@ export function FieldGuide() {
               <li><span className="emb-badge is-streak">🔥 5</span><span>Answer streak: right answers in a row (5 pays a white, 10 a blue).</span></li>
               <li><span className="emb-badge is-boost">⚡2</span><span>Extra rewards you got from Lucky, a ride or your scout. Tap to see which.</span></li>
               <li><span className="badge-ico"><ItemIcon item="blue" size={22} /><b>↺</b></span><span>Perfect score: your match comes back.</span></li>
-              <li><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>You can carry 30 matches of each colour. When you have 30, every 3 more turn into 1 match of the next colour (white→blue→green→amber→red→violet). “2/3” means you need one more.</span></li>
+              <li><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>You can carry 30 matches of each color. When you have 30, every 3 more turn into 1 match of the next color (white→blue→green→amber→red→violet). “2/3” means you need one more.</span></li>
               <li><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Violet pocket full: extra violets pay coin instead.</span></li>
               <li><span className="badge-ico"><ItemIcon item="coin" size={20} /><ItemIcon item="white" size={20} /><ItemIcon item="brass" size={20} /><b>+N</b></span><span>Items earned: coin, matches, brass, ink, vellum, ingredient, paint.</span></li>
             </ul>

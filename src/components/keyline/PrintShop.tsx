@@ -172,7 +172,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
         </div>
       ) : null}
       {section("coat", "Coats", "A new coat for your character. It only changes how you look.")}
-      {section("lantern", "Lantern skins", "Gives every street lamp a new metal frame. The glass keeps its colour, so you can still tell which match a lamp needs.")}
+      {section("lantern", "Lantern skins", "Gives every street lamp a new metal frame. The glass keeps its color, so you can still tell which match a lamp needs.")}
       <PaintVat counter={counter} />
       {counter ? <NightPress /> : null}
     </div>

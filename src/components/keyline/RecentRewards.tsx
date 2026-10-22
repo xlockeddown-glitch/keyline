@@ -44,7 +44,7 @@ export function RecentRewards() {
                   </span>
                 ))}
                 {(Object.entries(r.credit ?? {}) as [Tier, number][]).map(([t, n]) => (
-                  <span key={`c${t}`} className="recent-amt is-credit" title={`${n} ${t} extra (3 merge into the next colour)`}>
+                  <span key={`c${t}`} className="recent-amt is-credit" title={`${n} ${t} extra (3 merge into the next color)`}>
                     <ItemIcon item={t} size={14} />+{n}/3
                   </span>
                 ))}

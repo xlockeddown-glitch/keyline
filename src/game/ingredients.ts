@@ -105,7 +105,7 @@ export const INGREDIENTS: Record<IngredientId, Ingredient> = {
   "paint-amber": { id: "paint-amber", name: PAINT_NAME.amber, blurb: `About 1 in ${PAINT_DROP_IN.amber} amber vaults.` },
   "paint-red": { id: "paint-red", name: PAINT_NAME.red, blurb: `About 1 in ${PAINT_DROP_IN.red} red vaults.` },
   "paint-violet": { id: "paint-violet", name: PAINT_NAME.violet, blurb: `About 1 in ${PAINT_DROP_IN.violet} violet vaults.` },
-  "paint-prism": { id: "paint-prism", name: PAINT_NAME.prism, blurb: `About 1 in ${ULTRA_DROP_IN.toLocaleString()} vaults, any colour.` },
+  "paint-prism": { id: "paint-prism", name: PAINT_NAME.prism, blurb: `About 1 in ${ULTRA_DROP_IN.toLocaleString()} vaults, any color.` },
 };
 
 const CITY_STAPLE: Record<CityId, IngredientId> = {

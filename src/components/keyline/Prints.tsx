@@ -71,7 +71,7 @@ export function PrintPanel() {
   return (
     <div className="print-panel" data-testid="print-panel">
       <p className="kicker">City prints</p>
-      <p className="mt-1 text-xs text-fg-muted">Coat patterns you can only earn in their city: right answers there plus kilometres walked there. Looks only; wear on any scout.</p>
+      <p className="mt-1 text-xs text-fg-muted">Coat patterns you can only earn in their city: right answers there plus kilometers walked there. Looks only; wear on any scout.</p>
       {!rows ? (
         <p className="mt-2 text-xs text-fg-subtle">Sign in to track city prints.</p>
       ) : (

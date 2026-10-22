@@ -381,7 +381,7 @@ export const NATURE_LIFE: TriviaQ[] = [
   q("The blue shark (Prionace glauca) is a…", ["bottom wobbegong", "slim open-ocean hunter", "river dolphin", "parrotfish"], "slim open-ocean hunter", 2),
   q("Lemon sharks often use…", ["the stratosphere", "mangrove shallows as nurseries", "only Arctic ice", "desert seeps of the Sahara"], "mangrove shallows as nurseries", 2),
   q("Blacktip reef sharks are typical of…", ["only the abyssal trench", "tropical lagoons and reef flats", "only Alpine lakes", "wheat fields"], "tropical lagoons and reef flats", 1),
-  q("Whale-shark spot patterns are…", ["repainted each year as a rule", "unique to individuals, like a fingerprint", "identical in every ocean", "absent — they are plain grey always"], "unique to individuals, like a fingerprint", 2),
+  q("Whale-shark spot patterns are…", ["repainted each year as a rule", "unique to individuals, like a fingerprint", "identical in every ocean", "absent — they are plain gray always"], "unique to individuals, like a fingerprint", 2),
   q("A chimaera is also called a…", ["skipjack or bluefin tuna", "ratfish or ghost shark", "porpoise or dolphin", "sea cucumber"], "ratfish or ghost shark", 2),
   q("The giant oceanic manta is…", ["Carcharodon carcharias", "Mobula birostris", "Rhincodon typus", "Dasyatis pastinaca"], "Mobula birostris", 3),
   q("Devil rays are in the genus…", ["Pristis", "Mobula", "Lamna", "Hippocampus"], "Mobula", 3),

@@ -120,7 +120,7 @@ export function Satchel() {
                     </li>
                   ))}
                 {(Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || !isPaintId(id)) ? (
-                  <li className="text-sm text-fg-muted">Lamps sometimes give paint in their colour (rare rainbow “prism” paint: about 1 in 10,000). Use it at the outfitter shop.</li>
+                  <li className="text-sm text-fg-muted">Lamps sometimes give paint in their color (rare rainbow “prism” paint: about 1 in 10,000). Use it at the outfitter shop.</li>
                 ) : null}
               </ul>
             </section>

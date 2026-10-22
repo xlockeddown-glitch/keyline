@@ -19,7 +19,7 @@ nyc: {
       q("Rockefeller Center is in…", ["Battery Park", "Midtown", "Astoria", "Park Slope"], "Midtown", 1),
     ],
     arts: [
-      q("Broadway theatre is concentrated around…", ["Wall Street / Lower Manhattan", "Times Square / Midtown", "Coney Island / south Brooklyn", "Harlem / upper Manhattan"], "Times Square / Midtown", 1),
+      q("Broadway theater is concentrated around…", ["Wall Street / Lower Manhattan", "Times Square / Midtown", "Coney Island / south Brooklyn", "Harlem / upper Manhattan"], "Times Square / Midtown", 1),
       q("MoMA is in…", ["Brooklyn Heights", "Midtown Manhattan", "Staten Island", "the Bronx Zoo grounds"], "Midtown Manhattan", 1),
     ],
     food: [
@@ -43,7 +43,7 @@ london: {
       q("The Shard is a…", ["suspension bridge", "skyscraper", "covered market", "royal palace"], "skyscraper", 1),
     ],
     arts: [
-      q("The West End is London's…", ["Square Mile finance hub", "theatre district", "Docklands port area", "airport zone"], "theatre district", 1),
+      q("The West End is London's…", ["Square Mile finance hub", "theater district", "Docklands port area", "airport zone"], "theater district", 1),
       q("The British Museum is in…", ["Greenwich", "Bloomsbury", "South Kensington only", "the City's guildhall"], "Bloomsbury", 2),
     ],
     food: [

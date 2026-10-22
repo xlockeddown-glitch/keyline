@@ -65,7 +65,7 @@ export const DAILY_BANK: QuestDef[] = [
 
 export const WEEKLY_BANK: QuestDef[] = [
   { id: "w-lamps", kind: "week", title: "Lamp lighter", sub: "Light 25 lamps, green or higher.", need: 25, effort: 2, reward: r(2_000, "green") },
-  { id: "w-ladder", kind: "week", title: "Colour ladder", sub: "One right lamp in each of white, blue, green, amber and red.", need: 5, effort: 2, reward: r(1_500, "amber") },
+  { id: "w-ladder", kind: "week", title: "Color ladder", sub: "One right lamp in each of white, blue, green, amber and red.", need: 5, effort: 2, reward: r(1_500, "amber") },
   { id: "w-streak", kind: "week", title: "Hot hand", sub: "15 right lamps in a row.", need: 15, effort: 2, reward: r(1_000, "blue", "green") },
   { id: "w-out", kind: "week", title: "Out and about", sub: "Finish 3 different ride games.", need: 3, effort: 1, reward: r(1_200, "blue") },
   { id: "w-cache", kind: "week", title: "Regular", sub: "Open the match cache on 4 days.", need: 4, effort: 1, reward: r(1_000, "green") },

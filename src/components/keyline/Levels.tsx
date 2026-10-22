@@ -15,7 +15,7 @@ const CAT_LABEL: Record<TriviaCat, string> = {
 
 export function rewardLine(r: LevelReward): string {
   const bits = [`+${r.match.n} ${TIER_LABEL[r.match.tier]} match${r.match.n === 1 ? "" : "es"}`];
-  if (r.nameColor) bits.push(`${NAME_COLORS.find((c) => c.id === r.nameColor)?.label} name colour`);
+  if (r.nameColor) bits.push(`${NAME_COLORS.find((c) => c.id === r.nameColor)?.label} name color`);
   if (r.boost) bits.push("a 15-min double streak boost");
   if (r.gift) bits.push("a match to gift a friend");
   return bits.join(" · ");
@@ -178,7 +178,7 @@ export function LevelPanel() {
 
       {v.colors.length ? (
         <div className="mt-3">
-          <p className="kicker">Name colour</p>
+          <p className="kicker">Name color</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <button type="button" className={`lvl-swatch ${!v.color ? "is-on" : ""}`} onClick={() => pick({ color: "" })}>None</button>
             {v.colors.map((c) => (

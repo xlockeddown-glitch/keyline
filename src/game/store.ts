@@ -2211,7 +2211,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (!spec) return;
     const next = applyBank(get().keys, spec, matchCap);
     if (!next) {
-      set({ toast: "You don't have enough of that colour to trade." });
+      set({ toast: "You don't have enough of that color to trade." });
       window.setTimeout(() => set({ toast: null }), 1600);
       return;
     }

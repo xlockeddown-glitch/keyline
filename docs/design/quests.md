@@ -27,7 +27,7 @@ They pay no coin or matches directly. They pay cloths, titles, a schematic and a
 - **On the device.** `QuestLog` (`perfects`, `perfectRow`, `bestRow`, `reds`, `sawViolet`, `circuit`, `claimed`, `cloths`, `worn`, `title`, `patterns`) lives in the local save and is updated by `noteAnswer` / `noteClear` / `notePrint` in `store.ts`.
 - **On the server, only the rewards.** A claim pushes a `cloth` op, and `wallet.ts clothOp` checks some proof:
   - scarf: the city must be unlocked, and 3 press stock are spent;
-  - road-dust: the server's walk metres must be ≥ 10 km;
+  - road-dust: the server's walk meters must be ≥ 10 km;
   - red-book: a red vault visited in every city;
   - night-glass: a pattern and a press stock are spent.
 - **Not verified on the server:**
@@ -54,7 +54,7 @@ They pay no coin or matches directly. They pay cloths, titles, a schematic and a
 - **Weekly:** Monday 00:00 America/Chicago.
 - **Monthly:** the 1st, 00:00 America/Chicago.
 - **Why:** the server already keys daily goals, spark caps and street pickups to the Chicago day (`walletApply.ts chicagoDay`). One clock means one period key everyone shares (`W2026-44`, `M2026-11`), the same quests for all, and nobody gains by switching city to reset early.
-- Player-city time would mean one period per city and lets travelling players reset early.
+- Player-city time would mean one period per city and lets traveling players reset early.
 - Fix to do alongside this: the `dgoal` proof query uses `day + "T00:00:00Z"` (UTC midnight). Quest windows must use the Chicago boundary.
 
 ### Counting rules (all quests)
@@ -150,7 +150,7 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 | Scholar's clip | 8 / 4 / 0 + 1 | +3 s on the lamp timer | device only. The server's answer window (`WINDOW_MAX_MS` 40 s, `triviaService.ts`) already allows the extra 3 s for everyone, so ownership isn't checked |
 | Sprinter's strap | 6 / 0 / 8 + 1 | **nothing.** Its own blurb says "Every coat walks the same. The strap doesn't change it." | n/a |
 | Wider lantern | 10 / 6 / 0 + 1 | reach 200 m instead of 140 m (`interactRadius`), shown in the HUD | device only |
-| Lucky bit | 12 / 8 / 8 + 1 | 15% chance (`LUCKY_MATCH_CHANCE`) a lamp gives back a match of its colour; on a Run/Stack, a blue | **server**: `charmOp` charges stock and sets `meta.lucky`; the server rolls `luckyHit` and pays only if `meta.lucky` is set (`provenBoost`) |
+| Lucky bit | 12 / 8 / 8 + 1 | 15% chance (`LUCKY_MATCH_CHANCE`) a lamp gives back a match of its color; on a Run/Stack, a blue | **server**: `charmOp` charges stock and sets `meta.lucky`; the server rolls `luckyHit` and pays only if `meta.lucky` is set (`provenBoost`) |
 
 **Where they show:**
 - the Satchel → Charms grid, with Equip/Unequip;
@@ -177,7 +177,7 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 1. **Sprinter's strap is a dead item.** It costs real stock and a schematic, and does nothing.
 2. **Scholar and Lantern don't come back on a new device.** They have no server op, so `ownedOf` never returns them. A player who signs in somewhere else loses charms they paid for.
 3. **Scholar isn't really a perk.** The server window lets everyone have the 3 s, so the server never treats it as a special benefit. A guest or a modified client gets it free.
-4. **You can only equip one,** so there's no reason to own more than Lucky. Lucky is strictly better: it's the only one that pays, and the only one the server honours.
+4. **You can only equip one,** so there's no reason to own more than Lucky. Lucky is strictly better: it's the only one that pays, and the only one the server honors.
 5. **Unequipping Lucky turns off its pay,** but nothing in the UI says that only the equipped charm counts. The client sends `lucky: equipped === "lucky"`.
 6. **The "Category charm" name** makes players think owning a charm affects daily topic matches, when it doesn't.
 7. **Paid but not delivered:** the client takes the stock locally for a non-Lucky print and nothing records it on the server. If the save is lost, the stock is gone and so is the charm.
@@ -263,7 +263,7 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
   - Ride rounds come from `ride:<at>:r:<n>`, with the game read from the matching `ride:<at>:d:<n>` row.
   - Grade rows written before 0.1.22 have no `ql`, so they don't count. The first week after release starts from the release time.
 - **Payout:** op `{kind:"quest", period, id}` → `quest:<period>:<id>`, once. Reads come from `fetchQuests`.
-- **Lucky month:** stored in wallet `meta.luckyMonth` (jsonb). The grade pay honours it through `luckyLive`.
+- **Lucky month:** stored in wallet `meta.luckyMonth` (jsonb). The grade pay honors it through `luckyLive`.
 - **Legacy:**
   - op `{kind:"legacy"}`, sent once after a sign-in sync while the save still has `quests.legacy`;
   - keys are `legacy:<milestone>`, `legacy:scarf-<city>`, `legacy:thanks`, `legacy:lucky` and `legacy:charm:<id>`, so each part pays only once.

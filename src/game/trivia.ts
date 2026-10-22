@@ -319,7 +319,7 @@ const CORE_GENERAL: Partial<Record<TriviaCat, TriviaQ[]>> = {
 			"Opera buffa",
 			"Tone poem"
 		], "Ballet", 1),
-		q("The Globe theatre is tied to which playwright?", [
+		q("The Globe theater is tied to which playwright?", [
 			"Christopher Marlowe",
 			"William Shakespeare",
 			"Ben Jonson",
@@ -1036,7 +1036,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			], "Manhattan and the boroughs", 1)
 		],
 		arts: [
-			q("Broadway's theatre district clusters around…", [
+			q("Broadway's theater district clusters around…", [
 				"Wall Street",
 				"Times Square / 42nd Street",
 				"Coney Island",
@@ -1304,7 +1304,7 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 				"Sausage",
 				"Cheese wheel"
 			], "Filled pastry", 2),
-			q("Chicken tikka masala is often called a national favourite in…", [
+			q("Chicken tikka masala is often called a national favorite in…", [
 				"France",
 				"Britain",
 				"Spain",
@@ -1458,10 +1458,10 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			], "Millennium Park", 1),
 			q("Second City is a famous Chicago…", [
 				"Opera and ballet company",
-				"Improvisational comedy theatre",
+				"Improvisational comedy theater",
 				"Classical symphony hall",
 				"Independent blues record label"
-			], "Improvisational comedy theatre", 2),
+			], "Improvisational comedy theater", 2),
 			q("Chicago is a historic capital of which music?", [
 				"Grime and UK garage",
 				"Electric blues and house",
@@ -1674,14 +1674,14 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 			q("Toronto's Old City Hall is known for a…", ["glass pyramid", "clock tower on Queen Street", "retractable roof", "gold dome copied from Boston"], "clock tower on Queen Street", 2),
 			q("The new Toronto City Hall's curved towers were designed by…", ["Frank Gehry", "Viljo Revell", "Daniel Libeskind", "I. M. Pei"], "Viljo Revell", 2),
 			q("Bloor-Yonge is a major Toronto…", ["airport", "subway transfer", "island", "legislature"], "subway transfer", 1),
-			q("The Don River in Toronto flows toward…", ["Hudson Bay via the north", "the harbour / Lake Ontario", "Lake Huron / Georgian Bay", "Lake Erie / Niagara Falls"], "the harbour / Lake Ontario", 2),
+			q("The Don River in Toronto flows toward…", ["Hudson Bay via the north", "the harbor / Lake Ontario", "Lake Huron / Georgian Bay", "Lake Erie / Niagara Falls"], "the harbor / Lake Ontario", 2),
 			q("High Park is a large park on Toronto's…", ["eastern bluffs only", "west side", "island airport runway", "Queen's Park lawn"], "west side", 1),
 			q("The Royal Ontario Museum sits on which street?", ["Queen", "Bloor", "King only", "Spadina's south end"], "Bloor", 1),
 			q("The Art Gallery of Ontario faces…", ["Bloor", "Dundas", "the Gardiner", "Yonge-Dundas Square only"], "Dundas", 2),
 			q("The Hockey Hall of Fame in Toronto displays…", ["the Vince Lombardi Trophy", "the Stanley Cup", "the Claret Jug", "the America's Cup only"], "the Stanley Cup", 1),
 			q("Fort York in Toronto dates to fighting in…", ["the American Civil War", "the War of 1812", "World War I", "the Fenian"], "the War of 1812", 2),
 			q("Union Station is Toronto's main…", ["subway-only stop", "intercity rail hall", "ferry terminal", "streetcar barn"], "intercity rail hall", 1),
-			q("Billy Bishop Airport sits on…", ["the mainland at Pearson", "the Toronto Islands", "Hamilton harbour only", "Lake Simcoe"], "the Toronto Islands", 2),
+			q("Billy Bishop Airport sits on…", ["the mainland at Pearson", "the Toronto Islands", "Hamilton harbor only", "Lake Simcoe"], "the Toronto Islands", 2),
 			q("\"The 6ix\" is a nickname for…", ["Hamilton", "Toronto", "Ottawa", "Mississauga only"], "Toronto", 1),
 			q("First Canadian Place is a downtown Toronto…", ["ballpark", "bank tower", "university college", "market hall"], "bank tower", 2),
 			q("The Scarborough Bluffs are…", ["a mountain range north of the city", "lakeside cliffs on Lake Ontario", "a PATH concourse downtown", "a subway yard in the east end"], "lakeside cliffs on Lake Ontario", 2)
@@ -2512,7 +2512,7 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 		],
 		arts: [
 			q("Hollywood is a district of…", ["Burbank only", "Los Angeles", "Santa Barbara", "Las Vegas"], "Los Angeles", 1),
-			q("The Oscars are associated with…", ["the Sundance festival in Utah", "the film industry in Los Angeles", "Broadway theatre in New York", "the Cannes festival in France"], "the film industry in Los Angeles", 1)
+			q("The Oscars are associated with…", ["the Sundance festival in Utah", "the film industry in Los Angeles", "Broadway theater in New York", "the Cannes festival in France"], "the film industry in Los Angeles", 1)
 		]
 	},
 	boston: {

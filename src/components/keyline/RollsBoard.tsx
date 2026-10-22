@@ -196,7 +196,7 @@ export function RollsBoard() {
       <p className="mt-3 text-sm text-pretty text-fg-muted">{kindMeta.blurb}</p>
 
       {kind === "distance" ? null : (
-      <div className="rolls-tiers mt-3" role="tablist" aria-label="Match colour">
+      <div className="rolls-tiers mt-3" role="tablist" aria-label="Match color">
         {ROLL_TIERS.map((t) => (
           <button
             key={t}
@@ -361,7 +361,7 @@ export function RollsBoard() {
 }
 
 function emptyCopy(kind: StandingKind, color: string) {
-  if (kind === "distance") return "No walks posted yet. Sign in, walk the street, and the kilometres fill in.";
+  if (kind === "distance") return "No walks posted yet. Sign in, walk the street, and the kilometers fill in.";
   if (kind === "speed") return `No ${color.toLowerCase()} times yet. Answer ten trivia cards to rank.`;
   if (kind === "accuracy") {
     return `Need ${ACCURACY_MIN} ${color.toLowerCase()} trivia cards answered. Nobody's there yet.`;

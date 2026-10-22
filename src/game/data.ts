@@ -1570,7 +1570,7 @@ const toronto: City = {
       lng: -79.3871,
       kind: "landmark",
       tier: "violet",
-      lore: "553 metres of concrete and a glass floor. Opened 1976 as a CN communications mast.",
+      lore: "553 meters of concrete and a glass floor. Opened 1976 as a CN communications mast.",
     }),
     poi({
       id: "nps",
@@ -3085,7 +3085,7 @@ const CHICAGO_MARKS: Poi[] = [
   poi({ id: "chinatown-chi", name: "Chinatown Square", lat: 41.853, lng: -87.632, kind: "landmark", tier: "white", lore: "The gate and the square south of the Loop. A blank under the 'L'." }),
   poi({ id: "riverwalk-chi", name: "Chicago Riverwalk", lat: 41.8885, lng: -87.6212, kind: "water", tier: "white", lore: "Below street level along the river. Kayaks and a lamp on a landing." }),
   poi({ id: "wicker-pk", name: "Wicker Park", lat: 41.9086, lng: -87.6773, kind: "park", tier: "white", lore: "A triangle of lawn near the six-way crossing of North, Damen and Milwaukee. The neighborhood took its name." }),
-  poi({ id: "second-city", name: "Second City — Old Town", lat: 41.9116, lng: -87.635, kind: "theatre", tier: "white", lore: "The brick theatre on Wells. A small lamp by the marquee." }),
+  poi({ id: "second-city", name: "Second City — Old Town", lat: 41.9116, lng: -87.635, kind: "theatre", tier: "white", lore: "The brick theater on Wells. A small lamp by the marquee." }),
   poi({ id: "pilsen-18", name: "18th Street — Pilsen", lat: 41.8578, lng: -87.656, kind: "landmark", tier: "white", lore: "Murals on the Pink Line. A neighborhood corner south of the Loop." }),
   poi({ id: "grant-field", name: "Hutchinson Field", lat: 41.8722, lng: -87.6189, kind: "park", tier: "white", lore: "Grant Park's south lawn. The fountain uphill, the museum campus south." }),
   poi({ id: "oz-park", name: "Oz Park", lat: 41.9215, lng: -87.6465, kind: "park", tier: "white", lore: "Lincoln Park's yellow brick. A tin man, a small lamp." }),
@@ -3106,7 +3106,7 @@ const CHICAGO_MARKS: Poi[] = [
 ];
 
 const DETROIT_MARKS: Poi[] = [
-  poi({ id: "grand-circus", name: "Grand Circus Park", lat: 42.3365, lng: -83.0497, kind: "park", tier: "white", lore: "A pair of half-circles on Woodward. The old theatre district's lawn." }),
+  poi({ id: "grand-circus", name: "Grand Circus Park", lat: 42.3365, lng: -83.0497, kind: "park", tier: "white", lore: "A pair of half-circles on Woodward. The old theater district's lawn." }),
   poi({ id: "riverwalk-det", name: "Detroit Riverwalk", lat: 42.3285, lng: -83.04, kind: "water", tier: "white", lore: "Canada across the water. A path from Hart Plaza toward the east." }),
   poi({ id: "the-belt", name: "The Belt", lat: 42.3355, lng: -83.0475, kind: "landmark", tier: "white", lore: "An alley of murals between Broadway and Library. Lights at night." }),
   poi({ id: "dequindre", name: "Dequindre Cut", lat: 42.338, lng: -83.0325, kind: "park", tier: "white", lore: "A freight cut turned into a greenway. Bikes below street grade." }),
@@ -3171,11 +3171,11 @@ const TORONTO_MARKS: Poi[] = [
   poi({ id: "chinatown-spadina", name: "Chinatown — Spadina", lat: 43.6529, lng: -79.3981, kind: "food", tier: "white", lore: "Dundas and Spadina. A streetcar through the produce." }),
   poi({ id: "roundhouse-to", name: "Roundhouse Park", lat: 43.6409, lng: -79.3859, kind: "park", tier: "white", lore: "A railway roundhouse under the Tower. Steam Whistle in the stalls." }),
   poi({ id: "yorkville-to", name: "Yorkville", lat: 43.6706, lng: -79.3933, kind: "landmark", tier: "white", lore: "Bloor's old village. Cafes, a park on a parking garage." }),
-  poi({ id: "sugar-beach", name: "Sugar Beach", lat: 43.6426, lng: -79.3674, kind: "water", tier: "white", lore: "Pink umbrellas on the inner harbour. The Redpath silos next door." }),
+  poi({ id: "sugar-beach", name: "Sugar Beach", lat: 43.6426, lng: -79.3674, kind: "water", tier: "white", lore: "Pink umbrellas on the inner harbor. The Redpath silos next door." }),
   poi({ id: "allan-gardens", name: "Allan Gardens", lat: 43.6617, lng: -79.3747, kind: "park", tier: "white", lore: "A Victorian greenhouse east of Yonge. Palms in January." }),
   poi({ id: "the-annex", name: "The Annex", lat: 43.6697, lng: -79.4035, kind: "landmark", tier: "white", lore: "Victorian houses and deep porches west of the university, along Bloor between Bathurst and Avenue Road." }),
   poi({ id: "massey-hall", name: "Massey Hall", lat: 43.6473, lng: -79.3774, kind: "theatre", tier: "blue", lore: "1894, still a room that rings. Shuter Street's old hall." }),
-  poi({ id: "elgin-to", name: "Elgin and Winter Garden", lat: 43.653, lng: -79.3792, kind: "theatre", tier: "blue", lore: "A stacked Edwardian pair. The last operating double-decker theatre of its kind." }),
+  poi({ id: "elgin-to", name: "Elgin and Winter Garden", lat: 43.653, lng: -79.3792, kind: "theatre", tier: "blue", lore: "A stacked Edwardian pair. The last operating double-decker theater of its kind." }),
   poi({ id: "tiff-lightbox", name: "TIFF Lightbox", lat: 43.6467, lng: -79.3903, kind: "theatre", tier: "blue", lore: "King West. The film festival's year-round house." }),
   poi({ id: "st-james-to", name: "Cathedral Church of St. James", lat: 43.6502, lng: -79.3741, kind: "civic", tier: "blue", lore: "The Anglican cathedral on King. A spire over the old town." }),
   poi({ id: "osgoode", name: "Osgoode Hall", lat: 43.652, lng: -79.3858, kind: "civic", tier: "blue", lore: "The Law Society's iron fence. Courts, a lawn, Queen and University." }),
