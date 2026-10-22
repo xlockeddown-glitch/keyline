@@ -6,8 +6,8 @@ import type { Poi, Tier } from "./types";
  * "Need a X match": poi.tier for lamps, series.cost for The Run / The Stack.
  * (v0.0.18: the Run marker was hard-coded tier-amber while it costs a blue match.)
  */
-const LANTERN = `<span class="lantern"><i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"></i></i><i class="lantern-post"></i></span>`;
-const STACK_LAMP = `<span class="stack-lamp"><i class="lantern-cap"></i><i class="stack-globe a"><i class="lantern-glass"></i></i><i class="stack-globe b"><i class="lantern-glass"></i></i><i class="lantern-post"></i></span>`;
+const LANTERN = `<span class="lantern"><i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"><i class="lantern-flick"></i></i></i><i class="lantern-post"></i></span>`;
+const STACK_LAMP = `<span class="stack-lamp"><i class="lantern-cap"></i><i class="stack-globe a"><i class="lantern-glass"><i class="lantern-flick"></i></i></i><i class="stack-globe b"><i class="lantern-glass"><i class="lantern-flick"></i></i></i><i class="lantern-post"></i></span>`;
 
 export function vaultPinHtml(poi: Pick<Poi, "tier">, o: { cooling?: boolean } = {}) {
   return `<div class="vault-pin tier-${poi.tier}${o.cooling ? " cooling" : ""}">${LANTERN}</div>`;
