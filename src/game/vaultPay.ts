@@ -12,7 +12,7 @@ import type { Tier, TriviaDiff } from "./types.ts";
 export const SCHEMATIC_CHANCE = 0.08;
 /** A perfect answer. */
 export const PERFECT_BLUE_CHANCE = 0.1;
-/** Lucky charm, a match of the lamp's own colour. */
+/** Lucky (kept by old Lucky-bit owners, or on for a month from a Full month quest): a match of the lamp's own colour. */
 export const LUCKY_MATCH_CHANCE = 0.15;
 /** Vellum when the lamp is not a park or a campus (those pay 2). */
 export const VELLUM_CHANCE = 0.4;
@@ -79,8 +79,7 @@ export function lampExtra(tier: Tier): string {
   const stock = lampStock(tier);
   if (stock === "city") bits.push("city stock");
   if (stock === "ward") bits.push("city stock, or the ward's cut");
-  if (tier === "amber" || tier === "red" || tier === "violet") bits.push("schematic");
-  else if (tier !== "white") bits.push("schematic about 1 in 12");
+  // 0.1.22: schematics no longer drop (lampSchematicHits stays for the old odds' test only).
   return bits.join(" · ");
 }
 
@@ -124,7 +123,7 @@ export function paintFromClears(clears: number, paintIn: number): string | null 
 
 export const PAY_NOTES = [
   "These coin amounts are for a normal question. Easy questions pay about 70% of that. Hard questions pay about 45% more. Answering several right in a row adds up to 40% more.",
-  "Opening a lamp uses one match of its colour. A very fast right answer has a 1 in 10 chance of a free blue match. With the Lucky charm on, about 1 in 7 lamps also give back a match of their colour.",
+  "Opening a lamp uses one match of its colour. A very fast right answer has a 1 in 10 chance of a free blue match. With Lucky on (kept from the old Lucky bit, or a month from the Full month quest), about 1 in 7 lamps also give back a match of their colour.",
   `Paint is that lamp's colour. Prism is separate: any lamp, about 1 in ${ULTRA_DROP_IN.toLocaleString()}, and it can land with the colour can.`,
   "Green and up drop this city's press stock every time. Amber and up, at a named ward, drop that ward's cut instead.",
   "Ink is 1, or 2 at a museum, library, or theatre. A park or a campus drops 2 vellum. Other lamps drop 1 vellum about 2 in 5 times. Brass shows two numbers: what a normal question gives, then what a hard one gives.",

@@ -1,23 +1,5 @@
-import { cityHasWard, cityStaple, isNamedWard, type IngredientId } from "./ingredients.ts";
+import { cityStaple, type IngredientId } from "./ingredients.ts";
 import type { CityId, Tier } from "./types.ts";
-
-const CITY_IDS: CityId[] = [
-  "austin",
-  "temple",
-  "nyc",
-  "sf",
-  "london",
-  "chicago",
-  "detroit",
-  "tucson",
-  "toronto",
-  "la",
-  "boston",
-  "nola",
-  "seattle",
-  "denver",
-  "nashville",
-];
 
 const CITY_NAME: Record<CityId, string> = {
   austin: "Austin",
@@ -41,70 +23,75 @@ export type ClothId = "road-dust" | "red-book" | "night-glass" | `scarf-${CityId
 
 export type Errand = { kind: "row"; n: number } | { kind: "ladder"; seen: Array<"white" | "blue" | "green"> };
 
-export type Circuit = { red: boolean; ward: boolean; printed: boolean; claimed: boolean };
-
-export type LongId = "hundred" | "unbroken" | "walk" | "violet" | "redbook";
+/** 0.1.22: what an old save still owes from the retired milestones and charms, sent to the server once. */
+export type LegacyLog = {
+  claimed: string[];
+  circuits: CityId[];
+  unfinished: boolean;
+  charms: string[];
+};
 
 export type QuestLog = {
   errand: Errand;
-  circuit: Partial<Record<CityId, Circuit>>;
-  perfects: number;
-  perfectRow: number;
-  bestRow: number;
-  reds: Partial<Record<CityId, true>>;
-  sawViolet: boolean;
-  claimed: Partial<Record<LongId, true>>;
   cloths: ClothId[];
   worn: ClothId | null;
   title: string | null;
   patterns: number;
+  /** Set while an old save still has milestone / charm items to move; null once the move is done. */
+  legacy: LegacyLog | null;
 };
 
 const LADDER = ["white", "blue", "green"] as const;
-const AREA_TIERS: Tier[] = ["amber", "red", "violet"];
-
-export function freshQuests(cityId: CityId): QuestLog {
-  return {
-    errand: { kind: "row", n: 0 },
-    circuit: { [cityId]: emptyCircuit() },
-    perfects: 0,
-    perfectRow: 0,
-    bestRow: 0,
-    reds: {},
-    sawViolet: false,
-    claimed: {},
-    cloths: [],
-    worn: null,
-    title: null,
-    patterns: 0,
-  };
+export function freshQuests(_cityId?: CityId): QuestLog {
+  return { errand: { kind: "row", n: 0 }, cloths: [], worn: null, title: null, patterns: 0, legacy: null };
 }
 
-export function hydrateQuests(raw: Partial<QuestLog> | null | undefined, cityId: CityId): QuestLog {
+type OldCircuit = { red?: boolean; ward?: boolean; printed?: boolean; claimed?: boolean };
+type OldLog = {
+  circuit?: Partial<Record<CityId, OldCircuit>>;
+  perfects?: number;
+  bestRow?: number;
+  reds?: Partial<Record<CityId, true>>;
+  sawViolet?: boolean;
+  claimed?: Partial<Record<string, true>>;
+  legacy?: LegacyLog | null;
+};
+
+/** What a pre-0.1.22 quest log still owes: unclaimed armed circuits, claimed long ids, and whether anything was half done. */
+export function legacyOf(raw: OldLog, charms: readonly string[] = []): LegacyLog | null {
+  const old = raw.circuit !== undefined || raw.claimed !== undefined || raw.perfects !== undefined;
+  if (!old && !charms.length) return null;
+  const claimed = Object.keys(raw.claimed ?? {}).filter((k) => raw.claimed?.[k]);
+  const circuits: CityId[] = [];
+  let unfinished = false;
+  for (const [city, c] of Object.entries(raw.circuit ?? {}) as [CityId, OldCircuit][]) {
+    if (!c || c.claimed) continue;
+    if (c.red && c.ward) circuits.push(city);
+    else if (c.red || c.ward || c.printed) unfinished = true;
+  }
+  const started: Record<string, boolean> = {
+    hundred: (raw.perfects ?? 0) > 0,
+    unbroken: (raw.bestRow ?? 0) > 0,
+    violet: false,
+    walk: false,
+    redbook: Object.keys(raw.reds ?? {}).length > 0,
+  };
+  for (const [id, s] of Object.entries(started)) if (s && !claimed.includes(id)) unfinished = true;
+  return { claimed, circuits, unfinished, charms: [...charms] };
+}
+
+export function hydrateQuests(raw: (Partial<QuestLog> & OldLog) | null | undefined, cityId?: CityId, charms: readonly string[] = []): QuestLog {
   const base = freshQuests(cityId);
-  if (!raw) return base;
+  if (!raw) return { ...base, legacy: charms.length ? legacyOf({}, charms) : null };
+  const legacy = raw.legacy !== undefined ? raw.legacy : legacyOf(raw, charms);
   return {
-    ...base,
-    ...raw,
     errand: raw.errand ?? base.errand,
-    circuit: raw.circuit ?? {},
-    reds: raw.reds ?? {},
-    claimed: raw.claimed ?? {},
     cloths: raw.cloths ?? [],
     worn: raw.worn ?? null,
+    title: raw.title ?? null,
     patterns: raw.patterns ?? 0,
-    perfects: raw.perfects ?? 0,
-    perfectRow: raw.perfectRow ?? 0,
-    bestRow: raw.bestRow ?? 0,
+    legacy,
   };
-}
-
-function emptyCircuit(): Circuit {
-  return { red: false, ward: false, printed: false, claimed: false };
-}
-
-function circuit(log: QuestLog, cityId: CityId): Circuit {
-  return log.circuit[cityId] ?? emptyCircuit();
 }
 
 export function errandDone(errand: Errand): boolean {
@@ -120,18 +107,9 @@ export function errandLabel(errand: Errand): { title: string; sub: string } {
   return { title: "White, blue, green", sub: `${n}/3 colors in this city. Pays one city ingredient.` };
 }
 
-export function noteAnswer(log: QuestLog, correct: boolean, perfect: boolean): QuestLog {
-  if (!correct) {
-    const errand = log.errand.kind === "row" ? { kind: "row" as const, n: 0 } : log.errand;
-    return { ...log, perfectRow: 0, errand };
-  }
-  const perfectRow = perfect ? log.perfectRow + 1 : 0;
-  return {
-    ...log,
-    perfects: log.perfects + (perfect ? 1 : 0),
-    perfectRow,
-    bestRow: Math.max(log.bestRow, perfectRow),
-  };
+export function noteAnswer(log: QuestLog, correct: boolean, _perfect?: boolean): QuestLog {
+  if (correct || log.errand.kind !== "row") return log;
+  return { ...log, errand: { kind: "row", n: 0 } };
 }
 
 export function noteClear(log: QuestLog, hit: { cityId: CityId; poiId: string; tier: Tier }): QuestLog {
@@ -142,24 +120,7 @@ export function noteClear(log: QuestLog, hit: { cityId: CityId; poiId: string; t
       errand = { kind: "ladder", seen: errand.seen.includes(hit.tier) ? errand.seen : [...errand.seen, hit.tier] };
     }
   }
-  const cur = circuit(log, hit.cityId);
-  const next: Circuit = { ...cur };
-  if (hit.tier === "red") next.red = true;
-  const wardHere = cityHasWard(hit.cityId);
-  if (wardHere && isNamedWard(hit.poiId) && AREA_TIERS.includes(hit.tier)) next.ward = true;
-  if (!wardHere && AREA_TIERS.includes(hit.tier)) next.ward = true;
-  return {
-    ...log,
-    errand,
-    circuit: { ...log.circuit, [hit.cityId]: next },
-    reds: hit.tier === "red" ? { ...log.reds, [hit.cityId]: true } : log.reds,
-    sawViolet: log.sawViolet || hit.tier === "violet",
-  };
-}
-
-export function notePrint(log: QuestLog, cityId: CityId): QuestLog {
-  const cur = circuit(log, cityId);
-  return { ...log, circuit: { ...log.circuit, [cityId]: { ...cur, printed: true } } };
+  return errand === log.errand ? log : { ...log, errand };
 }
 
 export function rareExtra(tier: Tier, roll: number): "scrap" | "pattern" | null {
@@ -180,52 +141,12 @@ export function claimErrand(log: QuestLog, cityId: CityId): { log: QuestLog; ing
   return { log: { ...log, errand }, ingredient };
 }
 
-export function circuitReady(log: QuestLog, cityId: CityId, staple: number, charms: number): boolean {
-  const c = circuit(log, cityId);
-  if (c.claimed) return false;
-  return c.red && c.ward && staple >= 3 && (c.printed || charms > 0);
-}
-
-export function claimCircuit(log: QuestLog, cityId: CityId, staple: number, charms: number): { log: QuestLog; cloth: ClothId } | null {
-  if (!circuitReady(log, cityId, staple, charms)) return null;
-  const cloth: ClothId = `scarf-${cityId}`;
-  const cur = circuit(log, cityId);
-  const cloths = log.cloths.includes(cloth) ? log.cloths : [...log.cloths, cloth];
-  return {
-    cloth,
-    log: { ...log, cloths, worn: log.worn ?? cloth, circuit: { ...log.circuit, [cityId]: { ...cur, claimed: true } } },
-  };
-}
-
-export function longProgress(log: QuestLog, distanceM: number): Record<LongId, { n: number; need: number; ready: boolean; done: boolean }> {
-  const reds = CITY_IDS.filter((id) => log.reds[id]).length;
-  return {
-    hundred: { n: log.perfects, need: 100, ready: log.perfects >= 100 && !log.claimed.hundred, done: Boolean(log.claimed.hundred) },
-    unbroken: { n: log.bestRow, need: 10, ready: log.bestRow >= 10 && !log.claimed.unbroken, done: Boolean(log.claimed.unbroken) },
-    walk: { n: distanceM, need: 10_000, ready: distanceM >= 10_000 && !log.claimed.walk, done: Boolean(log.claimed.walk) },
-    violet: { n: log.sawViolet ? 1 : 0, need: 1, ready: log.sawViolet && !log.claimed.violet, done: Boolean(log.claimed.violet) },
-    redbook: { n: reds, need: CITY_IDS.length, ready: reds >= CITY_IDS.length && !log.claimed.redbook, done: Boolean(log.claimed.redbook) },
-  };
-}
-
-export function claimLong(log: QuestLog, id: LongId, distanceM: number): { log: QuestLog; schematic?: boolean; pattern?: boolean; cloth?: ClothId; title?: string } | null {
-  const row = longProgress(log, distanceM)[id];
-  if (!row.ready) return null;
-  const claimed = { ...log.claimed, [id]: true as const };
-  if (id === "hundred") return { log: { ...log, claimed, title: "Clean hundred" }, title: "Clean hundred" };
-  if (id === "unbroken") return { log: { ...log, claimed }, schematic: true };
-  if (id === "violet") return { log: { ...log, claimed, patterns: log.patterns + 1 }, pattern: true };
-  if (id === "walk") {
-    const cloths = log.cloths.includes("road-dust") ? log.cloths : [...log.cloths, "road-dust" as const];
-    return { log: { ...log, claimed, cloths, worn: log.worn ?? "road-dust", title: log.title ?? "Walker" }, cloth: "road-dust", title: "Walker" };
-  }
-  const cloths = log.cloths.includes("red-book") ? log.cloths : [...log.cloths, "red-book" as const];
-  return { log: { ...log, claimed, cloths, worn: log.worn ?? "red-book" }, cloth: "red-book" };
-}
-
-export function printPattern(log: QuestLog): { log: QuestLog } | null {
+/** Night glass: a pattern plus one press stock, or (0.1.22) a pattern plus a schematic. */
+export function printPattern(log: QuestLog, stock: { press: boolean; schematics: number }): { log: QuestLog; spend: "press" | "schematic" } | null {
   if (log.patterns < 1 || log.cloths.includes("night-glass")) return null;
-  return { log: { ...log, patterns: log.patterns - 1, cloths: [...log.cloths, "night-glass"], worn: log.worn ?? "night-glass" } };
+  const spend = stock.press ? "press" : stock.schematics > 0 ? "schematic" : null;
+  if (!spend) return null;
+  return { spend, log: { ...log, patterns: log.patterns - 1, cloths: [...log.cloths, "night-glass"], worn: log.worn ?? "night-glass" } };
 }
 
 export function clothName(id: ClothId): string {
@@ -236,10 +157,10 @@ export function clothName(id: ClothId): string {
 }
 
 export function clothEarn(id: ClothId): string {
-  if (id === "road-dust") return "Walk 10 km, or a rare red scrap.";
-  if (id === "red-book") return "A red vault in every city.";
-  if (id === "night-glass") return "Print a violet pattern. Spends one press stock.";
-  return "Finish this city's circuit.";
+  if (id === "road-dust") return "A rare red scrap from a red lamp.";
+  if (id === "red-book") return "No longer earned. Kept by those who have it.";
+  if (id === "night-glass") return "Print a violet pattern. Spends one press stock, or a schematic.";
+  return "No longer earned. Kept by those who have it.";
 }
 
 export function clothPerk(id: ClothId): string {
@@ -258,20 +179,9 @@ export function clothCoin(worn: ClothId | null, cityId: CityId, tier: Tier): num
   return 0;
 }
 
-/** Closet rows: dust, this city's scarf, other owned scarves, the two rare cuts. */
-export function clothShelf(log: QuestLog, cityId: CityId): ClothId[] {
-  const ids: ClothId[] = ["road-dust", `scarf-${cityId}`];
-  for (const id of log.cloths) {
-    if (id.startsWith("scarf-") && !ids.includes(id)) ids.push(id);
-  }
-  ids.push("red-book", "night-glass");
+/** Closet rows: road dust, the night glass, then any legacy cloth this walker owns (scarves, the red book). */
+export function clothShelf(log: QuestLog, _cityId?: CityId): ClothId[] {
+  const ids: ClothId[] = ["road-dust", "night-glass"];
+  for (const id of log.cloths) if (!ids.includes(id)) ids.push(id);
   return ids;
 }
-
-export const LONG_COPY: Record<LongId, { title: string; sub: string }> = {
-  hundred: { title: "Clean hundred", sub: "Give 100 perfect (very fast, right) answers. Earns a title shown under your name." },
-  unbroken: { title: "Unbroken", sub: "Give 10 perfect answers in a row. Earns a schematic." },
-  walk: { title: "The long walk", sub: "Walk 10 km. Earns the Road-dust cloth." },
-  violet: { title: "Night mark", sub: "Light one violet lamp. Earns a coat pattern." },
-  redbook: { title: "The Red Book", sub: "Light a red lamp in every city. Earns a rare cloth." },
-};

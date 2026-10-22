@@ -5,7 +5,7 @@
 import type { Sql } from "../lib/db.ts";
 import type { Tier } from "./types.ts";
 
-export type RewardSource = "lamp" | "market" | "streak" | "cache" | "gift" | "wheel" | "ride" | "merge" | "level" | "street" | "goal" | "daily" | "blitz" | "reward";
+export type RewardSource = "lamp" | "market" | "streak" | "cache" | "gift" | "wheel" | "ride" | "merge" | "level" | "street" | "goal" | "daily" | "blitz" | "quest" | "reward";
 export type RecentReward = { at: number; src: RewardSource; where?: string; coins: number; keys: Partial<Record<Tier, number>>; credit?: Partial<Record<Tier, number>>; merged?: Partial<Record<Tier, number>> };
 
 export const RECENT_MAX = 20;
@@ -13,7 +13,7 @@ export const RECENT_MAX = 20;
 const PREFIX: [string, RewardSource][] = [
   ["grade:", "lamp"], ["street:", "street"], ["cache:", "cache"], ["gift:", "gift"], ["lvgot:", "gift"], ["wheel:", "wheel"],
   ["ride:", "ride"], ["level:", "level"], ["goal:", "goal"], ["dgoal:", "goal"], ["daily:", "daily"], ["blitz", "blitz"], ["contract:", "blitz"],
-  ["friend:", "gift"], ["survey:", "goal"], ["crate:", "cache"],
+  ["friend:", "gift"], ["survey:", "goal"], ["crate:", "cache"], ["quest:", "quest"], ["legacy:", "reward"],
 ];
 
 /** One ledger row → a reward, or null when it gave nothing (spends, purchases, syncs). */
@@ -67,7 +67,7 @@ export function pushRecent(list: readonly RecentReward[], r: RecentReward): Rece
 
 export const SOURCE_LABEL: Record<RewardSource, string> = {
   lamp: "Lamp", market: "Night market", streak: "Streak", cache: "Cache", gift: "Gift", wheel: "Wheel", ride: "Ride", merge: "Merge ↑",
-  level: "Level-up", street: "Street match", goal: "Goal", daily: "Daily run", blitz: "Blitz", reward: "Reward",
+  level: "Level-up", street: "Street match", goal: "Goal", daily: "Daily run", blitz: "Blitz", quest: "Quest", reward: "Reward",
 };
 
 export function ago(at: number, now: number): string {

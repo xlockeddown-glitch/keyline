@@ -1,11 +1,11 @@
-import { CHARMS, TIER_LABEL } from "./data";
-import type { CharmId, Tier } from "./types";
+import { TIER_LABEL } from "./data";
+import type { Tier } from "./types";
 
 export const TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 
 export type MaterialId = "brass" | "ink" | "vellum" | "schematic";
 export type ExtraId = "crate" | "satchel" | "coin";
-export type ItemId = Tier | MaterialId | CharmId | ExtraId;
+export type ItemId = Tier | MaterialId | ExtraId;
 
 export const MATERIALS: Record<
   MaterialId,
@@ -32,7 +32,7 @@ export const MATERIALS: Record<
   schematic: {
     id: "schematic",
     name: "Schematic",
-    blurb: "A rare plan from lamps. Each charm needs one.",
+    blurb: "A rare plan from lamps. Night glass can use one in place of press stock.",
     src: "/sprites/items/schematic.png",
   },
 };
@@ -48,19 +48,8 @@ export const KEY_BLURB: Record<Tier, string> = {
   violet: "The rarest match. Night marks, if you ever find one.",
 };
 
-const CHARM_SRC: Record<CharmId, string> = {
-  scholar: "/sprites/items/scholar.png",
-  sprinter: "/sprites/items/sprinter.png",
-  lantern: "/sprites/vault.png",
-  lucky: "/sprites/items/lucky.png",
-};
-
 export function isTier(id: string): id is Tier {
   return (TIERS as string[]).includes(id);
-}
-
-export function isCharm(id: string): id is CharmId {
-  return id in CHARMS;
 }
 
 export function isMaterial(id: string): id is MaterialId {
@@ -70,7 +59,6 @@ export function isMaterial(id: string): id is MaterialId {
 export function itemSrc(id: ItemId): string {
   if (isTier(id)) return `/sprites/matches/${id}.png`;
   if (isMaterial(id)) return MATERIALS[id].src;
-  if (isCharm(id)) return CHARM_SRC[id];
   if (id === "crate") return "/sprites/items/crate.png";
   if (id === "coin") return "/sprites/items/coin.png";
   return "/sprites/items/satchel.png";
@@ -79,7 +67,6 @@ export function itemSrc(id: ItemId): string {
 export function itemName(id: ItemId): string {
   if (isTier(id)) return `${TIER_LABEL[id]} match`;
   if (isMaterial(id)) return MATERIALS[id].name;
-  if (isCharm(id)) return CHARMS[id].name;
   if (id === "crate") return "Daily crate";
   if (id === "coin") return "Coin";
   return "Satchel";
@@ -88,8 +75,7 @@ export function itemName(id: ItemId): string {
 export function itemBlurb(id: ItemId): string {
   if (isTier(id)) return KEY_BLURB[id];
   if (isMaterial(id)) return MATERIALS[id].blurb;
-  if (isCharm(id)) return CHARMS[id].blurb;
   if (id === "crate") return "A morning box from the print shop. Login days stack to 30. One missed day is forgiven.";
   if (id === "coin") return "Struck for a right answer. The ward pays in brass, not crypto.";
-  return "Your field bag. Matches, stock, and printed charms live here.";
+  return "Your field bag. Matches and stock live here.";
 }

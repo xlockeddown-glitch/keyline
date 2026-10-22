@@ -15,7 +15,7 @@ export const DAILY_LAMPS = 5;
 export const DAILY_RADIUS_M = 1600;
 /** Two route lamps never sit closer than this, so every leg is a real walk. */
 export const DAILY_MIN_SEP_M = 400;
-/** A route lamp lights when the walker is this close (the lantern charm doesn't stretch it). */
+/** A route lamp lights when the walker is this close (the lamp reach doesn't stretch it). */
 export const DAILY_LIGHT_M = 80;
 /** …or at the curb nearest a set-back lamp, if that curb is within this of the lamp. */
 export const DAILY_CURB_MAX_M = 150;

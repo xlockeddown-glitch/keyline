@@ -307,7 +307,7 @@ test("doubling scope: Daily Lantern Run, print shop prices, the bank and the loc
   );
   // The store only reaches for the market inside the lamp / spark / series / street-match paths.
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
-  for (const fn of ["payDailyRun", "bankUp", "bankDown", "payCosmetic", "craft", "buyScout", "buyKiosk", "finishRideRound", "claimWheel", "claimCrate", "claimPulse"]) {
+  for (const fn of ["payDailyRun", "bankUp", "bankDown", "payCosmetic", "printPattern", "buyScout", "buyKiosk", "finishRideRound", "claimWheel", "claimCrate", "claimPulse"]) {
     const start = src.search(new RegExp(`\\n  ${fn}: \\([\\w, ]*\\) => \\{\\n`));
     assert.ok(start > 0, fn);
     const end = src.indexOf("\n  },\n", start);

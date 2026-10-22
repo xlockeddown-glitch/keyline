@@ -3,6 +3,7 @@ import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { CITY_LIST, KIOSK } from "./data";
 import type { ClientOp, RideDeal } from "./walletApply";
+import type { LegacyGrant, QuestStatus } from "./questServer";
 import { COSMETIC_IDS, type Wardrobe } from "./cosmetics";
 import type { CityUnlocks } from "./cityPass";
 import type { CityId, Tier } from "./types";
@@ -85,7 +86,14 @@ const Op = z.discriminatedUnion("kind", [
     lat: z.number().finite().min(-90).max(90),
     lng: z.number().finite().min(-180).max(180),
   }),
-  z.object({ kind: z.literal("charm"), id: z.literal("lucky") }),
+  z.object({ kind: z.literal("quest"), period: z.string().regex(/^(W\d{4}-\d{2}-\d{2}|M\d{4}-\d{2})$/), id: z.string().min(1).max(20) }),
+  z.object({
+    kind: z.literal("legacy"),
+    claimed: z.array(z.string().max(20)).max(8),
+    circuits: z.array(z.string().max(20)).max(20),
+    unfinished: z.boolean(),
+    charms: z.array(z.string().max(20)).max(8),
+  }),
   z.object({ kind: z.literal("cloth"), id: z.string().min(1).max(40) }),
   z.object({ kind: z.literal("daily"), day: Day, city: City }),
   z.object({ kind: z.literal("friend"), id: z.string().min(3).max(80) }),
@@ -131,6 +139,8 @@ export type WalletWire = {
   /** 0.1.9: paint can found (cache) or the can a paint op spent. */
   can?: { car: string; color: string };
   home?: { match: Tier | null; day: string };
+  quest?: { id: string; period: string; lucky?: string };
+  legacy?: LegacyGrant[];
 };
 
 export type SyncWire = {
@@ -192,6 +202,8 @@ export const applyWallet = createServerFn({ method: "POST" })
       hurry: r.hurry,
       can: r.can,
       home: r.home,
+      quest: r.quest,
+      legacy: r.legacy,
     };
   });
 
@@ -208,4 +220,13 @@ export const fetchRecentRewards = createServerFn({ method: "POST" })
     const names = new Map<string, string>();
     for (const c of Object.values(CITIES)) for (const p of c.pois) names.set(p.id, p.name);
     return recentFromLedger(sql, id, (pid) => names.get(pid));
+  });
+
+/** 0.1.22: this week's and this month's quests, counted by the server from its own ledger rows. */
+export const fetchQuests = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<QuestStatus> => {
+    const { getSql } = await import("@/lib/db");
+    const { questStatus } = await import("./questServer");
+    return questStatus(await getSql(), context.userId);
   });

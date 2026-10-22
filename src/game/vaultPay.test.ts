@@ -57,9 +57,9 @@ test("brass, schematic, and stock match the lamp", () => {
   assert.equal(lampStock("green"), "city");
   assert.equal(lampStock("amber"), "ward");
   assert.match(lampExtra("red"), /Brass 5–7/);
-  assert.match(lampExtra("red"), /schematic/);
-  assert.doesNotMatch(lampExtra("red"), /1 in 12/);
-  assert.match(lampExtra("blue"), /schematic about 1 in 12/);
+  // 0.1.22: schematics no longer drop, so the lamp guide no longer lists them.
+  assert.doesNotMatch(lampExtra("red"), /schematic/);
+  assert.doesNotMatch(lampExtra("blue"), /schematic/);
   assert.equal(SCHEMATIC_CHANCE, 0.08);
 });
 

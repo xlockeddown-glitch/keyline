@@ -53,7 +53,7 @@ export function applyTriviaBoosts(input: {
   if (topic && !topics.includes(topic) && topics.length < CHARM_TOPICS_PER_DAY) {
     topics.push(topic);
     white += 1;
-    labels.push("Category charm");
+    labels.push("Topic bonus");
   }
 
   return { white, coins, labels, charmDay: day, charmTopics: topics };

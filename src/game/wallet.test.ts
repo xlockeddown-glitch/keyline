@@ -26,7 +26,6 @@ import {
   PASS_CAP,
   WALK_CAP,
   acceptNonces,
-  charmOp,
   clothOp,
   realCloth,
   applyDelta,
@@ -395,7 +394,12 @@ test("each device is clamped to the first-sync caps", () => {
   assert.equal(realCloth("nope"), null);
   assert.equal(CLOTH_CAP, 18);
   assert.equal(clothOp(emptyWallet(), "nope").ok, false);
-  assert.equal(charmOp(emptyWallet(), "scholar").ok, false);
+  // 0.1.22: night glass takes a pattern and a press stock, or a pattern and a schematic.
+  const w0 = emptyWallet();
+  const bySchem = clothOp({ ...w0, meta: { ...w0.meta, patterns: 1, schematic: 1 } }, "night-glass");
+  assert.equal(bySchem.ok, true);
+  if (bySchem.ok) assert.deepEqual([bySchem.wallet.meta.patterns, bySchem.wallet.meta.schematic], [0, 0]);
+  assert.equal(clothOp({ ...w0, meta: { ...w0.meta, patterns: 1 } }, "night-glass").ok, false);
 });
 
 test("a city pass pays only when every place has a graded visit", () => {
@@ -533,10 +537,7 @@ test("lucky and cloth are granted only when the craft spends its cost", async ()
   const graded = await awardGrade(sql, "lux", "luck1", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
   // 0.1.14: the account's first right lamp in this 800 m square today also pays the new-district bonus (luck2 below, same square, does not).
   assert.equal(graded.wallet.coins, gradeGrant(emptyWallet(), pay({ freshDistrict: true })).award?.coins);
-  const freeCharm = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
-  assert.equal(freeCharm.ok, false);
-  assert.equal(freeCharm.reason, "short");
-  assert.equal(freeCharm.wallet.meta.lucky, false);
+  assert.equal((await canonicalWallet(sql, "lux")).wallet.meta.lucky, false);
   const freeCloth = await applyClientOp(sql, "lux", { kind: "cloth", id: "road-dust" });
   assert.equal(freeCloth.ok, false);
   assert.equal(freeCloth.reason, "unproven");
@@ -553,26 +554,18 @@ test("lucky and cloth are granted only when the craft spends its cost", async ()
     press: 4,
     patterns: 1,
     walkM: 10_000,
+    lucky: true,
   };
   await sql.query(`update player_wallets set meta = $2::jsonb where user_id = $1`, [held.id, JSON.stringify(stock)]);
-  const charm = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
-  assert.equal(charm.ok, true);
-  assert.equal(charm.wallet.meta.lucky, true);
-  assert.equal(charm.wallet.meta.brass, 0);
-  assert.equal(charm.wallet.meta.ink, 0);
-  assert.equal(charm.wallet.meta.press, 3);
   const cloth = await applyClientOp(sql, "lux", { kind: "cloth", id: "road-dust" });
   assert.equal(cloth.ok, true);
   assert.ok(cloth.wallet.meta.cloths.includes("road-dust"));
   const glass = await applyClientOp(sql, "lux", { kind: "cloth", id: "night-glass" });
   assert.equal(glass.ok, true);
   assert.equal(glass.wallet.meta.patterns, 0);
-  assert.equal(glass.wallet.meta.press, 2);
+  assert.equal(glass.wallet.meta.press, 3);
   const dressedGrade = await awardGrade(sql, "lux", "luck2", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
   assert.equal(dressedGrade.wallet.coins - glass.wallet.coins, dressed.award?.coins);
-  const again = await applyClientOp(sql, "lux", { kind: "charm", id: "lucky" });
-  assert.equal(again.replay, true);
-  assert.equal(again.wallet.meta.brass, 0);
 });
 
 test("a goal, a survey and a daily each pay once from server records", async () => {

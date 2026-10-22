@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
-import { CHARMS, CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
+import { CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { carOf, isCarId, type CarId } from "./cars";
@@ -24,7 +24,6 @@ import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type Pla
 import { fetchRetune } from "./retuneJob";
 import { setQuarantine, setRetune } from "./rarity";
 import type {
-  CharmId,
   CityId,
   Journey,
   LootDrop,
@@ -55,25 +54,22 @@ import { bonusDue, rideRamp, chooseRideGame, dealForRide, forfeitRound, loadRide
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, rollIngredient, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
-import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE, VELLUM_CHANCE, lampBrass, lampSchematicHits } from "./vaultPay";
+import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE, VELLUM_CHANCE, lampBrass } from "./vaultPay";
 import { chooseStart, cleanUnlocks, freshUnlocks, goalsCheck, isUnlocked, lampLit, lockLine, migrateUnlocks, runFinished, unlockCity as unlockCityPass, type CityUnlocks } from "./cityPass";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, wheelClaimFailed, wheelDue, type WheelOffer } from "./wheel";
 import {
-  claimCircuit,
-  claimLong,
   grantScrap,
   hydrateQuests,
   noteAnswer,
   noteClear,
-  notePrint,
-  clothName,
   clothCoin,
+  clothName,
   printPattern,
   rareExtra,
   type ClothId,
-  type LongId,
   type QuestLog,
 } from "./quests";
+import { monthKey } from "./questPeriods";
 
 const SAVE_KEY = "keyline-save-v1";
 
@@ -163,8 +159,10 @@ export type GameState = {
   schematics: number;
   pantry: Partial<Record<IngredientId, number>>;
   quests: QuestLog;
-  charms: CharmId[];
-  equipped: CharmId | null;
+  /** 0.1.22: Lucky for good (a Lucky bit printed before charms retired). */
+  lucky: boolean;
+  /** 0.1.22: Lucky on for this one month ("M2026-12"), from a Full month quest bonus. */
+  luckyMonth: string;
   scouts: ScoutId[];
   scout: ScoutId;
   /** 0.0.45 print shop: cosmetic coats and lantern skins (owned, paid so far, worn). Purely visual. */
@@ -331,10 +329,10 @@ export type GameState = {
   payFriendTickets: (ids: string[]) => { fresh: string[]; added: number; coins: number };
   bankUp: (tier: Tier) => void;
   bankDown: (tier: Tier) => void;
-  craft: (id: CharmId) => void;
-  equip: (id: CharmId | null) => void;
-  claimCircuit: () => void;
-  claimLong: (id: LongId) => void;
+  /** 0.1.22: collect a weekly / monthly quest. The server recounts it; resolves to the toast line, or null when refused. */
+  claimQuest: (period: string, id: string) => Promise<string | null>;
+  /** 0.1.22: move an old save's milestones and charms to the server once (signed in only). */
+  runLegacy: () => Promise<void>;
   wearCloth: (id: ClothId | null) => void;
   printPattern: () => void;
   buyScout: (id: ScoutId) => void;
@@ -635,8 +633,8 @@ function persistable(s: GameState) {
     schematics: s.schematics,
     pantry: s.pantry,
     quests: s.quests,
-    charms: s.charms,
-    equipped: s.equipped,
+    lucky: s.lucky,
+    luckyMonth: s.luckyMonth,
     scouts: s.scouts,
     scout: s.scout,
     wardrobe: s.wardrobe,
@@ -874,9 +872,8 @@ async function dealCard(
       : undefined;
   if (!series && !named && !dealBlank) return null;
   const spark = Boolean(st.openVault?.spark);
-  const scholar = st.equipped === "scholar" ? 3000 : 0;
-  const extra = scholar + (st.pressPass > 0 ? 5000 : 0) + (wornPerk(st.scout).vaultMs ?? 0);
-  const windowMs = spark ? 20000 + scholar : step > 0 ? 25000 + scholar : 25000 + extra;
+  const extra = (st.pressPass > 0 ? 5000 : 0) + (wornPerk(st.scout).vaultMs ?? 0);
+  const windowMs = spark ? 20000 : step > 0 ? 25000 : 25000 + extra;
   const spot = series ? seriesLive(st, series.kind) : (named ?? blank);
   const input: DealInput = {
     city: st.cityId,
@@ -891,7 +888,7 @@ async function dealCard(
     pay: {
       streak: Math.max(0, Math.min(80, Math.floor(st.streak) || 0)),
       loot: wornPerk(st.scout).loot ?? 1,
-      lucky: st.equipped === "lucky",
+      lucky: luckyOn(st),
       cloth: st.quests.worn,
       charmDay: typeof st.charmDay === "string" ? st.charmDay.slice(0, 10) : "",
       charmTopics: (st.charmTopics ?? []).slice(0, 3),
@@ -1046,6 +1043,9 @@ function legacyDailyRun(): { day?: unknown; city?: unknown; timeMs?: unknown } |
 
 const saved = typeof window !== "undefined" ? loadSave() : null;
 const passGiftDue = typeof window !== "undefined" && saved?.passGift !== true;
+/** 0.1.22: charms printed before they retired (an old save's `charms`); moved to the server once by runLegacy. */
+const oldCharmsRaw = (saved as { charms?: unknown } | null)?.charms;
+const oldCharms: string[] = Array.isArray(oldCharmsRaw) ? oldCharmsRaw.filter((x): x is string => typeof x === "string") : [];
 const savedCity = saved?.cityId && saved.cityId in CITIES ? saved.cityId : "austin";
 
 export const useGame = create<GameState>((set, get) => ({
@@ -1059,9 +1059,9 @@ export const useGame = create<GameState>((set, get) => ({
   vellum: saved?.vellum ?? 0,
   schematics: saved?.schematics ?? 0,
   pantry: saved?.pantry ?? {},
-  quests: hydrateQuests(saved?.quests, savedCity),
-  charms: saved?.charms ?? [],
-  equipped: saved?.equipped ?? null,
+  quests: hydrateQuests(saved?.quests, savedCity, oldCharms),
+  lucky: saved?.lucky === true || oldCharms.includes("lucky"),
+  luckyMonth: typeof saved?.luckyMonth === "string" ? saved.luckyMonth : "",
   scouts: saved?.scouts?.length ? saved.scouts : ["raccoon"],
   scout: saved?.scout ?? "raccoon",
   wardrobe: cleanWardrobe(saved?.wardrobe),
@@ -1491,7 +1491,7 @@ export const useGame = create<GameState>((set, get) => ({
         return;
       }
       const spark = Boolean(cur.spark);
-      const extra = (get().equipped === "scholar" ? 3000 : 0) + (get().pressPass > 0 ? 5000 : 0) + (wornPerk(get().scout).vaultMs ?? 0);
+      const extra = (get().pressPass > 0 ? 5000 : 0) + (wornPerk(get().scout).vaultMs ?? 0);
       // Check and take the match in one step: if it was spent while the card was coming (another tab, an exchange), the lamp doesn't open.
       // A migrated wallet already paid on the server; that pocket is the one we keep.
       const keys = dealt.wallet ? cleanKeys(dealt.wallet.keys) : cost ? spendMatch(get().keys, cost) : get().keys;
@@ -1785,7 +1785,7 @@ export const useGame = create<GameState>((set, get) => ({
       });
       const baseKeys: Partial<Record<Tier, number>> = { [series.pay]: 1 };
       if (grades.every((g) => g === "perfect")) baseKeys[series.bonus] = 1;
-      else if (get().equipped === "lucky" && Math.random() < 0.15) baseKeys.blue = 1;
+      else if (luckyOn(get()) && Math.random() < 0.15) baseKeys.blue = 1;
       const spot = seriesLive(get(), series.kind);
       const seriesMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
       const sMult = spot && onMarket(seriesMarket, { kind: "series", lat: spot.lat, lng: spot.lng }) ? MARKET_MULT : 1;
@@ -1795,7 +1795,8 @@ export const useGame = create<GameState>((set, get) => ({
       const brass = series.kind === "stack" ? 6 : 4;
       const ink = series.kind === "stack" ? 4 : 3;
       const vellum = series.kind === "stack" ? 3 : 2;
-      const schematic = grades.every((g) => g === "perfect") || Math.random() < (series.kind === "stack" ? 0.28 : 0.2);
+      // 0.1.22: schematics no longer drop (the ones held print Night glass).
+      const schematic = false;
       const ing = rollIngredient(get().cityId, { id: series.id, tier: series.cost });
       const paints = paintsFromServer(series.cost, out.paints);
       let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
@@ -1924,13 +1925,14 @@ export const useGame = create<GameState>((set, get) => ({
     const brass = lampBrass(poi.tier, diff);
     const ink = poi.kind === "museum" || poi.kind === "library" || poi.kind === "theatre" ? 2 : 1;
     const vellum = poi.kind === "park" || poi.kind === "campus" ? 2 : Math.random() < VELLUM_CHANCE ? 1 : 0;
-    const schematic = lampSchematicHits(poi.tier, Math.random());
+    // 0.1.22: schematics no longer drop (the ones held print Night glass).
+    const schematic = false;
     const ing = rollIngredient(get().cityId, poi);
     const paints = paintsFromServer(poi.tier, out.paints);
     let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
     for (const id of paints) pantry = addIngredient(pantry, id);
     const baseKeys: Partial<Record<Tier, number>> = {};
-    if (get().equipped === "lucky" && Math.random() < LUCKY_MATCH_CHANCE) baseKeys[poi.tier] = 1;
+    if (luckyOn(get()) && Math.random() < LUCKY_MATCH_CHANCE) baseKeys[poi.tier] = 1;
     if (grade === "perfect" && Math.random() < PERFECT_BLUE_CHANCE) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
     // Night market: the trivia card's coin and its bonus matches double; the cloth tip and boosts don't.
     const lampPay = marketPay(lampCoin, baseKeys, lampMult);
@@ -2234,70 +2236,62 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 2000);
   },
-  craft: (id) => {
-    if (get().charms.includes(id)) return;
-    const c = CHARMS[id];
-    const s = get();
-    const press = spendIngredient(s.cityId, s.pantry);
-    if (s.brass < c.cost.brass || s.ink < c.cost.ink || s.vellum < c.cost.vellum || s.schematics < c.cost.schematic || !press) {
-      const staple = ingredientName(rollIngredient(s.cityId, { id: "press", tier: "green" }) ?? "pecan");
-      set({ toast: press ? "Need more stock." : `Need more stock. Print wants a ${staple} from a green vault or higher.` });
-      window.setTimeout(() => set({ toast: null }), 1800);
-      return;
+  claimQuest: async (period, id) => {
+    if (!walletLive()) {
+      flashToast(set, get, "Sign in to collect quests.", 1800);
+      return null;
     }
-    sfx.craft();
-    set({
-      brass: s.brass - c.cost.brass,
-      ink: s.ink - c.cost.ink,
-      vellum: s.vellum - c.cost.vellum,
-      schematics: s.schematics - c.cost.schematic,
-      pantry: { ...s.pantry, [press]: (s.pantry[press] ?? 1) - 1 },
-      charms: [...s.charms, id],
-      equipped: s.equipped ?? id,
-      toast: `Printed ${c.name}.`,
-      quests: notePrint(s.quests, s.cityId),
-    });
-    if (id === "lucky") pushOp({ kind: "charm", id: "lucky" });
-    scheduleSave(get);
-    window.setTimeout(() => set({ toast: null }), 1600);
-  },
-  equip: (id) => {
-    set({ equipped: id });
-    scheduleSave(get);
-  },
-  claimCircuit: () => {
-    const s = get();
-    const paid = claimCircuit(s.quests, s.cityId, s.pantry[cityStaple(s.cityId)] ?? 0, s.charms.length);
-    if (!paid) {
-      flashToast(set, get, "Circuit still open. Red, a ward, three stock, and a charm.", 1800);
-      return;
+    const r = await commitWallet({ kind: "quest", period, id });
+    if (!r?.ok && !r?.replay) {
+      flashToast(set, get, r?.reason === "unproven" ? "Not done yet. The server counts it from your lamps." : r?.reason === "closed" ? "That quest has closed." : "Board's busy. Try again in a moment.", 2000);
+      return null;
     }
+    const lucky = r.quest?.lucky;
+    if (lucky) set({ luckyMonth: lucky });
+    const coins = r.award?.coins ?? 0;
+    const keys = Object.entries(r.award?.keys ?? {}).filter(([, n]) => (n ?? 0) > 0) as [Tier, number][];
+    const bits = [coins ? `+${coins.toLocaleString("en-US")} coin` : "", ...keys.map(([t, n]) => `${n > 1 ? `${n} ` : ""}${TIER_LABEL[t]}`), lucky ? "Lucky all next month" : ""].filter(Boolean);
+    const line = r.replay ? "Already collected." : `Quest done! ${bits.join(" · ")}`;
     sfx.pickup();
-    set({ quests: paid.log });
-    pushOp({ kind: "cloth", id: paid.cloth });
-    flashToast(set, get, `${clothName(paid.cloth)} in the closet.`, 1800);
-    scheduleSave(get);
+    flashToast(set, get, line, 2200);
+    saveNow(get);
+    return line;
   },
-  claimLong: (id) => {
-    const paid = claimLong(get().quests, id, get().distanceM);
-    if (!paid) return;
-    sfx.pickup();
-    set({
-      quests: paid.log,
-      schematics: get().schematics + (paid.schematic ? 1 : 0),
-    });
-    if (paid.cloth) pushOp({ kind: "cloth", id: paid.cloth });
-    const msg = paid.title
-      ? `Title: ${paid.title}.`
-      : paid.schematic
-        ? "A schematic from the unbroken run."
-        : paid.pattern
-          ? "A pattern for the press."
-          : paid.cloth
-            ? "Cloth for the lantern."
-            : "Filed.";
-    flashToast(set, get, msg, 1800);
-    scheduleSave(get);
+  runLegacy: async () => {
+    const legacy = get().quests.legacy;
+    if (!legacy || !walletLive()) return;
+    const r = await commitWallet({ kind: "legacy", claimed: legacy.claimed, circuits: legacy.circuits, unfinished: legacy.unfinished, charms: legacy.charms });
+    if (!r?.ok) return;
+    const st = get();
+    let q: QuestLog = { ...st.quests, legacy: null };
+    let schematics = st.schematics;
+    let brass = st.brass;
+    let ink = st.ink;
+    let vellum = st.vellum;
+    let pantry = st.pantry;
+    let lucky = st.lucky;
+    const lines: string[] = [];
+    for (const g of r.legacy ?? []) {
+      if (g.kind === "title") {
+        q = { ...q, title: q.title ?? g.title };
+        lines.push(`Title: ${g.title}`);
+      } else if (g.kind === "schematic") schematics += 1;
+      else if (g.kind === "pattern") q = { ...q, patterns: q.patterns + 1 };
+      else if (g.kind === "cloth") q = { ...q, cloths: q.cloths.includes(g.cloth as ClothId) ? q.cloths : [...q.cloths, g.cloth as ClothId] };
+      else if (g.kind === "thanks") lines.push(`+${g.coins.toLocaleString("en-US")} coin for milestone progress`);
+      else if (g.kind === "lucky") lucky = true;
+      else if (g.kind === "refund") {
+        brass += g.cost.brass;
+        ink += g.cost.ink;
+        vellum += g.cost.vellum;
+        schematics += g.cost.schematic;
+        pantry = addIngredient(pantry, cityStaple(st.cityId));
+        lines.push("Charm refunded");
+      }
+    }
+    set({ quests: q, schematics, brass, ink, vellum, pantry, lucky });
+    if (lines.length) flashToast(set, get, `Milestones and charms retired. ${[...new Set(lines)].join(" · ")}.`, 3200);
+    saveNow(get);
   },
   wearCloth: (id) => {
     const owned = id == null || get().quests.cloths.includes(id);
@@ -2308,16 +2302,17 @@ export const useGame = create<GameState>((set, get) => ({
   printPattern: () => {
     const s = get();
     const press = spendIngredient(s.cityId, s.pantry);
-    const printed = printPattern(s.quests);
-    if (!printed || !press) {
-      flashToast(set, get, "Need a pattern and one press ingredient.", 1600);
+    const printed = printPattern(s.quests, { press: Boolean(press), schematics: s.schematics });
+    if (!printed) {
+      flashToast(set, get, "Need a pattern and one press ingredient or a schematic.", 1600);
       return;
     }
     sfx.craft();
-    set({
-      quests: printed.log,
-      pantry: { ...s.pantry, [press]: (s.pantry[press] ?? 1) - 1 },
-    });
+    set(
+      printed.spend === "press" && press
+        ? { quests: printed.log, pantry: { ...s.pantry, [press]: (s.pantry[press] ?? 1) - 1 } }
+        : { quests: printed.log, schematics: s.schematics - 1 },
+    );
     pushOp({ kind: "cloth", id: "night-glass" });
     flashToast(set, get, "Night glass printed.", 1600);
     scheduleSave(get);
@@ -2475,10 +2470,10 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const st = get();
     const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
-    const charms = Array.from(new Set([...st.charms, ...(o.charms as typeof st.charms)]));
+    const lucky = st.lucky || o.charms.includes("lucky");
     const cloths = Array.from(new Set([...(st.quests.cloths ?? []), ...(o.cloths as typeof st.quests.cloths)]));
-    if (scouts.length === st.scouts.length && charms.length === st.charms.length && cloths.length === (st.quests.cloths ?? []).length) return;
-    set({ scouts, charms, quests: { ...st.quests, cloths } });
+    if (scouts.length === st.scouts.length && lucky === st.lucky && cloths.length === (st.quests.cloths ?? []).length) return;
+    set({ scouts, lucky, quests: { ...st.quests, cloths } });
     saveNow(get);
   },
   grantGiftScout: (id) => {
@@ -3088,9 +3083,14 @@ export function allCities() {
   return CITY_LIST;
 }
 
+/** 0.1.22: Lucky pays when owned for good, or in the month a Full month bonus turned it on (Chicago month). */
+export function luckyOn(st: { lucky: boolean; luckyMonth: string }, now = Date.now()): boolean {
+  return st.lucky || (st.luckyMonth !== "" && st.luckyMonth === monthKey(now));
+}
+
 export function reach() {
   const st = useGame.getState();
-  return interactRadius(st.equipped === "lantern") * (wornPerk(st.scout).reach ?? 1);
+  return interactRadius() * (wornPerk(st.scout).reach ?? 1);
 }
 
 function savedPocket(raw: string | null): { points: number; cities: CityUnlocks } | null {

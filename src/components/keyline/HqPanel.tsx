@@ -5,18 +5,18 @@ import { StreakBoardSection } from "./RideBoards";
 import { PrintPanel } from "./Prints";
 import { MarketLightsPanel } from "./NightMarket";
 import { X } from "lucide-react";
-import { CHARMS, CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
+import { CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { MATERIAL_LIST } from "@/game/items";
 import { INGREDIENTS, cityStaple, isPaintId, type IngredientId } from "@/game/ingredients";
-import { LONG_COPY, circuitReady, clothEarn, clothName, clothPerk, clothShelf, longProgress, type ClothId, type LongId, type QuestLog } from "@/game/quests";
+import { clothEarn, clothName, clothPerk, clothShelf, type ClothId, type QuestLog } from "@/game/quests";
+import { QuestBoard } from "./QuestBoard";
 import { BANK_DOWN, BANK_UP } from "@/game/rewards";
 import { SURVEY_GOALS, surveyHave } from "@/game/survey";
 import { sfx } from "@/game/audio";
 import { fareDesk } from "@/game/ticket";
 import { useGame } from "@/game/store";
-import type { CharmId } from "@/game/types";
 import { DailyGoals } from "./DailyGoals";
 import { ItemIcon } from "./ItemIcon";
 import { AuthChip } from "./AuthChip";
@@ -46,11 +46,7 @@ export function HqPanel() {
   const schematics = useGame((s) => s.schematics);
   const pantry = useGame((s) => s.pantry);
   const quests = useGame((s) => s.quests);
-  const claimCircuit = useGame((s) => s.claimCircuit);
-  const claimLongQuest = useGame((s) => s.claimLong);
   const wearCloth = useGame((s) => s.wearCloth);
-  const charms = useGame((s) => s.charms);
-  const equipped = useGame((s) => s.equipped);
   const pressPass = useGame((s) => s.pressPass);
   const keys = useGame((s) => s.keys);
   const lastCrateDay = useGame((s) => s.lastCrateDay);
@@ -186,7 +182,7 @@ export function HqPanel() {
                 ))}
               </ul>
               <p className="kicker mt-2">Press stock</p>
-              <p className="hq-row-sub">Green, amber, red and violet lamps give this city's ingredient. Spend it on prints, paint and charms at {cityShop(cityId)?.name ?? "the outfitter"}.</p>
+              <p className="hq-row-sub">Green, amber, red and violet lamps give this city's ingredient. Spend it on prints, paint and Night glass at {cityShop(cityId)?.name ?? "the outfitter"}.</p>
               <ul className="grid gap-2">
                 {(Object.keys(pantry) as IngredientId[])
                   .filter((id) => (pantry[id] ?? 0) > 0 && !isPaintId(id))
@@ -241,32 +237,14 @@ export function HqPanel() {
                 Printed and worn at {cityShop(cityId)?.name ?? "the outfitter"}. The journal only keeps the list.
               </p>
               <PrintShop counter={false} />
-              <p className="kicker mt-2">Charms</p>
-              <p className="text-sm text-fg-muted">Printed at {cityShop(cityId)?.name ?? "the outfitter"}. Equip one from the satchel.</p>
               {quests.patterns > 0 && !quests.cloths.includes("night-glass") ? (
                 <div className="hq-row">
                   <div className="hq-row-copy">
                     <p className="hq-row-title">Night glass ×{quests.patterns}</p>
-                    <p className="hq-row-sub">Print it at {cityShop(cityId)?.name ?? "the outfitter"}. One {INGREDIENTS[cityStaple(cityId)].name}.</p>
+                    <p className="hq-row-sub">Print it at {cityShop(cityId)?.name ?? "the outfitter"}. One {INGREDIENTS[cityStaple(cityId)].name}, or a schematic.</p>
                   </div>
                 </div>
               ) : null}
-              {(Object.keys(CHARMS) as CharmId[]).map((id) => {
-                const c = CHARMS[id];
-                const owned = charms.includes(id);
-                return (
-                  <div key={id} className="hq-row">
-                    <ItemIcon item={id} size={40} />
-                    <div className="hq-row-copy">
-                      <p className="hq-row-title">
-                        {c.name}
-                        {owned && equipped === id ? " · on" : ""}
-                      </p>
-                      <p className="hq-row-sub">{owned ? c.blurb : `Not printed. ${c.blurb}`}</p>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           ) : null}
 
@@ -309,19 +287,7 @@ export function HqPanel() {
               </div>
               <PassProgressRow />
               <FriendJournalRow />
-              <QuestDesk
-                act={false}
-                cityId={cityId}
-                cityName={city.name}
-                staple={pantry[cityStaple(cityId)] ?? 0}
-                stapleName={INGREDIENTS[cityStaple(cityId)].name}
-                charms={charms.length}
-                distanceM={distanceM}
-                quests={quests}
-                onCircuit={claimCircuit}
-                onLong={claimLongQuest}
-                onWear={wearCloth}
-              />
+              <QuestDesk act={false} cityId={cityId} quests={quests} onWear={wearCloth} />
               <div>
                 <p className="kicker mt-2">Bank</p>
                 <p className="mt-1 text-xs text-fg-muted">
@@ -409,79 +375,17 @@ export function HqPanel() {
 export function QuestDesk({
   act,
   cityId,
-  cityName,
-  staple,
-  stapleName,
-  charms,
-  distanceM,
   quests,
-  onCircuit,
-  onLong,
   onWear,
 }: {
   act: boolean;
   cityId: import("@/game/types").CityId;
-  cityName: string;
-  staple: number;
-  stapleName: string;
-  charms: number;
-  distanceM: number;
   quests: QuestLog;
-  onCircuit: () => void;
-  onLong: (id: LongId) => void;
   onWear: (id: ClothId | null) => void;
 }) {
-  const circuit = circuitReady(quests, cityId, staple, charms);
-  const cityCircuit = quests.circuit[cityId];
-  const longs = longProgress(quests, distanceM);
   return (
     <div>
-      <p className="kicker mt-2">Milestones</p>
-      <div className="mt-2 grid gap-2">
-        <div className="hq-row">
-          <div className="hq-row-copy">
-            <p className="hq-row-title">{cityName} circuit</p>
-            <p className="hq-row-sub">
-              {cityCircuit?.claimed
-                ? "Scarf claimed."
-                : `To get the scarf: light a red lamp ${cityCircuit?.red ? "✓" : "✗"} · light a lamp in a named area ${cityCircuit?.ward ? "✓" : "✗"} · have 3 ${stapleName} (${staple}/3) · make a charm ${cityCircuit?.printed || charms > 0 ? "✓" : "✗"}`}
-            </p>
-            {cityCircuit?.claimed || !act ? null : (
-              <div className="hq-row-actions">
-                <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!circuit} onClick={onCircuit}>
-                  Claim scarf
-                </button>
-              </div>
-            )}
-            {!act && !cityCircuit?.claimed ? (
-              <p className="hq-row-sub">{circuit ? "Ready at the notice board." : "Not done yet."}</p>
-            ) : null}
-          </div>
-        </div>
-        {(Object.keys(LONG_COPY) as LongId[]).map((id) => {
-          const row = longs[id];
-          const copy = LONG_COPY[id];
-          const shown = id === "walk" ? `${(row.n / 1000).toFixed(1)}/${(row.need / 1000).toFixed(0)} km` : `${Math.min(row.n, row.need)}/${row.need}`;
-          return (
-            <div key={id} className="hq-row">
-              <div className="hq-row-copy">
-                <p className="hq-row-title">{copy.title}</p>
-                <p className="hq-row-sub">
-                  {copy.sub} {shown}.
-                </p>
-                {row.done || !act ? null : (
-                  <div className="hq-row-actions">
-                    <button type="button" className="btn btn-quiet px-3 text-xs" disabled={!row.ready} onClick={() => onLong(id)}>
-                      {row.ready ? "Claim" : "In progress"}
-                    </button>
-                  </div>
-                )}
-                {!act && !row.done ? <p className="hq-row-sub">{row.ready ? "Ready at the notice board." : "In progress."}</p> : null}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <QuestBoard />
       <p className="kicker mt-4">Cloth</p>
       <p className="mt-1 text-xs text-fg-muted">Wear one to get extra coin each time you light a lamp. It doesn't change how you look.</p>
       <div className="mt-2 grid gap-2">

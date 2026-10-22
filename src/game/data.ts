@@ -3758,35 +3758,11 @@ export const KIND_LABEL: Record<import("./types").PoiKind, string> = {
   board: "Notice",
 };
 
-export const CHARMS = {
-  scholar: {
-    id: "scholar" as const,
-    name: "Scholar's clip",
-    blurb: "Three extra seconds on every lamp.",
-    cost: { brass: 8, ink: 4, vellum: 0, schematic: 1 },
-  },
-  sprinter: {
-    id: "sprinter" as const,
-    name: "Sprinter's strap",
-    blurb: "Every coat walks the same. The strap doesn't change it.",
-    cost: { brass: 6, ink: 0, vellum: 8, schematic: 1 },
-  },
-  lantern: {
-    id: "lantern" as const,
-    name: "Wider lantern",
-    blurb: "Reach lamps from farther off.",
-    cost: { brass: 10, ink: 6, vellum: 0, schematic: 1 },
-  },
-  lucky: {
-    id: "lucky" as const,
-    name: "Lucky bit",
-    blurb: "Chance of a spare match in the drop.",
-    cost: { brass: 12, ink: 8, vellum: 8, schematic: 1 },
-  },
-};
+/** 0.1.22: one reach for everyone (the Wider lantern charm is retired; 140 m → 160 m). */
+export const REACH_M = 160;
 
-export function interactRadius(hasLantern: boolean) {
-  return hasLantern ? 200 : 140;
+export function interactRadius(): number {
+  return REACH_M;
 }
 
 export const RUN_ID = "__run__";

@@ -27,7 +27,7 @@ function snapOf() {
     blitzDay: s.lastBlitzDay,
     blitzStep: s.blitzTake > 0 ? Math.min(6, s.blitzMatches.length) : 0,
     wheel: s.wheelClaimed,
-    lucky: s.charms.includes("lucky"),
+    lucky: s.lucky,
     cloths: s.quests.cloths.slice(0, 18),
     distanceM: Math.min(150_000, Math.max(0, Math.floor(s.distanceM) || 0)),
     fares: n(s.fares, FARES_CAP),
@@ -70,6 +70,7 @@ export function WalletSync() {
         if (!live) return;
         useGame.getState().adoptWallet(r);
         if (r.owned) useGame.getState().adoptOwned(r.owned);
+        void useGame.getState().runLegacy();
         notes.push(...(r.giftNotes ?? []));
         if (notes.length) {
           const text = [...new Set(notes)].join(" ");

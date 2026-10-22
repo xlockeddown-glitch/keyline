@@ -2076,7 +2076,7 @@ export function GameMap() {
           distAcc.current = 0;
         }
         // The Giraffe (0.0.51) sees over the rooftops: places get their atlas name from a little farther off.
-        const reachM = interactRadius(st.equipped === "lantern") * (SCOUTS[st.scout]?.perk.sight ?? 1);
+        const reachM = interactRadius() * (SCOUTS[st.scout]?.perk.sight ?? 1);
         const fresh: string[] = [];
         if (!seated) {
           for (const p of livePois(city, st.blanks)) {

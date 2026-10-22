@@ -1,6 +1,6 @@
 import { applyTriviaBoosts, creditWhite } from "./boosts.ts";
 import { chooseStart, cleanUnlocks, freshUnlocks, lampLit, runFinished, unlockCity, type CityUnlocks } from "./cityPass.ts";
-import { CHARMS, CITIES, KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
+import { CITIES, KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
 import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { payDaily } from "./dailyRun.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
@@ -74,6 +74,8 @@ export type WalletMeta = {
   contractN: number;
   /** Lucky bit crafted or brought in on a first sync. Grades pay the spare match only when this is set. */
   lucky: boolean;
+  /** 0.1.22: Lucky on for this one month ("M2026-12"), from a Full month quest bonus. */
+  luckyMonth: string;
   /** Cloth the server has recorded. A grade tip applies only for one of these. */
   cloths: string[];
   /** Metres the first sync already counted, before the walk board had them. */
@@ -181,6 +183,7 @@ const emptyMeta = (): WalletMeta => ({
   contractDay: "",
   contractN: 0,
   lucky: false,
+  luckyMonth: "",
   cloths: [],
   walkM: 0,
   rideOpen: 0,
@@ -259,6 +262,7 @@ export function cleanMeta(raw: unknown): WalletMeta {
     contractDay: typeof m.contractDay === "string" ? m.contractDay.slice(0, 10) : "",
     contractN: num(m.contractN, 24),
     lucky: m.lucky === true,
+    luckyMonth: typeof m.luckyMonth === "string" && /^M\d{4}-\d{2}$/.test(m.luckyMonth) ? m.luckyMonth : "",
     cloths: cleanCloths(m.cloths),
     walkM: num(m.walkM, WALK_CAP),
     rideOpen: num(m.rideOpen, FARE_MAX_MS),
@@ -708,16 +712,6 @@ function spendStock(meta: WalletMeta, cost: StockCost): WalletMeta | null {
   return next;
 }
 
-/** The lucky bit, paid for in the same write. Already owned is not charged again. */
-export function charmOp(w: WalletState, id: string): OpResult {
-  if (id !== "lucky") return { ok: false, reason: "unknown" };
-  if (w.meta.lucky) return { ok: true, wallet: w };
-  const cost = CHARMS.lucky.cost;
-  const meta = spendStock(w.meta, { brass: cost.brass, ink: cost.ink, vellum: cost.vellum, schematic: cost.schematic, press: 1 });
-  if (!meta) return { ok: false, reason: "short" };
-  return applyDelta(w, { meta: { ...meta, lucky: true } });
-}
-
 function redCities(visited: ReadonlySet<string> | undefined): number {
   if (!visited) return 0;
   let n = 0;
@@ -729,7 +723,7 @@ function redCities(visited: ReadonlySet<string> | undefined): number {
 
 /**
  * One real cloth, paid for in the same write.
- * Night glass spends a pattern and a press stock. A scarf spends the circuit's three stock.
+ * Night glass spends a pattern and a press stock (0.1.22: or a pattern and a schematic). A scarf spends the circuit's three stock.
  * Road dust needs the 10 km the server already counted. The red book needs a red vault in every city.
  */
 export function clothOp(w: WalletState, id: string, proof?: { meters?: number; visited?: ReadonlySet<string> }): OpResult {
@@ -739,7 +733,7 @@ export function clothOp(w: WalletState, id: string, proof?: { meters?: number; v
   if (w.meta.cloths.length >= CLOTH_CAP) return { ok: false, reason: "capped" };
   let meta = w.meta;
   if (cloth === "night-glass") {
-    const spent = spendStock(meta, { patterns: 1, press: 1 });
+    const spent = spendStock(meta, { patterns: 1, press: 1 }) ?? spendStock(meta, { patterns: 1, schematic: 1 });
     if (!spent) return { ok: false, reason: "short" };
     meta = spent;
   } else if (cloth.startsWith("scarf-")) {

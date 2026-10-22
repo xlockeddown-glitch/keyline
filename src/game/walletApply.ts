@@ -5,6 +5,7 @@ import { carOf, isCarId, type CarId } from "./cars.ts";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
 import { cityDay } from "./vaultStack.ts";
 import { CAN_ODDS, canId, colorOf, paintPrice, parseCan, rollCan, type Can } from "./carPaint.ts";
+import { LONG_IDS, applyLegacy, claimQuest, luckyLive, type LegacyGrant, type LegacyIn, type LongId } from "./questServer.ts";
 import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cachePrize, payMatch, payMatches, payMatchesOf, streakPrize } from "./goals.ts";
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
@@ -16,7 +17,6 @@ import {
   PASS_CAP,
   bankOp,
   blitzOp,
-  charmOp,
   clothOp,
   contractOp,
   crateOp,
@@ -132,12 +132,14 @@ export async function ownedOf(sql: Sql, userId: string): Promise<{ scouts: Scout
     if (k.startsWith("scout:")) {
       const s = k.slice(6);
       if (s in SCOUTS) scouts.add(s as ScoutId);
-    } else if (k.startsWith("charm:")) charms.add(k.slice(6));
+    } else if (k === "charm:lucky") charms.add("lucky");
     else {
       const g = SCOUT_GIFTS.find((x) => x.key === k);
       if (g) scouts.add(g.scout);
     }
   }
+  // 0.1.22: Lucky is the only charm left; it is owned when the wallet says so (crafted before, or kept through the legacy move).
+  if (wallet.meta.lucky) charms.add("lucky");
   return { scouts: [...scouts], charms: [...charms], cloths: [...(wallet.meta.cloths ?? [])] };
 }
 
@@ -371,10 +373,15 @@ export async function awardGrade(
       )
     : true;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
-  const detailOf = (award: AwardView) =>
+  // 0.1.22: a quest lamp is a right answer on a lamp that spent a match (never a spark, never a blitz card).
+  const questLamp = full.correct && full.clearTier != null && !spark && !full.poiId.startsWith("blitz-");
+  const detailOf = (award: AwardView, counts = true) =>
     JSON.stringify({
       ...award,
       g: full.correct ? letter : "miss",
+      ...(full.correct ? { t: full.poiTier } : {}),
+      ...(questLamp && counts ? { ql: 1 } : {}),
+      ...(full.correct && full.topic ? { tp: full.topic } : {}),
       pv: prevNonce,
       ...(full.correct && full.poiId ? { pi: full.poiId } : {}),
       // 0.1.12: the city, so a house can count today's lamps there (market lanterns and unnamed spots included).
@@ -385,7 +392,7 @@ export async function awardGrade(
       ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
     });
   const r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
-    const owned = provenBoost(pay.lucky, pay.cloth, { lucky: w.meta.lucky, cloths: new Set(w.meta.cloths) });
+    const owned = provenBoost(pay.lucky, pay.cloth, { lucky: luckyLive(w.meta), cloths: new Set(w.meta.cloths) });
     full.lucky = owned.lucky;
     full.cloth = owned.cloth;
     full.luckyHit = owned.lucky && pay.luckyHit;
@@ -395,7 +402,7 @@ export async function awardGrade(
       const spent = spendMatchOp(base, full.clearTier);
       if (!spent.ok) {
         const award = { coins: 0, keys: {}, boosts: [] };
-        return { ok: true, wallet: w, award, detail: detailOf(award) };
+        return { ok: true, wallet: w, award, detail: detailOf(award, false) };
       }
       base = spent.wallet;
     }
@@ -484,7 +491,8 @@ export type ClientOp =
   | { kind: "print"; id: CosmeticId }
   | { kind: "refund"; token: string }
   | { kind: "street"; id: string; tier: Tier; city: CityId; lat: number; lng: number }
-  | { kind: "charm"; id: string }
+  | { kind: "quest"; period: string; id: string }
+  | { kind: "legacy"; claimed: string[]; circuits: string[]; unfinished: boolean; charms: string[] }
   | { kind: "cloth"; id: string }
   | { kind: "daily"; day: string; city: CityId }
   | { kind: "friend"; id: string }
@@ -527,6 +535,10 @@ export type ClientResult = Applied & {
   can?: Can;
   /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
   home?: { match: Tier | null; day: string };
+  /** 0.1.22: the quest a claim paid (and the month Lucky turned on for, from a Full month). */
+  quest?: { id: string; period: string; lucky?: string };
+  /** 0.1.22: what the one-time milestone / charm move paid (fresh grants only; a replay is empty). */
+  legacy?: LegacyGrant[];
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -759,9 +771,23 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     return applied(r);
   }
 
-  if (op.kind === "charm") {
-    const r = await mutateWallet(sql, sessionUserId, `charm:${op.id}`, (w) => charmOp(w, op.id));
-    return applied(r);
+  if (op.kind === "quest") {
+    const r = await claimQuest(sql, sessionUserId, op.period, op.id);
+    return { ...applied(r), authoritative: true, quest: r.quest };
+  }
+
+  if (op.kind === "legacy") {
+    const meters = Math.max(wallet.meta.walkM, await walkedMeters(sql, id));
+    const visited = await visitedPlaces(sql, id);
+    for (const poi of wallet.meta.visits) if (isPlace(poi)) visited.add(poi);
+    const input: LegacyIn = {
+      claimed: op.claimed.filter((x): x is LongId => (LONG_IDS as string[]).includes(x)),
+      circuits: op.circuits.filter((c): c is CityId => c in CITIES),
+      unfinished: op.unfinished === true,
+      charms: op.charms.slice(0, 8),
+    };
+    const r = await applyLegacy(sql, sessionUserId, input, { meters, visited });
+    return { ...applied({ ok: true, replay: false, wallet: r.wallet }), authoritative: true, legacy: r.grants };
   }
 
   if (op.kind === "cloth") {

@@ -61,7 +61,6 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const toggleInv = useGame((s) => s.toggleInv);
   const toggleGuide = useGame((s) => s.toggleGuide);
   const streak = useGame((s) => s.streak);
-  const equipped = useGame((s) => s.equipped);
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
   const city = CITIES[cityId];
@@ -77,7 +76,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       : hud.nearestId === STACK_ID && stackLive && stack
         ? { ...STACK_POI, lat: stack.lat, lng: stack.lng }
         : livePois(city, blanks).find((p) => p.id === hud.nearestId);
-  const reachM = interactRadius(equipped === "lantern");
+  const reachM = interactRadius();
   const service = Boolean(nearest && (isScoutShop(nearest) || isCounter(nearest) || isBoard(nearest)));
   const recasting = Boolean(nearest && !seriesNear && !service && (vaults[nearest.id]?.coolUntil ?? 0) > Date.now());
   const inReach = Boolean(nearest && hud.nearestDist <= reachM);
@@ -234,11 +233,6 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           >
             <span className="relative">
               <ItemIcon item="satchel" size={28} />
-              {equipped ? (
-                <span className="absolute -right-1 -bottom-1">
-                  <ItemIcon item={equipped} size={16} />
-                </span>
-              ) : null}
             </span>
             <span className="hidden lg:block">
               <span className="kicker">Satchel</span>

@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { CHARMS, CITIES, cityShop } from "@/game/data";
+import { CITIES } from "@/game/data";
 import {
   MATERIAL_LIST,
   TIERS,
-  isCharm,
   isMaterial,
   isTier,
   itemBlurb,
@@ -17,8 +16,7 @@ import { carOf } from "@/game/cars";
 import { colorOf, parseCan } from "@/game/carPaint";
 import { useGame } from "@/game/store";
 import { vaultColorNote } from "@/game/vaultNote";
-import type { CharmId } from "@/game/types";
-import { CostIcons, ItemIcon } from "./ItemIcon";
+import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 
 export function Satchel() {
@@ -30,9 +28,6 @@ export function Satchel() {
   const vellum = useGame((s) => s.vellum);
   const schematics = useGame((s) => s.schematics);
   const pantry = useGame((s) => s.pantry);
-  const charms = useGame((s) => s.charms);
-  const equipped = useGame((s) => s.equipped);
-  const equip = useGame((s) => s.equip);
   const cityId = useGame((s) => s.cityId);
   const atlas = useGame((s) => s.atlas);
   const vaults = useGame((s) => s.vaults);
@@ -49,8 +44,7 @@ export function Satchel() {
     setSel(id);
   }
 
-  const count = countOf(sel, keys, have, charms);
-  const charm = isCharm(sel) ? CHARMS[sel] : null;
+  const count = countOf(sel, keys, have);
 
   return (
     <div className="absolute inset-0 z-[720] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
@@ -153,40 +147,16 @@ export function Satchel() {
                 )}
               </ul>
             </section>
-
-            <section>
-              <p className="kicker mb-2">Charms</p>
-              <ul className="grid grid-cols-4 gap-2">
-                {(Object.keys(CHARMS) as CharmId[]).map((id) => (
-                  <li key={id}>
-                    <Slot
-                      item={id}
-                      qty={charms.includes(id) ? 1 : 0}
-                      selected={sel === id}
-                      equipped={equipped === id}
-                      locked={!charms.includes(id)}
-                      onClick={() => pick(id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
           </div>
 
           <aside className="border-t border-border bg-bg-subtle/40 px-5 py-4 sm:border-l sm:border-t-0">
             <div className="flex items-start gap-3">
               <ItemIcon item={sel} size={64} />
               <div>
-                <p className="kicker">{isTier(sel) ? "Match" : isMaterial(sel) ? "Stock" : "Charm"}</p>
+                <p className="kicker">{isTier(sel) ? "Match" : isMaterial(sel) ? "Stock" : "Item"}</p>
                 <h3 className="font-display text-xl leading-tight">{itemName(sel)}</h3>
                 <p className="mt-1 text-sm tabular-nums text-fg-muted">
-                  {isCharm(sel)
-                    ? charms.includes(sel)
-                      ? equipped === sel
-                        ? "Equipped"
-                        : "In the bag"
-                      : "Not printed"
-                    : `${count} carried`}
+                  {`${count} carried`}
                 </p>
               </div>
             </div>
@@ -196,25 +166,6 @@ export function Satchel() {
               <p className="mt-4 text-sm text-pretty text-fg-muted">
                 {vaultColorNote(city.pois, sel, city.name, atlas, vaults, Date.now())}
               </p>
-            ) : null}
-
-            {charm ? (
-              <div className="mt-4 grid gap-3">
-                <CostIcons cost={charm.cost} have={have} />
-                {charms.includes(sel as CharmId) ? (
-                  <button
-                    type="button"
-                    className={`btn ${equipped === sel ? "btn-primary" : "btn-ghost"}`}
-                    onClick={() => equip(equipped === sel ? null : (sel as CharmId))}
-                  >
-                    {equipped === sel ? "Unequip" : "Equip"}
-                  </button>
-                ) : (
-                  <p className="mt-4 text-sm text-fg-muted">
-                    Print this at {cityShop(cityId)?.name ?? "the outfitter"}.
-                  </p>
-                )}
-              </div>
             ) : null}
 
             {isMaterial(sel) ? (
@@ -231,14 +182,12 @@ function Slot({
   item,
   qty,
   selected,
-  equipped,
   locked,
   onClick,
 }: {
   item: ItemId;
   qty: number;
   selected: boolean;
-  equipped?: boolean;
   locked?: boolean;
   onClick: () => void;
 }) {
@@ -251,8 +200,7 @@ function Slot({
       aria-label={`${itemName(item)}${qty ? `, ${qty}` : ""}`}
     >
       <ItemIcon item={item} size={36} />
-      {equipped ? <span className="item-eq">On</span> : null}
-      {!locked && !isCharm(item) ? <span className="item-qty tabular-nums">{qty}</span> : null}
+      {!locked ? <span className="item-qty tabular-nums">{qty}</span> : null}
     </button>
   );
 }
@@ -261,13 +209,11 @@ function countOf(
   id: ItemId,
   keys: Record<string, number>,
   have: { brass: number; ink: number; vellum: number; schematics: number },
-  charms: CharmId[],
 ) {
   if (isTier(id)) return keys[id] ?? 0;
   if (id === "brass") return have.brass;
   if (id === "ink") return have.ink;
   if (id === "vellum") return have.vellum;
   if (id === "schematic") return have.schematics;
-  if (isCharm(id)) return charms.includes(id) ? 1 : 0;
   return 0;
 }

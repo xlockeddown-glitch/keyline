@@ -252,3 +252,22 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 1. Scrap with the Lucky legacy perk (recommended), or full rework (b)?
 2. Raise base reach to 160 m for everyone, or leave 140 m and just refund Lantern owners?
 3. Schematics: give them the Night-glass sink, or retire them and convert held ones to coin (for example, 2,000 each)?
+
+---
+
+## Implementation notes (0.1.22, built)
+- **Decisions (Ryan):** one Chicago clock; quests and rewards as listed above, except the monthly all-three bonus is **Lucky for all of next month** (25,000 coin if Lucky is already owned) instead of a violet match. Cloths stay legacy: no new cloth rewards. Charms are scrapped per B4.
+- **Period keys:** `W<Monday's date>` (e.g. `W2026-10-19`, which avoids ISO-week year edge cases) and `M2026-11`, in `src/game/questPeriods.ts`.
+- **Progress:** `src/game/questServer.ts` recounts from `wallet_ledger`:
+  - `grade:` rows now carry `t` (lamp tier), `tp` (category), and `ql:1` (a right answer on a lamp that spent a match). A spark, a blitz card, or a walk-away replay that couldn't re-spend never gets `ql`.
+  - Ride rounds come from `ride:<at>:r:<n>`, with the game read from the matching `ride:<at>:d:<n>` row.
+  - Grade rows written before 0.1.22 have no `ql`, so they don't count. The first week after release starts from the release time.
+- **Payout:** op `{kind:"quest", period, id}` → `quest:<period>:<id>`, once. Reads come from `fetchQuests`.
+- **Lucky month:** stored in wallet `meta.luckyMonth` (jsonb). The grade pay honours it through `luckyLive`.
+- **Legacy:**
+  - op `{kind:"legacy"}`, sent once after a sign-in sync while the save still has `quests.legacy`;
+  - keys are `legacy:<milestone>`, `legacy:scarf-<city>`, `legacy:thanks`, `legacy:lucky` and `legacy:charm:<id>`, so each part pays only once.
+- **No DB migration.** Everything uses existing tables (ledger rows and the wallet `meta` jsonb).
+- **Known gap, found while building:**
+  - Server wallet craft stock (`meta.brass`/`press`/…) is never credited by any server write. So the old `charm:lucky` op and the server-side Night-glass/scarf `cloth` ops were always refused as "short" in production, and the server never paid Lucky or those cloth tips.
+  - This is why the legacy move grants Lucky to a device that reports a printed Lucky bit (device-trusted, once per account), and grants proven milestone cloths without spending stock.

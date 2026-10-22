@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { CITIES, cityBoard, isQuestBoard } from "@/game/data";
 import { DailyGoals } from "./DailyGoals";
 import { BLITZ_FULL, blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
-import { INGREDIENTS, cityStaple } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
@@ -18,12 +17,7 @@ export function NoticeBoard() {
   const errandId = useGame((s) => s.errandId);
   const place = CITIES[cityId].pois.find((p) => p.id === errandId && p.kind === "board") ?? cityBoard(cityId);
   const city = CITIES[cityId];
-  const pantry = useGame((s) => s.pantry);
   const quests = useGame((s) => s.quests);
-  const charms = useGame((s) => s.charms);
-  const distanceM = useGame((s) => s.distanceM);
-  const claimCircuit = useGame((s) => s.claimCircuit);
-  const claimLongQuest = useGame((s) => s.claimLong);
   const wearCloth = useGame((s) => s.wearCloth);
   const openBlitz = useGame((s) => s.openBlitz);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
@@ -82,19 +76,7 @@ export function NoticeBoard() {
             <button type="button" className="btn btn-ghost" onClick={startContract}>
               {contract ? "Reroll contract" : "Take a contract"}
             </button>
-            <QuestDesk
-              act
-              cityId={cityId}
-              cityName={city.name}
-              staple={pantry[cityStaple(cityId)] ?? 0}
-              stapleName={INGREDIENTS[cityStaple(cityId)].name}
-              charms={charms.length}
-              distanceM={distanceM}
-              quests={quests}
-              onCircuit={claimCircuit}
-              onLong={claimLongQuest}
-              onWear={wearCloth}
-            />
+            <QuestDesk act cityId={cityId} quests={quests} onWear={wearCloth} />
           </div>
         </div>
       </div>

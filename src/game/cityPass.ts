@@ -175,7 +175,7 @@ type OldSave = {
   cityId?: unknown;
   atlas?: unknown;
   dailyPaid?: unknown;
-  quests?: { circuit?: unknown } | null;
+  quests?: object | null;
   journey?: { to?: unknown; from?: unknown } | null;
 };
 
@@ -199,7 +199,7 @@ export function migrateUnlocks(save: OldSave): CityUnlocks {
         runs[city] = (runs[city] ?? 0) + 1;
       }
     }
-  const circuit = save.quests?.circuit;
+  const circuit = (save.quests as { circuit?: unknown } | null | undefined)?.circuit;
   if (circuit && typeof circuit === "object") for (const [id, v] of Object.entries(circuit)) if (v && typeof v === "object" && Object.values(v).some(Boolean)) add(id);
   add(save.journey?.to);
   add(save.journey?.from);

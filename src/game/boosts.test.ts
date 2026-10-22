@@ -72,11 +72,11 @@ test("a miss never pays Perfect timing", () => {
   assert.ok(!miss.labels.includes("Perfect timing"));
 });
 
-test("Category charm: first correct of a topic each UTC day pays +1 white, max 3 topics", () => {
+test("Topic bonus: first correct of a topic each UTC day pays +1 white, max 3 topics", () => {
   assert.equal(CHARM_TOPICS_PER_DAY, 3);
   const local = hit({ streakAfter: 1, topic: "local" });
   assert.equal(local.white, 1);
-  assert.ok(local.labels.includes("Category charm"));
+  assert.ok(local.labels.includes("Topic bonus"));
   assert.deepEqual(local.charmTopics, ["local"]);
 
   const localAgain = hit({ streakAfter: 1, topic: "local", charmTopics: ["local"] });
@@ -96,7 +96,7 @@ test("Category charm: first correct of a topic each UTC day pays +1 white, max 3
   assert.deepEqual(arts.charmTopics, ["local", "sports", "food"]);
 });
 
-test("Category charm rolls over at the UTC day boundary", () => {
+test("Topic bonus rolls over at the UTC day boundary", () => {
   const late = new Date("2026-09-21T23:59:00Z");
   const first = hit({ streakAfter: 1, topic: "history", now: late, charmDay: "2026-09-21" });
   assert.deepEqual(first.charmTopics, ["history"]);
@@ -130,7 +130,7 @@ test("third streak plus a new topic plus a fast answer stacks", () => {
   const stacked = hit({ streakAfter: 3, elapsedMs: 1200, topic: "science" });
   assert.equal(stacked.white, 2);
   assert.equal(stacked.coins, 5);
-  assert.deepEqual(stacked.labels, ["Streak spark", "Perfect timing", "Category charm"]);
+  assert.deepEqual(stacked.labels, ["Streak spark", "Perfect timing", "Topic bonus"]);
 });
 
 test("creditWhite adds whites (0.0.97: the pocket rule settles overflow into merge credits)", () => {
@@ -141,7 +141,7 @@ test("creditWhite adds whites (0.0.97: the pocket rule settles overflow into mer
   assert.equal(creditWhite({ ...keys, white: WHITE_POCKET }, 2).keys.white, WHITE_POCKET + 2);
 });
 
-test("no topic means no Category charm", () => {
+test("no topic means no Topic bonus", () => {
   const none = hit({ streakAfter: 1, topic: null });
   assert.equal(none.white, 0);
   assert.deepEqual(none.charmTopics, []);
