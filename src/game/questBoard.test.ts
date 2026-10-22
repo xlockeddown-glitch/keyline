@@ -1,7 +1,7 @@
 // 0.1.22: quest banks, per-player fair sets, and progress from server events.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BANK, BONUS, FAIR, SET_SIZE, fairSets, longestRun, progressOf, questDef, questProgress, questSet, rewardLine, rewardValue, type QuestEvent } from "./questBoard.ts";
+import { BANK, BANK_V2, BONUS, CHALLENGES, FAIR, FAIR_V2, isV2, SET_SIZE, fairSets, longestRun, progressOf, questDef, questProgress, questSet, rewardLine, rewardValue, type QuestEvent } from "./questBoard.ts";
 import { currentPeriod, dayKey, monthKey, previousPeriod, weekKey } from "./questPeriods.ts";
 import type { CityId, Tier, TriviaCat } from "./types.ts";
 
@@ -161,4 +161,67 @@ test("monthly progress, including the new monthly quests, then the bonus over th
   assert.deepEqual(rows.map((r) => r.id), ["m-tour", "m-night", "m-shelf", "m-streak", "m-bonus"]);
   assert.equal(rows.at(-1)!.done, true);
   assert.equal(questProgress("month", set, narrow).at(-1)!.done, false);
+});
+
+test("0.1.27 banks start next period: this week and October keep their sets, the next week and November get a Challenge", () => {
+  assert.equal(isV2("week", "W2026-10-19"), false);
+  assert.equal(isV2("week", "W2026-10-26"), true);
+  assert.equal(isV2("month", "M2026-10"), false);
+  assert.equal(isV2("month", "M2026-11"), true);
+  assert.equal(isV2("day", "D2026-12-01"), false);
+  for (let i = 0; i < 50; i++) {
+    const old = questSet("week", `p${i}`, "W2026-10-19", { house: true });
+    assert.ok(old.every((d) => BANK.week.includes(d)) && !old.some((d) => d.challenge));
+    for (const [k, key] of [["week", "W2026-10-26"], ["month", "M2026-11"]] as const) {
+      const set = questSet(k, `p${i}`, key, { house: i % 2 === 0 });
+      assert.equal(set.length, SET_SIZE[k]);
+      assert.equal(set.filter((d) => d.challenge).length, 1, `${k} ${i}`);
+      assert.ok(set.at(-1)!.challenge);
+      assert.ok(set.slice(0, -1).every((d) => BANK_V2[k].includes(d)));
+    }
+  }
+  // Challenges vary between players too.
+  const seen = new Set(Array.from({ length: 60 }, (_, i) => questSet("week", `p${i}`, "W2026-10-26", { house: true }).at(-1)!.id));
+  assert.equal(seen.size, CHALLENGES.week.length);
+});
+
+test("0.1.27 regular slots stay inside their fairness band; challenges pay more and never violet", () => {
+  for (const k of ["week", "month"] as const)
+    for (const house of [true, false]) {
+      const sets = fairSets(k, { house }, true);
+      assert.ok(sets.length >= 20, `${k} ${house} ${sets.length}`);
+      for (const set of sets) {
+        assert.equal(set.length, SET_SIZE[k] - 1);
+        const e = set.reduce((a, d) => a + d.effort, 0);
+        const v = set.reduce((a, d) => a + rewardValue(d.reward), 0);
+        assert.ok(e >= FAIR_V2[k].effort[0] && e <= FAIR_V2[k].effort[1]);
+        assert.ok(v >= FAIR_V2[k].value[0] && v <= FAIR_V2[k].value[1]);
+        if (!house) assert.ok(!set.some((d) => d.needs === "house"));
+      }
+      const top = Math.max(...BANK_V2[k].map((d) => rewardValue(d.reward)));
+      for (const c of CHALLENGES[k]) {
+        assert.ok(rewardValue(c.reward) > top, c.id);
+        assert.ok(c.reward.matches.includes("red") && !c.reward.matches.includes("violet"));
+      }
+    }
+  assert.equal(rewardLine(questDef("mc-run")!.reward), "40,000 coin + 2 red matches");
+  // Higher targets on the busiest quests.
+  assert.equal(questDef("w-lamps2")!.need, 50);
+  assert.equal(questDef("w-street2")!.need, 25);
+  assert.equal(questDef("m-shelf2")!.need, 120);
+});
+
+test("challenge and v2 counters: perfect answers, long runs, volume, the bigger shelf", () => {
+  const p = (at: number, perfect: boolean): QuestEvent => ({ ...lamp(at, "white"), perfect } as QuestEvent);
+  const ev = Array.from({ length: 30 }, (_, i) => p(i, i % 2 === 0));
+  assert.equal(prog("wc-perfect", ev).have, 15);
+  assert.equal(prog("wc-perfect", Array.from({ length: 30 }, (_, i) => p(i, true))).done, true);
+  assert.equal(prog("wc-run", Array.from({ length: 40 }, (_, i) => lamp(i, "white"))).done, true);
+  assert.equal(prog("wc-red", Array.from({ length: 6 }, (_, i) => lamp(i, "red"))).done, true);
+  assert.equal(prog("mc-volume", Array.from({ length: 499 }, (_, i) => lamp(i, "white"))).done, false);
+  assert.equal(prog("w-lamps2", Array.from({ length: 49 }, (_, i) => lamp(i, "green"))).done, false);
+  const cats: TriviaCat[] = ["science", "history", "books", "music"];
+  const shelf = Array.from({ length: 120 }, (_, i) => lamp(i, "blue", "austin", cats[i % 4]!));
+  assert.equal(prog("m-shelf2", shelf).done, true);
+  assert.equal(prog("m-shelf2", shelf.slice(0, 119)).done, false);
 });

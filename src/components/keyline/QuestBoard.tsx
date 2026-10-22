@@ -69,9 +69,10 @@ export function QuestBoard({ kinds = ["week", "month"], heading = true }: { kind
             const def = questDef(r.id) as QuestDef;
             const key = `${r.period}:${r.id}`;
             return (
-              <div key={key} className={`hq-row ${def.bonus ? "is-bonus" : ""}`} data-testid={`quest-${r.id}`}>
+              <div key={key} className={`hq-row ${def.bonus ? "is-bonus" : ""}${def.challenge ? " is-challenge" : ""}`} data-testid={`quest-${r.id}`}>
                 <ItemIcon item={def.reward.matches[0] ?? "coin"} size={36} />
                 <div className="hq-row-copy">
+                  {def.challenge ? <p className="quest-challenge-tag">Challenge</p> : null}
                   <p className="hq-row-title">
                     {def.title}
                     {r.grace ? " · last " + kind : ""}

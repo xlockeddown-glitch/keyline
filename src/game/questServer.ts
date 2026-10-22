@@ -49,6 +49,7 @@ export async function questEvents(sql: Sql, id: string, start: number, end: numb
         topic: typeof d.tp === "string" && d.tp ? (d.tp as TriviaCat) : null,
         market: d.mk === 1,
         district: typeof d.d === "string" && d.d ? d.d : null,
+        perfect: d.g === "perfect",
       });
     }
   }

@@ -343,3 +343,27 @@ test("the day runs Chicago midnight to midnight: a lamp at 11:59 PM CT is yester
   await gradeAt(sql, id, "early", p.start + 60_000, { g: "good", ql: 1, t: "amber", c: "austin" });
   assert.equal((await claimQuest(sql, u, p.key, "d-amber", p.start + H)).ok, true);
 });
+
+test("0.1.27: next week's Challenge counts perfect answers on the server; sparks and plain right answers don't", async () => {
+  const sql = await db();
+  const next = currentPeriod("week", currentPeriod("week", NOW).end + 1);
+  const key = next.key >= "W2026-10-26" ? next.key : "W2026-10-26";
+  const p = next.key === key ? next : currentPeriod("week", Date.UTC(2026, 9, 27, 12));
+  const u = who("wcp", "week", [p.key], ["wc-perfect"]);
+  await syncPlayer(sql, u, snap(), `${u}-ph`);
+  const { id } = await canonicalWallet(sql, u);
+  const at = p.start + 3_600_000;
+  for (let i = 0; i < 30; i++) await gradeAt(sql, id, `sp${i}`, at + i, { g: "perfect", sp: 1, t: "white" });
+  for (let i = 0; i < 30; i++) await gradeAt(sql, id, `ok${i}`, at + 100 + i, { g: "good", ql: 1, t: "white" });
+  for (let i = 0; i < 29; i++) await gradeAt(sql, id, `pf${i}`, at + 200 + i, { g: "perfect", ql: 1, t: "white" });
+  const now = at + 7_200_000;
+  assert.equal((await claimQuest(sql, u, p.key, "wc-perfect", now)).reason, "unproven");
+  await gradeAt(sql, id, "pf29", at + 300, { g: "perfect", ql: 1, t: "white" });
+  const before = (await canonicalWallet(sql, u)).wallet.coins;
+  const paid = await claimQuest(sql, u, p.key, "wc-perfect", now);
+  assert.equal(paid.ok, true, paid.reason);
+  assert.equal(paid.wallet.coins - before, 5_000);
+  assert.equal((await claimQuest(sql, u, p.key, "wc-perfect", now)).replay, true);
+  // The old id is not in a v2 set.
+  assert.equal((await claimQuest(sql, u, p.key, "w-lamps", now)).reason, "not-yours");
+});

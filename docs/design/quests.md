@@ -282,3 +282,12 @@ month 9–10 / 57,000–69,000. House quests need a `house:%` row; there is no d
 always scheduled; m-night and m-hop have a month to happen). Guests see the set for account "guest", house off.
 Claims outside your set: `not-yours`. New event sources: `cache:%`, `street:sk:%`, `hook:<city>:<day>`, and the grade `d` district.
 Deploy note: the day key moves from the UTC date to the Chicago date, so the legacy dgoal path may pay once more on deploy evening.
+
+## Harder banks and the Challenge slot (0.1.27)
+
+From week W2026-10-26 and month M2026-11 (`V2_FROM`), sets draw from WEEKLY_BANK_V2 / MONTHLY_BANK_V2 (new ids with a
+`2` suffix; `calc` reuses the counter) for SET_SIZE − 1 regular slots inside FAIR_V2 (week effort 8–9 / value
+8,000–10,500; month effort 7–8 / 50,000–62,000), then one Challenge drawn with its own seed
+(`challenge|account|period`). Challenges: wc-perfect, wc-run, wc-red (5,000 + red); mc-run, mc-volume, mc-perfect
+(40,000 + 2 red). Perfect answers come from the grade row's `g: "perfect"` on a lamp that spent a match. Earlier periods
+keep the original banks, so a set never changes mid-period.

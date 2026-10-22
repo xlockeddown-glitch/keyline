@@ -10,7 +10,7 @@ import type { PeriodKind } from "./questPeriods.ts";
 import type { CityId, Tier, TriviaCat } from "./types.ts";
 
 export type QuestEvent =
-  | { k: "lamp"; at: number; tier: Tier; city: CityId | null; topic: TriviaCat | null; market: boolean; district?: string | null }
+  | { k: "lamp"; at: number; tier: Tier; city: CityId | null; topic: TriviaCat | null; market: boolean; district?: string | null; perfect?: boolean }
   | { k: "miss"; at: number }
   | { k: "ride"; at: number; game: string }
   | { k: "cache"; at: number }
@@ -33,6 +33,10 @@ export type QuestDef = {
   reward: QuestReward;
   needs?: QuestNeeds;
   bonus?: boolean;
+  /** The one hard slot in every weekly / monthly set (from 0.1.27's banks on). */
+  challenge?: boolean;
+  /** Which counter this quest uses when its id differs (a v2 quest with a higher target). */
+  calc?: string;
 };
 
 export type QuestRow = { id: string; have: number; need: number; done: boolean; note?: string };
@@ -93,6 +97,63 @@ export const MONTHLY_BANK: QuestDef[] = [
   { id: "m-days", kind: "month", title: "Steady hand", sub: "Right lamps on 12 different days.", need: 12, effort: 2, reward: r(12_000, "amber") },
 ];
 
+/**
+ * 0.1.27 (Ryan: "finished nearly every weekly and monthly quest on day one"): higher targets and a Challenge slot.
+ * They start at the next period so nobody's current set reshuffles: weeks from Monday 26 Oct 2026, months from
+ * November 2026. New ids (…2) keep old-period claims and new-period claims apart; `calc` reuses the counter.
+ */
+export const V2_FROM: Record<PeriodKind, string | null> = { day: null, week: "W2026-10-26", month: "M2026-11" };
+const v2 = (base: QuestDef[], id: string, over: Partial<QuestDef>): QuestDef => ({ ...base.find((d) => d.id === id)!, id: `${id}2`, calc: id, ...over });
+
+export const WEEKLY_BANK_V2: QuestDef[] = [
+  v2(WEEKLY_BANK, "w-lamps", { sub: "Light 50 lamps, green or higher.", need: 50, effort: 3, reward: r(3_000, "green") }),
+  v2(WEEKLY_BANK, "w-ladder", { effort: 1 }),
+  v2(WEEKLY_BANK, "w-streak", { sub: "25 right lamps in a row.", need: 25, effort: 2, reward: r(1_500, "blue", "green") }),
+  v2(WEEKLY_BANK, "w-out", { effort: 1 }),
+  v2(WEEKLY_BANK, "w-cache", { sub: "Open the match cache on 6 days.", need: 6, effort: 2, reward: r(1_500, "green") }),
+  v2(WEEKLY_BANK, "w-house", { sub: "Turn a house key on 5 days.", need: 5, effort: 2, reward: r(1_500, "green") }),
+  v2(WEEKLY_BANK, "w-roam", { sub: "Light lamps in 18 different districts.", need: 18, effort: 3, reward: r(2_000, "amber") }),
+  v2(WEEKLY_BANK, "w-street", { sub: "Pick up 25 street matches.", need: 25, effort: 2, reward: r(2_000, "green") }),
+  v2(WEEKLY_BANK, "w-amber", { sub: "Light 10 lamps, amber or higher.", need: 10, effort: 3, reward: r(2_500, "amber") }),
+];
+
+export const WEEKLY_CHALLENGES: QuestDef[] = [
+  { id: "wc-perfect", kind: "week", title: "Sharpshooter", sub: "30 perfect answers (right and fast).", need: 30, effort: 3, reward: r(5_000, "red"), challenge: true },
+  { id: "wc-run", kind: "week", title: "Unbroken", sub: "40 right lamps in a row.", need: 40, effort: 3, reward: r(5_000, "red"), challenge: true, calc: "streak" },
+  { id: "wc-red", kind: "week", title: "Red week", sub: "Light 6 lamps, red or higher.", need: 6, effort: 3, reward: r(5_000, "red"), challenge: true, calc: "m-red" },
+];
+
+export const MONTHLY_BANK_V2: QuestDef[] = [
+  v2(MONTHLY_BANK, "m-tour", { effort: 2 }),
+  v2(MONTHLY_BANK, "m-night", { sub: "25 right night-market lamps.", need: 25, effort: 3, reward: r(24_000, "amber") }),
+  {
+    ...v2(MONTHLY_BANK, "m-shelf", {}),
+    sub: "120 right lamps across 4 or more categories, at least 20 in each.",
+    need: 120,
+    effort: 3,
+    reward: r(18_000, "red"),
+  },
+  v2(MONTHLY_BANK, "m-hop", { effort: 2 }),
+  v2(MONTHLY_BANK, "m-streak", { sub: "40 right lamps in a row.", need: 40, effort: 3, reward: r(16_000, "amber") }),
+  v2(MONTHLY_BANK, "m-red", { sub: "Light 20 lamps, red or higher.", need: 20, effort: 3, reward: r(16_000, "red") }),
+  v2(MONTHLY_BANK, "m-days", { sub: "Right lamps on 18 different days.", need: 18, effort: 2, reward: r(14_000, "amber") }),
+];
+export const SHELF2_EACH = 20;
+
+export const MONTHLY_CHALLENGES: QuestDef[] = [
+  { id: "mc-run", kind: "month", title: "Iron streak", sub: "75 right lamps in a row.", need: 75, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "streak" },
+  { id: "mc-volume", kind: "month", title: "Lamplighter of the month", sub: "Answer 500 lamps right.", need: 500, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "d-right" },
+  { id: "mc-perfect", kind: "month", title: "Dead eye", sub: "150 perfect answers (right and fast).", need: 150, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "wc-perfect" },
+];
+
+export const CHALLENGES: Record<PeriodKind, QuestDef[]> = { day: [], week: WEEKLY_CHALLENGES, month: MONTHLY_CHALLENGES };
+
+/** Is this period on the 0.1.27 banks? Period keys sort by date inside a kind. */
+export function isV2(kind: PeriodKind, periodKey: string): boolean {
+  const from = V2_FROM[kind];
+  return from != null && periodKey >= from;
+}
+
 /** The all-done bonus per period (unchanged rewards: green / red / Lucky next month). */
 export const BONUS: Record<PeriodKind, QuestDef> = {
   day: { id: "d-bonus", kind: "day", title: "Full day", sub: "Finish all of today's quests.", need: 4, effort: 1, reward: r(0, "green"), bonus: true },
@@ -110,7 +171,8 @@ export const BONUS: Record<PeriodKind, QuestDef> = {
 };
 
 export const BANK: Record<PeriodKind, QuestDef[]> = { day: DAILY_BANK, week: WEEKLY_BANK, month: MONTHLY_BANK };
-export const QUESTS: QuestDef[] = [...DAILY_BANK, BONUS.day, ...WEEKLY_BANK, BONUS.week, ...MONTHLY_BANK, BONUS.month];
+export const BANK_V2: Record<PeriodKind, QuestDef[]> = { day: DAILY_BANK, week: WEEKLY_BANK_V2, month: MONTHLY_BANK_V2 };
+export const QUESTS: QuestDef[] = [...DAILY_BANK, BONUS.day, ...WEEKLY_BANK, ...WEEKLY_BANK_V2, ...WEEKLY_CHALLENGES, BONUS.week, ...MONTHLY_BANK, ...MONTHLY_BANK_V2, ...MONTHLY_CHALLENGES, BONUS.month];
 
 export function questDef(id: string): QuestDef | null {
   return QUESTS.find((q) => q.id === id) ?? null;
@@ -131,6 +193,13 @@ export const FAIR: Record<PeriodKind, { effort: [number, number]; value: [number
   month: { effort: [9, 10], value: [57_000, 69_000] },
 };
 
+/** 0.1.27 bands for the regular slots (the Challenge slot is drawn on its own, and all three pay the same). */
+export const FAIR_V2: Record<PeriodKind, { effort: [number, number]; value: [number, number] }> = {
+  day: FAIR.day,
+  week: { effort: [8, 9], value: [8_000, 10_500] },
+  month: { effort: [7, 8], value: [50_000, 62_000] },
+};
+
 function combos<T>(xs: T[], n: number): T[][] {
   const out: T[][] = [];
   const pick = (start: number, acc: T[]) => {
@@ -146,10 +215,11 @@ export function eligible(def: QuestDef, ctx: QuestCtx): boolean {
 }
 
 /** Every fair set this player could draw this kind of period (bank order inside a set). */
-export function fairSets(kind: PeriodKind, ctx: QuestCtx): QuestDef[][] {
-  const pool = BANK[kind].filter((d) => eligible(d, ctx));
-  const f = FAIR[kind];
-  return combos(pool, SET_SIZE[kind]).filter((set) => {
+export function fairSets(kind: PeriodKind, ctx: QuestCtx, v2 = false): QuestDef[][] {
+  const pool = (v2 ? BANK_V2 : BANK)[kind].filter((d) => eligible(d, ctx));
+  const f = (v2 ? FAIR_V2 : FAIR)[kind];
+  const n = SET_SIZE[kind] - (v2 && CHALLENGES[kind].length ? 1 : 0);
+  return combos(pool, n).filter((set) => {
     const e = set.reduce((a, d) => a + d.effort, 0);
     const v = set.reduce((a, d) => a + rewardValue(d.reward), 0);
     return e >= f.effort[0] && e <= f.effort[1] && v >= f.value[0] && v <= f.value[1];
@@ -158,9 +228,14 @@ export function fairSets(kind: PeriodKind, ctx: QuestCtx): QuestDef[][] {
 
 /** This player's quests for one period: fixed by (account, period key), the same on the server and the device. */
 export function questSet(kind: PeriodKind, accountId: string, periodKey: string, ctx: QuestCtx): QuestDef[] {
-  const sets = fairSets(kind, ctx);
-  if (!sets.length) return BANK[kind].filter((d) => eligible(d, ctx)).slice(0, SET_SIZE[kind]);
-  return sets[fnv1a(`quests|${accountId}|${periodKey}`) % sets.length]!;
+  const v2 = isV2(kind, periodKey);
+  const sets = fairSets(kind, ctx, v2);
+  const n = SET_SIZE[kind] - (v2 && CHALLENGES[kind].length ? 1 : 0);
+  const regular = sets.length ? sets[fnv1a(`quests|${accountId}|${periodKey}`) % sets.length]! : (v2 ? BANK_V2 : BANK)[kind].filter((d) => eligible(d, ctx)).slice(0, n);
+  if (!v2 || !CHALLENGES[kind].length) return regular;
+  // The Challenge slot: one of the period's hard quests, drawn on its own seed, always last before the bonus.
+  const ch = CHALLENGES[kind];
+  return [...regular, ch[fnv1a(`challenge|${accountId}|${periodKey}`) % ch.length]!];
 }
 
 /** Longest run of right lamps with no miss between them. Sparks are not events, so they neither count nor break it. */
@@ -183,7 +258,11 @@ export function progressOf(def: QuestDef, events: QuestEvent[]): QuestRow {
   const lamps = events.filter((e): e is Lamp => e.k === "lamp");
   const row = (have: number, done = have >= def.need, note?: string): QuestRow => ({ id: def.id, have: Math.min(have, def.need), need: def.need, done, ...(note ? { note } : {}) });
   const atLeast = (t: Tier) => lamps.filter((e) => RANK[e.tier] >= RANK[t]).length;
-  switch (def.id) {
+  switch (def.calc ?? def.id) {
+    case "streak":
+      return row(longestRun(events));
+    case "wc-perfect":
+      return row(lamps.filter((e) => e.perfect).length);
     case "d-right":
       return row(lamps.length);
     case "d-green":
@@ -230,10 +309,11 @@ export function progressOf(def: QuestDef, events: QuestEvent[]): QuestRow {
     case "m-days":
       return row(new Set(lamps.map((e) => chicagoDate.format(new Date(e.at)))).size);
     case "m-shelf": {
+      const each = def.id === "m-shelf2" ? SHELF2_EACH : SHELF_EACH;
       const by = new Map<TriviaCat, number>();
       for (const e of lamps) if (e.topic) by.set(e.topic, (by.get(e.topic) ?? 0) + 1);
-      const topics = [...by.values()].filter((n) => n >= SHELF_EACH).length;
-      return row(lamps.length, lamps.length >= SHELF_TOTAL && topics >= SHELF_TOPICS, `${Math.min(topics, SHELF_TOPICS)}/${SHELF_TOPICS} categories with ${SHELF_EACH}+`);
+      const topics = [...by.values()].filter((n) => n >= each).length;
+      return row(lamps.length, lamps.length >= def.need && topics >= SHELF_TOPICS, `${Math.min(topics, SHELF_TOPICS)}/${SHELF_TOPICS} categories with ${each}+`);
     }
     default:
       return row(0, false);
