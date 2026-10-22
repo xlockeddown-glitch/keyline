@@ -3,7 +3,7 @@ import { cleanCredit, creditHint, settlePocket } from "./goals";
 import { CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
-import { carOf, isCarId, type CarId } from "./cars";
+import { carOf, driveOf, isCarId, type CarId } from "./cars";
 import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
@@ -180,6 +180,8 @@ export type GameState = {
   /** 0.1.8: cars owned (server-reported) and the one you drive (null = the city cab). Showroom open at the dealer. */
   carsOwned: CarId[];
   carOn: CarId | null;
+  /** 0.1.31: the player tapped Driving to go back to the city cab on purpose (otherwise an owned car is always driven). */
+  carCab: boolean;
   /** 0.1.9: paint cans held ("civic:red", one per can) and each car's colour (absent = factory). Server-owned when signed in. */
   carCans: string[];
   carPaint: Partial<Record<CarId, string>>;
@@ -646,6 +648,7 @@ function persistable(s: GameState) {
     marketLight: s.marketLight,
     carsOwned: s.carsOwned,
     carOn: s.carOn,
+    carCab: s.carCab,
     carCans: s.carCans,
     carPaint: s.carPaint,
     houses: s.houses,
@@ -956,6 +959,16 @@ function cleanHouses(v: unknown): Partial<Record<CityId, HouseState>> {
   return out;
 }
 
+function savedCars(raw: string | null): { owned: CarId[]; on: CarId | null; cab: boolean } | null {
+  try {
+    const v = raw ? JSON.parse(raw) : null;
+    if (!v || !Array.isArray(v.carsOwned)) return null;
+    return { owned: v.carsOwned.filter(isCarId), on: isCarId(v.carOn) ? v.carOn : null, cab: v.carCab === true };
+  } catch {
+    return null;
+  }
+}
+
 function cleanCarPaint(v: unknown): Partial<Record<CarId, string>> {
   const out: Partial<Record<CarId, string>> = {};
   if (v && typeof v === "object") for (const [k, c] of Object.entries(v as Record<string, unknown>)) if (isCarId(k) && typeof c === "string" && colorOf(k, c)) out[k] = c;
@@ -1070,7 +1083,8 @@ export const useGame = create<GameState>((set, get) => ({
   lightsOwned: Array.isArray(saved?.lightsOwned) ? saved.lightsOwned.filter((x: unknown) => typeof x === "string") : ["amber"],
   marketLight: typeof saved?.marketLight === "string" ? saved.marketLight : "amber",
   carsOwned: Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [],
-  carOn: isCarId(saved?.carOn) ? saved.carOn : null,
+  carOn: driveOf(Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [], isCarId(saved?.carOn) ? saved.carOn : null, saved?.carCab === true),
+  carCab: saved?.carCab === true,
   carCans: Array.isArray(saved?.carCans) ? saved.carCans.filter((x: unknown) => parseCan(x)) : [],
   carPaint: cleanCarPaint(saved?.carPaint),
   houses: cleanHouses(saved?.houses),
@@ -2340,7 +2354,7 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     const before = { carsOwned: get().carsOwned, carOn: get().carOn };
-    set({ points: get().points - car.price, carsOwned: [...before.carsOwned, id], carOn: id });
+    set({ points: get().points - car.price, carsOwned: [...before.carsOwned, id], carOn: id, carCab: false });
     pushOp({ kind: "car", id }, () => set(before));
     flashToast(set, get, `${car.name} is yours. Tap CAB and it's at the curb.`, 2200);
     scheduleSave(get);
@@ -2412,7 +2426,7 @@ export const useGame = create<GameState>((set, get) => ({
   setHouseNear: (near) => set({ houseNear: near, houseOpen: near ? get().houseOpen : false }),
   driveCar: (id) => {
     if (id && !get().carsOwned.includes(id)) return;
-    set({ carOn: id });
+    set({ carOn: id, carCab: id === null });
     scheduleSave(get);
   },
   setDealerOpen: (open) => set({ dealerOpen: open }),
@@ -2477,7 +2491,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (o.paint) set({ carPaint: cleanCarPaint(o.paint) });
     if (o.cars) {
       const cars = Array.from(new Set([...get().carsOwned, ...o.cars.filter(isCarId)]));
-      set({ carsOwned: cars, carOn: get().carOn && cars.includes(get().carOn!) ? get().carOn : null });
+      set({ carsOwned: cars, carOn: driveOf(cars, get().carOn, get().carCab) });
     }
     const st = get();
     const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
@@ -3162,7 +3176,18 @@ if (typeof window !== "undefined") {
       patch.scout = scoutPatch.scout as ScoutId;
       patch.scouts = scoutPatch.scouts as ScoutId[];
     }
-    if (patch.keys || patch.points != null || patch.cities || patch.scout) useGame.setState(patch);
+    // 0.1.31: and the cars it bought / picked, so this tab doesn't write an old carless save back over them.
+    const cars = savedCars(e.newValue);
+    if (cars) {
+      const owned = Array.from(new Set([...cur.carsOwned, ...cars.owned]));
+      const carOn = driveOf(owned, cars.on ?? cur.carOn, cars.cab);
+      if (owned.length !== cur.carsOwned.length || carOn !== cur.carOn || cars.cab !== cur.carCab) {
+        patch.carsOwned = owned;
+        patch.carOn = carOn;
+        patch.carCab = cars.cab;
+      }
+    }
+    if (patch.keys || patch.points != null || patch.cities || patch.scout || patch.carsOwned) useGame.setState(patch);
     // 0.0.58: and the cards it was dealt, so this tab doesn't deal them again.
     const seen = savedSeen(e.newValue);
     if (!seen) return;

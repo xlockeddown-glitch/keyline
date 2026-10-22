@@ -30,6 +30,16 @@ export function carPace(id: string | null | undefined): number {
   return carOf(id)?.pace ?? 1;
 }
 
+/**
+ * 0.1.31: the car you drive. A bought car is yours in every city and session: with no car picked (a new device, a
+ * cleared save, or another tab writing back an old save) you drive the fastest one you own, unless you chose the cab.
+ */
+export function driveOf(owned: CarId[], on: CarId | null, cab: boolean): CarId | null {
+  if (on && owned.includes(on)) return on;
+  if (cab || !owned.length) return null;
+  return [...owned].sort((a, b) => carPace(b) - carPace(a))[0];
+}
+
 /** "+15%" for the showroom. */
 export function carBoost(c: Car): string {
   return `+${Math.round((c.pace - 1) * 100)}%`;

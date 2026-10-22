@@ -57,3 +57,27 @@ test("0.1.12 lot sign tap: opens at the door, walks you there from afar, asks yo
   assert.equal(dealerTap(500, false), "walk");
   assert.equal(dealerTap(5, true), "seated");
 });
+
+test("0.1.31: a bought car is driven in every city and session, no dealer visit", async () => {
+  const { driveOf } = await import("./cars.ts");
+  // Bought in Austin: the save holds the car and it's picked.
+  let owned = ["civic"] as import("./cars.ts").CarId[];
+  const on = driveOf(owned, "civic", false);
+  assert.equal(on, "civic");
+  // Train to Chicago: nothing about the car is per city, so the pick holds.
+  assert.equal(driveOf(owned, on, false), "civic");
+  // New device / cleared save / an old tab wrote back a carless save: the ledger's cars come back and one is driven.
+  assert.equal(driveOf(owned, null, false), "civic");
+  owned = ["civic", "mustang"];
+  assert.equal(driveOf(owned, null, false), "mustang", "the fastest car you own");
+  // Chose the city cab on purpose: respected until you pick a car again.
+  assert.equal(driveOf(owned, null, true), null);
+  assert.equal(driveOf([], null, false), null, "no car, the city cab");
+  assert.equal(driveOf(["civic"], "f150", false), "civic", "a pick you don't own falls back to one you do");
+  const { readFileSync } = await import("node:fs");
+  const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.match(store, /carOn: driveOf\(cars, get\(\)\.carOn, get\(\)\.carCab\)/, "server-owned cars are adopted and driven");
+  assert.match(store, /savedCars\(e\.newValue\)/, "another tab's car isn't overwritten by this tab");
+  const arrive = store.slice(store.indexOf("tickJourney:"), store.indexOf("tickJourney:") + 4000);
+  assert.ok(!/carOn|carsOwned/.test(arrive), "arriving in a new city leaves the car alone");
+});
