@@ -137,3 +137,118 @@ About 47k coin a month: a Lamp cottage (40k) in a month, a Row house (130k) in a
 1. **Reset clock:** a single Chicago clock (recommended), or each player's city time?
 2. **Cloths:** do the scarves, Road-dust and Red-book cloths come back as rare monthly rewards (for example, a city scarf for `m-tour` in that city), or are they frozen as legacy items for current owners only?
 3. **Reward size:** about 5.7k coin a week and 47k a month plus matches, with a violet for a full month. Keep it, halve it, or make the bonus a car or house discount instead?
+
+---
+
+# Part B: charms (Ryan: "isn't really working either, scrap or change it?")
+
+## B1. What charms are today
+Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at a print counter (`PrintShop.tsx` `CharmPress`). A print costs stock plus **1 schematic** plus 1 press stock (the city staple). You can **equip only one** (`store.equipped`).
+
+| Charm | Cost (brass/ink/vellum + schematic) | What it does | Who enforces it |
+|---|---|---|---|
+| Scholar's clip | 8 / 4 / 0 + 1 | +3 s on the lamp timer | device only. The server's answer window (`WINDOW_MAX_MS` 40 s, `triviaService.ts`) already allows the extra 3 s for everyone, so ownership isn't checked |
+| Sprinter's strap | 6 / 0 / 8 + 1 | **nothing.** Its own blurb says "Every coat walks the same. The strap doesn't change it." | n/a |
+| Wider lantern | 10 / 6 / 0 + 1 | reach 200 m instead of 140 m (`interactRadius`), shown in the HUD | device only |
+| Lucky bit | 12 / 8 / 8 + 1 | 15% chance (`LUCKY_MATCH_CHANCE`) a lamp gives back a match of its colour; on a Run/Stack, a blue | **server**: `charmOp` charges stock and sets `meta.lucky`; the server rolls `luckyHit` and pays only if `meta.lucky` is set (`provenBoost`) |
+
+**Where they show:**
+- the Satchel → Charms grid, with Equip/Unequip;
+- the PrintShop charm press;
+- the Journal HQ stock panel (`HqPanel` ~l.244);
+- the HUD's equipped-charm icon;
+- the city circuit milestone, which needs "a charm".
+
+**Storage:**
+- `charms: CharmId[]` and `equipped` live in the device save.
+- The server only knows about Lucky: the `charm:lucky` ledger row plus `meta.lucky`.
+- On sign-in, `ownedOf` gives back only the charms that have ledger rows.
+
+**Dependencies:**
+- the city circuit (`circuitReady` needs `charms > 0`), which Part A deletes anyway;
+- schematics: Unbroken was the only steady source besides drops (`items.ts`: "Each charm needs one");
+- the HUD reach readout and map reach (`GameMap.tsx`), multiplied by the scout's sight perk;
+- lamp timer extras in `store.ts` ~l.1494;
+- `vaultPay.ts` help text.
+
+**Name clash:** the "Category charm" boost (`boosts.ts`) has nothing to do with these. It's a free white match for the first right answer in up to 3 topics a day, keyed to the **UTC** day, not the Chicago one.
+
+## B2. Why it "isn't working": bugs and gaps
+1. **Sprinter's strap is a dead item.** It costs real stock and a schematic, and does nothing.
+2. **Scholar and Lantern don't come back on a new device.** They have no server op, so `ownedOf` never returns them. A player who signs in somewhere else loses charms they paid for.
+3. **Scholar isn't really a perk.** The server window lets everyone have the 3 s, so the server never treats it as a special benefit. A guest or a modified client gets it free.
+4. **You can only equip one,** so there's no reason to own more than Lucky. Lucky is strictly better: it's the only one that pays, and the only one the server honours.
+5. **Unequipping Lucky turns off its pay,** but nothing in the UI says that only the equipped charm counts. The client sends `lucky: equipped === "lucky"`.
+6. **The "Category charm" name** makes players think owning a charm affects daily topic matches, when it doesn't.
+7. **Paid but not delivered:** the client takes the stock locally for a non-Lucky print and nothing records it on the server. If the save is lost, the stock is gone and so is the charm.
+
+## B3. Options
+
+### (a) Scrap cleanly
+- **Delete:**
+  - `CHARMS`, `CharmId`, `craft`/`equip`, `charms`/`equipped` in the save;
+  - `CharmPress`, the Satchel Charms grid, the HQ charm list and the HUD charm icon;
+  - `charmOp` and the `charm` wallet op;
+  - `interactRadius(hasLantern)`, fixed at 140 m, or raised for everyone (see below);
+  - the Scholar timer extra.
+- **Rename** the daily "Category charm" boost to "Topic bonus".
+- **Keep:**
+  - the server-side Lucky roll, moved to a different source (a coat perk, or a quest reward, as in option c);
+  - existing `meta.lucky` owners, who keep Lucky for good as a legacy perk.
+- **Compensate owners** with a one-time server op, `legacy:charm:<id>` (so it can only pay once):
+  - each charm the server can prove (Lucky): keep the perk, no refund needed;
+  - each device-only charm (Scholar/Lantern/Sprinter) reported by a signed-in save at first sync: refund the printing stock **plus the schematic**, capped at 3 refunds per account. Without a server record this is trust-the-device, so the cap stays small and it pays stock, not coin;
+  - in place of the Lantern, raise base reach for everyone to 160 m, so nobody feels reach was taken away.
+- **Pros:**
+  - least code and the fewest surfaces;
+  - removes a dead item and a trust gap.
+- **Cons:**
+  - schematics lose their main use (cloths/Night-glass don't spend them), so the schematic needs a new sink or should be removed too;
+  - one less long-term crafting goal.
+
+### (b) Rework into something meaningful
+- **Make every charm server-owned:** a `charm:<id>` ledger row, `meta.charms[]`, and `provenBoost` checks for each one.
+- **Give each charm one clear, distinct job tied to a verb:**
+  - **Scholar:** the server adds +3 s to the dealt window *only if owned*, and the shared window shrinks back.
+  - **Lantern:** +60 m reach, and the server checks claim distance against `interactRadius(owned)`. This needs the lamp claim to send a position check; today it's device-only.
+  - **Sprinter → "Rider's strap":** +25% coin on ride games.
+  - **Lucky:** unchanged.
+  - **New "Night owl's charm":** +1 match on a night-market lamp once a day.
+- **Allow 2 slots**, the second unlocked at level 20, so owning several makes sense.
+- **Pros:** keeps the crafting loop and the schematic sink, and fixes every bug.
+- **Cons:**
+  - the most work, covering server checks for reach and the timer, the UI and balance;
+  - it adds power and pay right when the economy is being re-tuned around quests;
+  - reach checks on the server are new ground.
+
+### (c) Fold into quests as rewards
+- **Remove printing.** Charms stop being crafted. Each charm becomes a **monthly-quest reward that lasts the month:**
+  - a server row `charm:<id>:<period>`;
+  - it's active automatically while that period runs, with no equip slot;
+  - examples: finish `m-night` → Night owl's charm next month; finish all three monthlies → Lucky next month.
+- **Lucky:** permanent owners keep it forever, so `meta.lucky` stays.
+- **Scholar/Lantern/Sprinter:** device-only owners get the stock + schematic refund from (a).
+- **Server enforcement:** the server pays only charms whose current-period row exists, through the same `provenBoost` check as Lucky.
+- **Pros:**
+  - gives quests a reason to come back next month beyond coin;
+  - removes crafting UI and the dead item;
+  - everything is server-owned from day one.
+- **Cons:**
+  - perks that come and go can feel like being punished;
+  - still needs (b)'s server checks for any charm that isn't a payout perk (reach and timer), so keep the timed charms to **payout perks only**: Lucky, Night owl, Rider;
+  - schematics still need a new sink.
+
+## B4. Recommendation: **(a) scrap now, with (c)'s good part folded in**
+- Scrap printed charms and the equip slot.
+- Keep Lucky permanently for current owners.
+- Refund device-only charms in stock and schematics (capped).
+- Raise base reach to 160 m.
+- Rename the "Category charm" boost.
+- Then use **one payout-only perk** as the monthly all-three bonus: "Lucky next month", for players who don't own Lucky, or 25,000 coin for those who do. It reuses the existing server-checked Lucky roll, so nothing new needs client trust.
+- Don't do (b): it's the most work and adds power when the economy is being reset around quests.
+- **Schematics:** stop dropping new ones, and convert what players hold into a new **Night-glass alternative recipe**, schematic + pattern instead of press stock, so held schematics stay worth something.
+
+## B5. Open decisions for Ryan (charms)
+1. Scrap with the Lucky legacy perk (recommended), or full rework (b)?
+2. Raise base reach to 160 m for everyone, or leave 140 m and just refund Lantern owners?
+3. Schematics: give them the Night-glass sink, or retire them and convert held ones to coin (for example, 2,000 each)?
