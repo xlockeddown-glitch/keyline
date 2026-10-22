@@ -594,7 +594,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!row?.rewarded || (!ids.includes(row.sender_id) && !(row.friend_id && ids.includes(row.friend_id)))) {
       return { ...applied({ ok: false, replay: false, reason: "no-ticket", wallet }), authoritative: true };
     }
-    // 0.1.25: the ladder colour, replayed from the pair's tickets on the server (never from the client).
+    // 0.1.26: the ladder colour, replayed from the pair's tickets on the server (never from the client).
     const { ticketPay } = await import("./friendService.ts");
     const pay = await ticketPay(sql, row.pair_key, token);
     const r = await mutateWallet(sql, sessionUserId, `friend:${op.id}`, (w) => {

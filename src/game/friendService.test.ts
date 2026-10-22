@@ -214,7 +214,7 @@ test("rate limit: a bucket refuses past its limit inside one window, then resets
   await db.close();
 });
 
-test("0.1.25 friend ladder on the server: climbs a rung a day, wrong resets, cap leaves it, too-easy pays white", async () => {
+test("0.1.26 friend ladder on the server: climbs a rung a day, wrong resets, cap leaves it, too-easy pays white", async () => {
   const { db, d, tick } = await setup();
   const day = 24 * 3600_000;
   const play = async (card: FriendCard, choice = "Colorado", who = ben) => {

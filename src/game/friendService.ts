@@ -61,7 +61,7 @@ type DbRow = {
 };
 
 /**
- * 0.1.25: the pair's ladder, replayed from its answered tickets (no stored rung; see friendTicket.ts). Only the
+ * 0.1.26: the pair's ladder, replayed from its answered tickets (no stored rung; see friendTicket.ts). Only the
  * newest 400 answers are read: a reset (wrong, late, idle) or a full climb happens far sooner than that.
  */
 export async function pairLadder(sql: Sql, pair: string): Promise<LadderState> {
@@ -196,7 +196,7 @@ export type Scored = {
   fact: string | null;
   rewarded: boolean;
   why: RewardWhy | null;
-  /** 0.1.25: the ladder colour and rung this ticket paid (rewarded only). */
+  /** 0.1.26: the ladder colour and rung this ticket paid (rewarded only). */
   pay?: LadderPay;
 };
 
