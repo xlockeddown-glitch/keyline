@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.20";
+export const APP_VERSION = "0.1.21";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k120a";
+export const PUBLISH_STAMP = "k121a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -131,3 +131,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.18: Books trivia category (~150 cards: classics, bestsellers, children's/YA, authors, opening lines, characters, series, awards), Bookworm / Page Turner / Literary Lion ladder; libraries offer Books (k118a).
 // 0.1.19: sparks (a lamp answered with no match of its colour, which pays that colour) are now capped on the server as well as the device: six a day, once per lamp per Chicago day; a seventh or repeat spark grades but pays nothing. Violet never sparks (Ryan): a violet lamp with no violet match just says "Need a Violet match." and a spark-flagged violet grade pays nothing on the server (k119a).
 // 0.1.20: current-events trivia batch (Aug–Oct 2026, every card time-anchored; sources in docs/trivia-current-20261021-sources.md), 12 categories, no math (deck cap) (k120a). 0.1.19 is a separate bug fix.
+// 0.1.21: house copy rewritten in plain words (Ryan: 'so confusing'): price, sign in to buy, yours for good, light 3 lamps then turn the key once a day for one match of the house's colour (no coins), resets at midnight city time, one per city; 'hook' / 'Key hangs' / 'Your door' / 'Step up' dropped, a/an fixed. Text only (k121a).

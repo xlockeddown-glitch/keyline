@@ -5,7 +5,7 @@ import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { carOf, isCarId, type CarId } from "./cars";
 import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
-import { houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
+import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
@@ -2379,7 +2379,7 @@ export const useGame = create<GameState>((set, get) => ({
     set({ points: st.points - cost, houses: { ...st.houses, [city]: { ...st.houses[city], tier: def.id } } });
     pushOp({ kind: "house", city, tier: def.id }, () => set(before));
     sfx.craft();
-    flashToast(set, get, owned ? `Stepped up to the ${def.name}.` : `The ${def.name} is yours. Light three lamps here, then turn the key.`, 2400);
+    flashToast(set, get, owned ? `Upgraded to the ${def.name}.` : `The ${def.name} is yours! Light ${HOME_LAMPS} lamps here, then turn the key for your daily match.`, 2400);
     scheduleSave(get);
   },
   turnKey: (city) => {
@@ -2390,15 +2390,15 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     void commitWallet({ kind: "home", city }).then((r) => {
-      if (!r) return flashToast(set, get, "The key stuck. Try again in a moment.", 2000);
-      if (!r.ok && r.reason === "unproven") return flashToast(set, get, "Light three lamps in this city today, then come home.", 2400);
-      if (!r.ok) return flashToast(set, get, "The key stuck. Try again in a moment.", 2000);
+      if (!r) return flashToast(set, get, "Couldn't turn the key. Try again in a moment.", 2000);
+      if (!r.ok && r.reason === "unproven") return flashToast(set, get, `Light ${HOME_LAMPS} lamps in this city today first, then turn the key.`, 2400);
+      if (!r.ok) return flashToast(set, get, "Couldn't turn the key. Try again in a moment.", 2000);
       const h = r.home;
       const day = h?.day ?? cityDay(city, Date.now());
       set({ homeClaims: Array.from(new Set([...get().homeClaims, `hook:${city}:${day}`])).slice(-40) });
 
       sfx.pickup();
-      flashToast(set, get, h?.match ? `Home. A ${TIER_LABEL[h.match]} match on the hook.` : "Home. You already took today's match.", 2600);
+      flashToast(set, get, h?.match ? `You got ${/^[AEIOU]/i.test(TIER_LABEL[h.match]) ? "an" : "a"} ${TIER_LABEL[h.match]} match. Come back tomorrow for another.` : "You already got today's match. More at midnight.", 2600);
       saveNow(get);
     });
   },

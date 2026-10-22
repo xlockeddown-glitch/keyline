@@ -9,6 +9,8 @@ import { cityDay } from "@/game/vaultStack";
 import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 
+const an = (w: string) => (/^[AEIOU]/i.test(w) ? "an" : "a");
+
 /** 0.1.12 house sheet: four tiers for sale, or your door (painting, the car in the drive, the key, the step-up). */
 export function HouseSheet() {
   const open = useGame((s) => s.houseOpen);
@@ -34,10 +36,12 @@ export function HouseSheet() {
       <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <p className="kicker">{owned ? "Your door" : "House for sale"} · {lot.name}</p>
-            <h2 className="font-display text-2xl">{owned ? owned.name : "A door in this city"}</h2>
+            <p className="kicker">{owned ? "Your house" : "House for sale"} · {lot.name}</p>
+            <h2 className="font-display text-2xl">{owned ? owned.name : "Buy a house here"}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
-              Light {HOME_LAMPS} lamps in this city today, then turn the key: one match on the hook, once a day here.
+              {owned
+                ? `Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for ${an(TIER_LABEL[owned.match])} ${TIER_LABEL[owned.match]} match.`
+                : `Yours for good. Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for a free match.`}
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={() => close(false)} aria-label="Close">
@@ -58,7 +62,7 @@ export function HouseSheet() {
               </div>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <p className="text-sm text-fg-muted">
-                  {TIER_LABEL[owned.match]} match{hookTaken ? " (taken today)" : ""}
+                  {hookTaken ? `Got today's ${TIER_LABEL[owned.match]} match. More at midnight.` : `Today's ${TIER_LABEL[owned.match]} match is waiting.`}
                 </p>
                 <button
                   type="button"
@@ -70,13 +74,13 @@ export function HouseSheet() {
                     turnKey(cityId);
                   }}
                 >
-                  {hookTaken ? "Already home" : "Turn the key"}
+                  {hookTaken ? "Done today" : "Turn the key"}
                 </button>
               </div>
             </div>
           ) : null}
           <div className={`grid gap-3${owned ? " mt-5" : ""}`}>
-            {owned ? <p className="kicker">Step up</p> : null}
+            {owned ? <p className="kicker">Upgrade</p> : null}
             {HOUSES.map((h) => {
               const cost = houseCost(owned?.id, h.id);
               if (owned && cost === null) return null;
@@ -89,7 +93,7 @@ export function HouseSheet() {
                       <p className="font-display text-lg leading-tight">{h.name}</p>
                       <p className="text-sm text-fg-muted">{h.blurb}</p>
                       <p className="car-boost text-sm">
-                        Key hangs {/^[AEIOU]/i.test(TIER_LABEL[h.match]) ? "an" : "a"} {TIER_LABEL[h.match]} match
+                        {an(TIER_LABEL[h.match]) === "an" ? "An" : "A"} {TIER_LABEL[h.match]} match a day
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
@@ -98,7 +102,7 @@ export function HouseSheet() {
                         {(cost ?? h.price).toLocaleString()}
                       </p>
                       <button type="button" className={`btn ${short ? "btn-quiet" : "btn-primary"} mt-1 max-w-[7.5rem] whitespace-normal px-3 text-xs leading-tight`} disabled={short} onClick={() => buyHouse(cityId, h.id)}>
-                        {short ? `Need ${((cost ?? 0) - points).toLocaleString()} more` : owned ? "Step up" : "Buy"}
+                        {short ? `Need ${((cost ?? 0) - points).toLocaleString()} more` : owned ? "Upgrade" : "Buy"}
                       </button>
                     </div>
                   </div>
@@ -106,7 +110,7 @@ export function HouseSheet() {
               );
             })}
           </div>
-          <p className="mt-4 text-xs text-fg-subtle">One door per city, kept on your account. A step-up costs the difference. Sign-in required.</p>
+          <p className="mt-4 text-xs text-fg-subtle">Sign in to buy. One house per city, yours for good. Upgrading costs only the difference. One match a day per city, no coins; it resets at midnight city time.</p>
         </div>
       </div>
     </div>
