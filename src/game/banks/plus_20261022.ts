@@ -1,5 +1,5 @@
 // Thursday Oct 22, 2026 trivia batch (+~50 per category, balanced toward thinner categories).
-// Evergreen facts; anything time-sensitive carries its date in the prompt. Sources: docs/trivia-plus-20261022-sources.md
+// Evergreen facts; anything time-sensitive carries its date in the prompt.
 import { q } from "../quiz";
 import type { TriviaQ } from "../types";
 
