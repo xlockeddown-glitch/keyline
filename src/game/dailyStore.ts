@@ -223,7 +223,8 @@ export const useDaily = create<DailyStore>((set, get) => {
         const ok = checkSplits(route, splits, spots.length === route.lamps.length ? spots : undefined).ok;
         // Each city's finish pays its own reward, once per city per UTC day.
         const reward = ok ? st.payDailyRun(p.day, p.city) : null;
-        set({ finish: { day: p.day, city: p.city, timeMs: split, splits, reward, refused: !ok } });
+        // 0.1.23: the run is over, so the route, pins and guidance come off the map (show is never saved, so a reload stays hidden too).
+        set({ show: false, finish: { day: p.day, city: p.city, timeMs: split, splits, reward, refused: !ok } });
         useGame.setState({ fireworks: { kind: "mini", id: Date.now() } });
       } else {
         toast(`Lantern Run · lamp ${index + 1} of 5 · ${lamp.name}`);
