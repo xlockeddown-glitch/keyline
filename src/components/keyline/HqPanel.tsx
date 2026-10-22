@@ -31,7 +31,7 @@ import { PlayerLinkRow } from "./PlayerLink";
 import { PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 
-const TABS = ["Places", "Supplies", "Progress", "Leaderboard"] as const;
+const TABS = ["Places", "Supplies", "Goals", "Progress", "Leaderboard"] as const;
 
 export function HqPanel() {
   const hqOpen = useGame((s) => s.hqOpen);
@@ -259,9 +259,8 @@ export function HqPanel() {
             </>
           ) : null}
 
-          {tab === "Progress" ? (
+          {tab === "Goals" ? (
             <div className="grid gap-4 text-sm">
-              <LevelPanel />
               <DailyGoals act={false} />
               <div>
                 <p className="kicker">Daily Blitz</p>
@@ -313,6 +312,12 @@ export function HqPanel() {
                 Contracts are taken at {boardLine(cityId)}. The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
                 {desk.name}.
               </p>
+            </div>
+          ) : null}
+
+          {tab === "Progress" ? (
+            <div className="grid gap-4 text-sm">
+              <LevelPanel />
               <PassProgressRow />
               <PrintPanel />
               <MarketLightsPanel />

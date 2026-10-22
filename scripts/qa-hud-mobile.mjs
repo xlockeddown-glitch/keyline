@@ -88,7 +88,7 @@ async function inventorySweep(page) {
     await page.getByRole("button", { name: "Open satchel" }).first().click({ timeout: 5000 }).catch(() => {});
     await check("satchel", w, h);
     await closeAll();
-    for (const tab of ["Places", "Supplies", "Progress", "Leaderboard"]) {
+    for (const tab of ["Places", "Supplies", "Goals", "Progress", "Leaderboard"]) {
       if (!(await page.locator(".hq-tabs").count())) await page.locator('[aria-label^="Open Journal"]').first().click({ timeout: 5000 }).catch(() => {});
       await page.locator(".hq-tabs [role=tab]", { hasText: tab }).first().click({ timeout: 5000 }).catch(() => {});
       await scroll("top");

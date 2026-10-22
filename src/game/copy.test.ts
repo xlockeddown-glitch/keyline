@@ -11,9 +11,9 @@ test("empty-pocket hint counts the lamps still owed", () => {
   assert.equal(lampsToTicket(5), 1);
 });
 
-test("Journal tabs: Places, Supplies, Progress, Leaderboard; Places first", () => {
+test("Journal tabs: Places, Supplies, Goals, Progress, Leaderboard; Places first", () => {
   const src = read("../components/keyline/HqPanel.tsx");
-  assert.match(src, /const TABS = \["Places", "Supplies", "Progress", "Leaderboard"\] as const;/);
+  assert.match(src, /const TABS = \["Places", "Supplies", "Goals", "Progress", "Leaderboard"\] as const;/);
   assert.match(src, /useState<\(typeof TABS\)\[number\]>\("Places"\)/);
   assert.match(src, /aria-label="Journal sections"/);
   assert.doesNotMatch(src, /Headquarters|"Atlas"|"Ledger"|"Standings"/);
@@ -39,11 +39,18 @@ test("Goals talk about places, not marks or stamps", () => {
   assert.doesNotMatch(src, /: "stamps"/);
 });
 
-test("0.1.28 Journal · Progress reads standing → goals → collections → stats → log", () => {
+test("0.1.28 Journal: Goals tab holds the goals in order; Progress keeps standing, collections, stats, log", () => {
   const src = read("../components/keyline/HqPanel.tsx");
-  const tab = src.slice(src.indexOf('tab === "Progress"'));
-  const marks = ["<LevelPanel />", "<DailyGoals", 'kicker">Daily Blitz', "<QuestDesk", "<FriendJournalRow", 'kicker mt-2">Goals', "<PassProgressRow />", "<PrintPanel />", "<MarketLightsPanel />", 'className="hq-stats"', "<RecentRewards />", 'kicker mt-2">Bank'];
-  const at = marks.map((m) => tab.indexOf(m));
-  assert.ok(at.every((i) => i >= 0), marks.filter((_, i) => at[i] < 0).join(", "));
-  assert.deepEqual([...at].sort((a, b) => a - b), at);
+  const inOrder = (from: string, to: string, marks: string[]) => {
+    const tab = src.slice(src.indexOf(from), src.indexOf(to, src.indexOf(from)));
+    const at = marks.map((m) => tab.indexOf(m));
+    assert.ok(at.every((i) => i >= 0), marks.filter((_, i) => at[i] < 0).join(", "));
+    assert.deepEqual([...at].sort((a, b) => a - b), at);
+  };
+  const goals = ["<DailyGoals", 'kicker">Daily Blitz', "Login streak", "<QuestDesk", "<FriendJournalRow", 'kicker mt-2">Goals'];
+  const progress = ["<LevelPanel />", "<PassProgressRow />", "<PrintPanel />", "<MarketLightsPanel />", 'className="hq-stats"', "<RecentRewards />", 'kicker mt-2">Bank'];
+  inOrder('tab === "Goals"', ") : null}", goals);
+  inOrder('tab === "Progress"', ") : null}", progress);
+  const prog = src.slice(src.indexOf('tab === "Progress"'), src.indexOf(") : null}", src.indexOf('tab === "Progress"')));
+  for (const m of goals) assert.equal(prog.includes(m), false, m);
 });
