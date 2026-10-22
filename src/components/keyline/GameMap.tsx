@@ -208,6 +208,9 @@ export function GameMap() {
   const follow = useRef(true);
   const anim = useRef({ frame: 0, loop: 0, acc: 0 });
   const last = useRef(0);
+  // Battery: what the loop last pushed to Leaflet, and which pin was last marked near.
+  const drawnPins = useRef(-1);
+  const drawn = useRef({ lat: NaN, lng: NaN, pan: false, near: "" });
   const nightRef = useRef<HTMLDivElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const distAcc = useRef(0);
@@ -1528,6 +1531,7 @@ export function GameMap() {
   }
 
   function rebuildPins(L: LModule, map: LMap) {
+    drawnPins.current = -1; // battery: fresh pin elements need their "near" class again
     const st = useGame.getState();
     const city = CITIES[st.cityId];
     const now = Date.now();
@@ -1764,6 +1768,20 @@ export function GameMap() {
     let raf = 0;
     const step = (t: number) => {
       raf = requestAnimationFrame(step);
+      // Battery: standing still with nothing in motion, run the loop at ~30 fps (breathing idle, flicker timers and
+      // HUD checks look the same); any input, route, hail or leftover speed keeps the full rate.
+      if (
+        t - last.current < 30 &&
+        !injected.current &&
+        keysHeld.current.size === 0 &&
+        Math.hypot(stick.current.x, stick.current.y) <= 0.12 &&
+        !routeRef.current &&
+        !waypoint.current &&
+        queue.current.length === 0 &&
+        !cabRef.current?.hail &&
+        pos.current.speed === 0
+      )
+        return;
       const prev = last.current || t;
       last.current = t;
       const dt = Math.min(MAX_DT, (t - prev) / 1000);
@@ -1857,6 +1875,7 @@ export function GameMap() {
       } else {
         const want = throttle * max;
         pos.current.speed += (want - pos.current.speed) * Math.min(1, dt * 4.2);
+        if (want === 0 && Math.abs(pos.current.speed) < 0.01) pos.current.speed = 0; // battery: settle instead of decaying forever
         const speedFactor = Math.min(1, Math.abs(pos.current.speed) / 40);
         const reverse = pos.current.speed >= 0 ? 1 : -1;
         pos.current.yaw = wrapPi(pos.current.yaw + steer * turn * Math.max(0.35, speedFactor) * reverse * dt);
@@ -2058,15 +2077,25 @@ export function GameMap() {
         cabEl.classList.toggle("is-lamps", moving);
       }
       pawn?.classList.toggle("is-seated", seated);
-      playerMarker.current?.setLatLng([pos.current.lat, pos.current.lng]);
-      if (follow.current && mapRef.current) {
+      // Battery: only touch Leaflet when the scout actually moved (or follow was just switched back on).
+      const movedPx = pos.current.lat !== drawn.current.lat || pos.current.lng !== drawn.current.lng;
+      if (movedPx) playerMarker.current?.setLatLng([pos.current.lat, pos.current.lng]);
+      if (follow.current && mapRef.current && (movedPx || !drawn.current.pan)) {
         mapRef.current.panTo([pos.current.lat, pos.current.lng], { animate: false });
       }
+      drawn.current.lat = pos.current.lat;
+      drawn.current.lng = pos.current.lng;
+      drawn.current.pan = follow.current;
 
-      vaultMarkers.current.forEach((m, id) => {
-        const node = m.getElement()?.querySelector(".vault-pin, .shop-pin, .counter-pin, .board-pin");
-        node?.classList.toggle("near", id === nearestPoi.id && nearestPoi.d < 140);
-      });
+      const nearId = nearestPoi.d < 140 ? nearestPoi.id : "";
+      if (nearId !== drawn.current.near || vaultMarkers.current.size !== drawnPins.current) {
+        drawn.current.near = nearId;
+        drawnPins.current = vaultMarkers.current.size;
+        vaultMarkers.current.forEach((m, id) => {
+          const node = m.getElement()?.querySelector(".vault-pin, .shop-pin, .counter-pin, .board-pin");
+          node?.classList.toggle("near", id === nearId);
+        });
+      }
 
       if (Math.floor(t / 100) !== Math.floor((t - dt * 1000) / 100)) {
         if (distAcc.current && !seated) {

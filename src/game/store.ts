@@ -1245,7 +1245,12 @@ export const useGame = create<GameState>((set, get) => ({
     saveNow(get);
     return null;
   },
-  setHud: (h) => set({ hud: { ...get().hud, ...h } }),
+  // Battery: the map loop reports the HUD 10x a second; skip the store update (and every HUD re-render) when nothing changed.
+  setHud: (h) => {
+    const cur = get().hud as unknown as Record<string, unknown>;
+    if (Object.keys(h).every((k) => Object.is(cur[k], (h as Record<string, unknown>)[k]))) return;
+    set({ hud: { ...get().hud, ...h } });
+  },
   routeCancel: 0,
   cancelRoute: () => set({ routeCancel: get().routeCancel + 1 }),
   unstuck: 0,
