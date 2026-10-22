@@ -13,6 +13,10 @@ import {
   pairKey,
   rewardDecision,
   utcDay,
+  ladderNext,
+  replayLadder,
+  type LadderPay,
+  type LadderState,
   type RewardWhy,
   type TicketRow,
 } from "./friendTicket.ts";
@@ -55,6 +59,34 @@ type DbRow = {
   reward_day: string | null;
   reward_why: string | null;
 };
+
+/**
+ * 0.1.25: the pair's ladder, replayed from its answered tickets (no stored rung; see friendTicket.ts). Only the
+ * newest 400 answers are read: a reset (wrong, late, idle) or a full climb happens far sooner than that.
+ */
+export async function pairLadder(sql: Sql, pair: string): Promise<LadderState> {
+  const rows = await sql<{ token: string; answered_at: string | Date; correct: boolean | null; choice: string | null; rewarded: boolean; reward_why: string | null; diff: number }>`
+    select token, answered_at, correct, choice, rewarded, reward_why, diff from friend_tickets
+    where pair_key = ${pair} and answered_at is not null order by answered_at desc limit 400
+  `;
+  return replayLadder(
+    rows.map((r) => ({
+      token: r.token,
+      at: r.answered_at instanceof Date ? r.answered_at.getTime() : Date.parse(String(r.answered_at)),
+      correct: Boolean(r.correct),
+      late: r.choice === "__late__" || r.reward_why === "late",
+      rewarded: Boolean(r.rewarded),
+      capped: r.reward_why === "pair-cap" || r.reward_why === "sender-cap",
+      diff: Number(r.diff) || 2,
+    })),
+  );
+}
+
+/** What a rewarded ticket paid (both sides get the same), from the server's replay. */
+export async function ticketPay(sql: Sql, pair: string | null, token: string): Promise<LadderPay> {
+  if (!pair) return { tier: "white", rung: 0 };
+  return (await pairLadder(sql, pair)).paid.get(token) ?? { tier: "white", rung: 0 };
+}
 
 const ms = (v: string | Date) => (v instanceof Date ? v.getTime() : Date.parse(v));
 const msOrNull = (v: string | Date | null) => (v == null ? null : ms(v));
@@ -164,10 +196,13 @@ export type Scored = {
   fact: string | null;
   rewarded: boolean;
   why: RewardWhy | null;
+  /** 0.1.25: the ladder colour and rung this ticket paid (rewarded only). */
+  pay?: LadderPay;
 };
 
+export type LadderView = { rung: number; tier: LadderPay["tier"]; floor: number };
 export type OpenResult =
-  | { status: "play"; from: string; q: string; choices: string[]; diff: TriviaDiff; msLeft: number; msTotal: number }
+  | { status: "play"; from: string; q: string; choices: string[]; diff: TriviaDiff; msLeft: number; msTotal: number; next?: LadderView }
   | { status: "self" | "expired" | "taken" | "missing"; from: string | null }
   | Scored;
 
@@ -197,7 +232,7 @@ export async function openTicket(d: FriendDeps, user: FriendUser, token: string)
   const r = await load(d.sql, token);
   const dec = openDecision(r ? toRow(r) : null, user.id, now);
   if (!r || dec.kind === "missing") return { status: "missing", from: null };
-  const play = (row: DbRow, msLeft: number): OpenResult => ({
+  const play = async (row: DbRow, msLeft: number): Promise<OpenResult> => ({
     status: "play",
     from: row.sender_name,
     q: row.prompt,
@@ -205,6 +240,7 @@ export async function openTicket(d: FriendDeps, user: FriendUser, token: string)
     diff: (Number(row.diff) || 2) as TriviaDiff,
     msLeft,
     msTotal: deadlineOf(0),
+    next: ladderNext(await pairLadder(d.sql, pairKey(row.sender_id, user.id)), now),
   });
   switch (dec.kind) {
     case "self":
@@ -212,7 +248,7 @@ export async function openTicket(d: FriendDeps, user: FriendUser, token: string)
     case "taken":
       return { status: dec.kind, from: r.sender_name };
     case "done":
-      return scoredOf(r);
+      return withPay(d.sql, scoredOf(r), r);
     case "resume":
       return play(r, dec.msLeft);
     case "lapsed": {
@@ -246,7 +282,7 @@ export async function answerTicket(d: FriendDeps, user: FriendUser, token: strin
   const dec = answerDecision(r ? toRow(r) : null, user.id, choice, r?.answer ?? "", now);
   if (!r) return { status: "reject", reason: "missing" };
   if (dec.kind === "reject") {
-    if (dec.reason === "answered" && r.friend_id === user.id) return scoredOf(r);
+    if (dec.reason === "answered" && r.friend_id === user.id) return withPay(d.sql, scoredOf(r), r);
     return { status: "reject", reason: dec.reason };
   }
   const stored = dec.late ? "__late__" : choice.slice(0, 200);
@@ -258,7 +294,7 @@ export async function answerTicket(d: FriendDeps, user: FriendUser, token: strin
   `;
   if (!marked[0]) {
     const again = await load(d.sql, token);
-    return again && again.friend_id === user.id ? scoredOf(again) : { status: "reject", reason: "answered" };
+    return again && again.friend_id === user.id ? withPay(d.sql, scoredOf(again), again) : { status: "reject", reason: "answered" };
   }
   const day = utcDay(now);
   const pair = pairKey(r.sender_id, user.id);
@@ -300,25 +336,35 @@ export async function answerTicket(d: FriendDeps, user: FriendUser, token: strin
     await d.sql`update friend_ticket_days set rewarded = greatest(0, rewarded - 1) where sender_id = ${r.sender_id} and day = ${day}`;
     return miss("pair-cap");
   }
-  return result(true, null);
+  return { ...result(true, null), pay: await ticketPay(d.sql, pair, token) };
+}
+
+async function withPay(sql: Sql, s: Scored, r: DbRow): Promise<Scored> {
+  return s.rewarded ? { ...s, pay: await ticketPay(sql, pairKey(r.sender_id, r.friend_id ?? ""), r.token) } : s;
 }
 
 // ---------- news (rewards waiting to land in a save) ----------
 
-export type NewsItem = { id: string; role: "sender" | "friend"; name: string };
+export type NewsItem = { id: string; role: "sender" | "friend"; name: string; pay?: LadderPay };
 
 /** Rewarded tickets whose white hasn't been acknowledged by this user's save yet, both roles. */
 export async function friendNews(d: FriendDeps, userId: string): Promise<NewsItem[]> {
-  const sent = await d.sql<{ token: string; friend_name: string | null }>`
-    select token, friend_name from friend_tickets where sender_id = ${userId} and rewarded and not sender_seen order by answered_at asc limit 20
+  const sent = await d.sql<{ token: string; friend_name: string | null; pair_key: string | null }>`
+    select token, friend_name, pair_key from friend_tickets where sender_id = ${userId} and rewarded and not sender_seen order by answered_at asc limit 20
   `;
-  const got = await d.sql<{ token: string; sender_name: string }>`
-    select token, sender_name from friend_tickets where friend_id = ${userId} and rewarded and not friend_seen order by answered_at asc limit 20
+  const got = await d.sql<{ token: string; sender_name: string; pair_key: string | null }>`
+    select token, sender_name, pair_key from friend_tickets where friend_id = ${userId} and rewarded and not friend_seen order by answered_at asc limit 20
   `;
-  return [
-    ...sent.map((r) => ({ id: `s:${r.token}`, role: "sender" as const, name: r.friend_name ?? "A friend" })),
-    ...got.map((r) => ({ id: `f:${r.token}`, role: "friend" as const, name: r.sender_name })),
-  ];
+  const ladders = new Map<string, LadderState>();
+  const payOf = async (pair: string | null, token: string): Promise<LadderPay> => {
+    if (!pair) return { tier: "white", rung: 0 };
+    if (!ladders.has(pair)) ladders.set(pair, await pairLadder(d.sql, pair));
+    return ladders.get(pair)!.paid.get(token) ?? { tier: "white", rung: 0 };
+  };
+  const out: NewsItem[] = [];
+  for (const r of sent) out.push({ id: `s:${r.token}`, role: "sender", name: r.friend_name ?? "A friend", pay: await payOf(r.pair_key, r.token) });
+  for (const r of got) out.push({ id: `f:${r.token}`, role: "friend", name: r.sender_name, pay: await payOf(r.pair_key, r.token) });
+  return out;
 }
 
 /** The save has paid these; stop sending them. Scoped to the caller's own side of each ticket. */

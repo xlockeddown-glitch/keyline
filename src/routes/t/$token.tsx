@@ -4,7 +4,7 @@ import { Ticket } from "lucide-react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { SignInActions } from "@/components/keyline/AuthChip";
 import { answerFriendTicket, openFriendTicket, peekFriendTicket } from "@/game/friendApi";
-import { CARD_MS, rewardLine } from "@/game/friendTicket";
+import { CARD_MS, LADDER, ladderNextLine, rewardLine, type LadderPay } from "@/game/friendTicket";
 import type { TriviaDiff } from "@/game/types";
 
 export const Route = createFileRoute("/t/$token")({
@@ -16,8 +16,8 @@ const LETTERS = ["A", "B", "C", "D"] as const;
 /** Same words as the lamp card (trivia.ts DIFF_LABEL), kept here so this page doesn't pull in the trivia bank. */
 const DIFF_LABEL: Record<TriviaDiff, string> = { 1: "Easy", 2: "Standard", 3: "Hard" };
 
-type Play = { q: string; choices: string[]; diff: TriviaDiff; deadline: number; total: number };
-type Result = { correct: boolean; answer: string; choice: string | null; fact: string | null; rewarded: boolean; why: string | null };
+type Play = { q: string; choices: string[]; diff: TriviaDiff; deadline: number; total: number; next?: { rung: number; tier: LadderPay["tier"]; floor: number } };
+type Result = { correct: boolean; answer: string; choice: string | null; fact: string | null; rewarded: boolean; why: string | null; pay?: LadderPay };
 type View =
   | { kind: "loading" }
   | { kind: "landing"; from: string; expiresAt: number | null }
@@ -27,7 +27,7 @@ type View =
 
 const closed = (status: string, from: string | null): View => {
   const who = from ?? "A friend";
-  if (status === "self") return { kind: "closed", title: "This one's yours", body: "You sent this ticket. Pass the link to a friend — they answer, you both get a white." };
+  if (status === "self") return { kind: "closed", title: "This one's yours", body: "You sent this ticket. Pass the link to a friend — they answer, you both get a match." };
   if (status === "expired") return { kind: "closed", title: "This ticket expired", body: `Friend tickets are good for 48 hours. Ask ${who} for a fresh one.` };
   if (status === "used" || status === "taken") return { kind: "closed", title: "Already redeemed", body: `Someone else answered ${who}'s card first. One friend per ticket.` };
   if (status === "slow") return { kind: "closed", title: "One moment", body: "Too many tries just now. Wait a minute and reload." };
@@ -61,7 +61,7 @@ function FriendTicketPage() {
       const r = await openFriendTicket({ data: { token } });
       if (r.status === "play") {
         sent.current = false;
-        setView({ kind: "play", from: r.from, play: { q: r.q, choices: r.choices, diff: r.diff, deadline: performance.now() + r.msLeft, total: r.msTotal } });
+        setView({ kind: "play", from: r.from, play: { q: r.q, choices: r.choices, diff: r.diff, deadline: performance.now() + r.msLeft, total: r.msTotal, next: r.next } });
       } else if (r.status === "scored") setView({ kind: "result", from: r.from, result: r });
       else setView(closed(r.status, "from" in r ? r.from : null));
     } catch {
@@ -108,7 +108,7 @@ function FriendTicketPage() {
             </p>
             <h1 className="font-display mt-2 text-2xl leading-tight text-balance">{view.from} sent you a trivia card</h1>
             <p className="mt-2 text-sm text-pretty text-fg-muted">
-              One card, {Math.round(CARD_MS / 1000)} seconds on the wick. Get it right and you each get a White match.
+              One card, {Math.round(CARD_MS / 1000)} seconds on the wick. Get it right and you each get a match. Every right ticket between you two climbs a color: White, Blue, Green, Amber, Red.
             </p>
             <p className="mt-1 text-xs text-pretty text-fg-subtle">A one-card preview: it plays even if its city isn't unlocked in your game yet.</p>
             {user ? (
@@ -117,7 +117,7 @@ function FriendTicketPage() {
               </button>
             ) : (
               <div className="mt-4 flex flex-col gap-2">
-                <p className="text-sm text-fg">Sign in to play — the white goes to your account.</p>
+                <p className="text-sm text-fg">Sign in to play — the match goes to your account.</p>
                 <SignInActions callbackURL={`/t/${token}`} />
               </div>
             )}
@@ -136,14 +136,14 @@ function FriendTicketPage() {
         ) : null}
 
         <Link to="/" className="title-more">
-          {view.kind === "result" && view.result.rewarded ? "Walk the street — your white is waiting" : "Back to the street"}
+          {view.kind === "result" && view.result.rewarded ? "Walk the street — your match is waiting" : "Back to the street"}
         </Link>
       </main>
     </div>
   );
 }
 
-function PlayCard({ play, onAnswer }: { play: Play; onAnswer: (choice: string) => void }) {
+export function PlayCard({ play, onAnswer }: { play: Play; onAnswer: (choice: string) => void }) {
   const [now, setNow] = useState(() => performance.now());
   const [picked, setPicked] = useState<string | null>(null);
   const pick = useCallback(
@@ -195,6 +195,12 @@ function PlayCard({ play, onAnswer }: { play: Play; onAnswer: (choice: string) =
         <span>{DIFF_LABEL[play.diff]}</span>
         <span className="tabular-nums">{(left / 1000).toFixed(1)}s</span>
       </p>
+      {play.next ? (
+        <p className="mt-1 text-xs text-fg-muted" data-testid="friend-next">
+          {ladderNextLine(play.next.tier, play.next.floor)} · rung {play.next.rung + 1}/{LADDER.length}
+          {play.diff < play.next.floor ? " · this card is too easy, so it pays White" : ""}
+        </p>
+      ) : null}
       <p className="plate-q">{play.q}</p>
       <div className="plate-choices">
         {play.choices.map((c, i) => (
@@ -209,12 +215,12 @@ function PlayCard({ play, onAnswer }: { play: Play; onAnswer: (choice: string) =
   );
 }
 
-function ResultCard({ from, result }: { from: string; result: Result }) {
+export function ResultCard({ from, result }: { from: string; result: Result }) {
   const why = result.rewarded ? null : (result.why as Parameters<typeof rewardLine>[0]);
   return (
     <section className={`plate p-5 ft-result ${result.correct ? "is-hit" : "is-miss"}`} data-testid="friend-result">
       <p className="kicker">{result.correct ? "Right" : result.choice == null ? "Out of time" : "Miss"}</p>
-      <h1 className="font-display mt-1 text-2xl leading-tight text-balance">{rewardLine(why, from)}</h1>
+      <h1 className="font-display mt-1 text-2xl leading-tight text-balance">{rewardLine(why, from, result.pay)}</h1>
       {result.rewarded ? <p className="mt-2 text-sm text-fg-muted">Yours lands in your pocket when you open the street. {from} sees it next time they look.</p> : null}
       <p className="mt-3 text-sm text-fg-muted">The trivia card read:</p>
       <p className="mt-1 text-base font-medium text-pretty">{result.answer}</p>

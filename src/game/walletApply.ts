@@ -587,14 +587,20 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   if (op.kind === "friend") {
     const token = op.id.replace(/^[sf]:/, "");
     const ids = await groupIds(sql, sessionUserId);
-    const rows = await sql<{ rewarded: boolean; sender_id: string; friend_id: string | null }>`
-      select rewarded, sender_id, friend_id from friend_tickets where token = ${token} limit 1
+    const rows = await sql<{ rewarded: boolean; sender_id: string; friend_id: string | null; pair_key: string | null }>`
+      select rewarded, sender_id, friend_id, pair_key from friend_tickets where token = ${token} limit 1
     `;
     const row = rows[0];
     if (!row?.rewarded || (!ids.includes(row.sender_id) && !(row.friend_id && ids.includes(row.friend_id)))) {
       return { ...applied({ ok: false, replay: false, reason: "no-ticket", wallet }), authoritative: true };
     }
-    const r = await mutateWallet(sql, sessionUserId, `friend:${op.id}`, (w) => friendOp(w, 1));
+    // 0.1.25: the ladder colour, replayed from the pair's tickets on the server (never from the client).
+    const { ticketPay } = await import("./friendService.ts");
+    const pay = await ticketPay(sql, row.pair_key, token);
+    const r = await mutateWallet(sql, sessionUserId, `friend:${op.id}`, (w) => {
+      const done = friendOp(w, 1, pay.tier);
+      return done.ok ? { ...done, detail: JSON.stringify({ t: pay.tier, rung: pay.rung + 1 }) } : done;
+    });
     return applied(r);
   }
 

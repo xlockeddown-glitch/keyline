@@ -31,6 +31,8 @@ function sqlOf(db: PGlite): Sql {
 }
 
 const CARD: FriendCard = { id: "p00c0ffee", q: "Which river runs through Austin?", choices: ["Colorado", "Brazos", "Pecos", "Trinity"], answer: "Colorado", fact: "Lady Bird Lake is a reservoir on it.", diff: 2 };
+const HARD: FriendCard = { ...CARD, id: "p00hard00", diff: 3 };
+const EASY: FriendCard = { ...CARD, id: "p00easy00", diff: 1 };
 const ann = { id: "ann", name: "Ann B." };
 const ben = { id: "ben", name: "Ben C." };
 const cat = { id: "cat", name: "Cat D." };
@@ -40,7 +42,7 @@ async function setup(start = Date.UTC(2026, 9, 3, 12, 0, 0)) {
   await db.exec(migration("0009_friend_tickets.sql"));
   await db.exec(migration("0009_friend_tickets.sql")); // idempotent
   let now = start;
-  const d: FriendDeps = { sql: sqlOf(db), now: () => now, findCard: (id) => (id === CARD.id ? CARD : null) };
+  const d: FriendDeps = { sql: sqlOf(db), now: () => now, findCard: (id) => (id === CARD.id ? CARD : id === HARD.id ? HARD : id === EASY.id ? EASY : null) };
   return { db, d, tick: (ms: number) => (now += ms), at: () => now };
 }
 
@@ -74,9 +76,9 @@ test("send → peek → friend opens (no answer sent) → right answer pays both
   assert.equal(got.answer, "Colorado");
 
   const annNews = await friendNews(d, "ann");
-  assert.deepEqual(annNews, [{ id: `s:${made.token}`, role: "sender", name: "Ben C." }]);
+  assert.deepEqual(annNews, [{ id: `s:${made.token}`, role: "sender", name: "Ben C.", pay: { tier: "white", rung: 0 } }]);
   const benNews = await friendNews(d, "ben");
-  assert.deepEqual(benNews, [{ id: `f:${made.token}`, role: "friend", name: "Ann B." }]);
+  assert.deepEqual(benNews, [{ id: `f:${made.token}`, role: "friend", name: "Ann B.", pay: { tier: "white", rung: 0 } }]);
   // Acks are scoped: Ben can't ack Ann's side.
   assert.equal(await ackNews(d, "ben", [`s:${made.token}`]), 0);
   assert.equal(await ackNews(d, "ann", [`s:${made.token}`]), 1);
@@ -209,5 +211,58 @@ test("rate limit: a bucket refuses past its limit inside one window, then resets
   assert.equal(hits.filter(Boolean).length, rule.limit);
   assert.equal(await rateHit(d.sql, "create:ben", rule, at()), true, "buckets are per user");
   assert.equal(await rateHit(d.sql, "create:ann", rule, at() + rule.windowMs), true);
+  await db.close();
+});
+
+test("0.1.25 friend ladder on the server: climbs a rung a day, wrong resets, cap leaves it, too-easy pays white", async () => {
+  const { db, d, tick } = await setup();
+  const day = 24 * 3600_000;
+  const play = async (card: FriendCard, choice = "Colorado", who = ben) => {
+    const made = await createTicket(d, ann, card.id);
+    assert.ok(made.ok);
+    if (!made.ok) throw new Error("create");
+    const open = await openTicket(d, who, made.token);
+    assert.equal(open.status, "play");
+    tick(3000);
+    const got = await answerTicket(d, who, made.token, choice);
+    if (got.status !== "scored") throw new Error("score");
+    return { open, got };
+  };
+  const tiers: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const { open, got } = await play(HARD);
+    if (open.status === "play") assert.equal(open.next?.rung, i, "the play card shows the next rung");
+    assert.equal(got.rewarded, true);
+    tiers.push(got.pay!.tier);
+    tick(day);
+  }
+  assert.deepEqual(tiers, ["white", "blue", "green", "amber", "red"], "white → red, never violet");
+  assert.equal((await play(HARD)).got.pay!.tier, "white", "after red it starts over");
+  // Same day again: right but pair-capped, rung stays at blue.
+  const capped = await play(HARD);
+  assert.equal(capped.got.rewarded, false);
+  assert.equal(capped.got.why, "pair-cap");
+  tick(day);
+  const blue = await play(HARD);
+  assert.equal(blue.got.pay!.tier, "blue", "a capped right leaves the rung");
+  tick(day);
+  // Green needs medium+: an easy card pays white, no climb, no reset.
+  const easy = await play(EASY);
+  if (easy.open.status === "play") assert.deepEqual(easy.open.next, { rung: 2, tier: "green", floor: 2 });
+  assert.equal(easy.got.pay!.tier, "white");
+  tick(day);
+  assert.equal((await play(CARD)).got.pay!.tier, "green", "a medium card pays green at rung 3");
+  tick(day);
+  const miss = await play(HARD, "Brazos");
+  assert.equal(miss.got.rewarded, false);
+  tick(day);
+  assert.equal((await play(HARD)).got.pay!.tier, "white", "a wrong answer reset the pair");
+  tick(day);
+  assert.equal((await play(HARD)).got.pay!.tier, "blue");
+  tick(3 * day);
+  assert.equal((await play(HARD)).got.pay!.tier, "white", "48 h idle resets");
+  // Other pairs climb on their own; news reports the server's colour.
+  const news = await friendNews(d, "ann");
+  assert.ok(news.length > 0 && news.every((n) => n.pay && ["white", "blue", "green", "amber", "red"].includes(n.pay.tier)));
   await db.close();
 });

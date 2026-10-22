@@ -21,8 +21,64 @@ export const CARD_MS = 25_000;
 export const ANSWER_GRACE_MS = 2_500;
 export const TOKEN_BYTES = 18;
 export const TOKEN_RE = /^[A-Za-z0-9_-]{24}$/;
-/** What a friend ticket pays each side. */
+/** What a friend ticket pays each side at the bottom rung (and for a card too easy for the pair's rung). */
 export const FRIEND_REWARD: Tier = "white";
+
+/**
+ * 0.1.25 friend ladder (Ryan). Each friend PAIR (either direction) climbs a rung with every rewarded ticket:
+ * white → blue → green → amber → red, then back to white. Both sides get the current rung's match.
+ *  - a wrong or late answer resets the pair to white
+ *  - a right answer blocked by a cap (pair once a day, sender three a day) leaves the rung where it is
+ *  - 48 h with no rewarded ticket resets to white
+ *  - green and amber need a card of difficulty 2+, red needs 3; a card too easy for the rung pays white and
+ *    neither climbs nor resets
+ *  - never violet
+ * No table or column holds the rung: the server replays the pair's answered friend_tickets rows (oldest first)
+ * every time, so the rung, and the colour each rewarded ticket paid, come only from server records.
+ */
+export const LADDER: readonly Tier[] = ["white", "blue", "green", "amber", "red"];
+export const LADDER_FLOOR: readonly number[] = [1, 1, 2, 2, 3];
+export const LADDER_IDLE_MS = 48 * 60 * 60 * 1000;
+
+export type LadderStep = { token: string; at: number; correct: boolean; late: boolean; rewarded: boolean; capped: boolean; diff: number };
+export type LadderPay = { tier: Tier; rung: number };
+export type LadderState = { rung: number; lastAt: number | null; paid: Map<string, LadderPay> };
+
+/** Replay a pair's answered tickets (any order; sorted here by answer time, then token). */
+export function replayLadder(steps: readonly LadderStep[]): LadderState {
+  const sorted = [...steps].sort((a, b) => a.at - b.at || (a.token < b.token ? -1 : 1));
+  let rung = 0;
+  let lastAt: number | null = null;
+  const paid = new Map<string, LadderPay>();
+  for (const s of sorted) {
+    if (lastAt != null && s.at - lastAt > LADDER_IDLE_MS) rung = 0;
+    if (s.late || !s.correct) {
+      rung = 0;
+      continue;
+    }
+    if (!s.rewarded) continue; // capped (or not yet settled): the rung stays
+    lastAt = s.at;
+    if ((Number(s.diff) || 2) < LADDER_FLOOR[rung]!) {
+      paid.set(s.token, { tier: FRIEND_REWARD, rung: 0 });
+      continue;
+    }
+    paid.set(s.token, { tier: LADDER[rung]!, rung });
+    rung = (rung + 1) % LADDER.length;
+  }
+  return { rung, lastAt, paid };
+}
+
+/** The rung the pair's next rewarded ticket pays at `now` (idle reset applied). */
+export function ladderNext(st: LadderState, now: number): { rung: number; tier: Tier; floor: number } {
+  const rung = st.lastAt != null && now - st.lastAt > LADDER_IDLE_MS ? 0 : st.rung;
+  return { rung, tier: LADDER[rung]!, floor: LADDER_FLOOR[rung]! };
+}
+
+/** "Next: Amber (needs medium+)". */
+export function ladderNextLine(tier: Tier, floor: number): string {
+  const name = tier[0]!.toUpperCase() + tier.slice(1);
+  return `Next: ${name}${floor >= 3 ? " (needs hard)" : floor >= 2 ? " (needs medium+)" : ""}`;
+}
 
 export function utcDay(at: number): string {
   return new Date(at).toISOString().slice(0, 10);
@@ -136,11 +192,11 @@ export function rewardDecision(p: { correct: boolean; late: boolean; senderRewar
   return { rewarded: true };
 }
 
-export function rewardLine(why: RewardWhy | null, from: string): string {
-  // Names are "First L." — don't double the stop.
-  if (why == null) return `+1 White match for you and ${from}${from.endsWith(".") ? "" : "."}`;
-  if (why === "pair-cap") return `Right! You two already shared a white today, so this one is for bragging rights.`;
-  if (why === "sender-cap") return `Right! ${from} has had their three friend-ticket whites today, so no match this time.`;
+export function rewardLine(why: RewardWhy | null, from: string, pay: LadderPay = { tier: FRIEND_REWARD, rung: 0 }): string {
+  const name = pay.tier[0]!.toUpperCase() + pay.tier.slice(1);
+  if (why == null) return `+1 ${name} match for you and ${from.replace(/\.$/, "")} (rung ${pay.rung + 1}/${LADDER.length})`;
+  if (why === "pair-cap") return `Right! You two already shared a ticket match today, so this one is for bragging rights. Your rung stays.`;
+  if (why === "sender-cap") return `Right! ${from} has had their three friend-ticket matches today, so no match this time. Your rung stays.`;
   if (why === "late") return "The wick burned out before the answer landed.";
   return "Not this time.";
 }
@@ -155,10 +211,11 @@ export function payFriend(
   n: number,
   cap: number,
   step?: (keys: Record<Tier, number>, tier: Tier, n: number) => { keys: Record<Tier, number>; add: Partial<Record<Tier, number>>; coin: number },
+  tier: Tier = FRIEND_REWARD,
 ) {
   if (step) {
-    // 0.0.96: full white pocket steps up (match ↑); coin only when every tier above is full.
-    const paid = step(keys, FRIEND_REWARD, Math.max(0, n));
+    // 0.0.96: full pocket steps up (match ↑); coin only when every tier above is full. 0.1.25: the ladder's colour.
+    const paid = step(keys, LADDER.includes(tier) ? tier : FRIEND_REWARD, Math.max(0, n));
     const added = Object.values(paid.add).reduce((a, b) => a + (b ?? 0), 0);
     return { keys: paid.keys, points: points + paid.coin, added, coins: paid.coin };
   }
