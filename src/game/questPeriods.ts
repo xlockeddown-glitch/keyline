@@ -83,6 +83,8 @@ export type Period = { key: string; kind: PeriodKind; start: number; end: number
 const DAY_RE = /^D(\d{4})-(\d{2})-(\d{2})$/;
 const WEEK_RE = /^W(\d{4})-(\d{2})-(\d{2})$/;
 const MONTH_RE = /^M(\d{4})-(\d{2})$/;
+/** 0.1.24: every period key a quest claim may name (day, week, month). The claim op schema uses this, so a new period kind can't be left out again. */
+export const QUEST_PERIOD_KEY = /^(D\d{4}-\d{2}-\d{2}|W\d{4}-\d{2}-\d{2}|M\d{4}-\d{2})$/;
 
 /** The window [start, end) of a key, or null if the key is not a real period. */
 export function periodOf(key: string): Period | null {

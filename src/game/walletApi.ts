@@ -4,6 +4,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { CITY_LIST, KIOSK } from "./data";
 import type { ClientOp, RideDeal } from "./walletApply";
 import type { LegacyGrant, QuestStatus } from "./questServer";
+import { QUEST_PERIOD_KEY } from "./questPeriods";
 import { COSMETIC_IDS, type Wardrobe } from "./cosmetics";
 import type { CityUnlocks } from "./cityPass";
 import type { CityId, Tier } from "./types";
@@ -86,7 +87,7 @@ const Op = z.discriminatedUnion("kind", [
     lat: z.number().finite().min(-90).max(90),
     lng: z.number().finite().min(-180).max(180),
   }),
-  z.object({ kind: z.literal("quest"), period: z.string().regex(/^(W\d{4}-\d{2}-\d{2}|M\d{4}-\d{2})$/), id: z.string().min(1).max(20) }),
+  z.object({ kind: z.literal("quest"), period: z.string().regex(QUEST_PERIOD_KEY), id: z.string().min(1).max(20) }),
   z.object({
     kind: z.literal("legacy"),
     claimed: z.array(z.string().max(20)).max(8),

@@ -258,3 +258,22 @@ export function rewardLine(rw: QuestReward): string {
   if (rw.lucky) bits.push("Lucky next month");
   return bits.join(" + ");
 }
+
+/** 0.1.24: what a refused quest collect says, by the server's reason (or "offline" when the call never landed). */
+export function questClaimLine(reason: string | undefined): string {
+  switch (reason) {
+    case "unproven":
+      return "Not done yet. The server counts it from your lamps.";
+    case "closed":
+      return "That quest has closed.";
+    case "not-yours":
+    case "unknown":
+      return "That quest isn't on your board anymore. Reopen the board to refresh it.";
+    case "busy":
+      return "Another update to your pocket landed at the same time. Tap Collect again.";
+    case "offline":
+      return "Couldn't reach the server. Nothing was lost; tap Collect again.";
+    default:
+      return "The server couldn't pay that quest. Nothing was lost; tap Collect again.";
+  }
+}

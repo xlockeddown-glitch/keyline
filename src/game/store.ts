@@ -70,6 +70,7 @@ import {
   type QuestLog,
 } from "./quests";
 import { monthKey } from "./questPeriods";
+import { questClaimLine } from "./questBoard";
 
 const SAVE_KEY = "keyline-save-v1";
 
@@ -2243,7 +2244,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const r = await commitWallet({ kind: "quest", period, id });
     if (!r?.ok && !r?.replay) {
-      flashToast(set, get, r?.reason === "unproven" ? "Not done yet. The server counts it from your lamps." : r?.reason === "closed" ? "That quest has closed." : "Board's busy. Try again in a moment.", 2000);
+      flashToast(set, get, questClaimLine(r ? r.reason : "offline"), 2400);
       return null;
     }
     const lucky = r.quest?.lucky;
