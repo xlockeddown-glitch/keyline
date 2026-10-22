@@ -38,3 +38,12 @@ test("Goals talk about places, not marks or stamps", () => {
   for (const line of copy) assert.doesNotMatch(line!, /\b(marks?|stamps?|[Ss]tamp|survey|atlas)\b/, line);
   assert.doesNotMatch(src, /: "stamps"/);
 });
+
+test("0.1.28 Journal · Progress reads standing → goals → collections → stats → log", () => {
+  const src = read("../components/keyline/HqPanel.tsx");
+  const tab = src.slice(src.indexOf('tab === "Progress"'));
+  const marks = ["<LevelPanel />", "<DailyGoals", 'kicker">Daily Blitz', "<QuestDesk", "<FriendJournalRow", 'kicker mt-2">Goals', "<PassProgressRow />", "<PrintPanel />", "<MarketLightsPanel />", 'className="hq-stats"', "<RecentRewards />", 'kicker mt-2">Bank'];
+  const at = marks.map((m) => tab.indexOf(m));
+  assert.ok(at.every((i) => i >= 0), marks.filter((_, i) => at[i] < 0).join(", "));
+  assert.deepEqual([...at].sort((a, b) => a - b), at);
+});

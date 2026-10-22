@@ -262,12 +262,9 @@ export function HqPanel() {
           {tab === "Progress" ? (
             <div className="grid gap-4 text-sm">
               <LevelPanel />
-              <RecentRewards />
-              <PrintPanel />
-              <MarketLightsPanel />
               <DailyGoals act={false} />
               <div>
-                <p className="kicker">Quests</p>
+                <p className="kicker">Daily Blitz</p>
                 <p className="mt-1 text-xs text-fg-muted">
                   {blitzReady
                     ? `Daily Blitz is posted at ${boardLine(cityId)}.`
@@ -285,15 +282,40 @@ export function HqPanel() {
                   </p>
                 </div>
               </div>
-              <PassProgressRow />
-              <FriendJournalRow />
               <QuestDesk act={false} cityId={cityId} quests={quests} onWear={wearCloth} />
-              <div>
-                <p className="kicker mt-2">Bank</p>
-                <p className="mt-1 text-xs text-fg-muted">
-                  The exchange is at {counterLine(cityId)}. Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower.
-                </p>
-              </div>
+              <FriendJournalRow />
+              <p className="kicker mt-2">Goals</p>
+              <ul className="grid gap-2">
+                {SURVEY_GOALS.filter((g) => g.kind !== "ward" || g.cityId === cityId).map((g) => {
+                  const have = surveyHave(g, atlas, distanceM);
+                  const done = Boolean(survey[g.id]);
+                  return (
+                    <li key={g.id} className="hq-row">
+                      <div className="hq-row-copy">
+                        <p className={done ? "hq-row-title text-fg-muted" : "hq-row-title"}>{g.label}</p>
+                        <p className="hq-row-sub">{g.blurb}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <ItemIcon item={g.reward} size={28} />
+                        <span className="text-sm tabular-nums text-fg-muted">
+                          {done
+                            ? "Paid"
+                            : g.kind === "walk"
+                              ? `${(have / 1000).toFixed(1)}/${(g.need / 1000).toFixed(0)} km`
+                              : `${Math.min(have, g.need)}/${g.need}`}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-xs text-fg-subtle">
+                Contracts are taken at {boardLine(cityId)}. The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
+                {desk.name}.
+              </p>
+              <PassProgressRow />
+              <PrintPanel />
+              <MarketLightsPanel />
               <ul className="hq-stats">
                 <li className="hq-row">
                   <ItemIcon item="coin" size={36} />
@@ -335,35 +357,13 @@ export function HqPanel() {
                   </div>
                 </li>
               </ul>
-              <p className="kicker mt-2">Goals</p>
-              <ul className="grid gap-2">
-                {SURVEY_GOALS.filter((g) => g.kind !== "ward" || g.cityId === cityId).map((g) => {
-                  const have = surveyHave(g, atlas, distanceM);
-                  const done = Boolean(survey[g.id]);
-                  return (
-                    <li key={g.id} className="hq-row">
-                      <div className="hq-row-copy">
-                        <p className={done ? "hq-row-title text-fg-muted" : "hq-row-title"}>{g.label}</p>
-                        <p className="hq-row-sub">{g.blurb}</p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <ItemIcon item={g.reward} size={28} />
-                        <span className="text-sm tabular-nums text-fg-muted">
-                          {done
-                            ? "Paid"
-                            : g.kind === "walk"
-                              ? `${(have / 1000).toFixed(1)}/${(g.need / 1000).toFixed(0)} km`
-                              : `${Math.min(have, g.need)}/${g.need}`}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="text-xs text-fg-subtle">
-                Contracts are taken at {boardLine(cityId)}. The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
-                {desk.name}.
-              </p>
+              <RecentRewards />
+              <div>
+                <p className="kicker mt-2">Bank</p>
+                <p className="mt-1 text-xs text-fg-muted">
+                  The exchange is at {counterLine(cityId)}. Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower.
+                </p>
+              </div>
             </div>
           ) : null}
         </div>
