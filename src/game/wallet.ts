@@ -500,8 +500,8 @@ export function dailyOp(w: WalletState, _day: string, cityId: CityId): OpResult 
   return applyDelta(w, { coins: paid.points - w.coins, keys: diff, cities: runs.u });
 }
 
-export function friendOp(w: WalletState, n: number): OpResult {
-  const paid = payFriend(w.keys, w.coins, n, matchCap("white"), payMatchesOf);
+export function friendOp(w: WalletState, n: number, tier: Tier = "white"): OpResult {
+  const paid = payFriend(w.keys, w.coins, n, matchCap("white"), payMatchesOf, tier);
   return applyDelta(w, { coins: paid.points - w.coins, keys: keyDiff(w.keys, paid.keys) });
 }
 

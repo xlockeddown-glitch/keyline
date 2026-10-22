@@ -67,9 +67,9 @@ test("API: A sends, B redeems right → both +1 white in news, sender sees 'Ben 
   assert.deepEqual(await apiAnswer(d, "cat", { token: sent.token, choice: "Colorado" }), { status: "reject", reason: "not-yours" });
 
   const annNews = await apiNews(d, "ann");
-  assert.deepEqual(annNews, [{ id: `s:${sent.token}`, role: "sender", name: "Ben C." }], "sender's toast names First L.");
+  assert.deepEqual(annNews, [{ id: `s:${sent.token}`, role: "sender", name: "Ben C.", pay: { tier: "white", rung: 0 } }], "sender's toast names First L.");
   const benNews = await apiNews(d, "ben");
-  assert.deepEqual(benNews, [{ id: `f:${sent.token}`, role: "friend", name: "Ann B." }]);
+  assert.deepEqual(benNews, [{ id: `f:${sent.token}`, role: "friend", name: "Ann B.", pay: { tier: "white", rung: 0 } }]);
   assert.deepEqual(await apiAck(d, "ann", { ids: annNews.map((n) => n.id) }), { acked: 1 });
   assert.deepEqual(await apiNews(d, "ann"), []);
   await db.close();

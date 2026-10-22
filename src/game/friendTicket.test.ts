@@ -1,6 +1,7 @@
 import { payMatchesOf } from "./goals.ts";
 // 0.0.50 friend tickets: the reward and anti-abuse rules on their own.
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import {
   ANSWER_GRACE_MS,
@@ -134,8 +135,47 @@ test("markFriendPaid: a reward lands in a save once, however often the news repe
 });
 
 test("result lines: First L. names don't get a doubled full stop", () => {
-  assert.equal(rewardLine(null, "Ryan G."), "+1 White match for you and Ryan G.");
-  assert.equal(rewardLine(null, "Cher"), "+1 White match for you and Cher.");
-  assert.match(rewardLine("pair-cap", "Ryan G."), /already shared a white today/);
-  assert.match(rewardLine("sender-cap", "Ryan G."), /three friend-ticket whites today/);
+  assert.equal(rewardLine(null, "Ryan G."), "+1 White match for you and Ryan G (rung 1/5)");
+  assert.equal(rewardLine(null, "Beth", { tier: "green", rung: 2 }), "+1 Green match for you and Beth (rung 3/5)");
+  assert.match(rewardLine("pair-cap", "Ryan G."), /already shared a ticket match today.*rung stays/);
+  assert.match(rewardLine("sender-cap", "Ryan G."), /three friend-ticket matches today/);
+});
+
+test("0.1.25 ladder replay: climb, wrong/late reset, cap holds, idle reset, difficulty floor, no violet", async () => {
+  const { replayLadder, ladderNext, ladderNextLine, LADDER, LADDER_IDLE_MS } = await import("./friendTicket.ts");
+  const H = 3600_000;
+  let t = 0;
+  const step = (o: Partial<{ correct: boolean; late: boolean; rewarded: boolean; capped: boolean; diff: number }> = {}) => ({
+    token: `t${(t += 1)}`, at: t * 24 * H, correct: true, late: false, rewarded: true, capped: false, diff: 3, ...o,
+  });
+  const climb = [step(), step(), step(), step(), step(), step()];
+  const st = replayLadder(climb);
+  assert.deepEqual(climb.map((s) => st.paid.get(s.token)!.tier), ["white", "blue", "green", "amber", "red", "white"]);
+  assert.ok(!LADDER.includes("violet"));
+  t = 0;
+  assert.equal(replayLadder([step(), step(), step({ correct: false, rewarded: false })]).rung, 0, "wrong resets");
+  t = 0;
+  assert.equal(replayLadder([step(), step(), step({ late: true, correct: false, rewarded: false })]).rung, 0, "late resets");
+  t = 0;
+  assert.equal(replayLadder([step(), step(), step({ rewarded: false, capped: true })]).rung, 2, "a capped right keeps the rung");
+  t = 0;
+  const easy = [step(), step(), step({ diff: 1 })];
+  const e = replayLadder(easy);
+  assert.equal(e.paid.get(easy[2]!.token)!.tier, "white");
+  assert.equal(e.rung, 2, "too easy: no climb, no reset");
+  t = 0;
+  const red = [step(), step(), step(), step(), step({ diff: 2 })];
+  assert.equal(replayLadder(red).paid.get(red[4]!.token)!.tier, "white", "red needs a hard card");
+  t = 0;
+  const idle = replayLadder([step(), step()]);
+  assert.equal(ladderNext(idle, idle.lastAt! + LADDER_IDLE_MS + 1).rung, 0, "48 h idle resets");
+  assert.equal(ladderNext(idle, idle.lastAt! + H).tier, "green");
+  assert.equal(ladderNextLine("amber", 2), "Next: Amber (needs medium+)");
+  assert.equal(ladderNextLine("red", 3), "Next: Red (needs hard)");
+});
+
+test("0.1.25 ladder is server-only: the wallet pays the server's replay, never a client tier", () => {
+  const src = readFileSync(new URL("./walletApply.ts", import.meta.url), "utf8");
+  assert.match(src, /const pay = await ticketPay\(sql, row\.pair_key, token\);/);
+  assert.match(src, /friendOp\(w, 1, pay\.tier\)/);
 });

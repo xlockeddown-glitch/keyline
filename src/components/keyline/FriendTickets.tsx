@@ -3,7 +3,7 @@ import { Check, Copy, Share2, Ticket, X } from "lucide-react";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGame } from "@/game/store";
 import { ackFriendNews, fetchFriendNews, sendFriendTicket } from "@/game/friendApi";
-import { DAILY_TICKETS } from "@/game/friendTicket";
+import { DAILY_TICKETS, LADDER, type LadderPay } from "@/game/friendTicket";
 import { browserStores, noteAnswered, noteDismissed, noteIgnored, offerAllowed, readOffer, readRecent, type RecentCard } from "@/game/friendOffer";
 import { SignInActions } from "./AuthChip";
 
@@ -123,7 +123,7 @@ export function FriendJournalRow() {
         <p className="hq-row-title">Send a friend ticket</p>
         <p className="hq-row-sub">
           {recent.length
-            ? `Your friend gets the same card and wick. Both of you get a White match if they're right. ${DAILY_TICKETS} a day.`
+            ? `Your friend gets the same card and wick. Both of you get a match if they’re right, climbing White → Red with each right ticket between you. ${DAILY_TICKETS} a day.`
             : "Answer a trivia card at a lamp and it waits here to send to a friend."}
         </p>
         {recent.length ? (
@@ -208,7 +208,7 @@ function FriendSheet({ card, onClose }: { card: Offer; onClose: () => void }) {
 
   const share = async (url: string) => {
     try {
-      await navigator.share({ title: "Keyline friend ticket", text: "One trivia card, 25 seconds. Get it right and we both get a white match.", url });
+      await navigator.share({ title: "Keyline friend ticket", text: "One trivia card, 25 seconds. Get it right and we both get a match — every right one climbs a color.", url });
     } catch (e) {
       // Cancelled is fine; anything else falls back to the clipboard.
       if (!(e instanceof DOMException && e.name === "AbortError")) void copy(url);
@@ -231,7 +231,7 @@ function FriendSheet({ card, onClose }: { card: Offer; onClose: () => void }) {
         </div>
         <p className="ft-q">{card.q}</p>
         <p className="mt-3 text-sm text-pretty text-fg-muted">
-          Your friend gets this exact card with the same 25-second wick. Get it right and you each get a White match.
+          Your friend gets this exact card with the same 25-second wick. Get it right and you each get a match; each right ticket between you climbs a color (White → Red).
         </p>
 
         {state.kind === "making" ? <div className="mt-4 h-11 animate-pulse rounded-md bg-bg-subtle" aria-label="Making your ticket" /> : null}
@@ -261,7 +261,7 @@ function FriendSheet({ card, onClose }: { card: Offer; onClose: () => void }) {
 
         {state.kind === "guest" ? (
           <div className="mt-4 flex flex-col gap-2">
-            <p className="text-sm text-fg">Friend tickets need an account, so the white knows where to go.</p>
+            <p className="text-sm text-fg">Friend tickets need an account, so the match knows where to go.</p>
             <SignInActions />
           </div>
         ) : null}
@@ -289,7 +289,10 @@ function FriendNews() {
       try {
         const items = await fetchFriendNews();
         if (!live || !items.length) return;
-        const paid = useGame.getState().payFriendTickets(items.map((i) => i.id));
+        const paid = useGame.getState().payFriendTickets(
+          items.map((i) => i.id),
+          Object.fromEntries(items.map((i) => [i.id, i.pay?.tier ?? "white"])),
+        );
         // Ack everything listed: ids this save already paid are done too.
         await ackFriendNews({ data: { ids: items.map((i) => i.id) } });
         const fresh = items.filter((i) => paid.fresh.includes(i.id));
@@ -331,9 +334,17 @@ function FriendNews() {
   );
 }
 
-function newsLine(items: { role: "sender" | "friend"; name: string }[], added: number, coins: number): string {
+export function newsLine(items: { role: "sender" | "friend"; name: string; pay?: LadderPay }[], added: number, coins: number): string {
   const n = items.length;
-  const tail = added && coins ? ` · +${added} match${added === 1 ? "" : "es"} (match ↑), +${coins} coin (every pocket full)` : coins ? ` · +${coins} coin (every pocket full)` : ` · +${n} White match${n === 1 ? "" : "es"}`;
+  // 0.1.25 ladder: one ticket names its colour and rung.
+  if (n === 1 && !coins) {
+    const it = items[0]!;
+    const pay = it.pay ?? { tier: "white" as const, rung: 0 };
+    const name = pay.tier[0]!.toUpperCase() + pay.tier.slice(1);
+    const who = it.name.replace(/\.$/, "");
+    return `${it.role === "sender" ? `${who} got your friend ticket right` : `Friend ticket from ${who}`} · +1 ${name} match for you and ${who} (rung ${pay.rung + 1}/${LADDER.length})`;
+  }
+  const tail = added && coins ? ` · +${added} match${added === 1 ? "" : "es"} (match ↑), +${coins} coin (every pocket full)` : coins ? ` · +${coins} coin (every pocket full)` : ` · +${n} match${n === 1 ? "" : "es"}`;
   if (n === 1) {
     const it = items[0]!;
     return it.role === "sender" ? `${it.name} got your friend ticket right${tail}` : `Friend ticket from ${it.name}${tail}`;

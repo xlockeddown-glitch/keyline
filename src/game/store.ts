@@ -327,7 +327,7 @@ export type GameState = {
   /** Pay the Daily Lantern Run finish once per UTC day. Returns what landed, or null if already paid. */
   payDailyRun: (day: string, city: CityId) => { added: Partial<Record<Tier, number>>; coins: number } | null;
   /** Land server-confirmed friend-ticket whites (each id once per save). Returns the ids newly paid. */
-  payFriendTickets: (ids: string[]) => { fresh: string[]; added: number; coins: number };
+  payFriendTickets: (ids: string[], tiers?: Record<string, Tier>) => { fresh: string[]; added: number; coins: number };
   bankUp: (tier: Tier) => void;
   bankDown: (tier: Tier) => void;
   /** 0.1.22: collect a weekly / monthly quest. The server recounts it; resolves to the toast line, or null when refused. */
@@ -2197,10 +2197,15 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
     return { added: paid.added, coins: paid.coins };
   },
-  payFriendTickets: (ids) => {
+  payFriendTickets: (ids, tiers = {}) => {
     const marked = markFriendPaid(get().friendPaid, ids);
     if (!marked.fresh.length) return { fresh: [], added: 0, coins: 0 };
-    const paid = payFriend(get().keys, get().points, marked.fresh.length, matchCap("white"), payMatchesOf);
+    // 0.1.25: each ticket lands its ladder colour as the server reported it (the server wallet pays its own replay).
+    let paid = { keys: get().keys, points: get().points, added: 0, coins: 0 };
+    for (const id of marked.fresh) {
+      const p = payFriend(paid.keys, paid.points, 1, matchCap("white"), payMatchesOf, tiers[id] ?? "white");
+      paid = { keys: p.keys, points: p.points, added: paid.added + p.added, coins: paid.coins + p.coins };
+    }
     sfx.pickup();
     set({ friendPaid: marked.paid, keys: paid.keys, points: paid.points });
     if (walletLive()) {
