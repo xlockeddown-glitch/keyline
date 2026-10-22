@@ -1,5 +1,6 @@
 // 0.0.78 server wallet: first sync keeps the higher pocket (once), a grade pays from the server's
 // own formula, the same token pays once, and a spend that isn't in the pocket is refused.
+import { cacheLine } from "./goals.ts";
 import { mock, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -1505,4 +1506,23 @@ test("0.1.19: the device offers no spark at a violet lamp", () => {
   for (const t of ["white", "blue", "green", "amber", "red"]) assert.equal(sparkTier(t), true);
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(src, /if \(!sparkTier\(poi\.tier\)\) return `Need a \$\{TIER_LABEL\[poi\.tier\]\} match\.`;/);
+});
+
+test("0.1.23: a second cache open (another device) says already opened, never an empty 'pockets full'", async () => {
+  const sql = await db();
+  const cities = { ...freshUnlocks(), start: "chicago", unlocked: ["chicago"] as const, freePick: false };
+  // Ryan's pockets: white and blue at 30, room in green/amber/red.
+  await syncPlayer(sql, "ryan", snap({ cities, keys: { white: 30, blue: 30, green: 24, amber: 6, red: 1 } }), "ryandesk1");
+  const first = await applyClientOp(sql, "ryan", { kind: "cache", city: "chicago" });
+  assert.ok(first.cache!.got.length >= 2, "a cache pays amber/red when those pockets have room");
+  assert.equal(first.cache!.coin, 0);
+  const again = await applyClientOp(sql, "ryan", { kind: "cache", city: "chicago" });
+  assert.equal(again.replay, true);
+  assert.equal(again.cache!.already, true);
+  assert.deepEqual(again.cache!.got, first.cache!.got, "the replay reports what the first open paid");
+  assert.equal(cacheLine([], 0), "Match cache! It was empty.");
+  assert.doesNotMatch(cacheLine([], 0), /full/);
+  assert.match(cacheLine([], 90), /Every pocket is full: \+90 coin/);
+  const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  assert.match(src, /if \(r\.replay \|\| r\.cache\?\.already \|\| !r\.cache\)/, "the device shows 'already opened' on a replay");
 });

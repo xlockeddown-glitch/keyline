@@ -133,7 +133,7 @@ export type WalletWire = {
   ingredient?: { id: string; n: number };
   line?: string;
   wheelWin?: number;
-  cache?: { got: Tier[]; coin: number };
+  cache?: { got: Tier[]; coin: number; already?: boolean };
   rideDeal?: RideDeal;
   hurry?: { arriveAt: number; cost: number };
   /** 0.1.9: paint can found (cache) or the can a paint op spent. */

@@ -152,6 +152,12 @@ export function cachePrize(player: string, day: string): Tier[] {
   return out;
 }
 
+/** 0.1.23: the cache pop line. "Pockets full" only when it really paid overflow coin. */
+export function cacheLine(got: Tier[], coin: number, label: Record<Tier, string> = { white: "White", blue: "Blue", green: "Green", amber: "Amber", red: "Red", violet: "Violet" }): string {
+  if (got.length) return `Match cache! ${got.map((t) => label[t]).join(", ")}${coin ? ` + ${coin} coin (pockets full)` : ""}.`;
+  return coin > 0 ? `Match cache! Every pocket is full: +${coin} coin.` : "Match cache! It was empty.";
+}
+
 /** Pay a list of matches with overflow coin. */
 export const STEP_TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 

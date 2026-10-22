@@ -41,7 +41,7 @@ import type {
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
-import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
+import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cacheLine, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
@@ -2715,10 +2715,7 @@ export const useGame = create<GameState>((set, get) => ({
   claimCache: () => {
     const d = today();
     if (get().cacheDay === d) return;
-    const say = (got: Tier[], coin: number) =>
-      got.length
-        ? `Match cache! ${got.map((t) => TIER_LABEL[t]).join(", ")}${coin ? ` + ${coin} coin (pockets full)` : ""}.`
-        : `Match cache! Every pocket is full: +${coin} coin.`;
+    const say = (got: Tier[], coin: number) => cacheLine(got, coin, TIER_LABEL);
     set({ cacheDay: d });
     sfx.pickup();
     if (walletLive()) {
@@ -2728,6 +2725,12 @@ export const useGame = create<GameState>((set, get) => ({
           return;
         }
         if (r.can) gotCan(r.can);
+        // 0.1.23: already opened today (another device): say so, no empty "pockets full" pop.
+        if (r.replay || r.cache?.already || !r.cache) {
+          set({ toast: "You already opened today's match cache. A new one appears tomorrow." });
+          saveNow(get);
+          return;
+        }
         popMatch({ kind: "cache", big: "Match cache!", sub: say(r.cache?.got ?? [], r.cache?.coin ?? 0).replace(/^Match cache! /, ""), tiers: r.cache?.got ?? [], coin: r.cache?.coin ?? 0 });
         saveNow(get);
       });

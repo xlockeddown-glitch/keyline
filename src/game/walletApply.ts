@@ -528,7 +528,7 @@ export type ClientResult = Applied & {
   /** 0.0.92: index of the slice the server rolled and paid (the client animates to it). */
   wheelWin?: number;
   /** 0.0.93: the matches a cache paid (the rest became coin). */
-  cache?: { got: Tier[]; coin: number };
+  cache?: { got: Tier[]; coin: number; already?: boolean };
   rideDeal?: RideDeal;
   /** 0.1.2: the arrival and charge the server set for a Hurry up. */
   hurry?: { arriveAt: number; cost: number };
@@ -649,6 +649,18 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       const delta = applyDelta(w, { coins: paid.coin, keys });
       return delta.ok ? { ...delta, detail: JSON.stringify({ got, coin }) } : delta;
     });
+    // 0.1.23: a replay (today's cache already opened, e.g. on another device) used to answer got [] / coin 0, which
+    // the device showed as "Every pocket is full: +0 coin". Say it was already opened, with what it paid then.
+    if (r.ok && r.replay) {
+      let first: { got?: unknown; coin?: unknown } = {};
+      try {
+        first = JSON.parse(r.detail ?? "{}");
+      } catch {
+        /* old row: no detail */
+      }
+      const was = Array.isArray(first.got) ? (first.got as Tier[]) : [];
+      return { ...applied(r), cache: { got: was, coin: Number(first.coin) || 0, already: true } };
+    }
     const can = r.ok && !r.replay ? await grantCan(sql, sessionUserId, `c:${day}`, CAN_ODDS.cache, Math.random(), Math.random()) : null;
     return { ...applied(r), cache: { got, coin }, ...(can ? { can } : {}) };
   }
