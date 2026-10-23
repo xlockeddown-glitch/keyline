@@ -321,7 +321,8 @@ export function auditCraft(items) {
       flag(errors, "structure", item, "Two choices match once punctuation is ignored.");
     }
 
-    const sentenceStops = choices.filter((c) => /[a-z)]\.$/.test(c)).length;
+    // Name and title abbreviations (Jr., Sr., Bros., St., Mt., Dr.) are not sentence stops.
+    const sentenceStops = choices.filter((c) => /[a-z)]\.$/.test(c) && !/\b(?:Jr|Sr|Bros|St|Mt|Dr)\.$/.test(c)).length;
     if (sentenceStops >= 1 && sentenceStops <= 3) {
       flag(warnings, "structure", item, "Choices mix ending periods.");
     }

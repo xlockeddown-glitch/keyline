@@ -235,7 +235,7 @@ export const PLUS_HISTORY_20261019: TriviaQ[] = [
   q("The Titanic sank in which ocean?", ["Pacific", "Atlantic", "Indian", "Arctic"], "Atlantic", 1),
   q("Which ship carried the Pilgrims to America in 1620?", ["Santa Maria", "Mayflower", "Endeavour", "Victory"], "Mayflower", 1),
   q("The Declaration of Independence was signed in which year?", ["1776", "1789", "1812", "1754"], "1776", 1),
-  q("Who gave the 'I Have a Dream' speech?", ["Malcolm X", "Martin Luther King Jr.", "John Lewis", "Frederick Douglass"], "Martin Luther King Jr.", 1),
+  q("Who gave the 'I Have a Dream' speech?", ["Malcolm X", "Martin Luther King Jr.", "John Lewis", "Adam Clayton Powell Jr."], "Martin Luther King Jr.", 1),
   q("The Wright brothers made their first powered flight in 1903 near…", ["Dayton, Ohio", "Kitty Hawk, North Carolina", "Detroit, Michigan", "Boston, Massachusetts"], "Kitty Hawk, North Carolina", 2),
   q("Julius Caesar was killed in the year…", ["44 BC", "100 BC", "AD 14", "AD 79"], "44 BC", 2),
   q("Which U.S. president gave the Gettysburg Address?", ["Ulysses S. Grant", "Abraham Lincoln", "Andrew Johnson", "James Buchanan"], "Abraham Lincoln", 2),

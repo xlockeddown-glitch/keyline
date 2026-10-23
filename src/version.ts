@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.32";
+export const APP_VERSION = "0.1.33";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k132a";
+export const PUBLISH_STAMP = "k133a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -140,3 +140,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.30: title page shows the trivia card total bottom-left ("10,793 trivia cards"), counted at build time from the bank files trivia:quotas reads; only the number ships (k130a).
 // 0.1.31: a bought car is driven in every city and session — server-owned cars are picked when none is (new device, cleared save, a stale tab), tabs share the car pick; choosing the cab sticks (k131a).
 // 0.1.32: car/cab "No road that way." in Temple — the drive graph had only live Overpass (failing) then sparse OSRM spines ~45 s later; now it drives the baked city streets after 6 s and live roads join when they land; an unloaded drive graph says the roads are still loading (k132a).
+// 0.1.33: Friday weekly trivia cards (2026-10-23) — 15 new verified city cards in weekly_20261023, no math: Tucson (gem show, the Loop, Sun Link streetcar, Hotel Congress and the Dillinger gang, El Tour de Tucson), Austin (Texas Book Festival, Ellsworth Kelly's 'Austin', Central Library, November council elections), Temple (Level I trauma center, Rip Torn and Sissy Spacek), Denver (Black American West Museum, Elitch Gardens, Tim Allen, the elected auditor). Accuracy pass: the El Mansouri (Morocco) card no longer dates her appointment to October (named Sept 29, government sworn in Oct 16); the 'I Have a Dream' card no longer has the answer as the only choice ending in a period; the trivia audit no longer reads Jr./Sr./Bros./St. as sentence stops (k133a).

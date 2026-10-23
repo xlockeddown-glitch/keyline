@@ -24,7 +24,7 @@ export const CUR_SPORTS_20261021: TriviaQ[] = [
 
 export const CUR_POLITICAL_20261021: TriviaQ[] = [
   q("Brazil's Oct 25, 2026 presidential runoff pits Lula against…", ["Jair Bolsonaro", "Flávio Bolsonaro", "Tarcísio de Freitas", "Ciro Gomes"], "Flávio Bolsonaro", 1),
-  q("Fatima Ezzahra El Mansouri became the first woman to serve as prime minister of which country in Oct 2026?", ["Tunisia", "Morocco", "Algeria", "Jordan"], "Morocco", 1),
+  q("Fatima Ezzahra El Mansouri, whose government was sworn in Oct 2026, is the first woman to serve as prime minister of which country?", ["Tunisia", "Morocco", "Algeria", "Jordan"], "Morocco", 1),
   q("Luca Niculescu, sworn in as prime minister in Oct 2026, leads which country?", ["Moldova", "Romania", "Bulgaria", "Hungary"], "Romania", 2),
   q("Who resigned as Sweden's prime minister after the Sept 2026 election?", ["Magdalena Andersson", "Ulf Kristersson", "Stefan Löfven", "Ebba Busch"], "Ulf Kristersson", 2),
   q("In Russia's Sept 2026 State Duma election, which party won 349 of 450 seats?", ["Communist Party", "United Russia", "LDPR", "New People"], "United Russia", 1),
