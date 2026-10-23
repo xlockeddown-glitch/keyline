@@ -1466,12 +1466,29 @@ export function onArterial(g: StreetGraph | null, lat: number, lng: number) {
   return Boolean(g.segs[s.seg]?.arterial);
 }
 
-export async function bootstrapDrive(lat: number, lng: number, hubs: Pt[], signal?: AbortSignal) {
+/** 0.1.32: how long the car waits on the live road fetch before driving the city's baked streets. */
+export const DRIVE_LIVE_WAIT_MS = 6000;
+
+export async function bootstrapDrive(lat: number, lng: number, hubs: Pt[], signal?: AbortSignal, cityId?: string) {
   const g = createGraph(lat, lng);
-  try {
-    await expandGraph(g, lat, lng, 2000, signal, true);
-  } catch {
-    /* live fail — try spines */
+  // 0.1.32: the drive graph had no baked fallback, only live Overpass (then a few OSRM spines ~45 s later). When
+  // the fetch is slow or failing (Temple, Oct 22) the car and the cab both said "No road that way." Give the
+  // live fetch a few seconds; if it isn't in, drive the city's baked streets now and let the live roads join the
+  // same graph when (if) they land.
+  const live = expandGraph(g, lat, lng, 2000, signal, true).then(
+    () => true,
+    () => false,
+  );
+  const inTime = await Promise.race([live, new Promise<null>((r) => setTimeout(() => r(null), DRIVE_LIVE_WAIT_MS))]);
+  if (inTime !== true || g.segs.length < 8) {
+    if (cityId) {
+      const baked = await fetch(`/streets/${cityId}.json`)
+        .then(async (res) => (res.ok ? ((await res.json()) as { lines?: number[][] }).lines ?? [] : []))
+        .catch(() => [] as number[][]);
+      if (baked.length) ingestOsmWays(g, unpackLines(baked), true);
+    }
+    if (g.segs.length >= 8) return g;
+    if (inTime === null) await live;
   }
   if (g.segs.length < 8) {
     const nearby = [...hubs]

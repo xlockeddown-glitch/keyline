@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.31";
+export const APP_VERSION = "0.1.32";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k131a";
+export const PUBLISH_STAMP = "k132a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -139,3 +139,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.27: art fit — the Outfitter, Counter and Notice/Quest Board sheets in the lamp-card style (warm glow, brass hairline, serif titles, brass badges; scoped to .errand-lit so the Journal is untouched); redrawn map emblems for the outfitter and street counter; the notice/quest board emblem is now a station-style enamel sign (oxblood, cream '!', gold glow when there's quest news); sheet badges and portraits as rounded-square brass plates; harder weekly and monthly quests with a Challenge slot (Ryan: 'finished nearly every weekly and monthly quest on day one'): from the week of Monday 26 Oct 2026 and from November 2026 (this week's and October's sets don't change), targets roughly 1.5–2× on the busiest quests (50 green+ lamps, 25 in a row, cache on 6 days, house key on 5 days, 18 districts, 25 street matches, 10 amber+; monthly 25 market lamps, 120 across 4 categories of 20+, 40 in a row, 20 red+, 18 days), and every weekly and monthly set ends with one Challenge drawn on its own: weekly Sharpshooter (30 perfect answers), Unbroken (40 in a row) or Red week (6 red+ lamps) for 5,000 coin + a red match; monthly Iron streak (75 in a row), Lamplighter of the month (500 right lamps) or Dead eye (150 perfect answers) for 40,000 coin + 2 red matches. Never violet. Set sizes stay 5 weekly and 4 monthly (the Challenge is one of them); bonuses unchanged (k127a).
 // 0.1.30: title page shows the trivia card total bottom-left ("10,793 trivia cards"), counted at build time from the bank files trivia:quotas reads; only the number ships (k130a).
 // 0.1.31: a bought car is driven in every city and session — server-owned cars are picked when none is (new device, cleared save, a stale tab), tabs share the car pick; choosing the cab sticks (k131a).
+// 0.1.32: car/cab "No road that way." in Temple — the drive graph had only live Overpass (failing) then sparse OSRM spines ~45 s later; now it drives the baked city streets after 6 s and live roads join when they land; an unloaded drive graph says the roads are still loading (k132a).

@@ -481,7 +481,7 @@ export function GameMap() {
       return;
     }
     if (!drive || drive.segs.length < 4) {
-      flash("No road that way.");
+      flash("The roads are still loading. Try again in a moment.");
       return;
     }
     const here = { lat: pos.current.lat, lng: pos.current.lng };
@@ -1239,7 +1239,7 @@ export function GameMap() {
         setStreets("error");
       });
 
-    void bootstrapDrive(dock.lat, dock.lng, city.pois, abort.signal).then((dg) => {
+    void bootstrapDrive(dock.lat, dock.lng, city.pois, abort.signal, city.id).then((dg) => {
       if (cancelled) return;
       driveRef.current = dg;
       void fillSurroundings(dg, dock.lat, dock.lng, city.pois, abort.signal, true).then(() => {
@@ -2243,7 +2243,7 @@ export function GameMap() {
         if (abort.signal.aborted) return;
         setStreets("error");
       });
-    void bootstrapDrive(city.spawn.lat, city.spawn.lng, city.pois, abort.signal).then((dg) => {
+    void bootstrapDrive(city.spawn.lat, city.spawn.lng, city.pois, abort.signal, city.id).then((dg) => {
       driveRef.current = dg;
       void fillSurroundings(dg, city.spawn.lat, city.spawn.lng, city.pois, abort.signal, true);
     });
