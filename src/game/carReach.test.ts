@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { lampFromRide, rideOf, trimToReach } from "./carReach.ts";
+import { lampFromRide, rideOf, seatIsOwnCar, trimToReach } from "./carReach.ts";
 import { dest, distM } from "./geo.ts";
 
 test("own car answers lamps, the city cab does not, on foot does", () => {
@@ -32,4 +32,17 @@ test("GameMap: lamp, vault and match taps use the ride rule; dealer and house st
   assert.match(src, /trimToReach\(raw, target/);
   assert.match(src, /Step out of the car to visit the lot\./);
   assert.match(src, /Step out of the car to go home\./);
+});
+
+test("0.1.35: owning a car makes any seat your car; it answers lamps and picks matches up while driving", () => {
+  assert.equal(seatIsOwnCar("roadster"), true);
+  assert.equal(seatIsOwnCar(null), false, "chose the cab on purpose (carOn null): still the city cab");
+  assert.equal(lampFromRide(rideOf(true, seatIsOwnCar("roadster"))), true);
+  assert.equal(lampFromRide(rideOf(true, seatIsOwnCar(null))), false);
+  const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
+  // Entering a cab already parked at the curb used to keep own unset, so lamps said "Park at the curb".
+  assert.match(src, /cab\.seated = true;\n\s*cab\.hail = null;\n\s*cab\.own = seatIsOwnCar\(useGame\.getState\(\)\.carOn\);/);
+  // The drive-by match pickup used to stop for any seat.
+  assert.match(src, /if \(!lampFromRide\(ride\(\)\)\) break;\n\s*if \(canGrabMatch\(foot/);
+  assert.doesNotMatch(src, /if \(seated\) break;\n\s*if \(canGrabMatch/);
 });

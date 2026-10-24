@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { FREEWAY_HIGHWAY_RE, isFreeway, isWalkableWay, WALK_HIGHWAY_RE, type WayTags } from "./walkable.ts";
+import { FREEWAY_HIGHWAY_RE, isFreeway, isWalkableWay, sharedVertices, WALK_HIGHWAY_RE, type WayTags } from "./walkable.ts";
 
 const DRIVE = new Set([
   "primary",
@@ -44,7 +44,9 @@ async function postOverpass(url: string, query: string) {
   };
 }
 
-function packLine(geom: { lat: number; lon: number }[]) {
+// 0.1.35: `keep` (junctions) are never thinned. Dropping a corner vertex here left crossings unjoined in the walk graph,
+// so walks detoured blocks around (Rosa Parks at Michigan, Corktown) or couldn't reach a lamp beside the walker (Midtown).
+export function packLine(geom: { lat: number; lon: number }[], keep?: Set<string>) {
   const out: number[] = [];
   let lastLat = Infinity;
   let lastLon = Infinity;
@@ -52,7 +54,7 @@ function packLine(geom: { lat: number; lon: number }[]) {
     if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) continue;
     const dlat = (p.lat - lastLat) * 111320;
     const dlng = (p.lon - lastLon) * 111320 * Math.cos((p.lat * Math.PI) / 180);
-    if (out.length && Math.hypot(dlat, dlng) < 14) continue;
+    if (out.length && Math.hypot(dlat, dlng) < 14 && !keep?.has(`${p.lat},${p.lon}`)) continue;
     out.push(Math.round(p.lat * 1e5) / 1e5, Math.round(p.lon * 1e5) / 1e5);
     lastLat = p.lat;
     lastLon = p.lon;
@@ -72,7 +74,7 @@ export const getOsmWays = createServerFn({ method: "POST" })
   .validator((u) => Input.parse(u))
   .handler(async ({ data }) => {
     const { lat, lng, radius } = data;
-    const key = `walk4:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
+    const key = `walk5:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
     const hit = cache.get(key);
     if (hit) return hit;
     // Walkable and drivable ways together; drive rows keep the old access rule, walk rows use isWalkableWay.
@@ -86,9 +88,10 @@ export const getOsmWays = createServerFn({ method: "POST" })
         const lines: number[][] = [];
         const freeways: number[][] = [];
         const drive: { line: number[]; arterial: boolean }[] = [];
+        const keep = sharedVertices(json.elements ?? []);
         for (const el of json.elements ?? []) {
           const hw = el.tags?.highway ?? "";
-          const packed = packLine(el.geometry ?? []);
+          const packed = packLine(el.geometry ?? [], keep);
           if (packed.length < 4) continue;
           if (isFreeway(el.tags)) freeways.push(packed);
           else if (isWalkableWay(el.tags)) lines.push(packed);

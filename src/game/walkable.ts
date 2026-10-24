@@ -96,3 +96,11 @@ export function isFreeway(tags: WayTags | undefined | null): boolean {
   if (!hw || tags?.area === "yes") return false;
   return tags?.motorroad === "yes" || isExpresswayNamed(tags);
 }
+
+/** 0.1.35: coordinates two or more ways share (`lat,lon`): the junctions, which point thinning must keep. */
+export function sharedVertices(els: { geometry?: ({ lat: number; lon: number } | null)[] }[]): Set<string> {
+  const seen = new Set<string>();
+  const shared = new Set<string>();
+  for (const el of els) for (const p of new Set((el.geometry ?? []).flatMap((q) => (q ? [`${q.lat},${q.lon}`] : [])))) (seen.has(p) ? shared : seen).add(p);
+  return shared;
+}

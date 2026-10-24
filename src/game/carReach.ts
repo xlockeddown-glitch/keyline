@@ -11,6 +11,14 @@ export function rideOf(seated: boolean, ownCar: boolean): Ride {
   return !seated ? "foot" : ownCar ? "own" : "cab";
 }
 
+/**
+ * 0.1.35: whatever you climb into while you own a car (carOn set) is your car. A cab already parked at the curb used
+ * to be entered as the city cab, so lamps and matches refused you in your own car ("Park at the curb").
+ */
+export function seatIsOwnCar(carOn: string | null | undefined): boolean {
+  return Boolean(carOn);
+}
+
 /** Can this ride open a lamp / vault / pick up a match without stepping out? */
 export function lampFromRide(ride: Ride): boolean {
   return ride !== "cab";

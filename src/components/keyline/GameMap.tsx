@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
 import { DEALER_REACH_M, carOf, carPace, dealerOf, dealerTap } from "@/game/cars";
-import { lampFromRide, rideOf, trimToReach } from "@/game/carReach";
+import { lampFromRide, rideOf, seatIsOwnCar, trimToReach } from "@/game/carReach";
 import { factoryColor } from "@/game/carPaint";
 import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
@@ -498,6 +498,7 @@ export function GameMap() {
     pos.current.speed = 0;
     cab.seated = true;
     cab.hail = null;
+    cab.own = seatIsOwnCar(useGame.getState().carOn);
     routeMode.current = "drive";
     seatHud(true);
   }
@@ -2059,7 +2060,8 @@ export function GameMap() {
         if (d < nearestPoi.d) nearestPoi = { id: STACK_ID, d, lat: st.stack.lat, lng: st.stack.lng };
       }
       for (const k of st.mapKeys) {
-        if (seated) break;
+        // 0.1.35: your own car picks matches up from the window as you drive past; the city cab still doesn't.
+        if (!lampFromRide(ride())) break;
         if (canGrabMatch(foot, pos.current, k, reachMult(st.scout))) {
           st.collectKey(k.id);
           noteCollected(k.id);

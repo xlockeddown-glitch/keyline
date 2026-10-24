@@ -1,4 +1,4 @@
-import { FREEWAY_HIGHWAY_RE, isFreeway, isWalkableWay, WALK_HIGHWAY_RE, WALK_OVERPASS_FILTERS, type WayTags } from "./walkable.ts";
+import { FREEWAY_HIGHWAY_RE, isFreeway, isWalkableWay, sharedVertices, WALK_HIGHWAY_RE, WALK_OVERPASS_FILTERS, type WayTags } from "./walkable.ts";
 import { dest, distM, metersPerDegLng, yawToTarget } from "./geo.ts";
 import { getOsmWays } from "./streetApi.ts";
 import type { Poi, Tier } from "./types";
@@ -191,13 +191,15 @@ function stitchNode(g: StreetGraph, id: number) {
   }
 }
 
-function decimate(pts: Pt[]): Pt[] {
+// 0.1.35: junctions (`keep`, from sharedVertices, or a vertex already in the graph) survive thinning. A corner dropped
+// from both ways left the crossing unjoined, so walks looped blocks around (Corktown) or missed a lamp next door (Midtown).
+function decimate(pts: Pt[], g?: StreetGraph, keep?: Set<string>): Pt[] {
   if (pts.length < 3) return pts;
   const out: Pt[] = [pts[0]!];
   for (let i = 1; i < pts.length - 1; i++) {
     const prev = out[out.length - 1]!;
     const p = pts[i]!;
-    if (distM(prev.lat, prev.lng, p.lat, p.lng) >= DECIMATE) out.push(p);
+    if (distM(prev.lat, prev.lng, p.lat, p.lng) >= DECIMATE || g?.nodeIndex.has(nodeKey(p.lat, p.lng)) || keep?.has(`${p.lat},${p.lng}`)) out.push(p);
   }
   const last = pts[pts.length - 1]!;
   const tail = out[out.length - 1]!;
@@ -208,8 +210,8 @@ function decimate(pts: Pt[]): Pt[] {
   return out;
 }
 
-export function ingestLine(g: StreetGraph, raw: Pt[], arterial = false) {
-  const pts = decimate(raw.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)));
+export function ingestLine(g: StreetGraph, raw: Pt[], arterial = false, keep?: Set<string>) {
+  const pts = decimate(raw.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)), g, keep);
   if (pts.length < 2) return;
   const ids: number[] = [];
   let prev = addNode(g, pts[0]!.lat, pts[0]!.lng);
@@ -272,6 +274,7 @@ export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
       }
     }
   }
+  const keep = sharedVertices(ways);
   for (const way of ways) {
     const geom = way.geometry;
     if (!geom || geom.length < 2) continue;
@@ -285,6 +288,7 @@ export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
       g,
       geom.map((p) => ({ lat: p.lat, lng: p.lon })),
       drive && arterial,
+      keep,
     );
   }
 }
