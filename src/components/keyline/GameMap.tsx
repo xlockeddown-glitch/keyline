@@ -165,6 +165,47 @@ function warmSheets(scout: string, coat: string | null) {
 /** 0.0.90: re-plans a wedged walker gets on one leg before the route is dropped. */
 const MAX_STUCK_REPLANS = 3;
 
+// Heat (0.1.34): the camera follows the walker with a setView every frame, and Leaflet's SVG renderer answers every
+// moveend by re-clipping and re-simplifying every route/trail path. The SVG already covers the view plus a padded
+// margin and sits in layer coordinates, so while the view stays inside that drawn box (same zoom, same pixel origin,
+// same size) the redraw would produce the same picture; skip it until the view nears the edge.
+function steadySvg(L: LModule) {
+  type R = { _map: LMap; _bounds?: { min: { x: number; y: number }; max: { x: number; y: number } }; _zoom?: number; _update(): void; _steady?: string };
+  const Steady = L.SVG.extend({
+    getEvents(this: R) {
+      const ev = (L.SVG.prototype as unknown as { getEvents(): Record<string, unknown> }).getEvents.call(this);
+      ev.moveend = function (this: R) {
+        const map = this._map;
+        const b = this._bounds;
+        const size = map.getSize();
+        const o = map.getPixelOrigin();
+        const key = `${map.getZoom()}|${o.x},${o.y}|${size.x},${size.y}`;
+        if (b && this._steady === key) {
+          const tl = map.containerPointToLayerPoint([0, 0]);
+          if (tl.x >= b.min.x && tl.y >= b.min.y && tl.x + size.x <= b.max.x && tl.y + size.y <= b.max.y) return;
+        }
+        this._update();
+        this._steady = key;
+      };
+      return ev;
+    },
+  });
+  return new (Steady as unknown as new (o: { padding: number }) => InstanceType<typeof L.SVG>)({ padding: 0.25 });
+}
+
+// Heat (0.1.34): only ~10 of ~80 lamp pins are on screen, but every flicker animation ticked. Pins outside the
+// viewport (plus a margin) get .offscreen, which pauses their flicker; nothing visible changes.
+let offscreenIO: IntersectionObserver | null = null;
+function pinObserver(): IntersectionObserver {
+  offscreenIO ??= new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) e.target.classList.toggle("offscreen", !e.isIntersecting);
+    },
+    { rootMargin: "120px" },
+  );
+  return offscreenIO;
+}
+
 export function GameMap() {
   useWalkPoster();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -1070,6 +1111,7 @@ export function GameMap() {
         zoomDelta: 1,
         minZoom: 15,
         maxZoom: 18,
+        renderer: steadySvg(L),
       }).setView([dock.lat, dock.lng], 16);
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -1532,6 +1574,7 @@ export function GameMap() {
 
   function rebuildPins(L: LModule, map: LMap) {
     drawnPins.current = -1; // battery: fresh pin elements need their "near" class again
+    offscreenIO?.disconnect();
     const st = useGame.getState();
     const city = CITIES[st.cityId];
     const now = Date.now();
@@ -2094,6 +2137,7 @@ export function GameMap() {
         vaultMarkers.current.forEach((m, id) => {
           const node = m.getElement()?.querySelector(".vault-pin, .shop-pin, .counter-pin, .board-pin");
           node?.classList.toggle("near", id === nearId);
+          if (node) pinObserver().observe(node);
         });
       }
 

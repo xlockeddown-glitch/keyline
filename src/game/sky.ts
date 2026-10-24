@@ -26,16 +26,31 @@ export function weatherOfCode(code: number | null | undefined): Weather {
   return "clear";
 }
 
+// Heat (0.1.34): building an Intl.DateTimeFormat is slow and this ran every map frame; reuse one per zone and
+// remember the answer for the current UTC minute (every zone's offset is whole minutes, so it can't change sooner).
+const minuteFmt = new Map<string, Intl.DateTimeFormat>();
+const clockFmt = new Map<string, Intl.DateTimeFormat>();
+const minuteMemo = new Map<string, { at: number; v: number }>();
+
 /** Minutes past local midnight in a time zone. */
 export function localMinutes(tz: string, now: number): number {
-  const p = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date(now));
+  const at = Math.floor(now / 60_000);
+  const hit = minuteMemo.get(tz);
+  if (hit && hit.at === at) return hit.v;
+  let f = minuteFmt.get(tz);
+  if (!f) minuteFmt.set(tz, (f = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "numeric", hourCycle: "h23" })));
+  const p = f.formatToParts(new Date(now));
   const h = Number(p.find((x) => x.type === "hour")?.value ?? 0), m = Number(p.find((x) => x.type === "minute")?.value ?? 0);
-  return (h % 24) * 60 + m;
+  const v = (h % 24) * 60 + m;
+  minuteMemo.set(tz, { at, v });
+  return v;
 }
 
 /** "3:40 PM" in the city's own time. */
 export function localClock(tz: string, now: number): string {
-  return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(new Date(now));
+  let f = clockFmt.get(tz);
+  if (!f) clockFmt.set(tz, (f = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" })));
+  return f.format(new Date(now));
 }
 
 /** Offset of a time zone from UTC in minutes at `now` (e.g. −300 for CDT). */

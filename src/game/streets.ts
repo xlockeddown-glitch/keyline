@@ -310,6 +310,53 @@ export function nearest(g: StreetGraph, lat: number, lng: number, max = 90, only
   const cy = Math.floor(y / g.cell);
   let best: Snap | null = null;
   const ring = Math.min(18, Math.max(1, Math.ceil(max / g.cell) + 1));
+  // Where the old row-major scan first met a segment; only needed to break exact ties the same way.
+  const rankOf = (id: number) => {
+    for (let ix = cx - ring; ix <= cx + ring; ix++)
+      for (let iy = cy - ring; iy <= cy + ring; iy++) {
+        const k = g.grid.get(cellKey(ix, iy))?.indexOf(id) ?? -1;
+        if (k >= 0) return ((ix - cx + ring) * (2 * ring + 1) + (iy - cy + ring)) * 1e6 + k;
+      }
+    return Infinity;
+  };
+  // Heat (0.1.34): this ran several times per frame while walking and scanned every segment in up to 37x37 cells.
+  // Cells now go nearest-first and a cell farther than the best hit (with slack for the grid's flat projection) is
+  // skipped. Every segment sits in each cell its bounding box touches, so a skipped cell can't hold a closer one;
+  // exact ties go to whichever the old row-major scan met first, so the answer is the same as the full scan.
+  for (let r = 0; r <= ring; r++) {
+    for (let ix = cx - r; ix <= cx + r; ix++) {
+      const edge = ix === cx - r || ix === cx + r;
+      for (let iy = cy - r; iy <= cy + r; iy += edge ? 1 : 2 * r) {
+        if (best) {
+          const gx = Math.max(ix * g.cell - x, 0, x - (ix + 1) * g.cell);
+          const gy = Math.max(iy * g.cell - y, 0, y - (iy + 1) * g.cell);
+          if (Math.hypot(gx, gy) > best.dist * 1.05 + 3) continue;
+        }
+        const list = g.grid.get(cellKey(ix, iy));
+        if (!list) continue;
+        for (const id of list) {
+          const seg = g.segs[id]!;
+          if (only && compId !== undefined && only[seg.a] !== compId && only[seg.b] !== compId) continue;
+          const snap = projectToSeg(g, lat, lng, seg);
+          if (!best || snap.dist < best.dist || (snap.dist === best.dist && id !== best.seg && rankOf(id) < rankOf(best.seg))) {
+            snap.seg = id;
+            best = snap;
+          }
+        }
+      }
+    }
+  }
+  if (best && best.dist <= max) return best;
+  return best && best.dist <= max * 1.8 ? best : null;
+}
+
+export function nearestFullScan(g: StreetGraph, lat: number, lng: number, max = 90, only?: Int32Array, compId?: number): Snap | null {
+  if (!g.segs.length) return null;
+  const { x, y } = toXY(g, lat, lng);
+  const cx = Math.floor(x / g.cell);
+  const cy = Math.floor(y / g.cell);
+  let best: Snap | null = null;
+  const ring = Math.min(18, Math.max(1, Math.ceil(max / g.cell) + 1));
   for (let ix = cx - ring; ix <= cx + ring; ix++) {
     for (let iy = cy - ring; iy <= cy + ring; iy++) {
       const list = g.grid.get(cellKey(ix, iy));

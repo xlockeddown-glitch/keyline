@@ -4390,6 +4390,7 @@ h3 {
 .stack-globe.b .lantern-glass > .lantern-flick { animation-delay: .7s; }
 .vault-pin.cooling .lantern-glass > .lantern-flick { display: none; }
 @keyframes glass-glow { 50% { opacity: 1; } }
+.vault-pin.offscreen .lantern-glass > .lantern-flick { animation-play-state: paused; } /* heat: off-screen pins don't tick */
 @media (prefers-reduced-motion: reduce) {
   .vault-pin:not(.cooling) .lantern-glass > .lantern-flick, .vault-pin.is-run .lantern-glass > .lantern-flick { animation: none; }
 }

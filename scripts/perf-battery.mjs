@@ -24,10 +24,10 @@ if (await guest.count()) await guest.click();
 await page.waitForSelector('[data-testid="hud-status"]', { timeout: 120000 });
 await page.waitForTimeout(1500);
 for (const n of ["Not now", "Later", "Close"]) { const b = page.getByRole("button", { name: n }); if (await b.count()) await b.first().click().catch(() => {}); }
-await page.waitForTimeout(4000);
+await page.waitForTimeout(Number(process.env.WARM ?? 4000));
 console.log("hud:", (await page.locator('[data-testid="hud-status"]').textContent())?.slice(0, 120));
 if (shot) await page.screenshot({ path: shot });
-if (process.env.EXP === "noglass") await page.addStyleTag({ content: ".lantern-glass{animation:none!important}" });
+if (process.env.EXP_CSS) await page.addStyleTag({ content: process.env.EXP_CSS });
 if (process.env.EXP === "noanim") await page.addStyleTag({ content: "*,*::before,*::after{animation:none!important;transition:none!important}" });
 const cdp = await ctx.newCDPSession(page);
 await cdp.send("Performance.enable");
