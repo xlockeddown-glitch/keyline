@@ -7,7 +7,7 @@ import { lampFromRide, rideOf, seatIsOwnCar, trimToReach } from "@/game/carReach
 import { factoryColor } from "@/game/carPaint";
 import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
-import { CITIES, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
+import { CITIES, CLIMB_ID, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
@@ -583,6 +583,7 @@ export function GameMap() {
       ...useGame.getState().mapKeys,
       ...(useGame.getState().run ? [useGame.getState().run!] : []),
       ...(useGame.getState().stack ? [useGame.getState().stack!] : []),
+      ...(useGame.getState().climb ? [useGame.getState().climb!] : []),
       ...useGame.getState().blanks,
     ];
     const w = wardFrom([city.spawn, ...city.pois, ...extras]);
@@ -1020,6 +1021,14 @@ export function GameMap() {
         useGame.setState({ stack: { ...stack, lat: p.lat, lng: p.lng } });
       }
     }
+    const climb = useGame.getState().climb;
+    if (climb && climb.readyAt === 0) {
+      let p = onStreet(g, climb.lat, climb.lng);
+      if (w && !inWard(w, p.lat, p.lng)) p = onStreet(g, clampWard(w, p.lat, p.lng).lat, clampWard(w, p.lat, p.lng).lng);
+      if (distM(climb.lat, climb.lng, p.lat, p.lng) > 1.5) {
+        useGame.setState({ climb: { ...climb, lat: p.lat, lng: p.lng } });
+      }
+    }
   }
 
   function placeOnStreet(g: StreetGraph, lat: number, lng: number, openNorth = false) {
@@ -1055,7 +1064,7 @@ export function GameMap() {
       const avoid = [city.spawn, ...city.pois, ...now.blanks];
       const pts = spreadOnGraph(g, avoid, now.mapKeys.length);
       const keys = now.mapKeys.map((k, i) => (pts[i] ? { ...k, lat: pts[i]!.lat, lng: pts[i]!.lng } : k));
-      const extra = spreadOnGraph(g, [...avoid, ...keys], 2, 240);
+      const extra = spreadOnGraph(g, [...avoid, ...keys], 3, 240);
       const run =
         now.run && now.run.readyAt === 0 && extra[0]
           ? { ...now.run, lat: extra[0].lat, lng: extra[0].lng }
@@ -1064,7 +1073,11 @@ export function GameMap() {
         now.stack && now.stack.readyAt === 0 && extra[1]
           ? { ...now.stack, lat: extra[1].lat, lng: extra[1].lng }
           : now.stack;
-      now.spreadDrops(keys, run, stack);
+      const climb =
+        now.climb && now.climb.readyAt === 0 && extra[2]
+          ? { ...now.climb, lat: extra[2].lat, lng: extra[2].lng }
+          : now.climb;
+      now.spreadDrops(keys, run, stack, climb);
     }
     const L = Lref.current;
     const m = mapRef.current;
@@ -1638,6 +1651,17 @@ export function GameMap() {
       marker.on("click", () => tryOpen(STACK_ID));
       vaultMarkers.current.set(STACK_ID, marker);
     }
+    const climb = st.climb;
+    if (climb && climb.readyAt === 0) {
+      const el = seriesPinHtml(SERIES.climb);
+      const marker = L.marker([climb.lat, climb.lng], {
+        icon: L.divIcon({ className: "", html: el, iconSize: [34, 56], iconAnchor: [17, 54] }),
+        keyboard: false,
+        zIndexOffset: 410,
+      }).addTo(map);
+      marker.on("click", () => tryOpen(CLIMB_ID));
+      vaultMarkers.current.set(CLIMB_ID, marker);
+    }
     for (const m of keyMarkers.current.values()) m.remove();
     keyMarkers.current.clear();
     for (const k of st.mapKeys) {
@@ -1664,6 +1688,8 @@ export function GameMap() {
         ? { lat: run.lat, lng: run.lng }
         : poiId === STACK_ID && st.stack && st.stack.readyAt === 0
           ? { lat: st.stack.lat, lng: st.stack.lng }
+          : poiId === CLIMB_ID && st.climb && st.climb.readyAt === 0
+          ? { lat: st.climb.lat, lng: st.climb.lng }
           : anyPois(CITIES[st.cityId], st.blanks).find((p) => p.id === poiId);
     if (!poi) return;
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
@@ -2059,6 +2085,10 @@ export function GameMap() {
         const d = distM(pos.current.lat, pos.current.lng, st.stack.lat, st.stack.lng);
         if (d < nearestPoi.d) nearestPoi = { id: STACK_ID, d, lat: st.stack.lat, lng: st.stack.lng };
       }
+      if (st.climb && st.climb.readyAt === 0) {
+        const d = distM(pos.current.lat, pos.current.lng, st.climb.lat, st.climb.lng);
+        if (d < nearestPoi.d) nearestPoi = { id: CLIMB_ID, d, lat: st.climb.lat, lng: st.climb.lng };
+      }
       for (const k of st.mapKeys) {
         // 0.1.35: your own car picks matches up from the window as you drive past; the city cab still doesn't.
         if (!lampFromRide(ride())) break;
@@ -2242,9 +2272,9 @@ export function GameMap() {
         mapRef.current?.setView([pos.current.lat, pos.current.lng], mapRef.current.getZoom());
         useGame.getState().setHud({ seated: false });
       }
-      if (s.mapKeys !== p.mapKeys || s.vaults !== p.vaults || s.run !== p.run || s.stack !== p.stack || s.fares !== p.fares) {
+      if (s.mapKeys !== p.mapKeys || s.vaults !== p.vaults || s.run !== p.run || s.stack !== p.stack || s.climb !== p.climb || s.fares !== p.fares) {
         const g = graphRef.current;
-        if (g && (s.mapKeys !== p.mapKeys || s.run !== p.run || s.stack !== p.stack)) snapKeys(g);
+        if (g && (s.mapKeys !== p.mapKeys || s.run !== p.run || s.stack !== p.stack || s.climb !== p.climb)) snapKeys(g);
         const L = Lref.current;
         const map = mapRef.current;
         if (L && map) rebuildPins(L, map);

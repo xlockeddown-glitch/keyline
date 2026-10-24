@@ -43,6 +43,7 @@ import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
 import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cacheLine, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
+import { PRIZE_COIN, PRIZE_TAG, prizeTier } from "./ladderPrize.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
@@ -200,6 +201,8 @@ export type GameState = {
   mapKeys: MapKey[];
   run: StreetRun | null;
   stack: StreetRun | null;
+  /** 0.1.36: The Climb, the white ladder. */
+  climb: StreetRun | null;
   contract: { ids: string[]; done: string[]; nonces?: string[] } | null;
   streak: number;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
@@ -301,7 +304,7 @@ export type GameState = {
   bindStreet: () => void;
   maybeSpawnRun: (now: number) => void;
   seedBlanks: (list: Poi[]) => void;
-  spreadDrops: (keys: MapKey[], run: StreetRun | null, stack: StreetRun | null) => void;
+  spreadDrops: (keys: MapKey[], run: StreetRun | null, stack: StreetRun | null, climb?: StreetRun | null) => void;
   tryOpen: (poiId: string, now: number) => string | null;
   closeShop: () => void;
   closeErrand: () => void;
@@ -543,11 +546,11 @@ function marketKey(cityId: CityId, tier: Tier, now: number): MapKey | null {
 }
 
 function seriesLive(s: GameState, kind: SeriesKind): StreetRun | null {
-  return kind === "run" ? s.run : s.stack;
+  return kind === "run" ? s.run : kind === "climb" ? s.climb : s.stack;
 }
 
 function seriesPatch(kind: SeriesKind, pos: StreetRun): Partial<GameState> {
-  return kind === "run" ? { run: pos } : { stack: pos };
+  return kind === "run" ? { run: pos } : kind === "climb" ? { climb: pos } : { stack: pos };
 }
 
 function coolSeries(s: GameState, def: SeriesDef): StreetRun {
@@ -660,6 +663,7 @@ function persistable(s: GameState) {
     mapKeys: s.mapKeys,
     run: s.run,
     stack: s.stack,
+    climb: s.climb,
     contract: s.contract,
     streak: s.streak,
     shieldDay: s.shieldDay,
@@ -1102,6 +1106,7 @@ export const useGame = create<GameState>((set, get) => ({
   mapKeys: saved?.mapKeys?.length ? saved.mapKeys : seedKeys(savedCity),
   run: saved?.run ?? placeRun(savedCity),
   stack: saved?.stack ?? placeRun(savedCity),
+  climb: saved?.climb ?? placeRun(savedCity),
   contract: saved?.contract ?? null,
   streak: saved?.streak ?? 0,
   matchPop: null,
@@ -1219,6 +1224,7 @@ export const useGame = create<GameState>((set, get) => ({
       mapKeys: same ? prev.mapKeys : seedKeys(id),
       run: same && prev.run ? prev.run : placeRun(id),
       stack: same && prev.stack ? prev.stack : placeRun(id),
+      climb: same && prev.climb ? prev.climb : placeRun(id),
       contract: same && prev.contract ? prev.contract : seedContract(id),
       openVault: null,
       hqOpen: false,
@@ -1399,9 +1405,9 @@ export const useGame = create<GameState>((set, get) => ({
     set({ blanks: list });
     scheduleSave(get);
   },
-  spreadDrops: (keys, run, stack) => {
+  spreadDrops: (keys, run, stack, climb) => {
     if (get().streetSpread) return;
-    set({ mapKeys: keys, run, stack, streetSpread: true });
+    set({ mapKeys: keys, run, stack, ...(climb !== undefined ? { climb } : {}), streetSpread: true });
     scheduleSave(get);
   },
   tryOpen: (poiId, now) => {
@@ -1804,17 +1810,20 @@ export const useGame = create<GameState>((set, get) => ({
         series: true,
       });
       const baseKeys: Partial<Record<Tier, number>> = { [series.pay]: 1 };
-      if (grades.every((g) => g === "perfect")) baseKeys[series.bonus] = 1;
+      // 0.1.36: perfect ladder prize (a guest rolls here; signed in, the server's award replaces these keys).
+      const prize = grades.every((g) => g === "perfect") ? prizeTier(series.kind, Math.random()) : null;
+      if (prize) baseKeys[prize] = (baseKeys[prize] ?? 0) + 1;
       else if (luckyOn(get()) && Math.random() < 0.15) baseKeys.blue = 1;
       const spot = seriesLive(get(), series.kind);
       const seriesMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
       const sMult = spot && onMarket(seriesMarket, { kind: "series", lat: spot.lat, lng: spot.lng }) ? MARKET_MULT : 1;
       const sPay = marketPay(seriesCoin, baseKeys, sMult);
-      const points = sPay.coin;
+      const prizeCoin = prize ? PRIZE_COIN[series.kind] : 0;
+      const points = sPay.coin + prizeCoin;
       const extraKeys: Partial<Record<Tier, number>> = sPay.keys;
-      const brass = series.kind === "stack" ? 6 : 4;
-      const ink = series.kind === "stack" ? 4 : 3;
-      const vellum = series.kind === "stack" ? 3 : 2;
+      const brass = series.kind === "stack" ? 6 : series.kind === "climb" ? 2 : 4;
+      const ink = series.kind === "stack" ? 4 : series.kind === "climb" ? 2 : 3;
+      const vellum = series.kind === "stack" ? 3 : series.kind === "climb" ? 1 : 2;
       // 0.1.22: schematics no longer drop (the ones held print Night glass).
       const schematic = false;
       const ing = rollIngredient(get().cityId, { id: series.id, tier: series.cost });
@@ -1856,13 +1865,13 @@ export const useGame = create<GameState>((set, get) => ({
       if (paid.whiteAdded) extraKeys.white = (extraKeys.white ?? 0) + paid.whiteAdded;
       loot.keys = extraKeys;
       loot.points = paid.points - get().points;
-      loot.boosts = paid.boosts.length ? paid.boosts : undefined;
+      const boostLines = prize ? [...paid.boosts, `${PRIZE_TAG}: ${prize} match +${prizeCoin}`] : paid.boosts;
+      loot.boosts = boostLines.length ? boostLines : undefined;
       if (loot.grade === "perfect") sfx.perfect();
       else sfx.correct();
-      const bonusHit = Boolean(extraKeys[series.bonus]);
       const spun = foldWheel(get, series.cost);
-      const clearLine = (bonusHit
-        ? `${series.name} is clear. ${TIER_LABEL[series.pay]} and ${TIER_LABEL[series.bonus]} matches.`
+      const clearLine = (prize
+        ? `${series.name} is clear, all perfect. ${TIER_LABEL[series.pay]} match and a prize match.`
         : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`) + (sMult > 1 ? ` ${MARKET_TAG}.` : "");
       const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
       const paintLine = paints.length ? paints.map((id) => paintFoundLine(id)).join(" ") : null;
@@ -2871,6 +2880,7 @@ export const useGame = create<GameState>((set, get) => ({
       mapKeys: seedKeys(id),
       run: placeRun(id),
       stack: placeRun(id),
+      climb: placeRun(id),
       contract: seedContract(id),
       vaults: {},
       blanks: [],
@@ -3078,6 +3088,7 @@ export const useGame = create<GameState>((set, get) => ({
       mapKeys: seedKeys(j.to),
       run: placeRun(j.to),
       stack: placeRun(j.to),
+      climb: placeRun(j.to),
       contract: seedContract(j.to),
       cityVaults: 0,
       landAtStation: true,

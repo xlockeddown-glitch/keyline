@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BookOpen, Calculator, FlaskConical, Gamepad2, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
+import { ladderLampHtml } from "@/game/pins";
 import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
@@ -119,18 +120,9 @@ export function VaultModal() {
       <div className="plate lamp-card w-full max-w-lg">
         <div className="lamp-card-body px-5 pt-5 sm:px-6 sm:pt-6">
           <div className="flex items-start gap-4">
-            <div className={`vault-hero vault-pin tier-${poi.tier}${series?.kind === "stack" ? " is-stack" : series ? " is-run" : ""}`}>
-              {series?.kind === "stack" ? (
-                <span className="stack-lamp">
-                  <i className="lantern-cap" />
-                  <i className="stack-globe a">
-                    <i className="lantern-glass" />
-                  </i>
-                  <i className="stack-globe b">
-                    <i className="lantern-glass" />
-                  </i>
-                  <i className="lantern-post" />
-                </span>
+            <div className={`vault-hero vault-pin tier-${poi.tier}${series ? ` is-ladder is-${series.kind}` : ""}`}>
+              {series ? (
+                <span dangerouslySetInnerHTML={{ __html: ladderLampHtml(series.kind) }} />
               ) : (
                 <span className="lantern lantern-hero">
                   <i className="lantern-cap" />

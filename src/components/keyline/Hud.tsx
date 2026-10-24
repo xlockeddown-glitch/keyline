@@ -7,7 +7,7 @@ import { LevelHudBadge } from "./Levels";
 import { livePois } from "@/game/nightMarket";
 import { dealerOf } from "@/game/cars";
 import { houseOf, lotOf } from "@/game/houses";
-import { CITIES, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
+import { CITIES, CLIMB_ID, CLIMB_POI, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
 import { formatCool, isFareDesk, SPARK_DAY, ticketHint, VAULTS_PER_FARE } from "@/game/ticket";
@@ -68,6 +68,8 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const stack = useGame((s) => s.stack);
   const runLive = Boolean(run && run.readyAt === 0);
   const stackLive = Boolean(stack && stack.readyAt === 0);
+  const climb = useGame((s) => s.climb);
+  const climbLive = Boolean(climb && climb.readyAt === 0);
   const seriesNear = seriesOf(hud.nearestId ?? "");
   const blanks = useGame((s) => s.blanks);
   const nearest =
@@ -75,7 +77,9 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       ? { ...RUN_POI, lat: run.lat, lng: run.lng }
       : hud.nearestId === STACK_ID && stackLive && stack
         ? { ...STACK_POI, lat: stack.lat, lng: stack.lng }
-        : livePois(city, blanks).find((p) => p.id === hud.nearestId);
+        : hud.nearestId === CLIMB_ID && climbLive && climb
+          ? { ...CLIMB_POI, lat: climb.lat, lng: climb.lng }
+          : livePois(city, blanks).find((p) => p.id === hud.nearestId);
   const reachM = interactRadius();
   const service = Boolean(nearest && (isScoutShop(nearest) || isCounter(nearest) || isBoard(nearest)));
   const recasting = Boolean(nearest && !seriesNear && !service && (vaults[nearest.id]?.coolUntil ?? 0) > Date.now());

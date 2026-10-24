@@ -7,7 +7,6 @@ import type { Poi, Tier } from "./types";
  * (v0.0.18: the Run marker was hard-coded tier-amber while it costs a blue match.)
  */
 const LANTERN = `<span class="lantern"><i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"><i class="lantern-flick"></i></i></i><i class="lantern-post"></i></span>`;
-const STACK_LAMP = `<span class="stack-lamp"><i class="lantern-cap"></i><i class="stack-globe a"><i class="lantern-glass"><i class="lantern-flick"></i></i></i><i class="stack-globe b"><i class="lantern-glass"><i class="lantern-flick"></i></i></i><i class="lantern-post"></i></span>`;
 
 export function vaultPinHtml(poi: Pick<Poi, "tier">, o: { cooling?: boolean } = {}) {
   return `<div class="vault-pin tier-${poi.tier}${o.cooling ? " cooling" : ""}">${LANTERN}</div>`;
@@ -44,10 +43,19 @@ export function boardPinHtml(name: string) {
   return `<div class="service-pin board-pin" title="${name}"><span class="service-sign">${NOTICE}</span><i class="service-post"></i></div>`;
 }
 
+/**
+ * 0.1.36 ladder lamps (Ryan): The Climb (white), The Run (blue) and The Stack (green) are one matching set,
+ * two brass lanterns hung off the top of a small ladder, so the marker itself says "ladder". Glow follows
+ * series.cost; the rung count climbs with the ladder (3 / 4 / 5) so the three still differ in shape.
+ */
+const HANG = `<i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"><i class="lantern-flick"></i></i></i>`;
+export function ladderLampHtml(kind: SeriesDef["kind"]) {
+  const rungs = kind === "stack" ? 5 : kind === "run" ? 4 : 3;
+  return `<span class="ladder-lamp rungs-${rungs}"><i class="ladder-rail l"></i><i class="ladder-rail r"></i><i class="ladder-rungs"></i><i class="ladder-top"></i><i class="ladder-hang a">${HANG}</i><i class="ladder-hang b">${HANG}</i></span>`;
+}
+
 export function seriesPinHtml(s: Pick<SeriesDef, "kind" | "cost">) {
-  return s.kind === "stack"
-    ? `<div class="vault-pin is-stack tier-${s.cost}">${STACK_LAMP}</div>`
-    : `<div class="vault-pin is-run tier-${s.cost}">${LANTERN}</div>`;
+  return `<div class="vault-pin is-ladder is-${s.kind} tier-${s.cost}">${ladderLampHtml(s.kind)}</div>`;
 }
 
 /** Tier class on a marker's root element, or null if it has none. */

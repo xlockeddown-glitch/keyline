@@ -6,7 +6,7 @@ import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
 import type { PaintId } from "./ingredients.ts";
 import type { CityId, Poi, PoiKind, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward, ServerWallet } from "./triviaSchema";
-import { RUN_ID, STACK_ID } from "./data.ts";
+import { CLIMB_ID, RUN_ID, STACK_ID } from "./data.ts";
 import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
 import { awardGrade, noteBlitzCard, spendDealt } from "./walletApply.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
@@ -83,7 +83,7 @@ type TokenBody = {
     la: number;
     ln: number;
     pv: string;
-    sy: 0 | 1 | 2;
+    sy: 0 | 1 | 2 | 3;
     ss: number;
     sn: number;
     pt: Tier;
@@ -293,7 +293,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
       la: named ? named.lat : coord(pay?.lat, 90),
       ln: named ? named.lng : coord(pay?.lng, 180),
       pv,
-      sy: !series ? 0 : input.poiId === STACK_ID ? 2 : input.poiId === RUN_ID ? 1 : 1,
+      sy: !series ? 0 : input.poiId === STACK_ID ? 2 : input.poiId === CLIMB_ID ? 3 : input.poiId === RUN_ID ? 1 : 1,
       ss: Math.min(5, Math.max(0, input.step ?? 0)),
       sn: series?.diffs.length ?? 1,
       pt: poi.tier,
@@ -449,7 +449,8 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         poiId: x?.pi ?? "",
         lat: x?.la ?? 0,
         lng: x?.ln ?? 0,
-        series: x?.sy === 2 ? "stack" : x?.sy === 1 ? "run" : null,
+        series: x?.sy === 2 ? "stack" : x?.sy === 3 ? "climb" : x?.sy === 1 ? "run" : null,
+        prizeRoll: rand(),
         step: x?.ss ?? 0,
         steps: x?.sn ?? 1,
         prevNonce: x?.pv ?? "",

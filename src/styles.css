@@ -315,19 +315,7 @@ h3 {
 .vault-pin.is-run .lantern-glass{
   animation:1.2s ease-in-out infinite glass-flicker
 }
-.vault-pin.is-run::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  bottom:18px;
-  width:22px;
-  height:22px;
-  margin-left:-11px;
-  border:1px solid color-mix(in oklab, var(--color-vault-amber) 70%, transparent);
-  border-radius:99px;
-  pointer-events:none;
-  opacity:.85
-}
+/* 0.1.36: the Run ring is gone; ladder lamps (public/lantern-art.css) mark all three ladders. */
 .vault-pin.is-stack{
   --glow:var(--color-vault-green);
   width:28px;

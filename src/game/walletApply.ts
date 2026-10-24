@@ -321,6 +321,7 @@ export async function awardGrade(
     lat: pay.lat,
     lng: pay.lng,
     series: pay.series,
+    ...(typeof pay.prizeRoll === "number" ? { prizeRoll: pay.prizeRoll } : {}),
     step: pay.step,
     steps: pay.steps,
     prior,

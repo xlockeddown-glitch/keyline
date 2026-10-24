@@ -3767,13 +3767,14 @@ export function interactRadius(): number {
 
 export const RUN_ID = "__run__";
 export const STACK_ID = "__stack__";
+export const CLIMB_ID = "__climb__";
 export const RUN_STEPS = 3;
 export const RUN_COOL_MS = 10 * 60_000;
 export const RUN_COST: import("./types").Tier = "blue";
 export const RUN_PAY: import("./types").Tier = "green";
 export const RUN_DIFFS: import("./types").TriviaDiff[] = [1, 2, 3];
 
-export type SeriesKind = "run" | "stack";
+export type SeriesKind = "climb" | "run" | "stack";
 
 export type SeriesDef = {
   kind: SeriesKind;
@@ -3790,6 +3791,20 @@ export type SeriesDef = {
 };
 
 export const SERIES: Record<SeriesKind, SeriesDef> = {
+  // 0.1.36: the white ladder, the bottom rung under The Run (cost one tier, pay the next, like Run and Stack).
+  climb: {
+    kind: "climb",
+    id: CLIMB_ID,
+    name: "The Climb",
+    cost: "white",
+    pay: "blue",
+    bonus: "green",
+    steps: 3,
+    diffs: [1, 1, 2],
+    coolMs: 8 * 60_000,
+    lore: "Three trivia cards, one white match. Two easy, then a step up. Clear the lamp and a blue match drops. Miss any trivia card and the match is gone — eight minutes dark.",
+    kicker: "three trivia cards, one white",
+  },
   run: {
     kind: "run",
     id: RUN_ID,
@@ -3821,6 +3836,7 @@ export const SERIES: Record<SeriesKind, SeriesDef> = {
 export function seriesOf(id: string): SeriesDef | null {
   if (id === RUN_ID) return SERIES.run;
   if (id === STACK_ID) return SERIES.stack;
+  if (id === CLIMB_ID) return SERIES.climb;
   return null;
 }
 
@@ -3838,6 +3854,7 @@ export function seriesPoi(s: SeriesDef): import("./types").Poi {
 
 export const RUN_POI: import("./types").Poi = seriesPoi(SERIES.run);
 export const STACK_POI: import("./types").Poi = seriesPoi(SERIES.stack);
+export const CLIMB_POI: import("./types").Poi = seriesPoi(SERIES.climb);
 
 /** 0.0.90: +15% (was 92). The Lantern Run's server floor (dailyTopSpeed) follows this. */
 export const WALK_PACE = 92 * 1.15;
