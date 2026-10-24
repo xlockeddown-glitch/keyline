@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.36";
+export const APP_VERSION = "0.1.37";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k136a";
+export const PUBLISH_STAMP = "k137a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -144,3 +144,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.34: heat: off-screen lamp pins pause their flicker (IntersectionObserver .offscreen), localMinutes/localClock reuse one Intl.DateTimeFormat per zone (it was rebuilt every map frame), streets nearest() scans cells nearest-first and skips cells farther than the best hit (same answer as the full scan, nearest.test.ts), and the SVG renderer skips moveend redraws while the view stays inside the already-drawn padded box. No gameplay or visual change (k134a).
 // 0.1.35: walk graph keeps junction vertices: server packLine and client decimate no longer thin away a corner two ways share (sharedVertices), so crossings join. Fixes walks looping around blocks (Corktown, Rosa Parks at Michigan) and lamps right beside the walker that could not be reached (Midtown). Pre-existing, not from 0.1.34. junctions.test.ts. Driving your own car: entering a car already parked at the curb now counts as your car (cab.own from carOn), and drive-by match pickup works from your own car (was blocked for any seat), so lamps, trivia and matches answer from the car; the city cab still parks first (k135a).
 // 0.1.36: ladder lamps (two lanterns on a ladder) for The Climb (new white ladder) / Run / Stack; a perfect ladder rolls a server-side prize match of any tier + coin.
+// 0.1.37: walks reach lamps off the baked streets when live streets fail (Cass Corridor "No street that way."): the foot router's route is ingested (bridgeByFoot); server Overpass timeout 45 s, white-listed .fr mirror last (k137a).

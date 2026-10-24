@@ -16,10 +16,11 @@ const DRIVE = new Set([
 ]);
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
 
+// 0.1.36: overpass-api.de answers but takes ~35 s (Oct 24); .fr now 403s anyone not white-listed, so it goes last.
 const OVERPASS = [
-  "https://overpass.openstreetmap.fr/api/interpreter",
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.openstreetmap.fr/api/interpreter",
 ];
 
 const cache = new Map<string, { lines: number[][]; freeways: number[][]; drive: { line: number[]; arterial: boolean }[] }>();
@@ -36,7 +37,7 @@ async function postOverpass(url: string, query: string) {
     // Some Overpass mirrors 403 requests without a User-Agent (server-side fetch sends none by default).
     headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": "keyline/1.0 (+https://github.com/xlockeddown-glitch/keyline)" },
     body: `data=${encodeURIComponent(query)}`,
-    signal: AbortSignal.timeout(18000),
+    signal: AbortSignal.timeout(45000),
   });
   if (!res.ok) throw new Error(`overpass ${res.status}`);
   return (await res.json()) as {

@@ -46,6 +46,7 @@ import {
   hopTouchesFreeway,
   clearOfFreeway,
   pullToStreet,
+  bridgeByFoot,
   randomOnStreet,
   routeDrive,
   routeOnGraph,
@@ -1404,6 +1405,13 @@ export function GameMap() {
       snappedRaw = pullToStreet(g, target.lat, target.lng, 220, from);
       snapped = w ? clampWard(w, snappedRaw.lat, snappedRaw.lng) : snappedRaw;
       snapGap = distM(snapped.lat, snapped.lng, target.lat, target.lng);
+      // 0.1.36: the streets there didn't load (live fetch down): let the foot router lay the way in.
+      if (snapGap > WALK_REACH_M && (await bridgeByFoot(g, from, target, abortRef.current?.signal))) {
+        if (destSeq.current !== seq || mapRef.current !== map) return;
+        snappedRaw = pullToStreet(g, target.lat, target.lng, 220, from);
+        snapped = w ? clampWard(w, snappedRaw.lat, snappedRaw.lng) : snappedRaw;
+        snapGap = distM(snapped.lat, snapped.lng, target.lat, target.lng);
+      }
     }
     // No street within a door-step: drawing the route would stop on a far curb and leave the pin behind.
     if (!cut && !edge && snapGap > (seated ? 140 : WALK_REACH_M)) {

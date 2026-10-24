@@ -1454,6 +1454,21 @@ export function routeHugsGraph(g: StreetGraph, path: Pt[], maxOff = 32): boolean
 }
 
 /** Online route with an offline graph fallback. Resolves null once `signal` aborts, never a stale path. */
+/**
+ * 0.1.36: the live street fetch failed (Overpass slow or refusing, Oct 24) and the baked streets don't reach `to`
+ * (Cass Corridor lamps 400 m off the baked spines said "No street that way."). Ask the foot router and, when its
+ * walk really ends at `to` and keeps off freeways, ingest it so the walk graph reaches the spot.
+ */
+export async function bridgeByFoot(g: StreetGraph, from: Pt, to: Pt, signal?: AbortSignal): Promise<boolean> {
+  const path = await osrmRoute(from, to, signal, false);
+  if (!path || path.length < 2 || signal?.aborted) return false;
+  const end = path[path.length - 1]!;
+  if (distM(end.lat, end.lng, to.lat, to.lng) > WALK_REACH_M) return false;
+  if (freewayRide(g, path) >= FREEWAY_RIDE_M) return false;
+  ingestLine(g, path);
+  return true;
+}
+
 export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220, from) : to;
   const snappedFrom = g ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140)) : from;
