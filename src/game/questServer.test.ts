@@ -11,6 +11,10 @@ import { LEGACY_CHARM_CAP, LEGACY_THANKS_COIN, applyLegacy, claimQuest, luckyLiv
 import type { GradePay, LocalSnap } from "./wallet.ts";
 import { applyClientOp, awardGrade, syncPlayer } from "./walletApply.ts";
 import { canonicalWallet } from "./walletSql.ts";
+import { thanksClock } from "./thanksGift.ts";
+
+// 0.1.39: keep the thank-you gift (its free house and coin) out of these quest wallets; thanksGift.test.ts covers it.
+thanksClock.cutoff = "2000-01-01T00:00:00Z";
 
 function sqlOf(db: PGlite): Sql {
   const sql = (async (strings: TemplateStringsArray, ...values: unknown[]) => {

@@ -50,6 +50,8 @@ import type { ScoutId } from "./types.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
 import { rideRamp } from "./rideGames.ts";
 import { MARKET_LIGHTS, bestLight, nextLight, type LightId } from "./marketLights.ts";
+import { THANKS_CAR, THANKS_CAR_COIN, THANKS_CAR_KEY, THANKS_GIFT_KEY, thanksClock, THANKS_HOUSE, THANKS_HOUSE_COIN, THANKS_HOUSE_KEY, thanksCity, thanksNote, type ThanksCar, type ThanksHouse } from "./thanksGift.ts";
+import { COIN_CAP } from "./wallet.ts";
 import { SCOUT_GIFTS, type ScoutGift, MATCH_GIFTS, giftsFor, type MatchGift } from "./matchGift.ts";
 import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
@@ -102,6 +104,47 @@ export async function grantMatchGifts(sql: Sql, userId: string, list: readonly M
     if (r.ok && !r.replay) notes.push(g.note);
   }
   return notes;
+}
+
+/**
+ * 0.1.39: the one-time thank-you gift (thanksGift.ts). Keyed to the canonical wallet id, so linked sign-ins share it.
+ * Only for accounts whose earliest ledger row predates THANKS_GIFT_CUTOFF. Each half is its own idempotent key; the
+ * car/house rows are written like a purchase (car:f150, house:<city>:town) with detail { gift: true } and 0 coin.
+ */
+export async function grantThanksGift(sql: Sql, userId: string, localStart: CityId | null = null): Promise<string[]> {
+  const { id, wallet } = await canonicalWallet(sql, userId);
+  const first = await sql<{ t: unknown }>`
+    select min(created_at) as t from wallet_ledger where user_id = ${id} and op_key not like ${"gift:thanks-0139%"}
+  `;
+  const t0 = first[0]?.t;
+  if (t0 == null) return [];
+  const at = new Date(t0 instanceof Date ? t0.getTime() : String(t0)).getTime();
+  if (!(at < Date.parse(thanksClock.cutoff))) return [];
+  let car: ThanksCar | null = null;
+  let house: ThanksHouse | null = null;
+  const lost = { car: 0, house: 0 };
+  const pay = (w: WalletState, coin: number, half: "car" | "house") => {
+    lost[half] = Math.max(0, Math.min(coin, w.coins + coin - COIN_CAP));
+    return applyDelta(w, { coins: coin });
+  };
+  const hasCar = (await carsOf(sql, userId)).includes(THANKS_CAR);
+  const c = await mutateWallet(sql, userId, THANKS_CAR_KEY, (w) => ({ ...pay(w, hasCar ? THANKS_CAR_COIN : 0, "car"), detail: JSON.stringify({ car: THANKS_CAR, coin: hasCar ? THANKS_CAR_COIN : 0 }) }));
+  if (c.ok && !c.replay) {
+    car = hasCar ? "coin" : "given";
+    if (!hasCar) await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${"car:" + THANKS_CAR}, ${JSON.stringify({ car: THANKS_CAR, gift: true })}) on conflict (user_id, op_key) do nothing`;
+  }
+  const city = thanksCity(wallet.cities, localStart && localStart in CITIES ? localStart : null);
+  const owned = city ? ((await housesOf(sql, userId))[city]?.tier ?? null) : null;
+  const coinHouse = !city || houseRank(owned) >= houseRank(THANKS_HOUSE);
+  const h = await mutateWallet(sql, userId, THANKS_HOUSE_KEY, (w) => ({ ...pay(w, coinHouse ? THANKS_HOUSE_COIN : 0, "house"), detail: JSON.stringify({ city, from: owned, coin: coinHouse ? THANKS_HOUSE_COIN : 0 }) }));
+  if (h.ok && !h.replay) {
+    house = coinHouse ? "coin" : owned ? "upgraded" : "given";
+    if (!coinHouse && city) await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${`house:${city}:${THANKS_HOUSE}`}, ${JSON.stringify({ city, tier: THANKS_HOUSE, from: owned, gift: true })}) on conflict (user_id, op_key) do nothing`;
+  }
+  if (!car && !house) return [];
+  const note = thanksNote({ car, house, cityName: city ? CITIES[city].name : null, lost: (car ? lost.car : 0) + (house ? lost.house : 0), cap: COIN_CAP });
+  await mutateWallet(sql, userId, THANKS_GIFT_KEY, (w) => ({ ...applyDelta(w, {}), detail: note }));
+  return [note];
 }
 
 /** 0.0.95: restore a gifted scout once, refunding duplicate server-recorded purchases of it. */
@@ -248,11 +291,16 @@ export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId
 
 export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
   await grantPassGift(sql, userId);
-  const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId))];
+  const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId)), ...(await grantThanksGift(sql, userId, startOfLocal(local)))];
   const done = await syncCore(sql, userId, local, deviceId);
   const pt = await paintOf(sql, userId);
   const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId) };
   return giftNotes.length ? { ...done, owned, giftNotes } : { ...done, owned };
+}
+
+function startOfLocal(local: LocalSnap): CityId | null {
+  const s = (local.cities as { start?: unknown } | null | undefined)?.start;
+  return typeof s === "string" && s in CITIES ? (s as CityId) : null;
 }
 
 async function syncCore(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {

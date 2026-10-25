@@ -43,6 +43,10 @@ import {
 import { canonicalWallet, rowToState } from "./walletSql.ts";
 import { DEVICE_CAP, applyClientOp, awardGrade, carsOf, grantMatchGifts, grantScoutGifts, ownedOf, grantPassGift, lightsOf, spendDealt, syncPlayer, grantCan, paintOf, housesOf, lampsToday } from "./walletApply.ts";
 import { MATCH_GIFTS, SCOUT_GIFTS } from "./matchGift.ts";
+import { thanksClock } from "./thanksGift.ts";
+
+// 0.1.39: these tests predate the thank-you gift; keep it out of their wallets (thanksGift.test.ts covers it).
+thanksClock.cutoff = "2000-01-01T00:00:00Z";
 import { MARKET_COIN_CAP, lightOf, marketCoinX } from "./marketLights.ts";
 import { tokenNonce } from "./walletClient.ts";
 
