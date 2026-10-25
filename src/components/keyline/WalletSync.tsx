@@ -79,6 +79,8 @@ export function WalletSync() {
           const corgi = /Corgi is back/.test(text);
           popMatch({ kind: "gift", big: corgi ? "Corgi restored!" : "A gift!", sub: text, tiers: reds ? Array.from({ length: Number(reds[1]) }, () => "red" as const) : [], coin: 0 });
         }
+        // 0.1.43: a gift lantern granted on this sync shows up in Journal · Places.
+        void import("@/game/ownLampsClient").then((m) => m.refreshOwnedLamps());
         setStreetPlayer(r.playerId);
         setWalletLive(true);
         useGame.getState().bindStreet();

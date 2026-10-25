@@ -1,4 +1,7 @@
 // 0.0.78 server wallet: first sync keeps the higher pocket (once), a grade pays from the server's
+import { lampGiftClock } from "./lampGift.ts";
+// 0.1.43: these tests predate the free lantern gift; keep it out of their wallets (lampGift.test.ts covers it).
+lampGiftClock.cutoff = "2000-01-01T00:00:00Z";
 // own formula, the same token pays once, and a spend that isn't in the pocket is refused.
 import { cacheLine } from "./goals.ts";
 import { mock, test } from "node:test";

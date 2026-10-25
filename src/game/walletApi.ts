@@ -76,7 +76,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("paint"), car: z.string().min(1).max(20), color: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("house"), city: City, tier: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("home"), city: City }),
-  z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80) }),
+  z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80), free: z.boolean().optional() }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
   z.object({ kind: z.literal("print"), id: z.enum(COSMETICS) }),
@@ -239,10 +239,12 @@ export const fetchOwnedLamps = createServerFn({ method: "POST" })
   .middleware([viewerMiddleware])
   .handler(async ({ context }) => {
     const { getSql } = await import("@/lib/db");
-    const { ownedLamps } = await import("./walletApply");
+    const { ownedLamps, lampGiftsOpen } = await import("./walletApply");
     try {
-      return await ownedLamps(await getSql(), context.userId);
+      const sql = await getSql();
+      // 0.1.43: the signed-in player's unclaimed gift lanterns ride along.
+      return { lamps: await ownedLamps(sql, context.userId), gifts: context.userId ? await lampGiftsOpen(sql, context.userId) : [] };
     } catch {
-      return [];
+      return { lamps: [], gifts: [] as string[] };
     }
   });

@@ -64,6 +64,7 @@ import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 import { OWN_CLAIM_USER, OWN_DAILY_CAP, OWN_PRICE, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
 import { standingName } from "./standingName.ts";
+import { LAMP_GIFT_NOTE, LAMP_GIFT_TIERS, isLampGiftTier, lampGiftClock, lampGiftKey } from "./lampGift.ts";
 
 /** What the browser is allowed to see. */
 export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"]; credit?: Partial<Record<Tier, number>> };
@@ -106,6 +107,29 @@ export async function grantMatchGifts(sql: Sql, userId: string, list: readonly M
     if (r.ok && !r.replay) notes.push(g.note);
   }
   return notes;
+}
+
+/** 0.1.43: the free white and blue lantern (lampGift.ts) for accounts whose first ledger row predates the cutoff. */
+export async function grantLampGift(sql: Sql, userId: string): Promise<string[]> {
+  const { id } = await canonicalWallet(sql, userId);
+  const first = await sql<{ t: unknown }>`select min(created_at) as t from wallet_ledger where user_id = ${id} and op_key not like ${"gift:lamp-0143%"}`;
+  const t0 = first[0]?.t;
+  if (t0 == null) return [];
+  if (!(new Date(t0 instanceof Date ? t0.getTime() : String(t0)).getTime() < Date.parse(lampGiftClock.cutoff))) return [];
+  let fresh = false;
+  for (const t of LAMP_GIFT_TIERS) {
+    const g = await mutateWallet(sql, userId, lampGiftKey(t), (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify({ lamp: t }) }));
+    if (g.ok && !g.replay) fresh = true;
+  }
+  return fresh ? [LAMP_GIFT_NOTE] : [];
+}
+
+/** 0.1.43: gifted lanterns this account may still place (granted, not yet claimed). */
+export async function lampGiftsOpen(sql: Sql, userId: string): Promise<string[]> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and (op_key like ${"gift:lamp-0143-%"} or op_key like ${"ownfree:%"})`;
+  const keys = new Set(rows.map((r) => r.op_key));
+  return LAMP_GIFT_TIERS.filter((t) => keys.has(lampGiftKey(t)) && !keys.has(`ownfree:${t}`));
 }
 
 /**
@@ -293,7 +317,7 @@ export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId
 
 export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, deviceId: string): Promise<SyncApplied> {
   await grantPassGift(sql, userId);
-  const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId)), ...(await grantThanksGift(sql, userId, startOfLocal(local)))];
+  const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId)), ...(await grantThanksGift(sql, userId, startOfLocal(local))), ...(await grantLampGift(sql, userId))];
   const done = await syncCore(sql, userId, local, deviceId);
   const pt = await paintOf(sql, userId);
   const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId) };
@@ -518,7 +542,7 @@ export function ownableLamp(poiId: string): { poi: (typeof CITIES)[CityId]["pois
   return null;
 }
 
-type ClaimDetail = { owner: string; tier: Tier; city: string; name: string };
+type ClaimDetail = { owner: string; tier: Tier; city: string; name: string; free?: 1 };
 
 function parseClaim(detail: unknown): ClaimDetail | null {
   try {
@@ -530,13 +554,13 @@ function parseClaim(detail: unknown): ClaimDetail | null {
 }
 
 /** Every owned lamp, from the global claim rows. `mine` when the canonical viewer owns it. */
-export async function ownedLamps(sql: Sql, viewerId: string | null): Promise<(OwnedLamp & { mine: boolean })[]> {
+export async function ownedLamps(sql: Sql, viewerId: string | null): Promise<(OwnedLamp & { mine: boolean; free?: boolean })[]> {
   const me = viewerId ? (await canonicalWallet(sql, viewerId)).id : null;
   const rows = await sql<{ op_key: string; detail: string }>`select op_key, detail from wallet_ledger where user_id = ${OWN_CLAIM_USER} and op_key like ${"ownpoi:%"}`;
-  const out: (OwnedLamp & { mine: boolean })[] = [];
+  const out: (OwnedLamp & { mine: boolean; free?: boolean })[] = [];
   for (const r of rows) {
     const c = parseClaim(r.detail);
-    if (c) out.push({ poi: r.op_key.slice("ownpoi:".length), tier: c.tier, city: c.city, name: c.name, mine: c.owner === me });
+    if (c) out.push({ poi: r.op_key.slice("ownpoi:".length), tier: c.tier, city: c.city, name: c.name, mine: c.owner === me, ...(c.owner === me && c.free ? { free: true } : {}) });
   }
   return out;
 }
@@ -555,12 +579,19 @@ async function ownerName(sql: Sql, userId: string): Promise<string> {
  * The claim insert is the lock (primary key): it is taken first, and released if the purchase does not land, so two
  * buyers can't both get one lamp and one buyer can't get two lamps of a color.
  */
-async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string): Promise<ClientResult> {
+async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string, free = false): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
   const hit = ownableLamp(poiId);
   if (!hit) return refused(wallet, "unknown");
   const tier = hit.poi.tier;
-  const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${"own:" + tier} limit 1`;
+  // 0.1.43: a gifted lantern is its own key (ownfree:<tier>), free, and needs the gift row; it doesn't use up own:<tier>.
+  const key = `${free ? "ownfree" : "own"}:${tier}`;
+  const price = free ? 0 : OWN_PRICE[tier];
+  if (free) {
+    const gift = isLampGiftTier(tier) ? await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${lampGiftKey(tier)} limit 1` : [];
+    if (!gift.length) return refused(wallet, "no-gift");
+  }
+  const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${key} limit 1`;
   const heldPoi = (d: string | undefined) => {
     try {
       return (JSON.parse(d ?? "{}") as { poi?: string }).poi ?? null;
@@ -569,17 +600,17 @@ async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string): Promis
     }
   };
   if (held.length) return heldPoi(held[0]!.detail) === poiId ? applied({ ok: true, replay: true, wallet }) : refused(wallet, "owned");
-  if (wallet.coins < OWN_PRICE[tier]) return refused(wallet, "short-coins");
+  if (wallet.coins < price) return refused(wallet, "short-coins");
   const name = await ownerName(sql, sessionUserId);
   const claim = await sql<{ op_key: string }>`
-    insert into wallet_ledger (user_id, op_key, detail) values (${OWN_CLAIM_USER}, ${"ownpoi:" + poiId}, ${JSON.stringify({ owner: id, tier, city: hit.city, name })})
+    insert into wallet_ledger (user_id, op_key, detail) values (${OWN_CLAIM_USER}, ${"ownpoi:" + poiId}, ${JSON.stringify({ owner: id, tier, city: hit.city, name, ...(free ? { free: 1 } : {}) })})
     on conflict (user_id, op_key) do nothing returning op_key
   `;
   if (!claim.length) return refused(wallet, "taken");
   const release = () => sql`delete from wallet_ledger where user_id = ${OWN_CLAIM_USER} and op_key = ${"ownpoi:" + poiId} and detail like ${`%"owner":${JSON.stringify(id)}%`}`;
   try {
-    const r = await mutateWallet(sql, sessionUserId, `own:${tier}`, (w) =>
-      w.coins < OWN_PRICE[tier] ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -OWN_PRICE[tier] }), detail: JSON.stringify({ poi: poiId, city: hit.city, name }) },
+    const r = await mutateWallet(sql, sessionUserId, key, (w) =>
+      w.coins < price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -price }), detail: JSON.stringify({ poi: poiId, city: hit.city, name }) },
     );
     // A same-color buy that raced this one won with another lamp: give this lamp back.
     if (!r.ok || (r.replay && heldPoi(r.detail) !== poiId)) {
@@ -680,7 +711,7 @@ export type ClientOp =
   | { kind: "paint"; car: string; color: string }
   | { kind: "house"; city: CityId; tier: string }
   | { kind: "home"; city: CityId }
-  | { kind: "own"; poi: string }
+  | { kind: "own"; poi: string; free?: boolean }
   | { kind: "hurry"; min: number }
   | {
       kind: "ride";
@@ -726,7 +757,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     return refundDealt(sql, sessionUserId, t.n, t.k);
   }
 
-  if (op.kind === "own") return ownLampOp(sql, sessionUserId, op.poi);
+  if (op.kind === "own") return ownLampOp(sql, sessionUserId, op.poi, op.free === true);
 
   if (op.kind === "print") {
     const wardrobe = await loadWardrobe(sql, id);

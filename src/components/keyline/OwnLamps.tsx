@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { CITIES, CITY_LIST, TIER_LABEL } from "@/game/data";
 import { OWN_PRICE } from "@/game/ownLamps";
-import { buyLamp, useOwnedLamps } from "@/game/ownLampsClient";
+import { buyLamp, useLampGifts, useOwnedLamps } from "@/game/ownLampsClient";
 import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import type { CityId, Tier } from "@/game/types";
@@ -14,7 +14,10 @@ export function OwnLampsSection() {
   const owned = useOwnedLamps();
   const cityId = useGame((s) => s.cityId);
   const points = useGame((s) => s.points);
+  const gifts = useLampGifts();
   const [pick, setPick] = useState<Tier | null>(null);
+  /** 0.1.43: the open picker places a gift lantern (free) rather than buying one. */
+  const [free, setFree] = useState(false);
   const [city, setCity] = useState<CityId>(cityId);
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState("");
@@ -26,7 +29,7 @@ export function OwnLampsSection() {
       <li className="kicker">Your lanterns</li>
       <li className="hq-row-sub">Own one lamp of each color. When a visitor misses there, you get half its value.</li>
       {TIERS.map((t) => {
-        const mine = owned.find((o) => o.mine && o.tier === t);
+        const mine = owned.find((o) => o.mine && !o.free && o.tier === t);
         const poi = mine ? CITIES[mine.city as CityId]?.pois.find((p) => p.id === mine.poi) : null;
         return (
           <li key={t} className={`hq-row own-row tier-${t}`} data-testid={`own-${t}`}>
@@ -39,22 +42,59 @@ export function OwnLampsSection() {
               <button
                 type="button"
                 className="btn btn-quiet min-h-11 shrink-0 px-3 text-sm"
-                aria-expanded={pick === t}
+                aria-expanded={pick === t && !free}
                 onClick={() => {
                   sfx.ui();
                   setLine("");
-                  setPick(pick === t ? null : t);
+                  setFree(false);
+                  setPick(pick === t && !free ? null : t);
                 }}
               >
-                {pick === t ? "Close" : "Pick a lamp"}
+                {pick === t && !free ? "Close" : "Pick a lamp"}
               </button>
             )}
           </li>
         );
       })}
+      {owned
+        .filter((o) => o.mine && o.free)
+        .map((o) => (
+          <li key={`free-${o.poi}`} className={`hq-row own-row tier-${o.tier}`} data-testid={`own-free-${o.tier}`}>
+            <span className={`own-dot tier-${o.tier}`} aria-hidden />
+            <div className="hq-row-copy">
+              <p className="hq-row-title">
+                {CITIES[o.city as CityId]?.pois.find((p) => p.id === o.poi)?.name ?? "Your lamp"} · {CITIES[o.city as CityId]?.name ?? ""}
+              </p>
+              <p className="hq-row-sub">Your free {TIER_LABEL[o.tier]} lantern (a gift)</p>
+            </div>
+          </li>
+        ))}
+      {gifts.map((t) => (
+        <li key={`gift-${t}`} className={`hq-row own-row own-gift tier-${t}`} data-testid={`own-gift-${t}`}>
+          <span className={`own-dot tier-${t}`} aria-hidden />
+          <div className="hq-row-copy">
+            <p className="hq-row-title">Free {TIER_LABEL[t]} lantern: pick a lamp</p>
+            <p className="hq-row-sub">A gift. It's extra: you can still buy your own {TIER_LABEL[t]}.</p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary min-h-11 shrink-0 px-3 text-sm"
+            aria-expanded={pick === t && free}
+            onClick={() => {
+              sfx.ui();
+              setLine("");
+              const open = pick === t && free;
+              setFree(!open);
+              setPick(open ? null : t);
+            }}
+          >
+            {pick === t && free ? "Close" : "Pick a lamp"}
+          </button>
+        </li>
+      ))}
       {pick ? (
         <li className="own-pick grid gap-2 rounded-lg border border-border p-3" data-testid="own-pick">
-          <p className="hq-row-title">Pick a {TIER_LABEL[pick]} lamp · {OWN_PRICE[pick].toLocaleString("en-US")} coins</p>
+          <p className="hq-row-title">Pick a {TIER_LABEL[pick]} lamp · {free ? "free gift" : `${OWN_PRICE[pick].toLocaleString("en-US")} coins`}</p>
           <label className="hq-row-sub flex items-center gap-2">
             City
             <select className="min-h-11 rounded border border-border bg-bg px-2" value={city} onChange={(e) => setCity(e.target.value as CityId)}>
@@ -73,25 +113,26 @@ export function OwnLampsSection() {
                 <button
                   type="button"
                   className="btn min-h-11 shrink-0 px-3 text-sm"
-                  disabled={busy || points < OWN_PRICE[pick]}
+                  disabled={busy || (!free && points < OWN_PRICE[pick])}
                   onClick={() => {
                     setBusy(true);
-                    void buyLamp(p.id, pick).then((msg) => {
+                    void buyLamp(p.id, pick, free).then((msg) => {
                       setBusy(false);
                       setLine(msg);
                       if (msg.endsWith("is yours.")) {
                         sfx.craft();
                         setPick(null);
+                        setFree(false);
                       }
                     });
                   }}
                 >
-                  Buy
+                  {free ? "Place" : "Buy"}
                 </button>
               </li>
             ))}
           </ul>
-          {points < OWN_PRICE[pick] ? <p className="hq-row-sub">Need {(OWN_PRICE[pick] - points).toLocaleString("en-US")} more coins.</p> : null}
+          {!free && points < OWN_PRICE[pick] ? <p className="hq-row-sub">Need {(OWN_PRICE[pick] - points).toLocaleString("en-US")} more coins.</p> : null}
         </li>
       ) : null}
       {line ? (
