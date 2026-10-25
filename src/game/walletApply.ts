@@ -2,7 +2,7 @@ import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
-import { HOME_LAMPS, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
+import { HOME_LAMPS, KEY_MATCHES, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
 import { cityDay } from "./vaultStack.ts";
 import { CAN_ODDS, canId, colorOf, paintPrice, parseCan, rollCan, type Can } from "./carPaint.ts";
 import { LONG_IDS, applyLegacy, claimQuest, luckyLive, type LegacyGrant, type LegacyIn, type LongId } from "./questServer.ts";
@@ -706,7 +706,7 @@ export type ClientResult = Applied & {
   /** 0.1.9: a paint can found (cache), or the color a paint op set. */
   can?: Can;
   /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
-  home?: { match: Tier | null; day: string };
+  home?: { match: Tier | null; n?: number; coin?: number; day: string };
   /** 0.1.22: the quest a claim paid (and the month Lucky turned on for, from a Full month). */
   quest?: { id: string; period: string; lucky?: string };
   /** 0.1.22: what the one-time milestone / charm move paid (fresh grants only; a replay is empty). */
@@ -907,13 +907,20 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     const def = houseOf(tier)!;
     const day = cityDay(op.city, Date.now());
     let match: Tier | null = null;
+    let paid = 0;
+    // 0.1.42: KEY_MATCHES of the house's color (overflow becomes credits, as every match grant) plus the tier's coin, clamped at COIN_CAP.
     const hook = await mutateWallet(sql, sessionUserId, `hook:${op.city}:${day}`, (w) => {
-      const p = payMatch(w.keys, def.match);
-      const d = applyDelta(w, { coins: p.coin, keys: p.tier ? { [p.tier]: 1 } : {} });
-      if (d.ok) match = def.match;
-      return d.ok ? { ...d, detail: JSON.stringify({ city: op.city, match: def.match }) } : d;
+      const p = payMatchesOf(w.keys, def.match, KEY_MATCHES);
+      const coin = Math.max(0, Math.min(def.keyCoin + p.coin, COIN_CAP - w.coins));
+      const d = applyDelta(w, { coins: coin, keys: p.add });
+      if (d.ok) {
+        match = def.match;
+        paid = coin;
+      }
+      return d.ok ? { ...d, detail: JSON.stringify({ city: op.city, match: def.match, n: KEY_MATCHES, coin }) } : d;
     });
-    return { ...applied(hook), home: { match: hook.ok && !hook.replay ? match : null, day } };
+    const fresh = hook.ok && !hook.replay;
+    return { ...applied(hook), home: { match: fresh ? match : null, n: fresh ? KEY_MATCHES : 0, coin: fresh ? paid : 0, day } };
   }
 
   if (op.kind === "dgoal") {

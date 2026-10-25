@@ -1,10 +1,10 @@
 /**
  * 0.1.12 houses (design: docs/design/houses.md). A house is one door in one city: four tiers, bought in any order,
  * a step-up costs the difference. After three lamps lit in that city today, turning the key hangs the tier's match on
- * the hook, once per city per local day. It pays no coin.
+ * the hook, once per city per local day. 0.1.42: it pays KEY_MATCHES of the tier's match plus the tier's key coin.
  * Server ledger only, like cars — no new table:
  *   house:<city>:<tier>     a buy or step-up (detail { city, tier, from })
- *   hook:<city>:<local day> the city's match (detail { city, match })
+ *   hook:<city>:<local day> the city's matches and coin (detail { city, match, n, coin })
  * Later (not v1): interiors decorated with trivia items. A house is `HouseState` so items can ride along without a
  * change of shape; they would be their own ledger rows (e.g. decor:<city>:<item>).
  */
@@ -13,13 +13,16 @@ import type { CityId, Tier } from "./types";
 
 export type HouseTier = "cottage" | "row" | "town" | "villa";
 
-export type HouseDef = { id: HouseTier; name: string; blurb: string; price: number; match: Tier; star?: boolean };
+export type HouseDef = { id: HouseTier; name: string; blurb: string; price: number; match: Tier; keyCoin: number; star?: boolean };
+
+/** 0.1.42: matches of the house's color the daily key pays. */
+export const KEY_MATCHES = 2;
 
 export const HOUSES: readonly HouseDef[] = [
-  { id: "cottage", name: "Lantern Cottage", blurb: "Warm brick, a green door, a glowing lantern.", price: 40_000, match: "white" },
-  { id: "row", name: "Gaslight Row House", blurb: "Red brick, tall lit windows, an iron stoop.", price: 130_000, match: "blue" },
-  { id: "town", name: "Ivy Townhouse", blurb: "Pale limestone, ivy and golden windows.", price: 300_000, match: "green" },
-  { id: "villa", name: "Grand Villa", blurb: "Sand stucco, a long drive, amber light.", price: 1_200_000, match: "amber", star: true },
+  { id: "cottage", name: "Lantern Cottage", blurb: "Warm brick, a green door, a glowing lantern.", price: 40_000, match: "white", keyCoin: 1_000 },
+  { id: "row", name: "Gaslight Row House", blurb: "Red brick, tall lit windows, an iron stoop.", price: 130_000, match: "blue", keyCoin: 3_000 },
+  { id: "town", name: "Ivy Townhouse", blurb: "Pale limestone, ivy and golden windows.", price: 300_000, match: "green", keyCoin: 8_000 },
+  { id: "villa", name: "Grand Villa", blurb: "Sand stucco, a long drive, amber light.", price: 1_200_000, match: "amber", keyCoin: 25_000, star: true },
 ];
 
 /** What the account holds in one city. `items` is room for later (interior decor); v1 never sets it. */

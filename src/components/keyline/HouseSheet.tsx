@@ -3,13 +3,13 @@ import { sfx } from "@/game/audio";
 import { carOf } from "@/game/cars";
 import { carSprite } from "@/game/carPaint";
 import { TIER_LABEL } from "@/game/data";
-import { HOUSES, HOME_LAMPS, houseArt, houseCost, houseOf, lotOf } from "@/game/houses";
+import type { Tier } from "@/game/types";
+import { HOUSES, HOME_LAMPS, KEY_MATCHES, houseArt, houseCost, houseOf, lotOf } from "@/game/houses";
 import { useGame } from "@/game/store";
 import { cityDay } from "@/game/vaultStack";
 import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 
-const an = (w: string) => (/^[AEIOU]/i.test(w) ? "an" : "a");
 
 /** 0.1.12 house sheet: four tiers for sale, or your door (painting, the car in the drive, the key, the step-up). */
 export function HouseSheet() {
@@ -40,8 +40,8 @@ export function HouseSheet() {
             <h2 className="font-display text-2xl">{owned ? owned.name : "Buy a house here"}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
               {owned
-                ? `Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for ${an(TIER_LABEL[owned.match])} ${TIER_LABEL[owned.match]} match.`
-                : `Yours for good. Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for a free match.`}
+                ? `Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for ${keyPay(owned)}.`
+                : `Yours for good. Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for free matches and coins.`}
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={() => close(false)} aria-label="Close">
@@ -62,7 +62,7 @@ export function HouseSheet() {
               </div>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <p className="text-sm text-fg-muted">
-                  {hookTaken ? `Got today's ${TIER_LABEL[owned.match]} match. More at midnight.` : `Today's ${TIER_LABEL[owned.match]} match is waiting.`}
+                  {hookTaken ? `Got today's ${keyPay(owned)}. More at midnight.` : `Today's ${keyPay(owned)} are waiting.`}
                 </p>
                 <button
                   type="button"
@@ -93,7 +93,7 @@ export function HouseSheet() {
                       <p className="font-display text-lg leading-tight">{h.name}</p>
                       <p className="text-sm text-fg-muted">{h.blurb}</p>
                       <p className="car-boost text-sm">
-                        {an(TIER_LABEL[h.match]) === "an" ? "An" : "A"} {TIER_LABEL[h.match]} match a day
+                        {keyPay(h)} a day
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
@@ -110,9 +110,14 @@ export function HouseSheet() {
               );
             })}
           </div>
-          <p className="mt-4 text-xs text-fg-subtle">Sign in to buy. One house per city, yours for good. Upgrading costs only the difference. One match a day per city, no coins; it resets at midnight city time.</p>
+          <p className="mt-4 text-xs text-fg-subtle">Sign in to buy. One house per city, yours for good. Upgrading costs only the difference. The key pays once a day per city; it resets at midnight city time.</p>
         </div>
       </div>
     </div>
   );
+}
+
+/** 0.1.42: what the daily key pays, e.g. "2 Amber matches + 25,000 coins". */
+function keyPay(h: { match: Tier; keyCoin: number }) {
+  return `${KEY_MATCHES} ${TIER_LABEL[h.match]} matches + ${h.keyCoin.toLocaleString("en-US")} coins`;
 }

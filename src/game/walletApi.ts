@@ -141,7 +141,7 @@ export type WalletWire = {
   hurry?: { arriveAt: number; cost: number };
   /** 0.1.9: paint can found (cache) or the can a paint op spent. */
   can?: { car: string; color: string };
-  home?: { match: Tier | null; day: string };
+  home?: { match: Tier | null; n?: number; coin?: number; day: string };
   quest?: { id: string; period: string; lucky?: string };
   legacy?: LegacyGrant[];
 };

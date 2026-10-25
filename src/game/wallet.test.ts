@@ -1458,11 +1458,15 @@ test("0.1.12 houses: any tier first, step-up costs the difference, the key needs
   const k = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
   assert.equal(k.ok, true);
   assert.equal(k.home?.match, "amber");
+  assert.equal(k.home?.n, 2);
+  assert.equal(k.home?.coin, 25_000);
   const after = (await canonicalWallet(sql, "hse")).wallet;
-  assert.equal(after.coins, before.coins, "the key pays no coin");
-  assert.equal(after.keys.amber, before.keys.amber + 1);
+  assert.equal(after.coins, before.coins + 25_000, "0.1.42: the villa key pays 25,000 coin");
+  assert.equal(after.keys.amber, before.keys.amber + 2, "0.1.42: and 2 amber matches");
   const again = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
   assert.equal(again.home?.match, null, "once a day");
+  assert.equal(again.home?.coin, 0);
+  assert.equal((await canonicalWallet(sql, "hse")).wallet.keys.amber, after.keys.amber, "a replay pays nothing extra");
   assert.equal((await canonicalWallet(sql, "hse")).wallet.coins, after.coins);
   const s = await syncPlayer(sql, "hse", snap({ coins: 0 }), "hsephone1");
   assert.equal(s.owned?.houses?.austin?.tier, "villa");
@@ -1618,4 +1622,41 @@ test("0.1.42 owned lanterns: one per color, one owner per lamp, misses pay the o
   await awardGrade(sql, "vis", "m4", miss("blue", b0.id));
   assert.equal(await ownerCoins(), COIN_CAP);
   void OWN_CLAIM_USER;
+});
+
+test("0.1.42 house keys: every tier pays 2 matches of its color plus its coin, once a day, clamped at the coin cap", async () => {
+  const want = { cottage: ["white", 1_000], row: ["blue", 3_000], town: ["green", 8_000], villa: ["amber", 25_000] } as const;
+  for (const [tier, [color, coin]] of Object.entries(want)) {
+    const sql = await db();
+    const u = `key-${tier}`;
+    await syncPlayer(sql, u, snap({ coins: 0 }), `${u}phone1`);
+    const wid = (await canonicalWallet(sql, u)).id;
+    await sql`update player_wallets set coins = 2000000 where user_id = ${wid}`;
+    assert.equal((await applyClientOp(sql, u, { kind: "house", city: "austin", tier })).ok, true, tier);
+    for (const n of ["a", "b", "c"]) await awardGrade(sql, u, `${u}${n}`, { ...pay(), prevNonce: "" });
+    const before = (await canonicalWallet(sql, u)).wallet;
+    const r = await applyClientOp(sql, u, { kind: "home", city: "austin" });
+    assert.deepEqual([r.ok, r.home?.match, r.home?.n, r.home?.coin], [true, color, 2, coin], tier);
+    const after = (await canonicalWallet(sql, u)).wallet;
+    assert.equal(after.coins, before.coins + coin, tier);
+    assert.equal(after.keys[color], before.keys[color] + 2, tier);
+    const again = await applyClientOp(sql, u, { kind: "home", city: "austin" });
+    assert.equal(again.home?.coin, 0, `${tier} replay`);
+    const last = (await canonicalWallet(sql, u)).wallet;
+    assert.deepEqual([last.coins, last.keys[color]], [after.coins, after.keys[color]], `${tier} replay pays nothing extra`);
+  }
+  // Coin cap: a key near the cap pays only up to COIN_CAP (the matches still land).
+  const sql = await db();
+  await syncPlayer(sql, "keycap", snap({ coins: 0 }), "keycapphone1");
+  const wid = (await canonicalWallet(sql, "keycap")).id;
+  await sql`update player_wallets set coins = 1200000 where user_id = ${wid}`;
+  await applyClientOp(sql, "keycap", { kind: "house", city: "austin", tier: "villa" });
+  for (const n of ["a", "b", "c"]) await awardGrade(sql, "keycap", `kc${n}`, { ...pay(), prevNonce: "" });
+  await sql`update player_wallets set coins = ${COIN_CAP - 100} where user_id = ${wid}`;
+  const amber = (await canonicalWallet(sql, "keycap")).wallet.keys.amber;
+  const r = await applyClientOp(sql, "keycap", { kind: "home", city: "austin" });
+  assert.equal(r.home?.coin, 100);
+  const w = (await canonicalWallet(sql, "keycap")).wallet;
+  assert.equal(w.coins, COIN_CAP);
+  assert.equal(w.keys.amber, amber + 2);
 });

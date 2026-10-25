@@ -2430,7 +2430,7 @@ export const useGame = create<GameState>((set, get) => ({
       set({ homeClaims: Array.from(new Set([...get().homeClaims, `hook:${city}:${day}`])).slice(-40) });
 
       sfx.pickup();
-      flashToast(set, get, h?.match ? `You got ${/^[AEIOU]/i.test(TIER_LABEL[h.match]) ? "an" : "a"} ${TIER_LABEL[h.match]} match. Come back tomorrow for another.` : "You already got today's match. More at midnight.", 2600);
+      flashToast(set, get, h?.match ? `You got ${h.n ?? 2} ${TIER_LABEL[h.match]} matches${h.coin ? ` and ${h.coin.toLocaleString("en-US")} coins` : ""}. Come back tomorrow for more.` : "You already got today's key. More at midnight.", 2600);
       saveNow(get);
     });
   },
