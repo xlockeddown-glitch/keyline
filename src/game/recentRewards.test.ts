@@ -9,6 +9,10 @@ test("0.0.99 recent rewards: ledger rows map to source, place and amounts; spend
   const lamp = rewardOfRow("grade:n1", JSON.stringify({ coins: 40, keys: {}, boosts: [], pi: "p1", _d: { c: 40, k: { blue: 1 } } }), 1, name)!;
   assert.deepEqual([lamp.src, lamp.where, lamp.coins, lamp.keys], ["lamp", "Driskill Hotel", 40, { blue: 1 }]);
   assert.equal(rewardOfRow("grade:n2", JSON.stringify({ coins: 80, keys: {}, mk: 1, pi: "p1" }), 1, name)!.src, "market", "pre-0.0.99 rows use the award");
+  const own = rewardOfRow("ownpay:n9", JSON.stringify({ poi: "p1", t: "white", coins: 15, m: 0, _d: { c: 15, k: {} } }), 1, name)!;
+  assert.equal(own.src, "own", "0.1.42: an owned lamp's payout lists as Your lamp");
+  assert.equal(own.coins, 15);
+  assert.equal(own.where, name("p1"));
   const merge = rewardOfRow("street:sk:x", JSON.stringify({ _d: { c: 0, k: { green: 1 }, mg: { green: 1 }, cr: {} } }), 1, name)!;
   assert.deepEqual(merge.merged, { green: 1 });
   assert.equal(rewardOfRow("scout:corgi", JSON.stringify({ _d: { c: -9600, k: {} } }), 1, name), null);

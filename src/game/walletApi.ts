@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { viewerMiddleware } from "@/lib/auth/viewer-middleware";
 import { CITY_LIST, KIOSK } from "./data";
 import type { ClientOp, RideDeal } from "./walletApply";
 import type { LegacyGrant, QuestStatus } from "./questServer";
@@ -75,6 +76,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("paint"), car: z.string().min(1).max(20), color: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("house"), city: City, tier: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("home"), city: City }),
+  z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80) }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
   z.object({ kind: z.literal("print"), id: z.enum(COSMETICS) }),
@@ -230,4 +232,17 @@ export const fetchQuests = createServerFn({ method: "POST" })
     const { getSql } = await import("@/lib/db");
     const { questStatus } = await import("./questServer");
     return questStatus(await getSql(), context.userId);
+  });
+
+/** 0.1.42: every owned lamp (owner's display name), for the lamp card; `mine` for the signed-in owner. Guests may read. */
+export const fetchOwnedLamps = createServerFn({ method: "POST" })
+  .middleware([viewerMiddleware])
+  .handler(async ({ context }) => {
+    const { getSql } = await import("@/lib/db");
+    const { ownedLamps } = await import("./walletApply");
+    try {
+      return await ownedLamps(await getSql(), context.userId);
+    } catch {
+      return [];
+    }
   });

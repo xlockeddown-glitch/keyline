@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.41";
+export const APP_VERSION = "0.1.42";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k141a";
+export const PUBLISH_STAMP = "k142a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -149,3 +149,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.39: one-time thank-you gift on next sync for accounts from before 2026-10-25T06:00Z: Ford F-150 + Ivy Townhouse in the starting city (cottage/row upgraded free), or 50,000 / 300,000 coin for a half already owned; ledger keys gift:thanks-0139* (k139a).
 // 0.1.40: Journal Places opens with "Your houses" (city · house, street) and a collapsed "house lots for sale" list (k140a).
 // 0.1.41: getting out of a car keeps you by the car (the curb snap no longer reaches back to where the drive started); train stops in every city open the station board, never the lamp check ("Need a Amber match. This wick already sparked.") (k141a).
+// 0.1.42: player-owned lanterns, release 1: buy one lamp per color in Journal · Places (white 100k to violet 4M, one owner per lamp); visitors see the owner's name plate; a visitor's miss pays the owner half the tier value plus a 50% chance of a match (cooldown, 20 a day per lamp, coin cap) (k142a).

@@ -5,7 +5,7 @@
 import type { Sql } from "../lib/db.ts";
 import type { Tier } from "./types.ts";
 
-export type RewardSource = "lamp" | "market" | "streak" | "cache" | "gift" | "wheel" | "ride" | "merge" | "level" | "street" | "goal" | "daily" | "blitz" | "quest" | "reward";
+export type RewardSource = "lamp" | "market" | "streak" | "cache" | "gift" | "wheel" | "ride" | "merge" | "level" | "street" | "goal" | "daily" | "blitz" | "quest" | "reward" | "own";
 export type RecentReward = { at: number; src: RewardSource; where?: string; coins: number; keys: Partial<Record<Tier, number>>; credit?: Partial<Record<Tier, number>>; merged?: Partial<Record<Tier, number>> };
 
 export const RECENT_MAX = 20;
@@ -13,7 +13,7 @@ export const RECENT_MAX = 20;
 const PREFIX: [string, RewardSource][] = [
   ["grade:", "lamp"], ["street:", "street"], ["cache:", "cache"], ["gift:", "gift"], ["lvgot:", "gift"], ["wheel:", "wheel"],
   ["ride:", "ride"], ["level:", "level"], ["goal:", "goal"], ["dgoal:", "goal"], ["daily:", "daily"], ["blitz", "blitz"], ["contract:", "blitz"],
-  ["friend:", "gift"], ["survey:", "goal"], ["crate:", "cache"], ["quest:", "quest"], ["legacy:", "reward"],
+  ["friend:", "gift"], ["survey:", "goal"], ["crate:", "cache"], ["quest:", "quest"], ["legacy:", "reward"], ["ownpay:", "own"],
 ];
 
 /** One ledger row → a reward, or null when it gave nothing (spends, purchases, syncs). */
@@ -41,6 +41,8 @@ export function rewardOfRow(opKey: string, detail: string, at: number, poiName: 
     if (typeof o.pi === "string") where = poiName(o.pi);
     if (typeof o.streak === "number" && o.streak >= 3 && !where) src = "streak";
   }
+  // 0.1.42: a visitor missed at a lamp you own.
+  if (src === "own" && typeof o.poi === "string") where = poiName(o.poi);
   if (merged && src === "reward") src = "merge";
   return { at, src, ...(where ? { where } : {}), coins: Math.max(0, coins), keys, ...(credit ? { credit } : {}), ...(merged ? { merged } : {}) };
 }
@@ -67,7 +69,7 @@ export function pushRecent(list: readonly RecentReward[], r: RecentReward): Rece
 
 export const SOURCE_LABEL: Record<RewardSource, string> = {
   lamp: "Lamp", market: "Night market", streak: "Streak", cache: "Cache", gift: "Gift", wheel: "Wheel", ride: "Ride", merge: "Merge ↑",
-  level: "Level-up", street: "Street match", goal: "Goal", daily: "Daily run", blitz: "Blitz", quest: "Quest", reward: "Reward",
+  level: "Level-up", street: "Street match", goal: "Goal", daily: "Daily run", blitz: "Blitz", quest: "Quest", reward: "Reward", own: "Your lamp (a visitor missed)",
 };
 
 export function ago(at: number, now: number): string {

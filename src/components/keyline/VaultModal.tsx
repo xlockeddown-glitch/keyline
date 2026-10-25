@@ -9,6 +9,8 @@ import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta
 import { placeLine } from "@/game/place";
 import type { TriviaCat } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
+import { OwnerPlate } from "./OwnLamps";
+import { useOwnedPoi } from "@/game/ownLampsClient";
 import { choiceButtons, dropStaleFocus } from "@/game/choiceMarkup";
 
 const CAT_ICON: Record<TriviaCat, typeof Trophy> = {
@@ -59,6 +61,7 @@ export function VaultModal() {
 
   const quiz = openVault?.question ?? null;
   const isOpen = Boolean(openVault);
+  const owned = useOwnedPoi(openVault?.poiId);
 
   // 0.0.52: phones hide the map's +/- zoom while the lamp card is open — the card fills the screen there and the
   // zoom (a Leaflet control above the overlay) sat on its top-left corner, over the lamp. CSS keys off this class.
@@ -117,7 +120,7 @@ export function VaultModal() {
 
   return (
     <div className={`vault-night tier-${poi.tier} absolute inset-0 z-[800] flex items-end justify-center p-3 sm:items-center`}>
-      <div className="plate lamp-card w-full max-w-lg">
+      <div className={`plate lamp-card w-full max-w-lg${owned ? " is-owned" : ""}`}>
         <div className="lamp-card-body px-5 pt-5 sm:px-6 sm:pt-6">
           <div className="flex items-start gap-4">
             <div className={`vault-hero vault-pin tier-${poi.tier}${series ? ` is-ladder is-${series.kind}` : ""}`}>
@@ -143,6 +146,7 @@ export function VaultModal() {
                 {catMeta ? ` · ${catMeta.label}` : ""}
               </p>
               <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
+              {series ? null : <OwnerPlate poiId={poi.id} />}
               {!quiz ? (
                 <>
                   <p className="mt-2 text-sm text-pretty text-fg-muted">{poi.lore}</p>

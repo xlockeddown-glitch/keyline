@@ -4432,3 +4432,11 @@ h3 {
 /* 0.1.27: the Challenge slot on the quest board (one per weekly and monthly set). */
 .hq-row.is-challenge { border-color: #b3443a; box-shadow: inset 0 0 0 1px #b3443a55, 0 0 14px #b3443a33; }
 .quest-challenge-tag { display: inline-block; margin-bottom: 2px; padding: 1px 7px; border-radius: 999px; background: #7a2620; color: #f6e3c8; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+
+/* 0.1.42 owned lanterns (placeholder look; real art is a later release). */
+.own-dot{ width: .875rem; height: .875rem; border-radius: 999px; flex-shrink: 0; background: var(--tier-c, #e8dcc0); box-shadow: 0 0 0 2px rgba(0,0,0,.35), 0 0 10px var(--tier-c, #e8dcc0); }
+.own-dot.tier-white{ --tier-c: #f1ead8; } .own-dot.tier-blue{ --tier-c: #6aa5e8; } .own-dot.tier-green{ --tier-c: #6cc48a; }
+.own-dot.tier-amber{ --tier-c: #f0a640; } .own-dot.tier-red{ --tier-c: #e2574c; } .own-dot.tier-violet{ --tier-c: #a77ce8; }
+.own-plate{ display: inline-block; margin-top: .375rem; padding: .125rem .625rem; border-radius: .25rem; font-family: var(--font-display); font-size: .8125rem; letter-spacing: .04em;
+  color: #2a1c08; background: linear-gradient(#e9c977, #b98a35); border: 1px solid #6b4a14; box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 1px 2px rgba(0,0,0,.4); }
+.lamp-card.is-owned{ outline: 2px dashed #d9b25a; outline-offset: -6px; }

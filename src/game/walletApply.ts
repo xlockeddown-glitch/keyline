@@ -59,9 +59,11 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
-import { fareMs, FARES_CAP, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
+import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
+import { OWN_CLAIM_USER, OWN_DAILY_CAP, OWN_PRICE, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
+import { standingName } from "./standingName.ts";
 
 /** What the browser is allowed to see. */
 export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"]; credit?: Partial<Record<Tier, number>> };
@@ -195,7 +197,7 @@ export async function carsOf(sql: Sql, userId: string): Promise<CarId[]> {
 }
 
 /**
- * 0.1.9: paint cans this account holds (can:* rows not yet spent by a paint:<can key> row) and each car's colour
+ * 0.1.9: paint cans this account holds (can:* rows not yet spent by a paint:<can key> row) and each car's color
  * (the newest paint row per car). Ledger only, like cars: nothing to migrate.
  */
 export async function paintOf(sql: Sql, userId: string): Promise<{ cans: { key: string; can: Can }[]; paint: Partial<Record<CarId, string>> }> {
@@ -441,7 +443,10 @@ export async function awardGrade(
       // 0.0.98: night-market lamp, for the Night Owl title.
       ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
     });
+  // 0.1.42: did this write burn a match on a miss (an owned lamp's owner is paid for those)?
+  let matchLost = false;
   const r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
+    matchLost = false;
     const owned = provenBoost(pay.lucky, pay.cloth, { lucky: luckyLive(w.meta), cloths: new Set(w.meta.cloths) });
     full.lucky = owned.lucky;
     full.cloth = owned.cloth;
@@ -463,12 +468,14 @@ export async function awardGrade(
     const grant = gradeGrant(base, full);
     if (!grant.ok) return grant;
     const detail = detailOf(grant.award ?? { coins: 0, keys: {}, boosts: [] });
+    matchLost = !full.correct && full.clearTier != null;
     // 0.0.96 Plate (Shell): a server-rolled 1 in 3 failed lamps hands the spent match back (overflow coin if full).
     if (base.migrated && !full.correct && full.shellBack && full.clearTier) {
       const p = payMatch(base.keys, full.clearTier);
       const k = p.tier ? { [p.tier]: 1 } : {};
       const back = applyDelta(base, { coins: p.coin, keys: k });
       if (back.ok) {
+        matchLost = false;
         const award = { coins: p.coin, keys: k, boosts: p.up ? ["Shell: match back ↑"] : ["Shell: match back"] };
         return { ok: true, wallet: back.wallet, award, detail: detailOf(award) };
       }
@@ -490,6 +497,7 @@ export async function awardGrade(
     }
     return { ...grant, detail };
   });
+  if (r.ok && !r.replay && matchLost && !full.series && full.poiId) await payOwner(sql, id, nonce, full.poiId);
   // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.
   const odds = full.clearTier === "amber" ? CAN_ODDS.amber : full.clearTier === "red" ? CAN_ODDS.red : 0;
   if (r.ok && !r.replay && r.wallet.migrated && full.correct && odds && pay.canRoll) {
@@ -497,6 +505,119 @@ export async function awardGrade(
     if (can) return { ...applied(r), can };
   }
   return applied(r);
+}
+
+/* ---------------------------------------------------------------- 0.1.42 owned lanterns */
+
+/** A lamp POI that can be owned: any tiered city POI except train stations. */
+export function ownableLamp(poiId: string): { poi: (typeof CITIES)[CityId]["pois"][number]; city: CityId } | null {
+  for (const c of Object.values(CITIES)) {
+    const p = c.pois.find((x) => x.id === poiId);
+    if (p) return p.kind === "station" ? null : { poi: p, city: c.id };
+  }
+  return null;
+}
+
+type ClaimDetail = { owner: string; tier: Tier; city: string; name: string };
+
+function parseClaim(detail: unknown): ClaimDetail | null {
+  try {
+    const o = JSON.parse(String(detail)) as Partial<ClaimDetail>;
+    return typeof o.owner === "string" && typeof o.tier === "string" ? (o as ClaimDetail) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Every owned lamp, from the global claim rows. `mine` when the canonical viewer owns it. */
+export async function ownedLamps(sql: Sql, viewerId: string | null): Promise<(OwnedLamp & { mine: boolean })[]> {
+  const me = viewerId ? (await canonicalWallet(sql, viewerId)).id : null;
+  const rows = await sql<{ op_key: string; detail: string }>`select op_key, detail from wallet_ledger where user_id = ${OWN_CLAIM_USER} and op_key like ${"ownpoi:%"}`;
+  const out: (OwnedLamp & { mine: boolean })[] = [];
+  for (const r of rows) {
+    const c = parseClaim(r.detail);
+    if (c) out.push({ poi: r.op_key.slice("ownpoi:".length), tier: c.tier, city: c.city, name: c.name, mine: c.owner === me });
+  }
+  return out;
+}
+
+async function ownerName(sql: Sql, userId: string): Promise<string> {
+  try {
+    const rows = await sql<{ name: string | null }>`select name from "user" where id = ${userId} limit 1`;
+    return standingName(rows[0]?.name);
+  } catch {
+    return standingName(null);
+  }
+}
+
+/**
+ * Buy a lamp: `own:<tier>` on the buyer (one per color, spends OWN_PRICE) plus a global `ownpoi:<poi>` claim row.
+ * The claim insert is the lock (primary key): it is taken first, and released if the purchase does not land, so two
+ * buyers can't both get one lamp and one buyer can't get two lamps of a color.
+ */
+async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  const hit = ownableLamp(poiId);
+  if (!hit) return refused(wallet, "unknown");
+  const tier = hit.poi.tier;
+  const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${"own:" + tier} limit 1`;
+  const heldPoi = (d: string | undefined) => {
+    try {
+      return (JSON.parse(d ?? "{}") as { poi?: string }).poi ?? null;
+    } catch {
+      return null;
+    }
+  };
+  if (held.length) return heldPoi(held[0]!.detail) === poiId ? applied({ ok: true, replay: true, wallet }) : refused(wallet, "owned");
+  if (wallet.coins < OWN_PRICE[tier]) return refused(wallet, "short-coins");
+  const name = await ownerName(sql, sessionUserId);
+  const claim = await sql<{ op_key: string }>`
+    insert into wallet_ledger (user_id, op_key, detail) values (${OWN_CLAIM_USER}, ${"ownpoi:" + poiId}, ${JSON.stringify({ owner: id, tier, city: hit.city, name })})
+    on conflict (user_id, op_key) do nothing returning op_key
+  `;
+  if (!claim.length) return refused(wallet, "taken");
+  const release = () => sql`delete from wallet_ledger where user_id = ${OWN_CLAIM_USER} and op_key = ${"ownpoi:" + poiId} and detail like ${`%"owner":${JSON.stringify(id)}%`}`;
+  try {
+    const r = await mutateWallet(sql, sessionUserId, `own:${tier}`, (w) =>
+      w.coins < OWN_PRICE[tier] ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -OWN_PRICE[tier] }), detail: JSON.stringify({ poi: poiId, city: hit.city, name }) },
+    );
+    // A same-color buy that raced this one won with another lamp: give this lamp back.
+    if (!r.ok || (r.replay && heldPoi(r.detail) !== poiId)) {
+      await release();
+      return r.ok ? refused(r.wallet, "owned") : { ...applied(r), authoritative: true };
+    }
+    return applied(r);
+  } catch (e) {
+    await release();
+    throw e;
+  }
+}
+
+/**
+ * Pay the owner of `poiId` for a visitor's miss (grade nonce `nonce`), once, as `ownpay:<nonce>`.
+ * Not for the owner's own plays; at most once per the lamp's cooldown; OWN_DAILY_CAP a Chicago day; clamped at COIN_CAP.
+ */
+export async function payOwner(sql: Sql, visitorId: string, nonce: string, poiId: string): Promise<boolean> {
+  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${OWN_CLAIM_USER} and op_key = ${"ownpoi:" + poiId} limit 1`;
+  const c = parseClaim(rows[0]?.detail);
+  if (!c || c.owner === visitorId) return false;
+  const tier = c.tier;
+  const now = Date.now();
+  const paid = await sql<{ created_at: unknown }>`
+    select created_at from wallet_ledger where user_id = ${c.owner} and op_key like ${"ownpay:%"} and detail like ${`%"poi":${JSON.stringify(poiId)}%`}
+      and created_at >= ${new Date(now - 30 * 3600_000).toISOString()} order by created_at desc
+  `;
+  const at = (v: unknown) => (v instanceof Date ? v : new Date(String(v))).getTime();
+  if (paid[0] && now - at(paid[0].created_at) < lampCoolMs(tier)) return false;
+  const today = chicagoDay(new Date(now));
+  if (paid.filter((p) => chicagoDay(p.created_at) === today).length >= OWN_DAILY_CAP) return false;
+  const p = ownPayFor(tier, nonce);
+  const r = await mutateWallet(sql, c.owner, `ownpay:${nonce}`, (w) => {
+    const coins = Math.max(0, Math.min(p.coins, COIN_CAP - w.coins));
+    const d = applyDelta(w, { coins, keys: p.match ? { [tier]: 1 } : {} });
+    return d.ok ? { ...d, detail: JSON.stringify({ poi: poiId, t: tier, coins, m: p.match ? 1 : 0 }) } : d;
+  });
+  return r.ok && !r.replay;
 }
 
 export async function spendDealt(sql: Sql, userId: string, nonce: string, tier: Tier): Promise<Applied & { skipped?: boolean }> {
@@ -559,6 +680,7 @@ export type ClientOp =
   | { kind: "paint"; car: string; color: string }
   | { kind: "house"; city: CityId; tier: string }
   | { kind: "home"; city: CityId }
+  | { kind: "own"; poi: string }
   | { kind: "hurry"; min: number }
   | {
       kind: "ride";
@@ -581,7 +703,7 @@ export type ClientResult = Applied & {
   rideDeal?: RideDeal;
   /** 0.1.2: the arrival and charge the server set for a Hurry up. */
   hurry?: { arriveAt: number; cost: number };
-  /** 0.1.9: a paint can found (cache), or the colour a paint op set. */
+  /** 0.1.9: a paint can found (cache), or the color a paint op set. */
   can?: Can;
   /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
   home?: { match: Tier | null; day: string };
@@ -603,6 +725,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!t || t.s !== `u:${sessionUserId}` || !t.k) return { ...applied({ ok: false, replay: false, reason: "bad-token", wallet }), authoritative: true };
     return refundDealt(sql, sessionUserId, t.n, t.k);
   }
+
+  if (op.kind === "own") return ownLampOp(sql, sessionUserId, op.poi);
 
   if (op.kind === "print") {
     const wardrobe = await loadWardrobe(sql, id);
@@ -643,7 +767,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!row?.rewarded || (!ids.includes(row.sender_id) && !(row.friend_id && ids.includes(row.friend_id)))) {
       return { ...applied({ ok: false, replay: false, reason: "no-ticket", wallet }), authoritative: true };
     }
-    // 0.1.26: the ladder colour, replayed from the pair's tickets on the server (never from the client).
+    // 0.1.26: the ladder color, replayed from the pair's tickets on the server (never from the client).
     const { ticketPay } = await import("./friendService.ts");
     const pay = await ticketPay(sql, row.pair_key, token);
     const r = await mutateWallet(sql, sessionUserId, `friend:${op.id}`, (w) => {
@@ -745,7 +869,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     return applied(r);
   }
 
-  // 0.1.9: repaint a car you own with a can of its colour, for 10% of its price. The can is spent by key.
+  // 0.1.9: repaint a car you own with a can of its color, for 10% of its price. The can is spent by key.
   if (op.kind === "paint") {
     const car = carOf(op.car);
     if (!car || !colorOf(car.id, op.color)) return refused(wallet, "unknown");

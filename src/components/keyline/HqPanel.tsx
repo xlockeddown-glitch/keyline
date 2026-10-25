@@ -31,6 +31,7 @@ import { PlayerLinkRow } from "./PlayerLink";
 import { PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 import { houseArt, houseList } from "@/game/houses";
+import { OwnLampsSection } from "./OwnLamps";
 
 const TABS = ["Places", "Supplies", "Goals", "Progress", "Leaderboard"] as const;
 
@@ -153,6 +154,7 @@ export function HqPanel() {
                     </li>
                   ))
                 : null}
+              <OwnLampsSection />
               <li className="kicker">Places in {city.name}</li>
               <MarketJournalRow />
               {city.pois.map((p) => {

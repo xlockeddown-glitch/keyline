@@ -234,8 +234,8 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   assert.equal(streetAgain.replay, true);
   assert.equal(streetAgain.wallet.keys[spot!.tier], 1);
 
-  // 0.0.99 regression (Ryan's twitch): white 30 + 1/3 credit, the pickup's colour at 30: the server keeps the
-  // white credit and adds exactly one credit to the pickup's colour (or merges at 3). Nothing lost.
+  // 0.0.99 regression (Ryan's twitch): white 30 + 1/3 credit, the pickup's color at 30: the server keeps the
+  // white credit and adds exactly one credit to the pickup's color (or merges at 3). Nothing lost.
   {
     const s2 = streetSpot("ann", "austin", day, 1)!;
     const { id: annId, wallet: orig } = await canonicalWallet(sql, "ann");
@@ -1169,7 +1169,7 @@ test("0.0.97 cache into full pockets: matches become merge credits on the server
   const w = (await canonicalWallet(sql, "cfull")).wallet;
   assert.deepEqual([w.keys.white, w.keys.blue, w.keys.green], [30, 30, 30]);
   const credits = Object.values(w.meta.credit).reduce((a, b) => a + (b ?? 0), 0) + 3 * (w.keys.amber ?? 0);
-  assert.ok(credits >= 1, "the cache still counts toward the next colours");
+  assert.ok(credits >= 1, "the cache still counts toward the next colors");
 });
 
 test("0.0.95 Amanda's make-up gift: 2 red once, idempotent, only her account, overflow coin when full", async () => {
@@ -1485,7 +1485,7 @@ test("0.1.19: sparks (no match held) are capped on the server — six a day, onc
   await syncPlayer(sql, "beth", snap({ coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "detroit", unlocked: ["detroit"] } }), "bethphone");
   const spark = (poiId: string) => ({ ...pay({ clearTier: null, poiTier: "red", poiId, city: "detroit", series: null }), prevNonce: "" });
   const first = await awardGrade(sql, "beth", "s0", spark("det-lamp-0"));
-  assert.equal(first.wallet.keys.red, 1, "a spark pays the lamp's colour");
+  assert.equal(first.wallet.keys.red, 1, "a spark pays the lamp's color");
   const again = await awardGrade(sql, "beth", "s0b", spark("det-lamp-0"));
   assert.equal(again.wallet.keys.red, 1, "the same lamp can't spark twice in a day");
   for (let i = 1; i < 6; i++) await awardGrade(sql, "beth", `s${i}`, spark(`det-lamp-${i}`));
@@ -1529,4 +1529,93 @@ test("0.1.23: a second cache open (another device) says already opened, never an
   assert.match(cacheLine([], 90), /Every pocket is full: \+90 coin/);
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(src, /if \(r\.replay \|\| r\.cache\?\.already \|\| !r\.cache\)/, "the device shows 'already opened' on a replay");
+});
+
+test("0.1.42 owned lanterns: one per color, one owner per lamp, misses pay the owner once within the limits", async () => {
+  const { OWN_PRICE, ownPayFor, OWN_DAILY_CAP, OWN_CLAIM_USER } = await import("./ownLamps.ts");
+  const { ownedLamps, payOwner } = await import("./walletApply.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  const tiers = ["white", "blue", "green", "amber", "red", "violet"] as const;
+  const lamps = (t: (typeof tiers)[number]) => Object.values(CITIES).flatMap((c) => c.pois).filter((p) => p.tier === t && p.kind !== "station");
+  const station = Object.values(CITIES).flatMap((c) => c.pois).find((p) => p.kind === "station");
+  await syncPlayer(sql, "own", snap({ coins: 0 }), "ownphone1");
+  await syncPlayer(sql, "vis", snap({ coins: 0 }), "visphone1");
+  await syncPlayer(sql, "rich", snap({ coins: 0 }), "richphone1");
+  const oid = (await canonicalWallet(sql, "own")).id;
+  const rid = (await canonicalWallet(sql, "rich")).id;
+
+  // Insufficient coins: refused, and the lamp stays free.
+  const w0 = lamps("white")[0]!;
+  assert.equal((await applyClientOp(sql, "own", { kind: "own", poi: w0.id })).reason, "short-coins");
+  assert.equal((await ownedLamps(sql, null)).length, 0);
+  if (station) assert.equal((await applyClientOp(sql, "own", { kind: "own", poi: station.id })).reason, "unknown", "train stops can't be owned");
+
+  // One per tier: each color costs its price; a second lamp of a color is refused.
+  for (const t of tiers) {
+    await sql`update player_wallets set coins = ${OWN_PRICE[t] + 100_000} where user_id = ${oid}`;
+    assert.equal((await applyClientOp(sql, "own", { kind: "own", poi: lamps(t)[0]!.id })).ok, true, t);
+  }
+  assert.equal((await canonicalWallet(sql, "own")).wallet.coins, 100_000);
+  assert.equal((await applyClientOp(sql, "own", { kind: "own", poi: lamps("white")[1]!.id })).reason, "owned", "one white per player");
+  assert.equal((await applyClientOp(sql, "own", { kind: "own", poi: w0.id })).replay, true, "same lamp again is a free replay");
+  assert.equal((await canonicalWallet(sql, "own")).wallet.coins, 100_000);
+  const list = await ownedLamps(sql, "own");
+  assert.equal(list.length, 6);
+  assert.ok(list.every((l) => l.mine));
+  assert.ok((await ownedLamps(sql, "vis")).every((l) => !l.mine));
+
+  // POI exclusivity: another player can't take an owned lamp, and a refused buy charges nothing.
+  await sql`update player_wallets set coins = 4000000 where user_id = ${rid}`;
+  assert.equal((await applyClientOp(sql, "rich", { kind: "own", poi: w0.id })).reason, "taken");
+  assert.equal((await canonicalWallet(sql, "rich")).wallet.coins, 4_000_000);
+  const [ra, rb] = await Promise.all([
+    applyClientOp(sql, "rich", { kind: "own", poi: lamps("white")[2]!.id }),
+    applyClientOp(sql, "vis", { kind: "own", poi: lamps("white")[2]!.id }),
+  ]);
+  assert.equal(ra.ok, true, "the funded buyer wins");
+  assert.equal(rb.reason === "taken" || rb.reason === "short-coins", true);
+  assert.equal((await ownedLamps(sql, null)).filter((l) => l.poi === lamps("white")[2]!.id).length, 1);
+
+  // Self-play: the owner missing at their own lamp pays nothing.
+  const miss = (t: (typeof tiers)[number], poiId: string) => ({ ...pay({ correct: false, clearTier: t, poiTier: t, poiId }), prevNonce: "" });
+  const ownerCoins = async () => (await canonicalWallet(sql, "own")).wallet.coins;
+  await awardGrade(sql, "own", "self1", miss("white", w0.id));
+  assert.equal(await ownerCoins(), 100_000, "no pay from own plays");
+  // A right answer by a visitor pays the visitor only.
+  await awardGrade(sql, "vis", "right1", { ...pay({ correct: true, clearTier: "white", poiTier: "white", poiId: w0.id }), prevNonce: "" });
+  assert.equal(await ownerCoins(), 100_000);
+
+  // A visitor's miss pays the owner half the tier value plus (by nonce) a match; a replay does not pay again.
+  const before = (await canonicalWallet(sql, "own")).wallet;
+  await awardGrade(sql, "vis", "m1", miss("white", w0.id));
+  const exp = ownPayFor("white", "m1");
+  const after = (await canonicalWallet(sql, "own")).wallet;
+  assert.equal(exp.coins, 15);
+  assert.equal(after.coins, before.coins + 15);
+  assert.equal(after.keys.white, before.keys.white + (exp.match ? 1 : 0));
+  await awardGrade(sql, "vis", "m1", miss("white", w0.id));
+  assert.equal(await payOwner(sql, (await canonicalWallet(sql, "vis")).id, "m1", w0.id), false, "idempotent per grade nonce");
+  assert.equal((await canonicalWallet(sql, "own")).wallet.coins, before.coins + 15);
+  // Cooldown: a second miss inside the lamp's cooldown pays nothing.
+  await awardGrade(sql, "vis", "m2", miss("white", w0.id));
+  assert.equal(await ownerCoins(), before.coins + 15, "only at the lamp's normal cooldown");
+  for (const t of tiers) assert.equal(ownPayFor(t, "x").coins, { white: 15, blue: 45, green: 135, amber: 405, red: 1215, violet: 3645 }[t]);
+  assert.ok([...Array(40).keys()].some((i) => ownPayFor("blue", `n${i}`).match) && [...Array(40).keys()].some((i) => !ownPayFor("blue", `n${i}`).match), "the match is a coin flip");
+
+  // Daily cap: OWN_DAILY_CAP paid misses on one lamp today, then nothing (cooldowns aged out).
+  await sql`update wallet_ledger set created_at = now() - interval '100 seconds' where user_id = ${oid} and op_key like 'ownpay:%'`;
+  for (let i = 1; i < OWN_DAILY_CAP; i++) {
+    await sql.query(`insert into wallet_ledger (user_id, op_key, detail, created_at) values ($1, $2, $3, now() - make_interval(secs => $4))`, [oid, `ownpay:fake${i}`, JSON.stringify({ poi: w0.id }), 100 + i]);
+  }
+  const capped = await ownerCoins();
+  await awardGrade(sql, "vis", "m3", miss("white", w0.id));
+  assert.equal(await ownerCoins(), capped, "max 20 paid misses per lamp per day");
+
+  // Coin cap: a payout clamps at COIN_CAP.
+  const b0 = lamps("blue")[0]!;
+  await sql`update player_wallets set coins = ${COIN_CAP - 10} where user_id = ${oid}`;
+  await awardGrade(sql, "vis", "m4", miss("blue", b0.id));
+  assert.equal(await ownerCoins(), COIN_CAP);
+  void OWN_CLAIM_USER;
 });
