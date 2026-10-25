@@ -530,7 +530,7 @@ export const PLUS_20261022: Record<PlusCat, TriviaQ[]> = {
 		q("Bronze is mainly copper mixed with…", ["tin", "zinc", "lead", "silver"], "tin", 2),
 		q("Steel is iron alloyed mainly with…", ["carbon", "copper", "tin", "aluminum"], "carbon", 2),
 		q("Stainless steel resists rust thanks to added…", ["chromium", "copper", "lead", "silver"], "chromium", 3),
-		q("Which element has atomic number 6?", ["carbon", "oxygen", "nitrogen", "boron"], "carbon", 2),
+		q("Living things on Earth are built around chains of which element?", ["carbon", "oxygen", "nitrogen", "boron"], "carbon", 2),
 		q("A typical human male has which pair of sex chromosomes?", ["XY", "XX", "YY", "XO"], "XY", 2),
 	],
 

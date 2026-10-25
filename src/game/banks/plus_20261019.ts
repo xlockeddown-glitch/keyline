@@ -214,7 +214,7 @@ export const PLUS_SCIENCE_20261019: TriviaQ[] = [
   q("The pH of pure water is…", ["0", "7", "10", "14"], "7", 2),
   q("Which scientist is known for three laws of motion?", ["Galileo", "Isaac Newton", "Johannes Kepler", "Michael Faraday"], "Isaac Newton", 2),
   q("Marie Curie won Nobel Prizes in physics and…", ["medicine", "chemistry", "peace", "literature"], "chemistry", 2),
-  q("Which element has atomic number 1?", ["helium", "hydrogen", "oxygen", "carbon"], "hydrogen", 2),
+  q("The most abundant element in the universe is…", ["helium", "hydrogen", "oxygen", "carbon"], "hydrogen", 2),
   q("Which particle has a negative charge?", ["proton", "neutron", "electron", "photon"], "electron", 2),
   q("Which metal is liquid at room temperature?", ["lead", "mercury", "tin", "zinc"], "mercury", 2),
   q("Which is the hottest planet in our solar system?", ["Mercury", "Venus", "Mars", "Jupiter"], "Venus", 3),
@@ -364,7 +364,7 @@ export const PLUS_GAMES_20261019: TriviaQ[] = [
 
 export const PLUS_CELEBRITY_20261019: TriviaQ[] = [
   q("Who played Jack in the 1997 movie 'Titanic'?", ["Brad Pitt", "Leonardo DiCaprio", "Matthew McConaughey", "Johnny Depp"], "Leonardo DiCaprio", 1),
-  q("Who played Iron Man in the Marvel movies?", ["Chris Evans", "Robert Downey Jr.", "Chris Hemsworth", "Mark Ruffalo"], "Robert Downey Jr.", 1),
+  q("Who played Iron Man in the Marvel movies?", ["Chris Evans", "Robert Downey Jr.", "Cuba Gooding Jr.", "Mark Ruffalo"], "Robert Downey Jr.", 1),
   q("Who played Captain America in the Marvel movies?", ["Chris Pratt", "Chris Evans", "Chris Pine", "Chris Hemsworth"], "Chris Evans", 1),
   q("Who played Thor in the Marvel movies?", ["Chris Hemsworth", "Tom Hiddleston", "Chris Evans", "Liam Hemsworth"], "Chris Hemsworth", 1),
   q("Who played Hermione in the Harry Potter movies?", ["Emma Stone", "Emma Watson", "Keira Knightley", "Bonnie Wright"], "Emma Watson", 1),
