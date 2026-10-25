@@ -19,7 +19,7 @@ import { startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
   snapReachable,
-  curbAfterCab,
+  parkedFoot,
   roadsInCircle,
   quietDrop,
   walkableTarget,
@@ -373,7 +373,8 @@ export function GameMap() {
     );
     const g = graphRef.current;
     // 0.1.2: snap to the main walk (wider than the old 40 m pull, never an island), so the player can always route.
-    const curb = g ? curbAfterCab(g, side, walkReach()) : side;
+    // 0.1.41: but never farther than a short step from the car (it used to land back where the drive started).
+    const curb = g ? parkedFoot(g, side, walkReach()) : side;
     pos.current.lat = curb.lat;
     pos.current.lng = curb.lng;
     pos.current.speed = 0;
@@ -1629,7 +1630,7 @@ export function GameMap() {
       marker.on("click", () => {
         const nowSt = useGame.getState();
         const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
-        if (desk && nowSt.fares > 0 && d <= reach() && !nowSt.hud.seated) {
+        if (desk && d <= reach() && !nowSt.hud.seated) {
           setBoardOpen(true);
           return;
         }
@@ -1703,6 +1704,11 @@ export function GameMap() {
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
     if (d > reach() || !lampFromRide(ride())) {
       planWalk(poi.lat, poi.lng, true);
+      return;
+    }
+    // 0.1.41: a train stop in reach opens the station board (timetable, city passes), ticket or not; never the lamp card.
+    if ("kind" in poi && isFareDesk(poi) && !st.hud.seated) {
+      setBoardOpen(true);
       return;
     }
     const err = st.tryOpen(poiId, performance.now());

@@ -207,3 +207,14 @@ export function settleRide(j: Journey, keys: Record<Tier, number>, now: number, 
   };
   return { journey, keys: paid.keys, add: paid.add, arrived: now >= j.arriveAt };
 }
+
+/**
+ * 0.1.41: a train stop (fare desk) never takes the lamp path. Desks carry a tier for their pin, and store.tryOpen used
+ * to fall through to the lamp check, so with no ticket (or from the car) every stop said "Need a Amber match. This
+ * wick already sparked." The map opens the station board on foot; this is the line for when it can't. Null = not a desk.
+ */
+export function fareDeskNote(p: { kind: string; printShop?: boolean }, cityVaults: number, seated = false): string | null {
+  if (!isFareDesk(p)) return null;
+  if (seated) return "Park at the curb. The door is on foot.";
+  return `Train station. ${ticketHint(cityVaults)}.`;
+}

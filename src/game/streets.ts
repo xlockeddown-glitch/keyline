@@ -598,6 +598,23 @@ export function curbAfterCab(g: StreetGraph, p: Pt, reach: Reach | null): Pt {
   return snapReachable(g, p, reach ?? startReach(g, p, 400));
 }
 
+/** 0.1.41: how far stepping out of a car may pull you to reach the main walk. */
+export const PARK_CURB_M = 60;
+
+/**
+ * 0.1.41: where you stand after parking. The main-walk snap above searches as wide as it takes, so when the walk
+ * streets never loaded where you drove (live fetch down, Oct 24-25), the nearest main walk was back where the drive
+ * started and getting out of the truck teleported you there. Now you stay by the car: the main walk if it is close,
+ * else any walk close by, else the curb beside the car.
+ */
+export function parkedFoot(g: StreetGraph, p: Pt, reach: Reach | null): Pt {
+  if (!g.segs.length) return p;
+  const curb = curbAfterCab(g, p, reach);
+  if (distM(curb.lat, curb.lng, p.lat, p.lng) <= PARK_CURB_M) return curb;
+  const any = nearest(g, p.lat, p.lng, PARK_CURB_M);
+  return any ? { lat: any.lat, lng: any.lng } : p;
+}
+
 /**
  * 0.0.90: where a tap should walk to. `t` is the tap, already held inside the playable box; `outside` says the
  * tap was past it. When the tap was outside the box, or the street it lands on is on a walk the player can't
