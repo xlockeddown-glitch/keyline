@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { HOUSES, houseCost, HOUSE_LOTS, isHouseTier } from "./houses.ts";
+import { HOUSES, houseCost, houseList, HOUSE_LOTS, isHouseTier } from "./houses.ts";
 import { COIN_CAP } from "./wallet.ts";
 
 test("house price ladder and step-up difference", () => {
@@ -24,4 +24,16 @@ test("paintCab never removes the dealer or house markers", () => {
   const body = src.slice(i, src.indexOf("\n  }\n", i));
   assert.ok(body.length > 50);
   assert.ok(!/dealerMarker|houseMarker/.test(body), "paintCab touches dealer/house marker");
+});
+
+test("houseList: owned houses first with their tier, every other city's lot for sale from the cottage price", () => {
+  const none = houseList({});
+  assert.equal(none.owned.length, 0);
+  assert.equal(none.forSale.length, Object.keys(HOUSE_LOTS).length);
+  assert.ok(none.forSale.every((r) => r.from === 40_000));
+  const two = houseList({ detroit: { tier: "town" }, nyc: { tier: "cottage" }, austin: { tier: "bogus" as never } });
+  assert.deepEqual(two.owned.map((r) => [r.city, r.house.name]).sort(), [["detroit", "Ivy Townhouse"], ["nyc", "Lantern Cottage"]]);
+  assert.equal(two.forSale.length, Object.keys(HOUSE_LOTS).length - 2);
+  assert.ok(two.forSale.some((r) => r.city === "austin"));
+  assert.ok(!two.forSale.some((r) => r.city === "detroit"));
 });

@@ -30,6 +30,7 @@ import { FriendJournalRow } from "./FriendTickets";
 import { PlayerLinkRow } from "./PlayerLink";
 import { PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
+import { houseArt, houseList } from "@/game/houses";
 
 const TABS = ["Places", "Supplies", "Goals", "Progress", "Leaderboard"] as const;
 
@@ -68,6 +69,9 @@ export function HqPanel() {
   const crateDay = claimed ? Math.max(1, crateStreak) : nextCrateStreak(lastCrateDay, crateStreak, today);
   const blitzReady = blitzDue(lastBlitzDay, today);
   const { market } = useMarket(cityId);
+  const houses = useGame((s) => s.houses);
+  const homes = houseList(houses);
+  const [lotsOpen, setLotsOpen] = useState(false);
 
   useSheetOpen(hqOpen);
   if (!hqOpen) return null;
@@ -119,6 +123,37 @@ export function HqPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {tab === "Places" ? (
             <ul className="grid gap-2">
+              <li className="kicker">Your houses</li>
+              {homes.owned.length === 0 ? <li className="hq-row-sub">No houses yet. Each city has one lot for sale.</li> : null}
+              {homes.owned.map((h) => (
+                <li key={h.city} className="hq-row">
+                  <img src={houseArt(h.house.id)} alt="" width={36} height={36} className="shrink-0 rounded object-cover" />
+                  <div className="hq-row-copy">
+                    <p className="hq-row-title">
+                      {CITIES[h.city].name} · {h.house.name}
+                    </p>
+                    <p className="hq-row-sub">{h.lot.name}</p>
+                  </div>
+                </li>
+              ))}
+              <li>
+                <button type="button" className="hq-row-sub min-h-11 underline" aria-expanded={lotsOpen} onClick={() => setLotsOpen((o) => !o)}>
+                  {lotsOpen ? "Hide" : "Show"} house lots for sale ({homes.forSale.length})
+                </button>
+              </li>
+              {lotsOpen
+                ? homes.forSale.map((h) => (
+                    <li key={h.city} className="hq-row opacity-70">
+                      <div className="hq-row-copy">
+                        <p className="hq-row-title">
+                          {CITIES[h.city].name} · {h.lot.name}
+                        </p>
+                        <p className="hq-row-sub tabular-nums">For sale, from {h.from.toLocaleString("en-US")}</p>
+                      </div>
+                    </li>
+                  ))
+                : null}
+              <li className="kicker">Places in {city.name}</li>
               <MarketJournalRow />
               {city.pois.map((p) => {
                 const known = Boolean(atlas[p.id]);
