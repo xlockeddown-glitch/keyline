@@ -8,12 +8,13 @@ import type { GradePay, LocalSnap } from "./wallet.ts";
 import { canonicalWallet } from "./walletSql.ts";
 import { applyClientOp, awardGrade, grantLampGift, lampGiftsOpen, ownedLamps, syncPlayer } from "./walletApply.ts";
 import { thanksClock } from "./thanksGift.ts";
-import { LAMP_GIFT_CUTOFF, LAMP_GIFT_NOTE, lampGiftClock } from "./lampGift.ts";
+import { LAMP_GIFT_CUTOFF, lampGiftClock, lampGiftNote, welcomeClock } from "./lampGift.ts";
 import { OWN_PRICE, ownPayFor } from "./ownLamps.ts";
 import { CITIES } from "./data.ts";
 import type { Tier } from "./types.ts";
 
 thanksClock.cutoff = "2000-01-01T00:00:00Z";
+welcomeClock.cutoff = "2999-01-01T00:00:00Z";
 
 function sqlOf(db: PGlite): Sql {
   const sql = (async (strings: TemplateStringsArray, ...values: unknown[]) => {
@@ -51,8 +52,9 @@ test("eligibility: an account from before the cutoff gets both, once; a newer on
   const sql = await db();
   await veteran(sql, "old");
   const r = await syncPlayer(sql, "old", snap(), "old-phone1");
-  assert.deepEqual(r.giftNotes, [LAMP_GIFT_NOTE]);
-  assert.deepEqual(await lampGiftsOpen(sql, "old"), ["white", "blue"]);
+  assert.deepEqual(r.giftNotes, [lampGiftNote(["white", "blue", "green", "amber"])], "0.1.44: one note for all four");
+  assert.match(r.giftNotes![0]!, /Free White, Blue, Green and Amber lanterns are waiting/);
+  assert.deepEqual(await lampGiftsOpen(sql, "old"), ["white", "blue", "green", "amber"]);
   const again = await syncPlayer(sql, "old", snap(), "old-phone1");
   assert.equal(again.giftNotes, undefined, "grant is idempotent");
   assert.deepEqual(await grantLampGift(sql, "old"), []);
@@ -74,7 +76,7 @@ test("claim: free, one per color, lamp exclusivity (incl. concurrent), stacks wi
   const b0 = lamps("blue")[0]!;
   // No entitlement: a new account, or a color that isn't gifted.
   assert.equal((await applyClientOp(sql, "nob", { kind: "own", poi: w0!.id, free: true })).reason, "no-gift");
-  assert.equal((await applyClientOp(sql, "a", { kind: "own", poi: lamps("green")[0]!.id, free: true })).reason, "no-gift");
+  assert.equal((await applyClientOp(sql, "a", { kind: "own", poi: lamps("red")[0]!.id, free: true })).reason, "no-gift");
   // Concurrent: two gifted players race for one lamp; exactly one gets it.
   const [ra, rb] = await Promise.all([applyClientOp(sql, "a", { kind: "own", poi: w0!.id, free: true }), applyClientOp(sql, "b", { kind: "own", poi: w0!.id, free: true })]);
   assert.equal([ra.ok, rb.ok].filter(Boolean).length, 1);
@@ -86,7 +88,7 @@ test("claim: free, one per color, lamp exclusivity (incl. concurrent), stacks wi
   assert.equal((await canonicalWallet(sql, winner)).wallet.coins, 0);
   assert.equal((await applyClientOp(sql, winner, { kind: "own", poi: w1!.id, free: true })).reason, "owned");
   assert.equal((await applyClientOp(sql, winner, { kind: "own", poi: w0!.id, free: true })).replay, true);
-  assert.deepEqual(await lampGiftsOpen(sql, winner), ["blue"]);
+  assert.deepEqual(await lampGiftsOpen(sql, winner), ["blue", "green", "amber"]);
   // The loser still has the gift and places it elsewhere; then blue too.
   assert.equal((await applyClientOp(sql, loser, { kind: "own", poi: w2!.id, free: true })).ok, true);
   assert.equal((await applyClientOp(sql, "a", { kind: "own", poi: b0.id, free: true })).ok, true);

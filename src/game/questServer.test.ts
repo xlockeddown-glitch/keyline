@@ -1,5 +1,7 @@
 // 0.1.22: weekly / monthly quests are counted and paid by the server; the old milestones and charms move once.
-import { lampGiftClock } from "./lampGift.ts";
+import { lampGiftClock, welcomeClock } from "./lampGift.ts";
+// 0.1.44: and the new-player welcome pack (welcome.test.ts covers it).
+welcomeClock.cutoff = "2999-01-01T00:00:00Z";
 // 0.1.43: these tests predate the free lantern gift; keep it out of their wallets (lampGift.test.ts covers it).
 lampGiftClock.cutoff = "2000-01-01T00:00:00Z";
 import { test } from "node:test";

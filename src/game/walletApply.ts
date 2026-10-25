@@ -64,7 +64,7 @@ import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 import { OWN_CLAIM_USER, OWN_DAILY_CAP, OWN_PRICE, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
 import { standingName } from "./standingName.ts";
-import { LAMP_GIFT_NOTE, LAMP_GIFT_TIERS, isLampGiftTier, lampGiftClock, lampGiftKey } from "./lampGift.ts";
+import { DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
 
 /** What the browser is allowed to see. */
 export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"]; credit?: Partial<Record<Tier, number>> };
@@ -79,7 +79,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[] } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[] } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -109,27 +109,69 @@ export async function grantMatchGifts(sql: Sql, userId: string, list: readonly M
   return notes;
 }
 
-/** 0.1.43: the free white and blue lantern (lampGift.ts) for accounts whose first ledger row predates the cutoff. */
+/** When this account's first ledger row was written (gift rows excluded), or null for a wallet with no rows yet. */
+async function firstRowAt(sql: Sql, id: string): Promise<number | null> {
+  const first = await sql<{ t: unknown }>`
+    select min(created_at) as t from wallet_ledger where user_id = ${id} and op_key not like ${"gift:lamp-%"} and op_key <> ${WELCOME_KEY}
+  `;
+  const t0 = first[0]?.t;
+  if (t0 == null) return null;
+  const at = new Date(t0 instanceof Date ? t0.getTime() : String(t0)).getTime();
+  return Number.isFinite(at) ? at : null;
+}
+
+/** 0.1.43 / 0.1.44: the current-player gift lanterns (lampGift.ts LAMP_GIFTS, who "current"); one note for what's new. */
 export async function grantLampGift(sql: Sql, userId: string): Promise<string[]> {
   const { id } = await canonicalWallet(sql, userId);
-  const first = await sql<{ t: unknown }>`select min(created_at) as t from wallet_ledger where user_id = ${id} and op_key not like ${"gift:lamp-0143%"}`;
-  const t0 = first[0]?.t;
-  if (t0 == null) return [];
-  if (!(new Date(t0 instanceof Date ? t0.getTime() : String(t0)).getTime() < Date.parse(lampGiftClock.cutoff))) return [];
-  let fresh = false;
-  for (const t of LAMP_GIFT_TIERS) {
-    const g = await mutateWallet(sql, userId, lampGiftKey(t), (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify({ lamp: t }) }));
-    if (g.ok && !g.replay) fresh = true;
+  const at = await firstRowAt(sql, id);
+  if (at == null || !(at < Date.parse(lampGiftClock.cutoff))) return [];
+  const fresh: Tier[] = [];
+  for (const g of LAMP_GIFTS.filter((x) => x.who === "current")) {
+    const r = await mutateWallet(sql, userId, g.key, (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify({ lamp: g.tier }) }));
+    if (r.ok && !r.replay) fresh.push(g.tier);
   }
-  return fresh ? [LAMP_GIFT_NOTE] : [];
+  return fresh.length ? [lampGiftNote(fresh)] : [];
+}
+
+/**
+ * 0.1.44: the welcome pack for a new player (first ledger row at or after welcomeClock.cutoff), once, on a sync after
+ * the wallet exists: a cottage in the starting city (if no house there yet), WELCOME_COIN, a free white lantern
+ * (gift:lamp-0144-new-white) and double coin for the first hour (walletSql.mutateWallet reads `start` off this row).
+ */
+export async function grantWelcomePack(sql: Sql, userId: string, localStart: CityId | null): Promise<string[]> {
+  const { id, wallet } = await canonicalWallet(sql, userId);
+  const at = await firstRowAt(sql, id);
+  if (at == null || at < Date.parse(welcomeClock.cutoff)) return [];
+  const city = thanksCity(wallet.cities, localStart && localStart in CITIES ? localStart : null);
+  const has = city ? ((await housesOf(sql, userId))[city]?.tier ?? null) : null;
+  const house = Boolean(city && !has);
+  const r = await mutateWallet(sql, userId, WELCOME_KEY, (w) => ({ ...applyDelta(w, { coins: WELCOME_COIN }), detail: JSON.stringify({ start: at, city, house, coin: WELCOME_COIN }) }));
+  if (!r.ok || r.replay) return [];
+  if (house && city) await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${`house:${city}:${WELCOME_HOUSE}`}, ${JSON.stringify({ city, tier: WELCOME_HOUSE, from: null, gift: true })}) on conflict (user_id, op_key) do nothing`;
+  for (const g of LAMP_GIFTS.filter((x) => x.who === "new")) await mutateWallet(sql, userId, g.key, (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify({ lamp: g.tier }) }));
+  return [welcomeNote(house && city ? CITIES[city].name : null)];
+}
+
+/** 0.1.44: when a new player's double-coin hour ends (ms), or 0 when there is none or it is over. */
+export async function doubleUntil(sql: Sql, userId: string): Promise<number> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${WELCOME_KEY} limit 1`;
+  let start = 0;
+  try {
+    start = Number((JSON.parse(rows[0]?.detail ?? "{}") as { start?: number }).start) || 0;
+  } catch {
+    start = 0;
+  }
+  const end = start ? start + DOUBLE_MS : 0;
+  return end > welcomeClock.now() ? end : 0;
 }
 
 /** 0.1.43: gifted lanterns this account may still place (granted, not yet claimed). */
 export async function lampGiftsOpen(sql: Sql, userId: string): Promise<string[]> {
   const { id } = await canonicalWallet(sql, userId);
-  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and (op_key like ${"gift:lamp-0143-%"} or op_key like ${"ownfree:%"})`;
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and (op_key like ${"gift:lamp-%"} or op_key like ${"ownfree:%"})`;
   const keys = new Set(rows.map((r) => r.op_key));
-  return LAMP_GIFT_TIERS.filter((t) => keys.has(lampGiftKey(t)) && !keys.has(`ownfree:${t}`));
+  return GIFT_TIERS.filter((t) => giftKeysFor(t).some((k) => keys.has(k)) && !keys.has(`ownfree:${t}`));
 }
 
 /**
@@ -319,9 +361,13 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   await grantPassGift(sql, userId);
   const giftNotes = [...(await grantMatchGifts(sql, userId)), ...(await grantScoutGifts(sql, userId)), ...(await grantThanksGift(sql, userId, startOfLocal(local))), ...(await grantLampGift(sql, userId))];
   const done = await syncCore(sql, userId, local, deviceId);
+  // 0.1.44: the welcome pack needs the wallet's first row, so it runs after the first sync wrote it.
+  giftNotes.push(...(await grantWelcomePack(sql, userId, startOfLocal(local))));
   const pt = await paintOf(sql, userId);
   const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId) };
-  return giftNotes.length ? { ...done, owned, giftNotes } : { ...done, owned };
+  const until = await doubleUntil(sql, userId);
+  const out = { ...done, owned, ...(until ? { doubleUntil: until } : {}) };
+  return giftNotes.length ? { ...out, giftNotes } : out;
 }
 
 function startOfLocal(local: LocalSnap): CityId | null {
@@ -588,8 +634,9 @@ async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string, free = 
   const key = `${free ? "ownfree" : "own"}:${tier}`;
   const price = free ? 0 : OWN_PRICE[tier];
   if (free) {
-    const gift = isLampGiftTier(tier) ? await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${lampGiftKey(tier)} limit 1` : [];
-    if (!gift.length) return refused(wallet, "no-gift");
+    const keys = giftKeysFor(tier);
+    const gift = keys.length ? await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"gift:lamp-%"}` : [];
+    if (!gift.some((g) => keys.includes(g.op_key))) return refused(wallet, "no-gift");
   }
   const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${key} limit 1`;
   const heldPoi = (d: string | undefined) => {

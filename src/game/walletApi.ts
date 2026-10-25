@@ -147,6 +147,8 @@ export type WalletWire = {
 };
 
 export type SyncWire = {
+  /** 0.1.44: a new player's double-coin hour ends here (ms); absent when none. */
+  doubleUntil?: number;
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
@@ -179,6 +181,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       playerId: r.playerId,
       ...(r.giftNotes?.length ? { giftNotes: r.giftNotes } : {}),
       ...(r.owned ? { owned: r.owned } : {}),
+      ...(r.doubleUntil ? { doubleUntil: r.doubleUntil } : {}),
     };
   });
 

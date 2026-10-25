@@ -6,6 +6,12 @@ import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
+import { HOUSES, KEY_MATCHES } from "@/game/houses";
+import { OWN_DAILY_CAP, OWN_PRICE } from "@/game/ownLamps";
+import { WELCOME_COIN } from "@/game/lampGift";
+
+const fmt = (n: number) => (n >= 1_000_000 ? `${n / 1_000_000}M` : n >= 1000 ? `${n / 1000}k` : String(n));
+const TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
 
 export function FieldGuide() {
   const open = useGame((s) => s.guideOpen);
@@ -45,7 +51,7 @@ export function FieldGuide() {
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <p className="text-sm text-pretty text-fg-muted">
-            Answer right to earn coin. Answer in under 3 seconds for the most coin. Taking over 10 seconds pays the least. Each bar shows a lamp's coin, so you can compare colours.
+            Answer right to earn coin. Answer in under 3 seconds for the most coin. Taking over 10 seconds pays the least. Each bar shows a lamp's coin, so you can compare colors.
           </p>
           <ul className="mt-3 grid gap-2">
             {rows.map((row) => {
@@ -100,6 +106,31 @@ export function FieldGuide() {
             <h3 className="font-display text-lg leading-tight">Cars</h3>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
               Each city has a car lot on the map. Walk in to buy a car with coin. Your car is your own cab: tap Car and it's at the curb, and it drives a little faster than the city cab (5% for the Civic up to 30% for the Roadster 2.0). In your own car you can open lamps and vaults and grab matches from the curb; the city cab parks you first, and shops, the car lot and your house are on foot. You pay once and keep the car in every city.
+            </p>
+          </section>
+          {/* 0.1.44: houses, owned lanterns, train stops, a new player's first hour. */}
+          <section className="mt-5" data-testid="help-houses">
+            <h3 className="font-display text-lg leading-tight">Houses</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              Each city has one house lot. Walk in to buy: {HOUSES.map((h) => `${h.name} ${fmt(h.price)}`).join(", ")}. One house per city; stepping up costs only the difference. Once a day per city, light 3 lamps there and turn the key for {KEY_MATCHES} matches of the house's color plus coins ({HOUSES.map((h) => `${h.name} ${h.keyCoin.toLocaleString("en-US")}`).join(", ")}). Journal · Places lists your houses.
+            </p>
+          </section>
+          <section className="mt-5" data-testid="help-own-lamps">
+            <h3 className="font-display text-lg leading-tight">Owned lanterns</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              In Journal · Places, buy one lamp of each color: {TIERS.map((t) => `${TIER_LABEL[t]} ${fmt(OWN_PRICE[t])}`).join(", ")}. One owner per lamp, and visitors see your name on it. When a visitor misses there, you get half its coin value plus a 50% chance of one match, up to {OWN_DAILY_CAP} paid misses per lamp a day. Your own plays pay nothing. Free gift lanterns don't count toward the one per color and pay the same.
+            </p>
+          </section>
+          <section className="mt-5" data-testid="help-trains">
+            <h3 className="font-display text-lg leading-tight">Train stops</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              Tap a train stop on foot to open the station board. Tickets come from lighting lamps. In a car, park first.
+            </p>
+          </section>
+          <section className="mt-5" data-testid="help-welcome">
+            <h3 className="font-display text-lg leading-tight">New players</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              A new account gets a Lantern Cottage in its first city, {WELCOME_COIN.toLocaleString("en-US")} coins and a free White lantern, and lamps, street matches, rides, caches, quests and house keys pay double coin for the first hour.
             </p>
           </section>
           {/* 0.0.95: what the lantern result's badges and emblems mean. */}

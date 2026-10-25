@@ -3,6 +3,7 @@ import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user
 import { syncWallet, type SyncWire } from "@/game/walletApi";
 import { deviceId, setStreetPlayer, setWalletLive } from "@/game/walletClient";
 import { useGame, popMatch } from "@/game/store";
+import { setDoubleUntil } from "@/game/doubleClient";
 import { FARES_CAP } from "@/game/ticket";
 
 function pressStock(pantry: Partial<Record<string, number>>) {
@@ -79,6 +80,8 @@ export function WalletSync() {
           const corgi = /Corgi is back/.test(text);
           popMatch({ kind: "gift", big: corgi ? "Corgi restored!" : "A gift!", sub: text, tiers: reds ? Array.from({ length: Number(reds[1]) }, () => "red" as const) : [], coin: 0 });
         }
+        // 0.1.44: the new-player double-coin hour, for the HUD note.
+        setDoubleUntil(r.doubleUntil ?? 0);
         // 0.1.43: a gift lantern granted on this sync shows up in Journal · Places.
         void import("@/game/ownLampsClient").then((m) => m.refreshOwnedLamps());
         setStreetPlayer(r.playerId);

@@ -54,3 +54,11 @@ test("0.1.28 Journal: Goals tab holds the goals in order; Progress keeps standin
   const prog = src.slice(src.indexOf('tab === "Progress"'), src.indexOf(") : null}", src.indexOf('tab === "Progress"')));
   for (const m of goals) assert.equal(prog.includes(m), false, m);
 });
+
+test("0.1.44 help page: houses, owned lanterns, train stops and the new-player hour, in American spelling", () => {
+  const f = read("../components/keyline/FieldGuide.tsx");
+  for (const id of ["help-houses", "help-own-lamps", "help-trains", "help-welcome"]) assert.ok(f.includes(`data-testid="${id}"`), id);
+  assert.match(f, /KEY_MATCHES/);
+  assert.match(f, /OWN_PRICE/);
+  assert.doesNotMatch(f, /colour/);
+});

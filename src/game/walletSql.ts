@@ -3,7 +3,8 @@ import { settlePocket } from "./goals.ts";
 import { canonicalId } from "./playerLinks.ts";
 import { cleanKeys } from "./matchSpend.ts";
 import { cleanUnlocks } from "./cityPass.ts";
-import { clampWallet, emptyWallet, type AwardView, type OpResult, type WalletState } from "./wallet.ts";
+import { DOUBLE_MS, WELCOME_KEY, doubles, welcomeClock } from "./lampGift.ts";
+import { COIN_CAP, clampWallet, emptyWallet, type AwardView, type OpResult, type WalletState } from "./wallet.ts";
 
 /**
  * One row per canonical player (player_links). A ledger key applies once.
@@ -100,6 +101,19 @@ export async function mutateWallet(
     }
     return { ok: true, replay: true, wallet, award, detail: detail[0]?.detail };
   }
+  // 0.1.44: a new player's first hour doubles the coin these writes gain (lampGift.ts DOUBLE_PREFIXES). Decided once,
+  // before the write; a replay returns above and never doubles again. Matches, spends and caps are untouched.
+  let x2 = false;
+  if (doubles(opKey)) {
+    const wel = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${WELCOME_KEY} limit 1`;
+    try {
+      const start = Number((JSON.parse(wel[0]?.detail ?? "{}") as { start?: number }).start) || 0;
+      const now = welcomeClock.now();
+      x2 = start > 0 && now >= start && now < start + DOUBLE_MS;
+    } catch {
+      x2 = false;
+    }
+  }
   try {
     for (let attempt = 0; attempt < 5; attempt++) {
       const { wallet } = await canonicalWallet(sql, userId);
@@ -111,6 +125,13 @@ export async function mutateWallet(
       // 0.0.97: one pocket rule for every server write: rises past 30 become credits that merge 3→1 up.
       // A first sync (migrate*) only carries the save over; it is not a reward and must not mint credits.
       let next = res.wallet;
+      let award = res.award;
+      const gain = next.coins - wallet.coins;
+      const extra = x2 && gain > 0 ? Math.max(0, Math.min(gain, COIN_CAP - next.coins)) : 0;
+      if (extra) {
+        next = { ...next, coins: next.coins + extra };
+        if (award) award = { ...award, coins: award.coins + extra, boosts: [...award.boosts, "Double rewards ×2"] };
+      }
       let merged: Partial<Record<string, number>> = {};
       if (!opKey.startsWith("migrate")) {
         const st = settlePocket(wallet.keys, next.keys, wallet.meta.credit);
@@ -119,7 +140,8 @@ export async function mutateWallet(
       } else {
         next = { ...next, meta: { ...next.meta, credit: wallet.meta.credit } };
       }
-      const detail = withDelta(res.detail ?? (res.award ? JSON.stringify(res.award) : ""), opKey, wallet, next, merged);
+      let detail = withDelta(res.detail ?? (award ? JSON.stringify(award) : ""), opKey, wallet, next, merged);
+      if (extra) detail = markDouble(detail, extra);
       const updated = await sql.query<{ version: number }>(
         `update player_wallets set
            coins = $2, white = $3, blue = $4, green = $5, amber = $6, red = $7, violet = $8,
@@ -143,7 +165,7 @@ export async function mutateWallet(
       );
       if (!updated.length) continue;
       if (detail) await sql`update wallet_ledger set detail = ${detail} where user_id = ${id} and op_key = ${opKey}`;
-      return { ok: true, replay: false, wallet: { ...next, version: wallet.version + 1 }, award: res.award, detail };
+      return { ok: true, replay: false, wallet: { ...next, version: wallet.version + 1 }, award, detail };
     }
   } catch (e) {
     await sql`delete from wallet_ledger where user_id = ${id} and op_key = ${opKey}`;
@@ -202,4 +224,15 @@ export function withDelta(detail: string, opKey: string, before: WalletState, af
     /* a plain note */
   }
   return detail;
+}
+
+/** 0.1.44: record the first-hour double on the row: x2 (the multiplier) and dx (the extra coin it added). */
+function markDouble(detail: string, extra: number): string {
+  try {
+    const o = JSON.parse(detail || "{}");
+    if (o && typeof o === "object" && !Array.isArray(o)) return JSON.stringify({ ...o, x2: 2, dx: extra });
+  } catch {
+    /* a note: wrap it */
+  }
+  return JSON.stringify({ note: detail, x2: 2, dx: extra });
 }

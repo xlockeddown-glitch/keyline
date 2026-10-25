@@ -1,4 +1,5 @@
 import { SkyChip } from "./Sky";
+import { useDoubleMinutes } from "@/game/doubleClient";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, CircleHelp } from "lucide-react";
 import { creditHint } from "@/game/goals";
@@ -180,6 +181,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           </p>
             </div>
           </div>
+          <DoubleNote />
           {hud.routeStops >= 1 || hud.waypoint ? (
             <div className="route-row mt-1">
               <button type="button" className="fare-hint pointer-events-auto" onClick={onRoute}>
@@ -358,5 +360,16 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
         </div>
       )}
     </div>
+  );
+}
+
+/** 0.1.44: a new player's first hour pays double coin. */
+function DoubleNote() {
+  const min = useDoubleMinutes();
+  if (!min) return null;
+  return (
+    <p className="double-note mt-1 text-xs font-semibold" data-testid="double-note">
+      Double rewards: {min} min left
+    </p>
   );
 }
