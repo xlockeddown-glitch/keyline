@@ -68,7 +68,22 @@ export function v2MaskUrl(scout: string): string {
  * The base coat is `def.L + offset`; the new coat is `tgt.L + offset` with the target's hue and a chroma that
  * eases off in the shadows. Unmasked pixels are returned untouched. Twin of apply_coat in scripts/sprite-rig.py.
  */
-export function applyCoatLayer(base: Uint8ClampedArray, mask: Uint8ClampedArray, tgt: DyeTarget, def: DyeTarget): Uint8ClampedArray {
+/** Cell size of a v2 sheet, and how many pixels one full prism rainbow spans along the cell diagonal. */
+export const V2_CELL = 192;
+export const PRISM_BAND = 72;
+
+/** Prism hue (degrees) at a sheet pixel: a full rainbow every PRISM_BAND pixels of x + y inside its cell. */
+export function prismHue(x: number, y: number): number {
+  return (((x % V2_CELL) + (y % V2_CELL)) % PRISM_BAND) * (360 / PRISM_BAND);
+}
+
+export function applyCoatLayer(
+  base: Uint8ClampedArray,
+  mask: Uint8ClampedArray,
+  tgt: DyeTarget,
+  def: DyeTarget,
+  width = V2_COLS * V2_CELL,
+): Uint8ClampedArray {
   const out = new Uint8ClampedArray(base);
   const shift = tgt.L - def.L;
   const h = (tgt.h * Math.PI) / 180;
@@ -80,7 +95,15 @@ export function applyCoatLayer(base: Uint8ClampedArray, mask: Uint8ClampedArray,
     const [L] = toLab(base[i]!, base[i + 1]!, base[i + 2]!);
     const nl = Math.max(4, Math.min(92, L + shift));
     const nc = tgt.C * Math.max(0.5, Math.min(1.2, nl / tgt.L));
-    const [r, g, b] = fromLab(nl, nc * cos, nc * sin);
+    let c = cos;
+    let s = sin;
+    if (tgt.bands) {
+      const p = i / 4;
+      const ph = (prismHue(p % width, Math.floor(p / width)) * Math.PI) / 180;
+      c = Math.cos(ph);
+      s = Math.sin(ph);
+    }
+    const [r, g, b] = fromLab(nl, nc * c, nc * s);
     out[i] = pyRound(base[i]! * (1 - m) + r * m);
     out[i + 1] = pyRound(base[i + 1]! * (1 - m) + g * m);
     out[i + 2] = pyRound(base[i + 2]! * (1 - m) + b * m);

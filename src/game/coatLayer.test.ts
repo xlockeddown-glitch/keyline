@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { COAT_TARGETS, V2_DEFAULT_COAT, V2_PALETTE, V2_SCOUTS, applyCoatLayer, v2Cell } from "./coatLayer.ts";
-import { DYE_TARGETS } from "./dyeRecolor.ts";
+import { DYE_TARGETS, toLab } from "./dyeRecolor.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -81,7 +81,9 @@ test("v2 coat targets stay in step with scripts/coat-variants.json and each rig'
     assert.deepEqual(COAT_TARGETS[id], { L: t.L, C: t.C, h: t.h }, id);
   }
   for (const [id, t] of Object.entries(pal.dyes) as [string, { L: number; C: number; h: number }][]) {
-    assert.deepEqual(DYE_TARGETS[id], { L: t.L, C: t.C, h: t.h }, id);
+    const { bands, ...lch } = DYE_TARGETS[id]!;
+    assert.deepEqual(lch, { L: t.L, C: t.C, h: t.h }, id);
+    assert.equal(bands, id === "dye-prism" ? true : undefined, `${id}: only prism paints rainbow bands`);
   }
   for (const scout of V2_SCOUTS) {
     const rig = JSON.parse(readFileSync(`${ROOT}/scripts/sprite-redraw/${scout}/rig.json`, "utf8"));
@@ -102,4 +104,20 @@ test("v2 cells: 8 walk frames per stride on rows 0-3, 4-frame idles, standing af
   assert.deepEqual([v2Cell(false, 3, 0).row, v2Cell(false, 3, 0).col], [4, 0]);
   assert.equal(v2Cell(false, 0, 0).position, "0% 80%"); // the CSS default for previews
   assert.equal(v2Cell(true, 0, 4).col, 0); // wraps
+});
+
+test("prism paints the coat in rainbow bands, not one teal", () => {
+  const w = 192;
+  const base = new Uint8ClampedArray(w * w * 4).fill(120);
+  const mask = new Uint8ClampedArray(w * w * 4).fill(255);
+  const out = applyCoatLayer(base, mask, V2_PALETTE["dye-prism"]!, V2_DEFAULT_COAT.fox!, w);
+  const hues = new Set<number>();
+  for (let x = 0; x < 72; x += 6) {
+    const i = x * 4;
+    const [, a, b] = toLab(out[i]!, out[i + 1]!, out[i + 2]!);
+    hues.add(Math.round(((Math.atan2(b, a) * 180) / Math.PI + 360) % 360 / 60));
+  }
+  assert.ok(hues.size >= 5, `prism shows ${hues.size} hue sixths across one band`);
+  const one = applyCoatLayer(base, mask, V2_PALETTE["dye-green"]!, V2_DEFAULT_COAT.fox!, w);
+  assert.deepEqual([one[0], one[1], one[2]], [one[40], one[41], one[42]], "a plain dye stays one colour");
 });

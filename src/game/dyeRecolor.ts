@@ -3,7 +3,8 @@
  * scripts/make-coat-variants.py). The sheets are mixed here rather than shipped: a full
  * set of dye PNGs does not fit the publish cap. Print-shop coats stay as real files.
  */
-export type DyeTarget = { L: number; C: number; h: number };
+/** `bands`: prism. The hue runs a full rainbow in diagonal bands across each sprite cell (coatLayer.ts). */
+export type DyeTarget = { L: number; C: number; h: number; bands?: boolean };
 export type SheetKind = "idle" | "walk" | "idle-side";
 
 /** Lab targets. Keep in step with the `dyes` block of scripts/coat-variants.json. */
@@ -14,7 +15,7 @@ export const DYE_TARGETS: Record<string, DyeTarget> = {
   "dye-amber": { L: 66, C: 64, h: 70 },
   "dye-red": { L: 41, C: 72, h: 14 },
   "dye-violet": { L: 46, C: 74, h: 290 },
-  "dye-prism": { L: 62, C: 52, h: 192 },
+  "dye-prism": { L: 62, C: 52, h: 192, bands: true },
 };
 
 const HEAD: Record<string, number> = {

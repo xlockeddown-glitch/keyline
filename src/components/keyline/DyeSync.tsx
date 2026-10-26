@@ -97,7 +97,7 @@ async function cssForV2(scout: string, cancel: () => boolean): Promise<void> {
   for (const [coat, tgt] of order) {
     await new Promise((r) => setTimeout(r, 0));
     if (cancel()) return;
-    const url = toUrl(applyCoatLayer(base.data, mask.data, tgt, def), base.w, base.h);
+    const url = toUrl(applyCoatLayer(base.data, mask.data, tgt, def, base.w), base.w, base.h);
     const sel = `.scout-marker[data-scout="${scout}"][data-coat="${coat}"]`;
     lines.push(`${sel},${sel}.is-idle,${sel}.is-idle.is-side{background-image:url("${url}")}`);
     publish(lines.join("\n"));
