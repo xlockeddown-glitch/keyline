@@ -36,6 +36,10 @@ export const CAT_LABEL: Record<TriviaCat, string> = {
 };
 
 export const FAV_BONUS = 0.15;
+/** 0.1.45: the worn coat and the seated car both favor the card's category. */
+export const FAV_BOTH = 0.25;
+/** Favorite bonus for how many of [coat, car] favor this category. */
+export const favBonus = (n: number) => (n >= 2 ? FAV_BOTH : n === 1 ? FAV_BONUS : 0);
 export const COTD_BONUS = 0.25;
 export const CAT_BONUS_CAP = 0.4;
 
@@ -55,7 +59,8 @@ export function catBoost(topic: TriviaCat | null | undefined, favs: readonly Tri
   if (!topic) return { x: 1, labels: [] };
   let add = 0;
   const labels: string[] = [];
-  for (const f of new Set(favs)) if (f === topic) add += FAV_BONUS;
+  // favs is [coat?, car?]: one match is +15%, both is +25%.
+  add += favBonus(favs.filter((f) => f === topic).length);
   if (add) labels.push(`Favorite +${Math.round(add * 100)}%`);
   if (cotdAt(at) === topic) {
     add += COTD_BONUS;

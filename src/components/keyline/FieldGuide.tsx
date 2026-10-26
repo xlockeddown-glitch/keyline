@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CARS } from "@/game/cars";
-import { CAR_PERKS, CAT_BONUS_CAP, COTD_BONUS, FAV_BONUS } from "@/game/carPerks";
+import { CAR_PERKS, CAT_BONUS_CAP, COTD_BONUS, FAV_BONUS, FAV_BOTH } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -116,7 +116,7 @@ export function FieldGuide() {
           <section className="mt-5" data-testid="help-categories">
             <h3 className="font-display text-lg leading-tight">Category boosts</h3>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
-              Every coat and car has a favorite category: a right answer in it pays +{Math.round(FAV_BONUS * 100)}% coin (coats when worn, cars while you sit in them). Each day one category of the day pays +{Math.round(COTD_BONUS * 100)}% and is always offered (gold badge). Boosts add up to at most +{Math.round(CAT_BONUS_CAP * 100)}%, on lamp coin only.
+              Every coat and car has a favorite category: a right answer in it pays +{Math.round(FAV_BONUS * 100)}% coin (coats when worn, cars while you sit in them), or +{Math.round(FAV_BOTH * 100)}% when your coat and car both favor it. Each day one category of the day pays +{Math.round(COTD_BONUS * 100)}% and is always offered (gold badge). Boosts add up to at most +{Math.round(CAT_BONUS_CAP * 100)}%, on lamp coin only.
             </p>
           </section>
           {/* 0.1.44: houses, owned lanterns, train stops, a new player's first hour. */}

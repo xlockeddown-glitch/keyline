@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { cotdAt, perkFavs } from "@/game/carPerks";
+import { cotdAt, perkFavs, favBonus } from "@/game/carPerks";
 import { BookOpen, Calculator, FlaskConical, Gamepad2, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
@@ -207,7 +207,7 @@ export function VaultModal() {
                         <span className="font-display block text-lg leading-none">
                           {c.label}
                           {c.id === today && !series ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
-                          {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +15%</span> : null}
+                          {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +{Math.round(favBonus(favs.filter((f) => f === c.id).length) * 100)}%</span> : null}
                         </span>
                         <span className="field-blurb mt-1 block text-xs text-fg-subtle">{c.blurb}</span>
                       </span>

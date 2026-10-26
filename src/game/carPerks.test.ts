@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
-import { CAR_FAV, CAR_PERKS, CAT_BONUS_CAP, SCOUT_FAV, bestReach, bestVaultMs, carCool, catBoost, cotdAt, cotdOf, perkFavs, regenHit } from "./carPerks.ts";
+import { CAR_FAV, CAR_PERKS, FAV_BOTH, CAT_BONUS_CAP, SCOUT_FAV, bestReach, bestVaultMs, carCool, catBoost, cotdAt, cotdOf, perkFavs, regenHit } from "./carPerks.ts";
 import { emptyWallet, gradeGrant, type GradePay } from "./wallet.ts";
 import { DealIn, dealFor, openToken, publicCardId, type TriviaDeps } from "./triviaService.ts";
 import { sealPlate } from "./rarity.ts";
@@ -61,7 +61,19 @@ test("boost math: favorite +15%, day +25%, added, capped at +40%; lamps only, ne
   const fav = other([day]);
   assert.equal(catBoost(fav, [fav], T0).x, 1.15);
   assert.equal(catBoost(day, [day], T0).x, 1.4);
-  assert.equal(catBoost(day, [day, day], T0).x, 1.4, "the same favorite twice counts once");
+  // 0.1.45: coat + car on the same favorite stack to +25%; different favorites: only the matching one counts.
+  assert.equal(FAV_BOTH, 0.25);
+  assert.equal(catBoost(fav, [fav, fav], T0).x, 1.25, "coat and car both favor it: +25%");
+  assert.equal(catBoost(fav, [fav, day], T0).x, 1.15, "different favorites: just the one");
+  assert.equal(catBoost(fav, [day, fav], T0).x, 1.15, "car alone");
+  assert.equal(catBoost(day, [day, day], T0).x, 1.4, "day +25% and both +25% caps at 1.40");
+  assert.equal(coin(pay({ topic: fav, favs: [fav, fav] })), Math.round(coin(pay({ topic: other([day, fav]) })) * 1.25));
+  // Giraffe + Roadster on Science (both Science), not the day: +25%, server-side from proven favs.
+  const sci = perkFavs("giraffe", true, "roadster");
+  assert.deepEqual(sci, ["science", "science"]);
+  const notDay = cotdAt(T0) === "science" ? T0 + 86_400_000 : T0;
+  assert.equal(catBoost("science", sci, notDay).x, cotdAt(notDay) === "science" ? 1.4 : 1.25);
+  assert.equal(catBoost("science", perkFavs("giraffe", false, "roadster"), notDay).x, 1.15, "an unproven coat drops to the car's +15%");
   assert.ok(catBoost(day, [day], T0).x <= 1 + CAT_BONUS_CAP);
   assert.equal(catBoost(null, [fav], T0).x, 1);
   const base = coin(pay({ topic: other([day, fav]) }));

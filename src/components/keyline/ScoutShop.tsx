@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CAT_LABEL, SCOUT_FAV } from "@/game/carPerks";
+import { CAT_LABEL, FAV_BONUS, FAV_BOTH, SCOUT_FAV } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { SCOUT_LIST, SUPER_LEGENDARY_ID, SUPER_LEGENDARY_LABEL, cityShop } from "@/game/data";
 import { sfx } from "@/game/audio";
@@ -65,7 +65,7 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
                     <span className="ability-name">{s.perk.label.split(" · ")[0]}</span>
                     <span className="text-fg-muted"> {s.perk.label.split(" · ").slice(1).join(" · ")}</span>
                   </p>
-                  <p className="text-xs text-fg-subtle" data-testid={`fav-${s.id}`}>Favorite: {CAT_LABEL[SCOUT_FAV[s.id]]} +15% coin</p>
+                  <p className="text-xs text-fg-subtle" data-testid={`fav-${s.id}`}>Favorite: {CAT_LABEL[SCOUT_FAV[s.id]]} +{Math.round(FAV_BONUS * 100)}% coin, +{Math.round(FAV_BOTH * 100)}% in a car that favors it too</p>
                   {s.id === SUPER_LEGENDARY_ID ? (
                     <p className="mt-1 kicker">{SUPER_LEGENDARY_LABEL}</p>
                   ) : s.coins >= 50000 ? (

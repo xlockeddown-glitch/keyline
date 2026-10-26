@@ -156,3 +156,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.45: a one-time gift for Amanda G (200,000 coins, "I Love you"), keyed on her sign-in email, once (k145a).
 // 0.1.45: Corgi favors Celebrity (was Sports), Fox favors Math (was Political), Owl favors Books (was Nature) (k145a).
 // 0.1.45: Sloth favors Political (was Books) (k145a).
+// 0.1.45: a worn coat and a seated car that both favor the card's category stack to +25% (one favorite stays +15%; still capped at x1.40) (k145a).

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CAR_FAV, CAR_PERKS, CAT_LABEL } from "@/game/carPerks";
+import { CAR_FAV, CAR_PERKS, CAT_LABEL, FAV_BONUS, FAV_BOTH } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { CAR_COLORS, carSprite, factoryColor, paintPrice } from "@/game/carPaint";
 import { CARS, carBoost, dealerOf } from "@/game/cars";
@@ -61,7 +61,7 @@ export function Showroom() {
                       <p className="text-sm" data-testid={`car-perk-${c.id}`}>
                         <span className="ability-name">{CAR_PERKS[c.id].label.split(" · ")[0]}</span>
                         <span className="text-fg-muted">
-                          {CAR_PERKS[c.id].label.includes(" · ") ? ` ${CAR_PERKS[c.id].label.split(" · ").slice(1).join(" · ")}` : ""} · Favorite: {CAT_LABEL[CAR_FAV[c.id]]} +15%
+                          {CAR_PERKS[c.id].label.includes(" · ") ? ` ${CAR_PERKS[c.id].label.split(" · ").slice(1).join(" · ")}` : ""} · Favorite: {CAT_LABEL[CAR_FAV[c.id]]} +{Math.round(FAV_BONUS * 100)}%, +{Math.round(FAV_BOTH * 100)}% with a coat that favors it too
                         </span>
                       </p>
                     </div>
