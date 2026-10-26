@@ -41,6 +41,7 @@ import { BOOKS_BANK } from "@/game/banks/books";
 import { CUR_SPORTS_20261021, CUR_POLITICAL_20261021, CUR_FOOD_20261021, CUR_ARTS_20261021, CUR_SCIENCE_20261021, CUR_HISTORY_20261021, CUR_NATURE_20261021, CUR_GAMES_20261021, CUR_CELEBRITY_20261021, CUR_MUSIC_20261021, CUR_BOOKS_20261021, CUR_LOCAL_20261021 } from "@/game/banks/current_20261021";
 import { PLUS_20261022 } from "@/game/banks/plus_20261022";
 import { PLUS_20261025 } from "@/game/banks/plus_20261025";
+import { VARIETY_20261025 } from "@/game/banks/variety_20261025";
 import { PLUS_SPORTS_20261019, PLUS_LOCAL_20261019, PLUS_POLITICAL_20261019, PLUS_FOOD_20261019, PLUS_ARTS_20261019, PLUS_SCIENCE_20261019, PLUS_HISTORY_20261019, PLUS_NATURE_20261019, PLUS_GAMES_20261019, PLUS_CELEBRITY_20261019, PLUS_MUSIC_20261019 } from "@/game/banks/plus_20261019";
 import { CITY_EXTRA } from "@/game/banks/cities";
 import {
@@ -351,20 +352,20 @@ function mergeCat(a: TriviaQ[], b: TriviaQ[]): TriviaQ[] {
 	return out;
 }
 const GENERAL: Record<TriviaCat, TriviaQ[]> = {
-	sports: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006), WEEKLY_SPORTS_20261009), WEEKLY_SPORTS_20261016), PLUS_SPORTS_20261019), CUR_SPORTS_20261021), PLUS_20261022.sports),
+	sports: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006), WEEKLY_SPORTS_20261009), WEEKLY_SPORTS_20261016), PLUS_SPORTS_20261019), CUR_SPORTS_20261021), PLUS_20261022.sports), VARIETY_20261025.sports),
 	local: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.local ?? [], GENERAL_BANK.local ?? []), WEEKLY_LOCAL_20261006), PLUS_LOCAL_20261019), CUR_LOCAL_20261021), PLUS_20261022.local), PLUS_20261025.local),
-	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009), WEEKLY_POLITICAL_20261016), LEVEL_POLITICAL_20261016), PLUS_POLITICAL_20261019), CUR_POLITICAL_20261021), PLUS_20261022.political),
-	food: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []), WEEKLY_FOOD_20261006), PLUS_FOOD_20261019), CUR_FOOD_20261021), PLUS_20261022.food),
-	arts: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []), WEEKLY_ARTS_20261006), WEEKLY_ARTS_20261009), PLUS_ARTS_20261019), CUR_ARTS_20261021), PLUS_20261022.arts),
+	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009), WEEKLY_POLITICAL_20261016), LEVEL_POLITICAL_20261016), PLUS_POLITICAL_20261019), CUR_POLITICAL_20261021), PLUS_20261022.political), VARIETY_20261025.political),
+	food: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []), WEEKLY_FOOD_20261006), PLUS_FOOD_20261019), CUR_FOOD_20261021), PLUS_20261022.food), VARIETY_20261025.food),
+	arts: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.arts ?? [], GENERAL_BANK.arts ?? []), WEEKLY_ARTS_20261006), WEEKLY_ARTS_20261009), PLUS_ARTS_20261019), CUR_ARTS_20261021), PLUS_20261022.arts), VARIETY_20261025.arts),
 	// 0.0.99: each sum sits on its ladder colour (mathLadder.ts); non-head-math sums are trimmed; generated cards fill amber+.
 	math: [...mergeCat(mergeCat(MATH_BANK, MATH_MORE), PLUS_20261025.math).map(rescoreMath).flatMap((x) => ladderCard(x) ?? []), ...generatedMath()],
-	science: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE), WEEKLY_SCIENCE_20261002), WEEKLY_SCIENCE_20261006), WEEKLY_SCIENCE_20261009), PLUS_SCIENCE_20261019), CUR_SCIENCE_20261021), PLUS_20261022.science),
-	history: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY), WEEKLY_HISTORY_20261002), WEEKLY_HISTORY_20261006), PLUS_HISTORY_20261019), CUR_HISTORY_20261021), PLUS_20261022.history),
-	nature: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE), WEEKLY_NATURE_20261002), WEEKLY_NATURE_20261006), PLUS_NATURE_20261019), CUR_NATURE_20261021), PLUS_20261022.nature),
-	games: mergeCat(mergeCat(mergeCat(mergeCat(GAMES_BANK, WEEKLY_GAMES_20261006), PLUS_GAMES_20261019), CUR_GAMES_20261021), PLUS_20261022.games),
+	science: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE), WEEKLY_SCIENCE_20261002), WEEKLY_SCIENCE_20261006), WEEKLY_SCIENCE_20261009), PLUS_SCIENCE_20261019), CUR_SCIENCE_20261021), PLUS_20261022.science), VARIETY_20261025.science),
+	history: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY), WEEKLY_HISTORY_20261002), WEEKLY_HISTORY_20261006), PLUS_HISTORY_20261019), CUR_HISTORY_20261021), PLUS_20261022.history), VARIETY_20261025.history),
+	nature: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE), WEEKLY_NATURE_20261002), WEEKLY_NATURE_20261006), PLUS_NATURE_20261019), CUR_NATURE_20261021), PLUS_20261022.nature), VARIETY_20261025.nature),
+	games: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(GAMES_BANK, WEEKLY_GAMES_20261006), PLUS_GAMES_20261019), CUR_GAMES_20261021), PLUS_20261022.games), VARIETY_20261025.games),
 	celebrity: mergeCat(mergeCat(mergeCat(mergeCat(CELEBRITY_BANK, WEEKLY_CELEBRITY_20261006), PLUS_CELEBRITY_20261019), CUR_CELEBRITY_20261021), PLUS_20261022.celebrity),
-	music: mergeCat(mergeCat(mergeCat(MUSIC_BANK, PLUS_MUSIC_20261019), CUR_MUSIC_20261021), PLUS_20261022.music),
-	books: mergeCat(mergeCat(BOOKS_BANK, CUR_BOOKS_20261021), PLUS_20261022.books),
+	music: mergeCat(mergeCat(mergeCat(mergeCat(MUSIC_BANK, PLUS_MUSIC_20261019), CUR_MUSIC_20261021), PLUS_20261022.music), VARIETY_20261025.music),
+	books: mergeCat(mergeCat(mergeCat(BOOKS_BANK, CUR_BOOKS_20261021), PLUS_20261022.books), VARIETY_20261025.books),
 };
 const TEXAS_LOCAL = [
 	q("The current Texas Capitol in Austin opened in which decade?", [
