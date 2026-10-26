@@ -39,7 +39,8 @@ export const DIFF_MULT = {
 /** How many seen card ids a save keeps for anti-repeat (sent to the server with each deal). */
 export const ASKED_KEEP = 2400;
 
-export function offerCats(poiId: string, vaultsOpened: number, n = 6, poi?: Poi): TriviaCat[] {
+/** 0.1.45: `cotd` (the category of the day) is always among the offer: it takes the last slot when missing. */
+export function offerCats(poiId: string, vaultsOpened: number, n = 6, poi?: Poi, cotd?: TriviaCat): TriviaCat[] {
   let h = 2166136261;
   const seed = `${poiId}#${vaultsOpened}`;
   for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
@@ -58,7 +59,9 @@ export function offerCats(poiId: string, vaultsOpened: number, n = 6, poi?: Poi)
   // the next field slides in. Math then comes up on under 20% of lamps, so even a player who picks
   // it every time it's offered gets under 20% math. No cards are removed.
   const drop = !keepsMath(seed);
-  return (drop ? order.filter((c) => c !== "math") : order).slice(0, n);
+  const out = (drop ? order.filter((c) => c !== "math") : order).slice(0, n);
+  if (cotd && !out.includes(cotd) && out.length) out[out.length - 1] = cotd;
+  return out;
 }
 
 /** Share of lamps that keep a Math offer. See offerCats; trivia:quotas checks the result. */

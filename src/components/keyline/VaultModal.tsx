@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { cotdAt, perkFavs } from "@/game/carPerks";
 import { BookOpen, Calculator, FlaskConical, Gamepad2, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
 import { ladderLampHtml } from "@/game/pins";
-import { useGame } from "@/game/store";
+import { seatedCar, useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
 import { placeLine } from "@/game/place";
@@ -61,6 +62,8 @@ export function VaultModal() {
 
   const quiz = openVault?.question ?? null;
   const isOpen = Boolean(openVault);
+  const scout = useGame((s) => s.scout);
+  const carNow = useGame((s) => seatedCar(s));
   const owned = useOwnedPoi(openVault?.poiId);
 
   // 0.0.52: phones hide the map's +/- zoom while the lamp card is open — the card fills the screen there and the
@@ -112,7 +115,9 @@ export function VaultModal() {
   const grade = elapsed <= 3000 ? "Perfect" : elapsed <= 10000 ? "Great" : "Good";
   const frac = quiz ? Math.min(1, left / total) : 0;
   const catMeta = TRIVIA_CATS.find((c) => c.id === openVault.category);
-  const offered = offerCats(openVault.poiId, vaultsOpened, 6, series ? undefined : poi);
+  const today = cotdAt(Date.now());
+  const offered = offerCats(openVault.poiId, vaultsOpened, 6, series ? undefined : poi, series ? undefined : today);
+  const favs = series ? [] : perkFavs(scout, true, carNow);
   const ground = !series && poi ? placeLine(poi) : null;
   const step = (openVault.run?.step ?? 0) + (quiz ? 1 : 0);
   const steps = openVault.run?.steps ?? series?.steps ?? 3;
@@ -144,6 +149,7 @@ export function VaultModal() {
                   ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
                   : `${TIER_LABEL[poi.tier]} lamp · ${KIND_LABEL[poi.kind]}`}
                 {catMeta ? ` · ${catMeta.label}` : ""}
+                {!series && openVault.category === today ? <span className="cotd-badge ml-1.5">+25% today</span> : null}
               </p>
               <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
               {series ? null : <OwnerPlate poiId={poi.id} />}
@@ -198,7 +204,11 @@ export function VaultModal() {
                         <Icon className="size-4" strokeWidth={1.75} />
                       </span>
                       <span className="min-w-0">
-                        <span className="font-display block text-lg leading-none">{c.label}</span>
+                        <span className="font-display block text-lg leading-none">
+                          {c.label}
+                          {c.id === today && !series ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
+                          {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +15%</span> : null}
+                        </span>
                         <span className="field-blurb mt-1 block text-xs text-fg-subtle">{c.blurb}</span>
                       </span>
                     </button>

@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.44";
+export const APP_VERSION = "0.1.45";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k144a";
+export const PUBLISH_STAMP = "k145a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -152,3 +152,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.42: player-owned lanterns, release 1: buy one lamp per color in Journal · Places (white 100k to violet 4M, one owner per lamp); visitors see the owner's name plate; a visitor's miss pays the owner half the tier value plus a 50% chance of a match (cooldown, 20 a day per lamp, coin cap); the daily house key pays 2 matches of the house's color plus coins (cottage 1,000, row 3,000, town 8,000, villa 25,000) (k142a).
 // 0.1.43: thank-you gift: every account from before 1:00 AM CT Oct 26 gets a free White and a free Blue owned lantern (extra to the one-per-color buy), placed from Journal · Places; a one-time pop-up says it's waiting (k143a).
 // 0.1.44: current players also get a free Green and Amber lantern (one gift note for all); new players (from 1:00 AM CT Oct 26) get a welcome pack: a Lantern Cottage in their first city, 15,000 coins, a free White lantern and double coin for their first hour; help page covers houses, owned lanterns, train stops and the first hour (k144a).
+// 0.1.45: car perks while seated (Civic +1 s timers, F-150 1.5x pickup reach, Mustang 15% shorter lamp rests, Roadster refunds 1 in 5 failed lamps); every coat and car has a favorite category (+15% coin, proven on the server); a category of the day (+25%, always offered, gold badge); boosts add up to +40% on lamp coin (k145a).

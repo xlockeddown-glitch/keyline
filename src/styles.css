@@ -4443,3 +4443,8 @@ h3 {
 
 /* 0.1.44: new player's double-coin hour, under the coin count. */
 .double-note{ color: #f0c260; text-shadow: 0 0 8px rgba(240,194,96,.45); }
+
+/* 0.1.45 category of the day (gold) and favorite-category badges. */
+.cotd-badge, .fav-badge{ display: inline-block; vertical-align: middle; padding: .05rem .4rem; border-radius: .25rem; font-family: var(--font-sans, inherit); font-size: .6875rem; font-weight: 600; letter-spacing: .02em; line-height: 1.4; }
+.cotd-badge{ color: #2a1c08; background: linear-gradient(#f0d27a, #c9973a); box-shadow: 0 0 8px rgba(240,194,96,.45); }
+.fav-badge{ color: #f0d27a; border: 1px solid rgba(240,210,122,.6); }

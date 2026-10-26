@@ -43,6 +43,8 @@ export const DealIn = z.object({
       prevToken: z.string().min(10).max(2000).optional(),
       /** 0.0.96: the worn coat; its abilities are rolled by the server at grade time. */
       scout: z.string().max(20).optional(),
+      /** 0.1.45: the owned car the player sits in; the server checks ownership before it counts. */
+      car: z.string().max(20).optional(),
     })
     .optional(),
 });

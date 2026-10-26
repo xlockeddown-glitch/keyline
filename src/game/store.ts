@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { bestVaultMs, carCool } from "./carPerks";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
 import { CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
@@ -880,7 +881,7 @@ async function dealCard(
       : undefined;
   if (!series && !named && !dealBlank) return null;
   const spark = Boolean(st.openVault?.spark);
-  const extra = (st.pressPass > 0 ? 5000 : 0) + (wornPerk(st.scout).vaultMs ?? 0);
+  const extra = (st.pressPass > 0 ? 5000 : 0) + bestVaultMs(wornPerk(st.scout).vaultMs, seatedCar(st));
   const windowMs = spark ? 20000 : step > 0 ? 25000 : 25000 + extra;
   const spot = series ? seriesLive(st, series.kind) : (named ?? blank);
   const input: DealInput = {
@@ -904,6 +905,7 @@ async function dealCard(
       lng: spot?.lng ?? 0,
       prevToken,
       scout: st.scout,
+      ...(seatedCar(st) ? { car: seatedCar(st)! } : {}),
     },
   };
   try {
@@ -1520,7 +1522,7 @@ export const useGame = create<GameState>((set, get) => ({
         return;
       }
       const spark = Boolean(cur.spark);
-      const extra = (get().pressPass > 0 ? 5000 : 0) + (wornPerk(get().scout).vaultMs ?? 0);
+      const extra = (get().pressPass > 0 ? 5000 : 0) + bestVaultMs(wornPerk(get().scout).vaultMs, seatedCar(get()));
       // Check and take the match in one step: if it was spent while the card was coming (another tab, an exchange), the lamp doesn't open.
       // A migrated wallet already paid on the server; that pocket is the one we keep.
       const keys = dealt.wallet ? cleanKeys(dealt.wallet.keys) : cost ? spendMatch(get().keys, cost) : get().keys;
@@ -2016,9 +2018,12 @@ export const useGame = create<GameState>((set, get) => ({
     // 0.1.7: and each open of the same lamp today rests longer: 1x, 2x, 3x… (resets at the city's midnight).
     const openDay = cityDay(get().cityId, Date.now());
     const opens = openNumber(get().vaults[poi.id], openDay);
+    // 0.1.45: the Shelby (Quick stop) rests lamps opened from it 15% shorter.
+    // 0.1.45: the Mustang's Quick stop takes 15% off the whole rest while seated in it.
     const coolMs = stackedCoolMs(marketCoolMs(lampCoolMs(poi.tier), lampMult), opens);
+    const restMs = Math.round(coolMs * carCool(seatedCar(get())));
     // 0.1.7: a market lantern opens once per market — it stays dark until its market closes (and then it is gone).
-    const lanternLeft = isMarketLantern(poi.id) ? Math.max(coolMs, lanternCycleEnd(poi.id) - Date.now()) : coolMs;
+    const lanternLeft = isMarketLantern(poi.id) ? Math.max(restMs, lanternCycleEnd(poi.id) - Date.now()) : restMs;
     const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + lanternLeft, opens, openDay } };
     let contract = get().contract;
     let contractToast: string | null = null;
@@ -3301,3 +3306,8 @@ useGame.subscribe((s, prev) => {
     useGame.setState({ recent: [{ ...top, coins: top.coins + r.coins, keys: k }, ...s.recent.slice(1)] });
   } else useGame.setState({ recent: pushRecent(s.recent, r) });
 });
+
+/** 0.1.45: the owned car you sit in right now (its perk and favorite count only then). */
+export function seatedCar(st: Pick<GameState, "hud" | "carOn">): CarId | null {
+  return st.hud.seated && st.hud.ownCar ? st.carOn : null;
+}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CAT_LABEL, cotdAt } from "@/game/carPerks";
 import { LevelPanel } from "./Levels";
 import { RecentRewards } from "./RecentRewards";
 import { StreakBoardSection } from "./RideBoards";
@@ -124,6 +125,9 @@ export function HqPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {tab === "Places" ? (
             <ul className="grid gap-2">
+              <li className="hq-row-sub" data-testid="cotd-line">
+                Category of the day: <span className="cotd-badge">{CAT_LABEL[cotdAt(Date.now())]} +25%</span>
+              </li>
               <li className="kicker">Your houses</li>
               {homes.owned.length === 0 ? <li className="hq-row-sub">No houses yet. Each city has one lot for sale.</li> : null}
               {homes.owned.map((h) => (

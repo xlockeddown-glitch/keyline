@@ -10,11 +10,12 @@ import { HouseSheet } from "./HouseSheet";
 import { CITIES, CLIMB_ID, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
+import { bestReach } from "@/game/carPerks";
 import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { V2_CADENCE, V2_SCOUTS, v2Cell } from "@/game/coatLayer";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
-import { reach, useGame } from "@/game/store";
+import { reach, seatedCar, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
@@ -702,7 +703,7 @@ export function GameMap() {
       const door = legDoor.current;
       clearRoute();
       pos.current.speed = 0;
-      if (match && canGrabMatch(graphRef.current, pos.current, match, reachMult(useGame.getState().scout))) useGame.getState().collectKey(match.id);
+      if (match && canGrabMatch(graphRef.current, pos.current, match, bestReach(reachMult(useGame.getState().scout), seatedCar(useGame.getState())))) useGame.getState().collectKey(match.id);
       else if (door) flash("At the curb. E to open from the car.", 1600);
       return;
     }
@@ -716,7 +717,7 @@ export function GameMap() {
     if (keyId) {
       const match = useGame.getState().mapKeys.find((k) => k.id === keyId);
       if (match) {
-        if (canGrabMatch(graphRef.current, pos.current, match, reachMult(useGame.getState().scout))) useGame.getState().collectKey(match.id);
+        if (canGrabMatch(graphRef.current, pos.current, match, bestReach(reachMult(useGame.getState().scout), seatedCar(useGame.getState())))) useGame.getState().collectKey(match.id);
         else flash("That match is off the street.");
         queue.current = queue.current.filter((s) => s.keyId !== keyId);
         legKey.current = null;
@@ -1723,7 +1724,7 @@ export function GameMap() {
       void setDestination(k.lat, k.lng);
       return;
     }
-    if (!canGrabMatch(graphRef.current, pos.current, k, reachMult(useGame.getState().scout))) {
+    if (!canGrabMatch(graphRef.current, pos.current, k, bestReach(reachMult(useGame.getState().scout), seatedCar(useGame.getState())))) {
       planWalk(k.lat, k.lng, false, k.id);
       return;
     }
@@ -2106,7 +2107,7 @@ export function GameMap() {
       for (const k of st.mapKeys) {
         // 0.1.35: your own car picks matches up from the window as you drive past; the city cab still doesn't.
         if (!lampFromRide(ride())) break;
-        if (canGrabMatch(foot, pos.current, k, reachMult(st.scout))) {
+        if (canGrabMatch(foot, pos.current, k, bestReach(reachMult(st.scout), seatedCar(st)))) {
           st.collectKey(k.id);
           noteCollected(k.id);
           const L = Lref.current;

@@ -6,6 +6,7 @@ import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { COIN_CAP, type GradePay, type LocalSnap } from "./wallet.ts";
 import { canonicalWallet } from "./walletSql.ts";
+import { catBoost, cotdAt } from "./carPerks.ts";
 import { applyClientOp, awardGrade, housesOf, lampGiftsOpen, syncPlayer } from "./walletApply.ts";
 import { thanksClock } from "./thanksGift.ts";
 import { DOUBLE_MS, WELCOME_COIN, WELCOME_KEY, lampGiftClock, welcomeClock, welcomeNote } from "./lampGift.ts";
@@ -114,5 +115,31 @@ test("double coin: inside the first hour a lamp pays 2x (recorded x2), after it 
   await awardGrade(sql, "cap", "g-cap", grade());
   assert.equal(await coins(sql, "cap"), COIN_CAP);
   // Purchases and gifts aren't doubled: a lantern buy spends exactly its price.
+  welcomeClock.now = () => Date.now();
+});
+
+test("0.1.45 stacking: a category-of-the-day lamp in the first hour pays the boost and then the double", async () => {
+  const sql = await db();
+  const cut = Date.now() - 3 * 3600_000;
+  const iso = new Date(cut).toISOString();
+  const start = cut + 1000;
+  for (const u of ["plain", "boost"]) {
+    await account(sql, u, start, iso, "austin");
+    welcomeClock.now = () => start + 10 * 60_000;
+    await syncPlayer(sql, u, snap("austin"), `${u}-phone1`);
+  }
+  const at = Date.UTC(2026, 9, 16, 18);
+  const day = cotdAt(at);
+  const plain = day === "music" ? "arts" : "music";
+  welcomeClock.now = () => start + 10 * 60_000;
+  const p0 = await coins(sql, "plain");
+  await awardGrade(sql, "plain", "s-plain", grade({ topic: plain, dealtAt: at }));
+  const b0 = await coins(sql, "boost");
+  await awardGrade(sql, "boost", "s-boost", grade({ topic: day, favs: [day], dealtAt: at }));
+  const gp = (await coins(sql, "plain")) - p0;
+  const gb = (await coins(sql, "boost")) - b0;
+  assert.equal(catBoost(day, [day], at).x, 1.4);
+  assert.ok(Math.abs(gb / gp - 1.4) < 0.02, `${gb}/${gp}: both doubled, the boosted one 1.4x on top`);
+  assert.equal(gb % 2, 0, "doubled after the boost");
   welcomeClock.now = () => Date.now();
 });

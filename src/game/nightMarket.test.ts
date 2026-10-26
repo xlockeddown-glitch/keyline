@@ -431,5 +431,5 @@ test("0.1.7: the server deals a live market lantern as a real lamp, and the devi
   assert.match(bank, /\?\? marketLanternById\(city, poiId, Date\.now\(\)\)/);
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(store, /marketLanternById\(st\.cityId, poiId, Date\.now\(\)\)/);
-  assert.match(store, /isMarketLantern\(poi\.id\) \? Math\.max\(coolMs, lanternCycleEnd\(poi\.id\) - Date\.now\(\)\) : coolMs/);
+  assert.match(store, /isMarketLantern\(poi\.id\) \? Math\.max\(restMs, lanternCycleEnd\(poi\.id\) - Date\.now\(\)\) : restMs/);
 });

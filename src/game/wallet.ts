@@ -1,4 +1,5 @@
 import { applyTriviaBoosts, creditWhite } from "./boosts.ts";
+import { catBoost } from "./carPerks.ts";
 import { chooseStart, cleanUnlocks, freshUnlocks, lampLit, runFinished, unlockCity, type CityUnlocks } from "./cityPass.ts";
 import { CITIES, KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
 import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
@@ -753,6 +754,8 @@ export function clothOp(w: WalletState, id: string, proof?: { meters?: number; v
 }
 
 export type GradePay = {
+  /** 0.1.45: favorite categories the server verified at deal time (owned coat, seated owned car). */
+  favs?: import("./types").TriviaCat[];
   correct: boolean;
   elapsedMs: number;
   /** Grade multiplier already decided by the server clock (1 / 0.7 / 0.4). */
@@ -892,12 +895,16 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     return withBoost(w, pay.coin + back.coin + prizeCoin, sKeys, tagged);
   }
 
-  const lampCoin = rewardPoints(p.poiTier, {
-    mult: p.mult,
-    bonus,
-    diffMult: DIFF_MULT[p.diff] ?? 1,
-    loot: p.loot,
-  });
+  // 0.1.45: favorite categories and the category of the day (+15% / +25%, added, cap +40%), before the market.
+  const cat = catBoost(p.topic, p.favs ?? [], p.dealtAt);
+  const lampCoin = Math.round(
+    rewardPoints(p.poiTier, {
+      mult: p.mult,
+      bonus,
+      diffMult: DIFF_MULT[p.diff] ?? 1,
+      loot: p.loot,
+    }) * cat.x,
+  );
   const tip = clothCoin(p.cloth, p.city, p.poiTier);
   const baseKeys: Partial<Record<Tier, number>> = {};
   if (p.lucky && p.luckyHit) baseKeys[p.poiTier] = 1;
@@ -921,7 +928,8 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   }
   // 0.1.14: new-district bonus, a quarter of the base lamp coin. Never on a market lamp (no camping reward).
   const fresh = p.freshDistrict && lampMult === 1 ? freshDistrictCoin(lampCoin) : 0;
-  const tagged = fresh ? { ...boost, labels: [...boost.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : boost;
+  const catTagged = cat.labels.length && p.correct ? { ...boost, labels: [...boost.labels, ...cat.labels] } : boost;
+  const tagged = fresh ? { ...catTagged, labels: [...catTagged.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : catTagged;
   return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh, lKeys, tagged, lit.u);
 }
 

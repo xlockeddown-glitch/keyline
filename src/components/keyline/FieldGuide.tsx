@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { CARS } from "@/game/cars";
+import { CAR_PERKS, CAT_BONUS_CAP, COTD_BONUS, FAV_BONUS } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -106,6 +108,15 @@ export function FieldGuide() {
             <h3 className="font-display text-lg leading-tight">Cars</h3>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
               Each city has a car lot on the map. Walk in to buy a car with coin. Your car is your own cab: tap Car and it's at the curb, and it drives a little faster than the city cab (5% for the Civic up to 30% for the Roadster 2.0). In your own car you can open lamps and vaults and grab matches from the curb; the city cab parks you first, and shops, the car lot and your house are on foot. You pay once and keep the car in every city.
+            </p>
+            <p className="mt-1 text-sm text-pretty text-fg-muted" data-testid="help-car-perks">
+              Each car has a perk that works while you sit in it: {CARS.map((c) => `${c.name.replace(/^Used /, "")}: ${CAR_PERKS[c.id].label.split(" · ").pop()}`).join("; ")}. A coat with the same kind of perk doesn't add to it; the better one counts.
+            </p>
+          </section>
+          <section className="mt-5" data-testid="help-categories">
+            <h3 className="font-display text-lg leading-tight">Category boosts</h3>
+            <p className="mt-1 text-sm text-pretty text-fg-muted">
+              Every coat and car has a favorite category: a right answer in it pays +{Math.round(FAV_BONUS * 100)}% coin (coats when worn, cars while you sit in them). Each day one category of the day pays +{Math.round(COTD_BONUS * 100)}% and is always offered (gold badge). Boosts add up to at most +{Math.round(CAT_BONUS_CAP * 100)}%, on lamp coin only.
             </p>
           </section>
           {/* 0.1.44: houses, owned lanterns, train stops, a new player's first hour. */}

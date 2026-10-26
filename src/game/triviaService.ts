@@ -1,14 +1,16 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { perkFavs, regenHit } from "./carPerks.ts";
+import { isCarId, type CarId } from "./cars.ts";
 import { rummageHit, scoutOf, shellBackHit, strikeOption } from "./scoutPerks.ts";
 import type { Sql } from "../lib/db.ts";
 import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
 import type { PaintId } from "./ingredients.ts";
-import type { CityId, Poi, PoiKind, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
+import type { CityId, Poi, PoiKind, ScoutId, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward, ServerWallet } from "./triviaSchema";
-import { CLIMB_ID, RUN_ID, STACK_ID } from "./data.ts";
+import { CLIMB_ID, RUN_ID, SCOUTS, STACK_ID } from "./data.ts";
 import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
-import { awardGrade, noteBlitzCard, spendDealt } from "./walletApply.ts";
+import { awardGrade, carsOf, noteBlitzCard, ownedOf, spendDealt } from "./walletApply.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
 export type { DealInput, DealResult, GradeInput, GradeResult, Grade, PublicCard } from "./triviaSchema";
 
@@ -91,6 +93,10 @@ type TokenBody = {
     cat: string;
     /** 0.0.96: worn coat at deal time. */
     sc?: string;
+    /** 0.1.45: the seated car, only when the server found its car:<id> row. */
+    cr?: string;
+    /** 0.1.45: 1 when the server found the worn coat among the account's scouts (its favorite category counts). */
+    fs?: 1;
   };
 };
 
@@ -198,19 +204,40 @@ export function avoidList(deps: Pick<TriviaDeps, "card">, seen: readonly string[
  * card is noted at once, so a walk-away, a lost answer or a second tab can't bring it straight back. Guests have
  * only the save's list (sent by the client). A database hiccup falls back to the client's list, never fails the deal.
  */
+/** 0.1.45: what the server could confirm about the pay context (a client can claim any coat or car). */
+export type Proven = { car?: CarId; scout?: ScoutId };
+
+export async function provePerks(sql: Sql, userId: string, input: DealInput): Promise<Proven> {
+  const out: Proven = {};
+  try {
+    const want = input.pay?.car;
+    if (isCarId(want) && (await carsOf(sql, userId)).includes(want)) out.car = want;
+    const sc = scoutOf(input.pay?.scout);
+    // The Raccoon is everyone's starting coat (never a ledger row); every other coat needs its server row.
+    if (sc && (sc === "raccoon" || (await ownedOf(sql, userId)).scouts.includes(sc))) out.scout = sc;
+  } catch (e) {
+    console.warn("[trivia] perk proof failed", e instanceof Error ? e.message : e);
+  }
+  return out;
+}
+
+
 export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput): Promise<DealResult> {
   let recent: string[] = [];
   let sql: Sql | null = null;
+  let proven: Proven = {};
   if (viewer.userId && deps.sql) {
     try {
       sql = await deps.sql();
+      // 0.1.45: prove the car and coat on their own, so a missing recent list can't cost the perks.
+      proven = await provePerks(sql, viewer.userId, input);
       recent = await loadRecent(sql, viewer.userId);
     } catch (e) {
       sql = null;
       console.warn("[trivia] recent list unavailable", e instanceof Error ? e.message : e);
     }
   }
-  const r = deal(deps, viewer, input, recent);
+  const r = deal(deps, viewer, input, recent, proven);
   if (!r.ok) return r;
   // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
   const spendTier = !input.spark && (input.step ?? 0) === 0 && !input.poiId.startsWith("blitz-");
@@ -239,7 +266,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
 }
 
 /** Pick, seal and shuffle one card. `recent` is the server's memory for this walker (oldest first), merged before the save's list. */
-export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent: readonly string[] = []): DealResult {
+export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent: readonly string[] = [], proven: Proven = {}): DealResult {
   const series = deps.series(input.poiId);
   let poi: Poi | null;
   let clearTier: Tier | null;
@@ -300,6 +327,8 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
       pi: poi.id,
       cat: input.cat,
       ...(scout ? { sc: scout } : {}),
+      ...(proven.car ? { cr: proven.car } : {}),
+      ...(scout && proven.scout === scout ? { fs: 1 as const } : {}),
     },
   });
   // 0.0.96 Fox: the server strikes one wrong option on red/violet lamps (never the answer).
@@ -466,7 +495,9 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         perfectBlue: g?.grade === "perfect" && rand() < PERFECT_BLUE_CHANCE,
         scout: scoutOf(x?.sc),
         rummage: rummageHit(scoutOf(x?.sc), rand()),
-        shellBack: shellBackHit(scoutOf(x?.sc), rand()),
+        // 0.1.45: Roadster Regen (1 in 5, from the nonce) only when no stronger coat refund (Turtle 1 in 3) is worn.
+        shellBack: shellBackHit(scoutOf(x?.sc), rand()) || (!SCOUTS[scoutOf(x?.sc) ?? "raccoon"]?.perk.shellBack && regenHit(isCarId(x?.cr) ? x.cr : null, t.n)),
+        favs: perkFavs(scoutOf(x?.sc), x?.fs === 1, isCarId(x?.cr) ? x.cr : null),
         canRoll: [rand(), rand()],
       });
       if (awarded.authoritative) {
