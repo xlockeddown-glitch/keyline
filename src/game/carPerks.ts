@@ -24,7 +24,7 @@ export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   turtle: "history",
   owl: "books",
   corgi: "celebrity",
-  sloth: "books",
+  sloth: "political",
   giraffe: "science",
   fox: "math",
   lynx: "music",

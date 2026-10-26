@@ -155,3 +155,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.45: car perks while seated (Civic +1 s timers, F-150 1.5x pickup reach, Mustang 15% shorter lamp rests, Roadster refunds 1 in 5 failed lamps); every coat and car has a favorite category (+15% coin, proven on the server); a category of the day (+25%, always offered, gold badge); boosts add up to +40% on lamp coin (k145a).
 // 0.1.45: a one-time gift for Amanda G (200,000 coins, "I Love you"), keyed on her sign-in email, once (k145a).
 // 0.1.45: Corgi favors Celebrity (was Sports), Fox favors Math (was Political), Owl favors Books (was Nature) (k145a).
+// 0.1.45: Sloth favors Political (was Books) (k145a).
