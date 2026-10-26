@@ -95,8 +95,11 @@ test("stacking with the night market: the category factor applies before it (sam
 
 test("favorites count only for a proven coat and a seated, owned car", () => {
   assert.deepEqual(perkFavs("fox", true, "mustang"), [SCOUT_FAV.fox, CAR_FAV.mustang]);
+  assert.equal(SCOUT_FAV.corgi, "celebrity");
+  assert.equal(SCOUT_FAV.fox, "math");
   assert.deepEqual(perkFavs("fox", false, null), []);
-  assert.deepEqual(new Set(Object.values(SCOUT_FAV)).size, 9, "nine different coat favorites");
+  assert.equal(new Set(Object.values(SCOUT_FAV)).size, 8, "Owl and Sloth share Books");
+  assert.equal(SCOUT_FAV.owl, "books");
 });
 
 const mig = (name: string) => readFileSync(new URL(`../../migrations/${name}`, import.meta.url), "utf8");

@@ -22,11 +22,11 @@ export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   raccoon: "food",
   cat: "arts",
   turtle: "history",
-  owl: "nature",
-  corgi: "sports",
+  owl: "books",
+  corgi: "celebrity",
   sloth: "books",
   giraffe: "science",
-  fox: "political",
+  fox: "math",
   lynx: "music",
 };
 
