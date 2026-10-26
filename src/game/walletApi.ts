@@ -88,7 +88,9 @@ const Op = z.discriminatedUnion("kind", [
     city: City,
     lat: z.number().finite().min(-90).max(90),
     lng: z.number().finite().min(-180).max(180),
+    via: z.literal("magnet").optional(),
   }),
+  z.object({ kind: z.literal("drive"), city: City }),
   z.object({ kind: z.literal("quest"), period: z.string().regex(QUEST_PERIOD_KEY), id: z.string().min(1).max(20) }),
   z.object({
     kind: z.literal("legacy"),

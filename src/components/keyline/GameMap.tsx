@@ -10,12 +10,12 @@ import { HouseSheet } from "./HouseSheet";
 import { CITIES, CLIMB_ID, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
-import { bestReach } from "@/game/carPerks";
+import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
 import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { V2_CADENCE, V2_SCOUTS, v2Cell } from "@/game/coatLayer";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
-import { reach, seatedCar, useGame } from "@/game/store";
+import { drivePing, reach, seatedCar, useGame } from "@/game/store";
 import { startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
@@ -246,6 +246,8 @@ export function GameMap() {
   const queueMarkers = useRef<Marker[]>([]);
   const planLine = useRef<Polyline | null>(null);
   const legKey = useRef<string | null>(null);
+  const magnetAt = useRef(0);
+  const magnetLive = useRef(0);
   const legDoor = useRef(false);
   const routeHold = useRef(false);
   const follow = useRef(true);
@@ -1596,6 +1598,26 @@ export function GameMap() {
     return true;
   }
 
+  /** 0.1.46: a short CSS pull from the match to the car on the marker layer; false (land at once) on reduced motion or 3 already running. */
+  function magnetPull(k: { lat: number; lng: number; tier: string }, car: { lat: number; lng: number }): boolean {
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (!L || !map || magnetLive.current >= 3) return false;
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
+    const a = map.latLngToContainerPoint([k.lat, k.lng]);
+    const b = map.latLngToContainerPoint([car.lat, car.lng]);
+    const dx = Math.round(b.x - a.x);
+    const dy = Math.round(b.y - a.y);
+    const html = `<div class="magnet-pull tier-${k.tier}" style="--dx:${dx}px;--dy:${dy}px"><i></i><b></b><b></b><b></b></div>`;
+    const m = L.marker([k.lat, k.lng], { icon: L.divIcon({ className: "", html, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: false, keyboard: false, zIndexOffset: 900 }).addTo(map);
+    magnetLive.current++;
+    window.setTimeout(() => {
+      m.remove();
+      magnetLive.current--;
+    }, MAGNET_PULL_MS + 40);
+    return true;
+  }
+
   function rebuildPins(L: LModule, map: LMap) {
     drawnPins.current = -1; // battery: fresh pin elements need their "near" class again
     offscreenIO?.disconnect();
@@ -2115,6 +2137,31 @@ export function GameMap() {
           if (foot) snapKeys(foot);
           if (L && map) rebuildPins(L, map);
           break;
+        }
+      }
+      // 0.1.46: the Roadster 2.0 Magnet — seated in it, pull the nearest street match within 35 m, one every 3 s.
+      if (hasMagnet(seatedCar(st))) {
+        void drivePing(st.cityId);
+        const nowMs = Date.now();
+        {
+          const best = magnetPick(seatedCar(st), pos.current, useGame.getState().mapKeys, magnetAt.current, nowMs);
+          if (best) {
+            magnetAt.current = nowMs;
+            const land = () => {
+              if (!useGame.getState().mapKeys.some((k) => k.id === best)) return;
+              if (useGame.getState().magnetKey(best)) {
+                noteCollected(best);
+                const L = Lref.current;
+                const map = mapRef.current;
+                if (foot) snapKeys(foot);
+                if (L && map) rebuildPins(L, map);
+              }
+            };
+            // 0.1.46: the suction fans — the match streaks in under the car, then lands (the ping and pickup sound).
+            const k = useGame.getState().mapKeys.find((x) => x.id === best);
+            if (k && magnetPull(k, pos.current)) window.setTimeout(land, MAGNET_PULL_MS);
+            else land();
+          }
         }
       }
 

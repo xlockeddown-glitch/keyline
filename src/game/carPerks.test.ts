@@ -30,7 +30,8 @@ test("perks only while seated in that car; same perk with a coat: the higher win
   assert.equal(carCool(null), 1);
   assert.equal(carCool("civic"), 1);
   assert.deepEqual(Object.keys(CAR_PERKS).sort(), ["civic", "f150", "mustang", "roadster", "roadster2"]);
-  assert.doesNotMatch(JSON.stringify(CAR_PERKS), /coming soon|magnet/i);
+  assert.doesNotMatch(JSON.stringify(CAR_PERKS), /coming soon/i);
+  assert.match(CAR_PERKS.roadster2.label, /^Magnet · .*35 m/);
 });
 
 test("Roadster Regen: 1 in 5 from the nonce, the same every time, never without the car", () => {

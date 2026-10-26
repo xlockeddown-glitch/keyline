@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.45";
+export const APP_VERSION = "0.1.46";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k145a";
+export const PUBLISH_STAMP = "k146a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -157,3 +157,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.45: Corgi favors Celebrity (was Sports), Fox favors Math (was Political), Owl favors Books (was Nature) (k145a).
 // 0.1.45: Sloth favors Political (was Books) (k145a).
 // 0.1.45: a worn coat and a seated car that both favor the card's category stack to +25% (one favorite stays +15%; still capped at x1.40) (k145a).
+// 0.1.46: Roadster 2.0 Magnet: seated in it, street matches within 35 m come to you, one every 3 s, up to 30 a city a day inside the 80; the server checks the car and a drive ping from the last 5 min (k146a).

@@ -59,6 +59,7 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
+import { MAGNET_DAY_CAP, MAGNET_GAP_MS } from "./carPerks.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
@@ -763,7 +764,8 @@ export type ClientOp =
   | { kind: "kiosk"; id: KioskId; poi?: string }
   | { kind: "print"; id: CosmeticId }
   | { kind: "refund"; token: string }
-  | { kind: "street"; id: string; tier: Tier; city: CityId; lat: number; lng: number }
+  | { kind: "street"; id: string; tier: Tier; city: CityId; lat: number; lng: number; via?: "magnet" }
+  | { kind: "drive"; city: CityId }
   | { kind: "quest"; period: string; id: string }
   | { kind: "legacy"; claimed: string[]; circuits: string[]; unfinished: boolean; charms: string[] }
   | { kind: "cloth"; id: string }
@@ -1052,6 +1054,17 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     return applied(r);
   }
 
+  // 0.1.46: a seated Roadster 2.0 says "driving in this city" (one row per city, its time moved forward). The Magnet needs one in the last 5 min.
+  if (op.kind === "drive") {
+    if (!wallet.cities.unlocked.includes(op.city)) return refused(wallet, "locked");
+    if (!(await carsOf(sql, sessionUserId)).includes("roadster2")) return refused(wallet, "no-car");
+    await sql`
+      insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${`drive:${op.city}`}, ${JSON.stringify({ car: "roadster2" })})
+      on conflict (user_id, op_key) do update set created_at = now()
+    `;
+    return { ...applied({ ok: true, replay: false, wallet }), authoritative: true };
+  }
+
   if (op.kind === "street") {
     const parsed = parseStreetId(op.id);
     const day = today();
@@ -1063,14 +1076,23 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!existing.length) {
       if (!wallet.cities.unlocked.includes(op.city)) return refused(wallet, "locked");
       const ids = await groupIds(sql, sessionUserId);
-      if (!(await cityFresh(sql, id, ids, op.city))) return refused(wallet, "unproven");
+      // 0.1.46: a Magnet pull proves freshness with the drive ping (in magnetRefusal) instead of a walk post.
+      if (op.via !== "magnet" && !(await cityFresh(sql, id, ids, op.city))) return refused(wallet, "unproven");
       const prior = await sql<{ n: number }>`
         select count(*)::int as n from wallet_ledger
         where user_id = ${id} and op_key like ${"street:sk:" + op.city + ":" + day + ":%"}
       `;
       if ((Number(prior[0]?.n) || 0) >= STREET_DAY_CAP) return refused(wallet, "capped");
+      if (op.via === "magnet") {
+        const why = await magnetRefusal(sql, sessionUserId, id, op.city, day);
+        if (why) return refused(wallet, why);
+      }
     }
-    const r = await mutateWallet(sql, sessionUserId, key, (w) => streetOp(w, op.city, spot.tier, spot.market));
+    const magnet = op.via === "magnet" && !existing.length;
+    const r = await mutateWallet(sql, sessionUserId, key, (w) => {
+      const out = streetOp(w, op.city, spot.tier, spot.market);
+      return magnet && out.ok ? { ...out, detail: JSON.stringify({ ...detailOf(out.detail), mg: 1 }) } : out;
+    });
     return applied(r);
   }
 
@@ -1233,6 +1255,31 @@ async function visitedPlaces(sql: Sql, userId: string): Promise<Set<string>> {
 async function walkedMeters(sql: Sql, userId: string): Promise<number> {
   const rows = await sql<{ n: number }>`select coalesce(sum(meters), 0)::int as n from walk_distance_by_player where user_id = ${userId}`;
   return Number(rows[0]?.n) || 0;
+}
+
+function detailOf(d: string | undefined): Record<string, unknown> {
+  try {
+    const v = JSON.parse(d || "{}") as unknown;
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** 0.1.46 Magnet: owns the Roadster 2.0, drove in this city in the last 5 min, 3 s since the last pull, under 30 today. */
+async function magnetRefusal(sql: Sql, sessionUserId: string, id: string, city: CityId, day: string): Promise<string | null> {
+  if (!(await carsOf(sql, sessionUserId)).includes("roadster2")) return "no-car";
+  const since = new Date(Date.now() - STREET_FRESH_MS).toISOString();
+  const drove = await sql<{ n: number }>`select 1 as n from wallet_ledger where user_id = ${id} and op_key = ${`drive:${city}`} and created_at >= ${since}::timestamptz limit 1`;
+  if (!drove.length) return "not-driving";
+  const rows = await sql<{ n: number; last: string | null }>`
+    select count(*)::int as n, max(created_at) as last from wallet_ledger
+    where user_id = ${id} and op_key like ${"street:sk:" + city + ":" + day + ":%"} and detail like ${'%"mg":1%'}
+  `;
+  if ((Number(rows[0]?.n) || 0) >= MAGNET_DAY_CAP) return "magnet-capped";
+  const last = rows[0]?.last ? new Date(rows[0].last).getTime() : 0;
+  if (last && Date.now() - last < MAGNET_GAP_MS) return "magnet-wait";
+  return null;
 }
 
 /** A walk post or a dealt card in this city within the last few minutes. */

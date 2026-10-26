@@ -4,18 +4,29 @@
  * the higher one wins. Category boosts add up and cap at +40%, on lamp coin only (gradeGrant, before the market).
  */
 import type { CarId } from "./cars.ts";
+import { distM } from "./geo.ts";
 import { chicagoDay } from "./questPeriods.ts";
 import type { ScoutId, TriviaCat } from "./types.ts";
 
-export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number };
+/** 0.1.46 Roadster 2.0 Magnet: radius, spacing and a per-city daily cap inside the street cap of 80. */
+export const MAGNET_M = 35;
+export const MAGNET_GAP_MS = 3000;
+export const MAGNET_DAY_CAP = 30;
+/** How long the suction pull animation runs before the match lands. */
+export const MAGNET_PULL_MS = 420;
+/** How often a seated Roadster 2.0 tells the server it is driving in this city (the Magnet needs one within 5 min). */
+export const DRIVE_PING_MS = 60_000;
+export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean };
 
 export const CAR_PERKS: Record<CarId, CarPerk> = {
   civic: { label: "Glovebox · +1 s on lamp timers", vaultMs: 1000 },
   f150: { label: "Truck bed · 1.5× match pickup reach", reach: 1.5 },
   mustang: { label: "Quick stop · lamp rests 15% shorter", cool: 0.85 },
   roadster: { label: "Regen · 1 in 5 failed lamps refund the match", refund: 5 },
-  roadster2: { label: "Top speed · the fastest car in Keyline" },
+  roadster2: { label: `Magnet · pulls in street matches within ${MAGNET_M} m as you drive`, magnet: true },
 };
+
+export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].magnet);
 
 export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", mustang: "sports", roadster: "science", roadster2: "games" };
 export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
@@ -87,4 +98,15 @@ export function regenHit(car: CarId | null, nonce: string): boolean {
 /** Favorite categories that count on a lamp: the worn coat's (when proven) and the seated car's. */
 export function perkFavs(scout: ScoutId | null, scoutProven: boolean, car: CarId | null): TriviaCat[] {
   return [...(scout && scoutProven ? [SCOUT_FAV[scout]] : []), ...(car ? [CAR_FAV[car]] : [])];
+}
+
+/** 0.1.46: the street match the Magnet pulls now — the nearest within MAGNET_M, and only once MAGNET_GAP_MS has passed. */
+export function magnetPick(car: CarId | null, at: { lat: number; lng: number }, keys: readonly { id: string; lat: number; lng: number }[], lastMs: number, nowMs: number): string | null {
+  if (!hasMagnet(car) || nowMs - lastMs < MAGNET_GAP_MS) return null;
+  let best: { id: string; d: number } | null = null;
+  for (const k of keys) {
+    const d = distM(at.lat, at.lng, k.lat, k.lng);
+    if (d <= MAGNET_M && (!best || d < best.d)) best = { id: k.id, d };
+  }
+  return best?.id ?? null;
 }

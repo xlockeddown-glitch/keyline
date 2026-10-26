@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { bestVaultMs, carCool } from "./carPerks";
+import { DRIVE_PING_MS, MAGNET_DAY_CAP, bestVaultMs, carCool } from "./carPerks";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
 import { CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
@@ -300,7 +300,10 @@ export type GameState = {
   unstick: () => void;
   addDistance: (m: number) => void;
   stampPlaces: (ids: string[]) => void;
-  collectKey: (id: string) => void;
+  collectKey: (id: string, via?: "magnet") => void;
+  /** 0.1.46: the Roadster 2.0 Magnet pulls a street match in (spaced, capped); false when it is full for today. */
+  magnetKey: (id: string) => boolean;
+  magnetDay: { day: string; city: string; n: number; full?: boolean };
   maybeSpawnKey: (now: number) => void;
   bindStreet: () => void;
   maybeSpawnRun: (now: number) => void;
@@ -981,6 +984,24 @@ function cleanCarPaint(v: unknown): Partial<Record<CarId, string>> {
   return out;
 }
 
+/** 0.1.46: the Magnet's drive ping (at most once a minute) goes first, then the pull; at the server's cap the Magnet stops for the day. */
+let drivePingAt = 0;
+export async function drivePing(city: CityId, force = false) {
+  if (!walletLive()) return;
+  if (!force && Date.now() - drivePingAt < DRIVE_PING_MS) return;
+  drivePingAt = Date.now();
+  await commitWallet({ kind: "drive", city });
+}
+async function magnetCommit(op: Parameters<typeof commitWallet>[0], city: CityId) {
+  if (!walletLive()) return;
+  await drivePing(city);
+  const r = await commitWallet(op);
+  if (r && !r.ok && r.reason === "magnet-capped") {
+    const md = useGame.getState().magnetDay;
+    useGame.setState({ magnetDay: { ...md, n: MAGNET_DAY_CAP, full: true } });
+  }
+}
+
 function pushOp(op: Parameters<typeof commitWallet>[0], undo?: () => void) {
   if (!walletLive()) return;
   void commitWallet(op).then((r) => {
@@ -1175,6 +1196,7 @@ export const useGame = create<GameState>((set, get) => ({
   loot: null,
   miss: null,
   openVault: null,
+  magnetDay: { day: "", city: "", n: 0 },
   hqOpen: false,
   guideOpen: false,
   invOpen: false,
@@ -1311,7 +1333,22 @@ export const useGame = create<GameState>((set, get) => ({
     else if (!surveyPaid) flashToast(set, get, msg, 1400);
     scheduleSave(get);
   },
-  collectKey: (id) => {
+  magnetKey: (id) => {
+    const day = new Date().toISOString().slice(0, 10);
+    const city = get().cityId;
+    const md = get().magnetDay.day === day && get().magnetDay.city === city ? get().magnetDay : { day, city, n: 0 };
+    if (md.full || md.n >= MAGNET_DAY_CAP) {
+      if (!md.full) {
+        set({ magnetDay: { ...md, full: true }, toast: "Magnet's full for today" });
+        window.setTimeout(() => { if (get().toast === "Magnet's full for today") set({ toast: null }); }, 1800);
+      }
+      return false;
+    }
+    set({ magnetDay: { ...md, n: md.n + 1 } });
+    get().collectKey(id, "magnet");
+    return true;
+  },
+  collectKey: (id, via) => {
     const k = get().mapKeys.find((x) => x.id === id);
     if (!k) return;
     const mult = marketMult(get().cityId, Date.now(), { kind: "match", lat: k.lat, lng: k.lng });
@@ -1331,12 +1368,17 @@ export const useGame = create<GameState>((set, get) => ({
       toast:
         mult > 1
           ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}${coin ? ` + ${coin} coin (every pocket full)` : ""}`
-          : `${TIER_LABEL[k.tier]} match`,
+          : via === "magnet"
+            ? `Magnet: +1 ${TIER_LABEL[k.tier]}`
+            : `${TIER_LABEL[k.tier]} match`,
     });
-    pushOp({ kind: "street", id: k.id, tier: k.tier, city: get().cityId, lat: k.lat, lng: k.lng });
+    if (via === "magnet") {
+      const city = get().cityId;
+      void magnetCommit({ kind: "street", id: k.id, tier: k.tier, city, lat: k.lat, lng: k.lng, via: "magnet" }, city);
+    } else pushOp({ kind: "street", id: k.id, tier: k.tier, city: get().cityId, lat: k.lat, lng: k.lng });
     scheduleSave(get);
     window.setTimeout(() => {
-      if (get().toast?.includes("match")) set({ toast: null });
+      if (get().toast?.includes("match") || get().toast?.startsWith("Magnet:")) set({ toast: null });
     }, 1400);
   },
   maybeSpawnKey: (now) => {
