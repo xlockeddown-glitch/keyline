@@ -64,7 +64,7 @@ import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 import { OWN_CLAIM_USER, OWN_DAILY_CAP, OWN_PRICE, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
 import { standingName } from "./standingName.ts";
-import { DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
+import { LOVE_COIN, LOVE_EMAIL, LOVE_GIFT_KEY, LOVE_NOTE, DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
 
 /** What the browser is allowed to see. */
 export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"]; credit?: Partial<Record<Tier, number>> };
@@ -150,6 +150,28 @@ export async function grantWelcomePack(sql: Sql, userId: string, localStart: Cit
   if (house && city) await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${`house:${city}:${WELCOME_HOUSE}`}, ${JSON.stringify({ city, tier: WELCOME_HOUSE, from: null, gift: true })}) on conflict (user_id, op_key) do nothing`;
   for (const g of LAMP_GIFTS.filter((x) => x.who === "new")) await mutateWallet(sql, userId, g.key, (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify({ lamp: g.tier }) }));
   return [welcomeNote(house && city ? CITIES[city].name : null)];
+}
+
+/** 0.1.45: the one-time love gift. Only an account whose "user".email is hers (this login or the wallet it links to). */
+export async function grantLoveGift(sql: Sql, userId: string): Promise<string[]> {
+  try {
+    const { id } = await canonicalWallet(sql, userId);
+    const rows = await sql<{ email: string | null }>`select email from "user" where id = ${userId} or id = ${id}`;
+    if (!rows.some((r) => (r.email ?? "").trim().toLowerCase() === LOVE_EMAIL)) return [];
+    let clamped = false;
+    const r = await mutateWallet(sql, userId, LOVE_GIFT_KEY, (w) => {
+      const next = applyDelta(w, { coins: LOVE_COIN });
+      if (!next.ok) return next;
+      const paid = next.wallet.coins - w.coins;
+      clamped = paid < LOVE_COIN;
+      return { ...next, detail: JSON.stringify({ coin: LOVE_COIN, paid }) };
+    });
+    if (!r.ok || r.replay) return [];
+    return [clamped ? `${LOVE_NOTE} (your coins were near the cap, so this filled them to the top)` : LOVE_NOTE];
+  } catch (e) {
+    console.warn("[wallet] love gift skipped", e instanceof Error ? e.message : e);
+    return [];
+  }
 }
 
 /** 0.1.44: when a new player's double-coin hour ends (ms), or 0 when there is none or it is over. */
@@ -363,6 +385,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const done = await syncCore(sql, userId, local, deviceId);
   // 0.1.44: the welcome pack needs the wallet's first row, so it runs after the first sync wrote it.
   giftNotes.push(...(await grantWelcomePack(sql, userId, startOfLocal(local))));
+  giftNotes.push(...(await grantLoveGift(sql, userId)));
   const pt = await paintOf(sql, userId);
   const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId) };
   const until = await doubleUntil(sql, userId);

@@ -51,3 +51,9 @@ export function welcomeNote(cityName: string | null): string {
   const parts = [cityName ? `a Lantern Cottage in ${cityName}` : null, `${WELCOME_COIN.toLocaleString("en-US")} coins`, "a free White lantern (pick a lamp in Journal · Places)", "double rewards for your first hour"].filter(Boolean) as string[];
   return `Welcome to Keyline! Here's ${list(parts)}. — Ryan & Grok`;
 }
+
+/** 0.1.45: a one-time gift for Amanda G. Keyed on her account's unique sign-in email (never a display name). */
+export const LOVE_GIFT_KEY = "gift:love-0145";
+export const LOVE_EMAIL = "omfgitsmandy@gmail.com";
+export const LOVE_COIN = 200_000;
+export const LOVE_NOTE = "I Love you";
