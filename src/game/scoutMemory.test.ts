@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { adoptScout, savedScout } from "./scoutMemory.ts";
 
-const KNOWN = new Set(["raccoon", "cat", "turtle", "owl", "corgi", "sloth", "fox", "lynx", "giraffe"]);
+const KNOWN = new Set(["raccoon", "cat", "turtle", "owl", "corgi", "sloth", "fox", "lynx", "giraffe", "panda"]);
 const known = (x: string) => KNOWN.has(x);
 const save = (scout: string, scouts: string[]) => JSON.stringify({ version: 2, scout, scouts, points: 0 });
 

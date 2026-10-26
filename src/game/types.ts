@@ -120,7 +120,7 @@ export type MapKey = {
 
 /** `lynx` is the Super Legendary slot. Since 0.0.49 it is drawn and named as the Penguin; the id stays so owned
  *  hires, worn scouts and print-shop coats in existing saves carry over unchanged. */
-export type ScoutId = "raccoon" | "cat" | "turtle" | "owl" | "corgi" | "sloth" | "fox" | "lynx" | "giraffe";
+export type ScoutId = "raccoon" | "cat" | "turtle" | "owl" | "corgi" | "sloth" | "fox" | "lynx" | "giraffe" | "panda";
 
 export type ScoutPerk = {
   label: string;
@@ -144,6 +144,8 @@ export type ScoutPerk = {
   shellBack?: number;
   /** 0.0.96 Fox: one wrong option is crossed out on red/violet lamps (server picks it). */
   strike?: boolean;
+  /** 0.1.47 Panda: 1 in N right lamps pay their lamp coin twice (server-rolled). */
+  doubleUp?: number;
 };
 
 export type LootDrop = {

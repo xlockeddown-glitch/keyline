@@ -39,6 +39,7 @@ export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   giraffe: "science",
   fox: "math",
   lynx: "music",
+  panda: "music",
 };
 
 export const CAT_LABEL: Record<TriviaCat, string> = {

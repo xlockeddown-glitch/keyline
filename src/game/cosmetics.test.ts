@@ -140,7 +140,7 @@ test("art wiring: the coat palette, the generated coat CSS and the lantern-skin 
   assert.deepEqual(Object.keys(palette).sort(), Object.keys(COATS).sort());
   for (const [id, c] of Object.entries(COATS)) assert.equal(palette[id]!.name, c.name);
   const coatsCss = read("../../public/coats.css");
-  const all = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"];
+  const all = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe", "panda"];
   // 0.0.83: v2 scouts (redrawn sheets) have no coat PNGs; the browser recolours their coat mask from V2_PALETTE.
   for (const scout of all.filter((s) => V2_SCOUTS.has(s))) {
     assert.ok(!coatsCss.includes(`[data-scout="${scout}"]`), `${scout} is v2: no coat sheets in coats.css`);

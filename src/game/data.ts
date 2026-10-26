@@ -3980,6 +3980,19 @@ export const SCOUTS: Record<
     // get their atlas name from 20% farther off (sight 1.2).
     perk: { label: "Long neck · 2× reach for lamps and matches", reach: 2, sight: 1.2 },
   },
+  panda: {
+    id: "panda",
+    name: "The Panda",
+    blurb: "Hums on the walk. A bamboo sprig behind one ear, the lantern swinging in time.",
+    coins: 35000,
+    walk: "/sprites/scouts/panda-v2.png",
+    idle: "/sprites/scouts/panda-v2.png",
+    icon: "/sprites/scouts/panda.png",
+    gait: 1,
+    bed: "Bamboo hum",
+    // 0.1.47: 1 in 15 right lamps pay the lamp coin twice (server-rolled; about +7% on average, under the Fox's +10%).
+    perk: { label: "Bamboo luck · 1 in 15 right lamps pay double coin", doubleUp: 15 },
+  },
   fox: {
     id: "fox",
     name: "The Fox",

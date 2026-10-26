@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { cacheAnywhere, marketCoinMult, owlExtraCoin, reachMult, rummageHit, scoutOf, shellBackHit, strikeOption, streakRun } from "./scoutPerks.ts";
+import { cacheAnywhere, doubleUpHit, marketCoinMult, owlExtraCoin, reachMult, rummageHit, scoutOf, shellBackHit, strikeOption, streakRun } from "./scoutPerks.ts";
 import { canGrabMatch, MATCH_GRAB_M } from "./streets.ts";
 
 it("Raccoon: 1 in 15 lamps (server roll), nobody else", () => {
@@ -64,4 +64,11 @@ it("scoutOf rejects junk", () => {
   assert.equal(scoutOf("owl"), "owl");
   assert.equal(scoutOf("dragon"), null);
   assert.equal(scoutOf(3), null);
+});
+
+it("Panda: 1 in 15 right lamps pay double coin (server roll), nobody else", () => {
+  assert.equal(doubleUpHit("panda", 0.06), true);
+  assert.equal(doubleUpHit("panda", 0.07), false);
+  assert.equal(doubleUpHit("raccoon", 0), false);
+  assert.equal(doubleUpHit(null, 0), false);
 });

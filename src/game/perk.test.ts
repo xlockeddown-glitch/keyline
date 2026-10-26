@@ -26,12 +26,13 @@ describe("0.0.96 scout abilities (data.ts SCOUTS)", () => {
     assert.equal(SCOUTS.turtle.coins, 24000);
     assert.equal(SCOUTS.sloth.coins, 20000);
     assert.equal(SCOUTS.giraffe.coins, 45000);
+    assert.equal(SCOUTS.panda.coins, 35000);
     assert.equal(SCOUTS.fox.coins, 90000);
     for (const s of SCOUT_LIST) if (s.id !== "lynx") assert.ok(SCOUTS.lynx.coins > s.coins, s.id);
   });
 
   it("short punchy shop names", () => {
-    const names = { raccoon: "Rummager", cat: "Nine lives", corgi: "Zoomies", owl: "Night eyes", turtle: "Shell", sloth: "Hang time", giraffe: "Long neck", fox: "Clever", lynx: "Belly slide" } as const;
+    const names = { raccoon: "Rummager", cat: "Nine lives", corgi: "Zoomies", owl: "Night eyes", turtle: "Shell", sloth: "Hang time", giraffe: "Long neck", fox: "Clever", lynx: "Belly slide", panda: "Bamboo luck" } as const;
     for (const [id, n] of Object.entries(names)) assert.equal(wornPerk(id as keyof typeof names).label.split(" · ")[0], n, id);
   });
 
@@ -48,6 +49,7 @@ describe("0.0.96 scout abilities (data.ts SCOUTS)", () => {
     assert.equal(wornPerk("giraffe").reach, 2);
     assert.equal(wornPerk("giraffe").sight, 1.2);
     assert.equal(wornPerk("fox").loot, 1.1);
+    assert.equal(wornPerk("panda").doubleUp, 15);
     assert.equal(wornPerk("fox").strike, true);
     assert.equal(wornPerk("lynx").pace, 1.2);
     assert.equal(wornPerk("lynx").loot, 1.1);

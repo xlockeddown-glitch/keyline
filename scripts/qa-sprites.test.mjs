@@ -22,7 +22,7 @@ test("qa:sprites exits 0 on the committed scout sheets", () => {
   assert.equal(verdict.sheets.length, 0);
   assert.equal(verdict.coatSheets, 0);
   assert.equal(verdict.coats.length, 0);
-  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl", "lynx", "giraffe"]);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl", "lynx", "giraffe", "panda"]);
   assert.deepEqual(verdict.warnings, []);
   assert.equal(verdict.failures.length, 0);
 });
@@ -45,12 +45,12 @@ const runLegacy = (override) => runWith(override, "giraffe");
 test("qa:sprites legacy checks pass on the fixture legacy Giraffe (sheets, coats, dyes, icon)", () => {
   const { status, verdict } = runLegacy("");
   assert.equal(status, 0, verdict.failures.join("\n"));
-  // 1 legacy character × walk / idle / side idle, × (4 print-shop coats + 7 vat dyes); the other 8 stay v2.
+  // 1 legacy character × walk / idle / side idle, × (4 print-shop coats + 7 vat dyes); the other 9 stay v2.
   assert.equal(verdict.sheets.length, 3);
   assert.equal(verdict.coatSheets, 33);
   assert.equal(verdict.coats.length, 11);
   assert.equal(verdict.palettes.length, 1);
-  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl", "lynx"]);
+  assert.deepEqual(verdict.v2.map((r) => r.scout), ["turtle", "cat", "fox", "corgi", "sloth", "raccoon", "owl", "lynx", "panda"]);
   assert.deepEqual(verdict.warnings, []);
 });
 

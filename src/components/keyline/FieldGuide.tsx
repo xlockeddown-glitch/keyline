@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { CARS } from "@/game/cars";
 import { STREET_DAY_CAP } from "@/game/streetSpots";
-import { MAGNET_DAY_CAP, MAGNET_GAP_MS, CAR_PERKS, CAT_BONUS_CAP, COTD_BONUS, FAV_BONUS, FAV_BOTH } from "@/game/carPerks";
+import { MAGNET_DAY_CAP, MAGNET_GAP_MS, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, SCOUT_FAV } from "@/game/carPerks";
 import { X } from "lucide-react";
-import { TIER_LABEL } from "@/game/data";
+import { SCOUT_LIST, TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -118,6 +118,10 @@ export function FieldGuide() {
             <h3 className="font-display text-lg leading-tight">Category boosts</h3>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
               Every coat and car has a favorite category: a right answer in it pays +{Math.round(FAV_BONUS * 100)}% coin (coats when worn, cars while you sit in them), or +{Math.round(FAV_BOTH * 100)}% when your coat and car both favor it. Each day one category of the day pays +{Math.round(COTD_BONUS * 100)}% and is always offered (gold badge). Boosts add up to at most +{Math.round(CAT_BONUS_CAP * 100)}%, on lamp coin only.
+            </p>
+            {/* 0.1.47: each coat's favorite, so the Panda (Music) shows up here too. */}
+            <p className="mt-1 text-sm text-pretty text-fg-muted" data-testid="help-coat-favs">
+              Coat favorites: {SCOUT_LIST.map((s) => `${s.name.replace(/^The /, "")} ${CAT_LABEL[SCOUT_FAV[s.id]]}`).join(", ")}. The Panda's Bamboo luck pays a right lamp's coin twice, 1 in 15 lamps.
             </p>
           </section>
           {/* 0.1.44: houses, owned lanterns, train stops, a new player's first hour. */}

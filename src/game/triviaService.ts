@@ -1,7 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { perkFavs, regenHit } from "./carPerks.ts";
 import { isCarId, type CarId } from "./cars.ts";
-import { rummageHit, scoutOf, shellBackHit, strikeOption } from "./scoutPerks.ts";
+import { doubleUpHit, rummageHit, scoutOf, shellBackHit, strikeOption } from "./scoutPerks.ts";
 import type { Sql } from "../lib/db.ts";
 import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
@@ -495,6 +495,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         perfectBlue: g?.grade === "perfect" && rand() < PERFECT_BLUE_CHANCE,
         scout: scoutOf(x?.sc),
         rummage: rummageHit(scoutOf(x?.sc), rand()),
+        doubleUp: doubleUpHit(scoutOf(x?.sc), rand()),
         // 0.1.45: Roadster Regen (1 in 5, from the nonce) only when no stronger coat refund (Turtle 1 in 3) is worn.
         shellBack: shellBackHit(scoutOf(x?.sc), rand()) || (!SCOUTS[scoutOf(x?.sc) ?? "raccoon"]?.perk.shellBack && regenHit(isCarId(x?.cr) ? x.cr : null, t.n)),
         favs: perkFavs(scoutOf(x?.sc), x?.fs === 1, isCarId(x?.cr) ? x.cr : null),

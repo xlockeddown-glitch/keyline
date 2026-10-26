@@ -220,6 +220,25 @@ const BEDS: Record<ScoutId, Bed> = {
     melody: true,
     pad: true,
   },
+  // 0.1.47 Panda: an unhurried, humming major walk, mellow and round.
+  panda: {
+    bpm: 68,
+    root: 50,
+    scale: [0, 2, 4, 7, 9],
+    chords: [
+      [0, 4, 7, 11],
+      [5, 9, 12, 16],
+      [9, 12, 16, 19],
+      [7, 11, 14, 17],
+    ],
+    swing: 0.18,
+    cutoff: 2400,
+    vinyl: 0.02,
+    kit: "soft",
+    hats: 3,
+    melody: true,
+    pad: true,
+  },
   lynx: {
     bpm: 64,
     root: 49,
@@ -250,6 +269,7 @@ export const BED_NAME: Record<ScoutId, string> = {
   sloth: "The long way",
   fox: "Coal dusk",
   lynx: "Through the block",
+  panda: "Bamboo hum",
 };
 
 function hookVis() {

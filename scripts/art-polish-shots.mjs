@@ -8,7 +8,7 @@
 import { chromium } from "playwright";
 
 const [base, prefix, walkArg = "corgi,giraffe"] = process.argv.slice(2);
-const SCOUTS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"];
+const SCOUTS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe", "panda"];
 const WALK = walkArg.split(",").filter(Boolean);
 const R = 40; // css px around the 56 px pawn
 

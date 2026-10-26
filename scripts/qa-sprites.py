@@ -70,7 +70,7 @@ SHEETS = {
     "giraffe-idle-side": (SCOUTS / "giraffe-idle-side.png", (192, 192)),
 }
 # Shop icons (one 96 px idle-style portrait each); checked against the idle coat, not inspected as sheets.
-SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe"]  # 0.0.51: + the Giraffe
+SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe", "panda"]  # 0.0.51: + the Giraffe
 ICONS = {s: SCOUTS / f"{s}.png" for s in SCOUT_IDS}
 
 # 0.0.83: scouts redrawn on the v2 sheets (src/game/coatLayer.ts V2_SCOUTS) — one 8x6 sheet of 192 px cells plus a

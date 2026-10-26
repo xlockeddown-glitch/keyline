@@ -8,7 +8,7 @@ import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
 import { SURVEY_GOALS, isPlace } from "./survey.ts";
 import { MARKET_MULT, marketAt, marketMatches, marketMult, marketOverflowCoin, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
-import { owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
+import { BAMBOO_TAG, owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
 import { lightOf, type LightId } from "./marketLights.ts";
 import { FRESH_DISTRICT_TAG, freshDistrictCoin } from "./district.ts";
 import { cleanCredit, payMatch, payMatchesOf } from "./goals.ts";
@@ -789,6 +789,8 @@ export type GradePay = {
   /** 0.0.96: worn coat and the server's ability rolls (Raccoon blue drop, Plate refund). */
   scout?: ScoutId | null;
   rummage?: boolean;
+  /** 0.1.47 Panda: the server rolled Bamboo luck (lamp coin paid twice). */
+  doubleUp?: boolean;
   shellBack?: boolean;
   /** 0.1.00: the market light the SERVER found in this account's ledger (never from the client). */
   light?: LightId;
@@ -928,9 +930,12 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   }
   // 0.1.14: new-district bonus, a quarter of the base lamp coin. Never on a market lamp (no camping reward).
   const fresh = p.freshDistrict && lampMult === 1 ? freshDistrictCoin(lampCoin) : 0;
+  // 0.1.47 Panda (Bamboo luck): the lamp coin (after category boosts, before the market) is paid once more.
+  const bamboo = p.doubleUp && p.scout && SCOUTS[p.scout]?.perk.doubleUp ? lampCoin : 0;
   const catTagged = cat.labels.length && p.correct ? { ...boost, labels: [...boost.labels, ...cat.labels] } : boost;
-  const tagged = fresh ? { ...catTagged, labels: [...catTagged.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : catTagged;
-  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh, lKeys, tagged, lit.u);
+  const freshTagged = fresh ? { ...catTagged, labels: [...catTagged.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : catTagged;
+  const tagged = bamboo ? { ...freshTagged, labels: [...freshTagged.labels, `${BAMBOO_TAG} +${bamboo}`] } : freshTagged;
+  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo, lKeys, tagged, lit.u);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */

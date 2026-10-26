@@ -1330,6 +1330,19 @@ test("0.0.96 abilities in the server grade: Raccoon blue, Owl ×2.5 market coin,
   assert.equal(off.award!.coins, offPlain.award!.coins, "off the market the Owl pays the same");
 });
 
+test("0.1.47 Panda Bamboo luck: the server's roll pays the lamp coin twice; no roll or another coat pays as usual", () => {
+  const plain = gradeGrant(emptyWallet(), pay({ scout: "panda" }));
+  const hit = gradeGrant(emptyWallet(), pay({ scout: "panda", doubleUp: true }));
+  const other = gradeGrant(emptyWallet(), pay({ scout: "fox", doubleUp: true }));
+  assert.ok(plain.ok && hit.ok && other.ok);
+  assert.ok(hit.award!.coins > plain.award!.coins, "double lamp coin");
+  assert.ok(hit.award!.boosts.some((b) => b.startsWith("Bamboo luck +")), hit.award!.boosts.join(","));
+  assert.equal(other.award!.coins, gradeGrant(emptyWallet(), pay({ scout: "fox" })).award!.coins, "only the Panda's perk pays");
+  assert.deepEqual(hit.award!.keys, plain.award!.keys, "matches unchanged");
+  const miss = gradeGrant(emptyWallet(), pay({ scout: "panda", doubleUp: true, correct: false }));
+  assert.equal(miss.award!.coins, 0);
+});
+
 test("0.0.96 Plate refunds 1 in 3 failed lamps (server roll); Tabby keeps a streak through the day's first miss", async () => {
   const sql = await db();
   await syncPlayer(sql, "shl", snap({ coins: 100, keys: { blue: 2 } }), "shlphone1");

@@ -482,6 +482,7 @@ export async function awardGrade(
     perfectBlue: pay.perfectBlue,
     scout: pay.scout ?? null,
     rummage: pay.rummage === true,
+    doubleUp: pay.doubleUp === true,
     shellBack: pay.shellBack === true,
     light: (await lightsOf(sql, id)).best,
   };

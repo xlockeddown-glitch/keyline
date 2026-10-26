@@ -80,6 +80,14 @@ export function cacheAnywhere(id: ScoutId | null): boolean {
   return Boolean(perkOf(id)?.cacheAnywhere);
 }
 
+export const BAMBOO_TAG = "Bamboo luck";
+
+/** 0.1.47 Panda (Bamboo luck): does this right lamp pay its lamp coin twice? `roll` is the server's Math.random(). */
+export function doubleUpHit(id: ScoutId | null, roll: number): boolean {
+  const n = perkOf(id)?.doubleUp;
+  return Boolean(n && roll < 1 / n);
+}
+
 /** Lamp-and-match reach multiplier (Giraffe 2×). */
 export function reachMult(id: ScoutId | null): number {
   return perkOf(id)?.reach ?? 1;

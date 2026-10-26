@@ -3556,6 +3556,7 @@ h3 {
 .pawn:has(.scout-marker[data-scout="sloth"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 .pawn:has(.scout-marker[data-scout="turtle"]) { --foot: 48px; }
 .pawn:has(.scout-marker[data-scout="giraffe"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
+.pawn:has(.scout-marker[data-scout="panda"]) { --foot: 48.5px; } /* v2 rig foot_y 166 of 192 */
 
 /* 1. Contact shadow: a soft ground ellipse under the feet that tightens when a foot lifts. */
 .pawn::before {
@@ -3654,6 +3655,14 @@ h3 {
 .scout-marker[data-scout="giraffe"].is-idle,
 .scout-marker[data-scout="giraffe"].is-idle.is-side {
   background-image: url("/sprites/scouts/giraffe-v2.png?v=k96a");
+  background-size: 800% 600%;
+  background-position: 0% 80%;
+}
+/* 0.1.47: the Panda. */
+.scout-marker[data-scout="panda"],
+.scout-marker[data-scout="panda"].is-idle,
+.scout-marker[data-scout="panda"].is-idle.is-side {
+  background-image: url("/sprites/scouts/panda-v2.png?v=k96a");
   background-size: 800% 600%;
   background-position: 0% 80%;
 }
