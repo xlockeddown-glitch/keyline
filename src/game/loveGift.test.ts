@@ -69,3 +69,37 @@ test("near the cap the gift clamps and the note says so; not doubled by the firs
   assert.ok(note && note !== LOVE_NOTE && /cap/.test(note), note);
   assert.equal(await coins(sql, "amanda"), COIN_CAP);
 });
+
+test("X sign-ins: synthetic email with her id, her grok-x accountId, or grok-x name Amanda Gray each pay once; look-alikes don't", async () => {
+  const { sql, pg } = await db();
+  const acct = (u: string, provider: string, accountId: string) =>
+    pg.query(`insert into account (id, "accountId", "providerId", "userId", "createdAt", "updatedAt") values ($1, $2, $3, $1, now(), now())`, [u, accountId, provider]);
+  const user = (u: string, name: string, email: string) => pg.query(`insert into "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") values ($1, $2, $3, false, now(), now())`, [u, name, email]);
+  await user("x-mail", "Walker", "grok-x.2105005481156591616@broker.keyline.invalid");
+  await acct("x-mail", "grok-x", "broker-sub-1");
+  await user("x-acct", "Walker", "grok-x.zzz@broker.keyline.invalid");
+  await acct("x-acct", "grok-x", "2105005481156591616");
+  await user("x-name", " amanda GRAY ", "grok-x.yyy@broker.keyline.invalid");
+  await acct("x-name", "grok-x", "other-1");
+  await user("x-g", "Amanda G", "grok-x.a1@broker.keyline.invalid");
+  await acct("x-g", "grok-x", "a1");
+  await user("x-grey", "Amanda Grey", "grok-x.a2@broker.keyline.invalid");
+  await acct("x-grey", "grok-x", "a2");
+  await user("g-gray", "Amanda Gray", "amanda.gray@example.com");
+  await acct("g-gray", "grok-google", "g1");
+  for (const u of ["x-mail", "x-acct", "x-name"]) {
+    const a = await syncPlayer(sql, u, snap, `${u}-1`);
+    assert.deepEqual(a.giftNotes?.filter((n) => n.startsWith("I Love")), [LOVE_NOTE], u);
+    const paid = await coins(sql, u);
+    assert.ok(paid >= LOVE_COIN, u);
+    const b = await syncPlayer(sql, u, snap, `${u}-2`);
+    assert.ok(!(b.giftNotes ?? []).some((n) => n.startsWith("I Love")), u);
+    assert.equal(await coins(sql, u), paid, u);
+  }
+  for (const u of ["x-g", "x-grey", "g-gray"]) {
+    const r = await syncPlayer(sql, u, snap, `${u}-1`);
+    assert.ok(!(r.giftNotes ?? []).some((n) => n.startsWith("I Love")), u);
+    assert.ok((await coins(sql, u)) < LOVE_COIN, u);
+  }
+  assert.equal((await rows(sql)).length, 3);
+});

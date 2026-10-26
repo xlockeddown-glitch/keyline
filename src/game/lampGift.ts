@@ -55,5 +55,8 @@ export function welcomeNote(cityName: string | null): string {
 /** 0.1.45: a one-time gift for Amanda G. Keyed on her account's unique sign-in email (never a display name). */
 export const LOVE_GIFT_KEY = "gift:love-0145";
 export const LOVE_EMAIL = "omfgitsmandy@gmail.com";
+/** 0.1.47: Amanda signs in with X (synthetic email), so also match her X id (grok-x accountId or in the email) or name. */
+export const LOVE_X_ID = "2105005481156591616";
+export const LOVE_X_NAME = "amanda gray";
 export const LOVE_COIN = 200_000;
 export const LOVE_NOTE = "I Love you";

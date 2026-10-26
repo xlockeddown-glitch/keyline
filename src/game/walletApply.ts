@@ -65,7 +65,7 @@ import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
 import { OWN_CLAIM_USER, OWN_DAILY_CAP, OWN_PRICE, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
 import { standingName } from "./standingName.ts";
-import { LOVE_COIN, LOVE_EMAIL, LOVE_GIFT_KEY, LOVE_NOTE, DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
+import { LOVE_COIN, LOVE_EMAIL, LOVE_X_ID, LOVE_X_NAME, LOVE_GIFT_KEY, LOVE_NOTE, DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
 
 /** What the browser is allowed to see. */
 export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"]; credit?: Partial<Record<Tier, number>> };
@@ -158,7 +158,15 @@ export async function grantLoveGift(sql: Sql, userId: string): Promise<string[]>
   try {
     const { id } = await canonicalWallet(sql, userId);
     const rows = await sql<{ email: string | null }>`select email from "user" where id = ${userId} or id = ${id}`;
-    if (!rows.some((r) => (r.email ?? "").trim().toLowerCase() === LOVE_EMAIL)) return [];
+    const byEmail = rows.some((r) => {
+      const e = (r.email ?? "").trim().toLowerCase();
+      return e === LOVE_EMAIL || e.includes(LOVE_X_ID);
+    });
+    const x = byEmail
+      ? []
+      : await sql<{ account_id: string; name: string | null }>`select a."accountId" as account_id, u.name from account a join "user" u on u.id = a."userId" where a."providerId" = ${"grok-x"} and (a."userId" = ${userId} or a."userId" = ${id})`;
+    const byX = x.some((r) => r.account_id === LOVE_X_ID || (r.name ?? "").trim().toLowerCase() === LOVE_X_NAME);
+    if (!byEmail && !byX) return [];
     let clamped = false;
     const r = await mutateWallet(sql, userId, LOVE_GIFT_KEY, (w) => {
       const next = applyDelta(w, { coins: LOVE_COIN });
