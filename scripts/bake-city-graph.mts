@@ -1,6 +1,6 @@
 // 0.1.48: bake each city's whole street map (walk + drive + freeway layer) from OpenStreetMap, so walks don't
 // wait on live Overpass inside the play area.
-//   node --experimental-strip-types scripts/bake-city-graph.mts [cityId…] [--force] [--drive]
+//   node --experimental-strip-types scripts/bake-city-graph.mts [cityId…] [--force] [--drive] [--mirrors] [--allow-stale]
 // → public/streets/v2/<city>.<hash>.json.gz + public/streets/v2/manifest.json
 // Bbox: spawn + every lamp, padded 900 m (same as bake-freeways). Two polite Overpass queries per city (walk + freeway,
 // drive), one at a time, mirror rotation with backoff; raw answers cached in .bake-cache/ (gitignored), so reruns are
@@ -22,7 +22,16 @@ export const BAKE_PAD_M = 900;
 const DRIVE = "primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service";
 const DRIVE_SET = new Set(DRIVE.split("|"));
 const ARTERIAL = new Set(["primary", "primary_link", "secondary", "secondary_link"]);
-const URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass.openstreetmap.fr/api/interpreter"];
+// overpass-api.de is the source of truth: the kumi / .fr mirrors answered Oct 27 with snapshots 2–5 months old.
+// --mirrors lets the others in (their answers still have to pass the snapshot-age check).
+const MAIN = "https://overpass-api.de/api/interpreter";
+const URLS = process.argv.includes("--mirrors") ? [MAIN, "https://overpass.kumi.systems/api/interpreter", "https://overpass.openstreetmap.fr/api/interpreter"] : [MAIN];
+/** Refuse map data older than this (osm3s.timestamp_osm_base); --allow-stale overrides. */
+const MAX_AGE_DAYS = 7;
+function snapshotAgeDays(json: { osm3s?: { timestamp_osm_base?: string } }) {
+  const t = Date.parse(json.osm3s?.timestamp_osm_base ?? "");
+  return Number.isFinite(t) ? (Date.now() - t) / 86_400_000 : Infinity;
+}
 const UA = "keyline-bake-city-graph/1.0 (github.com/xlockeddown-glitch/keyline)";
 const OUT = "public/streets/v2";
 const CACHE = ".bake-cache";
@@ -51,7 +60,7 @@ async function fetchRaw(city: string, mode: "walk" | "drive", force: boolean) {
   const f = `${CACHE}/${city}-${mode}.osm.json`;
   if (!force && existsSync(f)) return JSON.parse(readFileSync(f, "utf8"));
   const q = query(cityBbox(city).join(","), mode);
-  for (let att = 0; att < 6; att++) {
+  for (let att = 0; att < 8; att++) {
     const u = URLS[att % URLS.length]!;
     try {
       const t = Date.now();
@@ -59,12 +68,14 @@ async function fetchRaw(city: string, mode: "walk" | "drive", force: boolean) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const txt = await res.text();
       const json = JSON.parse(txt);
+      const age = snapshotAgeDays(json);
+      if (age > MAX_AGE_DAYS) throw new Error(`stale snapshot ${json.osm3s?.timestamp_osm_base} (${age.toFixed(0)} days old)`);
       writeFileSync(f, txt);
       console.log(city, mode, `${(txt.length / 1e6).toFixed(1)} MB`, `${Math.round((Date.now() - t) / 1000)} s`, u);
       return json;
     } catch (e) {
       console.error(city, mode, u, (e as Error).message, `retry in ${20 * (att + 1)} s`);
-      await new Promise((r) => setTimeout(r, 20_000 * (att + 1)));
+      await new Promise((r) => setTimeout(r, Math.min(300_000, 30_000 * 2 ** att)));
     }
   }
   throw new Error(`${city} ${mode}: overpass failed`);
@@ -73,6 +84,25 @@ async function fetchRaw(city: string, mode: "walk" | "drive", force: boolean) {
 const distM = (a: [number, number], b: [number, number]) => Math.hypot((a[0] - b[0]) * 1.1132, (a[1] - b[1]) * 1.1132 * Math.cos((a[0] / 1e5) * (Math.PI / 180)));
 
 export function buildCity(city: string, walkEls: El[], driveEls: El[], snapshot: string, withDrive = false) {
+  // Overpass can return null points inside a way's geometry (NYC, Oct 27; the node is outside what it served). Split
+  // the way there, like qa:stands does, rather than join across the hole. Pieces keep the way's id with a suffix.
+  const split = (els: El[]): El[] =>
+    els.flatMap((el) => {
+      const g = el.geometry ?? [];
+      if (g.every((p) => p != null)) return [el];
+      const parts: El[] = [];
+      let cur: { lat: number; lon: number }[] = [];
+      for (const p of [...g, null]) {
+        if (p != null && Number.isFinite(p.lat) && Number.isFinite(p.lon)) cur.push(p);
+        else {
+          if (cur.length >= 2) parts.push({ ...el, id: el.id! + parts.length * 1e12, geometry: cur });
+          cur = [];
+        }
+      }
+      return parts;
+    });
+  walkEls = split(walkEls);
+  driveEls = split(driveEls);
   const byId = new Map<number, { el: El; walkQ: boolean; driveQ: boolean }>();
   for (const el of walkEls) if (el.type === "way" && el.id != null) byId.set(el.id, { el, walkQ: true, driveQ: false });
   for (const el of driveEls) {
@@ -222,6 +252,10 @@ async function main() {
     const walk = await fetchRaw(city, "walk", force);
     const drive = await fetchRaw(city, "drive", force);
     const snapshot = String(walk.osm3s?.timestamp_osm_base ?? "").slice(0, 10);
+    for (const [m, j] of [["walk", walk], ["drive", drive]] as const) {
+      const age = snapshotAgeDays(j);
+      if (age > MAX_AGE_DAYS && !args.includes("--allow-stale")) throw new Error(`${city} ${m}: cached snapshot ${j.osm3s?.timestamp_osm_base} is ${age.toFixed(0)} days old; re-fetch with --force`);
+    }
     const data = buildCity(city, walk.elements ?? [], drive.elements ?? [], snapshot, withDrive);
     const body = JSON.stringify(data);
     const hash = createHash("sha256").update(body).digest("hex").slice(0, 10);
