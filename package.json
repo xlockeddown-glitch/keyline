@@ -23,7 +23,6 @@
     "trivia:quotas": "node scripts/trivia-balance.mjs --check",
     "trivia:lint": "node scripts/trivia-lint.mjs",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "check:uniformity": "node scripts/uniformity-qa.mjs",
     "check:city-graphs": "node --experimental-strip-types scripts/check-city-graphs.mts",
     "bake:city-graph": "node --max-old-space-size=6000 --experimental-strip-types scripts/bake-city-graph.mts",
     "qa:sprites": "python3 scripts/qa-sprites.py",
