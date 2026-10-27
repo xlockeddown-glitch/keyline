@@ -42,6 +42,7 @@ import { CUR_SPORTS_20261021, CUR_POLITICAL_20261021, CUR_FOOD_20261021, CUR_ART
 import { PLUS_20261022 } from "@/game/banks/plus_20261022";
 import { PLUS_20261025 } from "@/game/banks/plus_20261025";
 import { VARIETY_20261025 } from "@/game/banks/variety_20261025";
+import { HISTORY_PRESIDENTS_20261027 } from "@/game/banks/history_presidents_20261027";
 import { PLUS_SPORTS_20261019, PLUS_LOCAL_20261019, PLUS_POLITICAL_20261019, PLUS_FOOD_20261019, PLUS_ARTS_20261019, PLUS_SCIENCE_20261019, PLUS_HISTORY_20261019, PLUS_NATURE_20261019, PLUS_GAMES_20261019, PLUS_CELEBRITY_20261019, PLUS_MUSIC_20261019 } from "@/game/banks/plus_20261019";
 import { CITY_EXTRA } from "@/game/banks/cities";
 import {
@@ -360,7 +361,7 @@ const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	// 0.0.99: each sum sits on its ladder colour (mathLadder.ts); non-head-math sums are trimmed; generated cards fill amber+.
 	math: [...mergeCat(mergeCat(MATH_BANK, MATH_MORE), PLUS_20261025.math).map(rescoreMath).flatMap((x) => ladderCard(x) ?? []), ...generatedMath()],
 	science: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(SCIENCE_BANK, SCIENCE_MORE), SCIENCE_LIFE), WEEKLY_SCIENCE), WEEKLY_SCIENCE_20261002), WEEKLY_SCIENCE_20261006), WEEKLY_SCIENCE_20261009), PLUS_SCIENCE_20261019), CUR_SCIENCE_20261021), PLUS_20261022.science), VARIETY_20261025.science),
-	history: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY), WEEKLY_HISTORY_20261002), WEEKLY_HISTORY_20261006), PLUS_HISTORY_20261019), CUR_HISTORY_20261021), PLUS_20261022.history), VARIETY_20261025.history),
+	history: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(HISTORY_BANK, HISTORY_MORE), HISTORY_LIFE), WEEKLY_HISTORY), WEEKLY_HISTORY_20261002), WEEKLY_HISTORY_20261006), PLUS_HISTORY_20261019), CUR_HISTORY_20261021), PLUS_20261022.history), VARIETY_20261025.history), HISTORY_PRESIDENTS_20261027),
 	nature: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(NATURE_BANK, NATURE_MORE), NATURE_LIFE), WEEKLY_NATURE), WEEKLY_NATURE_20261002), WEEKLY_NATURE_20261006), PLUS_NATURE_20261019), CUR_NATURE_20261021), PLUS_20261022.nature), VARIETY_20261025.nature),
 	games: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(GAMES_BANK, WEEKLY_GAMES_20261006), PLUS_GAMES_20261019), CUR_GAMES_20261021), PLUS_20261022.games), VARIETY_20261025.games),
 	celebrity: mergeCat(mergeCat(mergeCat(mergeCat(CELEBRITY_BANK, WEEKLY_CELEBRITY_20261006), PLUS_CELEBRITY_20261019), CUR_CELEBRITY_20261021), PLUS_20261022.celebrity),
