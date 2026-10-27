@@ -8,7 +8,9 @@ test("0.1.8 cars: Ryan's prices and speeds, each car dearer and faster, Roadster
   assert.deepEqual(CARS.map((c) => [c.id, c.price, c.pace]), [
     ["civic", 30_000, 1.05],
     ["f150", 50_000, 1.08],
+    ["ioniq5", 90_000, 1.1],
     ["mustang", 150_000, 1.15],
+    ["model3", 350_000, 1.2],
     ["roadster", 600_000, 1.22],
     ["roadster2", 2_400_000, 1.3],
   ]);

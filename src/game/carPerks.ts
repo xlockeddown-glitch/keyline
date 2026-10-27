@@ -16,19 +16,23 @@ export const MAGNET_DAY_CAP = 30;
 export const MAGNET_PULL_MS = 420;
 /** How often a seated Roadster 2.0 tells the server it is driving in this city (the Magnet needs one within 5 min). */
 export const DRIVE_PING_MS = 60_000;
-export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean };
+/** 0.1.51 Ioniq 5 Vehicle-to-load: +1 white per lit lamp while seated, this many a day per player (Chicago day). */
+export const V2L_DAY_CAP = 20;
+export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number };
 
 export const CAR_PERKS: Record<CarId, CarPerk> = {
   civic: { label: "Glovebox · +1 s on lamp timers", vaultMs: 1000 },
   f150: { label: "Truck bed · 1.5× match pickup reach", reach: 1.5 },
+  ioniq5: { label: `Vehicle-to-load · each lamp lit pays +1 white match, ${V2L_DAY_CAP} a day`, v2l: 1 },
   mustang: { label: "Quick stop · lamp rests 15% shorter", cool: 0.85 },
+  model3: { label: "Autopilot · 1 in 10 lamp questions drop a wrong answer", autopilot: 10 },
   roadster: { label: "Regen · 1 in 5 failed lamps refund the match", refund: 5 },
   roadster2: { label: `Magnet · pulls in street matches within ${MAGNET_M} m as you drive`, magnet: true },
 };
 
 export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].magnet);
 
-export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", mustang: "sports", roadster: "science", roadster2: "games" };
+export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", ioniq5: "arts", mustang: "sports", model3: "math", roadster: "science", roadster2: "games" };
 export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   raccoon: "food",
   cat: "arts",
@@ -94,6 +98,38 @@ export function regenHit(car: CarId | null, nonce: string): boolean {
   const s = `regen:${nonce}`;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
   return (h >>> 0) / 4294967296 < 1 / n;
+}
+
+function roll(tag: string, nonce: string): number {
+  let h = 0x811c9dc5;
+  const s = `${tag}:${nonce}`;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+  // Finalizer (murmur3 fmix32): FNV alone clusters on near-identical nonces.
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/** 0.1.51 Model 3 Autopilot: does this lamp question lose one wrong answer? From the deal nonce, so it is fixed per question. */
+export function autopilotHit(car: CarId | null, nonce: string): boolean {
+  const n = car ? CAR_PERKS[car].autopilot : undefined;
+  return Boolean(n && roll("autopilot", nonce) < 1 / n);
+}
+
+/** The wrong option Autopilot hides (never the answer), picked from the nonce too. */
+export function autopilotStrike(car: CarId | null, nonce: string, choices: readonly string[], answer: string): string | null {
+  if (!autopilotHit(car, nonce)) return null;
+  const wrong = [...choices].filter((c) => c !== answer).sort();
+  if (!wrong.length) return null;
+  return wrong[Math.min(wrong.length - 1, Math.floor(roll("autopilot-pick", nonce) * wrong.length))]!;
+}
+
+/** 0.1.51 Ioniq 5 Vehicle-to-load: does this lit lamp pay the extra white? `usedToday` is today's V2L pays so far. */
+export function v2lPays(car: CarId | null, usedToday: number): boolean {
+  return Boolean(car && CAR_PERKS[car].v2l) && usedToday < V2L_DAY_CAP;
 }
 
 /** Favorite categories that count on a lamp: the worn coat's (when proven) and the seated car's. */

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { bakedSnapshot } from "@/game/streets";
 import { CARS } from "@/game/cars";
 import { STREET_DAY_CAP } from "@/game/streetSpots";
-import { MAGNET_DAY_CAP, MAGNET_GAP_MS, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, SCOUT_FAV } from "@/game/carPerks";
+import { MAGNET_DAY_CAP, MAGNET_GAP_MS, V2L_DAY_CAP, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, SCOUT_FAV } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { SCOUT_LIST, TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -122,7 +122,7 @@ export function FieldGuide() {
               Each city has a car lot on the map. Walk in to buy a car with coin. Your car is your own cab: tap Car and it's at the curb, and it drives a little faster than the city cab (5% for the Civic up to 30% for the Roadster 2.0). In your own car you can open lamps and vaults and grab matches from the curb; the city cab parks you first, and shops, the car lot and your house are on foot. You pay once and keep the car in every city.
             </p>
             <p className="mt-1 text-sm text-pretty text-fg-muted" data-testid="help-car-perks">
-              Each car has a perk that works while you sit in it: {CARS.map((c) => `${c.name.replace(/^Used /, "")}: ${CAR_PERKS[c.id].label.split(" · ").pop()}`).join("; ")}. The Magnet pulls at most one match every {MAGNET_GAP_MS / 1000} s and {MAGNET_DAY_CAP} a day per city, inside the usual {STREET_DAY_CAP} street matches a day. A coat with the same kind of perk doesn't add to it; the better one counts.
+              Each car has a perk that works while you sit in it: {CARS.map((c) => `${c.name.replace(/^Used /, "")}: ${CAR_PERKS[c.id].label.split(" · ").pop()}`).join("; ")}. The Magnet pulls at most one match every {MAGNET_GAP_MS / 1000} s and {MAGNET_DAY_CAP} a day per city, inside the usual {STREET_DAY_CAP} street matches a day. Vehicle-to-load pays its white match on at most {V2L_DAY_CAP} lamps a day, and Autopilot never stacks on the Fox's struck option. A coat with the same kind of perk doesn't add to it; the better one counts.
             </p>
           </section>
           <section className="mt-5" data-testid="help-categories">

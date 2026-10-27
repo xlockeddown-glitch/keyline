@@ -59,7 +59,7 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
-import { MAGNET_DAY_CAP, MAGNET_GAP_MS } from "./carPerks.ts";
+import { MAGNET_DAY_CAP, MAGNET_GAP_MS, v2lPays } from "./carPerks.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
@@ -453,7 +453,7 @@ export async function awardGrade(
   sql: Sql,
   userId: string,
   nonce: string,
-  pay: Omit<GradePay, "prior"> & { prevNonce: string; canRoll?: [number, number] },
+  pay: Omit<GradePay, "prior"> & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null },
 ): Promise<Applied & { can?: Can }> {
   const { id } = await canonicalWallet(sql, userId);
   const prevNonce = pay.prevNonce;
@@ -528,6 +528,21 @@ export async function awardGrade(
         full.poiId,
       )
     : true;
+  // 0.1.51 Ioniq 5 Vehicle-to-load: a lit lamp (a right answer that spent a match; a series pays on its last card) while
+  // seated in the proven car pays +1 white, at most V2L_DAY_CAP a day per player. Each pay is flagged v2 on its grade row.
+  const v2lLamp = full.correct && full.clearTier != null && !full.poiId.startsWith("blitz-") && (!full.series || full.step >= full.steps - 1);
+  const v2l = v2lLamp && v2lPays(pay.car ?? null, 0)
+    ? v2lPays(
+        pay.car ?? null,
+        (
+          await sql<{ created_at: unknown }>`
+            select created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
+              and created_at >= ${new Date(Date.now() - 30 * 3600_000).toISOString()} and detail like ${'%"v2":1%'}
+          `
+        ).filter((row) => chicagoDay(row.created_at) === chicagoDay(new Date())).length,
+      )
+    : false;
+  let v2Paid = false;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   // 0.1.22: a quest lamp is a right answer on a lamp that spent a match (never a spark, never a blitz card).
   const questLamp = full.correct && full.clearTier != null && !spark && !full.poiId.startsWith("blitz-");
@@ -544,13 +559,28 @@ export async function awardGrade(
       ...(full.correct ? { c: full.city } : {}),
       ...(district ? { d: district } : {}),
       ...(spark && sparkOk ? { sp: 1 } : {}),
+      ...(v2Paid ? { v2: 1 } : {}),
       // 0.0.98: night-market lamp, for the Night Owl title.
       ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
     });
   // 0.1.42: did this write burn a match on a miss (an owned lamp's owner is paid for those)?
   let matchLost = false;
+  const withV2l = (res: OpResult & { detail?: string }): OpResult & { detail?: string } => {
+    if (!v2l || !res.ok || !res.wallet.migrated) return res;
+    const p = payMatch(res.wallet.keys, "white");
+    const k = p.tier ? { [p.tier]: 1 } : {};
+    const extra = applyDelta(res.wallet, { coins: p.coin, keys: k });
+    if (!extra.ok) return res;
+    const award = res.award ?? { coins: 0, keys: {}, boosts: [] };
+    const keys = { ...award.keys };
+    for (const [t, n] of Object.entries(k) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
+    const v2Award = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, "Vehicle-to-load: +1 white"] };
+    v2Paid = true;
+    return { ok: true, wallet: extra.wallet, award: v2Award, detail: detailOf(v2Award) };
+  };
   const r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
     matchLost = false;
+    v2Paid = false;
     const owned = provenBoost(pay.lucky, pay.cloth, { lucky: luckyLive(w.meta), cloths: new Set(w.meta.cloths) });
     full.lucky = owned.lucky;
     full.cloth = owned.cloth;
@@ -596,10 +626,10 @@ export async function awardGrade(
         for (const [t, n] of Object.entries(p.add) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
         const label = `${run + 1} in a row${doubled ? " ×2" : ""}`;
         const streakAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, label] };
-        return { ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) };
+        return withV2l({ ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) });
       }
     }
-    return { ...grant, detail };
+    return withV2l({ ...grant, detail });
   });
   if (r.ok && !r.replay && matchLost && !full.series && full.poiId) await payOwner(sql, id, nonce, full.poiId);
   // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.

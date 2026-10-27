@@ -27,6 +27,14 @@ export const CAR_COLORS: Record<CarId, readonly PaintColor[]> = {
     { id: "blue", name: "Antimatter Blue", hex: "#1d2c4f" },
     { id: "sig", name: "Atlas Blue", hex: "#2e5f9a" },
   ],
+  ioniq5: [
+    { id: "white", name: "Atlas White", hex: "#eeeeea" },
+    { id: "black", name: "Abyss Black Pearl", hex: "#1a1c22" },
+    { id: "silver", name: "Cyber Gray", hex: "#8e9297" },
+    { id: "red", name: "Ultimate Red", hex: "#a5161d" },
+    { id: "blue", name: "Lucid Blue", hex: "#2f5d86" },
+    { id: "sig", name: "Gravity Gold Matte", hex: "#a39270" },
+  ],
   mustang: [
     { id: "silver", name: "Iconic Silver", hex: "#b4b8bd" },
     { id: "white", name: "Oxford White", hex: "#f3f3f0" },
@@ -34,6 +42,14 @@ export const CAR_COLORS: Record<CarId, readonly PaintColor[]> = {
     { id: "red", name: "Race Red", hex: "#c8141c" },
     { id: "blue", name: "Velocity Blue", hex: "#1f56b5" },
     { id: "sig", name: "Twister Orange", hex: "#e2581b" },
+  ],
+  model3: [
+    { id: "white", name: "Pearl White", hex: "#f2f2ef" },
+    { id: "black", name: "Diamond Black", hex: "#16171a" },
+    { id: "silver", name: "Quicksilver", hex: "#b8bbbf" },
+    { id: "red", name: "Ultra Red", hex: "#b4121b" },
+    { id: "blue", name: "Deep Blue Metallic", hex: "#1c3b78" },
+    { id: "sig", name: "Stealth Grey", hex: "#4b4f56" },
   ],
   roadster: [
     { id: "white", name: "Arctic White", hex: "#f2f2ef" },

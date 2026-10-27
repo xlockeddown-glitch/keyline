@@ -29,7 +29,7 @@ test("perks only while seated in that car; same perk with a coat: the higher win
   assert.equal(carCool("mustang"), 0.85);
   assert.equal(carCool(null), 1);
   assert.equal(carCool("civic"), 1);
-  assert.deepEqual(Object.keys(CAR_PERKS).sort(), ["civic", "f150", "mustang", "roadster", "roadster2"]);
+  assert.deepEqual(Object.keys(CAR_PERKS).sort(), ["civic", "f150", "ioniq5", "model3", "mustang", "roadster", "roadster2"]);
   assert.doesNotMatch(JSON.stringify(CAR_PERKS), /coming soon/i);
   assert.match(CAR_PERKS.roadster2.label, /^Magnet · .*35 m/);
 });

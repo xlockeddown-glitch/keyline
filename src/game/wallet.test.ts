@@ -1429,8 +1429,8 @@ test("0.1.9 car paint: cans drop server-side once per source, paint needs the ca
   const a = await grantCan(sql, "pnt", "g:n2", 0.08, 0.01, 0.5);
   assert.ok(a, "a hit drops a can");
   assert.equal(await grantCan(sql, "pnt", "g:n2", 0.08, 0.01, 0.9), null, "same source never drops twice");
-  // A known can: civic red (pick lands on index 3 of 30).
-  await grantCan(sql, "pnt", "c:2026-10-20", 0.2, 0, 3.5 / 30);
+  // A known can: civic red (pick lands on index 3 of 42; 0.1.51 seven cars × six colours).
+  await grantCan(sql, "pnt", "c:2026-10-20", 0.2, 0, 3.5 / 42);
   assert.ok((await paintOf(sql, "pnt")).cans.some((c) => c.can.car === "civic" && c.can.color === "red"));
   assert.equal((await applyClientOp(sql, "pnt", { kind: "paint", car: "civic", color: "red" })).reason, "no-car");
   await sql`update player_wallets set coins = 31000 where user_id = ${wid}`;
