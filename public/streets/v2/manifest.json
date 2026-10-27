@@ -2,17 +2,95 @@
  "v": 2,
  "source": "© OpenStreetMap contributors, ODbL",
  "cities": {
+  "austin": {
+   "file": "austin.ff665e2015.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 2562321,
+   "gz": 651932
+  },
+  "boston": {
+   "file": "boston.ee65ed59d9.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 2931119,
+   "gz": 734226
+  },
   "chicago": {
    "file": "chicago.16beb10673.json.gz",
    "snapshot": "2026-10-27",
    "bytes": 5772018,
    "gz": 1417747
   },
+  "denver": {
+   "file": "denver.1adef533df.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 1835824,
+   "gz": 452838
+  },
+  "detroit": {
+   "file": "detroit.608d21ddfc.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 2362319,
+   "gz": 587147
+  },
+  "la": {
+   "file": "la.8d6309a97e.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 5633424,
+   "gz": 1450590
+  },
+  "london": {
+   "file": "london.c904a461d5.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 3588581,
+   "gz": 964942
+  },
   "nashville": {
    "file": "nashville.7eccff252a.json.gz",
    "snapshot": "2026-10-27",
    "bytes": 1124141,
    "gz": 276223
+  },
+  "nola": {
+   "file": "nola.028a3776a2.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 778967,
+   "gz": 203500
+  },
+  "nyc": {
+   "file": "nyc.112b31841d.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 3109605,
+   "gz": 767636
+  },
+  "seattle": {
+   "file": "seattle.fe65f44198.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 1561976,
+   "gz": 391745
+  },
+  "sf": {
+   "file": "sf.000b2e5402.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 2424434,
+   "gz": 626653
+  },
+  "temple": {
+   "file": "temple.4e9bf0bdc0.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 1209623,
+   "gz": 332935
+  },
+  "toronto": {
+   "file": "toronto.e2ceae7150.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 2910351,
+   "gz": 714496
+  },
+  "tucson": {
+   "file": "tucson.5da317f211.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 3518573,
+   "gz": 912748
   }
  }
 }

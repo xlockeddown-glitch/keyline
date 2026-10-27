@@ -169,3 +169,22 @@ test("0.1.6: the market lights only road inside its circle, clipped at the edge"
   }
   assert.ok(Math.abs(total - 300) < 3, `about 300 m of road lit, got ${total}`);
 });
+
+test("0.1.49: a long walk across a big network routes (the A* budget scales with distance), short ones stay quick", () => {
+  // A 320 × 320 street grid at 30 m (~9.6 km a side, ~100k nodes): corner to corner overran the old fixed 80k-pop cap.
+  const o = { lat: 41.8, lng: -87.7 };
+  const n = 320;
+  const g = createGraph(o.lat, o.lng);
+  const at = (i: number, j: number) => dest(o.lat, o.lng, i * 30, j * 30);
+  for (let i = 0; i < n; i++) {
+    ingestLine(g, Array.from({ length: n }, (_, j) => at(i, j)));
+    ingestLine(g, Array.from({ length: n }, (_, j) => at(j, i)));
+  }
+  const far = routeOnGraph(g, at(0, 0), at(n - 1, n - 1));
+  assert.ok(far, "corner-to-corner walk routes");
+  const straight = distM(o.lat, o.lng, at(n - 1, n - 1).lat, at(n - 1, n - 1).lng);
+  assert.ok(pathLength(far!) < straight * 1.5);
+  const t = performance.now();
+  for (let k = 0; k < 20; k++) assert.ok(routeOnGraph(g, at(100 + k, 100), at(130 + k, 140)));
+  assert.ok((performance.now() - t) / 20 < 50, "short routes stay quick");
+});

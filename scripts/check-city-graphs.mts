@@ -41,7 +41,6 @@ const RULES: Record<string, Rules> = {
   denver: { budget: 500_000, walkRatio: 4.5, driveRatio: 4.4 }, // Elitch/Aquarium/Ball Arena: the Platte, I-25 and rail yards; Byers→Dam: Cherry Creek.
   detroit: {
     budget: 650_000, walkRatio: 2.7, driveRatio: 7.3, water: "Detroit River: the Windsor side (Ambassador Bridge / tunnel are freeways, no walk)",
-    gaps: { "walk:ford-field": "stadium footprint: nearest public walk way 122–126 m out (stairs, footways at the edge), past the 110 m walk reach" },
   }, // Hart Plaza→Spirit: Woodward/Jefferson one-ways + plaza, short hop.
   la: { budget: 1_600_000, driveRatio: 4.6 }, // Little Tokyo/JANM: 1st St one-way pair; Hollywood/Highland mall.
   london: { budget: 1_070_000, driveRatio: 7.8 }, // Tower Bridge→Tate etc.: one-ways, the Tower, bus-only lanes.
@@ -52,17 +51,14 @@ const RULES: Record<string, Rules> = {
     water: "Hudson: the New Jersey side (Lincoln/Holland tunnels are freeways, no walk)",
     gaps: {
       "drive:bethesda": "Central Park drives are car-free (no motor vehicles); nearest drivable way 251 m, a park service road off the network",
-      "drive:brooklyn-br": "lamp sits at 40.7061,-73.9969, ~180 m off the bridge line; nearest drivable way 325 m (South St)",
     },
   },
   seattle: { budget: 440_000, driveRatio: 6.1 }, // Seattle Center: the campus is pedestrian, cars loop Mercer/Denny.
-  sf: { budget: 690_000, driveRatio: 3.3, gaps: { "walk:gg-crissy": "lamp at 37.8076,-122.4667 is ~200 m out in the bay; nearest walk way 203 m" } }, // Twin Peaks figure-eight.
+  sf: { budget: 690_000, driveRatio: 3.3 }, // Twin Peaks figure-eight.
   temple: {
     budget: 370_000, walkRatio: 3.5, driveRatio: 3.6,
     gaps: {
       "walk:sammons": "the park's path loop (11 m away) is its own piece; the street network is > 110 m away (the offline proof still arrives, ending 117 m out)",
-      "walk:draughon": "Draughon-Miller airport: nearest way of any kind 290–309 m",
-      "drive:draughon": "Draughon-Miller airport: nearest way of any kind 290–309 m",
     },
   }, // Woodson Field ↔ THS: the campus has one gate.
   toronto: { budget: 790_000 },
@@ -71,8 +67,6 @@ const RULES: Record<string, Rules> = {
     gaps: {
       "walk:tuc-santa-rita": "park interior: its footways (54 m) are their own piece; the nearest street is 140 m (the offline proof still arrives, ending 119 m out)",
       "walk:pima-air": "museum grounds: its paths are their own piece (access=customers); the public street is > 110 m",
-      "walk:raytheon-tucson": "secured campus: every way within 180 m is access=private (dropped); nearest public way 126 m",
-      "drive:raytheon-tucson": "secured campus: the service roads 182 m out connect only through access=private roads",
     },
   },
 };

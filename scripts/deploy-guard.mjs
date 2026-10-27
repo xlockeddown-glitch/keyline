@@ -9,6 +9,8 @@
 import { copyFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+/** Our own ceiling on .vercel/output/static (the host allows far more); see the check below. */
+const STATIC_CAP_MB = 20;
 const SHEET_NAME = "sheet-k07d.css";
 const output = join(process.cwd(), ".vercel/output");
 const func = join(output, "functions/__server.func");
@@ -70,8 +72,10 @@ else {
 
 if (existsSync(staticDir)) {
   const staticSize = dirBytes(staticDir);
-  if (staticSize > 8 * 1024 * 1024) {
-    errors.push(`static ${ (staticSize / 1024 / 1024).toFixed(2) }MB exceeds 8MB cap`);
+  // 0.1.49: 8 MB → 20 MB. This cap is our own safety setting, not the host's: Vercel takes far more static (100 MB on
+  // Hobby). 0.1.48 published at 7.76 MB; the 15 baked city street maps (public/streets/v2, ~10.5 MB gz) bring it to ~16 MB.
+  if (staticSize > STATIC_CAP_MB * 1024 * 1024) {
+    errors.push(`static ${ (staticSize / 1024 / 1024).toFixed(2) }MB exceeds ${STATIC_CAP_MB}MB cap`);
   }
   console.log(`[deploy-guard] static ${(staticSize / 1024 / 1024).toFixed(2)}MB`);
 

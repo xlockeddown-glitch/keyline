@@ -1325,6 +1325,9 @@ export function routeOnGraph(g: StreetGraph, from: Pt, to: Pt): Pt[] | null {
   return null;
 }
 
+/** A* budget for long routes: heap pops allowed per meter of straight line (see searchGraph). */
+export const SEARCH_POPS_PER_M = 25;
+
 function searchGraph(g: StreetGraph, a: Snap, b: Snap): Pt[] | null {
   if (a.seg === b.seg || distM(a.lat, a.lng, b.lat, b.lng) < 12) return tidyPath([a, b]);
 
@@ -1349,7 +1352,10 @@ function searchGraph(g: StreetGraph, a: Snap, b: Snap): Pt[] | null {
 
   let found = -1;
   let guard = 0;
-  const limit = Math.min(80_000, Math.max(14_000, g.nodes.length * 8));
+  // 0.1.49: the fixed 80k cap ran out on the baked cities' long walks (Wrigley → MSI, 18.6 km of Chicago). Short
+  // routes keep the old cap; a long one gets room in proportion to its straight-line span (~25 pops per meter),
+  // never more than the whole graph twice over.
+  const limit = Math.max(Math.min(80_000, Math.max(14_000, g.nodes.length * 8)), Math.min(g.nodes.length * 2, Math.round(distM(a.lat, a.lng, b.lat, b.lng) * SEARCH_POPS_PER_M)));
   while (heap.length && guard++ < limit) {
     const cur = heapPop(heap)!;
     if (cur.i === goalA || cur.i === goalB) {
