@@ -29,31 +29,29 @@ def wheel(x,y,r,kind):
 def arch(x,y,r): return f'<path d="M{x-r-8} {y+2} A{r+8} {r+8} 0 0 1 {x+r+8} {y+2} Z" fill="#141416"/>'
 
 def ioniq_side():
-    W,H=480,170; wy=126; r=41
-    body='M30 142 L24 120 L22 66 Q22 36 44 31 L74 27 L290 25 Q306 26 318 34 L388 70 L448 78 Q462 81 462 94 L462 120 Q460 138 446 142 Z'
+    # v2: shorter, taller crossover-hatch: short front overhang, raked rear glass + ducktail, thick C-pillar.
+    W,H=420,180; wy=136; r=40
+    body='M34 152 L30 128 L32 80 L40 66 L70 36 Q76 30 88 30 L250 29 Q268 30 280 38 L332 72 L384 80 Q398 83 398 98 L398 132 Q396 150 384 152 Z'
     g=f'<path d="{body}" fill="url(#bd)" stroke="{INK}" stroke-width="3" stroke-linejoin="round"/>'
-    # black cladding band + arches
-    g+=f'<path d="M28 126 L462 126 L460 136 Q458 142 446 142 L30 142 Z" fill="#26282c"/>'
-    g+=arch(104,wy,r)+arch(378,wy,r)
-    g+=f'<path d="M56 128 A50 50 0 0 1 152 128" stroke="#2a2c30" stroke-width="8" fill="none"/><path d="M330 128 A50 50 0 0 1 426 128" stroke="#2a2c30" stroke-width="8" fill="none"/>'
-    # glass: one long greenhouse, B pillar, thick black C pillar
-    g+=f'<path d="M66 35 L288 32 Q302 33 312 40 L366 66 L80 68 Q64 66 64 52 Z" fill="url(#gl)" stroke="{INK}" stroke-width="2"/>'
-    g+=f'<path d="M196 33 L208 33 L206 68 L194 68 Z" fill="#14181e"/><path d="M66 35 L112 34 L104 68 L78 68 Q64 66 64 52 Z" fill="#14181e"/>'
-    g+=f'<path d="M130 40 L300 38" stroke="#fff" stroke-opacity=".28" stroke-width="3"/>'
-    # roof rail
-    g+=f'<path d="M80 28 L286 26" stroke="#3c3f44" stroke-width="3"/>'
-    # Z-crease: rises from the rear wheel toward the front door
-    g+=f'<path d="M150 112 L300 82 L420 80" stroke="#9fa3a8" stroke-width="2.5" fill="none"/><path d="M150 114 L300 84" stroke="#fff" stroke-opacity=".7" stroke-width="1.5" fill="none"/>'
-    # door cuts + flush handles
-    g+=f'<path d="M202 70 L200 124 M318 68 L330 124" stroke="#9aa0a6" stroke-width="1.6"/><rect x="170" y="80" width="22" height="4" rx="2" fill="#8e9399"/><rect x="276" y="80" width="22" height="4" rx="2" fill="#8e9399"/>'
-    # mirror
-    g+=f'<path d="M360 64 L378 60 L380 72 L366 74 Z" fill="#26282c"/>'
-    # pixel lights: tail (rear, left) red squares, head (front, right) white squares
+    g+=f'<path d="M32 136 L398 136 L396 146 Q394 152 384 152 L34 152 Z" fill="#26282c"/>'
+    g+=arch(96,wy,r)+arch(326,wy,r)
+    g+=f'<path d="M50 136 A46 46 0 0 1 142 136" stroke="#2a2c30" stroke-width="8" fill="none"/><path d="M280 136 A46 46 0 0 1 372 136" stroke="#2a2c30" stroke-width="8" fill="none"/>'
+    # ducktail spoiler over the raked rear glass
+    g+=f'<path d="M70 36 L54 40 L52 46 L68 43 Z" fill="#26282c"/>'
+    # tall greenhouse tapering at the rear; thick body-colour C-pillar with a black inset
+    g+=f'<path d="M100 38 L248 36 Q262 37 272 44 L318 74 L104 76 Z" fill="url(#gl)" stroke="{INK}" stroke-width="2"/>'
+    g+=f'<path d="M72 42 L92 38 L96 76 L52 76 Z" fill="url(#gl)" stroke="{INK}" stroke-width="2"/>'
+    g+=f'<path d="M180 37 L192 37 L190 76 L178 76 Z" fill="#14181e"/><path d="M94 38 L104 38 L106 76 L96 76 Z" fill="#14181e"/>'
+    g+=f'<path d="M120 44 L240 42" stroke="#fff" stroke-opacity=".28" stroke-width="3"/>'
+    # straight parametric crease, door cuts, handles, mirror
+    g+=f'<path d="M110 124 L300 86" stroke="#9fa3a8" stroke-width="2.5"/><path d="M110 126 L300 88" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>'
+    g+=f'<path d="M186 76 L184 134 M282 76 L292 134" stroke="#9aa0a6" stroke-width="1.6"/><rect x="150" y="86" width="20" height="4" rx="2" fill="#8e9399"/><rect x="246" y="86" width="20" height="4" rx="2" fill="#8e9399"/>'
+    g+=f'<path d="M312 68 L330 64 L332 76 L318 78 Z" fill="#26282c"/>'
     for i in range(3):
-        for j in range(2): g+=f'<rect x="{23+j*5}" y="{74+i*6}" width="4" height="4" fill="#ff3340"/>'
+        for j in range(2): g+=f'<rect x="{32+j*5}" y="{84+i*6}" width="4" height="4" fill="#ff3340"/>'
     for i in range(2):
-        for j in range(3): g+=f'<rect x="{448+j*5}" y="{82+i*6}" width="4" height="4" fill="#f4fbff" stroke="#9fb6c6" stroke-width=".6"/>'
-    g+=wheel(104,wy,r,'pin')+wheel(378,wy,r,'pin')
+        for j in range(3): g+=f'<rect x="{384+j*5}" y="{88+i*6}" width="4" height="4" fill="#f4fbff" stroke="#9fb6c6" stroke-width=".6"/>'
+    g+=wheel(96,wy,r,'pin')+wheel(326,wy,r,'pin')
     return W,H,g
 
 def ioniq_fb(back):
