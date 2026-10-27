@@ -21,7 +21,29 @@ const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.k
 const cacheDir = join(tmpdir(), "keyline-stand-reach");
 mkdirSync(cacheDir, { recursive: true });
 
+/** Overpass can return a way whose geometry has null points (OSM `out geom` gaps). Split at the gaps instead of crashing. */
+type Way = { geometry?: Array<{ lat: number; lon: number } | null>; [k: string]: unknown };
+let gapWays = 0;
+function clean(els: Way[]): Way[] {
+  const out: Way[] = [];
+  for (const w of els) {
+    if (!w.geometry?.some((p) => p == null)) { out.push(w); continue; }
+    gapWays++;
+    let run: Array<{ lat: number; lon: number }> = [];
+    for (const p of [...w.geometry, null]) {
+      if (p) { run.push(p); continue; }
+      if (run.length >= 2) out.push({ ...w, geometry: run });
+      run = [];
+    }
+  }
+  return out;
+}
+
 async function ways(lat: number, lng: number) {
+  return clean((await rawWays(lat, lng)) as Way[]);
+}
+
+async function rawWays(lat: number, lng: number) {
   const f = join(cacheDir, `${lat.toFixed(5)},${lng.toFixed(5)},${R}.json`);
   if (existsSync(f)) return JSON.parse(readFileSync(f, "utf8"));
   const at = `(around:${R},${lat.toFixed(5)},${lng.toFixed(5)})`;
@@ -130,6 +152,7 @@ if (WRITE) {
   writeFileSync(new URL("../src/game/standSpots.ts", import.meta.url), `${head}export const STAND_AT: Record<string, { lat: number; lng: number }> = {\n${body}\n};\n`);
   console.log(`wrote ${Object.keys(moved).length} stand spot(s) to src/game/standSpots.ts`);
 }
+if (gapWays) console.log(`note: ${gapWays} Overpass way(s) had null geometry points; split at the gaps`);
 console.log(`\nunreachable per city (> ${REACH} m): ${perCity.join(" ")}`);
 console.log(bad ? `qa:stands FAIL — ${bad} stand(s) off the walk` : "qa:stands ok — every stand is in reach of the walk");
 process.exit(bad ? 1 : 0);
