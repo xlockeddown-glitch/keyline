@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.49";
+export const APP_VERSION = "0.1.50";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k149a";
+export const PUBLISH_STAMP = "k150a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -161,3 +161,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.47: the Panda joins the cast (35,000 coin, between the Plate and the Giraffe): v2 sheet, tangerine coat, bamboo sprig; Bamboo luck pays a right lamp's coin twice 1 in 15 lamps (server-rolled); favors Music like the Penguin; Help lists every coat's favorite; prism paint now shows as a rainbow on every coat; Amanda's I Love you gift now reaches X sign-ins (k147a).
 // 0.1.48: baked street maps for Chicago and Nashville: walking and driving use a whole-city OpenStreetMap graph shipped with the build (public/streets/v2, gzipped; scripts/bake-city-graph.mts), live Overpass only past its edge; the car drives baked roads at once (no 6 s wait, no foot routes as roads); a failing road fetch while driving backs off instead of retrying every frame; null Overpass points are skipped; check:city-graphs validates walk and drive; map credit reads "© OpenStreetMap contributors" with the copyright link (k148a).
 // 0.1.49: baked street maps for all 15 cities (OpenStreetMap snapshot 2026-10-27, ~10.5 MB gzipped): walking and driving no longer wait on Overpass; five lamps moved onto streets you can reach (Draughon-Miller Airport, Raytheon, Brooklyn Bridge, Crissy Field, Ford Field); long walks (18 km across Chicago) now route offline (k149a).
+// 0.1.50: visited cities' street maps are kept in the browser for offline play; inside the 15 baked cities walking and driving never ask Overpass or the online routers (only past the map's edge, or when the map has no route); Help shows the city's OpenStreetMap data date and credit (k150a).

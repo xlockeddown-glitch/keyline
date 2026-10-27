@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createGraph, graphCovers, ingestBaked, ingestLine, routeOnGraph, type BakedCity } from "./streets.ts";
+import { createGraph, expandGraph, graphCovers, ingestBaked, ingestLine, routeDrive, routeOnGraph, routeWalk, type BakedCity } from "./streets.ts";
 
 // A plus-shaped walk (two ways sharing the center node) and a freeway row off to the east.
 function plus(): BakedCity {
@@ -53,4 +53,25 @@ test("baked drive: only drive rows (flag 2), arterial from flag 8, no freeway la
   assert.equal(g.segs.length, 2);
   assert.ok(g.segs.every((s) => s.arterial));
   assert.equal(g.fw.length, 0);
+});
+
+test("0.1.50: inside the baked box walks and drives route on the baked graph with no network at all", async () => {
+  const g = ingestBaked(createGraph(41.001, -87.6), plus());
+  for (let i = 0; i < 30; i++) ingestLine(g, [{ lat: 41.0 + i * 0.0001, lng: -87.598 }, { lat: 41.0 + i * 0.0001, lng: -87.5979 }]);
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    throw new Error("offline");
+  }) as typeof fetch;
+  try {
+    const walk = await routeWalk(g, { lat: 41.0, lng: -87.6 }, { lat: 41.001, lng: -87.599 });
+    assert.ok(walk, "walk routes on the baked graph");
+    const drive = await routeDrive(g, { lat: 41.0, lng: -87.6 }, { lat: 41.001, lng: -87.599 });
+    assert.ok(drive, "drive routes on the baked graph");
+    await expandGraph(g, 41.0005, -87.5995, 2000);
+    assert.equal(calls, 0, "no Overpass, no getOsmWays, no OSRM inside the box");
+  } finally {
+    globalThis.fetch = real;
+  }
 });

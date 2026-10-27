@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { bakedSnapshot } from "@/game/streets";
 import { CARS } from "@/game/cars";
 import { STREET_DAY_CAP } from "@/game/streetSpots";
 import { MAGNET_DAY_CAP, MAGNET_GAP_MS, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, SCOUT_FAV } from "@/game/carPerks";
@@ -22,6 +23,16 @@ export function FieldGuide() {
   const replay = useGame((s) => s.replayTutorial);
   const clears = useGame((s) => s.correctByTier);
   const [askStuck, setAskStuck] = useState(false);
+  const cityId = useGame((s) => s.cityId);
+  const [mapDate, setMapDate] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    let live = true;
+    void bakedSnapshot(cityId).then((d) => live && setMapDate(d));
+    return () => {
+      live = false;
+    };
+  }, [open, cityId]);
   useSheetOpen(open);
   if (!open) return null;
   const rows = lampPayRows();
@@ -162,6 +173,13 @@ export function FieldGuide() {
               <li><span className="badge-ico"><ItemIcon item="coin" size={20} /><ItemIcon item="white" size={20} /><ItemIcon item="brass" size={20} /><b>+N</b></span><span>Items earned: coin, matches, brass, ink, vellum, ingredient, paint.</span></li>
             </ul>
           </section>
+          {/* 0.1.50: where the streets come from, and how fresh they are. */}
+          <p className="mt-5 text-xs text-fg-muted" data-testid="help-map-data">
+            {mapDate ? `Street map: OpenStreetMap data from ${mapDate}. ` : "Street map: OpenStreetMap data. "}
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">
+              © OpenStreetMap contributors
+            </a>
+          </p>
         </div>
         <div className="shrink-0 border-t border-border px-5 py-3">
           {askStuck ? (

@@ -1146,6 +1146,12 @@ export function graphCovers(g: StreetGraph, lat: number, lng: number, margin = 4
   return g.covers.some((c) => distM(lat, lng, c.lat, c.lng) < c.r - margin);
 }
 
+/** 0.1.50: inside the baked city's box (no margin): the baked map is the whole truth there, no live fetch. */
+export function inBakedBox(g: StreetGraph | null, lat: number, lng: number) {
+  const b = g?.baked;
+  return !!b && lat > b[0] && lat < b[2] && lng > b[1] && lng < b[3];
+}
+
 function overpassQuery(lat: number, lng: number, radius: number, drive = false) {
   const r = Math.round(radius);
   const at = `(around:${r},${lat.toFixed(5)},${lng.toFixed(5)})`;
@@ -1226,6 +1232,8 @@ export async function expandGraph(
   drive = false,
 ) {
   if (graphCovers(g, lat, lng, 380) && g.segs.length > 20) return g;
+  // 0.1.50: no Overpass (browser or getOsmWays) inside a baked city's box; live is only past its edge.
+  if (inBakedBox(g, lat, lng) && g.segs.length > 20) return g;
   const ways = await fetchStreets(lat, lng, radius, signal, drive);
   ingestOsmWays(g, ways, drive);
   g.covers.push({ lat, lng, r: radius });
@@ -1520,6 +1528,11 @@ export async function bridgeByFoot(g: StreetGraph, from: Pt, to: Pt, signal?: Ab
 export async function routeWalk(g: StreetGraph | null, from: Pt, to: Pt, signal?: AbortSignal): Promise<Pt[] | null> {
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 220, from) : to;
   const snappedFrom = g ? clearOfFreeway(g, pullToStreet(g, from.lat, from.lng, 140)) : from;
+  // 0.1.50: both ends in the baked city: walk the baked graph; the foot router only when it has no route.
+  if (inBakedBox(g, snappedFrom.lat, snappedFrom.lng) && inBakedBox(g, snappedTo.lat, snappedTo.lng)) {
+    const local = routeOnGraph(g!, snappedFrom, snappedTo);
+    if (local) return local;
+  }
   const online = await osrmRoute(snappedFrom, snappedTo, signal, false);
   // Aborted (map torn down, city changed): no fallback path. The caller's map may be gone.
   if (signal?.aborted) return null;
@@ -1563,6 +1576,11 @@ export async function routeDrive(g: StreetGraph | null, from: Pt, to: Pt, signal
   const snappedTo = g ? pullToStreet(g, to.lat, to.lng, 160) : to;
   const snappedFrom = g ? pullToStreet(g, from.lat, from.lng, 140) : from;
   if (g && distM(snappedTo.lat, snappedTo.lng, to.lat, to.lng) > 160) return null;
+  // 0.1.50: both ends in the baked city: drive the baked roads; the car router only when they have no route.
+  if (inBakedBox(g, snappedFrom.lat, snappedFrom.lng) && inBakedBox(g, snappedTo.lat, snappedTo.lng)) {
+    const local = routeOnGraph(g!, snappedFrom, snappedTo);
+    if (local) return local;
+  }
   const online = await osrmRoute(snappedFrom, snappedTo, signal, true);
   if (signal?.aborted) return null;
   if (online && online.length >= 2) {
@@ -1660,15 +1678,68 @@ export const BAKED_FREEWAY = 4;
 export const BAKED_ARTERIAL = 8;
 
 const bakedCache = new Map<string, Promise<BakedCity | null>>();
+/** 0.1.50: the browser cache that keeps visited cities' baked maps (and the last manifest) for offline play. */
+export const STREETS_CACHE = "keyline-streets-v2";
+async function streetsCache(): Promise<Cache | null> {
+  try {
+    return typeof caches === "undefined" ? null : await caches.open(STREETS_CACHE);
+  } catch {
+    return null;
+  }
+}
+/** The manifest: network first (a new publish's bake wins), the cached copy when offline. */
+async function fetchManifest(): Promise<{ cities?: Record<string, { file: string }> } | null> {
+  const url = "/streets/v2/manifest.json";
+  const cache = await streetsCache();
+  try {
+    const res = await fetch(url, { cache: "no-cache" });
+    if (res.ok) {
+      if (cache) void cache.put(url, res.clone()).catch(() => {});
+      return (await res.json()) as { cities?: Record<string, { file: string }> };
+    }
+  } catch {
+    /* offline: the cached manifest below */
+  }
+  const hit = await cache?.match(url);
+  return hit ? ((await hit.json()) as { cities?: Record<string, { file: string }> }) : null;
+}
+/** 0.1.50: the date of the OpenStreetMap snapshot the city's baked map was made from ("2026-10-27"), or null. */
+export async function bakedSnapshot(cityId: string): Promise<string | null> {
+  const man = (await fetchManifest().catch(() => null)) as { cities?: Record<string, { snapshot?: string }> } | null;
+  return man?.cities?.[cityId]?.snapshot ?? null;
+}
+/** A city file: hashed names never change, so cache first; a fresh download is stored and older files of the city dropped. */
+async function fetchCityFile(file: string): Promise<Response | null> {
+  const url = `/streets/v2/${file}`;
+  const cache = await streetsCache();
+  const hit = await cache?.match(url);
+  if (hit) return hit;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  if (!cache) return res;
+  // Read it once and store those bytes before handing them on, so a reload right after finds the city.
+  const body = await res.arrayBuffer();
+  const type = res.headers.get("content-type") ?? "application/octet-stream";
+  try {
+    await cache.put(url, new Response(body, { headers: { "content-type": type } }));
+    const city = file.split(".")[0];
+    for (const req of await cache.keys()) {
+      const name = new URL(req.url).pathname.split("/").pop() ?? "";
+      if (name !== file && name !== "manifest.json" && name.split(".")[0] === city) await cache.delete(req);
+    }
+  } catch {
+    /* storage full or blocked: play on without the offline copy */
+  }
+  return new Response(body, { headers: { "content-type": type } });
+}
 /** Fetch the city's baked map (null when the city has none or the fetch fails); one download per city per session. */
 export function loadBakedCity(cityId: string): Promise<BakedCity | null> {
   let p = bakedCache.get(cityId);
   if (!p) {
-    p = fetch("/streets/v2/manifest.json")
-      .then((res) => (res.ok ? (res.json() as Promise<{ cities?: Record<string, { file: string }> }>) : null))
+    p = fetchManifest()
       .then((man) => {
         const file = man?.cities?.[cityId]?.file;
-        return file ? fetch(`/streets/v2/${file}`).then((res) => (res.ok ? readBaked(res) : null)) : null;
+        return file ? fetchCityFile(file).then((res) => (res ? readBaked(res) : null)) : null;
       })
       .then((d) => (d && d.v === 3 ? d : null))
       .catch(() => null);
