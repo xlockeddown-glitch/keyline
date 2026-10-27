@@ -3,16 +3,16 @@
  "source": "© OpenStreetMap contributors, ODbL",
  "cities": {
   "chicago": {
-   "file": "chicago.5fb8b7a8c5.json.gz",
+   "file": "chicago.16beb10673.json.gz",
    "snapshot": "2026-10-27",
-   "bytes": 5667480,
-   "gz": 1385417
+   "bytes": 5772018,
+   "gz": 1417747
   },
   "nashville": {
-   "file": "nashville.5dd02d921b.json.gz",
+   "file": "nashville.7eccff252a.json.gz",
    "snapshot": "2026-10-27",
-   "bytes": 1071434,
-   "gz": 269143
+   "bytes": 1124141,
+   "gz": 276223
   }
  }
 }

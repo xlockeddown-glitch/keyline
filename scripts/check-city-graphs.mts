@@ -23,6 +23,13 @@ const MIN_BIG_SHARE = 0.95;
 const KNOWN_GAPS: Record<string, number> = {
   "nashville:stadium:nash-nissan": 125, // Nissan Stadium: the lots around it are mapped as area=yes / private service.
 };
+/** Lamps the road can only reach the long way round (straight line is over water); drive ratio cap for routes touching them. */
+const DRIVE_DETOUR: Record<string, number> = {
+  "chicago:chi-northerly": 3.2, // Northerly Island: one causeway in, Solidarity Drive, so routes south loop the harbor.
+  // Same ratios on a full live fetch (measured with every service road in): the car's curb is in a lot reached the long way.
+  "nashville:nash-capitol": 3.3, // Capitol Hill: its drives loop up from Charlotte / 6th.
+  "nashville:nash-nissan": 2.8, // Nissan Stadium lots: in from the east bank only.
+};
 const BUDGET_GZ: Record<string, number> = { chicago: 1_600_000, default: 600_000 };
 
 function comps(g: StreetGraph) {
@@ -85,11 +92,32 @@ for (const [city, { file }] of Object.entries(man.cities)) {
     const root = spawnSnap ? comp[g.segs[spawnSnap.seg]!.a]! : -1;
     const share = root >= 0 ? len[root]! / total : 0;
     const bigShare = Math.max(...len) / total;
-    const strict = mode === "walk";
+    const strict = true;
     const report = (m: string) => (strict ? fail(m) : console.log("note", m));
     console.log(`  ${mode}: ${g.nodes.length} nodes, ${g.segs.length} segs, ${g.fw.length} fw segs, ingest ${ms.toFixed(0)} ms (node), ${len.length} comps, largest ${(bigShare * 100).toFixed(1)}%, spawn's ${(share * 100).toFixed(1)}%`);
     if (share < MIN_BIG_SHARE) report(`${city} ${mode} spawn component ${(share * 100).toFixed(1)}% < 95%`);
-    const pts: { id: string; lat: number; lng: number; big?: boolean }[] = [
+    if (mode === "drive") {
+      // Car lot: its door snaps onto the road within 60 m, on the main road network. Lamps: the curb the car stops at
+      // (the nearest road within 250 m) must be on the main network, or the car can't get there.
+      const dl = DEALERS[c.id];
+      const ds = nearest(g, dl.lat, dl.lng, SNAP_M, comp, root);
+      if (!ds || ds.dist > SNAP_M) report(`${city} drive car lot not within ${SNAP_M} m of the main road network`);
+      let curbBad = 0;
+      let curbWorst = 0;
+      for (const p of c.pois) {
+        // A stub of lot road beside the lamp may be its own piece; routeOnGraph then stops on the main network's
+        // nearest curb, so that one must be within 250 m.
+        const main = nearest(g, p.lat, p.lng, 250, comp, root);
+        const d = main && main.dist <= 250 ? main.dist : Infinity;
+        curbWorst = Math.max(curbWorst, d);
+        if (d === Infinity) {
+          curbBad++;
+          report(`${city} drive: no curb on the main road network within 250 m of ${p.id}`);
+        }
+      }
+      console.log(`  drive: car lot ${ds ? ds.dist.toFixed(0) : "–"} m from road; ${c.pois.length - curbBad}/${c.pois.length} lamp curbs on the main network (farthest curb ${curbWorst.toFixed(0)} m)`);
+    }
+    const pts: { id: string; lat: number; lng: number; big?: boolean }[] = mode === "drive" ? [] : [
       { id: "spawn", ...c.spawn },
       ...(c.start ? [{ id: "start", ...c.start }] : []),
       // Stadiums are big footprints: the walk only has to come within the game's walk reach (WALK_REACH_M).
@@ -115,7 +143,7 @@ for (const [city, { file }] of Object.entries(man.cities)) {
         report(`${city} ${mode} ${p.id} not within ${SNAP_M} m of the spawn's ${mode} component (nearest any ${any ? any.dist.toFixed(0) + " m" : "> 400 m"})`);
       } else worst = Math.max(worst, s.dist);
     }
-    console.log(`  ${mode}: ${pts.length - off}/${pts.length} points snap on the spawn's component (≤ ${SNAP_M} m, stadiums ≤ ${WALK_REACH_M} m; worst ${worst.toFixed(0)} m)`);
+    if (pts.length) console.log(`  ${mode}: ${pts.length - off}/${pts.length} points snap on the spawn's component (≤ ${SNAP_M} m, stadiums ≤ ${WALK_REACH_M} m; worst ${worst.toFixed(0)} m)`);
     const lamps = c.pois.filter((p) => p.kind !== "station" && !/counter|board|outfitter/.test(p.kind));
     const r = rng(148);
     let ok = 0;
@@ -141,7 +169,8 @@ for (const [city, { file }] of Object.entries(man.cities)) {
       const straight = Math.max(distM(a.lat, a.lng, b.lat, b.lng), 50);
       const ratio = pathLength(path) / straight;
       maxRatio = Math.max(maxRatio, ratio);
-      if (ratio > MAX_RATIO) {
+      const cap = mode === "drive" ? Math.max(MAX_RATIO, DRIVE_DETOUR[`${city}:${a.id}`] ?? 0, DRIVE_DETOUR[`${city}:${b.id}`] ?? 0) : MAX_RATIO;
+      if (ratio > cap) {
         long++;
         if (long <= 5) report(`${city} ${mode} ${a.id} → ${b.id} ${ratio.toFixed(2)}× straight`);
         continue;

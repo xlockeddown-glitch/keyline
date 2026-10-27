@@ -21,7 +21,7 @@ function plus(): BakedCity {
     pl = la!;
     pa = lo!;
   }
-  return { v: 2, city: "t", snapshot: "2026-10-27", source: "© OpenStreetMap contributors, ODbL", bbox: [40.99, -87.61, 41.01, -87.58], cls: ["walk", "motorway"], names: [""], nodes, ways: [[0, 0, 1, 0, 1, 2], [0, 0, 1, 3, 1, 4], [1, 0, 4, 5, 6]] };
+  return { v: 3, city: "t", snapshot: "2026-10-27", source: "© OpenStreetMap contributors, ODbL", bbox: [40.99, -87.61, 41.01, -87.58], cls: ["walk", "motorway"], names: [""], nodes, ways: [[0, 0, 1, 0, 1, 1], [0, 0, 1, 3, -2, 3], [1, 0, 4, 5, 1]] };
 }
 
 test("baked walk: junction shared by index, freeway goes to the no-walk layer", () => {
@@ -44,4 +44,13 @@ test("a later live line merges onto baked nodes (lazy node keys)", () => {
   const before = g.nodes.length;
   ingestLine(g, [{ lat: 41.002, lng: -87.6 }, { lat: 41.003, lng: -87.6 }]);
   assert.equal(g.nodes.length, before + 1, "the shared end reuses the baked node");
+});
+
+test("baked drive: only drive rows (flag 2), arterial from flag 8, no freeway layer", () => {
+  const d = plus();
+  d.ways.push([0, 0, 2 | 8, 0, 1, 1]);
+  const g = ingestBaked(createGraph(41.001, -87.6), d, true);
+  assert.equal(g.segs.length, 2);
+  assert.ok(g.segs.every((s) => s.arterial));
+  assert.equal(g.fw.length, 0);
 });

@@ -282,7 +282,7 @@ export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
   // foot ways before freeways).
   if (!drive) {
     for (const way of ways) {
-      const geom = way.geometry;
+      const geom = way.geometry?.filter((p) => p != null && Number.isFinite(p.lat) && Number.isFinite(p.lon));
       if (!geom || geom.length < 2) continue;
       if (way.noWalk || (way.tags && isFreeway(way.tags))) {
         ingestFreeway(
@@ -294,7 +294,8 @@ export function ingestOsmWays(g: StreetGraph, ways: OsmWay[], drive = false) {
   }
   const keep = sharedVertices(ways);
   for (const way of ways) {
-    const geom = way.geometry;
+    // 0.1.48: live Overpass can hand back null points; drop them rather than crash the ingest.
+    const geom = way.geometry?.filter((p) => p != null && Number.isFinite(p.lat) && Number.isFinite(p.lon));
     if (!geom || geom.length < 2) continue;
     const hw = way.tags?.highway ?? "";
     if (!drive && (way.noWalk || (way.tags && isFreeway(way.tags)))) continue;
@@ -1578,6 +1579,12 @@ export const DRIVE_LIVE_WAIT_MS = 6000;
 
 export async function bootstrapDrive(lat: number, lng: number, hubs: Pt[], signal?: AbortSignal, cityId?: string) {
   const g = createGraph(lat, lng);
+  // 0.1.48: a baked city drives its baked roads at once: no live wait, no foot routes standing in for roads.
+  const baked = cityId ? await loadBakedCity(cityId) : null;
+  if (baked && baked.ways.some((w) => (w[2]! & BAKED_DRIVE) !== 0)) {
+    ingestBaked(g, baked, true);
+    if (g.segs.length >= 8) return g;
+  }
   // 0.1.32: the drive graph had no baked fallback, only live Overpass (then a few OSRM spines ~45 s later). When
   // the fetch is slow or failing (Temple, Oct 22) the car and the cab both said "No road that way." Give the
   // live fetch a few seconds; if it isn't in, drive the city's baked streets now and let the live roads join the
@@ -1627,11 +1634,11 @@ export function unpackFreeways(lines: number[][]): Pt[][] {
 
 /**
  * 0.1.48: the city's whole street map, baked from OpenStreetMap (scripts/bake-city-graph.mts, format v2): a delta-int
- * node table at 1e-5°, ways as node-index lists with a class, a name and flags (1 walk, 2 drive, 4 freeway, 8 arterial).
+ * node table at 1e-5°, ways as node-index lists (first absolute, then deltas; v3) with a class, a name and flags (1 walk, 2 drive, 4 freeway, 8 arterial).
  * Walk and drive share the file. Shared node indexes make every junction exact, so ingest skips stitching and thinning.
  */
 export type BakedCity = {
-  v: 2;
+  v: 3;
   city: string;
   snapshot: string;
   source: string;
@@ -1657,7 +1664,7 @@ export function loadBakedCity(cityId: string): Promise<BakedCity | null> {
         const file = man?.cities?.[cityId]?.file;
         return file ? fetch(`/streets/v2/${file}`).then((res) => (res.ok ? readBaked(res) : null)) : null;
       })
-      .then((d) => (d && d.v === 2 ? d : null))
+      .then((d) => (d && d.v === 3 ? d : null))
       .catch(() => null);
     bakedCache.set(cityId, p);
     void p.then((d) => {
@@ -1710,7 +1717,11 @@ export function ingestBaked(g: StreetGraph, d: BakedCity, drive = false) {
     const f = w[2]!;
     if (!drive && f & BAKED_FREEWAY) {
       const pts: Pt[] = [];
-      for (let k = 3; k < w.length; k++) pts.push({ lat: lat[w[k]!]!, lng: lng[w[k]!]! });
+      let ix = 0;
+      for (let k = 3; k < w.length; k++) {
+        ix = k === 3 ? w[k]! : ix + w[k]!;
+        pts.push({ lat: lat[ix]!, lng: lng[ix]! });
+      }
       ingestFreeway(g, pts);
     }
   }
@@ -1718,9 +1729,11 @@ export function ingestBaked(g: StreetGraph, d: BakedCity, drive = false) {
     const f = w[2]!;
     if (!(f & want)) continue;
     const art = drive && (f & BAKED_ARTERIAL) !== 0;
-    let prev = idOf(w[3]!);
+    let ix = w[3]!;
+    let prev = idOf(ix);
     for (let k = 4; k < w.length; k++) {
-      const id = idOf(w[k]!);
+      ix += w[k]!;
+      const id = idOf(ix);
       addBakedSeg(g, prev, id, art);
       prev = id;
     }

@@ -5,13 +5,14 @@
 // Bbox: spawn + every lamp, padded 900 m (same as bake-freeways). Two polite Overpass queries per city (walk + freeway,
 // drive), one at a time, mirror rotation with backoff; raw answers cached in .bake-cache/ (gitignored), so reruns are
 // offline and idempotent. --force re-fetches. Output format (v2):
-//   nodes: delta ints at 1e-5° [lat0,lng0,dLat1,dLng1,…]; ways: [cls, name, flags, n0, n1, …] node indexes;
+//   nodes: delta ints at 1e-5° [lat0,lng0,dLat1,dLng1,…]; ways: [cls, name, flags, n0, d1, d2, …] node indexes (first absolute, then deltas);
 //   flags: 1 walk (the game's own walk ingest), 2 drive (getOsmWays' drive rule; only with --drive), 4 freeway (no-walk layer), 8 arterial.
 // Freeway/drive rows: thinned at 14 m like packLine, shared vertices always kept. Walk rows: see buildCity.
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { CITIES } from "../src/game/data.ts";
+import { DEALERS } from "../src/game/cars.ts";
 import { createGraph, ingestOsmWays } from "../src/game/streets.ts";
 import { packLine } from "../src/game/streetApi.ts";
 import { sharedVertices } from "../src/game/walkable.ts";
@@ -80,6 +81,10 @@ export function buildCity(city: string, walkEls: El[], driveEls: El[], snapshot:
     if (hit) hit.driveQ = true;
     else byId.set(el.id, { el, walkQ: false, driveQ: true });
   }
+  const c = CITIES[city as keyof typeof CITIES];
+  const places = [c.spawn, ...(c.start ? [c.start] : []), ...c.pois, DEALERS[c.id as keyof typeof DEALERS]];
+  const nearPlace = (geom: { lat: number; lon: number }[]) =>
+    geom.some((p) => p && places.some((q) => Math.abs(p.lat - q.lat) * 111_320 < 300 && Math.hypot((p.lat - q.lat) * 111_320, (p.lon - q.lng) * 111_320 * Math.cos((q.lat * Math.PI) / 180)) < 300));
   const ways = [...byId.values()].sort((a, b) => a.el.id! - b.el.id!);
   const count = new Map<string, number>();
   for (const { el } of ways) for (const k of new Set((el.geometry ?? []).filter(Boolean).map((p) => `${Math.round(p.lat * 1e5)},${Math.round(p.lon * 1e5)}`))) count.set(k, (count.get(k) ?? 0) + 1);
@@ -93,7 +98,9 @@ export function buildCity(city: string, walkEls: El[], driveEls: El[], snapshot:
     const hw = t.highway ?? "";
     let flags = 0;
     if (walkQ && isFreeway(t)) flags |= 4;
-    if (withDrive && driveQ && DRIVE_SET.has(hw)) flags |= 2;
+    // Service roads (alleys, lots, driveways) are ~40% of drive rows and the static output is capped at 8 MB, so only
+    // the ones within 300 m of a lamp, stand, car lot or spawn ship: those are the curbs a car stops at.
+    if (withDrive && driveQ && DRIVE_SET.has(hw) && (hw !== "service" || nearPlace(el.geometry ?? []))) flags |= 2;
     if (flags & 2 && ARTERIAL.has(hw)) flags |= 8;
     if (!flags) continue;
     const g = (el.geometry ?? []).filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon));
@@ -174,6 +181,8 @@ export function buildCity(city: string, walkEls: El[], driveEls: El[], snapshot:
   };
   for (let i = 0; i < g.nodes.length; i++) if (deg(i) !== 2) for (const s of g.adj[i]!) if (!used[s]) chain(i, s);
   for (let i = 0; i < g.nodes.length; i++) for (const s of g.adj[i]!) if (!used[s]) chain(i, s); // loops
+  // Node indexes after the first are deltas from the previous one (neighbors are mostly numbered close together).
+  for (const row of out) for (let k = row.length - 1; k > 3; k--) row[k] = row[k]! - row[k - 1]!;
   const flat: number[] = [];
   let pl = 0;
   let pa = 0;
@@ -183,7 +192,7 @@ export function buildCity(city: string, walkEls: El[], driveEls: El[], snapshot:
     pa = lo;
   }
   return {
-    v: 2,
+    v: 3,
     city,
     snapshot,
     source: "© OpenStreetMap contributors, ODbL (https://www.openstreetmap.org/copyright)",

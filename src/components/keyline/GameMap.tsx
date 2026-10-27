@@ -236,6 +236,8 @@ export function GameMap() {
   const lastExpand = useRef(0);
   const lastKeyCheck = useRef(0);
   const expandFails = useRef(0);
+  const lastDriveExpand = useRef(0);
+  const driveExpandFails = useRef(0);
   const pos = useRef({ lat: 0, lng: 0, yaw: 0, speed: 0, stamina: 1 });
   const keysHeld = useRef(new Set<string>());
   const injected = useRef<string[] | null>(null);
@@ -2104,11 +2106,27 @@ export function GameMap() {
             expandBusy.current = false;
           });
       }
-      if (driveG && seated && !graphCovers(driveG, pos.current.lat, pos.current.lng, 500) && !expandBusy.current) {
+      // 0.1.48: this used to retry every frame when the road fetch failed (~12 Overpass calls a second offline, plus an
+      // unhandled rejection each time). Now it waits, doubling per failure up to a minute, like the walk expand above.
+      if (
+        driveG &&
+        seated &&
+        t - lastDriveExpand.current > Math.min(60_000, 1400 * 2 ** driveExpandFails.current) &&
+        !graphCovers(driveG, pos.current.lat, pos.current.lng, 500) &&
+        !expandBusy.current
+      ) {
         expandBusy.current = true;
-        void expandGraph(driveG, pos.current.lat, pos.current.lng, 2000, abortRef.current?.signal, true).finally(() => {
-          expandBusy.current = false;
-        });
+        lastDriveExpand.current = t;
+        void expandGraph(driveG, pos.current.lat, pos.current.lng, 2000, abortRef.current?.signal, true)
+          .then(() => {
+            driveExpandFails.current = 0;
+          })
+          .catch(() => {
+            driveExpandFails.current = Math.min(6, driveExpandFails.current + 1);
+          })
+          .finally(() => {
+            expandBusy.current = false;
+          });
       }
 
       const city = CITIES[st.cityId];
