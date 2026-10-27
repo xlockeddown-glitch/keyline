@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.55";
+export const APP_VERSION = "0.1.56";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k155a";
+export const PUBLISH_STAMP = "k156a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -163,8 +163,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.49: baked street maps for all 15 cities (OpenStreetMap snapshot 2026-10-27, ~10.5 MB gzipped): walking and driving no longer wait on Overpass; five lamps moved onto streets you can reach (Draughon-Miller Airport, Raytheon, Brooklyn Bridge, Crissy Field, Ford Field); long walks (18 km across Chicago) now route offline (k149a).
 // 0.1.50: visited cities' street maps are kept in the browser for offline play; inside the 15 baked cities walking and driving never ask Overpass or the online routers (only past the map's edge, or when the map has no route); Help shows the city's OpenStreetMap data date and credit (k150a).
 // 0.1.51: two new cars — Hyundai Ioniq 5 (90k, +10%, Vehicle-to-load: +1 white per lit lamp while seated, 20 a day, server-paid; favorite Arts) and Tesla Model 3 Highland (350k, +20%, Autopilot: 1 in 10 lamp questions drop a wrong answer, rolled from the deal nonce; favorite Math); 3 views + 5 paint colours each.
-// 0.1.52: History trivia — 201 U.S. presidents cards (nicknames, birthplaces, VPs, first ladies, elections, speeches, cabinet, scandals, assassinations, firsts) in banks/history_presidents_20261027.ts.
-// 0.1.53: Geography becomes the 14th trivia category (213 cards: capitals, rivers, mountains, flags, borders, U.S. states, islands, lakes, time zones; Map Reader / Navigator / Cartographer ladder; water and airport lamps offer it); the Giraffe now favors Geography (k153a).
-// 0.1.53: Geography becomes the 14th trivia category (211 cards: capitals, rivers, mountains, flags, borders, U.S. states, islands, lakes, time zones; Map Reader / Navigator / Cartographer ladder; water and airport lamps offer it); the Giraffe now favors Geography (k153a).
-// 0.1.54: sound pack — 7 short synthesized effects (car bought, get in the car, step out, city arrival chime, level up, quest done, morning crate); muted with the speaker, once per event.
-// 0.1.55: 1957 Chevrolet Bel Air convertible (200k, +17%): Road trip — the first lamp you light in each city each day pays +1 white match while seated (server-paid, one per city per day, 15 a day at most); favorite Local for now (Geography when 0.1.53 lands); turquoise factory paint + 5 colours (k155a).
+// 0.1.56: 201 U.S. presidents History cards; Geography becomes the 14th category (211 cards, Map Reader / Navigator / Cartographer ladder, the Giraffe favors it); sound pack — 7 synthesized effects (car bought, get in/step out, city arrival, level up, quest done, crate open), muted with the speaker; 1957 Chevrolet Bel Air convertible (200k, +17%, Road trip: the first lamp lit in each city each day pays +1 white while seated, one per city per day; favorite Geography; turquoise + 5 paints) (k156a).

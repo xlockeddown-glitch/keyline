@@ -46,11 +46,11 @@ const rtRows = async (sql: Sql, id: string) =>
   Number((await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and detail like ${'%"rt":1%'}`)[0]?.n);
 
 const RT = "Road trip: +1 white";
-test("data: Bel Air in price order, six colours, Road trip perk, temporary Local favorite", () => {
+test("data: Bel Air in price order, six colours, Road trip perk, Geography favorite", () => {
   assert.deepEqual(CARS.filter((c) => c.id === "belair57").map((c) => [c.price, c.pace, c.year]), [[200_000, 1.17, "1957"]]);
   assert.equal(CAR_COLORS.belair57.length, 6);
   assert.equal(CAR_COLORS.belair57[0]!.name, "Tropical Turquoise");
-  assert.equal(CAR_FAV.belair57, "local");
+  assert.equal(CAR_FAV.belair57, "geography");
   assert.match(CAR_PERKS.belair57.label, /^Road trip/);
   assert.equal(roadTripPays("belair57", false), true);
   assert.equal(roadTripPays("belair57", true), false);

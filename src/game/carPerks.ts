@@ -34,7 +34,7 @@ export const CAR_PERKS: Record<CarId, CarPerk> = {
 export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].magnet);
 
 export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", ioniq5: "arts", mustang: "sports",
-  belair57: "local", // TODO(0.1.53 geography): flip belair57 to "geography" when wip/geography lands.
+  belair57: "geography",
   model3: "math", roadster: "science", roadster2: "games" };
 export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   raccoon: "food",
