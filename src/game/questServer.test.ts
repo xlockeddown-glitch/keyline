@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
-import { LUCKY_OWNED_COIN, questSet } from "./questBoard.ts";
+import { LUCKY_OWNED_COIN, V2_FROM, questSet } from "./questBoard.ts";
 import { chicagoDay, currentPeriod, dayKey, monthKey, nextMonthKey, previousPeriod, QUEST_GRACE_MS } from "./questPeriods.ts";
 import { LEGACY_CHARM_CAP, LEGACY_THANKS_COIN, applyLegacy, claimQuest, luckyLive, questCtx, questStatus } from "./questServer.ts";
 import type { GradePay, LocalSnap } from "./wallet.ts";
@@ -20,6 +20,10 @@ import { thanksClock } from "./thanksGift.ts";
 
 // 0.1.39: keep the thank-you gift (its free house and coin) out of these quest wallets; thanksGift.test.ts covers it.
 thanksClock.cutoff = "2000-01-01T00:00:00Z";
+// These tests use the original quest bank (w-lamps, m-tour, ...). From W2026-10-26 / M2026-11 the live bank is v2
+// (w-lamps2 ...), so pin v1 here or the draws depend on today's date; questBoard.test.ts covers v2.
+V2_FROM.week = null;
+V2_FROM.month = null;
 
 function sqlOf(db: PGlite): Sql {
   const sql = (async (strings: TemplateStringsArray, ...values: unknown[]) => {
@@ -353,7 +357,9 @@ test("the day runs Chicago midnight to midnight: a lamp at 11:59 PM CT is yester
   assert.equal((await claimQuest(sql, u, p.key, "d-amber", p.start + H)).ok, true);
 });
 
-test("0.1.27: next week's Challenge counts perfect answers on the server; sparks and plain right answers don't", async () => {
+test("0.1.27: next week's Challenge counts perfect answers on the server; sparks and plain right answers don't", async (t) => {
+  V2_FROM.week = "W2026-10-26";
+  t.after(() => { V2_FROM.week = null; });
   const sql = await db();
   const next = currentPeriod("week", currentPeriod("week", NOW).end + 1);
   const key = next.key >= "W2026-10-26" ? next.key : "W2026-10-26";
