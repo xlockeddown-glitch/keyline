@@ -119,6 +119,7 @@ export const CAT_LADDERS: Readonly<Record<TriviaCat, readonly [string, string, s
   celebrity: ["Fan Club", "Paparazzo", "Media Lover"],
   music: ["Air Guitarist", "Roadie", "Headliner"],
   books: ["Bookworm", "Page Turner", "Literary Lion"],
+  geography: ["Map Reader", "Navigator", "Cartographer"],
   history: ["Time Tourist", "Time Traveler", "Living Legend"],
   science: ["Lab Rat", "Mad Scientist", "Big Brain"],
   math: ["Number Cruncher", "Human Calculator", "Mathlete Supreme"],

@@ -24,6 +24,7 @@ export const TRIVIA_CATS: { id: TriviaCat; label: string; blurb: string }[] = [
   { id: "celebrity", label: "Celebrity", blurb: "Screens, stages, the names everyone knows." },
   { id: "music", label: "Music", blurb: "Songs, singers and bands, from old hits to deep cuts." },
   { id: "books", label: "Books", blurb: "Novels, authors, first lines and the prizes they won." },
+  { id: "geography", label: "Geography", blurb: "Maps, capitals, rivers, flags." },
 ];
 export const ALL_CATS: TriviaCat[] = TRIVIA_CATS.map((c) => c.id);
 export const DIFF_LABEL = {

@@ -40,7 +40,7 @@ export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   owl: "books",
   corgi: "celebrity",
   sloth: "political",
-  giraffe: "science",
+  giraffe: "geography",
   fox: "math",
   lynx: "music",
   panda: "music",
@@ -48,7 +48,7 @@ export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
 
 export const CAT_LABEL: Record<TriviaCat, string> = {
   sports: "Sports", local: "Local", political: "Political", food: "Food", arts: "Arts", math: "Math", science: "Science",
-  history: "History", nature: "Nature", games: "Video games", celebrity: "Celebrity", music: "Music", books: "Books",
+  history: "History", nature: "Nature", games: "Video games", celebrity: "Celebrity", music: "Music", books: "Books", geography: "Geography",
 };
 
 export const FAV_BONUS = 0.15;
@@ -59,7 +59,7 @@ export const favBonus = (n: number) => (n >= 2 ? FAV_BOTH : n === 1 ? FAV_BONUS 
 export const COTD_BONUS = 0.25;
 export const CAT_BONUS_CAP = 0.4;
 
-const CATS: readonly TriviaCat[] = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music", "books"];
+const CATS: readonly TriviaCat[] = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music", "books", "geography"];
 
 /** The category of the day for a Chicago date ("2026-10-25"): the same on every server and device. */
 export function cotdOf(day: string): TriviaCat {

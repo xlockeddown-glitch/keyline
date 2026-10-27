@@ -69,12 +69,12 @@ test("boost math: favorite +15%, day +25%, added, capped at +40%; lamps only, ne
   assert.equal(catBoost(fav, [day, fav], T0).x, 1.15, "car alone");
   assert.equal(catBoost(day, [day, day], T0).x, 1.4, "day +25% and both +25% caps at 1.40");
   assert.equal(coin(pay({ topic: fav, favs: [fav, fav] })), Math.round(coin(pay({ topic: other([day, fav]) })) * 1.25));
-  // Giraffe + Roadster on Science (both Science), not the day: +25%, server-side from proven favs.
-  const sci = perkFavs("giraffe", true, "roadster");
-  assert.deepEqual(sci, ["science", "science"]);
-  const notDay = cotdAt(T0) === "science" ? T0 + 86_400_000 : T0;
-  assert.equal(catBoost("science", sci, notDay).x, cotdAt(notDay) === "science" ? 1.4 : 1.25);
-  assert.equal(catBoost("science", perkFavs("giraffe", false, "roadster"), notDay).x, 1.15, "an unproven coat drops to the car's +15%");
+  // Fox + Model 3 on Math (both Math), not the day: +25%, server-side from proven favs.
+  const sci = perkFavs("fox", true, "model3");
+  assert.deepEqual(sci, ["math", "math"]);
+  const notDay = cotdAt(T0) === "math" ? T0 + 86_400_000 : T0;
+  assert.equal(catBoost("math", sci, notDay).x, cotdAt(notDay) === "math" ? 1.4 : 1.25);
+  assert.equal(catBoost("math", perkFavs("fox", false, "model3"), notDay).x, 1.15, "an unproven coat drops to the car's +15%");
   assert.ok(catBoost(day, [day], T0).x <= 1 + CAT_BONUS_CAP);
   assert.equal(catBoost(null, [fav], T0).x, 1);
   const base = coin(pay({ topic: other([day, fav]) }));

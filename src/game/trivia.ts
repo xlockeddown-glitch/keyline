@@ -38,6 +38,7 @@ import { GAMES_BANK } from "@/game/banks/games";
 import { CELEBRITY_BANK } from "@/game/banks/celebrity";
 import { MUSIC_BANK } from "@/game/banks/music";
 import { BOOKS_BANK } from "@/game/banks/books";
+import { GEOGRAPHY_20261027 } from "@/game/banks/geography_20261027";
 import { CUR_SPORTS_20261021, CUR_POLITICAL_20261021, CUR_FOOD_20261021, CUR_ARTS_20261021, CUR_SCIENCE_20261021, CUR_HISTORY_20261021, CUR_NATURE_20261021, CUR_GAMES_20261021, CUR_CELEBRITY_20261021, CUR_MUSIC_20261021, CUR_BOOKS_20261021, CUR_LOCAL_20261021 } from "@/game/banks/current_20261021";
 import { PLUS_20261022 } from "@/game/banks/plus_20261022";
 import { PLUS_20261025 } from "@/game/banks/plus_20261025";
@@ -367,6 +368,7 @@ const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	celebrity: mergeCat(mergeCat(mergeCat(mergeCat(CELEBRITY_BANK, WEEKLY_CELEBRITY_20261006), PLUS_CELEBRITY_20261019), CUR_CELEBRITY_20261021), PLUS_20261022.celebrity),
 	music: mergeCat(mergeCat(mergeCat(mergeCat(MUSIC_BANK, PLUS_MUSIC_20261019), CUR_MUSIC_20261021), PLUS_20261022.music), VARIETY_20261025.music),
 	books: mergeCat(mergeCat(mergeCat(BOOKS_BANK, CUR_BOOKS_20261021), PLUS_20261022.books), VARIETY_20261025.books),
+	geography: GEOGRAPHY_20261027,
 };
 const TEXAS_LOCAL = [
 	q("The current Texas Capitol in Austin opened in which decade?", [

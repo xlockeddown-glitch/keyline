@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cotdAt, perkFavs, favBonus } from "@/game/carPerks";
-import { BookOpen, Calculator, FlaskConical, Gamepad2, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
+import { BookOpen, Calculator, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
 import { ladderLampHtml } from "@/game/pins";
@@ -28,6 +28,7 @@ const CAT_ICON: Record<TriviaCat, typeof Trophy> = {
   celebrity: Star,
   music: Music,
   books: BookOpen,
+  geography: Globe,
 };
 
 export function VaultModal() {

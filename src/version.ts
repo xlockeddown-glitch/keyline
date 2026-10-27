@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.52";
+export const APP_VERSION = "0.1.53";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k152a";
+export const PUBLISH_STAMP = "k153a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -164,3 +164,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.50: visited cities' street maps are kept in the browser for offline play; inside the 15 baked cities walking and driving never ask Overpass or the online routers (only past the map's edge, or when the map has no route); Help shows the city's OpenStreetMap data date and credit (k150a).
 // 0.1.51: two new cars — Hyundai Ioniq 5 (90k, +10%, Vehicle-to-load: +1 white per lit lamp while seated, 20 a day, server-paid; favorite Arts) and Tesla Model 3 Highland (350k, +20%, Autopilot: 1 in 10 lamp questions drop a wrong answer, rolled from the deal nonce; favorite Math); 3 views + 5 paint colours each.
 // 0.1.52: History trivia — 201 U.S. presidents cards (nicknames, birthplaces, VPs, first ladies, elections, speeches, cabinet, scandals, assassinations, firsts) in banks/history_presidents_20261027.ts.
+// 0.1.53: Geography becomes the 14th trivia category (213 cards: capitals, rivers, mountains, flags, borders, U.S. states, islands, lakes, time zones; Map Reader / Navigator / Cartographer ladder; water and airport lamps offer it); the Giraffe now favors Geography (k153a).
