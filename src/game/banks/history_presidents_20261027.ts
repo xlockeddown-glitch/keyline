@@ -20,7 +20,7 @@ export const HISTORY_PRESIDENTS_20261027: TriviaQ[] = [
 
 	// Birthplaces and home states
 	q("Abraham Lincoln was born in a log cabin in which state?", ["Kentucky","Illinois","Indiana","Ohio"], "Kentucky", 2),
-	q("Which state is nicknamed the 'Mother of Presidents' for producing eight of them?", ["Virginia","Ohio","Massachusetts","New York"], "Virginia", 2),
+	q("Which state is nicknamed the 'Mother of Presidents' for producing eight of them?", ["Virginia","Pennsylvania","Massachusetts","New York"], "Virginia", 2),
 	q("Barack Obama was born in which state?", ["Hawaii","Illinois","Kansas","California"], "Hawaii", 1),
 	q("Jimmy Carter was a peanut farmer from Plains in which state?", ["Georgia","Alabama","South Carolina","Tennessee"], "Georgia", 1),
 	q("Bill Clinton was born in Hope, in which state?", ["Arkansas","Texas","Oklahoma","Missouri"], "Arkansas", 1),
@@ -68,7 +68,7 @@ export const HISTORY_PRESIDENTS_20261027: TriviaQ[] = [
 	q("The 12th Amendment changed elections so electors cast separate votes for president and…", ["vice president","House Speaker","state senators","governors"], "vice president", 3),
 
 	// First ladies
-	q("Which first lady saved a portrait of George Washington from the White House before British troops burned it in 1814?", ["Dolley Madison","Abigail Adams","Martha Washington","Elizabeth Monroe"], "Dolley Madison", 2),
+	q("Which first lady is credited with saving a portrait of George Washington before British troops burned the White House in 1814?", ["Dolley Madison","Abigail Adams","Martha Washington","Elizabeth Monroe"], "Dolley Madison", 2),
 	q("Which first lady wrote a newspaper column called 'My Day'?", ["Eleanor Roosevelt","Edith Wilson","Bess Truman","Mamie Eisenhower"], "Eleanor Roosevelt", 2),
 	q("Eleanor Roosevelt chaired the committee that drafted the Universal Declaration of…", ["Human Rights","Independence","Peace","Labor"], "Human Rights", 2),
 	q("Which first lady led a 1962 televised tour of the White House?", ["Jacqueline Kennedy","Mamie Eisenhower","Lady Bird Johnson","Pat Nixon"], "Jacqueline Kennedy", 2),
@@ -78,7 +78,7 @@ export const HISTORY_PRESIDENTS_20261027: TriviaQ[] = [
 	q("Michelle Obama's best-selling 2018 memoir is titled…", ["Becoming","Rising","Believing","Living History"], "Becoming", 1),
 	q("Which first lady later became a U.S. senator and Secretary of State?", ["Hillary Clinton","Laura Bush","Rosalynn Carter","Barbara Bush"], "Hillary Clinton", 1),
 	q("Abigail Adams urged her husband in a 1776 letter to remember the…", ["Ladies","Children","Farmers","Soldiers"], "Ladies", 2),
-	q("Which first lady is both wife of one president and mother of another?", ["Barbara Bush","Laura Bush","Martha Washington","Dolley Madison"], "Barbara Bush", 2),
+	q("Which of these first ladies was both the wife of one president and the mother of another?", ["Barbara Bush","Laura Bush","Martha Washington","Dolley Madison"], "Barbara Bush", 2),
 	q("Laura Bush worked as a teacher and…", ["librarian","nurse","lawyer","journalist"], "librarian", 2),
 	q("Betty Ford founded a well-known treatment center for…", ["addiction","cancer","heart disease","blindness"], "addiction", 2),
 	q("Which first lady is credited with taking on many duties after Woodrow Wilson's 1919 stroke?", ["Edith Wilson","Ellen Wilson","Florence Harding","Grace Coolidge"], "Edith Wilson", 3),
@@ -94,7 +94,7 @@ export const HISTORY_PRESIDENTS_20261027: TriviaQ[] = [
 	q("The 1800 election, a tie between Jefferson and Burr, was decided by the…", ["House of Representatives","U.S. Senate","Supreme Court","state legislatures"], "House of Representatives", 3),
 	q("The 1824 election John Quincy Adams won in the House was attacked by Jackson as the…", ["Corrupt Bargain","Great Compromise","Era of Good Feelings","Spoils System"], "Corrupt Bargain", 3),
 	q("The 'Dewey Defeats Truman' headline was a famous mistake in which election year?", ["1948","1944","1952","1940"], "1948", 2),
-	q("The first televised presidential debates in 1960 were between Kennedy and…", ["Richard Nixon","Barry Goldwater","Adlai Stevenson","Hubert Humphrey"], "Richard Nixon", 1),
+	q("The first televised general-election presidential debates, in 1960, pitted Kennedy against…", ["Richard Nixon","Barry Goldwater","Adlai Stevenson","Nelson Rockefeller"], "Richard Nixon", 1),
 	q("Theodore Roosevelt's third-party run in 1912 was nicknamed the…", ["Bull Moose Party","Know-Nothing Party","Whig Party","Free Soil Party"], "Bull Moose Party", 2),
 	q("Which candidate won the 1912 election when the Republican vote split?", ["Woodrow Wilson","William Howard Taft","Eugene Debs","Charles Evans Hughes"], "Woodrow Wilson", 2),
 	q("FDR's 1932 promise to Americans was a New…", ["Deal","Frontier","Society","Freedom"], "Deal", 1),
@@ -131,7 +131,7 @@ export const HISTORY_PRESIDENTS_20261027: TriviaQ[] = [
 
 	// Cabinet and government
 	q("Who was the first U.S. Secretary of the Treasury?", ["Alexander Hamilton","Thomas Jefferson","Albert Gallatin","John Jay"], "Alexander Hamilton", 1),
-	q("Who was the first U.S. Secretary of State?", ["Thomas Jefferson","John Jay","James Madison","Alexander Hamilton"], "Thomas Jefferson", 2),
+	q("Who was the first U.S. Secretary of State?", ["Thomas Jefferson","Benjamin Franklin","James Madison","Alexander Hamilton"], "Thomas Jefferson", 2),
 	q("Who was the first woman to serve in a U.S. Cabinet, as Labor Secretary?", ["Frances Perkins","Eleanor Roosevelt","Oveta Culp Hobby","Madeleine Albright"], "Frances Perkins", 2),
 	q("Who was the first African American Secretary of State?", ["Colin Powell","Condoleezza Rice","Andrew Young","Ralph Bunche"], "Colin Powell", 2),
 	q("Secretary of State William Seward arranged the 1867 purchase of…", ["Alaska","Hawaii","Florida","the Philippines"], "Alaska", 1),
