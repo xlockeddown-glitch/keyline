@@ -43,6 +43,14 @@ export const CAR_COLORS: Record<CarId, readonly PaintColor[]> = {
     { id: "blue", name: "Velocity Blue", hex: "#1f56b5" },
     { id: "sig", name: "Twister Orange", hex: "#e2581b" },
   ],
+  belair57: [
+    { id: "turquoise", name: "Tropical Turquoise", hex: "#2fb3ad" },
+    { id: "black", name: "Onyx Black", hex: "#17181b" },
+    { id: "silver", name: "Inca Silver", hex: "#a9aeb3" },
+    { id: "red", name: "Matador Red", hex: "#b3141d" },
+    { id: "blue", name: "Larkspur Blue", hex: "#5b86b8" },
+    { id: "sig", name: "Coronado Yellow", hex: "#e8cf6a" },
+  ],
   model3: [
     { id: "white", name: "Pearl White", hex: "#f2f2ef" },
     { id: "black", name: "Diamond Black", hex: "#16171a" },

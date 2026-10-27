@@ -10,6 +10,7 @@ test("0.1.8 cars: Ryan's prices and speeds, each car dearer and faster, Roadster
     ["f150", 50_000, 1.08],
     ["ioniq5", 90_000, 1.1],
     ["mustang", 150_000, 1.15],
+    ["belair57", 200_000, 1.17],
     ["model3", 350_000, 1.2],
     ["roadster", 600_000, 1.22],
     ["roadster2", 2_400_000, 1.3],

@@ -11,9 +11,12 @@ cols={}
 for car,body in re.findall(r'\n  (\w+): \[\n(.*?)\n  \],',src,re.S):
     cols[car]=re.findall(r'id: "(\w+)", name: "[^"]+", hex: "#(\w{6})"',body)
 os.makedirs(f'{R}/public/sprites/cars/paint',exist_ok=True)
-def mask(a):
+def mask(a,car=''):
     rgb=a[...,:3].astype(float); mx=rgb.max(-1); mn=rgb.min(-1); sat=(mx-mn)/np.maximum(mx,1)
     m=(a[...,3]>0)&(sat<0.16)&(mx>105)
+    if car=='belair57':  # 0.1.55: turquoise body (ivory roof sweep and chrome keep their pixels)
+        r,g,b=rgb[...,0],rgb[...,1],rgb[...,2]
+        m=(a[...,3]>0)&(sat>0.22)&(g>r+25)&(b>r+15)&(mx>60)
     lab,n=ndimage.label(m); 
     if not n: return m
     sz=ndimage.sum(m,lab,range(1,n+1)); keep=1+np.where(sz>=sz.max()*0.12)[0]
@@ -21,7 +24,7 @@ def mask(a):
 for car,cl in cols.items():
     for view in ['side','front','back']:
         a=np.asarray(Image.open(f'{R}/public/sprites/cars/{car}-{view}.png').convert('RGBA')).astype(float)
-        m=mask(a); L=a[...,:3].mean(-1); Lm=np.median(L[m])
+        m=mask(a,car); L=a[...,:3].mean(-1); Lm=np.median(L[m])
         for cid,hx in cl[1:]:
             t=np.array([int(hx[i:i+2],16) for i in (0,2,4)],float)
             s=(L[m]/Lm)[:,None]

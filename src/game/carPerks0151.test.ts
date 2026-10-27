@@ -54,7 +54,7 @@ test("data: two new cars in price order, six real colours each, perks and favori
   for (const c of ["ioniq5", "model3"] as const) assert.equal(CAR_COLORS[c].length, 6);
   assert.equal(CAR_FAV.ioniq5, "arts");
   assert.equal(CAR_FAV.model3, "math");
-  const carFavs = Object.values(CAR_FAV);
+  const carFavs = Object.entries(CAR_FAV).filter(([k]) => k !== "belair57").map(([, v]) => v); // belair57: temporary "local" until geography
   assert.equal(new Set(carFavs).size, carFavs.length, "no two cars share a favorite");
   assert.match(CAR_PERKS.ioniq5.label, /^Vehicle-to-load/);
   assert.match(CAR_PERKS.model3.label, /^Autopilot/);

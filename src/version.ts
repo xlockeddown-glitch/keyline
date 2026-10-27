@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.54";
+export const APP_VERSION = "0.1.55";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k154a";
+export const PUBLISH_STAMP = "k155a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -167,3 +167,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.53: Geography becomes the 14th trivia category (213 cards: capitals, rivers, mountains, flags, borders, U.S. states, islands, lakes, time zones; Map Reader / Navigator / Cartographer ladder; water and airport lamps offer it); the Giraffe now favors Geography (k153a).
 // 0.1.53: Geography becomes the 14th trivia category (211 cards: capitals, rivers, mountains, flags, borders, U.S. states, islands, lakes, time zones; Map Reader / Navigator / Cartographer ladder; water and airport lamps offer it); the Giraffe now favors Geography (k153a).
 // 0.1.54: sound pack — 7 short synthesized effects (car bought, get in the car, step out, city arrival chime, level up, quest done, morning crate); muted with the speaker, once per event.
+// 0.1.55: 1957 Chevrolet Bel Air convertible (200k, +17%): Road trip — the first lamp you light in each city each day pays +1 white match while seated (server-paid, one per city per day, 15 a day at most); favorite Local for now (Geography when 0.1.53 lands); turquoise factory paint + 5 colours (k155a).

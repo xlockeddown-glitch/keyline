@@ -18,13 +18,14 @@ export const MAGNET_PULL_MS = 420;
 export const DRIVE_PING_MS = 60_000;
 /** 0.1.51 Ioniq 5 Vehicle-to-load: +1 white per lit lamp while seated, this many a day per player (Chicago day). */
 export const V2L_DAY_CAP = 20;
-export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number };
+export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number; roadTrip?: boolean };
 
 export const CAR_PERKS: Record<CarId, CarPerk> = {
   civic: { label: "Glovebox · +1 s on lamp timers", vaultMs: 1000 },
   f150: { label: "Truck bed · 1.5× match pickup reach", reach: 1.5 },
   ioniq5: { label: `Vehicle-to-load · each lamp lit pays +1 white match, ${V2L_DAY_CAP} a day`, v2l: 1 },
   mustang: { label: "Quick stop · lamp rests 15% shorter", cool: 0.85 },
+  belair57: { label: "Road trip · the first lamp you light in each city each day pays +1 white match", roadTrip: true },
   model3: { label: "Autopilot · 1 in 10 lamp questions drop a wrong answer", autopilot: 10 },
   roadster: { label: "Regen · 1 in 5 failed lamps refund the match", refund: 5 },
   roadster2: { label: `Magnet · pulls in street matches within ${MAGNET_M} m as you drive`, magnet: true },
@@ -32,7 +33,9 @@ export const CAR_PERKS: Record<CarId, CarPerk> = {
 
 export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].magnet);
 
-export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", ioniq5: "arts", mustang: "sports", model3: "math", roadster: "science", roadster2: "games" };
+export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", ioniq5: "arts", mustang: "sports",
+  belair57: "local", // TODO(0.1.53 geography): flip belair57 to "geography" when wip/geography lands.
+  model3: "math", roadster: "science", roadster2: "games" };
 export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   raccoon: "food",
   cat: "arts",
@@ -130,6 +133,11 @@ export function autopilotStrike(car: CarId | null, nonce: string, choices: reado
 /** 0.1.51 Ioniq 5 Vehicle-to-load: does this lit lamp pay the extra white? `usedToday` is today's V2L pays so far. */
 export function v2lPays(car: CarId | null, usedToday: number): boolean {
   return Boolean(car && CAR_PERKS[car].v2l) && usedToday < V2L_DAY_CAP;
+}
+
+/** 0.1.55 Bel Air Road trip: does this lit lamp pay the extra white? `paidHereToday`: a Road trip white already paid in this city today. */
+export function roadTripPays(car: CarId | null, paidHereToday: boolean): boolean {
+  return Boolean(car && CAR_PERKS[car].roadTrip) && !paidHereToday;
 }
 
 /** Favorite categories that count on a lamp: the worn coat's (when proven) and the seated car's. */

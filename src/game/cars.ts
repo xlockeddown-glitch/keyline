@@ -9,7 +9,7 @@
 import { distM } from "./geo.ts";
 import type { CityId } from "./types";
 
-export type CarId = "civic" | "f150" | "ioniq5" | "mustang" | "model3" | "roadster" | "roadster2";
+export type CarId = "civic" | "f150" | "ioniq5" | "mustang" | "belair57" | "model3" | "roadster" | "roadster2";
 
 export type Car = { id: CarId; name: string; year: string; blurb: string; price: number; pace: number; star?: boolean };
 
@@ -18,6 +18,7 @@ export const CARS: readonly Car[] = [
   { id: "f150", name: "Ford F-150", year: "2026", blurb: "A pickup with room for the crates.", price: 50_000, pace: 1.08 },
   { id: "ioniq5", name: "Hyundai Ioniq 5", year: "2025", blurb: "Pixel lights, and it powers the lamps.", price: 90_000, pace: 1.1 },
   { id: "mustang", name: "Shelby GT500", year: "2020", blurb: "760 hp, silver, striped.", price: 150_000, pace: 1.15 },
+  { id: "belair57", name: "Chevrolet Bel Air Convertible", year: "1957", blurb: "Top down, tank full, nowhere to be.", price: 200_000, pace: 1.17 },
   { id: "model3", name: "Tesla Model 3", year: "Highland", blurb: "No grille, one screen, Autopilot.", price: 350_000, pace: 1.2 },
   { id: "roadster", name: "Tesla Roadster", year: "2008", blurb: "The original electric roadster.", price: 600_000, pace: 1.22 },
   { id: "roadster2", name: "Tesla Roadster 2.0", year: "Next-gen", blurb: "The fastest thing in Keyline.", price: 2_400_000, pace: 1.3, star: true },

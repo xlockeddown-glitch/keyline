@@ -4212,6 +4212,9 @@ h3 {
 .cab-sprite[data-car="model3"][data-face="down"] { background-image: url("/sprites/cars/model3-front.png"); }
 .cab-sprite[data-car="model3"][data-face="up"] { background-image: url("/sprites/cars/model3-back.png"); }
 .cab-sprite[data-car="model3"][data-face="left"], .cab-sprite[data-car="model3"][data-face="right"] { background-image: url("/sprites/cars/model3-side.png"); }
+.cab-sprite[data-car="belair57"][data-face="down"] { background-image: url("/sprites/cars/belair57-front.png"); }
+.cab-sprite[data-car="belair57"][data-face="up"] { background-image: url("/sprites/cars/belair57-back.png"); }
+.cab-sprite[data-car="belair57"][data-face="left"], .cab-sprite[data-car="belair57"][data-face="right"] { background-image: url("/sprites/cars/belair57-side.png"); }
 /* 0.1.9 car paint: recolours from scripts/art/cars-paint.py (side mirrored for left, as above). */
 .cab-sprite[data-car="civic"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-black-front.png"); }
 .cab-sprite[data-car="civic"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-black-back.png"); }
@@ -4318,6 +4321,21 @@ h3 {
 .cab-sprite[data-car="model3"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-sig-front.png"); }
 .cab-sprite[data-car="model3"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-sig-back.png"); }
 .cab-sprite[data-car="model3"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-sig-side.png"); }
+.cab-sprite[data-car="belair57"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-black-front.png"); }
+.cab-sprite[data-car="belair57"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-black-back.png"); }
+.cab-sprite[data-car="belair57"][data-paint="black"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-black-side.png"); }
+.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-silver-front.png"); }
+.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-silver-back.png"); }
+.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-silver-side.png"); }
+.cab-sprite[data-car="belair57"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-red-front.png"); }
+.cab-sprite[data-car="belair57"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-red-back.png"); }
+.cab-sprite[data-car="belair57"][data-paint="red"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-red-side.png"); }
+.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-blue-front.png"); }
+.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-blue-back.png"); }
+.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-blue-side.png"); }
+.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-sig-front.png"); }
+.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-sig-back.png"); }
+.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-sig-side.png"); }
 .paint-chip { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgb(255 255 255 / 0.35); vertical-align: -2px; }
 .cab-sprite[data-car]:not([data-car=""])[data-face="down"], .cab-sprite[data-car]:not([data-car=""])[data-face="up"] { background-size: 40px auto; }
 .cab-sprite[data-car]:not([data-car=""])[data-face="left"] { transform: scaleX(-1); }
