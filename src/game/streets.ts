@@ -21,7 +21,7 @@ export type StreetGraph = {
   adj: number[][];
   originLat: number;
   originLng: number;
-  grid: Map<string, number[]>;
+  grid: Map<number, number[]>;
   nodeIndex: Map<string, number>;
   cell: number;
   covers: { lat: number; lng: number; r: number }[];
@@ -33,7 +33,11 @@ export type StreetGraph = {
    * spot at a route's end) can be held off them.
    */
   fw: FwSeg[];
-  fwGrid: Map<string, number[]>;
+  fwGrid: Map<number, number[]>;
+  /** 0.1.48: the baked city map's bbox [lat0, lng0, lat1, lng1]; inside it the graph is complete, no live fetch. */
+  baked?: [number, number, number, number];
+  /** 0.1.48: nodes below this index are in nodeIndex. Baked nodes are keyed lazily, on the first live ingest. */
+  indexed?: number;
 };
 
 type FwSeg = { ax: number; ay: number; bx: number; by: number; ux: number; uy: number; len: number };
@@ -73,8 +77,9 @@ function toXY(g: StreetGraph, lat: number, lng: number) {
   };
 }
 
+// 0.1.48: a number, not "ix,iy": string keys were a third of a baked city's ingest (Chicago, 240k segments).
 function cellKey(ix: number, iy: number) {
-  return `${ix},${iy}`;
+  return (ix + 16_384) * 32_768 + (iy + 16_384); // small ints (± 1,300 km of 80 m cells) so V8 keeps them unboxed
 }
 
 export function createGraph(lat: number, lng: number): StreetGraph {
@@ -93,7 +98,19 @@ export function createGraph(lat: number, lng: number): StreetGraph {
   };
 }
 
+/** Key any nodes added without one (a baked map) so live ingest merges onto them; free when nothing is pending. */
+function indexNodes(g: StreetGraph) {
+  if (g.indexed === undefined) return;
+  for (let i = g.indexed; i < g.nodes.length; i++) {
+    const p = g.nodes[i]!;
+    const k = nodeKey(p.lat, p.lng);
+    if (!g.nodeIndex.has(k)) g.nodeIndex.set(k, i);
+  }
+  g.indexed = undefined;
+}
+
 function addNode(g: StreetGraph, lat: number, lng: number) {
+  indexNodes(g);
   const k = nodeKey(lat, lng);
   const existing = g.nodeIndex.get(k);
   if (existing !== undefined) return existing;
@@ -194,6 +211,7 @@ function stitchNode(g: StreetGraph, id: number) {
 // 0.1.35: junctions (`keep`, from sharedVertices, or a vertex already in the graph) survive thinning. A corner dropped
 // from both ways left the crossing unjoined, so walks looped blocks around (Corktown) or missed a lamp next door (Midtown).
 function decimate(pts: Pt[], g?: StreetGraph, keep?: Set<string>): Pt[] {
+  if (g) indexNodes(g);
   if (pts.length < 3) return pts;
   const out: Pt[] = [pts[0]!];
   for (let i = 1; i < pts.length - 1; i++) {
@@ -1118,6 +1136,12 @@ export function faceAlongStreet(g: StreetGraph, lat: number, lng: number, toward
 }
 
 export function graphCovers(g: StreetGraph, lat: number, lng: number, margin = 420) {
+  const b = g.baked;
+  if (b) {
+    const dLat = margin / M_PER_DEG_LAT;
+    const dLng = margin / metersPerDegLng(lat);
+    if (lat > b[0] + dLat && lat < b[2] - dLat && lng > b[1] + dLng && lng < b[3] - dLng) return true;
+  }
   return g.covers.some((c) => distM(lat, lng, c.lat, c.lng) < c.r - margin);
 }
 
@@ -1601,8 +1625,134 @@ export function unpackFreeways(lines: number[][]): Pt[][] {
   });
 }
 
+/**
+ * 0.1.48: the city's whole street map, baked from OpenStreetMap (scripts/bake-city-graph.mts, format v2): a delta-int
+ * node table at 1e-5°, ways as node-index lists with a class, a name and flags (1 walk, 2 drive, 4 freeway, 8 arterial).
+ * Walk and drive share the file. Shared node indexes make every junction exact, so ingest skips stitching and thinning.
+ */
+export type BakedCity = {
+  v: 2;
+  city: string;
+  snapshot: string;
+  source: string;
+  bbox: [number, number, number, number];
+  cls: string[];
+  names: string[];
+  nodes: number[];
+  ways: number[][];
+};
+export const BAKED_WALK = 1;
+export const BAKED_DRIVE = 2;
+export const BAKED_FREEWAY = 4;
+export const BAKED_ARTERIAL = 8;
+
+const bakedCache = new Map<string, Promise<BakedCity | null>>();
+/** Fetch the city's baked map (null when the city has none or the fetch fails); one download per city per session. */
+export function loadBakedCity(cityId: string): Promise<BakedCity | null> {
+  let p = bakedCache.get(cityId);
+  if (!p) {
+    p = fetch("/streets/v2/manifest.json")
+      .then((res) => (res.ok ? (res.json() as Promise<{ cities?: Record<string, { file: string }> }>) : null))
+      .then((man) => {
+        const file = man?.cities?.[cityId]?.file;
+        return file ? fetch(`/streets/v2/${file}`).then((res) => (res.ok ? readBaked(res) : null)) : null;
+      })
+      .then((d) => (d && d.v === 2 ? d : null))
+      .catch(() => null);
+    bakedCache.set(cityId, p);
+    void p.then((d) => {
+      if (!d) bakedCache.delete(cityId);
+    });
+  }
+  return p;
+}
+
+/** The file ships as .json.gz; inflate it unless the host already sent it decoded (Content-Encoding: gzip). */
+async function readBaked(res: Response): Promise<BakedCity> {
+  const buf = new Uint8Array(await res.arrayBuffer());
+  let bytes: Uint8Array | ArrayBuffer = buf;
+  if (buf[0] === 0x1f && buf[1] === 0x8b) bytes = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+  return JSON.parse(new TextDecoder().decode(bytes)) as BakedCity;
+}
+
+/** Straight into the graph: walk (flag 1, freeways to the no-walk layer) or drive (flag 2, arterial from flag 8). */
+export function ingestBaked(g: StreetGraph, d: BakedCity, drive = false) {
+  const n = d.nodes.length >> 1;
+  const lat = new Float64Array(n);
+  const lng = new Float64Array(n);
+  let la = 0;
+  let lo = 0;
+  for (let i = 0; i < n; i++) {
+    la += d.nodes[2 * i]!;
+    lo += d.nodes[2 * i + 1]!;
+    lat[i] = la / 1e5;
+    lng[i] = lo / 1e5;
+  }
+  const want = drive ? BAKED_DRIVE : BAKED_WALK;
+  const map = new Int32Array(n).fill(-1);
+  // Baked nodes are unique by construction: on an empty graph they go in unkeyed (string keys were ~40% of the
+  // ingest); indexNodes keys them only if a live fetch ever lands on this graph.
+  const fresh = g.nodes.length === 0;
+  if (fresh) g.indexed = 0;
+  const idOf = (i: number) => {
+    let id = map[i]!;
+    if (id < 0) {
+      if (fresh) {
+        id = g.nodes.length;
+        g.nodes.push({ lat: lat[i]!, lng: lng[i]! });
+        g.adj.push([]);
+      } else id = addNode(g, lat[i]!, lng[i]!);
+      map[i] = id;
+    }
+    return id;
+  };
+  for (const w of d.ways) {
+    const f = w[2]!;
+    if (!drive && f & BAKED_FREEWAY) {
+      const pts: Pt[] = [];
+      for (let k = 3; k < w.length; k++) pts.push({ lat: lat[w[k]!]!, lng: lng[w[k]!]! });
+      ingestFreeway(g, pts);
+    }
+  }
+  for (const w of d.ways) {
+    const f = w[2]!;
+    if (!(f & want)) continue;
+    const art = drive && (f & BAKED_ARTERIAL) !== 0;
+    let prev = idOf(w[3]!);
+    for (let k = 4; k < w.length; k++) {
+      const id = idOf(w[k]!);
+      addBakedSeg(g, prev, id, art);
+      prev = id;
+    }
+  }
+  g.baked = d.bbox;
+  return g;
+}
+
+/** addSeg without the 2.2 m floor: baked junctions are exact, so a short hop must stay or the corner comes apart. */
+function addBakedSeg(g: StreetGraph, ia: number, ib: number, arterial: boolean) {
+  if (ia === ib) return;
+  for (const s of g.adj[ia]!) {
+    const seg = g.segs[s]!;
+    if ((seg.a === ia && seg.b === ib) || (seg.a === ib && seg.b === ia)) return;
+  }
+  const a = g.nodes[ia]!;
+  const b = g.nodes[ib]!;
+  const id = g.segs.length;
+  g.segs.push({ a: ia, b: ib, length: distM(a.lat, a.lng, b.lat, b.lng), arterial });
+  g.adj[ia]!.push(id);
+  g.adj[ib]!.push(id);
+  coverSeg(g, a, b, id);
+}
+
 export async function bootstrapStreets(cityId: string, lat: number, lng: number, hubs: Pt[], signal?: AbortSignal) {
   const g = createGraph(lat, lng);
+  // 0.1.48: the baked city map first. When it loads, it is the walk graph inside its bbox (live Overpass only past it).
+  const baked = await loadBakedCity(cityId);
+  if (baked) {
+    ingestBaked(g, baked);
+    if (g.segs.length >= 8) return g;
+  }
   // 0.0.52b: the city's freeway layer ships with the build, so walks are held off ramps and feeders even when
   // the live street fetch fails and the graph is only the baked foot routes. Load it before the foot graph so
   // corner bridges can see the centerlines.

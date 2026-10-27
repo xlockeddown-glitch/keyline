@@ -1134,7 +1134,7 @@ export function GameMap() {
       }).setView([dock.lat, dock.lng], 16);
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap",
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',
         maxZoom: 19,
         maxNativeZoom: 18,
         className: "atlas-tiles",
@@ -1160,6 +1160,9 @@ export function GameMap() {
           dealer: () => (dealerDoor.current ? { ...dealerDoor.current } : null),
           house: () => (houseDoor.current ? { ...houseDoor.current } : null),
           cab: () => toggleCab(),
+          // 0.1.48 QA: the road graph and whether we're in the car.
+          drive: () => driveRef.current,
+          seated: () => Boolean(cabRef.current?.seated),
           place: (lat: number, lng: number) => {
             const g = graphRef.current;
             clearRoute();

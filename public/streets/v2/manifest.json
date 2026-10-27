@@ -1,0 +1,18 @@
+{
+ "v": 2,
+ "source": "© OpenStreetMap contributors, ODbL",
+ "cities": {
+  "chicago": {
+   "file": "chicago.5fb8b7a8c5.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 5667480,
+   "gz": 1385417
+  },
+  "nashville": {
+   "file": "nashville.5dd02d921b.json.gz",
+   "snapshot": "2026-10-27",
+   "bytes": 1071434,
+   "gz": 269143
+  }
+ }
+}

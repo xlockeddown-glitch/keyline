@@ -76,3 +76,7 @@ App id: `01a0aca9-a3e5-7de0-beb2-c543f9134594`.
 Do **not** publish from a project-hub New Chat sandbox. Those create a Not Published temp slug and leave live stuck. Reload Preview until the title shows the new version, then Publish Changes immediately to the existing `keyline.grok.me` slug.
 
 **v0.0.11**
+
+## Map data
+
+Street data in `public/streets/` (including the baked city maps in `public/streets/v2/`) is © OpenStreetMap contributors, available under the Open Database License (ODbL): https://www.openstreetmap.org/copyright. The game code is not covered by the ODbL.

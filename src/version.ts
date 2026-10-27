@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.47";
+export const APP_VERSION = "0.1.48";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k147a";
+export const PUBLISH_STAMP = "k148a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -159,3 +159,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.45: a worn coat and a seated car that both favor the card's category stack to +25% (one favorite stays +15%; still capped at x1.40) (k145a).
 // 0.1.46: Roadster 2.0 Magnet: seated in it, street matches within 35 m come to you, one every 3 s, up to 30 a city a day inside the 80; the server checks the car and a drive ping from the last 5 min; plus ~494 new trivia cards across categories with fact-check fixes (bank 11,382) (k146a).
 // 0.1.47: the Panda joins the cast (35,000 coin, between the Plate and the Giraffe): v2 sheet, tangerine coat, bamboo sprig; Bamboo luck pays a right lamp's coin twice 1 in 15 lamps (server-rolled); favors Music like the Penguin; Help lists every coat's favorite; prism paint now shows as a rainbow on every coat; Amanda's I Love you gift now reaches X sign-ins (k147a).
+// 0.1.48: baked street maps, slice 1: Chicago and Nashville walk on a whole-city OpenStreetMap graph shipped with the build (public/streets/v2, gzipped; scripts/bake-city-graph.mts), live Overpass only past its edge; check:city-graphs validates snaps, 200 lamp-to-lamp walks and freeways; map credit now reads "© OpenStreetMap contributors" with the copyright link (k148a).

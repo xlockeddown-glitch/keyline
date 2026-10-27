@@ -14,3 +14,5 @@ tmp/
 .grok/trivia-audit-cache.json
 .grok/trivia-audit-report.json
 __pycache__/
+.bake-cache/
+.vercel/
