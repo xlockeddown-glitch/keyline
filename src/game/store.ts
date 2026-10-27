@@ -1242,6 +1242,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const prev = get();
     const same = prev.cityId === id && prev.mapKeys.length;
+    if (!same) sfx.cityArrive();
     set({
       cityId: id,
       screen: "play",
@@ -2185,7 +2186,7 @@ export const useGame = create<GameState>((set, get) => ({
     (Object.keys(loot) as Tier[]).forEach((t) => {
       keys[t] = (keys[t] ?? 0) + (loot[t] ?? 0);
     });
-    sfx.pickup();
+    sfx.crateOpen(`crate:${d}`);
     set({
       lastCrateDay: d,
       crateStreak: day,
@@ -2336,7 +2337,8 @@ export const useGame = create<GameState>((set, get) => ({
     const keys = Object.entries(r.award?.keys ?? {}).filter(([, n]) => (n ?? 0) > 0) as [Tier, number][];
     const bits = [coins ? `+${coins.toLocaleString("en-US")} coin` : "", ...keys.map(([t, n]) => `${n > 1 ? `${n} ` : ""}${TIER_LABEL[t]}`), lucky ? "Lucky all next month" : ""].filter(Boolean);
     const line = r.replay ? "Already collected." : `Quest done! ${bits.join(" · ")}`;
-    sfx.pickup();
+    if (r.replay) sfx.ui();
+    else sfx.questDone(`quest:${period}:${id}`);
     flashToast(set, get, line, 2200);
     saveNow(get);
     return line;
@@ -2414,6 +2416,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const before = { carsOwned: get().carsOwned, carOn: get().carOn };
     set({ points: get().points - car.price, carsOwned: [...before.carsOwned, id], carOn: id, carCab: false });
+    sfx.carBuy();
     pushOp({ kind: "car", id }, () => set(before));
     flashToast(set, get, `${car.name} is yours. Tap CAB and it's at the curb.`, 2200);
     scheduleSave(get);

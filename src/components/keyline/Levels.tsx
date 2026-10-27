@@ -4,6 +4,7 @@ import { useLevel } from "@/game/levelStore";
 import { BOOST_LABEL, CAT_LADDERS, NAME_COLORS, nameColorHex, type LevelReward } from "@/game/levels";
 import type { LevelView } from "@/game/levelsServer";
 import { popMatch, useGame } from "@/game/store";
+import { sfx } from "@/game/audio";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 import type { Tier, TriviaCat } from "@/game/types";
 
@@ -25,6 +26,7 @@ export function rewardLine(r: LevelReward): string {
 export function celebrate(view: LevelView) {
   if (!view.paid.length) return;
   const top = view.paid[view.paid.length - 1]!;
+  sfx.levelUp(`level:${top.level}`);
   popMatch({
     kind: "level",
     big: `Level ${top.level}!`,

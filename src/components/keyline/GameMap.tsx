@@ -16,7 +16,7 @@ import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { V2_CADENCE, V2_SCOUTS, v2Cell } from "@/game/coatLayer";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { drivePing, reach, seatedCar, useGame } from "@/game/store";
-import { startBed, unlockAudio } from "@/game/audio";
+import { sfx, startBed, unlockAudio } from "@/game/audio";
 import {
   bindWalkGraph,
   snapReachable,
@@ -385,6 +385,7 @@ export function GameMap() {
     pos.current.speed = 0;
     routeMode.current = "walk";
     seatHud(false);
+    sfx.carDoor();
   }
 
   /** 0.1.8: your car drives a little faster than the city cab (1 when you have none). Seated driving only. */
@@ -508,6 +509,7 @@ export function GameMap() {
     cab.own = seatIsOwnCar(useGame.getState().carOn);
     routeMode.current = "drive";
     seatHud(true);
+    sfx.carStart();
   }
 
   /** 0.1.14: foot, your own car, or the city cab. */

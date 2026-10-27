@@ -1,4 +1,5 @@
 import type { ScoutId } from "./types";
+import { PACK, makeSfxGate, type SfxName } from "./sfxPack";
 
 const PREF_KEY = "keyline-audio";
 
@@ -371,7 +372,65 @@ function beep(freq: number, dur: number, type: OscillatorType, vol = 0.4, slide 
   };
 }
 
+const packGate = makeSfxGate();
+
+/** 0.1.54: play one sound-pack recipe. Silent until unlockAudio ran from a tap (iOS/Safari) and while muted. */
+function playPack(name: SfxName, key?: string) {
+  if (!ctx || !sfxBus || muted) return;
+  if (!packGate(name, Date.now(), key)) return;
+  const t0 = ctx.currentTime + 0.005;
+  const r = PACK[name];
+  for (const x of r.tones) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = x.wave;
+    osc.frequency.setValueAtTime(x.freq, t0 + x.at);
+    if (x.to) osc.frequency.exponentialRampToValueAtTime(x.to, t0 + x.at + x.dur);
+    g.gain.setValueAtTime(0.0001, t0 + x.at);
+    g.gain.exponentialRampToValueAtTime(x.vol, t0 + x.at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + x.at + x.dur);
+    osc.connect(g);
+    g.connect(sfxBus);
+    osc.start(t0 + x.at);
+    osc.stop(t0 + x.at + x.dur + 0.02);
+    osc.onended = () => {
+      osc.disconnect();
+      g.disconnect();
+    };
+  }
+  for (const p of r.puffs ?? []) {
+    if (!noise) break;
+    const src = ctx.createBufferSource();
+    src.buffer = noise;
+    const f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = p.lp;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0 + p.at);
+    g.gain.exponentialRampToValueAtTime(p.vol, t0 + p.at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + p.at + p.dur);
+    src.connect(f);
+    f.connect(g);
+    g.connect(sfxBus);
+    src.start(t0 + p.at);
+    src.stop(t0 + p.at + p.dur + 0.02);
+    src.onended = () => {
+      src.disconnect();
+      f.disconnect();
+      g.disconnect();
+    };
+  }
+}
+
 export const sfx = {
+  /** 0.1.54 sound pack. `key` makes a one-off event (a level number, a quest id) play only once. */
+  carBuy: () => playPack("carBuy"),
+  carStart: () => playPack("carStart"),
+  carDoor: () => playPack("carDoor"),
+  cityArrive: () => playPack("cityArrive"),
+  levelUp: (key?: string) => playPack("levelUp", key),
+  questDone: (key?: string) => playPack("questDone", key),
+  crateOpen: (key?: string) => playPack("crateOpen", key),
   pickup: () => {
     beep(880, 0.08, "triangle", 0.35, 220);
     beep(1320, 0.1, "sine", 0.18, 80);
