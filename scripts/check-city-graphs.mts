@@ -60,7 +60,7 @@ const RULES: Record<string, Rules> = {
   temple: {
     budget: 370_000, walkRatio: 3.5, driveRatio: 3.6,
     gaps: {
-      "walk:sammons": "the park's path loop (11 m away) is its own piece; the street network is > 110 m away",
+      "walk:sammons": "the park's path loop (11 m away) is its own piece; the street network is > 110 m away (the offline proof still arrives, ending 117 m out)",
       "walk:draughon": "Draughon-Miller airport: nearest way of any kind 290–309 m",
       "drive:draughon": "Draughon-Miller airport: nearest way of any kind 290–309 m",
     },
@@ -69,7 +69,7 @@ const RULES: Record<string, Rules> = {
   tucson: {
     budget: 1_010_000, walkRatio: 3.3, driveRatio: 3.7, // TCC ↔ St. Augustine: the convention-center superblock.
     gaps: {
-      "walk:tuc-santa-rita": "park interior: its footways (54 m) are their own piece; the nearest street is 140 m",
+      "walk:tuc-santa-rita": "park interior: its footways (54 m) are their own piece; the nearest street is 140 m (the offline proof still arrives, ending 119 m out)",
       "walk:pima-air": "museum grounds: its paths are their own piece (access=customers); the public street is > 110 m",
       "walk:raytheon-tucson": "secured campus: every way within 180 m is access=private (dropped); nearest public way 126 m",
       "drive:raytheon-tucson": "secured campus: the service roads 182 m out connect only through access=private roads",
@@ -165,6 +165,7 @@ for (const [city, { file }] of Object.entries(man.cities)) {
       const ds = nearest(g, dl.lat, dl.lng, SNAP_M, comp, root);
       if (!ds || ds.dist > SNAP_M) report(`${city} drive car lot not within ${SNAP_M} m of the main road network`);
       let curbBad = 0;
+      const driveToast: string[] = [];
       let curbWorst = 0;
       for (const p of c.pois) {
         if (NOT_LAMP.test(p.kind)) continue;
@@ -175,6 +176,10 @@ for (const [city, { file }] of Object.entries(man.cities)) {
         }
         // A stub of lot road beside the lamp may be its own piece; routeOnGraph then stops on the main network's
         // nearest curb, so that one must be within 250 m.
+        // A seated tap more than 140 m from any road toasts "No road that way." (GameMap): the player parks and walks.
+        // Not a failure (park interiors, pedestrian bridges), but listed so it's a known, deliberate stop.
+        const near = nearest(g, p.lat, p.lng, 140);
+        if (!near || near.dist > 140) driveToast.push(p.id);
         const main = nearest(g, p.lat, p.lng, 250, comp, root);
         const d = main && main.dist <= 250 ? main.dist : Infinity;
         curbWorst = Math.max(curbWorst, d);
@@ -183,6 +188,7 @@ for (const [city, { file }] of Object.entries(man.cities)) {
           report(`${city} drive: no curb on the main road network within 250 m of ${p.id}`);
         }
       }
+      if (driveToast.length) console.log(`  drive: no road within 140 m (in a car the tap toasts; park and walk): ${driveToast.join(", ")}`);
       console.log(`  drive: car lot ${ds ? ds.dist.toFixed(0) : "–"} m from road; ${c.pois.length - curbBad}/${c.pois.length} lamp curbs on the main network (farthest curb ${curbWorst.toFixed(0)} m)`);
     }
     const pts: { id: string; lat: number; lng: number; big?: boolean }[] = mode === "drive" ? [] : [
