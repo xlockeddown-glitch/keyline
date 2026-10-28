@@ -4530,3 +4530,22 @@ h3 {
   100% { transform: translate(var(--dx), var(--dy)) rotate(360deg) translateX(0) scale(0.2); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .magnet-pull { display: none; } }
+
+/* 0.1.57: the Bel Air is open, so the worn scout rides in it: its own sheet cell (coat and dyes included), shrunk
+   and dropped so the door (the car sprite, stacked on top) covers it below the shoulders. The clip trims the legs
+   that would hang under the car. Closed cars keep hiding the scout (.pawn.is-seated .scout-marker above). */
+.pawn.is-seated.has-driver .scout-marker {
+  opacity: 1;
+  translate: none;
+  rotate: none;
+  scale: none;
+  transform: translate(var(--drv-x, 0px), var(--drv-y, 9px)) scale(var(--drv-s, 0.5));
+  transform-origin: 50% 48.5px;
+  clip-path: inset(0 0 var(--drv-clip, 46%) 0);
+}
+.pawn.is-seated.has-driver .cab-sprite { z-index: 2; }
+.pawn.is-seated.has-driver { --drv-s: 0.62; --drv-y: 10px; }
+.pawn.is-seated.has-driver:has(.cab-sprite[data-face="right"]) { --drv-x: -3px; }
+.pawn.is-seated.has-driver:has(.cab-sprite[data-face="left"]) { --drv-x: 3px; }
+.pawn.is-seated.has-driver:has(.cab-sprite[data-face="down"]),
+.pawn.is-seated.has-driver:has(.cab-sprite[data-face="up"]) { --drv-s: 0.5; --drv-y: -13px; }

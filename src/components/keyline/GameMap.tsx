@@ -68,6 +68,8 @@ import { VaultModal } from "./VaultModal";
 import { HqPanel } from "./HqPanel";
 import { ScoutShop } from "./ScoutShop";
 import { Showroom } from "./Showroom";
+import { driverCell, driverShows } from "@/game/carDriver";
+import type { CarId } from "@/game/cars";
 import { LootToast } from "./LootToast";
 import { FriendTickets } from "./FriendTickets";
 import { GiftNote } from "./GiftNote";
@@ -2236,6 +2238,11 @@ export function GameMap() {
         cabEl.dataset.face = faceFromYaw(pos.current.yaw);
         cabEl.classList.toggle("is-lamps", moving);
       }
+      // 0.1.57: an open car (the Bel Air) shows the worn scout's head and shoulders above the door (styles.css .has-driver).
+      const face = faceFromYaw(pos.current.yaw);
+      const driver = seated && driverShows(cabEl?.dataset.car as CarId | undefined, st.scout, face);
+      pawn?.classList.toggle("has-driver", driver);
+      if (driver && el) el.style.backgroundPosition = driverCell(face).position;
       pawn?.classList.toggle("is-seated", seated);
       // Battery: only touch Leaflet when the scout actually moved (or follow was just switched back on).
       const movedPx = pos.current.lat !== drawn.current.lat || pos.current.lng !== drawn.current.lng;
