@@ -76,6 +76,8 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("paint"), car: z.string().min(1).max(20), color: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("house"), city: City, tier: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("home"), city: City }),
+  z.object({ kind: z.literal("shop"), city: City }),
+  z.object({ kind: z.literal("shopCollect"), city: City }),
   z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80), free: z.boolean().optional() }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
@@ -144,6 +146,7 @@ export type WalletWire = {
   /** 0.1.9: paint can found (cache) or the can a paint op spent. */
   can?: { car: string; color: string };
   home?: { match: Tier | null; n?: number; coin?: number; day: string };
+  shop?: { n: number; coin: number; at: number; anchor: number; readyAt: number };
   quest?: { id: string; period: string; lucky?: string };
   legacy?: LegacyGrant[];
 };
@@ -162,7 +165,7 @@ export type SyncWire = {
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
   /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
-  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[] };
+  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }> };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })
@@ -210,6 +213,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       hurry: r.hurry,
       can: r.can,
       home: r.home,
+      shop: r.shop,
       quest: r.quest,
       legacy: r.legacy,
     };

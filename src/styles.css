@@ -4687,3 +4687,11 @@ h3 {
   font-family: var(--font-display, inherit);
   font-size: 14px;
 }
+
+/* 0.1.59 Lantern Shop on the map: the house cutout pattern, plus a till light when a payout waits. */
+.shop-map .shop-dot { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: #6b6250; vertical-align: 1px; }
+.shop-map.is-ready .shop-dot { background: #ffd27a; box-shadow: 0 0 6px 2px rgb(255 200 110 / 0.8); animation: shop-ready 1.6s ease-in-out infinite; }
+.shop-map.is-ready .house-chip { border-color: #ffd27a; }
+.shop-map.is-ready .house-glow { background: radial-gradient(closest-side, rgb(255 190 100 / 0.5), rgb(255 150 70 / 0.2) 55%, transparent); }
+@keyframes shop-ready { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .shop-map.is-ready .shop-dot { animation: none; } }

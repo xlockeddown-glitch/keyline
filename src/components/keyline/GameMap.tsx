@@ -7,6 +7,8 @@ import { lampFromRide, rideOf, seatIsOwnCar, trimToReach } from "@/game/carReach
 import { factoryColor } from "@/game/carPaint";
 import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
+import { LanternSheet } from "./LanternSheet";
+import { SHOP_EVERY_MS, SHOP_METERS, SHOP_REACH_M, shopLot, shopMapArt } from "@/game/shop";
 import { CITIES, CLIMB_ID, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
@@ -283,6 +285,9 @@ export function GameMap() {
   const dealerMarker = useRef<Marker | null>(null);
   const dealerDoor = useRef<{ lat: number; lng: number } | null>(null);
   const houseMarker = useRef<Marker | null>(null);
+  const shopMarker = useRef<Marker | null>(null);
+  const shopDoor = useRef<{ lat: number; lng: number } | null>(null);
+  const shopGraph = useRef<StreetGraph | null>(null);
   const houseDoor = useRef<{ lat: number; lng: number } | null>(null);
   const houseGraph = useRef<StreetGraph | null>(null);
 
@@ -435,9 +440,75 @@ export function GameMap() {
     () =>
       useGame.subscribe((st, prev) => {
         if (st.houses !== prev.houses && houseMarker.current) paintHouse();
+        if (st.shops !== prev.shops && shopMarker.current) paintShop();
       }),
     [],
   );
+  // 0.1.59: the shop's "ready" light turns on when a payout is waiting (checked twice a minute).
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      const el = shopMarker.current?.getElement()?.querySelector<HTMLElement>(".shop-map");
+      if (el && el.classList.contains("is-ready") !== shopReady()) paintShop();
+    }, 30_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  function shopReady(): boolean {
+    const st = useGame.getState();
+    const s = st.shops[st.cityId];
+    return Boolean(s && Date.now() - s.anchor >= SHOP_EVERY_MS);
+  }
+  function shopWidthPx(): number {
+    const map = mapRef.current;
+    const door = shopDoor.current;
+    if (!map || !door) return 48;
+    const mpp = (156543.03392 * Math.cos((door.lat * Math.PI) / 180)) / 2 ** map.getZoom();
+    return Math.round(Math.min(220, Math.max(34, (SHOP_METERS * 3) / mpp)));
+  }
+  /** 0.1.59: the Lantern Shop lot, drawn like the house: a cutout at building scale, "For sale" or the till light. */
+  function paintShop(snapTo?: StreetGraph | null) {
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    if (snapTo !== undefined) shopGraph.current = snapTo;
+    const st = useGame.getState();
+    const lot = shopLot(st.cityId);
+    if (snapTo !== undefined || !shopDoor.current) {
+      const c = shopGraph.current ? nearest(shopGraph.current, lot.lat, lot.lng, 80) : null;
+      shopDoor.current = c ? { lat: c.lat, lng: c.lng } : { lat: lot.lat, lng: lot.lng };
+    }
+    const mine = Boolean(st.shops[st.cityId]);
+    const ready = shopReady();
+    const chip = mine ? `<i class="shop-dot" aria-hidden="true"></i>${ready ? "Till ready" : "Lantern Shop"}` : "Shop for sale";
+    shopMarker.current?.remove();
+    const m = L.marker([shopDoor.current.lat, shopDoor.current.lng], {
+      icon: L.divIcon({
+        className: "",
+        html: `<div class="house-pin house-map shop-map${mine ? " is-home" : ""}${ready ? " is-ready" : ""}" data-testid="shop-pin" style="--house-w:${shopWidthPx()}px"><i class="house-shadow" aria-hidden="true"></i><i class="house-glow" aria-hidden="true"></i><img class="house-sprite" src="${shopMapArt}" alt="" draggable="false"><span class="house-chip">${chip}</span></div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      }),
+      interactive: true,
+      keyboard: false,
+      zIndexOffset: 589,
+    }).addTo(map);
+    m.on("click", () => {
+      const door = shopDoor.current;
+      if (!door) return;
+      const d = distM(pos.current.lat, pos.current.lng, door.lat, door.lng);
+      if (cabRef.current?.seated) flash("Step out of the car to visit the shop.");
+      else if (d <= SHOP_REACH_M) useGame.getState().setLanternOpen(true);
+      else {
+        setDestination(door.lat, door.lng);
+        flash("Walking to the Lantern Shop. It opens at the door.", 2200);
+      }
+    });
+    shopMarker.current = m;
+  }
+  function sizeShop() {
+    const el = shopMarker.current?.getElement()?.querySelector<HTMLElement>(".shop-map");
+    if (el) el.style.setProperty("--house-w", `${shopWidthPx()}px`);
+  }
 
   /** 0.1.12: house width in screen px for its real footprint at this zoom (scales with the map). */
   function houseWidthPx(tier: HouseTier): number {
@@ -1276,6 +1347,7 @@ export function GameMap() {
       paintMarket();
       map.on("zoomend", fitMarketSign);
       map.on("zoom zoomend", sizeHouse); // 0.1.12: the house keeps its real size
+      map.on("zoom zoomend", sizeShop);
       const signTick = window.setInterval(fitMarketSign, 1500);
       map.once("unload", () => window.clearInterval(signTick));
     });
@@ -1291,6 +1363,7 @@ export function GameMap() {
         paintMarket(); // 0.1.6: the lit roads need the street graph
         paintDealer(g); // 0.1.8: and the car lot door snaps onto it
         paintHouse(g); // 0.1.12: and the house lot
+        paintShop(g); // 0.1.59: and the Lantern Shop lot
         const L = Lref.current;
         const m = mapRef.current;
         if (L && m) rebuildPins(L, m);
@@ -2289,6 +2362,9 @@ export function GameMap() {
         const hd = houseDoor.current;
         const nearHouse = Boolean(hd && !seated && distM(pos.current.lat, pos.current.lng, hd.lat, hd.lng) <= HOUSE_REACH_M);
         if (nearHouse !== st.houseNear) st.setHouseNear(nearHouse);
+        const sd = shopDoor.current;
+        const nearShop = Boolean(sd && !seated && distM(pos.current.lat, pos.current.lng, sd.lat, sd.lng) <= SHOP_REACH_M);
+        if (nearShop !== st.lanternNear) st.setLanternNear(nearShop);
         useDaily.getState().check({ lat: pos.current.lat, lng: pos.current.lng }, seated, (lat, lng) => {
           const g = graphRef.current;
           const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
@@ -2402,6 +2478,7 @@ export function GameMap() {
         paintMarket(); // 0.1.6: the lit roads need the street graph
         paintDealer(g); // 0.1.8: and the car lot door snaps onto it
         paintHouse(g); // 0.1.12: and the house lot
+        paintShop(g); // 0.1.59: and the Lantern Shop lot
         void fillSurroundings(g, city.spawn.lat, city.spawn.lng, city.pois, abort.signal).then(() => {
           snapKeys(g);
           fillWardLamps(g);
@@ -2550,6 +2627,7 @@ const CACHE_PIN_HTML =
       <ScoutShop />
       <Showroom />
       <HouseSheet />
+      <LanternSheet />
       <WardCounter />
       <NoticeBoard />
       <Fireworks />

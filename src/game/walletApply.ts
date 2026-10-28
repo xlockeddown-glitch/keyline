@@ -1,3 +1,4 @@
+import { SHOP_PRICE, shopAnchor, shopOutput, type ShopState } from "./shop.ts";
 import { loopCrate, loopCrateLoot, posterKey } from "./loop.ts";
 import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
@@ -81,7 +82,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[] } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>> } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -335,6 +336,30 @@ export async function grantCan(sql: Sql, userId: string, source: string, odds: n
   return r.ok && !r.replay ? can : null;
 }
 
+/** 0.1.59: Lantern Shops this account owns (shop:<city> rows) with each one's clock (latest shopc:<city>:<anchor>). */
+export async function shopsOf(sql: Sql, userId: string): Promise<Partial<Record<CityId, ShopState>>> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string; detail: string }>`select op_key, detail from wallet_ledger where user_id = ${id} and (op_key like ${"shop:%"} or op_key like ${"shopc:%"})`;
+  const bought: Partial<Record<CityId, number>> = {};
+  const collects: Partial<Record<CityId, number[]>> = {};
+  for (const r of rows) {
+    const [kind, city, anchor] = r.op_key.split(":");
+    if (!city || !(city in CITIES)) continue;
+    const c = city as CityId;
+    if (kind === "shop") {
+      try {
+        const at = Number((JSON.parse(r.detail ?? "{}") as { at?: unknown }).at);
+        if (at > 0) bought[c] = at;
+      } catch {
+        /* a row without a clock is not a shop */
+      }
+    } else if (kind === "shopc" && Number(anchor) > 0) (collects[c] ??= []).push(Number(anchor));
+  }
+  const out: Partial<Record<CityId, ShopState>> = {};
+  for (const [c, at] of Object.entries(bought) as [CityId, number][]) out[c] = { at, anchor: shopAnchor(at, collects[c] ?? []) };
+  return out;
+}
+
 /** 0.1.12: houses this account owns (house:<city>:<tier> rows; the highest tier per city wins). */
 export async function housesOf(sql: Sql, userId: string): Promise<Partial<Record<CityId, HouseState>>> {
   const { id } = await canonicalWallet(sql, userId);
@@ -397,7 +422,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   giftNotes.push(...(await grantWelcomePack(sql, userId, startOfLocal(local))));
   giftNotes.push(...(await grantLoveGift(sql, userId)));
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId) };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId) };
   const until = await doubleUntil(sql, userId);
   const out = { ...done, owned, ...(until ? { doubleUntil: until } : {}) };
   return giftNotes.length ? { ...out, giftNotes } : out;
@@ -842,6 +867,9 @@ export type ClientOp =
   | { kind: "paint"; car: string; color: string }
   | { kind: "house"; city: CityId; tier: string }
   | { kind: "home"; city: CityId }
+  /** 0.1.59 Lantern Shop: buy one in a city; collect its waiting coin. */
+  | { kind: "shop"; city: CityId }
+  | { kind: "shopCollect"; city: CityId }
   | { kind: "own"; poi: string; free?: boolean }
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
@@ -873,6 +901,8 @@ export type ClientResult = Applied & {
   can?: Can;
   /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
   home?: { match: Tier | null; n?: number; coin?: number; day: string };
+  /** 0.1.59: what a shop collect paid and the shop's new clock (server time). */
+  shop?: { n: number; coin: number; at: number; anchor: number; readyAt: number };
   /** 0.1.22: the quest a claim paid (and the month Lucky turned on for, from a Full month). */
   quest?: { id: string; period: string; lucky?: string };
   /** 0.1.22: what the one-time milestone / charm move paid (fresh grants only; a replay is empty). */
@@ -1061,6 +1091,37 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       w.coins < cost ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -cost }), detail: JSON.stringify({ city: op.city, tier: def.id, from: owned }) },
     );
     return applied(r);
+  }
+
+  // 0.1.59: buy a Lantern Shop. One per city; the server stamps the time it starts making coin.
+  if (op.kind === "shop") {
+    if (!(op.city in CITIES)) return refused(wallet, "unknown");
+    if ((await shopsOf(sql, sessionUserId))[op.city]) return applied({ ok: true, replay: true, wallet });
+    const at = Date.now();
+    const r = await mutateWallet(sql, sessionUserId, `shop:${op.city}`, (w) =>
+      w.coins < SHOP_PRICE ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -SHOP_PRICE }), detail: JSON.stringify({ city: op.city, at }) },
+    );
+    const s = (await shopsOf(sql, sessionUserId))[op.city];
+    return { ...applied(r), ...(s ? { shop: { n: 0, coin: 0, at: s.at, anchor: s.anchor, readyAt: shopOutput(s.anchor, at).readyAt } } : {}) };
+  }
+
+  // 0.1.59: collect the shop's waiting coin. Counted from the server clock; the next anchor is the row key, so a retry replays.
+  if (op.kind === "shopCollect") {
+    if (!(op.city in CITIES)) return refused(wallet, "unknown");
+    const s = (await shopsOf(sql, sessionUserId))[op.city];
+    if (!s) return refused(wallet, "no-shop");
+    const now = Date.now();
+    const out = shopOutput(s.anchor, now);
+    const view = (n: number, coin: number, anchor: number) => ({ n, coin, at: s.at, anchor, readyAt: shopOutput(anchor, now).readyAt });
+    if (out.n < 1) return { ...applied({ ok: true, replay: true, wallet }), shop: view(0, 0, s.anchor) };
+    let paid = 0;
+    const r = await mutateWallet(sql, sessionUserId, `shopc:${op.city}:${out.nextAnchor}`, (w) => {
+      paid = Math.max(0, Math.min(out.coin, COIN_CAP - w.coins));
+      const d = applyDelta(w, { coins: paid });
+      return d.ok ? { ...d, detail: JSON.stringify({ city: op.city, anchor: out.nextAnchor, n: out.n, coin: paid }) } : d;
+    });
+    const fresh = r.ok && !r.replay;
+    return { ...applied(r), shop: view(fresh ? out.n : 0, fresh ? paid : 0, out.nextAnchor) };
   }
 
   // 0.1.12: turn the key. Needs a house here and three correct lamps in this city today. Pays no coin: just the

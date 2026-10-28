@@ -13,7 +13,7 @@ export const RECENT_MAX = 20;
 const PREFIX: [string, RewardSource][] = [
   ["grade:", "lamp"], ["street:", "street"], ["cache:", "cache"], ["gift:", "gift"], ["lvgot:", "gift"], ["wheel:", "wheel"],
   ["ride:", "ride"], ["level:", "level"], ["goal:", "goal"], ["dgoal:", "goal"], ["daily:", "daily"], ["blitz", "blitz"], ["contract:", "blitz"],
-  ["friend:", "gift"], ["survey:", "goal"], ["crate:", "cache"], ["quest:", "quest"], ["legacy:", "reward"], ["ownpay:", "own"], ["hook:", "house"],
+  ["friend:", "gift"], ["survey:", "goal"], ["crate:", "cache"], ["quest:", "quest"], ["legacy:", "reward"], ["ownpay:", "own"], ["hook:", "house"], ["shopc:", "house"],
 ];
 
 /** One ledger row → a reward, or null when it gave nothing (spends, purchases, syncs). */

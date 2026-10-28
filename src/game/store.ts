@@ -6,6 +6,7 @@ import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { carOf, driveOf, isCarId, type CarId } from "./cars";
 import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
+import { SHOP_NAME, SHOP_PAY, SHOP_PRICE, cleanShops, type ShopState } from "./shop";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
@@ -193,6 +194,10 @@ export type GameState = {
   homeClaims: string[];
   houseNear: boolean;
   houseOpen: boolean;
+  /** 0.1.59: Lantern Shops per city (server-owned: buy time and the clock collects count from). */
+  shops: Partial<Record<CityId, ShopState>>;
+  lanternNear: boolean;
+  lanternOpen: boolean;
   dealerOpen: boolean;
   dealerNear: boolean;
   /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
@@ -359,6 +364,10 @@ export type GameState = {
   buyHouse: (city: CityId, tier: HouseTier) => void;
   turnKey: (city: CityId) => void;
   setHouseOpen: (open: boolean) => void;
+  setLanternOpen: (open: boolean) => void;
+  setLanternNear: (near: boolean) => void;
+  buyShop: (city: CityId) => void;
+  collectShop: (city: CityId) => void;
   setHouseNear: (near: boolean) => void;
   driveCar: (id: CarId | null) => void;
   setDealerOpen: (open: boolean) => void;
@@ -377,7 +386,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[] }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }> }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -668,6 +677,7 @@ function persistable(s: GameState) {
     carPaint: s.carPaint,
     houses: s.houses,
     homeClaims: s.homeClaims,
+    shops: s.shops,
     paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
@@ -1127,6 +1137,9 @@ export const useGame = create<GameState>((set, get) => ({
   homeClaims: Array.isArray(saved?.homeClaims) ? saved.homeClaims.filter((x: unknown) => typeof x === "string").slice(-40) : [],
   houseNear: false,
   houseOpen: false,
+  shops: cleanShops(saved?.shops),
+  lanternNear: false,
+  lanternOpen: false,
   dealerOpen: false,
   dealerNear: false,
   printWorn: typeof saved?.printWorn === "string" ? saved.printWorn : null,
@@ -2496,6 +2509,52 @@ export const useGame = create<GameState>((set, get) => ({
     });
   },
   setHouseOpen: (open) => set({ houseOpen: open }),
+  setLanternOpen: (open) => set({ lanternOpen: open }),
+  setLanternNear: (near) => set({ lanternNear: near, lanternOpen: near ? get().lanternOpen : false }),
+  buyShop: (city) => {
+    const st = get();
+    if (st.shops[city]) return;
+    if (!walletLive()) {
+      flashToast(set, get, "Sign in to buy a shop.", 1600);
+      return;
+    }
+    if (st.points < SHOP_PRICE) {
+      flashToast(set, get, "Need more coins.", 1400);
+      return;
+    }
+    const before = { shops: st.shops, points: st.points };
+    const now = Date.now();
+    set({ points: st.points - SHOP_PRICE, shops: { ...st.shops, [city]: { at: now, anchor: now } } });
+    void commitWallet({ kind: "shop", city }).then((r) => {
+      if (!r || !r.ok) {
+        set(before);
+        flashToast(set, get, "Couldn't buy the shop. Try again in a moment.", 2000);
+        return;
+      }
+      if (r.shop) set({ shops: { ...get().shops, [city]: { at: r.shop.at, anchor: r.shop.anchor } } });
+      saveNow(get);
+    });
+    sfx.craft();
+    flashToast(set, get, `The ${SHOP_NAME} is yours! It makes ${SHOP_PAY.toLocaleString("en-US")} coins every 4 hours. Collect here.`, 2600);
+    scheduleSave(get);
+  },
+  collectShop: (city) => {
+    if (!get().shops[city]) return;
+    if (!walletLive()) {
+      flashToast(set, get, "Sign in to use your shop.", 1600);
+      return;
+    }
+    void commitWallet({ kind: "shopCollect", city }).then((r) => {
+      const s = r?.shop;
+      if (!r || !r.ok || !s) return flashToast(set, get, "Couldn't collect. Try again in a moment.", 2000);
+      set({ shops: { ...get().shops, [city]: { at: s.at, anchor: s.anchor } } });
+      if (s.coin > 0) {
+        sfx.pickup();
+        flashToast(set, get, `The till: ${s.coin.toLocaleString("en-US")} coins.`, 2200);
+      } else flashToast(set, get, "Nothing in the till yet.", 1600);
+      saveNow(get);
+    });
+  },
   setHouseNear: (near) => set({ houseNear: near, houseOpen: near ? get().houseOpen : false }),
   driveCar: (id) => {
     if (id && !get().carsOwned.includes(id)) return;
@@ -2561,6 +2620,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (o.cans) set({ carCans: o.cans.filter((x) => parseCan(x)) });
     if (o.houses) set({ houses: cleanHouses(o.houses) });
     if (o.homeClaims) set({ homeClaims: o.homeClaims.filter((x) => typeof x === "string") });
+    if (o.shops) set({ shops: cleanShops(o.shops) });
     if (o.paint) set({ carPaint: cleanCarPaint(o.paint) });
     if (o.cars) {
       const cars = Array.from(new Set([...get().carsOwned, ...o.cars.filter(isCarId)]));
