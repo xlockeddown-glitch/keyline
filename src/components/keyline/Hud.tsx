@@ -205,14 +205,14 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           ) : null}
           {fares > 0 && !canPunch ? (
             <button type="button" className="fare-hint pointer-events-auto mt-1" onClick={onDesk}>
-              <span className="kicker mr-1.5">Train</span>
+              <span className="kicker mr-1.5">Travel</span>
               Walk to {hud.deskName}
               <span className="tabular-nums text-fg-subtle"> · {formatDist(hud.deskDist)}</span>
             </button>
           ) : fares > 0 ? (
             <p className="mt-1 truncate text-xs text-fg-muted">
-              <span className="kicker mr-1.5">Train</span>
-              {hud.deskName} · T to board
+              <span className="kicker mr-1.5">Travel</span>
+              {hud.deskName} · T to travel
             </p>
           ) : null}
           <DailyHudLine />

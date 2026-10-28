@@ -153,6 +153,7 @@ test("0.1.60 copy: Travel at the station, owner footer on the shop sheet, Shop l
   const map = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(hud + map, /Board train|Board the train/);
   assert.match(hud, /cue = `Travel · T · /);
+  assert.doesNotMatch(hud, /T to board/);
   const sheet = readFileSync(new URL("../components/keyline/LanternSheet.tsx", import.meta.url), "utf8");
   const foot = sheet.slice(sheet.indexOf('data-testid="shop-foot"'));
   assert.match(foot, /\{shop\s*\?\s*"Yours for good\./, "owners don't see Sign in to buy");
