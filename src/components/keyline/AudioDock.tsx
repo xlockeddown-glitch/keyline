@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Music, Volume2, VolumeX } from "lucide-react";
+import { Map as MapIcon, Music, Volume2, VolumeX } from "lucide-react";
 import { BED_NAME, isMusicOn, isMuted, subscribeAudio, toggleMusic, toggleMuted, unlockAudio } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { SkyToggle } from "./Sky";
@@ -14,6 +14,7 @@ export function AudioDock() {
   const { muted, musicOn } = useAudioUi();
   const scout = useGame((s) => s.scout);
   const bed = BED_NAME[scout];
+  const openSkins = useGame((s) => s.setSkinsOpen);
 
   return (
     <div className="flex items-center gap-2">
@@ -42,6 +43,16 @@ export function AudioDock() {
         {muted ? <VolumeX className="size-4 text-fg-muted" strokeWidth={1.75} /> : <Volume2 className="size-4" strokeWidth={1.75} />}
       </button>
       <SkyToggle />
+      <button
+        type="button"
+        className="hud-plate is-kit pointer-events-auto size-11 justify-center p-0"
+        data-testid="skins-btn"
+        onClick={() => openSkins(true)}
+        aria-label="Map skins"
+        title="Map skins"
+      >
+        <MapIcon className="size-4" strokeWidth={1.75} />
+      </button>
     </div>
   );
 }

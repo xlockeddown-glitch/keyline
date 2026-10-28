@@ -8,6 +8,7 @@ import { factoryColor } from "@/game/carPaint";
 import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
 import { LanternSheet } from "./LanternSheet";
+import { SkinSheet } from "./SkinSheet";
 import { SHOP_EVERY_MS, SHOP_METERS, SHOP_REACH_M, shopLot, shopMapArt } from "@/game/shop";
 import { CITIES, CLIMB_ID, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
@@ -293,7 +294,8 @@ export function GameMap() {
 
   function strokeColor() {
     if (typeof document === "undefined") return "#c4a35a";
-    return getComputedStyle(document.documentElement).getPropertyValue("--color-vault-amber").trim() || "#c4a35a";
+    const css = getComputedStyle(document.documentElement);
+    return css.getPropertyValue("--skin-route").trim() || css.getPropertyValue("--color-vault-amber").trim() || "#c4a35a";
   }
 
   function flash(msg: string, ms = 1600) {
@@ -2628,6 +2630,7 @@ const CACHE_PIN_HTML =
       <Showroom />
       <HouseSheet />
       <LanternSheet />
+      <SkinSheet />
       <WardCounter />
       <NoticeBoard />
       <Fireworks />

@@ -10,6 +10,7 @@ import { DyeSync } from "./DyeSync";
 import { WardrobeSync } from "./WardrobeSync";
 import { WornScoutSync } from "./WornScoutSync";
 import { WalletSync } from "./WalletSync";
+import { SkinSync } from "./SkinSheet";
 
 export function KeylineApp() {
   const screen = useGame((s) => s.screen);
@@ -20,6 +21,7 @@ export function KeylineApp() {
       <WardrobeSync />
       <WornScoutSync />
       <WalletSync />
+      <SkinSync />
       <DyeSync />
       <LevelSync />
       <PrintSync />

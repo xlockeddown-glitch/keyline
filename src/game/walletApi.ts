@@ -78,6 +78,8 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("home"), city: City }),
   z.object({ kind: z.literal("shop"), city: City }),
   z.object({ kind: z.literal("shopCollect"), city: City }),
+  z.object({ kind: z.literal("skin"), id: z.string().min(1).max(20) }),
+  z.object({ kind: z.literal("skinOn"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80), free: z.boolean().optional() }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
@@ -165,7 +167,7 @@ export type SyncWire = {
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
   /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
-  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }> };
+  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })

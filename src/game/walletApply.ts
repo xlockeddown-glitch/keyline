@@ -1,3 +1,4 @@
+import { isSkinId, skinOf, skinOwned } from "./skins.ts";
 import { SHOP_PRICE, shopAnchor, shopOutput, type ShopState } from "./shop.ts";
 import { loopCrate, loopCrateLoot, posterKey } from "./loop.ts";
 import { hasShield, streakRun } from "./scoutPerks.ts";
@@ -82,7 +83,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>> } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>>; skins?: string[]; skin?: string | null } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -336,6 +337,29 @@ export async function grantCan(sql: Sql, userId: string, source: string, odds: n
   return r.ok && !r.replay ? can : null;
 }
 
+/** 0.1.61: map skins this account bought (skin:<id>) and the one it wears (latest skinon:<ms>). */
+export async function skinsOf(sql: Sql, userId: string): Promise<{ skins: string[]; skin: string | null }> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string; detail: string }>`
+    select op_key, detail from wallet_ledger where user_id = ${id} and (op_key like ${"skin:%"} or op_key like ${"skinon:%"}) order by created_at asc, op_key asc
+  `;
+  const skins: string[] = [];
+  let skin: string | null = null;
+  for (const r of rows) {
+    const [kind, rest] = r.op_key.split(":");
+    if (kind === "skin" && isSkinId(rest) && !skins.includes(rest)) skins.push(rest);
+    else if (kind === "skinon") {
+      try {
+        const want = (JSON.parse(r.detail ?? "{}") as { id?: unknown }).id;
+        if (isSkinId(want)) skin = want;
+      } catch {
+        /* a row without an id changes nothing */
+      }
+    }
+  }
+  return { skins, skin };
+}
+
 /** 0.1.59: Lantern Shops this account owns (shop:<city> rows) with each one's clock (latest shopc:<city>:<anchor>). */
 export async function shopsOf(sql: Sql, userId: string): Promise<Partial<Record<CityId, ShopState>>> {
   const { id } = await canonicalWallet(sql, userId);
@@ -422,7 +446,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   giftNotes.push(...(await grantWelcomePack(sql, userId, startOfLocal(local))));
   giftNotes.push(...(await grantLoveGift(sql, userId)));
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId) };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId), ...(await skinsOf(sql, userId)) };
   const until = await doubleUntil(sql, userId);
   const out = { ...done, owned, ...(until ? { doubleUntil: until } : {}) };
   return giftNotes.length ? { ...out, giftNotes } : out;
@@ -870,6 +894,9 @@ export type ClientOp =
   /** 0.1.59 Lantern Shop: buy one in a city; collect its waiting coin. */
   | { kind: "shop"; city: CityId }
   | { kind: "shopCollect"; city: CityId }
+  /** 0.1.61 map skins: buy one; choose the one to wear (any owned or free skin). */
+  | { kind: "skin"; id: string }
+  | { kind: "skinOn"; id: string }
   | { kind: "own"; poi: string; free?: boolean }
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
@@ -1090,6 +1117,28 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     const r = await mutateWallet(sql, sessionUserId, `house:${op.city}:${def.id}`, (w) =>
       w.coins < cost ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -cost }), detail: JSON.stringify({ city: op.city, tier: def.id, from: owned }) },
     );
+    return applied(r);
+  }
+
+  // 0.1.61: buy a map skin (free skins need no row).
+  if (op.kind === "skin") {
+    const def = skinOf(op.id);
+    if (!def) return refused(wallet, "unknown");
+    if (def.price === 0 || (await skinsOf(sql, sessionUserId)).skins.includes(def.id)) return applied({ ok: true, replay: true, wallet });
+    const r = await mutateWallet(sql, sessionUserId, `skin:${def.id}`, (w) =>
+      w.coins < def.price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -def.price }), detail: JSON.stringify({ id: def.id }) },
+    );
+    return applied(r);
+  }
+
+  // 0.1.61: wear a skin. Only an owned (or free) one; the latest skinon row is the account's choice.
+  if (op.kind === "skinOn") {
+    const def = skinOf(op.id);
+    if (!def) return refused(wallet, "unknown");
+    const mine = await skinsOf(sql, sessionUserId);
+    if (!skinOwned(def.id, mine.skins)) return refused(wallet, "not-owned");
+    if (mine.skin === def.id) return applied({ ok: true, replay: true, wallet });
+    const r = await mutateWallet(sql, sessionUserId, `skinon:${Date.now()}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ id: def.id }) }));
     return applied(r);
   }
 

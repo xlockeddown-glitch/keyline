@@ -6,6 +6,7 @@ import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { carOf, driveOf, isCarId, type CarId } from "./cars";
 import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
+import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { SHOP_NAME, SHOP_PAY, SHOP_PRICE, cleanShops, type ShopState } from "./shop";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
@@ -198,6 +199,11 @@ export type GameState = {
   shops: Partial<Record<CityId, ShopState>>;
   lanternNear: boolean;
   lanternOpen: boolean;
+  /** 0.1.61 map skins: bought skins (server-owned), the one you wear (saved), the sheet and a try-on preview. */
+  skins: SkinId[];
+  mapSkin: SkinId;
+  skinsOpen: boolean;
+  skinPreview: SkinId | null;
   dealerOpen: boolean;
   dealerNear: boolean;
   /** 0.0.64 vault paint: cans live in the pantry; this is what the vat has mixed and what's on. */
@@ -365,6 +371,10 @@ export type GameState = {
   turnKey: (city: CityId) => void;
   setHouseOpen: (open: boolean) => void;
   setLanternOpen: (open: boolean) => void;
+  setSkinsOpen: (open: boolean) => void;
+  previewSkin: (id: SkinId | null) => void;
+  wearSkin: (id: SkinId) => void;
+  buySkin: (id: SkinId) => void;
   setLanternNear: (near: boolean) => void;
   buyShop: (city: CityId) => void;
   collectShop: (city: CityId) => void;
@@ -386,7 +396,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }> }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -678,6 +688,8 @@ function persistable(s: GameState) {
     houses: s.houses,
     homeClaims: s.homeClaims,
     shops: s.shops,
+    skins: s.skins,
+    mapSkin: s.mapSkin,
     paints: s.paints,
     atlas: s.atlas,
     survey: s.survey,
@@ -1140,6 +1152,10 @@ export const useGame = create<GameState>((set, get) => ({
   shops: cleanShops(saved?.shops),
   lanternNear: false,
   lanternOpen: false,
+  skins: cleanSkins(saved?.skins),
+  mapSkin: isSkinId(saved?.mapSkin) ? saved.mapSkin : "default",
+  skinsOpen: false,
+  skinPreview: null,
   dealerOpen: false,
   dealerNear: false,
   printWorn: typeof saved?.printWorn === "string" ? saved.printWorn : null,
@@ -2510,6 +2526,42 @@ export const useGame = create<GameState>((set, get) => ({
   },
   setHouseOpen: (open) => set({ houseOpen: open }),
   setLanternOpen: (open) => set({ lanternOpen: open }),
+  setSkinsOpen: (open) => set({ skinsOpen: open, skinPreview: null }),
+  previewSkin: (id) => set({ skinPreview: id }),
+  wearSkin: (id) => {
+    if (!skinOwned(id, get().skins)) return;
+    const before = get().mapSkin;
+    set({ mapSkin: id, skinPreview: null });
+    scheduleSave(get);
+    if (walletLive()) void commitWallet({ kind: "skinOn", id }).then((r) => {
+      if (r && !r.ok) set({ mapSkin: before });
+    });
+  },
+  buySkin: (id) => {
+    const def = skinOf(id);
+    const st = get();
+    if (!def || skinOwned(id, st.skins)) return;
+    if (!walletLive()) {
+      flashToast(set, get, "Sign in to buy a map skin. You can still try it on.", 1800);
+      return;
+    }
+    if (st.points < def.price) {
+      flashToast(set, get, "Need more coins.", 1400);
+      return;
+    }
+    const before = { skins: st.skins, points: st.points };
+    set({ points: st.points - def.price, skins: [...st.skins, id] });
+    void commitWallet({ kind: "skin", id }).then((r) => {
+      if (!r || !r.ok) {
+        set(before);
+        flashToast(set, get, "Couldn't buy the skin. Try again in a moment.", 2000);
+        return;
+      }
+      get().wearSkin(id);
+    });
+    sfx.craft();
+    flashToast(set, get, `${def.name} is yours.`, 1800);
+  },
   setLanternNear: (near) => set({ lanternNear: near, lanternOpen: near ? get().lanternOpen : false }),
   buyShop: (city) => {
     const st = get();
@@ -2621,6 +2673,8 @@ export const useGame = create<GameState>((set, get) => ({
     if (o.houses) set({ houses: cleanHouses(o.houses) });
     if (o.homeClaims) set({ homeClaims: o.homeClaims.filter((x) => typeof x === "string") });
     if (o.shops) set({ shops: cleanShops(o.shops) });
+    if (o.skins) set({ skins: cleanSkins(o.skins) });
+    if (o.skin && isSkinId(o.skin)) set({ mapSkin: o.skin });
     if (o.paint) set({ carPaint: cleanCarPaint(o.paint) });
     if (o.cars) {
       const cars = Array.from(new Set([...get().carsOwned, ...o.cars.filter(isCarId)]));

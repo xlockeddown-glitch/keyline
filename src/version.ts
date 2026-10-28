@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.60";
+export const APP_VERSION = "0.1.61";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k160a";
+export const PUBLISH_STAMP = "k161a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -168,3 +168,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.58: city travel is instant by default (Arrive); the optional Loop plays a 7 s tunnel ride with your car on a sled (Skip button, reduced motion = short fade), a 1-in-12 mystery crate and a tunnel poster per route in the Journal; the timed train with ride games stays as a third option (k158a).
 // 0.1.59: Lantern Shop, a buildable of its own (600k, one per city, next to the house lot): makes 2,000 coins every 4 hours on the server clock, the till holds 3 payouts; painted map cutout with a till-ready light, buy confirm and a collect sheet with the next-ready countdown (k159a).
 // 0.1.60: leftovers: the station says Travel (not Board train); the Lantern Shop sheet shows owners their own footer; every shop lot is hand-placed on a named street about 110 m from the house door (never a park path, never under the house button), checked on each baked walk graph; shop collects read "Shop" in Recent rewards (k160a).
+// 0.1.61: map skins: Lamplight (default) and Moonlight free, Mars and Neon 50,000 coin each; one CSS filter on the map tiles plus a route accent, no animation; bought as skin:<id> ledger rows, the worn skin saved per account (skinon rows) or locally for guests, who can preview but not buy (k161a).
