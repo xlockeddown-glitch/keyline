@@ -100,7 +100,11 @@ export function LanternSheet() {
               )}
             </div>
           )}
-          <p className="mt-4 text-xs text-fg-subtle">Sign in to buy. One shop per city, yours for good. The clock runs on the server; what waits past a full till is lost.</p>
+          <p className="mt-4 text-xs text-fg-subtle" data-testid="shop-foot">
+            {shop
+              ? "Yours for good. The clock runs on the server; what waits past a full till is lost, so collect at least every 12 hours."
+              : "Sign in to buy. One shop per city, yours for good. The clock runs on the server; what waits past a full till is lost."}
+          </p>
         </div>
       </div>
     </div>

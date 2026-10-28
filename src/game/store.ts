@@ -2115,8 +2115,8 @@ export const useGame = create<GameState>((set, get) => ({
       fares += 1;
       cityVaults = 0;
       fareToast = fares === 1
-        ? `A train ticket printed. Walk to ${fareDesk(CITIES[get().cityId]).name} and board.`
-        : `Another train ticket. Two is the pocket. Board at ${fareDesk(CITIES[get().cityId]).name}.`;
+        ? `A train ticket printed. Walk to ${fareDesk(CITIES[get().cityId]).name} to travel.`
+        : `Another train ticket. Two is the pocket. Travel from ${fareDesk(CITIES[get().cityId]).name}.`;
     }
     if (grade === "perfect") sfx.perfect();
     else sfx.correct();
@@ -2775,7 +2775,7 @@ export const useGame = create<GameState>((set, get) => ({
       sfx.craft();
       set({ points: get().points - item.cost, fares: get().fares + 1 });
       pushOp({ kind: "kiosk", id }, () => set({ fares: Math.max(0, useGame.getState().fares - 1) }));
-      flashToast(set, get, `A train ticket reprinted. Board at ${fareDesk(CITIES[get().cityId]).name}.`, 2400);
+      flashToast(set, get, `A train ticket reprinted. Travel from ${fareDesk(CITIES[get().cityId]).name}.`, 2400);
       scheduleSave(get);
       return;
     }

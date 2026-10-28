@@ -49,8 +49,33 @@ export function cleanShops(raw: unknown): Partial<Record<CityId, ShopState>> {
   return out;
 }
 
-/** The shop lot: about 90 m east of the house lot, so the two read as neighbours. The client snaps it to the walk. */
+/**
+ * 0.1.60: hand-placed shop lots, one per city, about 110 m from the house lot (so the house and shop buttons never
+ * show together; each reach is 40 m) on a sidewalk node of a named street in the baked walk graph — never a park
+ * path. Picked by /workspace/bake-scope/k160/pick.py; shop.test.ts checks each snaps onto the baked walk.
+ */
+export const SHOP_LOTS: Record<CityId, { name: string; lat: number; lng: number }> = {
+  austin: { name: "Nueces Street", lat: 30.26627, lng: -97.74971 },
+  temple: { name: "West Avenue B", lat: 31.09696, lng: -97.34651 },
+  nyc: { name: "7th Avenue", lat: 40.7599, lng: -73.98413 },
+  sf: { name: "Washington Street", lat: 37.79555, lng: -122.40324 },
+  london: { name: "Charing Cross Road", lat: 51.51057, lng: -0.1284 },
+  chicago: { name: "East Washington Street", lat: 41.88325, lng: -87.6257 },
+  detroit: { name: "Monroe Street", lat: 42.33227, lng: -83.04627 },
+  tucson: { name: "East Toole Avenue", lat: 32.22368, lng: -110.96787 },
+  toronto: { name: "Dundas Street West", lat: 43.65576, lng: -79.38359 },
+  la: { name: "North Broadway", lat: 34.05563, lng: -118.24369 },
+  boston: { name: "Tremont Street", lat: 42.35346, lng: -71.06421 },
+  nola: { name: "Madison Avenue", lat: 29.95803, lng: -90.06176 },
+  seattle: { name: "Union Street", lat: 47.6087, lng: -122.33701 },
+  denver: { name: "Arapahoe Street", lat: 39.74821, lng: -104.99522 },
+  nashville: { name: "Commerce Street", lat: 36.16288, lng: -86.77693 },
+};
+
 export function shopLot(city: CityId): { city: CityId; name: string; lat: number; lng: number } {
+  const fixed = SHOP_LOTS[city];
+  if (fixed) return { city, ...fixed };
+  // A city added later without a lot: about 90 m east of its house lot until one is placed.
   const h = HOUSE_LOTS[city];
   return { city, name: h.name, lat: h.lat, lng: h.lng + 90 / (111_320 * Math.cos((h.lat * Math.PI) / 180)) };
 }

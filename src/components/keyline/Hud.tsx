@@ -128,7 +128,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   let cue = cabSeat ? "Park at the curb. The door is on foot." : hud.seated ? "Tap a lamp to drive to its curb." : "Click the map to walk.";
   if (nearest) {
     if (cabSeat || (hud.seated && service)) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
-    else if (canPunch) cue = `Board train · T · ${nearest.name}`;
+    else if (canPunch) cue = `Travel · T · ${nearest.name}`;
     else if (canUnlock) cue = `Train station · T · unlock a city (${freePick ? "free pick" : `${passes} pass${passes === 1 ? "" : "es"}`})`;
     else if (atDesk && !fares) cue = `Train station. ${ticketHint(cityVaults)}.`;
     else if (atShop) cue = `${nearest.name} · coats for hire · E`;
@@ -363,7 +363,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             type="button"
             className={`act-btn pointer-events-auto ${canDesk ? "is-armed" : armed ? "is-armed" : ""}`}
             onClick={canDesk ? onTimetable : onInteract}
-            aria-label={canPunch ? "Board train" : canUnlock ? "Open timetable" : atShop ? "Open outfitter" : atCounter ? "Open counter" : atBoard ? "Open notice" : armed ? "Light lamp" : "Interact"}
+            aria-label={canPunch ? "Travel" : canUnlock ? "Open timetable" : atShop ? "Open outfitter" : atCounter ? "Open counter" : atBoard ? "Open notice" : armed ? "Light lamp" : "Interact"}
           >
             {canDesk ? "T" : "E"}
           </button>

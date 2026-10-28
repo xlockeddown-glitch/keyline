@@ -393,7 +393,7 @@ export function HqPanel() {
                 <li className="hq-row">
                   <div className="hq-row-copy">
                     <p className="hq-row-title tabular-nums">{fares}</p>
-                    <p className="hq-row-sub">Train tickets. Board at {desk.name}.</p>
+                    <p className="hq-row-sub">Tickets. Travel from {desk.name}: the Loop, arrive now, or the train.</p>
                   </div>
                 </li>
                 <li className="hq-row">

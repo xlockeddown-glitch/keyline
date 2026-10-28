@@ -1891,7 +1891,7 @@ export function GameMap() {
         const here = desks.find((p) => distM(pos.current.lat, pos.current.lng, p.lat, p.lng) <= reach());
         if (!here) {
           const desk = fareDesk(city);
-          flash(`Walk to ${desk.name}. Board the train there.`);
+          flash(`Walk to ${desk.name}. Travel from there.`);
           void setDestination(desk.lat, desk.lng);
           return;
         }
@@ -2648,7 +2648,7 @@ const CACHE_PIN_HTML =
             );
             if (!atDesk) {
               const desk = fareDesk(city);
-              flash(`Walk to ${desk.name}. Board the train there.`);
+              flash(`Walk to ${desk.name}. Travel from there.`);
               setBoardOpen(false);
               void setDestination(desk.lat, desk.lng);
               return;

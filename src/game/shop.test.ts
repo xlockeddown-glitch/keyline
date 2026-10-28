@@ -4,7 +4,9 @@ welcomeClock.cutoff = "2999-01-01T00:00:00Z";
 lampGiftClock.cutoff = "2999-01-01T00:00:00Z";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
+import { createGraph, ingestBaked, nearest, routeOnGraph, type BakedCity } from "./streets.ts";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
@@ -12,7 +14,7 @@ import type { LocalSnap } from "./wallet.ts";
 import { applyClientOp, shopsOf, syncPlayer } from "./walletApply.ts";
 import { canonicalWallet } from "./walletSql.ts";
 import { thanksClock } from "./thanksGift.ts";
-import { SHOP_CAP, SHOP_EVERY_MS, SHOP_PAY, SHOP_PRICE, cleanShops, formatWait, shopAnchor, shopLot, shopOutput } from "./shop.ts";
+import { SHOP_REACH_M, SHOP_CAP, SHOP_EVERY_MS, SHOP_PAY, SHOP_PRICE, cleanShops, formatWait, shopAnchor, shopLot, shopOutput } from "./shop.ts";
 import { HOUSE_LOTS } from "./houses.ts";
 import { distM } from "./geo.ts";
 thanksClock.cutoff = "2999-01-01T00:00:00Z";
@@ -59,7 +61,7 @@ test("collect math: 2k per 4 h, part-made payout carries over, till caps at 3 an
   assert.deepEqual(cleanShops({ austin: { at: 5, anchor: 9 }, mars: { at: 5 }, nyc: { at: -1 }, la: { at: 7, anchor: 3 } }), { austin: { at: 5, anchor: 9 }, la: { at: 7, anchor: 7 } });
   for (const c of Object.keys(HOUSE_LOTS) as (keyof typeof HOUSE_LOTS)[]) {
     const d = distM(HOUSE_LOTS[c].lat, HOUSE_LOTS[c].lng, shopLot(c).lat, shopLot(c).lng);
-    assert.ok(d > 80 && d < 100, `${c} shop lot ${d} m from the house`);
+    assert.ok(d > 60 && d < 200, `${c} shop lot ${d} m from the house lot pin (the snapped doors are checked below)`);
   }
 });
 
@@ -126,4 +128,36 @@ test("client sends no clock: the shop ops carry only the city", () => {
   assert.match(api, /z\.object\(\{ kind: z\.literal\("shopCollect"\), city: City \}\)/);
   const pkg = readFileSync(new URL("../../package.json", import.meta.url), "utf8");
   assert.match(pkg, /src\/game\/shop\.test\.ts/);
+});
+
+test("0.1.60: every shop lot snaps onto its city's baked walk graph and connects to the house lot", () => {
+  const dir = new URL("../../public/streets/v2/", import.meta.url);
+  const files = readdirSync(dir);
+  for (const c of Object.keys(HOUSE_LOTS) as (keyof typeof HOUSE_LOTS)[]) {
+    const f = files.find((x) => x.startsWith(`${c}.`) && x.endsWith(".json.gz"));
+    assert.ok(f, `${c} baked streets`);
+    const baked = JSON.parse(gunzipSync(readFileSync(new URL(f!, dir))).toString("utf8")) as BakedCity;
+    const lot = shopLot(c);
+    const g = ingestBaked(createGraph(lot.lat, lot.lng), baked);
+    const snap = nearest(g, lot.lat, lot.lng, 80);
+    assert.ok(snap && snap.dist <= 6, `${c} shop lot ${snap?.dist} m off the walk`);
+    const home = nearest(g, HOUSE_LOTS[c].lat, HOUSE_LOTS[c].lng, 80);
+    assert.ok(home, `${c} house lot on the walk`);
+    assert.ok(routeOnGraph(g, { lat: home!.lat, lng: home!.lng }, { lat: snap!.lat, lng: snap!.lng }), `${c} house → shop walkable`);
+    assert.ok(distM(home!.lat, home!.lng, snap!.lat, snap!.lng) > SHOP_REACH_M * 2, `${c} house and shop buttons never overlap`);
+  }
+});
+
+test("0.1.60 copy: Travel at the station, owner footer on the shop sheet, Shop label on collects", async () => {
+  const hud = readFileSync(new URL("../components/keyline/Hud.tsx", import.meta.url), "utf8");
+  const map = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(hud + map, /Board train|Board the train/);
+  assert.match(hud, /cue = `Travel · T · /);
+  const sheet = readFileSync(new URL("../components/keyline/LanternSheet.tsx", import.meta.url), "utf8");
+  const foot = sheet.slice(sheet.indexOf('data-testid="shop-foot"'));
+  assert.match(foot, /\{shop\s*\?\s*"Yours for good\./, "owners don't see Sign in to buy");
+  const { rewardOfRow, SOURCE_LABEL } = await import("./recentRewards.ts");
+  const r = rewardOfRow("shopc:austin:123", JSON.stringify({ coins: 2000 }), 1, () => undefined);
+  assert.equal(r?.src, "shop");
+  assert.equal(SOURCE_LABEL.shop, "Shop");
 });
