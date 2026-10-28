@@ -1,3 +1,4 @@
+import { loopCrate, loopCrateLoot, posterKey } from "./loop.ts";
 import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
@@ -843,6 +844,8 @@ export type ClientOp =
   | { kind: "home"; city: CityId }
   | { kind: "own"; poi: string; free?: boolean }
   | { kind: "hurry"; min: number }
+  /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
+  | { kind: "loop"; ride: boolean }
   | {
       kind: "ride";
       watch?: boolean;
@@ -864,6 +867,8 @@ export type ClientResult = Applied & {
   rideDeal?: RideDeal;
   /** 0.1.2: the arrival and charge the server set for a Hurry up. */
   hurry?: { arriveAt: number; cost: number };
+  /** 0.1.58: the Loop ride paid a mystery crate. */
+  loop?: { crate: boolean };
   /** 0.1.9: a paint can found (cache), or the color a paint op set. */
   can?: Can;
   /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
@@ -1219,6 +1224,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
 
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
   if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op);
+  if (op.kind === "loop") return loopArrive(sql, sessionUserId, id, wallet, op.ride);
   if (op.kind === "hurry") return hurryRide(sql, sessionUserId, id, wallet, op.min);
 
   // 0.0.98: a scout the account already owns on the server (bought under any key, or restored by a gift such as
@@ -1494,7 +1500,8 @@ async function boardTicket(sql: Sql, sessionUserId: string, id: string, wallet: 
   const held = Math.min(FARES_CAP, Math.max(0, earned - spent));
   const prev = await latestTicket(sql, id);
   const now = Date.now();
-  if (prev && now < prev.at + prev.ms) return { ...applied({ ok: true, replay: true, wallet }), authoritative: true };
+  // 0.1.58: an early arrival (Hurry up, skip, Loop) closes the ticket, so the next board spends a new one.
+  if (prev && now < ((await hurriedArrive(sql, id, prev.at)) ?? prev.at + prev.ms)) return { ...applied({ ok: true, replay: true, wallet }), authoritative: true };
   if (held < 1) return refused(wallet, "no-ticket");
   const ms = fareMs(from, to);
   const r = await mutateWallet(sql, sessionUserId, `ticket:${spent}`, (w) => {
@@ -1549,6 +1556,25 @@ async function hurryRide(sql: Sql, sessionUserId: string, id: string, wallet: Wa
     w.coins < cost ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -cost }), detail: JSON.stringify({ arrive: target, full: ticket.ms, cost }) },
   );
   return { ...applied(r), hurry: r.ok ? { arriveAt: target, cost } : undefined };
+}
+
+/** 0.1.58: arrive now. Closes the open ticket at no charge; a Loop ride also rolls its crate and files the route poster. */
+async function loopArrive(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, ride: boolean): Promise<ClientResult> {
+  const ticket = await latestTicket(sql, id);
+  const now = Date.now();
+  if (!ticket) return refused(wallet, "no-ticket");
+  const cur = (await hurriedArrive(sql, id, ticket.at)) ?? ticket.at + ticket.ms;
+  if (now >= cur) return refused(wallet, "arrived");
+  const crate = ride && loopCrate(ticket.at);
+  const r = await mutateWallet(sql, sessionUserId, `hurry:${ticket.at}:loop`, (w) =>
+    crate
+      ? { ...applyDelta(w, { keys: loopCrateLoot() }), detail: JSON.stringify({ arrive: now, full: ticket.ms, cost: 0, crate }) }
+      : { ok: true, wallet: w, detail: JSON.stringify({ arrive: now, full: ticket.ms, cost: 0 }) },
+  );
+  if (r.ok && ride) {
+    await mutateWallet(sql, sessionUserId, posterKey(ticket.from, ticket.to), (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ at: now }) }));
+  }
+  return { ...applied(r), loop: r.ok ? { crate } : undefined };
 }
 
 /** Pay the open ticket from the server clock. A win is scored here from the dealt seed and the submitted moves. */

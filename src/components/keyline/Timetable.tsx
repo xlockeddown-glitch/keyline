@@ -7,7 +7,8 @@ import { unlockCost } from "@/game/cityPass";
 import { LockNote, PassHelpCard, PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 
-type Props = { onClose: () => void; onPunch: (id: CityId) => void };
+export type Ride = "skip" | "loop" | "train";
+type Props = { onClose: () => void; onPunch: (id: CityId, how: Ride) => void };
 
 export function Timetable({ onClose, onPunch }: Props) {
   const cityId = useGame((s) => s.cityId);
@@ -17,9 +18,9 @@ export function Timetable({ onClose, onPunch }: Props) {
   const unlock = useGame((s) => s.unlockCity);
   useSheetOpen(true);
 
-  function punch(id: CityId) {
+  function punch(id: CityId, how: Ride) {
     sfx.ui();
-    onPunch(id);
+    onPunch(id, how);
   }
 
   return (
@@ -28,12 +29,12 @@ export function Timetable({ onClose, onPunch }: Props) {
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Timetable</p>
-            <h2 className="font-display text-2xl">Board train</h2>
+            <h2 className="font-display text-2xl">Travel</h2>
             <p className="mt-1 text-sm text-fg-muted">
               {seated
                 ? "Park first. The window doesn’t take a ticket."
                 : fares
-                  ? `${fares} train ticket${fares === 1 ? "" : "s"} in the pocket. Clock runs while you’re away. Matches turn up in the car.`
+                  ? `${fares} ticket${fares === 1 ? "" : "s"} in the pocket. Arrive now, or ride the Loop for a tunnel poster and the odd crate.`
                   : "Need a train ticket. Light 3 lamps in this city."}
             </p>
           </div>
@@ -73,25 +74,31 @@ export function Timetable({ onClose, onPunch }: Props) {
                 </li>
               );
             }
+            const off = fares < 1 || seated;
             return (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  className="flex w-full items-baseline justify-between gap-3 border-b border-border py-3 text-left last:border-0"
-                  disabled={fares < 1 || seated}
-                  onClick={() => punch(c.id)}
-                >
+              <li key={c.id} className="border-b border-border py-3 last:border-0" data-testid={`ward-${c.id}`}>
+                <div className="flex items-baseline justify-between gap-3">
                   <span>
                     <span className="font-display text-xl leading-none">{c.name}</span>
                     <span className="mt-1 block kicker">{c.region}</span>
                   </span>
-                  <span className="tabular-nums text-sm text-fg-muted">{eta}</span>
+                  <span className="flex shrink-0 gap-2">
+                    <button type="button" className="btn btn-quiet px-3 text-xs" disabled={off} data-testid={`skip-${c.id}`} onClick={() => punch(c.id, "skip")}>
+                      Arrive
+                    </button>
+                    <button type="button" className="btn btn-primary px-3 text-xs" disabled={off} data-testid={`loop-${c.id}`} onClick={() => punch(c.id, "loop")}>
+                      Loop
+                    </button>
+                  </span>
+                </div>
+                <button type="button" className="mt-1 text-xs text-fg-subtle underline-offset-2 hover:underline disabled:opacity-50" disabled={off} data-testid={`train-${c.id}`} onClick={() => punch(c.id, "train")}>
+                  Or take the train · {eta} · games on board
                 </button>
               </li>
             );
           })}
         </ul>
-        <p className="px-5 py-3 text-xs text-fg-subtle">The cab stays. You walk from the far station.</p>
+        <p className="px-5 py-3 text-xs text-fg-subtle">One ticket either way. The cab stays; you walk from the far station.</p>
       </div>
     </div>
   );

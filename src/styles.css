@@ -4549,3 +4549,141 @@ h3 {
 .pawn.is-seated.has-driver:has(.cab-sprite[data-face="left"]) { --drv-x: 3px; }
 .pawn.is-seated.has-driver:has(.cab-sprite[data-face="down"]),
 .pawn.is-seated.has-driver:has(.cab-sprite[data-face="up"]) { --drv-s: 0.5; --drv-y: -13px; }
+
+/* 0.1.58 The Loop: tunnel ride (CSS only). Rings and lights grow from the vanishing point; the sled holds the middle. */
+.loop-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 46%, #1b2230 0%, #0b0e14 38%, #030407 75%);
+  animation: loop-in 500ms ease-out both, loop-out 600ms ease-in calc(var(--loop-ms) - 600ms) both;
+}
+.loop-screen.is-reduced {
+  animation: loop-in 300ms ease-out both;
+}
+.loop-tube {
+  position: absolute;
+  inset: 0;
+  perspective: 600px;
+}
+.loop-ring {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 140vmax;
+  height: 140vmax;
+  margin: -70vmax 0 0 -70vmax;
+  border-radius: 50%;
+  border: 2px solid rgb(120 150 190 / 0.35);
+  box-shadow: inset 0 0 40px rgb(80 110 160 / 0.25);
+  animation: loop-ring 0.9s linear infinite;
+}
+.loop-light {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 6px;
+  height: 22px;
+  margin-left: -3px;
+  border-radius: 3px;
+  background: #ffe6a8;
+  box-shadow: 0 0 14px 4px rgb(255 214 140 / 0.7);
+  transform-origin: 50% 0;
+  animation: loop-light 0.9s linear infinite;
+}
+.loop-light:nth-child(odd) {
+  --side: -1;
+}
+.loop-light:nth-child(even) {
+  --side: 1;
+}
+.loop-sled {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  transform: scale(3);
+  animation: loop-sled 0.35s ease-in-out infinite alternate;
+}
+.loop-sled .cab-sprite {
+  filter: drop-shadow(0 0 6px rgb(160 200 255 / 0.5));
+}
+.loop-skid {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 9px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #7fd4ff, transparent);
+  box-shadow: 0 0 8px 2px rgb(127 212 255 / 0.6);
+}
+.loop-route {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 12%;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  color: #e9eef7;
+  text-shadow: 0 2px 10px #000;
+}
+.loop-skip {
+  position: absolute;
+  right: 16px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  min-width: 88px;
+}
+@keyframes loop-ring {
+  from { transform: scale(0.02); opacity: 0; }
+  20% { opacity: 1; }
+  to { transform: scale(1); opacity: 0.2; }
+}
+@keyframes loop-light {
+  from { transform: translate(0, 0) scale(0.1); opacity: 0; }
+  20% { opacity: 1; }
+  to { transform: translate(calc(var(--side) * 46vw), 40vh) scale(2.4); opacity: 0; }
+}
+@keyframes loop-sled {
+  from { translate: 0 0; }
+  to { translate: 0 -1px; }
+}
+@keyframes loop-in {
+  from { opacity: 0; }
+}
+@keyframes loop-out {
+  to { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loop-ring, .loop-light, .loop-sled { animation: none; }
+}
+
+/* 0.1.58 tunnel posters in the Journal. */
+.poster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+}
+.loop-poster {
+  aspect-ratio: 3 / 4;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 18%, rgb(0 0 0 / 0.55) 19%, rgb(0 0 0 / 0.55) 24%, transparent 25%),
+    linear-gradient(160deg, hsl(var(--h) 60% 42%), hsl(calc(var(--h) + 40) 55% 18%));
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.15);
+  font-size: 11px;
+  line-height: 1.15;
+}
+.loop-poster b {
+  font-family: var(--font-display, inherit);
+  font-size: 14px;
+}

@@ -9,7 +9,7 @@ export type Tone = { at: number; dur: number; freq: number; to?: number; wave: W
 export type Puff = { at: number; dur: number; lp: number; vol: number };
 export type Recipe = { tones: Tone[]; puffs?: Puff[] };
 
-export type SfxName = "carBuy" | "carStart" | "carDoor" | "cityArrive" | "levelUp" | "questDone" | "crateOpen";
+export type SfxName = "carBuy" | "carStart" | "carDoor" | "cityArrive" | "levelUp" | "questDone" | "crateOpen" | "loopWhoosh";
 
 const t = (at: number, dur: number, freq: number, wave: Wave, vol: number, to?: number): Tone => ({ at, dur, freq, wave, vol, ...(to ? { to } : {}) });
 
@@ -46,6 +46,11 @@ export const PACK: Record<SfxName, Recipe> = {
   crateOpen: {
     tones: [t(0, 0.22, 300, "triangle", 0.1, 420), t(0.24, 0.12, 1175, "sine", 0.14), t(0.31, 0.12, 1397, "sine", 0.14), t(0.38, 0.35, 1760, "sine", 0.14)],
     puffs: [{ at: 0.2, dur: 0.06, lp: 1000, vol: 0.1 }],
+  },
+  // 0.1.58 Loop: a synth swoop with an airy rush (played as the sled launches and again into the platform).
+  loopWhoosh: {
+    tones: [t(0, 1, 110, "sawtooth", 0.06, 330), t(0, 1, 165, "triangle", 0.06, 495), t(0.1, 0.9, 880, "sine", 0.04, 220)],
+    puffs: [{ at: 0, dur: 0.6, lp: 2400, vol: 0.08 }, { at: 0.4, dur: 0.6, lp: 900, vol: 0.08 }],
   },
 };
 

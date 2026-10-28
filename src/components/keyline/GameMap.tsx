@@ -2562,7 +2562,7 @@ const CACHE_PIN_HTML =
       {boardOpen ? (
         <Timetable
           onClose={() => setBoardOpen(false)}
-          onPunch={(id) => {
+          onPunch={(id, how) => {
             const st = useGame.getState();
             const city = CITIES[st.cityId];
             const atDesk = city.pois.some(
@@ -2575,7 +2575,7 @@ const CACHE_PIN_HTML =
               void setDestination(desk.lat, desk.lng);
               return;
             }
-            const err = st.boardFare(id);
+            const err = st.boardFare(id, how);
             if (err) flash(err);
             else setBoardOpen(false);
           }}

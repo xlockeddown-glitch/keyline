@@ -4,6 +4,7 @@ import { LevelPanel } from "./Levels";
 import { RecentRewards } from "./RecentRewards";
 import { StreakBoardSection } from "./RideBoards";
 import { PrintPanel } from "./Prints";
+import { LoopPosters } from "./LoopPosters";
 import { MarketLightsPanel } from "./NightMarket";
 import { X } from "lucide-react";
 import { CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
@@ -361,6 +362,7 @@ export function HqPanel() {
               <LevelPanel />
               <PassProgressRow />
               <PrintPanel />
+              <LoopPosters />
               <MarketLightsPanel />
               <ul className="hq-stats">
                 <li className="hq-row">

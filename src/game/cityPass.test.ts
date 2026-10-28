@@ -151,7 +151,7 @@ test("store wiring: the save carries unlocks, old saves migrate, pickCity and th
   assert.match(src, /lampLit\(/);
   assert.match(src, /goalsCheck\(/);
   assert.match(src, /runFinished\(/);
-  const board = src.slice(src.indexOf("boardFare: (to) =>"), src.indexOf("chooseRideGame: (game) =>"));
+  const board = src.slice(src.indexOf("boardFare: (to, how = \"train\") =>"), src.indexOf("chooseRideGame: (game) =>"));
   assert.match(board, /isUnlocked\(/, "the train won't board a locked city");
   const pick = src.slice(src.indexOf("pickCity: (id) =>"), src.indexOf("setHud: (h) =>"));
   assert.match(pick, /isUnlocked\(|chooseStart\(/);

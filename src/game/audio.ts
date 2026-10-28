@@ -428,6 +428,7 @@ export const sfx = {
   carStart: () => playPack("carStart"),
   carDoor: () => playPack("carDoor"),
   cityArrive: () => playPack("cityArrive"),
+  loopWhoosh: () => playPack("loopWhoosh"),
   levelUp: (key?: string) => playPack("levelUp", key),
   questDone: (key?: string) => playPack("questDone", key),
   crateOpen: (key?: string) => playPack("crateOpen", key),

@@ -180,7 +180,7 @@ export type StreetRun = {
   readyAt: number;
 };
 
-export type Screen = "title" | "cities" | "play" | "ride";
+export type Screen = "title" | "cities" | "play" | "ride" | "loop";
 
 export type Journey = {
   from: CityId;

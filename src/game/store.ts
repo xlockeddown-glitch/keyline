@@ -40,6 +40,7 @@ import type {
   VaultRuntime,
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
+import { addPoster, cleanPosters, loopCrate, loopCrateLoot, posterKey } from "./loop";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
 import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cacheLine, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
@@ -228,6 +229,10 @@ export type GameState = {
   distanceM: number;
   lastCrateDay: string;
   crateStreak: number;
+  /** 0.1.58: tunnel posters collected on Loop rides (ledger keys `poster:<from>-<to>`). */
+  posters: string[];
+  /** 0.1.58: the Loop ride playing now (cutscene), with its crate roll. */
+  loop: { from: CityId; to: CityId; crate: boolean } | null;
   lastPulseDay: string;
   /** 0.0.59 Daily Blitz: the UTC day the login run was started, the coin it paid, and the matches that fit. */
   lastBlitzDay: string;
@@ -400,7 +405,10 @@ export type GameState = {
   replayTutorial: () => void;
   resetCity: () => void;
   clearFireworks: () => void;
-  boardFare: (to: CityId) => string | null;
+  /** 0.1.58: `skip` arrives at once, `loop` plays the tunnel ride, `train` is the old timed ride with games. */
+  boardFare: (to: CityId, how?: "skip" | "loop" | "train") => string | null;
+  /** 0.1.58: end the Loop cutscene (done or skipped): arrive, file the poster, open any crate. */
+  finishLoop: () => void;
   tickJourney: () => void;
   /** Pick this ride's game (0.0.41). Stored on the ride so a reload and every screen agree. */
   chooseRideGame: (game: RideGameId) => void;
@@ -679,6 +687,7 @@ function persistable(s: GameState) {
     distanceM: s.distanceM,
     lastCrateDay: s.lastCrateDay,
     crateStreak: s.crateStreak,
+    posters: s.posters,
     lastPulseDay: s.lastPulseDay,
     lastBlitzDay: s.lastBlitzDay,
     lastBlitzOfferDay: s.lastBlitzOfferDay,
@@ -1146,6 +1155,8 @@ export const useGame = create<GameState>((set, get) => ({
   distanceM: saved?.distanceM ?? 0,
   lastCrateDay: saved?.lastCrateDay ?? "",
   crateStreak: saved?.crateStreak ?? 0,
+  posters: cleanPosters(saved?.posters),
+  loop: null,
   lastPulseDay: typeof saved?.lastPulseDay === "string" ? saved.lastPulseDay : "",
   lastBlitzDay: typeof saved?.lastBlitzDay === "string" ? saved.lastBlitzDay : "",
   blitzTake: typeof saved?.blitzTake === "number" && saved.blitzTake > 0 ? Math.floor(saved.blitzTake) : 0,
@@ -2942,7 +2953,7 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
   },
   clearFireworks: () => set({ fireworks: null }),
-  boardFare: (to) => {
+  boardFare: (to, how = "train") => {
     if (get().hud.seated) return "Park at the curb. The door is on foot.";
     if (to === get().cityId) return "You're already in this ward.";
     if (!CITIES[to]) return "No ward by that name.";
@@ -2972,6 +2983,7 @@ export const useGame = create<GameState>((set, get) => ({
         toast: null,
       });
       scheduleSave(get);
+      if (how !== "train") arriveNow(set, get, how === "loop");
     };
     if (walletLive()) {
       if (boarding) return "You're already on a train.";
@@ -2988,6 +3000,26 @@ export const useGame = create<GameState>((set, get) => ({
     }
     go();
     return null;
+  },
+  finishLoop: () => {
+    const l = get().loop;
+    if (!l) return;
+    set({ loop: null });
+    get().tickJourney();
+    const loot = loopCrateLoot();
+    const add: Partial<GameState> = { posters: addPoster(get().posters, posterKey(l.from, l.to)) };
+    if (l.crate && !walletLive()) {
+      const keys = { ...get().keys };
+      for (const [t, n] of Object.entries(loot) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
+      add.keys = keys;
+    }
+    set(add);
+    sfx.cityArrive();
+    if (l.crate) {
+      sfx.crateOpen();
+      flashToast(set, get, `Mystery crate in the tunnel. ${crateLine(loot)}.`, 3200);
+    }
+    scheduleSave(get);
   },
   hurryRide: (min) => {
     const j = get().journey;
@@ -3166,6 +3198,22 @@ export const useGame = create<GameState>((set, get) => ({
     }, 3200);
   },
 }));
+
+/** 0.1.58: end the open ride now. A Loop ride shows the tunnel first; a skip lands at once. */
+function arriveNow(set: (p: Partial<GameState>) => void, get: () => GameState, ride: boolean) {
+  const j = get().journey;
+  if (!j) return;
+  const now = Date.now();
+  set({ journey: { ...j, arriveAt: now, fullMs: j.fullMs ?? j.arriveAt - j.departAt } });
+  if (walletLive()) void commitWallet({ kind: "loop", ride });
+  if (ride) {
+    set({ loop: { from: j.from, to: j.to, crate: loopCrate(j.departAt) }, screen: "loop" });
+    scheduleSave(get);
+    return;
+  }
+  get().tickJourney();
+  sfx.cityArrive();
+}
 
 export function cityOf() {
   return CITIES[useGame.getState().cityId];
