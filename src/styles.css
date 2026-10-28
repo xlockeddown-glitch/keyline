@@ -4699,8 +4699,8 @@ h3 {
 /* 0.1.61 map skins: one filter on the tiles (replacing the default, never stacked) and a route accent. No animation. */
 :root[data-map-skin="moonlight"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(.4) hue-rotate(180deg) saturate(.9) brightness(.8) contrast(1.06); }
 :root[data-map-skin="moonlight"] { --skin-route: #b9cdf0; }
-:root[data-map-skin="mars"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(-28deg) saturate(2.4) brightness(.62) contrast(1.12); }
-:root[data-map-skin="mars"] { --skin-route: #ffb070; }
+:root[data-map-skin="copper"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(-12deg) saturate(1.5) brightness(.62) contrast(1.1); }
+:root[data-map-skin="copper"] { --skin-route: #f0b47a; }
 :root[data-map-skin="neon"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(140deg) saturate(4) brightness(.62) contrast(1.25); }
 :root[data-map-skin="neon"] { --skin-route: #ff5fd2; }
 .skin-card { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 10px; border: 1px solid var(--color-border); background: rgb(255 255 255 / 0.03); }

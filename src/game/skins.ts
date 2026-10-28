@@ -6,15 +6,15 @@
  *   skinon:<ms>     the account's chosen skin (detail { id }); the latest row wins
  * Guests can preview any skin and keep a free one (saved locally); buying needs sign-in.
  */
-export type SkinId = "default" | "moonlight" | "mars" | "neon";
+export type SkinId = "default" | "moonlight" | "copper" | "neon";
 
 export type SkinDef = { id: SkinId; name: string; blurb: string; price: number; swatch: [string, string] };
 
 export const SKINS: readonly SkinDef[] = [
   { id: "default", name: "Lamplight", blurb: "The usual night streets.", price: 0, swatch: ["#2b2f38", "#cba56c"] },
-  { id: "moonlight", name: "Moonlight", blurb: "Cool silver-blue streets under a full moon.", price: 0, swatch: ["#26324a", "#b9cdf0"] },
-  { id: "mars", name: "Mars", blurb: "Rust dust and red rock. Your city, a long way from Earth.", price: 50_000, swatch: ["#4a2416", "#ff8a4c"] },
-  { id: "neon", name: "Neon", blurb: "Electric cyan streets, a city that never sleeps.", price: 50_000, swatch: ["#07303a", "#3ef0ff"] },
+  { id: "moonlight", name: "Moonlight", blurb: "Cool silver-blue tint on the streets.", price: 0, swatch: ["#26324a", "#b9cdf0"] },
+  { id: "copper", name: "Copper", blurb: "Warm copper-brown tint on the streets.", price: 50_000, swatch: ["#3e2618", "#d08a52"] },
+  { id: "neon", name: "Neon", blurb: "Cyan tint with a pink route line.", price: 50_000, swatch: ["#07303a", "#3ef0ff"] },
 ];
 
 export function skinOf(id: unknown): SkinDef | null {
