@@ -96,6 +96,18 @@ export function HqPanel() {
             >
               How to play
             </button>
+            <button
+              type="button"
+              data-testid="skins-btn"
+              className="hq-howto mt-1 ml-4 inline-flex min-h-8 items-center text-xs text-fg-subtle underline-offset-2 hover:text-fg-muted hover:underline"
+              onClick={() => {
+                sfx.ui();
+                toggleHq(false);
+                useGame.getState().setSkinsOpen(true);
+              }}
+            >
+              Map skins
+            </button>
           </div>
           <div className="flex shrink-0 items-start gap-2">
             <AuthChip />
