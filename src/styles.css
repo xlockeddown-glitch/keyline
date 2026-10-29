@@ -4733,3 +4733,5 @@ h3 {
 /* 0.1.67: board filter buttons share one line on a phone (scroll sideways if a row still overflows). */
 .rolls-tiers { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .rolls-tiers > .rolls-tier { flex: 1 1 0; min-width: max-content; justify-content: center; padding: 0 8px; font-size: 0.75rem; }
+.rolls-tiers[aria-label="Match color"] { display: grid; grid-template-columns: repeat(3, 1fr); overflow: visible; }
+.rolls-tiers[aria-label="Match color"] > .rolls-tier { min-width: 0; }
