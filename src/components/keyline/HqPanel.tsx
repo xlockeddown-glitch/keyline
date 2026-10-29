@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { LevelPanel } from "./Levels";
 import { RecentRewards } from "./RecentRewards";
 import { StreakBoardSection } from "./RideBoards";
@@ -29,7 +29,7 @@ import { FriendJournalRow } from "./FriendTickets";
 import { PlayerLinkRow } from "./PlayerLink";
 import { PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
-import { PlacesTab } from "./JournalPlaces";
+import { PlacesTab, TapRow } from "./JournalPlaces";
 
 const TABS = ["Places", "Supplies", "Goals", "Progress", "Leaderboard"] as const;
 
@@ -38,6 +38,7 @@ export function HqPanel() {
   const toggleHq = useGame((s) => s.toggleHq);
   const cityId = useGame((s) => s.cityId);
   const atlas = useGame((s) => s.atlas);
+  const [supOpen, setSupOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Places");
   const points = useGame((s) => s.points);
   const brass = useGame((s) => s.brass);
@@ -132,17 +133,18 @@ export function HqPanel() {
 
           {tab === "Supplies" ? (
             <div className="grid gap-3">
-              <ul className="grid gap-2 sm:grid-cols-2">
+              <ul className="jr-list" data-testid="supplies-materials">
                 {MATERIAL_LIST.map((m) => (
-                  <li key={m.id} className="hq-row">
-                    <ItemIcon item={m.id} size={36} />
-                    <div className="hq-row-copy">
-                      <p className="hq-row-title">
-                        {m.name} <span className="tabular-nums text-fg-muted">×{stock[m.id]}</span>
-                      </p>
-                      <p className="hq-row-sub">{m.blurb}</p>
-                    </div>
-                  </li>
+                  <Fragment key={m.id}>
+                    <li className="jr-row">
+                      <button type="button" className="jr-tap" aria-expanded={supOpen === m.id} onClick={() => { sfx.ui(); setSupOpen((o) => (o === m.id ? null : m.id)); }}>
+                        <ItemIcon item={m.id} size={28} />
+                        <span className="jr-main"><span className="jr-title">{m.name}</span></span>
+                        <span className="jr-val tabular-nums">×{stock[m.id]} {supOpen === m.id ? "▴" : "›"}</span>
+                      </button>
+                    </li>
+                    {supOpen === m.id ? <li className="hq-row-sub jr-note">{m.blurb}</li> : null}
+                  </Fragment>
                 ))}
               </ul>
               <p className="kicker mt-2">Press stock</p>
@@ -191,16 +193,14 @@ export function HqPanel() {
                 </div>
                 );
               })}
-              <p className="kicker mt-2">Scouts</p>
-              <p className="text-sm text-fg-muted">
-                Hire and change coats at {cityShop(cityId)?.name ?? "the outfitter"}.
-              </p>
-              <ScoutRoster hire={false} />
-              <p className="kicker mt-2">Wardrobe</p>
-              <p className="text-sm text-fg-muted">
-                Printed and worn at {cityShop(cityId)?.name ?? "the outfitter"}. The journal only keeps the list.
-              </p>
-              <PrintShop counter={false} />
+              <ul className="jr-list mt-2">
+                <TapRow title="Scouts" sub={`Hire and change coats at ${cityShop(cityId)?.name ?? "the outfitter"}.`} open={supOpen === "scouts"} onTap={() => setSupOpen((o) => (o === "scouts" ? null : "scouts"))} testid="sup-scouts" />
+              </ul>
+              {supOpen === "scouts" ? <ScoutRoster hire={false} /> : null}
+              <ul className="jr-list">
+                <TapRow title="Wardrobe" sub={`Printed and worn at ${cityShop(cityId)?.name ?? "the outfitter"}.`} open={supOpen === "wardrobe"} onTap={() => setSupOpen((o) => (o === "wardrobe" ? null : "wardrobe"))} testid="sup-wardrobe" />
+              </ul>
+              {supOpen === "wardrobe" ? <PrintShop counter={false} /> : null}
               {quests.patterns > 0 && !quests.cloths.includes("night-glass") ? (
                 <div className="hq-row">
                   <div className="hq-row-copy">
