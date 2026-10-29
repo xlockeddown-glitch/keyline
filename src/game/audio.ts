@@ -1,5 +1,7 @@
 import type { ScoutId } from "./types";
 import { PACK, makeSfxGate, type SfxName } from "./sfxPack";
+import { bedFor, deckPrune, deckSwitch, FADE_S, musicAudible, scheduleWindow, wantedBed, type Bed, type BedKey, type MusicEvent, type Player, type SchedState } from "./music";
+import type { CityId } from "./types";
 
 const PREF_KEY = "keyline-audio";
 
@@ -13,12 +15,10 @@ let musicFilter: BiquadFilterNode | null = null;
 let muted = false;
 let musicOn = true;
 let noise: AudioBuffer | null = null;
-let vinyl: AudioBufferSourceNode | null = null;
-let vinylGain: GainNode | null = null;
 let clock = 0;
-let nextNote = 0;
-let step = 0;
 let current: ScoutId | null = null;
+/** 0.1.62: the city whose bed plays in play; null on the title screen and city picker. */
+let currentCity: CityId | null = null;
 let visHooked = false;
 
 const listeners = new Set<() => void>();
@@ -61,205 +61,6 @@ function midi(n: number) {
   return 440 * 2 ** ((n - 69) / 12);
 }
 
-type Bed = {
-  bpm: number;
-  root: number;
-  scale: number[];
-  chords: number[][];
-  swing: number;
-  cutoff: number;
-  vinyl: number;
-  kit: "dust" | "soft" | "none" | "bounce";
-  hats: number;
-  melody: boolean;
-  pad: boolean;
-};
-
-const BEDS: Record<ScoutId, Bed> = {
-  raccoon: {
-    bpm: 76,
-    root: 50,
-    scale: [0, 2, 3, 5, 7, 9, 10],
-    chords: [
-      [0, 3, 7, 10],
-      [5, 8, 12, 15],
-      [7, 10, 14, 17],
-      [0, 3, 7, 12],
-    ],
-    swing: 0.18,
-    cutoff: 2400,
-    vinyl: 0.028,
-    kit: "dust",
-    hats: 2,
-    melody: true,
-    pad: true,
-  },
-  cat: {
-    bpm: 86,
-    root: 57,
-    scale: [0, 2, 4, 7, 9, 11],
-    chords: [
-      [0, 4, 7, 11],
-      [5, 9, 12, 16],
-      [7, 11, 14, 18],
-      [0, 4, 7, 12],
-    ],
-    swing: 0.12,
-    cutoff: 3200,
-    vinyl: 0.016,
-    kit: "soft",
-    hats: 2,
-    melody: true,
-    pad: true,
-  },
-  turtle: {
-    bpm: 56,
-    root: 48,
-    scale: [0, 3, 5, 7, 10],
-    chords: [
-      [0, 3, 7],
-      [5, 8, 12],
-      [7, 10, 14],
-      [0, 5, 10],
-    ],
-    swing: 0.08,
-    cutoff: 1600,
-    vinyl: 0.022,
-    kit: "none",
-    hats: 8,
-    melody: false,
-    pad: true,
-  },
-  owl: {
-    bpm: 66,
-    root: 54,
-    scale: [0, 2, 3, 5, 7, 8, 10],
-    chords: [
-      [0, 3, 7, 10],
-      [8, 12, 15, 19],
-      [5, 8, 12, 15],
-      [0, 3, 7, 12],
-    ],
-    swing: 0.16,
-    cutoff: 2800,
-    vinyl: 0.02,
-    kit: "soft",
-    hats: 4,
-    melody: true,
-    pad: true,
-  },
-  corgi: {
-    bpm: 96,
-    root: 55,
-    scale: [0, 2, 4, 7, 9],
-    chords: [
-      [0, 4, 7],
-      [7, 11, 14],
-      [5, 9, 12],
-      [0, 4, 7, 12],
-    ],
-    swing: 0.2,
-    cutoff: 3600,
-    vinyl: 0.014,
-    kit: "bounce",
-    hats: 1,
-    melody: true,
-    pad: false,
-  },
-  sloth: {
-    bpm: 50,
-    root: 46,
-    scale: [0, 2, 4, 7, 9, 10],
-    chords: [
-      [0, 4, 7, 10],
-      [5, 9, 12],
-      [0, 4, 7],
-      [7, 10, 14],
-    ],
-    swing: 0.06,
-    cutoff: 1400,
-    vinyl: 0.03,
-    kit: "none",
-    hats: 8,
-    melody: true,
-    pad: true,
-  },
-  fox: {
-    bpm: 70,
-    root: 52,
-    scale: [0, 2, 3, 5, 7, 8, 10],
-    chords: [
-      [0, 3, 7, 10],
-      [5, 8, 12, 15],
-      [8, 12, 15, 19],
-      [0, 3, 7, 12],
-    ],
-    swing: 0.14,
-    cutoff: 2200,
-    vinyl: 0.024,
-    kit: "dust",
-    hats: 3,
-    melody: true,
-    pad: true,
-  },
-  // 0.0.51 Giraffe: an easy loping 6-ish swing, major and airy, high root — a walk with its head above the roofs.
-  giraffe: {
-    bpm: 72,
-    root: 53,
-    scale: [0, 2, 4, 5, 7, 9],
-    chords: [
-      [0, 4, 7, 11],
-      [9, 12, 16, 19],
-      [5, 9, 12, 16],
-      [7, 11, 14, 17],
-    ],
-    swing: 0.22,
-    cutoff: 3000,
-    vinyl: 0.018,
-    kit: "soft",
-    hats: 3,
-    melody: true,
-    pad: true,
-  },
-  // 0.1.47 Panda: an unhurried, humming major walk, mellow and round.
-  panda: {
-    bpm: 68,
-    root: 50,
-    scale: [0, 2, 4, 7, 9],
-    chords: [
-      [0, 4, 7, 11],
-      [5, 9, 12, 16],
-      [9, 12, 16, 19],
-      [7, 11, 14, 17],
-    ],
-    swing: 0.18,
-    cutoff: 2400,
-    vinyl: 0.02,
-    kit: "soft",
-    hats: 3,
-    melody: true,
-    pad: true,
-  },
-  lynx: {
-    bpm: 64,
-    root: 49,
-    scale: [0, 2, 3, 5, 7, 8, 10],
-    chords: [
-      [0, 3, 7, 10],
-      [5, 8, 12, 15],
-      [8, 12, 15, 19],
-      [0, 3, 7, 12],
-    ],
-    swing: 0.1,
-    cutoff: 1800,
-    vinyl: 0.02,
-    kit: "dust",
-    hats: 4,
-    melody: true,
-    pad: true,
-  },
-};
-
 export const BED_NAME: Record<ScoutId, string> = {
   giraffe: "Over the rooftops",
   raccoon: "Lantern dust",
@@ -281,7 +82,7 @@ function hookVis() {
     if (document.hidden) void ctx.suspend();
     else {
       void ctx.resume();
-      nextNote = ctx.currentTime;
+      for (const r of runs.values()) r.st.next = ctx.currentTime + 0.05;
     }
   });
 }
@@ -332,6 +133,7 @@ export function setMuted(v: boolean) {
   savePrefs();
   notify();
   if (!v && musicOn && current) startBed(current);
+  if (v) haltBed();
 }
 
 export function setMusicOn(v: boolean) {
@@ -550,8 +352,14 @@ function oscAt(type: OscillatorType, freq: number, when: number, dur: number, sl
   return osc;
 }
 
-function burst(when: number, dur: number, hp: number, vol: number) {
-  if (!ctx || !noise || !musicFilter) return;
+/** One running bed: its own lowpass and fade gain into the shared music filter. */
+type Run = { player: Player; bed: Bed; st: SchedState; filter: BiquadFilterNode; gain: GainNode; vinyl: AudioBufferSourceNode | null };
+const runs = new Map<number, Run>();
+let deck: Player[] = [];
+let nextPlayerId = 1;
+
+function burst(out: AudioNode, when: number, dur: number, hp: number, vol: number) {
+  if (!ctx || !noise) return;
   const src = ctx.createBufferSource();
   src.buffer = noise;
   src.loop = true;
@@ -561,7 +369,7 @@ function burst(when: number, dur: number, hp: number, vol: number) {
   const g = envGain(when, 0.004, dur, vol);
   src.connect(f);
   f.connect(g);
-  g.connect(musicFilter);
+  g.connect(out);
   src.start(when);
   src.stop(when + dur + 0.04);
   src.onended = () => {
@@ -571,63 +379,63 @@ function burst(when: number, dur: number, hp: number, vol: number) {
   };
 }
 
-function kick(when: number, vol: number) {
-  if (!ctx || !musicFilter) return;
+function kick(out: AudioNode, when: number, vol: number) {
+  if (!ctx) return;
   const g = envGain(when, 0.004, 0.18, vol);
   const osc = oscAt("sine", 92, when, 0.18, 38);
   osc.connect(g);
-  g.connect(musicFilter);
+  g.connect(out);
   osc.onended = () => {
     osc.disconnect();
     g.disconnect();
   };
 }
 
-function rhodes(notes: number[], when: number, dur: number, vol: number) {
-  if (!ctx || !musicFilter) return;
+function chord(out: AudioNode, notes: number[], when: number, dur: number, vol: number, voice: "rhodes" | "pad" | "organ") {
+  if (!ctx) return;
   for (let i = 0; i < notes.length; i++) {
     const freq = midi(notes[i]!);
-    const g = envGain(when, 0.02, dur, vol / notes.length);
-    const a = oscAt("sine", freq, when, dur);
-    const b = oscAt("triangle", freq * 1.003, when, dur);
+    const g = envGain(when, voice === "pad" ? Math.min(0.6, dur / 3) : 0.02, dur, vol / notes.length);
+    const a = oscAt(voice === "organ" ? "square" : voice === "pad" ? "triangle" : "sine", freq, when, dur);
+    const b = voice === "rhodes" ? oscAt("triangle", freq * 1.003, when, dur) : null;
     const f = ctx.createBiquadFilter();
     f.type = "lowpass";
-    f.frequency.setValueAtTime(1200 + i * 180, when);
+    f.frequency.setValueAtTime(voice === "organ" ? 700 + i * 120 : 1200 + i * 180, when);
     a.connect(f);
-    b.connect(f);
+    b?.connect(f);
     f.connect(g);
-    g.connect(musicFilter);
+    g.connect(out);
     a.onended = () => {
       a.disconnect();
-      b.disconnect();
+      b?.disconnect();
       f.disconnect();
       g.disconnect();
     };
   }
 }
 
-function bass(note: number, when: number, dur: number, vol: number) {
-  if (!ctx || !musicFilter) return;
+function bass(out: AudioNode, note: number, when: number, dur: number, vol: number) {
+  if (!ctx) return;
   const g = envGain(when, 0.01, dur, vol);
   const osc = oscAt("triangle", midi(note), when, dur);
   osc.connect(g);
-  g.connect(musicFilter);
+  g.connect(out);
   osc.onended = () => {
     osc.disconnect();
     g.disconnect();
   };
 }
 
-function lead(note: number, when: number, dur: number, vol: number) {
-  if (!ctx || !musicFilter) return;
+function lead(out: AudioNode, note: number, when: number, dur: number, vol: number, wave: OscillatorType) {
+  if (!ctx) return;
   const g = envGain(when, 0.015, dur, vol);
-  const osc = oscAt("sine", midi(note), when, dur);
+  const osc = oscAt(wave, midi(note), when, dur);
   const f = ctx.createBiquadFilter();
   f.type = "lowpass";
   f.frequency.value = 1800;
   osc.connect(f);
   f.connect(g);
-  g.connect(musicFilter);
+  g.connect(out);
   osc.onended = () => {
     osc.disconnect();
     f.disconnect();
@@ -635,28 +443,51 @@ function lead(note: number, when: number, dur: number, vol: number) {
   };
 }
 
-function playStep(bed: Bed, n: number, when: number) {
-  const bar = Math.floor(n / 16) % 4;
-  const s = n % 16;
-  const chord = bed.chords[bar]!.map((iv) => bed.root + iv);
-  const kitVol = bed.kit === "bounce" ? 0.22 : bed.kit === "dust" ? 0.16 : 0.1;
+function play(out: AudioNode, e: MusicEvent, when: number) {
+  if (e.kind === "kick") kick(out, when, e.vol);
+  else if (e.kind === "noise") burst(out, when, e.dur, e.hp, e.vol);
+  else if (e.kind === "chord") chord(out, e.notes, when, e.dur, e.vol, e.voice);
+  else if (e.kind === "bass") bass(out, e.note, when, e.dur, e.vol);
+  else lead(out, e.note, when, e.dur, e.vol, e.wave);
+}
 
-  if (bed.kit !== "none") {
-    if (s === 0 || (bed.kit === "bounce" && s === 8)) kick(when, kitVol);
-    if (bed.kit === "dust" && s === 8) kick(when, kitVol * 0.55);
-    if ((s === 4 || s === 12) && bed.kit !== "soft") burst(when, 0.08, 1800, kitVol * 0.45);
-    if (bed.kit === "bounce" && (s === 4 || s === 12)) burst(when, 0.06, 2400, kitVol * 0.4);
+function spinVinyl(bed: Bed, out: AudioNode) {
+  if (!ctx || !noise || bed.vinyl <= 0) return null;
+  const vg = ctx.createGain();
+  vg.gain.value = bed.vinyl;
+  const f = ctx.createBiquadFilter();
+  f.type = "bandpass";
+  f.frequency.value = 900;
+  f.Q.value = 0.6;
+  const v = ctx.createBufferSource();
+  v.buffer = noise;
+  v.loop = true;
+  v.connect(f);
+  f.connect(vg);
+  vg.connect(out);
+  v.start();
+  v.onended = () => {
+    v.disconnect();
+    f.disconnect();
+    vg.disconnect();
+  };
+  return v;
+}
+
+function endRun(id: number) {
+  const r = runs.get(id);
+  if (!r) return;
+  runs.delete(id);
+  try {
+    r.vinyl?.stop();
+  } catch {
+    /* already stopped */
   }
-  if (s % bed.hats === 0) {
-    const open = bed.kit === "bounce" && s % 8 === 6;
-    burst(when, open ? 0.12 : 0.035, open ? 5000 : 7000, (open ? 0.07 : 0.045) * (s % 4 === 0 ? 1 : 0.7));
-  }
-  if (s === 0) rhodes(chord, when, bed.pad ? 1.8 : 0.9, bed.pad ? 0.22 : 0.16);
-  if (s === 0 || s === 8) bass(bed.root + (s === 8 ? bed.chords[bar]![0]! : 0), when, 0.42, 0.2);
-  if (bed.melody && (s === 2 || s === 6 || s === 10 || s === 14) && (bar === 1 || bar === 3)) {
-    const deg = bed.scale[(n + bar * 3) % bed.scale.length]!;
-    lead(bed.root + 12 + deg, when, 0.22, 0.09);
-  }
+  // Let notes already scheduled ring out under the faded gain, then let go of the nodes.
+  window.setTimeout(() => {
+    r.filter.disconnect();
+    r.gain.disconnect();
+  }, 2500);
 }
 
 function haltBed() {
@@ -664,66 +495,73 @@ function haltBed() {
     window.clearInterval(clock);
     clock = 0;
   }
-  if (vinyl) {
-    try {
-      vinyl.stop();
-    } catch {
-      /* already stopped */
-    }
-    vinyl.disconnect();
-    vinyl = null;
-  }
-  if (vinylGain) {
-    vinylGain.disconnect();
-    vinylGain = null;
-  }
+  for (const id of [...runs.keys()]) endRun(id);
+  deck = [];
 }
 
-function spinVinyl(bed: Bed) {
-  if (!ctx || !noise || !musicFilter || bed.vinyl <= 0) return;
-  vinylGain = ctx.createGain();
-  vinylGain.gain.value = bed.vinyl;
-  const f = ctx.createBiquadFilter();
-  f.type = "bandpass";
-  f.frequency.value = 900;
-  f.Q.value = 0.6;
-  vinyl = ctx.createBufferSource();
-  vinyl.buffer = noise;
-  vinyl.loop = true;
-  vinyl.connect(f);
-  f.connect(vinylGain);
-  vinylGain.connect(musicFilter);
-  vinyl.start();
+function startRun(p: Player) {
+  if (!ctx || !musicFilter) return;
+  const bed = bedFor(p.key);
+  const filter = ctx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = bed.cutoff;
+  filter.Q.value = 0.7;
+  const gain = ctx.createGain();
+  const t = ctx.currentTime;
+  const first = runs.size === 0;
+  gain.gain.setValueAtTime(first ? 1 : 0.0001, t);
+  if (!first) gain.gain.exponentialRampToValueAtTime(1, t + FADE_S);
+  filter.connect(gain);
+  gain.connect(musicFilter);
+  runs.set(p.id, { player: p, bed, st: { next: t + 0.05, step: 0 }, filter, gain, vinyl: spinVinyl(bed, filter) });
 }
 
 function tick() {
-  if (!ctx || !musicOn || muted || !current) return;
-  const bed = BEDS[current];
-  const sixteenth = 60 / bed.bpm / 4;
+  if (!ctx || !musicAudible({ unlocked: true, musicOn, muted, hidden: document.hidden }) || !current) return;
   const now = ctx.currentTime;
-  while (nextNote < now + 0.12) {
-    const swung = nextNote + (step % 2 === 1 ? sixteenth * bed.swing : 0);
-    playStep(bed, step, swung);
-    step += 1;
-    nextNote += sixteenth;
+  const pruned = deckPrune(deck, now);
+  deck = pruned.deck;
+  for (const p of pruned.cut) endRun(p.id);
+  for (const r of runs.values()) {
+    for (const { at, events } of scheduleWindow(r.bed, r.st, now)) for (const e of events) play(r.filter, e, at);
   }
 }
 
+/** Point the deck at the bed we want now (city in play, scout otherwise). Same bed = no-op. */
+function switchTo(key: BedKey) {
+  if (!ctx || !musicFilter) return;
+  const now = ctx.currentTime;
+  const r = deckSwitch(deck, key, now, nextPlayerId);
+  if (!r.started) return;
+  nextPlayerId += 1;
+  for (const p of r.cut) endRun(p.id);
+  for (const p of r.deck) {
+    if (p.fadingSince === now) {
+      const run = runs.get(p.id);
+      if (run) {
+        run.gain.gain.cancelScheduledValues(now);
+        run.gain.gain.setValueAtTime(Math.max(0.0001, run.gain.gain.value), now);
+        run.gain.gain.exponentialRampToValueAtTime(0.0001, now + FADE_S);
+      }
+    }
+  }
+  deck = r.deck;
+  startRun(r.started);
+}
+
 export function startBed(id: ScoutId) {
-  const restart = current !== id || !clock;
   current = id;
   if (!ctx || !musicFilter || !musicOn || muted) return;
-  const bed = BEDS[id];
-  if (!restart) {
-    musicFilter.frequency.setTargetAtTime(bed.cutoff, ctx.currentTime, 0.08);
-    return;
-  }
-  haltBed();
-  musicFilter.frequency.setValueAtTime(bed.cutoff, ctx.currentTime);
-  nextNote = ctx.currentTime + 0.05;
-  step = 0;
-  spinVinyl(bed);
-  clock = window.setInterval(tick, 40);
+  musicFilter.frequency.setValueAtTime(20000, ctx.currentTime);
+  switchTo(wantedBed(id, currentCity));
+  if (!clock) clock = window.setInterval(tick, 40);
+}
+
+/** 0.1.62: the city bed for play (null = back to the scout bed). Crossfades; repeated calls are no-ops. */
+export function setCityBed(city: CityId | null) {
+  if (currentCity === city) return;
+  currentCity = city;
+  if (current) startBed(current);
 }
 
 export function stopBed() {

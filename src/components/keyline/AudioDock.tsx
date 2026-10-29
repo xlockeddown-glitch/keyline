@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Music, Volume2, VolumeX } from "lucide-react";
 import { BED_NAME, isMusicOn, isMuted, subscribeAudio, toggleMusic, toggleMuted, unlockAudio } from "@/game/audio";
 import { useGame } from "@/game/store";
+import { CITY_BED_NAME } from "@/game/music";
 import { SkyToggle } from "./Sky";
 
 export function useAudioUi() {
@@ -13,7 +14,10 @@ export function useAudioUi() {
 export function AudioDock() {
   const { muted, musicOn } = useAudioUi();
   const scout = useGame((s) => s.scout);
-  const bed = BED_NAME[scout];
+  const cityId = useGame((s) => s.cityId);
+  const inPlay = useGame((s) => s.screen !== "title" && s.screen !== "cities");
+  // 0.1.62: in play the music is the city's own bed, so name that one.
+  const bed = inPlay ? CITY_BED_NAME[cityId] : BED_NAME[scout];
 
   return (
     <div className="flex items-center gap-2">
