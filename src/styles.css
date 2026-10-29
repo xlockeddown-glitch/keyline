@@ -4053,7 +4053,6 @@ h3 {
 .lvl-swatch.is-on { border-color: currentColor; }
 .lvl-ladder { margin-top: 8px; }
 .lvl-ladder-name { font-size: 12px; font-weight: 700; }
-.lvl-draft { margin-left: 6px; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; padding: 1px 5px; border-radius: 4px; background: rgba(127,127,127,.2); color: var(--color-fg-muted, #666); }
 .lvl-rungs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
 .lvl-rung { display: grid; gap: 3px; text-align: left; padding: 6px 7px; border-radius: 10px; border: 1px solid var(--color-border, rgba(127,127,127,.3)); background: rgba(127,127,127,.08); color: inherit; min-height: 44px; }
 .lvl-rung:not(.is-earned) { opacity: .6; }

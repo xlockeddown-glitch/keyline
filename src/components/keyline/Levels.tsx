@@ -198,7 +198,6 @@ export function LevelPanel() {
             <div key={g} className="lvl-ladder">
               <p className="lvl-ladder-name">
                 {g === "bonus" ? "Bonus" : CAT_LABEL[g as TriviaCat]}
-                {rows[0]?.draft ? <span className="lvl-draft">draft</span> : null}
               </p>
               <div className="lvl-rungs">
                 {rows.map((r) => (

@@ -114,7 +114,7 @@ export function colorsAt(level: number): NameColorId[] {
 
 export const TITLE_RUNGS = [250, 1000, 2000] as const;
 
-/** Per-category ladders. sports/political/food/arts/nature are DRAFTS for Ryan to rename. */
+/** Per-category ladders. */
 export const CAT_LADDERS: Readonly<Record<TriviaCat, readonly [string, string, string]>> = {
   celebrity: ["Fan Club", "Paparazzo", "Media Lover"],
   music: ["Air Guitarist", "Roadie", "Headliner"],
@@ -131,7 +131,6 @@ export const CAT_LADDERS: Readonly<Record<TriviaCat, readonly [string, string, s
   arts: ["Doodler", "Curator", "Old Master"],
   nature: ["Trail Walker", "Field Ranger", "Naturalist"],
 };
-export const DRAFT_LADDERS: readonly TriviaCat[] = ["sports", "political", "food", "arts", "nature"];
 
 export type TitleStats = {
   byCat: Partial<Record<TriviaCat, number>>;
@@ -151,7 +150,7 @@ export const BONUS_TITLES = [
   { id: "violet-hunter", name: "Violet Hunter", need: 100, what: "violet lamps" },
 ] as const;
 
-export type TitleRow = { id: string; name: string; have: number; need: number; earned: boolean; group: string; draft?: boolean };
+export type TitleRow = { id: string; name: string; have: number; need: number; earned: boolean; group: string };
 
 /** Every title with progress, in picker order. `cities` = every city id (Globetrotter counts the weakest). */
 export function titleRows(s: TitleStats, cities: readonly CityId[]): TitleRow[] {
@@ -160,7 +159,7 @@ export function titleRows(s: TitleStats, cities: readonly CityId[]): TitleRow[] 
     const have = Math.max(0, s.byCat[cat] ?? 0);
     names.forEach((name, i) => {
       const need = TITLE_RUNGS[i]!;
-      out.push({ id: `cat:${cat}:${i}`, name, have, need, earned: have >= need, group: cat, ...(DRAFT_LADDERS.includes(cat) ? { draft: true } : {}) });
+      out.push({ id: `cat:${cat}:${i}`, name, have, need, earned: have >= need, group: cat });
     });
   }
   const weakest = cities.length ? Math.min(...cities.map((c) => s.cityCorrect[c] ?? 0)) : 0;

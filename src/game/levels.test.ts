@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BONUS_TITLES, CAT_LADDERS, DRAFT_LADDERS, bestRun, colorsAt, levelMatch, levelOf, needFor, rewardFor, titleName, titleRows, xpOf } from "./levels.ts";
+import { BONUS_TITLES, CAT_LADDERS, bestRun, colorsAt, levelMatch, levelOf, needFor, rewardFor, titleName, titleRows, xpOf } from "./levels.ts";
 const ALL_CATS = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music", "books", "geography"] as const;
 
 test("0.0.98 curve: fast early, slower later, monotonic", () => {
@@ -38,9 +38,8 @@ test("rewards never give permanent power: matches, colours, gift and 15-min boos
   assert.deepEqual(colorsAt(12), ["amber", "teal"]);
 });
 
-test("titles: a ladder for every trivia category, 250/1000/2000; drafts flagged; bonus titles", () => {
+test("titles: a ladder for every trivia category, 250/1000/2000; bonus titles", () => {
   for (const c of ALL_CATS) assert.equal(CAT_LADDERS[c].length, 3, c);
-  assert.deepEqual([...DRAFT_LADDERS].sort(), ["arts", "food", "nature", "political", "sports"]);
   const rows = titleRows({ byCat: { science: 1000 }, marketLamps: 0, bestStreak: 25, perfects: 0, violet: 0, cityCorrect: { austin: 200 } }, ["austin", "nyc"]);
   const sci = rows.filter((r) => r.group === "science");
   assert.deepEqual(sci.map((r) => r.earned), [true, true, false]);
