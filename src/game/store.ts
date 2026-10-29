@@ -43,6 +43,7 @@ import type {
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
 import { addPoster, cleanPosters, loopCrate, loopCrateLoot, posterKey } from "./loop";
+import { addSouvenir, canFly, cleanSouvenirs, SOUVENIRS, souvenirKey } from "./flight";
 import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
 import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cacheLine, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
@@ -242,6 +243,10 @@ export type GameState = {
   crateStreak: number;
   /** 0.1.58: tunnel posters collected on Loop rides (ledger keys `poster:<from>-<to>`). */
   posters: string[];
+  /** 0.1.63: souvenirs from flights (ledger keys `souvenir:<city>`). */
+  souvenirs: string[];
+  /** 0.1.63: the flight playing now (takeoff, window view, landing). */
+  flight: { from: CityId; to: CityId; departAt: number } | null;
   /** 0.1.58: the Loop ride playing now (cutscene), with its crate roll. */
   loop: { from: CityId; to: CityId; crate: boolean } | null;
   lastPulseDay: string;
@@ -425,7 +430,9 @@ export type GameState = {
   resetCity: () => void;
   clearFireworks: () => void;
   /** 0.1.58: `skip` arrives at once, `loop` plays the tunnel ride, `train` is the old timed ride with games. */
-  boardFare: (to: CityId, how?: "skip" | "loop" | "train") => string | null;
+  boardFare: (to: CityId, how?: "skip" | "loop" | "train" | "fly") => string | null;
+  /** 0.1.63: end the flight cutscene: arrive and pin the souvenir. */
+  finishFlight: () => void;
   /** 0.1.58: end the Loop cutscene (done or skipped): arrive, file the poster, open any crate. */
   finishLoop: () => void;
   tickJourney: () => void;
@@ -710,6 +717,7 @@ function persistable(s: GameState) {
     lastCrateDay: s.lastCrateDay,
     crateStreak: s.crateStreak,
     posters: s.posters,
+    souvenirs: s.souvenirs,
     lastPulseDay: s.lastPulseDay,
     lastBlitzDay: s.lastBlitzDay,
     lastBlitzOfferDay: s.lastBlitzOfferDay,
@@ -1185,6 +1193,8 @@ export const useGame = create<GameState>((set, get) => ({
   lastCrateDay: saved?.lastCrateDay ?? "",
   crateStreak: saved?.crateStreak ?? 0,
   posters: cleanPosters(saved?.posters),
+  souvenirs: cleanSouvenirs(saved?.souvenirs),
+  flight: null,
   loop: null,
   lastPulseDay: typeof saved?.lastPulseDay === "string" ? saved.lastPulseDay : "",
   lastBlitzDay: typeof saved?.lastBlitzDay === "string" ? saved.lastBlitzDay : "",
@@ -3076,6 +3086,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (get().fares < 1) return noTicket;
     if (get().journey) return "You're already on a train.";
     const from = get().cityId;
+    if (how === "fly" && !canFly(from, to)) return "Too close to fly. Take the Loop.";
     const go = () => {
       if (get().fares < 1 || get().journey) return;
       const now = Date.now();
@@ -3097,7 +3108,8 @@ export const useGame = create<GameState>((set, get) => ({
         toast: null,
       });
       scheduleSave(get);
-      if (how !== "train") arriveNow(set, get, how === "loop");
+      if (how === "fly") flyNow(set, get);
+      else if (how !== "train") arriveNow(set, get, how === "loop");
     };
     if (walletLive()) {
       if (boarding) return "You're already on a train.";
@@ -3114,6 +3126,17 @@ export const useGame = create<GameState>((set, get) => ({
     }
     go();
     return null;
+  },
+  finishFlight: () => {
+    const f = get().flight;
+    if (!f) return;
+    set({ flight: null });
+    get().tickJourney();
+    const fresh = !get().souvenirs.includes(souvenirKey(f.to));
+    set({ souvenirs: addSouvenir(get().souvenirs, souvenirKey(f.to)) });
+    sfx.cityArrive();
+    flashToast(set, get, fresh ? `Landed. Souvenir: ${SOUVENIRS[f.to]}.` : `Landed. You already have the ${SOUVENIRS[f.to]}.`, 3200);
+    scheduleSave(get);
   },
   finishLoop: () => {
     const l = get().loop;
@@ -3312,6 +3335,16 @@ export const useGame = create<GameState>((set, get) => ({
     }, 3200);
   },
 }));
+
+/** 0.1.63: end the open ride by air: the flight cutscene plays, then finishFlight lands. */
+function flyNow(set: (p: Partial<GameState>) => void, get: () => GameState) {
+  const j = get().journey;
+  if (!j) return;
+  set({ journey: { ...j, arriveAt: Date.now(), fullMs: j.fullMs ?? j.arriveAt - j.departAt } });
+  if (walletLive()) void commitWallet({ kind: "fly" });
+  set({ flight: { from: j.from, to: j.to, departAt: j.departAt }, screen: "flight" });
+  scheduleSave(get);
+}
 
 /** 0.1.58: end the open ride now. A Loop ride shows the tunnel first; a skip lands at once. */
 function arriveNow(set: (p: Partial<GameState>) => void, get: () => GameState, ride: boolean) {

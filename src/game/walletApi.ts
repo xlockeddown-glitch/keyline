@@ -82,6 +82,9 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("skinOn"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80), free: z.boolean().optional() }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
+  // 0.1.63: the Loop's arrive op was missing here (0.1.58), so signed-in Arrive/Loop never reached the server.
+  z.object({ kind: z.literal("loop"), ride: z.boolean() }),
+  z.object({ kind: z.literal("fly") }),
   z.object({ kind: z.literal("kiosk"), id: z.enum(KIOSKS), poi: z.string().min(1).max(80).optional() }),
   z.object({ kind: z.literal("print"), id: z.enum(COSMETICS) }),
   z.object({ kind: z.literal("refund"), token: z.string().min(10).max(2000) }),

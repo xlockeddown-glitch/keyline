@@ -1,13 +1,14 @@
 import { X } from "lucide-react";
 import { sfx } from "@/game/audio";
 import { fareMs, formatEta, otherWards } from "@/game/ticket";
+import { canFly } from "@/game/flight";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
 import { unlockCost } from "@/game/cityPass";
 import { LockNote, PassHelpCard, PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 
-export type Ride = "skip" | "loop" | "train";
+export type Ride = "skip" | "loop" | "train" | "fly";
 type Props = { onClose: () => void; onPunch: (id: CityId, how: Ride) => void };
 
 export function Timetable({ onClose, onPunch }: Props) {
@@ -34,7 +35,7 @@ export function Timetable({ onClose, onPunch }: Props) {
               {seated
                 ? "Park first. The window doesn’t take a ticket."
                 : fares
-                  ? `${fares} ticket${fares === 1 ? "" : "s"} in the pocket. Arrive now, or ride the Loop for a tunnel poster and the odd crate.`
+                  ? `${fares} ticket${fares === 1 ? "" : "s"} in the pocket. Arrive now, ride the Loop for a tunnel poster, or fly far trips for a souvenir.`
                   : "Need a train ticket. Light 3 lamps in this city."}
             </p>
           </div>
@@ -89,6 +90,11 @@ export function Timetable({ onClose, onPunch }: Props) {
                     <button type="button" className="btn btn-primary px-3 text-xs" disabled={off} data-testid={`loop-${c.id}`} onClick={() => punch(c.id, "loop")}>
                       Loop
                     </button>
+                    {canFly(cityId, c.id) ? (
+                      <button type="button" className="btn btn-primary px-3 text-xs" disabled={off} data-testid={`fly-${c.id}`} onClick={() => punch(c.id, "fly")}>
+                        Fly
+                      </button>
+                    ) : null}
                   </span>
                 </div>
                 <button type="button" className="mt-1 text-xs text-fg-subtle underline-offset-2 hover:underline disabled:opacity-50" disabled={off} data-testid={`train-${c.id}`} onClick={() => punch(c.id, "train")}>

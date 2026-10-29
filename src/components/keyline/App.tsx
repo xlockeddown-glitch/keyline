@@ -8,6 +8,7 @@ import { CitySelect } from "./CitySelect";
 import { GameMap } from "./GameMap";
 import { RideScreen } from "./RideScreen";
 import { LoopScreen } from "./LoopScreen";
+import { FlightScreen } from "./FlightScreen";
 import { DyeSync } from "./DyeSync";
 import { WardrobeSync } from "./WardrobeSync";
 import { WornScoutSync } from "./WornScoutSync";
@@ -17,11 +18,12 @@ import { SkinSync } from "./SkinSheet";
 export function KeylineApp() {
   const screen = useGame((s) => s.screen);
   const looping = useGame((s) => s.loop !== null);
+  const flying = useGame((s) => s.flight !== null);
   const cityId = useGame((s) => s.cityId);
   // 0.1.62: in play each city has its own music bed; the title screen and city picker keep the scout bed.
   const inPlay = screen !== "title" && screen !== "cities";
   useEffect(() => setCityBed(inPlay ? cityId : null), [inPlay, cityId]);
-  const view = screen === "title" ? <TitleScreen /> : screen === "cities" ? <CitySelect /> : screen === "ride" ? <RideScreen /> : screen === "loop" && looping ? <LoopScreen /> : <GameMap />;
+  const view = screen === "title" ? <TitleScreen /> : screen === "cities" ? <CitySelect /> : screen === "ride" ? <RideScreen /> : screen === "loop" && looping ? <LoopScreen /> : screen === "flight" && flying ? <FlightScreen /> : <GameMap />;
   return (
     <>
       <WardrobeSync />

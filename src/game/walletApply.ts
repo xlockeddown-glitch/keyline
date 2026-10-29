@@ -1,6 +1,7 @@
 import { isSkinId, skinOf, skinOwned } from "./skins.ts";
 import { SHOP_PRICE, shopAnchor, shopOutput, type ShopState } from "./shop.ts";
 import { loopCrate, loopCrateLoot, posterKey } from "./loop.ts";
+import { canFly, souvenirKey } from "./flight.ts";
 import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
@@ -901,6 +902,8 @@ export type ClientOp =
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
   | { kind: "loop"; ride: boolean }
+  /** 0.1.63: arrive by air (far routes only): closes the ticket and files the destination souvenir. */
+  | { kind: "fly" }
   | {
       kind: "ride";
       watch?: boolean;
@@ -1335,6 +1338,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
   if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op);
   if (op.kind === "loop") return loopArrive(sql, sessionUserId, id, wallet, op.ride);
+  if (op.kind === "fly") return flyArrive(sql, sessionUserId, id, wallet);
   if (op.kind === "hurry") return hurryRide(sql, sessionUserId, id, wallet, op.min);
 
   // 0.0.98: a scout the account already owns on the server (bought under any key, or restored by a gift such as
@@ -1685,6 +1689,19 @@ async function loopArrive(sql: Sql, sessionUserId: string, id: string, wallet: W
     await mutateWallet(sql, sessionUserId, posterKey(ticket.from, ticket.to), (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ at: now }) }));
   }
   return { ...applied(r), loop: r.ok ? { crate } : undefined };
+}
+
+/** 0.1.63: arrive by air. Like the Loop: closes the open ticket at no charge, but only on a far route, and files `souvenir:<to>` once. */
+async function flyArrive(sql: Sql, sessionUserId: string, id: string, wallet: WalletState): Promise<ClientResult> {
+  const ticket = await latestTicket(sql, id);
+  const now = Date.now();
+  if (!ticket) return refused(wallet, "no-ticket");
+  if (!canFly(ticket.from as CityId, ticket.to as CityId)) return refused(wallet, "too-near");
+  const cur = (await hurriedArrive(sql, id, ticket.at)) ?? ticket.at + ticket.ms;
+  if (now >= cur) return refused(wallet, "arrived");
+  const r = await mutateWallet(sql, sessionUserId, `hurry:${ticket.at}:fly`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ arrive: now, full: ticket.ms, cost: 0, fly: true }) }));
+  if (r.ok) await mutateWallet(sql, sessionUserId, souvenirKey(ticket.to as CityId), (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ at: now, from: ticket.from }) }));
+  return applied(r);
 }
 
 /** Pay the open ticket from the server clock. A win is scored here from the dealt seed and the submitted moves. */

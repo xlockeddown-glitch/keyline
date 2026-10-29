@@ -4743,3 +4743,47 @@ h3 {
 .ladder-pick { background: var(--color-bg-elevated); color: var(--color-fg); }
 .ladder-pick option { background: var(--color-bg-elevated); color: var(--color-fg); }
 .jr-row.is-me .jr-title { color: var(--color-accent); }
+/* 0.1.63 Airports: flight cutscene. Vector/CSS art, transforms and opacity only. */
+.flight-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  background: linear-gradient(#5d84b8 0%, #9cbbe0 55%, #d8e4f0 100%);
+  animation: loop-in 500ms ease-out both;
+}
+.flight-screen.is-landing { animation: flight-dusk 2.2s ease-in both; }
+@keyframes flight-dusk { to { filter: brightness(0.8); } }
+.flight-runway { position: absolute; inset: 0; }
+.flight-strip {
+  position: absolute; left: -10%; right: -10%; bottom: 0; height: 26%;
+  background: repeating-linear-gradient(90deg, transparent 0 46px, #f4f1e8 46px 86px) center 50% / 100% 6px no-repeat, #3b4250;
+}
+.flight-plane {
+  position: absolute; left: 50%; bottom: 25%; width: min(64vw, 340px); fill: #f5f6f8; stroke: #2a3140; stroke-width: 1.2;
+  transform: translate(-120%, 0) rotate(0deg);
+}
+.flight-screen.is-takeoff .flight-plane { animation: flight-up 2.6s cubic-bezier(.5, 0, .7, 1) both; }
+.flight-screen.is-landing .flight-plane { animation: flight-down 2.2s cubic-bezier(.2, .6, .4, 1) both; }
+@keyframes flight-up { 0% { transform: translate(-120%, 0) rotate(0deg); } 55% { transform: translate(-50%, 0) rotate(-2deg); } 100% { transform: translate(40%, -55vh) rotate(-14deg); } }
+@keyframes flight-down { 0% { transform: translate(-140%, -45vh) rotate(8deg); } 100% { transform: translate(-50%, 0) rotate(0deg); } }
+.flight-cabin { position: absolute; inset: 0; background: #e9e4da; display: grid; place-items: center; }
+.flight-window {
+  width: min(70vw, 300px); aspect-ratio: 3 / 4.2; border-radius: 46% / 36%; overflow: hidden;
+  border: 14px solid #d3cdc1; box-shadow: inset 0 0 0 4px #b9b2a4; margin-top: -30vh;
+}
+.flight-sky { position: relative; width: 100%; height: 100%; background: linear-gradient(#4f7fc0, #a9c8ea 70%, #f3efe4); }
+.flight-cloud {
+  position: absolute; width: 70%; height: 16%; border-radius: 999px; background: #fff; opacity: .85;
+  animation: flight-cloud 6s linear infinite;
+}
+.flight-cloud.c1 { top: 52%; }
+.flight-cloud.c2 { top: 66%; width: 90%; animation-duration: 4.2s; animation-delay: -2s; }
+.flight-cloud.c3 { top: 38%; width: 50%; opacity: .6; animation-duration: 8s; animation-delay: -5s; }
+@keyframes flight-cloud { from { transform: translateX(160%); } to { transform: translateX(-160%); } }
+.flight-wing { position: absolute; left: 0; bottom: 18%; width: 100%; height: 22%; fill: #c9ced8; stroke: #8b93a3; }
+.flight-route { position: absolute; left: 0; right: 0; top: max(16px, env(safe-area-inset-top)); display: grid; justify-items: center; gap: 2px; color: #11151d; text-align: center; }
+.flight-card { position: absolute; left: 50%; bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px)); width: min(92vw, 420px); transform: translateX(-50%); padding: 16px; }
+.flight-skip { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); }
+.flight-screen.is-reduced, .flight-screen.is-reduced * { animation: none !important; }
+.flight-screen.is-reduced .flight-plane { transform: translate(-50%, 0); }
