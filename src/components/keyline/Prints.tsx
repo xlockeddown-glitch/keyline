@@ -95,7 +95,7 @@ export function PrintPanel() {
           ))}
         </ul>
       )}
-      <p className="mt-2 text-xs text-fg-subtle">Coming soon: {PRINTS_PENDING.map(cityName).join(", ")}.</p>
+      {PRINTS_PENDING.length ? <p className="mt-2 text-xs text-fg-subtle">Coming soon: {PRINTS_PENDING.map(cityName).join(", ")}.</p> : null}
     </div>
   );
 }
