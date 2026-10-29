@@ -248,27 +248,34 @@ export function HqPanel() {
               <QuestDesk act={false} cityId={cityId} quests={quests} onWear={wearCloth} />
               <FriendJournalRow />
               <p className="kicker mt-2">Goals</p>
-              <ul className="grid gap-2">
+              <ul className="jr-list" data-testid="survey-goals">
                 {SURVEY_GOALS.filter((g) => g.kind !== "ward" || g.cityId === cityId).map((g) => {
                   const have = surveyHave(g, atlas, distanceM);
                   const done = Boolean(survey[g.id]);
+                  const pct = done ? 100 : Math.min(100, Math.round((have / g.need) * 100));
+                  const k = `goal:${g.id}`;
                   return (
-                    <li key={g.id} className="hq-row">
-                      <div className="hq-row-copy">
-                        <p className={done ? "hq-row-title text-fg-muted" : "hq-row-title"}>{g.label}</p>
-                        <p className="hq-row-sub">{g.blurb}</p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <ItemIcon item={g.reward} size={28} />
-                        <span className="text-sm tabular-nums text-fg-muted">
-                          {done
-                            ? "Paid"
-                            : g.kind === "walk"
-                              ? `${(have / 1000).toFixed(1)}/${(g.need / 1000).toFixed(0)} km`
-                              : `${Math.min(have, g.need)}/${g.need}`}
-                        </span>
-                      </div>
-                    </li>
+                    <Fragment key={g.id}>
+                      <li className="jr-row">
+                        <button type="button" className="jr-tap" aria-expanded={supOpen === k} onClick={() => { sfx.ui(); setSupOpen((o) => (o === k ? null : k)); }}>
+                          <span className="jr-main">
+                            <span className={done ? "jr-title text-fg-muted" : "jr-title"}>{g.label}</span>
+                            <span className="print-bar jr-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                              <i style={{ width: `${pct}%` }} />
+                            </span>
+                          </span>
+                          <ItemIcon item={g.reward} size={24} />
+                          <span className="jr-val tabular-nums">
+                            {done
+                              ? "Paid"
+                              : g.kind === "walk"
+                                ? `${(have / 1000).toFixed(1)}/${(g.need / 1000).toFixed(0)} km`
+                                : `${Math.min(have, g.need)}/${g.need}`}
+                          </span>
+                        </button>
+                      </li>
+                      {supOpen === k ? <li className="hq-row-sub jr-note">{g.blurb}</li> : null}
+                    </Fragment>
                   );
                 })}
               </ul>
