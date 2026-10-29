@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.68";
+export const APP_VERSION = "0.1.69";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k168a";
+export const PUBLISH_STAMP = "k169a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -173,3 +173,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.64: city prints for the last four cities: Denver Aspen Gold, Nashville Honky-Tonk Neon, NOLA Iron Lace Balcony, Seattle Needle in the Rain (500 right + 150 km walked there each); PRINTS_PENDING is now empty; plus the readable gift picker drop-down and no DRAFT labels on title ladders (k164a).
 // 0.1.67: Journal tabs in the Progress row style: Places opens with a city summary (lanterns owned, places lit bars), House and Lantern Shop tap rows, compact lantern color rows with lamp picking behind the tap, and place groups with bars (two shown, the rest under + N more); Supplies one-line rows with scouts and wardrobe behind taps; Goals rows with bars; Leaderboard sign-in collapsed to one row and filters on one line (k167a).
 // 0.1.68: grounded map markers: stations, boards, counters, shops, the car lot, runs, stacks, climbs, matches and parked cars sit on a soft ground shadow (lanterns stay bare), every one scales with zoom (×0.8 at 15 to ×1.3, floored so pins stay tappable), they share one z band so nearer (southern) objects overlap farther ones, and a parked car tilts up to 45° to the exact bearing of its road; walking and driving unchanged
+// 0.1.69: Ladders board in Journal · Leaderboard: pick one of the 14 trivia categories, top 5 by right answers there with the title rung reached (250 / 1000 / 2000), your rank and "N behind <name>" for the player just above you; rebuilt from the answer records, cached 60 s (k169a).
