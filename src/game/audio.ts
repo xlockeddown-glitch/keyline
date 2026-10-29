@@ -572,3 +572,8 @@ export function stopBed() {
 export function syncBed(id: ScoutId) {
   startBed(id);
 }
+
+/** 0.1.62: what the music deck holds right now (QA and tests). */
+export function musicDeck() {
+  return { deck: deck.map((p) => ({ key: p.key, fading: p.fadingSince !== null })), runs: runs.size, ticking: clock !== 0, state: ctx?.state ?? "none" };
+}
