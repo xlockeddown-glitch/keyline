@@ -73,7 +73,9 @@ test("buy and wear: coin price, no double charge, can't wear unowned, choice syn
 
 test("skins reuse the tile filter: one filter per skin, no animation, route accent only", () => {
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-  const block = css.slice(css.indexOf("/* 0.1.61 map skins")).replace(/^\/\*.*?\*\//, "");
+  const from = css.indexOf("/* 0.1.61 map skins");
+  const next = css.indexOf("/* 0.1.", from + 10);
+  const block = css.slice(from, next === -1 ? undefined : next).replace(/^\/\*.*?\*\//, "");
   for (const id of ["moonlight", "copper", "neon"]) assert.match(block, new RegExp(`:root\\[data-map-skin="${id}"\\] \\.atlas-tiles \\{ filter: `));
   assert.doesNotMatch(block, /animation|@keyframes|transition/);
   const pkg = readFileSync(new URL("../../package.json", import.meta.url), "utf8");
