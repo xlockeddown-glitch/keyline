@@ -1358,7 +1358,7 @@ export function GameMap() {
       map.on("zoomend", fitMarketSign);
       map.on("zoom zoomend", sizeHouse); // 0.1.12: the house keeps its real size
       map.on("zoom zoomend", sizeShop);
-      const setWorldScale = () => map.getContainer().style.setProperty("--world-scale", String(worldScale(map.getZoom())));
+      const setWorldScale = () => { const m = mapRef.current; m?.getContainer().style.setProperty("--world-scale", String(worldScale(m.getZoom()))); };
       setWorldScale();
       map.on("zoom zoomend", setWorldScale); // 0.1.66: every world marker scales with the map
       const signTick = window.setInterval(fitMarketSign, 1500);
