@@ -46,3 +46,12 @@ test("print progress needs both legs; layer only touches the coat mask", () => {
   assert.notDeepEqual([...out.slice(0, 3)], [100, 100, 100]);
   assert.deepEqual([...out.slice(4)], [100, 100, 100, 255]);
 });
+
+test("0.1.64: denver, nashville, nola and seattle each have a first print; nothing is pending", () => {
+  assert.deepEqual([...PRINTS_PENDING], []);
+  for (const id of ["denver", "nashville", "nola", "seattle"] as CityId[]) {
+    const list = CITY_PRINTS[id] ?? [];
+    assert.ok(list.length >= 1, id);
+    assert.deepEqual(list[0]!.goal, { correct: 500, meters: 150_000 }, id);
+  }
+});

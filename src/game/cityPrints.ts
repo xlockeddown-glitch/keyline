@@ -431,6 +431,155 @@ const BOSTON_FREEDOM_TRAIL: CityPrint = {
   ],
 };
 
+/** 0.1.64: Denver — the Front Range and fall aspens. */
+const DENVER_ASPEN: CityPrint = {
+  id: "print-denver-aspen",
+  city: "denver",
+  name: "Aspen Gold",
+  blurb: "Snowcapped Rocky Mountain peaks over a stand of gold fall aspens with white bark.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#d9a521",
+  palette: {
+    ".": { L: 62, C: 26, h: 245 }, // mountain sky
+    s: { L: 94, C: 3, h: 240 }, // snow
+    m: { L: 40, C: 12, h: 260 }, // rock
+    a: { L: 76, C: 62, h: 88 }, // aspen gold
+    A: { L: 62, C: 58, h: 72 }, // deep gold
+    f: { L: 30, C: 14, h: 120 }, // forest floor
+    t: { L: 88, C: 4, h: 90 }, // white bark
+    k: { L: 18, C: 3, h: 270 }, // bark mark
+  },
+  tile: [
+    "................",
+    "....s...........",
+    "...sss.......s..",
+    "..ssmms.....sss.",
+    ".smmmmms...smmms",
+    "smmmmmmmmssmmmmm",
+    "mmmmmmmmmmmmmmmm",
+    "mmmmmmmmmmmmmmmm",
+    "faaafffaaafffaaa",
+    "aaaaafaaaaafaaaa",
+    "aAaaafaAaaafaAaa",
+    "faaafffaaafffaaa",
+    "fftffffftffffftf",
+    "ffkffffftffffffk",
+    "fftffffffkfffftf",
+    "fftffffftffffftf",
+  ],
+};
+
+/** 0.1.64: Nashville — Music City's guitars and the neon on Lower Broadway. */
+const NASHVILLE_GUITAR: CityPrint = {
+  id: "print-nashville-guitar",
+  city: "nashville",
+  name: "Honky-Tonk Neon",
+  blurb: "Music City at night: honey-wood guitars under neon pink stars and cyan music notes.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 2,
+  swatch: "#d14a8b",
+  palette: {
+    ".": { L: 16, C: 24, h: 290 }, // night
+    w: { L: 60, C: 44, h: 70 }, // honey wood
+    d: { L: 32, C: 24, h: 55 }, // neck
+    o: { L: 10, C: 4, h: 60 }, // sound hole
+    s: { L: 86, C: 6, h: 90 }, // strings
+    p: { L: 60, C: 70, h: 350 }, // neon pink
+    c: { L: 78, C: 40, h: 200 }, // neon cyan
+  },
+  tile: [
+    "....dd..........",
+    "....dd.....cccc.",
+    "....ds.....c..c.",
+    "....ds.....c..c.",
+    "....ds...ccc.ccc",
+    "..wwdsww.ccc.ccc",
+    ".wwwdswww.......",
+    ".wwwdswww.......",
+    "..wwdsww........",
+    ".wwwoowww....p..",
+    "wwwwoowwww..ppp.",
+    "wwwwdswwww...p..",
+    "wwwwdswwww......",
+    ".wwwssswww......",
+    "..wwwwww........",
+    "................",
+  ],
+};
+
+/** 0.1.64: New Orleans — French Quarter iron-lace balconies hung with Mardi Gras beads. */
+const NOLA_IRON_LACE: CityPrint = {
+  id: "print-nola-iron-lace",
+  city: "nola",
+  name: "Iron Lace Balcony",
+  blurb: "French Quarter ironwork on a peach stucco wall, hung with purple, green and gold Mardi Gras beads.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 2,
+  swatch: "#6b3fa0",
+  palette: {
+    ".": { L: 72, C: 24, h: 55 }, // peach stucco
+    k: { L: 14, C: 3, h: 270 }, // wrought iron
+    P: { L: 36, C: 48, h: 305 }, // purple bead
+    G: { L: 50, C: 46, h: 150 }, // green bead
+    Y: { L: 80, C: 62, h: 88 }, // gold bead
+  },
+  tile: [
+    "kkkkkkkkkkkkkkkk",
+    "k..kk..kk..kk..k",
+    "k.k..k.kk.k..k.k",
+    "kk.kk.kkkk.kk.kk",
+    "k.k..k.kk.k..k.k",
+    "k..kk..kk..kk..k",
+    "kkkkkkkkkkkkkkkk",
+    "k.......k.......",
+    "kY.....Yk......Y",
+    "k.G...P.kP....G.",
+    "k..P.G..k.G..P..",
+    "k...YY..k..YY...",
+    "k.......k.......",
+    "k.......k.......",
+    "k.......k.......",
+    "k.......k.......",
+  ],
+};
+
+/** 0.1.64: Seattle — rain, the Space Needle and the evergreens. */
+const SEATTLE_NEEDLE: CityPrint = {
+  id: "print-seattle-needle",
+  city: "seattle",
+  name: "Needle in the Rain",
+  blurb: "The Space Needle in a steady drizzle, a ridge of evergreens below the gray sky.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 3,
+  swatch: "#2f6b4f",
+  palette: {
+    ".": { L: 50, C: 10, h: 235 }, // rain sky
+    r: { L: 74, C: 8, h: 225 }, // rain streak
+    n: { L: 88, C: 3, h: 90 }, // needle white
+    e: { L: 34, C: 30, h: 155 }, // evergreen
+    E: { L: 22, C: 24, h: 160 }, // deep evergreen
+  },
+  tile: [
+    "...n........r...",
+    "...n.....r......",
+    "nnnnnnn.....r...",
+    ".nnnnn..r.......",
+    "..n.n.......r...",
+    "..n.n...r.......",
+    "..n.n........r..",
+    ".n...n...r......",
+    ".n...n.......r..",
+    ".n...n..e.......",
+    "n.....n.e....e..",
+    "n.....neee...e..",
+    "......eeee..eee.",
+    ".e...eeeeee.eee.",
+    "eee.eeeeeeeeeeee",
+    "EEEEEEEEEEEEEEEE",
+  ],
+};
+
 /** Every city's prints, in earn order. */
 export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>> = {
   austin: [AUSTIN_BLUEBONNET],
@@ -444,6 +593,10 @@ export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>
   toronto: [TORONTO_CN_TOWER],
   la: [LA_PALMS],
   boston: [BOSTON_FREEDOM_TRAIL],
+  denver: [DENVER_ASPEN],
+  nashville: [NASHVILLE_GUITAR],
+  nola: [NOLA_IRON_LACE],
+  seattle: [SEATTLE_NEEDLE],
 };
 
 /**
@@ -451,9 +604,7 @@ export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>
  * city has no print and is not listed here, and if a listed city already has one: new cities cannot ship
  * without a print, and this list can only shrink.
  */
-export const PRINTS_PENDING: readonly CityId[] = [
-  "nola", "seattle", "denver", "nashville",
-];
+export const PRINTS_PENDING: readonly CityId[] = [];
 
 export const ALL_PRINTS: readonly CityPrint[] = Object.values(CITY_PRINTS).flatMap((l) => l ?? []);
 

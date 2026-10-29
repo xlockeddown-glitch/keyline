@@ -62,3 +62,18 @@ test("0.0.99 prints: earned only with 500 right in the city AND 150 km walked th
   assert.equal(rows.find((r) => r.id === "print-austin-bluebonnet")!.earned, true);
   assert.deepEqual((await canonicalWallet(sql, "p1")).wallet, before);
 });
+
+test("0.1.64 prints: the four new cities are tracked with the first-print goal", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "p2", snap(), "p2phone1");
+  await sql.query(`insert into walk_distance (user_id, city, meters) values ('p2', 'seattle', 150000)`);
+  const rows = await printLook(sql, "p2");
+  for (const id of ["print-denver-aspen", "print-nashville-guitar", "print-nola-iron-lace", "print-seattle-needle"]) {
+    const r = rows.find((x) => x.id === id)!;
+    assert.ok(r, id);
+    assert.equal(r.needCorrect, 500);
+    assert.equal(r.needMeters, 150_000);
+    assert.equal(r.earned, false);
+  }
+  assert.equal(rows.find((x) => x.id === "print-seattle-needle")!.meters, 150000);
+});
