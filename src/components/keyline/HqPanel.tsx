@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { CAT_LABEL, cotdAt } from "@/game/carPerks";
 import { LevelPanel } from "./Levels";
 import { RecentRewards } from "./RecentRewards";
 import { StreakBoardSection } from "./RideBoards";
@@ -7,7 +6,7 @@ import { PrintPanel } from "./Prints";
 import { LoopPosters } from "./LoopPosters";
 import { MarketLightsPanel } from "./NightMarket";
 import { X } from "lucide-react";
-import { CITIES, KIND_LABEL, KIOSK, TIER_LABEL, boardLine, cityShop, counterLine } from "@/game/data";
+import { CITIES, KIOSK, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { MATERIAL_LIST } from "@/game/items";
@@ -26,14 +25,11 @@ import { RollsBoard } from "./RollsBoard";
 import { DailyBoard } from "./DailyRun";
 import { ScoutRoster } from "./ScoutShop";
 import { PrintShop } from "./PrintShop";
-import { MarketJournalRow, useMarket } from "./NightMarket";
-import { MARKET_TAG } from "@/game/nightMarket";
 import { FriendJournalRow } from "./FriendTickets";
 import { PlayerLinkRow } from "./PlayerLink";
 import { PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
-import { houseArt, houseList } from "@/game/houses";
-import { OwnLampsSection } from "./OwnLamps";
+import { PlacesTab } from "./JournalPlaces";
 
 const TABS = ["Places", "Supplies", "Goals", "Progress", "Leaderboard"] as const;
 
@@ -71,10 +67,6 @@ export function HqPanel() {
   const claimed = lastCrateDay === today;
   const crateDay = claimed ? Math.max(1, crateStreak) : nextCrateStreak(lastCrateDay, crateStreak, today);
   const blitzReady = blitzDue(lastBlitzDay, today);
-  const { market } = useMarket(cityId);
-  const houses = useGame((s) => s.houses);
-  const homes = houseList(houses);
-  const [lotsOpen, setLotsOpen] = useState(false);
 
   useSheetOpen(hqOpen);
   if (!hqOpen) return null;
@@ -136,89 +128,7 @@ export function HqPanel() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          {tab === "Places" ? (
-            <ul className="grid gap-2">
-              <li className="hq-row-sub" data-testid="cotd-line">
-                Category of the day: <span className="cotd-badge">{CAT_LABEL[cotdAt(Date.now())]} +25%</span>
-              </li>
-              <li className="kicker">Your houses</li>
-              {homes.owned.length === 0 ? <li className="hq-row-sub">No houses yet. Each city has one lot for sale.</li> : null}
-              {homes.owned.map((h) => (
-                <li key={h.city} className="hq-row">
-                  <img src={houseArt(h.house.id)} alt="" width={36} height={36} className="shrink-0 rounded object-cover" />
-                  <div className="hq-row-copy">
-                    <p className="hq-row-title">
-                      {CITIES[h.city].name} · {h.house.name}
-                    </p>
-                    <p className="hq-row-sub">{h.lot.name}</p>
-                  </div>
-                </li>
-              ))}
-              <li>
-                <button type="button" className="hq-row-sub min-h-11 underline" aria-expanded={lotsOpen} onClick={() => setLotsOpen((o) => !o)}>
-                  {lotsOpen ? "Hide" : "Show"} house lots for sale ({homes.forSale.length})
-                </button>
-              </li>
-              {lotsOpen
-                ? homes.forSale.map((h) => (
-                    <li key={h.city} className="hq-row opacity-70">
-                      <div className="hq-row-copy">
-                        <p className="hq-row-title">
-                          {CITIES[h.city].name} · {h.lot.name}
-                        </p>
-                        <p className="hq-row-sub tabular-nums">For sale, from {h.from.toLocaleString("en-US")}</p>
-                      </div>
-                    </li>
-                  ))
-                : null}
-              <OwnLampsSection />
-              <li className="kicker">Places in {city.name}</li>
-              <MarketJournalRow />
-              {city.pois.map((p) => {
-                const known = Boolean(atlas[p.id]);
-                return (
-                  <li key={p.id} className="hq-row">
-                    <ItemIcon item={p.tier} size={36} />
-                    <div className="hq-row-copy">
-                      <p className="kicker">
-                        {p.kind === "shop"
-                          ? "Outfitter"
-                          : p.kind === "counter"
-                            ? "Counter"
-                            : p.kind === "board"
-                              ? "Notice"
-                              : `${TIER_LABEL[p.tier]} · ${KIND_LABEL[p.kind]}`}
-                        {p.printShop ? " · Print" : ""}
-                        {market?.street.lamps.includes(p.id) ? <span className="market-x"> · {MARKET_TAG}</span> : null}
-                      </p>
-                      <p className="hq-row-title">
-                        {known
-                          ? p.name
-                          : p.kind === "shop"
-                            ? "Undiscovered outfitter"
-                            : p.kind === "counter"
-                              ? "Undiscovered counter"
-                              : p.kind === "board"
-                                ? "Undiscovered notice"
-                                : "Undiscovered lamp"}
-                      </p>
-                      <p className="hq-row-sub">
-                        {known
-                          ? p.lore
-                          : p.kind === "shop"
-                            ? "Look for the brass awning on the street."
-                            : p.kind === "counter"
-                              ? "A street counter. Get matches, open your daily crate, or trade matches."
-                              : p.kind === "board"
-                                ? "A notice board. Pick up jobs and play the Daily Blitz."
-                                : "Walk up to it to add it to Places."}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : null}
+          {tab === "Places" ? <PlacesTab /> : null}
 
           {tab === "Supplies" ? (
             <div className="grid gap-3">

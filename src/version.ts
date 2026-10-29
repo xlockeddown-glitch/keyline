@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.64";
+export const APP_VERSION = "0.1.67";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k164a";
+export const PUBLISH_STAMP = "k167a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -171,3 +171,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.61: map skins: Lamplight (default) and Moonlight free, Copper and Neon 50,000 coin each (plain color tints); one CSS filter on the map tiles plus a route accent, no animation; bought as skin:<id> ledger rows, the worn skin saved per account (skinon rows) or locally for guests, who can preview but not buy (k161a).
 // 0.1.62: city music beds: each of the 15 cities has its own quiet synth bed (plain data in music.ts: mode, tempo, chord loop, pad/lead voice, light kit), crossfaded in on arrival over 1.6 s; the scout bed stays for the title screen and city picker. Same lookahead scheduler, music toggle, mute and hidden-tab pause; at most two beds ever play (one fading) (k162a).
 // 0.1.64: city prints for the last four cities: Denver Aspen Gold, Nashville Honky-Tonk Neon, NOLA Iron Lace Balcony, Seattle Needle in the Rain (500 right + 150 km walked there each); PRINTS_PENDING is now empty; plus the readable gift picker drop-down and no DRAFT labels on title ladders (k164a).
+// 0.1.67: Journal tabs in the Progress row style: Places opens with a city summary (lanterns owned, places lit bars), House and Lantern Shop tap rows, compact lantern color rows with lamp picking behind the tap, and place groups with bars (two shown, the rest under + N more) (k167a).

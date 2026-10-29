@@ -4709,3 +4709,23 @@ h3 {
 .skin-try { display: grid; gap: 3px; text-align: left; }
 .skin-swatch { display: block; height: 36px; border-radius: 6px; border: 1px solid rgb(255 255 255 / 0.15); }
 .skin-tag { align-self: flex-start; font-size: 11px; font-weight: 600; color: var(--color-accent); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--color-accent); }
+
+/* 0.1.67 Journal row style (Progress-tab look): single-line rows with hairlines, bars, and › taps. */
+.jr-list { display: grid; gap: 0; }
+.jr-row, .jr-group { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent); }
+.jr-group { display: block; }
+.jr-kicker { padding: 18px 0 4px; }
+.jr-main { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; text-align: left; }
+.jr-title { font-size: 1rem; color: var(--color-fg); }
+.jr-sub { font-size: .75rem; color: var(--color-fg-muted); }
+.jr-val { flex: none; font-size: .8125rem; color: var(--color-fg-muted); }
+.jr-go { flex: none; font-size: .8125rem; color: var(--color-accent); }
+.jr-bar { margin-top: 6px; }
+.jr-tap { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
+.jr-row > .jr-tap { margin: -4px 0; }
+.jr-more { min-height: 44px; font-size: .8125rem; color: var(--color-fg-muted); background: none; border: 0; padding: 0; }
+.jr-mini { padding: 8px 0; }
+.jr-mini .jr-title { font-size: .875rem; }
+.jr-note { padding: 8px 0 12px; }
+.jr-detail { margin: 6px 0; }
+.jr-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; }
