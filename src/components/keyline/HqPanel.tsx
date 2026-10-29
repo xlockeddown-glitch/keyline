@@ -2,6 +2,7 @@ import { Fragment, useState } from "react";
 import { LevelPanel } from "./Levels";
 import { RecentRewards } from "./RecentRewards";
 import { StreakBoardSection } from "./RideBoards";
+import { LadderBoardSection } from "./LadderBoard";
 import { PrintPanel } from "./Prints";
 import { LoopPosters } from "./LoopPosters";
 import { MarketLightsPanel } from "./NightMarket";
@@ -216,6 +217,7 @@ export function HqPanel() {
             <>
               <DailyBoard city={cityId} />
               <StreakBoardSection />
+              <LadderBoardSection />
               <div className="mt-5 border-t border-border pt-4">
                 <RollsBoard />
                 <PlayerLinkRow />
