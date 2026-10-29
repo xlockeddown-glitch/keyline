@@ -119,7 +119,7 @@ function paintOn(): string {
   return st.carOn && c && c !== factoryColor(st.carOn) ? c : "";
 }
 
-/** 0.1.66: wrap a world marker so it scales with zoom (--world-scale on the map) around its anchor and, unless bare, sits on a soft ground shadow. */
+/** 0.1.68: wrap a world marker so it scales with zoom (--world-scale on the map) around its anchor and, unless bare, sits on a soft ground shadow. */
 function worldObj(html: string, ax: number, ay: number, shadow = true): string {
   return `<div class="world-obj${shadow ? " has-shadow" : ""}" style="--ax:${ax}px;--ay:${ay}px">${html}</div>`;
 }
@@ -1360,7 +1360,7 @@ export function GameMap() {
       map.on("zoom zoomend", sizeShop);
       const setWorldScale = () => { const m = mapRef.current; m?.getContainer().style.setProperty("--world-scale", String(worldScale(m.getZoom()))); };
       setWorldScale();
-      map.on("zoom zoomend", setWorldScale); // 0.1.66: every world marker scales with the map
+      map.on("zoom zoomend", setWorldScale); // 0.1.68: every world marker scales with the map
       const signTick = window.setInterval(fitMarketSign, 1500);
       map.once("unload", () => window.clearInterval(signTick));
     });
@@ -1742,7 +1742,7 @@ export function GameMap() {
               : vaultPinHtml(poi, { cooling });
       const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : [20, 50];
       const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : [10, 28];
-      // 0.1.66: one z band so Leaflet's own latitude order puts nearer (southern) pins in front; lanterns get no ground shadow.
+      // 0.1.68: one z band so Leaflet's own latitude order puts nearer (southern) pins in front; lanterns get no ground shadow.
       const lantern = !(shop || counter || board || desk);
       const marker = L.marker([poi.lat, poi.lng], {
         icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1], !lantern), iconSize: size, iconAnchor: anchor }),
