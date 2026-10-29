@@ -18,7 +18,7 @@ test("all 15 cities have a valid, quiet bed with a name and a character line", (
     assert.ok(b.root >= 45 && b.root <= 60, `${id} root`);
     assert.ok(b.scale[0] === 0 && b.scale.every((x, i) => i === 0 || x > b.scale[i - 1]!) && b.scale.at(-1)! < 12, `${id} scale`);
     assert.ok(b.chords.length >= 2 && b.chords.every((c) => c.length >= 2 && c.length <= 4), `${id} chords`);
-    assert.ok(b.swing >= 0 && b.swing <= 0.35 && b.cutoff >= 1000 && b.cutoff <= 4000 && b.vinyl <= 0.035, `${id} feel`);
+    assert.ok(b.swing >= 0 && b.swing <= 0.35 && b.cutoff >= 1000 && b.cutoff <= 4000 && b.vinyl === 0, `${id} feel`);
     assert.ok((b.level ?? 1) <= 1.6, `${id} level`);
     if (b.lead) assert.ok(b.lead.vol <= 0.1 && b.lead.steps.every((s) => s >= 0 && s < 16), `${id} lead`);
     // Every event of a full loop is quiet.
@@ -97,4 +97,12 @@ test("city bed in play, scout bed on the title screen; gating on unlock, toggle,
   assert.doesNotMatch(src, /requestAnimationFrame/, "no per-frame audio work");
   const pkg = readFileSync(new URL("../../package.json", import.meta.url), "utf8");
   assert.match(pkg, /src\/game\/music\.test\.ts/);
+});
+
+test("no constant hiss: every city bed's quiet gaps stay under -70 dBFS (offline render, before any preview gain)", async () => {
+  const { render, noiseFloor } = await import("../../scripts/music-render.mts");
+  for (const [id, b] of Object.entries(CITY_BEDS)) {
+    const nf = noiseFloor(render(b, 10));
+    assert.ok(nf < -70, `${id} floor ${nf.toFixed(1)} dBFS`);
+  }
 });

@@ -5,9 +5,6 @@ import { CITY_BEDS, SCOUT_BEDS, scheduleWindow, type Bed, type MusicEvent, type 
 
 const SR = 44100;
 const GAIN = 0.7 * 0.22;
-const out = process.argv[2] ?? "/workspace/music-preview";
-const SECS = Number(process.argv[3] ?? 30);
-mkdirSync(out, { recursive: true });
 
 let seed = 12345;
 const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32) * 2 - 1;
@@ -88,26 +85,49 @@ function wav(file: string, b: Float64Array) {
   pcm.writeUInt32LE(SR * 2, 28); pcm.writeUInt16LE(2, 32); pcm.writeUInt16LE(16, 34); pcm.write("data", 36); pcm.writeUInt32LE(b.length * 2, 40);
   writeFileSync(file, pcm);
 }
+/** Noise floor: the RMS of the quietest 5% of 50 ms windows (the gaps between notes), in dBFS. */
+export function noiseFloor(b: Float64Array) {
+  const win = 2205, vals: number[] = [];
+  for (let i = 0; i + win <= b.length; i += win) {
+    let sq = 0;
+    for (let j = i; j < i + win; j++) sq += b[j]! ** 2;
+    vals.push(Math.sqrt(sq / win));
+  }
+  vals.sort((x, y) => x - y);
+  return 20 * Math.log10(Math.max(vals[Math.floor(vals.length / 20)]!, 1e-9));
+}
 const db = (x: number) => (20 * Math.log10(Math.max(x, 1e-9))).toFixed(1);
 function stats(b: Float64Array | Int16Array, scale = 1) {
   let peak = 0, sq = 0, clip = 0;
   for (let i = 0; i < b.length; i++) { const v = Math.abs(b[i]! / scale); peak = Math.max(peak, v); sq += v * v; if (v >= 0.999) clip++; }
   return { peak, rms: Math.sqrt(sq / b.length), clip };
 }
-const rows: string[] = [];
-const beds: [string, Bed][] = [...Object.entries(CITY_BEDS), ["scout-raccoon (fallback)", SCOUT_BEDS.raccoon]];
-for (const [name, bed] of beds) {
-  const b = render(bed, SECS);
-  const s = stats(b);
-  if (!name.startsWith("scout")) wav(`${out}/${name}.wav`, b);
-  rows.push(`${name.padEnd(26)} peak ${db(s.peak)} dBFS  rms ${db(s.rms)} dBFS  clipped ${s.clip}${name.startsWith("scout") ? "" : `  ${out}/${name}.wav`}`);
-}
-// Sound effects for comparison (their own peaks/RMS over the effect's length).
-try {
-  for (const f of readdirSync("/workspace/sfx-preview").filter((x) => x.endsWith(".wav"))) {
-    const raw = readFileSync(`/workspace/sfx-preview/${f}`);
-    const s = stats(new Int16Array(raw.buffer, raw.byteOffset + 44, (raw.length - 44) >> 1), 32767);
-    rows.push(`sfx ${f.padEnd(22)} peak ${db(s.peak)} dBFS  rms ${db(s.rms)} dBFS`);
+if (process.argv[1]?.endsWith("music-render.mts")) {
+  const out = process.argv[2] ?? "/workspace/music-preview";
+  const SECS = Number(process.argv[3] ?? 30);
+  mkdirSync(out, { recursive: true });
+  const bad: string[] = [];
+  const rows: string[] = [];
+  const beds: [string, Bed][] = [...Object.entries(CITY_BEDS), ["scout-raccoon (fallback)", SCOUT_BEDS.raccoon]];
+  for (const [name, bed] of beds) {
+    const b = render(bed, SECS);
+    const s = stats(b);
+    if (!name.startsWith("scout")) wav(`${out}/${name}.wav`, b);
+    const nf = noiseFloor(b);
+    if (nf > -70 && !name.startsWith("scout")) bad.push(`${name} floor ${nf.toFixed(1)}`);
+    rows.push(`${name.padEnd(26)} peak ${db(s.peak)} dBFS  rms ${db(s.rms)} dBFS  floor ${nf.toFixed(1)} dBFS  clipped ${s.clip}${name.startsWith("scout") ? "" : `  ${out}/${name}.wav`}`);
   }
-} catch { /* no sfx previews */ }
-console.log(rows.join("\n"));
+  // Sound effects for comparison (their own peaks/RMS over the effect's length).
+  try {
+    for (const f of readdirSync("/workspace/sfx-preview").filter((x) => x.endsWith(".wav"))) {
+      const raw = readFileSync(`/workspace/sfx-preview/${f}`);
+      const s = stats(new Int16Array(raw.buffer, raw.byteOffset + 44, (raw.length - 44) >> 1), 32767);
+      rows.push(`sfx ${f.padEnd(22)} peak ${db(s.peak)} dBFS  rms ${db(s.rms)} dBFS`);
+    }
+  } catch { /* no sfx previews */ }
+  console.log(rows.join("\n"));
+  if (bad.length) {
+    console.error("noise floor above -70 dBFS:", bad.join(", "));
+    process.exitCode = 1;
+  }
+}
