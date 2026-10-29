@@ -1,4 +1,4 @@
-// 0.1.63 Airports: far routes can fly; the server closes the ticket like the Loop and files souvenir:<city>.
+// 0.1.70 Airports: far routes can fly; the server closes the ticket like the Loop and files souvenir:<city>.
 import { lampGiftClock, welcomeClock } from "./lampGift.ts";
 welcomeClock.cutoff = "2999-01-01T00:00:00Z";
 lampGiftClock.cutoff = "2999-01-01T00:00:00Z";

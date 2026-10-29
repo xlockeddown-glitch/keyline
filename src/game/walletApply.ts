@@ -902,7 +902,7 @@ export type ClientOp =
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
   | { kind: "loop"; ride: boolean }
-  /** 0.1.63: arrive by air (far routes only): closes the ticket and files the destination souvenir. */
+  /** 0.1.70: arrive by air (far routes only): closes the ticket and files the destination souvenir. */
   | { kind: "fly" }
   | {
       kind: "ride";
@@ -1691,7 +1691,7 @@ async function loopArrive(sql: Sql, sessionUserId: string, id: string, wallet: W
   return { ...applied(r), loop: r.ok ? { crate } : undefined };
 }
 
-/** 0.1.63: arrive by air. Like the Loop: closes the open ticket at no charge, but only on a far route, and files `souvenir:<to>` once. */
+/** 0.1.70: arrive by air. Like the Loop: closes the open ticket at no charge, but only on a far route, and files `souvenir:<to>` once. */
 async function flyArrive(sql: Sql, sessionUserId: string, id: string, wallet: WalletState): Promise<ClientResult> {
   const ticket = await latestTicket(sql, id);
   const now = Date.now();

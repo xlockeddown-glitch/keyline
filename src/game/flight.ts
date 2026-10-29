@@ -1,5 +1,5 @@
 /**
- * 0.1.63 Airports: far trips (over about 1,000 miles) can fly. Takeoff, a window view with a Geography
+ * 0.1.70 Airports: far trips (over about 1,000 miles) can fly. Takeoff, a window view with a Geography
  * card, and a souvenir from the destination on landing. Pure helpers shared by the store, the server
  * wallet op (`fly`, like the Loop's `loop`) and the cutscene. Souvenirs are ledger rows `souvenir:<city>`.
  */

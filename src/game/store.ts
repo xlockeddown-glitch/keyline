@@ -243,9 +243,9 @@ export type GameState = {
   crateStreak: number;
   /** 0.1.58: tunnel posters collected on Loop rides (ledger keys `poster:<from>-<to>`). */
   posters: string[];
-  /** 0.1.63: souvenirs from flights (ledger keys `souvenir:<city>`). */
+  /** 0.1.70: souvenirs from flights (ledger keys `souvenir:<city>`). */
   souvenirs: string[];
-  /** 0.1.63: the flight playing now (takeoff, window view, landing). */
+  /** 0.1.70: the flight playing now (takeoff, window view, landing). */
   flight: { from: CityId; to: CityId; departAt: number } | null;
   /** 0.1.58: the Loop ride playing now (cutscene), with its crate roll. */
   loop: { from: CityId; to: CityId; crate: boolean } | null;
@@ -431,7 +431,7 @@ export type GameState = {
   clearFireworks: () => void;
   /** 0.1.58: `skip` arrives at once, `loop` plays the tunnel ride, `train` is the old timed ride with games. */
   boardFare: (to: CityId, how?: "skip" | "loop" | "train" | "fly") => string | null;
-  /** 0.1.63: end the flight cutscene: arrive and pin the souvenir. */
+  /** 0.1.70: end the flight cutscene: arrive and pin the souvenir. */
   finishFlight: () => void;
   /** 0.1.58: end the Loop cutscene (done or skipped): arrive, file the poster, open any crate. */
   finishLoop: () => void;
@@ -3337,7 +3337,7 @@ export const useGame = create<GameState>((set, get) => ({
   },
 }));
 
-/** 0.1.63: end the open ride by air: the flight cutscene plays, then finishFlight lands. */
+/** 0.1.70: end the open ride by air: the flight cutscene plays, then finishFlight lands. */
 function flyNow(set: (p: Partial<GameState>) => void, get: () => GameState) {
   const j = get().journey;
   if (!j) return;

@@ -11,7 +11,7 @@ type Phase = "takeoff" | "window" | "landing";
 type Reveal = { correct: boolean; answer: string };
 
 /**
- * 0.1.63 Airports: a far trip by air. Takeoff on a runway, a window seat with clouds and a Geography
+ * 0.1.70 Airports: a far trip by air. Takeoff on a runway, a window seat with clouds and a Geography
  * card (dealt and graded on the server, like every card), then landing. Vector/CSS art only; transforms
  * only, a handful of elements, nothing per-frame in JS.
  */

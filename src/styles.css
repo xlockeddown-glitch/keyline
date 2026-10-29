@@ -4743,7 +4743,7 @@ h3 {
 .ladder-pick { background: var(--color-bg-elevated); color: var(--color-fg); }
 .ladder-pick option { background: var(--color-bg-elevated); color: var(--color-fg); }
 .jr-row.is-me .jr-title { color: var(--color-accent); }
-/* 0.1.63 Airports: flight cutscene. Vector/CSS art, transforms and opacity only. */
+/* 0.1.70 Airports: flight cutscene. Vector/CSS art, transforms and opacity only. */
 .flight-screen {
   position: fixed;
   inset: 0;
