@@ -4729,3 +4729,7 @@ h3 {
 .jr-note { padding: 8px 0 12px; }
 .jr-detail { margin: 6px 0; }
 .jr-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+
+/* 0.1.67: board filter buttons share one line on a phone (scroll sideways if a row still overflows). */
+.rolls-tiers { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.rolls-tiers > .rolls-tier { flex: 1 1 0; min-width: max-content; justify-content: center; padding: 0 8px; font-size: 0.75rem; }

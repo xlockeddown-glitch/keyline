@@ -27,7 +27,7 @@ import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import type { Tier } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
-import { SignInActions } from "./AuthChip";
+import { SignInCollapsed } from "./AuthChip";
 
 export function RollsOverlay({ onClose }: { onClose: () => void }) {
   useEffect(() => {
@@ -301,7 +301,7 @@ export function RollsBoard() {
                   </>
                 )}
               </p>
-              <SignInActions />
+              <SignInCollapsed />
             </div>
           }
         >

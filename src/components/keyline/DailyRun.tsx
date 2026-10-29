@@ -12,7 +12,7 @@ import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import type { CityId, Tier } from "@/game/types";
 import { ItemIcon, QtyChip } from "./ItemIcon";
-import { SignInActions } from "./AuthChip";
+import { SignInCollapsed } from "./AuthChip";
 
 function useTick(on: boolean, ms = 100) {
   const [, setN] = useState(0);
@@ -176,10 +176,7 @@ export function DailyBoard({ city, day }: { city: CityId; day?: string }) {
       <div className="mt-4 border-t border-border pt-3">
         <SignInGate
           fallback={
-            <div className="grid gap-3">
-              <p className="text-sm text-pretty text-fg-muted">Sign in to post your time. Guests can run the route and read the board.</p>
-              <SignInActions />
-            </div>
+            <SignInCollapsed line="Sign in to post your time. Guests can run the route and read the board." />
           }
         >
           <p className="text-sm text-fg-muted">
