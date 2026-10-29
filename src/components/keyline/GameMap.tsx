@@ -16,6 +16,7 @@ import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
 import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml } from "@/game/pins";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
+import { roadTilt, worldScale } from "@/game/grounded";
 import { V2_CADENCE, V2_SCOUTS, v2Cell } from "@/game/coatLayer";
 import { dest, distM, wrapPi, yawToTarget } from "@/game/geo";
 import { drivePing, reach, seatedCar, useGame } from "@/game/store";
@@ -116,6 +117,11 @@ function paintOn(): string {
   const st = useGame.getState();
   const c = st.carOn ? st.carPaint[st.carOn] : undefined;
   return st.carOn && c && c !== factoryColor(st.carOn) ? c : "";
+}
+
+/** 0.1.66: wrap a world marker so it scales with zoom (--world-scale on the map) around its anchor and, unless bare, sits on a soft ground shadow. */
+function worldObj(html: string, ax: number, ay: number, shadow = true): string {
+  return `<div class="world-obj${shadow ? " has-shadow" : ""}" style="--ax:${ax}px;--ay:${ay}px">${html}</div>`;
 }
 
 function cabMarkup(face: CabFace, lamps: boolean) {
@@ -334,13 +340,13 @@ export function GameMap() {
       cabMarker.current = L.marker([cab.lat, cab.lng], {
         icon: L.divIcon({
           className: "",
-          html: cabMarkup(face, lamps),
+          html: worldObj(`<div class="cab-tilt" style="--tilt:${roadTilt(cab.yaw)}deg">${cabMarkup(face, lamps)}</div>`, 28, 36),
           iconSize: [56, 56],
           iconAnchor: [28, 36],
         }),
         interactive: false,
         keyboard: false,
-        zIndexOffset: 700,
+        zIndexOffset: 400,
       }).addTo(map);
     } else {
       cabMarker.current.setLatLng([cab.lat, cab.lng]);
@@ -349,6 +355,8 @@ export function GameMap() {
         el.dataset.face = face;
         el.classList.toggle("is-lamps", lamps);
       }
+      const tilt = cabMarker.current.getElement()?.querySelector(".cab-tilt") as HTMLElement | null;
+      tilt?.style.setProperty("--tilt", `${roadTilt(cab.yaw)}deg`);
     }
   }
 
@@ -415,13 +423,13 @@ export function GameMap() {
     dealerMarker.current = L.marker([dealerDoor.current.lat, dealerDoor.current.lng], {
       icon: L.divIcon({
         className: "",
-        html: `<div class="dealer-pin" data-testid="dealer-pin" title="${safe}: car lot"><i class="dealer-sign" aria-hidden="true"></i><span class="dealer-name">${safe}</span></div>`,
+        html: worldObj(`<div class="dealer-pin" data-testid="dealer-pin" title="${safe}: car lot"><i class="dealer-sign" aria-hidden="true"></i><span class="dealer-name">${safe}</span></div>`, 0, 0),
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       }),
       interactive: true,
       keyboard: false,
-      zIndexOffset: 600,
+      zIndexOffset: 400,
     }).addTo(map);
     // 0.1.12: the sign was tap-dead (players thought the lot "won't open"); now it opens, or walks you to the door.
     dealerMarker.current.on("click", () => {
@@ -1350,6 +1358,9 @@ export function GameMap() {
       map.on("zoomend", fitMarketSign);
       map.on("zoom zoomend", sizeHouse); // 0.1.12: the house keeps its real size
       map.on("zoom zoomend", sizeShop);
+      const setWorldScale = () => map.getContainer().style.setProperty("--world-scale", String(worldScale(map.getZoom())));
+      setWorldScale();
+      map.on("zoom zoomend", setWorldScale); // 0.1.66: every world marker scales with the map
       const signTick = window.setInterval(fitMarketSign, 1500);
       map.once("unload", () => window.clearInterval(signTick));
     });
@@ -1729,10 +1740,14 @@ export function GameMap() {
             : desk
               ? stationPinHtml({ cooling, fare: lit })
               : vaultPinHtml(poi, { cooling });
+      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : [20, 50];
+      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : [10, 28];
+      // 0.1.66: one z band so Leaflet's own latitude order puts nearer (southern) pins in front; lanterns get no ground shadow.
+      const lantern = !(shop || counter || board || desk);
       const marker = L.marker([poi.lat, poi.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : [20, 50], iconAnchor: shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : [10, 28] }),
+        icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1], !lantern), iconSize: size, iconAnchor: anchor }),
         keyboard: false,
-        zIndexOffset: shop ? 520 : lit ? 460 : counter || board ? 400 : desk ? 280 : 200,
+        zIndexOffset: lit ? 460 : 400,
       }).addTo(map);
       marker.on("click", () => {
         const nowSt = useGame.getState();
@@ -1749,9 +1764,9 @@ export function GameMap() {
     if (run && run.readyAt === 0) {
       const el = seriesPinHtml(SERIES.run);
       const marker = L.marker([run.lat, run.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: [24, 52], iconAnchor: [12, 30] }),
+        icon: L.divIcon({ className: "", html: worldObj(el, 12, 30), iconSize: [24, 52], iconAnchor: [12, 30] }),
         keyboard: false,
-        zIndexOffset: 420,
+        zIndexOffset: 400,
       }).addTo(map);
       marker.on("click", () => tryOpen(RUN_ID));
       vaultMarkers.current.set(RUN_ID, marker);
@@ -1760,9 +1775,9 @@ export function GameMap() {
     if (stack && stack.readyAt === 0) {
       const el = seriesPinHtml(SERIES.stack);
       const marker = L.marker([stack.lat, stack.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: [28, 64], iconAnchor: [14, 62] }),
+        icon: L.divIcon({ className: "", html: worldObj(el, 14, 62), iconSize: [28, 64], iconAnchor: [14, 62] }),
         keyboard: false,
-        zIndexOffset: 430,
+        zIndexOffset: 400,
       }).addTo(map);
       marker.on("click", () => tryOpen(STACK_ID));
       vaultMarkers.current.set(STACK_ID, marker);
@@ -1771,9 +1786,9 @@ export function GameMap() {
     if (climb && climb.readyAt === 0) {
       const el = seriesPinHtml(SERIES.climb);
       const marker = L.marker([climb.lat, climb.lng], {
-        icon: L.divIcon({ className: "", html: el, iconSize: [34, 56], iconAnchor: [17, 54] }),
+        icon: L.divIcon({ className: "", html: worldObj(el, 17, 54), iconSize: [34, 56], iconAnchor: [17, 54] }),
         keyboard: false,
-        zIndexOffset: 410,
+        zIndexOffset: 400,
       }).addTo(map);
       marker.on("click", () => tryOpen(CLIMB_ID));
       vaultMarkers.current.set(CLIMB_ID, marker);
@@ -1784,7 +1799,7 @@ export function GameMap() {
       const marker = L.marker([k.lat, k.lng], {
         icon: L.divIcon({
           className: "",
-          html: `<div class="match-pin tier-${k.tier}" title="${k.tier} match"><i class="match-head"></i><i class="match-stick"></i></div>`,
+          html: worldObj(`<div class="match-pin tier-${k.tier}" title="${k.tier} match"><i class="match-head"></i><i class="match-stick"></i></div>`, 10, 21),
           iconSize: [20, 42],
           iconAnchor: [10, 21],
         }),

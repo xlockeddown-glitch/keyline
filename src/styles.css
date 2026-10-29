@@ -4735,3 +4735,7 @@ h3 {
 .rolls-tiers > .rolls-tier { flex: 1 1 0; min-width: max-content; justify-content: center; padding: 0 8px; font-size: 0.75rem; }
 .rolls-tiers[aria-label="Match color"] { display: grid; grid-template-columns: repeat(3, 1fr); overflow: visible; }
 .rolls-tiers[aria-label="Match color"] > .rolls-tier { min-width: 0; }
+/* 0.1.68: grounded markers: zoom scale around the anchor, soft ground shadow, cars tilted to the road. */
+.world-obj { position: relative; width: 100%; height: 100%; isolation: isolate; transform-origin: var(--ax) var(--ay); scale: var(--world-scale, 1); }
+.world-obj.has-shadow::before { content: ""; position: absolute; left: var(--ax); top: var(--ay); width: 34px; height: 11px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, .7), rgba(0, 0, 0, .3) 60%, transparent); z-index: -1; pointer-events: none; }
+.cab-tilt { width: 100%; height: 100%; rotate: var(--tilt, 0deg); }
