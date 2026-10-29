@@ -3135,7 +3135,8 @@ export const useGame = create<GameState>((set, get) => ({
     const fresh = !get().souvenirs.includes(souvenirKey(f.to));
     set({ souvenirs: addSouvenir(get().souvenirs, souvenirKey(f.to)) });
     sfx.cityArrive();
-    flashToast(set, get, fresh ? `Landed. Souvenir: ${SOUVENIRS[f.to]}.` : `Landed. You already have the ${SOUVENIRS[f.to]}.`, 3200);
+    // After the arrival toasts ("Visited N places"), so the souvenir line is not stepped on.
+    window.setTimeout(() => flashToast(set, get, fresh ? `Souvenir from the flight: ${SOUVENIRS[f.to]}.` : `You already have the ${SOUVENIRS[f.to]}.`, 3600), 2600);
     scheduleSave(get);
   },
   finishLoop: () => {

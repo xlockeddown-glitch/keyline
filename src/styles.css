@@ -4787,3 +4787,4 @@ h3 {
 .flight-skip { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); }
 .flight-screen.is-reduced, .flight-screen.is-reduced * { animation: none !important; }
 .flight-screen.is-reduced .flight-plane { transform: translate(-50%, 0); }
+.flight-route .kicker { color: #1d2735; opacity: 0.85; }
