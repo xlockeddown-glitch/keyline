@@ -23,7 +23,7 @@ export const CUR_SPORTS_20261021: TriviaQ[] = [
 ];
 
 export const CUR_POLITICAL_20261021: TriviaQ[] = [
-  q("Brazil's Oct 25, 2026 presidential runoff pits Lula against…", ["Jair Bolsonaro", "Flávio Bolsonaro", "Tarcísio de Freitas", "Ciro Gomes"], "Flávio Bolsonaro", 1),
+  q("Brazil's Oct 25, 2026 presidential runoff pitted Lula against…", ["Jair Bolsonaro", "Flávio Bolsonaro", "Tarcísio de Freitas", "Ciro Gomes"], "Flávio Bolsonaro", 1),
   q("Fatima Ezzahra El Mansouri, whose government was sworn in Oct 2026, is the first woman to serve as prime minister of which country?", ["Tunisia", "Morocco", "Algeria", "Jordan"], "Morocco", 1),
   q("Luca Niculescu, sworn in as prime minister in Oct 2026, leads which country?", ["Moldova", "Romania", "Bulgaria", "Hungary"], "Romania", 2),
   q("Who resigned as Sweden's prime minister after the Sept 2026 election?", ["Magdalena Andersson", "Ulf Kristersson", "Stefan Löfven", "Ebba Busch"], "Ulf Kristersson", 2),
@@ -94,7 +94,7 @@ export const CUR_NATURE_20261021: TriviaQ[] = [
   q("Fat Bear Week 2026 at Katmai was won by bear 89, nicknamed…", ["Otis", "Backpack", "Grazer", "Chunk"], "Backpack", 1),
   q("Fat Bear Week (won by 'Backpack' in Sept 2026) is held at a national park in…", ["Montana", "Alaska", "Wyoming", "British Columbia"], "Alaska", 1),
   q("Hurricane Isaias made landfall in Oct 2026 near which Florida city?", ["Tampa", "Destin", "Naples", "Miami"], "Destin", 2),
-  q("Isaias, the strongest 2026 Atlantic hurricane, peaked as a Category…", ["1", "2", "3", "5"], "3", 3),
+  q("Isaias, the first hurricane of the 2026 Atlantic season, peaked as a Category…", ["1", "2", "3", "5"], "3", 3),
   q("Victoria colombiana, described by Kew in Oct 2026, is a new species of…", ["giant waterlily", "jungle orchid", "tall tree fern", "air bromeliad"], "giant waterlily", 1),
   q("Kew's waterlily expert first spotted Victoria colombiana (named Oct 2026) on…", ["Google Earth", "Instagram", "a museum sheet", "a stamp"], "Instagram", 2),
   q("Victoria colombiana (named Oct 2026) grows in a headwater of which river system?", ["Amazon", "Orinoco", "Magdalena", "Paraná"], "Orinoco", 3),
@@ -134,7 +134,7 @@ export const CUR_MUSIC_20261021: TriviaQ[] = [
   q("Which Taylor Swift song debuted at No. 1 on the Billboard Hot 100 in Oct 2026?", ["Opalite", "Patient Zero", "The Fate of Ophelia", "I Knew It, I Knew You"], "Patient Zero", 1),
   q("In Sept 2026, which song broke the record for most weeks at No. 1 on the Hot 100?", ["Old Town Road", "Choosin' Texas", "A Bar Song (Tipsy)", "Last Night"], "Choosin' Texas", 2),
   q("'Choosin' Texas', the record-setting 2026 Hot 100 No. 1, is by…", ["Lainey Wilson", "Ella Langley", "Megan Moroney", "Kacey Musgraves"], "Ella Langley", 2),
-  q("How many weeks did 'Choosin' Texas' spend at No. 1 on the Hot 100 in 2026?", ["19", "24", "16", "22"], "24", 3),
+  q("By the Hot 100 dated Oct 3, 2026, how many weeks had 'Choosin' Texas' spent at No. 1?", ["19", "24", "16", "22"], "24", 3),
   q("Which song won Video of the Year at the Sept 2026 VMAs?", ["Patient Zero", "The Fate of Ophelia", "Bring Your Love", "Tears"], "The Fate of Ophelia", 1),
   q("Who won the most awards (seven) at the Sept 2026 VMAs?", ["Taylor Swift", "Madonna", "Sabrina Carpenter", "Ariana Grande"], "Madonna", 2),
   q("Which band received the Video Vanguard Award at the 2026 VMAs?", ["Pearl Jam", "Nirvana", "Foo Fighters", "Green Day"], "Nirvana", 2),

@@ -70,6 +70,7 @@ import {
   WEEKLY_SCIENCE_20261006,
   WEEKLY_SPORTS_20261006,
 } from "@/game/banks/weekly_20261006";
+import { WEEKLY_SHARED_20261030 } from "@/game/banks/weekly_20261030";
 import {
   WEEKLY_ARTS_20261009,
   WEEKLY_POLITICAL_20261009,
@@ -354,7 +355,7 @@ function mergeCat(a: TriviaQ[], b: TriviaQ[]): TriviaQ[] {
 	return out;
 }
 const GENERAL: Record<TriviaCat, TriviaQ[]> = {
-	sports: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006), WEEKLY_SPORTS_20261009), WEEKLY_SPORTS_20261016), PLUS_SPORTS_20261019), CUR_SPORTS_20261021), PLUS_20261022.sports), VARIETY_20261025.sports),
+	sports: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006), WEEKLY_SPORTS_20261009), WEEKLY_SPORTS_20261016), PLUS_SPORTS_20261019), CUR_SPORTS_20261021), PLUS_20261022.sports), VARIETY_20261025.sports), WEEKLY_SHARED_20261030.sports ?? []),
 	local: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.local ?? [], GENERAL_BANK.local ?? []), WEEKLY_LOCAL_20261006), PLUS_LOCAL_20261019), CUR_LOCAL_20261021), PLUS_20261022.local), PLUS_20261025.local),
 	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009), WEEKLY_POLITICAL_20261016), LEVEL_POLITICAL_20261016), PLUS_POLITICAL_20261019), CUR_POLITICAL_20261021), PLUS_20261022.political), VARIETY_20261025.political),
 	food: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.food ?? [], GENERAL_BANK.food ?? []), WEEKLY_FOOD_20261006), PLUS_FOOD_20261019), CUR_FOOD_20261021), PLUS_20261022.food), VARIETY_20261025.food),

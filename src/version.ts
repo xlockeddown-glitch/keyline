@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.75";
+export const APP_VERSION = "0.1.76";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k175a";
+export const PUBLISH_STAMP = "k176a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -178,3 +178,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.72: Leaderboard fixes: signed-in boards (Ladders, Daily, Streak, Rolls) no longer refetch on every render (stable current-user object), so Ladders stops flashing Loading…; Ladders shows an error line instead of hanging on Loading…
 // 0.1.74: Help in Journal rows: How to play opens on its own; each topic is one row (icon, title, one-line summary) that opens a few short bullets, one at a time, grouped Start here, Getting around, Spend & own, More; lamp cards become a color strip; long lists sit behind See all; new topics for travel and flights, the Lantern Shop, Journal ladders and accounts (k174a).
 // 0.1.75: airport art pass: painted SVG art in /sprites/flight (about 75 KB): a gray A320-style airliner in purple livery (shaded fuselage, purple cheat line, window row, cockpit glass, purple tail with a red poppy and a small poppy by the front door, swept wing with sharklet and flap fairings, engine with fan, gear with doors), an airport skyline with terminal, hangars and control tower, a perspective runway with markings, edge lights, PAPI and taxiways that rolls under the plane, shaded cumulus clouds, and an over-wing window view (cabin wall, bezel, ribbed shade, wing with flaps and winglet, layered clouds, hazy farmland); same timings and behavior (k175a).
+// 0.1.76: Friday weekly trivia cards (2026-10-30) — 15 new verified trivia cards in weekly_20261030, no math: Tucson (Calexico x2, San Xavier del Bac's 1783–1797 church, Saguaro National Monument 1933 and national park 1994, Kitt Peak's Tohono O'odham lease, 'The Bean Trees'), Austin (Huston–Tillotson 1875, García Márquez archive at the Ransom Center, Double Trouble, Balcones Canyonlands refuge), Temple (1881 founding, the Little River), and two shared cards on the 2026 World Series (Brewers over Rays 4–1, MVP William Contreras). Accuracy pass: the 'Choosin' Texas' weeks-at-No.-1 card is pinned to the Oct 3 chart (the run reached 25 weeks on the Oct 31 chart, so "24 in 2026" was stale); the Brazil runoff card is past tense now the Oct 25 runoff is over; the Isaias card says first hurricane of the season instead of strongest, since the season runs to Nov 30 (k176a).
