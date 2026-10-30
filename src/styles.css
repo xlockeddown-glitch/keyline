@@ -4790,8 +4790,8 @@ h3 {
 .flight-route .kicker { color: #1d2735; opacity: 0.85; }
 
 /* 0.1.74 Help in Journal rows: icon, title, one-line summary, one topic open with a few bullets. */
-.help-topic { border-bottom: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent); padding: 6px 0; }
-.help-tap { min-height: 52px; }
+.help-topic { border-bottom: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent); padding: 2px 0; }
+.help-tap { min-height: 48px; }
 .help-ico { flex: none; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 17px; background: color-mix(in oklab, var(--color-bg-elevated) 80%, transparent); }
 .help-bullets { margin: 2px 0 8px 46px; padding: 0 0 0 14px; list-style: disc; display: grid; gap: 4px; font-size: .8125rem; line-height: 1.4; color: var(--color-fg-muted); }
 .help-bullets > .help-more, .help-bullets > .help-strip-wrap { list-style: none; margin-left: -14px; }
