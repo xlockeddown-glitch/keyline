@@ -57,7 +57,8 @@ test("0.1.28 Journal: Goals tab holds the goals in order; Progress keeps standin
 
 test("0.1.44 help page: houses, owned lanterns, train stops and the new-player hour, in American spelling", () => {
   const f = read("../components/keyline/FieldGuide.tsx");
-  for (const id of ["help-houses", "help-own-lamps", "help-trains", "help-welcome"]) assert.ok(f.includes(`data-testid="${id}"`), id);
+  // 0.1.74: Help topics are rows; the id rides on the Topic as testid="…".
+  for (const id of ["help-houses", "help-own-lamps", "help-trains", "help-welcome"]) assert.ok(f.includes(`data-testid="${id}"`) || f.includes(`testid="${id}"`), id);
   assert.match(f, /KEY_MATCHES/);
   assert.match(f, /OWN_PRICE/);
   assert.doesNotMatch(f, /colour/);
