@@ -6,7 +6,7 @@ import { LadderBoardSection } from "./LadderBoard";
 import { PrintPanel } from "./Prints";
 import { LoopPosters } from "./LoopPosters";
 import { MarketLightsPanel } from "./NightMarket";
-import { X } from "lucide-react";
+import { Palette, X } from "lucide-react";
 import { CITIES, KIOSK, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
@@ -93,13 +93,15 @@ export function HqPanel() {
             <button
               type="button"
               data-testid="skins-btn"
-              className="hq-howto mt-1 ml-4 inline-flex min-h-8 items-center text-xs text-fg-subtle underline-offset-2 hover:text-fg-muted hover:underline"
+              className="btn btn-quiet mt-1 ml-3 inline-flex min-h-11 items-center gap-1.5 px-3 text-xs align-middle"
+              aria-label="Map skins"
               onClick={() => {
                 sfx.ui();
                 toggleHq(false);
                 useGame.getState().setSkinsOpen(true);
               }}
             >
+              <Palette className="size-4" aria-hidden />
               Map skins
             </button>
           </div>

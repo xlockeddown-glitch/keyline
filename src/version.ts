@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.78";
+export const APP_VERSION = "0.1.79";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k178a";
+export const PUBLISH_STAMP = "k179a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -181,3 +181,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.76: Friday weekly trivia cards (2026-10-30) — 15 new verified trivia cards in weekly_20261030, no math: Tucson (Calexico x2, San Xavier del Bac's 1783–1797 church, Saguaro National Monument 1933 and national park 1994, Kitt Peak's Tohono O'odham lease, 'The Bean Trees'), Austin (Huston–Tillotson 1875, García Márquez archive at the Ransom Center, Double Trouble, Balcones Canyonlands refuge), Temple (1881 founding, the Little River), and two shared cards on the 2026 World Series (Brewers over Rays 4–1, MVP William Contreras). Accuracy pass: the 'Choosin' Texas' weeks-at-No.-1 card is pinned to the Oct 3 chart (the run reached 25 weeks on the Oct 31 chart, so "24 in 2026" was stale); the Brazil runoff card is past tense now the Oct 25 runoff is over; the Isaias card says first hurricane of the season instead of strongest, since the season runs to Nov 30 (k176a).
 // 0.1.77: package.json had two "test" keys (last wins), so ladderBoard.test.ts and grounded.test.ts never ran; merged into one script (k177a).
 // 0.1.78: no vinyl crackle on the title-screen scout beds either; the looping noise layer is gone from the engine and the Bed type, and a test renders every city and scout bed offline and holds the floor under -70 dBFS (k178a).
+// 0.1.79: the Journal header's Map skins link is a palette-icon button now (44 px tall, aria-label "Map skins"), so it reads as a button and not faint text (k179a).
