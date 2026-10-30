@@ -4743,50 +4743,96 @@ h3 {
 .ladder-pick { background: var(--color-bg-elevated); color: var(--color-fg); }
 .ladder-pick option { background: var(--color-bg-elevated); color: var(--color-fg); }
 .jr-row.is-me .jr-title { color: var(--color-accent); }
-/* 0.1.70 Airports: flight cutscene. Vector/CSS art, transforms and opacity only. */
+/* 0.1.70 Airports: flight cutscene. 0.1.75 art: painted SVG layers in /sprites/flight (airliner, airport skyline, perspective runway, over-wing window view). Transforms and opacity only. */
 .flight-screen {
   position: fixed;
   inset: 0;
   z-index: 900;
   overflow: hidden;
-  background: linear-gradient(#5d84b8 0%, #9cbbe0 55%, #d8e4f0 100%);
+  background: linear-gradient(#2f5a96 0%, #5f8cc6 30%, #a9c4e2 55%, #f1d3ad 66%, #f7e2c4 70%);
   animation: loop-in 500ms ease-out both;
 }
 .flight-screen.is-landing { animation: flight-dusk 2.2s ease-in both; }
-@keyframes flight-dusk { to { filter: brightness(0.8); } }
-.flight-runway { position: absolute; inset: 0; }
-.flight-strip {
-  position: absolute; left: -10%; right: -10%; bottom: 0; height: 26%;
-  background: repeating-linear-gradient(90deg, transparent 0 46px, #f4f1e8 46px 86px) center 50% / 100% 6px no-repeat, #3b4250;
-}
+@keyframes flight-dusk { to { filter: brightness(0.86) saturate(1.08); } }
+.flight-runway { position: absolute; inset: 0; --horizon: 64%; }
+.flight-sun { position: absolute; left: 70%; top: calc(var(--horizon) - 15vh); width: 26vh; height: 26vh; border-radius: 50%; transform: translate(-50%, 0); background: radial-gradient(circle, #fffaf0 0 9%, #ffe7b8cc 16%, #ffd59a55 34%, transparent 66%); }
+.fl-cloud { position: absolute; height: auto; pointer-events: none; }
+.flight-runway .fl-cloud.r1 { left: 4%; top: 20%; width: min(70vw, 420px); opacity: .8; animation: fl-drift 40s linear infinite alternate; }
+.flight-runway .fl-cloud.r2 { right: -6%; top: 36%; width: min(40vw, 240px); opacity: .65; animation: fl-drift 30s linear -8s infinite alternate-reverse; }
+@keyframes fl-drift { to { translate: -12vw 0; } }
+.fl-far { position: absolute; left: -5%; width: 110%; bottom: calc(100% - var(--horizon)); height: clamp(84px, 17vh, 150px); background: url("/sprites/flight/far.svg") 50% 100% / auto 100% repeat-x; }
+.fl-ground-clip { position: absolute; left: 0; right: 0; top: var(--horizon); bottom: 0; overflow: hidden; }
+.fl-ground { position: absolute; top: 0; bottom: 0; left: 0; width: 400%; background: url("/sprites/flight/ground.svg") 0 0 / auto 100% repeat-x; }
+.flight-screen.is-takeoff .fl-ground { animation: fl-roll 2.6s cubic-bezier(.55, 0, .9, .6) both; }
+.flight-screen.is-landing .fl-ground { animation: fl-roll 2.2s cubic-bezier(.1, .5, .3, 1) both reverse; }
+@keyframes fl-roll { from { transform: translateX(0); } to { transform: translateX(-60%); } }
+.flight-screen.is-takeoff .fl-far { animation: fl-par 2.6s cubic-bezier(.55, 0, .9, .6) both; }
+@keyframes fl-par { to { transform: translateX(-4%); } }
+/* The plane sits on the runway: the runway's wheel line is 72% down the ground band. */
 .flight-plane {
-  position: absolute; left: 50%; bottom: 25%; width: min(64vw, 340px); fill: #f5f6f8; stroke: #2a3140; stroke-width: 1.2;
-  transform: translate(-120%, 0) rotate(0deg);
+  position: absolute; left: 50%; width: min(86vw, 520px); height: auto;
+  top: calc(var(--horizon) + (100% - var(--horizon)) * .72); transform-origin: 55% 92%;
+  translate: -50% -94%;
+  filter: drop-shadow(0 1px 1px #0003);
 }
-.flight-screen.is-takeoff .flight-plane { animation: flight-up 2.6s cubic-bezier(.5, 0, .7, 1) both; }
-.flight-screen.is-landing .flight-plane { animation: flight-down 2.2s cubic-bezier(.2, .6, .4, 1) both; }
-@keyframes flight-up { 0% { transform: translate(-120%, 0) rotate(0deg); } 55% { transform: translate(-50%, 0) rotate(-2deg); } 100% { transform: translate(40%, -55vh) rotate(-14deg); } }
-@keyframes flight-down { 0% { transform: translate(-140%, -45vh) rotate(8deg); } 100% { transform: translate(-50%, 0) rotate(0deg); } }
-.flight-cabin { position: absolute; inset: 0; background: #e9e4da; display: grid; place-items: center; }
+.fl-shadow { position: absolute; left: 50%; width: min(60vw, 360px); height: 14px; top: calc(var(--horizon) + (100% - var(--horizon)) * .72 - 7px); translate: -46% 0; border-radius: 50%; background: radial-gradient(closest-side, #000d, #0005 55%, transparent); }
+.flight-screen.is-takeoff .flight-plane { animation: fl-up 2.6s both; }
+.flight-screen.is-takeoff .fl-shadow { animation: fl-shadow-up 2.6s both; }
+@keyframes fl-up {
+  0% { transform: translateX(-70vw) rotate(0deg); animation-timing-function: cubic-bezier(.3, 0, .6, 1); }
+  52% { transform: translateX(0) rotate(0deg); animation-timing-function: ease-in-out; }
+  66% { transform: translateX(6vw) rotate(-7deg); animation-timing-function: cubic-bezier(.4, 0, 1, 1); }
+  100% { transform: translate(70vw, -52vh) rotate(-13deg) scale(.62); }
+}
+@keyframes fl-shadow-up {
+  0% { transform: translateX(-70vw); opacity: 1; animation-timing-function: cubic-bezier(.3, 0, .6, 1); }
+  52% { transform: translateX(0); opacity: 1; }
+  66% { transform: translateX(6vw) scaleX(.9); opacity: .8; }
+  100% { transform: translateX(40vw) scaleX(.4); opacity: 0; }
+}
+.flight-screen.is-landing .flight-plane { animation: fl-down 2.2s both; }
+.flight-screen.is-landing .fl-shadow { animation: fl-shadow-down 2.2s both; }
+@keyframes fl-down {
+  0% { transform: translate(-80vw, -46vh) rotate(4deg) scale(.6); animation-timing-function: cubic-bezier(.2, .5, .5, 1); }
+  60% { transform: translate(-8vw, -1vh) rotate(-4deg) scale(.97); animation-timing-function: ease-out; }
+  72% { transform: translate(-3vw, 0) rotate(-3deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+@keyframes fl-shadow-down { 0%, 30% { opacity: 0; transform: translateX(-40vw) scaleX(.4); } 72%, 100% { opacity: 1; transform: none; } }
+.flight-cabin {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background:
+    radial-gradient(60% 40% at 50% 30%, #0000 60%, #0000000d),
+    linear-gradient(90deg, #d9d3c7, #ece7de 30%, #f2eee6 50%, #ece7de 70%, #d4cdc0);
+}
 .flight-window {
-  width: min(70vw, 300px); aspect-ratio: 3 / 4.2; border-radius: 46% / 36%; overflow: hidden;
-  border: 14px solid #d3cdc1; box-shadow: inset 0 0 0 4px #b9b2a4; margin-top: -30vh;
+  position: relative; width: min(66vw, 290px); aspect-ratio: 3 / 4.3; border-radius: 48% / 34%; overflow: hidden; margin-top: -30vh;
+  background: #cfc8bb;
+  box-shadow:
+    0 0 0 10px #e9e4da, 0 0 0 12px #cbc3b5, 0 0 0 26px #f1ece4, 0 0 0 27px #d9d2c5,
+    0 14px 30px 18px #0000001c, inset 0 0 0 7px #ddd6c9, inset 0 0 0 9px #b6ae9f, inset 0 6px 16px 9px #0000004d;
 }
-.flight-sky { position: relative; width: 100%; height: 100%; background: linear-gradient(#4f7fc0, #a9c8ea 70%, #f3efe4); }
-.flight-cloud {
-  position: absolute; width: 70%; height: 16%; border-radius: 999px; background: #fff; opacity: .85;
-  animation: flight-cloud 6s linear infinite;
+.flight-sky { position: absolute; inset: 9px; border-radius: 48% / 34%; overflow: hidden; background: linear-gradient(#2c5ea6 0%, #5f92d0 30%, #a8c8ea 50%, #dce8f3 58%, #e7eef5 62%); }
+.fl-earth { position: absolute; left: -10%; width: 120%; top: 58%; height: 46%; object-fit: cover; object-position: 50% 0; opacity: .9; -webkit-mask-image: linear-gradient(#0000, #000 30%); mask-image: linear-gradient(#0000, #000 30%); }
+.flight-sky .fl-cloud { will-change: transform; }
+.flight-sky .fl-cloud.w1 { top: 52%; width: 90%; opacity: .7; animation: fl-pass 26s linear -6s infinite; }
+.flight-sky .fl-cloud.w2 { top: 64%; width: 62%; animation: fl-pass 14s linear -3s infinite; }
+.flight-sky .fl-cloud.w3 { top: 22%; width: 50%; opacity: .55; animation: fl-pass 34s linear -20s infinite; }
+.flight-sky .fl-cloud.w4 { top: 84%; width: 140%; opacity: .95; filter: blur(1.5px); animation: fl-pass 7s linear -2s infinite; }
+@keyframes fl-pass { from { transform: translateX(120%); } to { transform: translateX(-150%); } }
+.fl-wing { position: absolute; left: -8%; width: 128%; top: 46%; height: auto; animation: fl-bob 4.6s ease-in-out infinite alternate; }
+@keyframes fl-bob { to { transform: translateY(1.6%) rotate(-.6deg); } }
+.flight-glare { position: absolute; inset: 0; z-index: 3; background: linear-gradient(118deg, #ffffff38 0 14%, #fff0 26%, #fff0 70%, #ffffff14 82%, #fff0 90%); pointer-events: none; }
+.flight-shade {
+  position: absolute; left: 9px; right: 9px; top: 9px; height: 24%; z-index: 4; border-radius: 48% 48% 0 0 / 60% 60% 0 0;
+  background: repeating-linear-gradient(#f3efe8 0 9px, #e3ddd2 9px 10px), #efeae2;
+  box-shadow: inset 0 -6px 0 #d6cfc2, 0 3px 6px #0003;
 }
-.flight-cloud.c1 { top: 52%; }
-.flight-cloud.c2 { top: 66%; width: 90%; animation-duration: 4.2s; animation-delay: -2s; }
-.flight-cloud.c3 { top: 38%; width: 50%; opacity: .6; animation-duration: 8s; animation-delay: -5s; }
-@keyframes flight-cloud { from { transform: translateX(160%); } to { transform: translateX(-160%); } }
-.flight-wing { position: absolute; left: 0; bottom: 18%; width: 100%; height: 22%; fill: #c9ced8; stroke: #8b93a3; }
+.flight-shade::after { content: ""; position: absolute; left: 50%; bottom: 1px; width: 26%; height: 4px; translate: -50% 0; border-radius: 3px; background: #b9b1a3; }
 .flight-route { position: absolute; left: 0; right: 0; top: max(16px, env(safe-area-inset-top)); display: grid; justify-items: center; gap: 2px; color: #11151d; text-align: center; }
 .flight-card { position: absolute; left: 50%; bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px)); width: min(92vw, 420px); transform: translateX(-50%); padding: 16px; }
 .flight-skip { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); }
 .flight-screen.is-reduced, .flight-screen.is-reduced * { animation: none !important; }
-.flight-screen.is-reduced .flight-plane { transform: translate(-50%, 0); }
 .flight-route .kicker { color: #1d2735; opacity: 0.85; }
 
 /* 0.1.74 Help in Journal rows: icon, title, one-line summary, one topic open with a few bullets. */

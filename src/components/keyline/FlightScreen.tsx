@@ -6,14 +6,16 @@ import { useGame } from "@/game/store";
 import { dealTrivia, gradeTrivia } from "@/game/triviaApi";
 import { SEEN_MAX, type PublicCard } from "@/game/triviaSchema";
 
+/** 0.1.75: painted SVG art in public/sprites/flight (airliner, airport skyline, runway, wing, clouds, farmland). */
+const ART = "/sprites/flight/";
 const SEEN_ID = /^[A-Za-z0-9_:.~-]{1,80}$/;
 type Phase = "takeoff" | "window" | "landing";
 type Reveal = { correct: boolean; answer: string };
 
 /**
  * 0.1.70 Airports: a far trip by air. Takeoff on a runway, a window seat with clouds and a Geography
- * card (dealt and graded on the server, like every card), then landing. Vector/CSS art only; transforms
- * only, a handful of elements, nothing per-frame in JS.
+ * card (dealt and graded on the server, like every card), then landing. Static SVG art layers moved by CSS
+ * transforms only; nothing per-frame in JS.
  */
 export function FlightScreen() {
   const flight = useGame((s) => s.flight);
@@ -109,22 +111,28 @@ export function FlightScreen() {
         <div className="flight-cabin" aria-hidden="true">
           <div className="flight-window">
             <div className="flight-sky">
-              <i className="flight-cloud c1" />
-              <i className="flight-cloud c2" />
-              <i className="flight-cloud c3" />
-              <svg className="flight-wing" viewBox="0 0 200 80" preserveAspectRatio="none">
-                <path d="M0 62 L200 30 L200 44 L0 80 Z" />
-              </svg>
+              <img className="fl-earth" src={`${ART}earth.svg`} alt="" draggable={false} />
+              <img className="fl-cloud w1" src={`${ART}cloud-c.svg`} alt="" draggable={false} />
+              <img className="fl-cloud w2" src={`${ART}cloud-a.svg`} alt="" draggable={false} />
+              <img className="fl-cloud w3" src={`${ART}cloud-b.svg`} alt="" draggable={false} />
+              <img className="fl-wing" src={`${ART}wing.svg`} alt="" draggable={false} />
+              <img className="fl-cloud w4" src={`${ART}cloud-a.svg`} alt="" draggable={false} />
+              <i className="flight-glare" />
             </div>
+            <i className="flight-shade" />
           </div>
         </div>
       ) : (
         <div className="flight-runway" aria-hidden="true">
-          <i className="flight-strip" />
-          <svg className="flight-plane" viewBox="0 0 120 40">
-            <path d="M6 22 Q10 16 22 16 L92 16 Q112 16 116 22 Q112 27 92 27 L22 27 Q10 27 6 22 Z" />
-            <path d="M44 18 L70 2 L78 2 L62 18 Z M44 25 L70 40 L78 40 L62 25 Z M10 18 L4 6 L12 6 L20 17 Z" />
-          </svg>
+          <i className="flight-sun" />
+          <img className="fl-cloud r1" src={`${ART}cloud-c.svg`} alt="" draggable={false} />
+          <img className="fl-cloud r2" src={`${ART}cloud-b.svg`} alt="" draggable={false} />
+          <i className="fl-far" />
+          <div className="fl-ground-clip">
+            <i className="fl-ground" />
+          </div>
+          <i className="fl-shadow" />
+          <img className="flight-plane" src={`${ART}plane.svg`} alt="" draggable={false} />
         </div>
       )}
       <p className="flight-route">
