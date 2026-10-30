@@ -15,15 +15,22 @@ export function LadderBoardSection() {
   const playerId = usePlayerId();
   const [cat, setCat] = useState<TriviaCat>("sports");
   const [board, setBoard] = useState<LadderBoard | null>(null);
+  const [failed, setFailed] = useState(false);
+  const uid = user?.id ?? null;
   useEffect(() => {
     let live = true;
     setBoard(null);
-    const get = user ? fetchMyLadder({ data: { cat } }) : fetchLadder({ data: { cat } });
-    void get.then((b) => live && setBoard(b)).catch(() => {});
+    setFailed(false);
+    const get = uid ? fetchMyLadder({ data: { cat } }) : fetchLadder({ data: { cat } });
+    void get
+      .then((b) => live && setBoard(b))
+      .catch(() => {
+        if (live) setFailed(true);
+      });
     return () => {
       live = false;
     };
-  }, [cat, user]);
+  }, [cat, uid]);
   const me = playerId ?? user?.id ?? null;
   const mine = board?.mine;
   const inTop = Boolean(me && board?.top.some((r) => r.userId === me));
@@ -43,7 +50,9 @@ export function LadderBoardSection() {
         </label>
       </div>
       <p className="mt-1 text-xs text-fg-muted">Right answers in {CAT_LABEL[cat]}. Titles at 250, 1,000 and 2,000.</p>
-      {!board ? (
+      {failed ? (
+        <p className="mt-2 text-xs text-fg-subtle">Couldn't load the board. Try again in a minute.</p>
+      ) : !board ? (
         <p className="mt-2 text-xs text-fg-subtle">Loading…</p>
       ) : board.top.length === 0 ? (
         <p className="mt-2 text-xs text-fg-subtle">No one on the board yet.</p>
