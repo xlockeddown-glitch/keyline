@@ -353,7 +353,7 @@ function oscAt(type: OscillatorType, freq: number, when: number, dur: number, sl
 }
 
 /** One running bed: its own lowpass and fade gain into the shared music filter. */
-type Run = { player: Player; bed: Bed; st: SchedState; filter: BiquadFilterNode; gain: GainNode; vinyl: AudioBufferSourceNode | null };
+type Run = { player: Player; bed: Bed; st: SchedState; filter: BiquadFilterNode; gain: GainNode };
 const runs = new Map<number, Run>();
 let deck: Player[] = [];
 let nextPlayerId = 1;
@@ -451,38 +451,10 @@ function play(out: AudioNode, e: MusicEvent, when: number) {
   else lead(out, e.note, when, e.dur, e.vol, e.wave);
 }
 
-function spinVinyl(bed: Bed, out: AudioNode) {
-  if (!ctx || !noise || bed.vinyl <= 0) return null;
-  const vg = ctx.createGain();
-  vg.gain.value = bed.vinyl;
-  const f = ctx.createBiquadFilter();
-  f.type = "bandpass";
-  f.frequency.value = 900;
-  f.Q.value = 0.6;
-  const v = ctx.createBufferSource();
-  v.buffer = noise;
-  v.loop = true;
-  v.connect(f);
-  f.connect(vg);
-  vg.connect(out);
-  v.start();
-  v.onended = () => {
-    v.disconnect();
-    f.disconnect();
-    vg.disconnect();
-  };
-  return v;
-}
-
 function endRun(id: number) {
   const r = runs.get(id);
   if (!r) return;
   runs.delete(id);
-  try {
-    r.vinyl?.stop();
-  } catch {
-    /* already stopped */
-  }
   // Let notes already scheduled ring out under the faded gain, then let go of the nodes.
   window.setTimeout(() => {
     r.filter.disconnect();
@@ -513,7 +485,7 @@ function startRun(p: Player) {
   if (!first) gain.gain.exponentialRampToValueAtTime(1, t + FADE_S);
   filter.connect(gain);
   gain.connect(musicFilter);
-  runs.set(p.id, { player: p, bed, st: { next: t + 0.05, step: 0 }, filter, gain, vinyl: spinVinyl(bed, filter) });
+  runs.set(p.id, { player: p, bed, st: { next: t + 0.05, step: 0 }, filter, gain });
 }
 
 function tick() {

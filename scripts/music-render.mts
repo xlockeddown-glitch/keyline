@@ -70,8 +70,6 @@ export function render(bed: Bed, secs: number) {
   const dry = new Float64Array(n + SR * 3);
   const st = { next: 0.05, step: 0 };
   for (let now = 0; now < secs; now += 0.04) for (const { at, events } of scheduleWindow(bed, st, now)) for (const e of events) if (at < secs) addEvent(dry, e, at);
-  const vin = biquad("bandpass", 900, 0.6);
-  for (let i = 0; i < n; i++) dry[i]! += run(vin, rnd()) * bed.vinyl;
   const lp = biquad("lowpass", bed.cutoff, 0.7);
   const outb = new Float64Array(n);
   for (let i = 0; i < n; i++) outb[i] = run(lp, dry[i]!) * GAIN;
@@ -108,13 +106,13 @@ if (process.argv[1]?.endsWith("music-render.mts")) {
   mkdirSync(out, { recursive: true });
   const bad: string[] = [];
   const rows: string[] = [];
-  const beds: [string, Bed][] = [...Object.entries(CITY_BEDS), ["scout-raccoon (fallback)", SCOUT_BEDS.raccoon]];
+  const beds: [string, Bed][] = [...Object.entries(CITY_BEDS), ...Object.entries(SCOUT_BEDS).map(([k, b]): [string, Bed] => [`scout-${k}`, b])];
   for (const [name, bed] of beds) {
     const b = render(bed, SECS);
     const s = stats(b);
     if (!name.startsWith("scout")) wav(`${out}/${name}.wav`, b);
     const nf = noiseFloor(b);
-    if (nf > -70 && !name.startsWith("scout")) bad.push(`${name} floor ${nf.toFixed(1)}`);
+    if (nf > -70) bad.push(`${name} floor ${nf.toFixed(1)}`);
     rows.push(`${name.padEnd(26)} peak ${db(s.peak)} dBFS  rms ${db(s.rms)} dBFS  floor ${nf.toFixed(1)} dBFS  clipped ${s.clip}${name.startsWith("scout") ? "" : `  ${out}/${name}.wav`}`);
   }
   // Sound effects for comparison (their own peaks/RMS over the effect's length).

@@ -18,7 +18,6 @@ export type Bed = {
   chords: number[][];
   swing: number;
   cutoff: number;
-  vinyl: number;
   kit: Kit;
   /** Hat every N sixteenths; 0 = no hats. */
   hats: number;
@@ -41,18 +40,18 @@ export type MusicEvent =
   | { kind: "lead"; note: number; dur: number; vol: number; wave: Wave };
 
 export const SCOUT_BEDS: Record<ScoutId, Bed> = {
-  raccoon: { bpm: 76, root: 50, scale: [0, 2, 3, 5, 7, 9, 10], chords: [[0, 3, 7, 10], [5, 8, 12, 15], [7, 10, 14, 17], [0, 3, 7, 12]], swing: 0.18, cutoff: 2400, vinyl: 0.028, kit: "dust", hats: 2, melody: true, pad: true },
-  cat: { bpm: 86, root: 57, scale: [0, 2, 4, 7, 9, 11], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [7, 11, 14, 18], [0, 4, 7, 12]], swing: 0.12, cutoff: 3200, vinyl: 0.016, kit: "soft", hats: 2, melody: true, pad: true },
-  turtle: { bpm: 56, root: 48, scale: [0, 3, 5, 7, 10], chords: [[0, 3, 7], [5, 8, 12], [7, 10, 14], [0, 5, 10]], swing: 0.08, cutoff: 1600, vinyl: 0.022, kit: "none", hats: 8, melody: false, pad: true },
-  owl: { bpm: 66, root: 54, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7, 10], [8, 12, 15, 19], [5, 8, 12, 15], [0, 3, 7, 12]], swing: 0.16, cutoff: 2800, vinyl: 0.02, kit: "soft", hats: 4, melody: true, pad: true },
-  corgi: { bpm: 96, root: 55, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7], [7, 11, 14], [5, 9, 12], [0, 4, 7, 12]], swing: 0.2, cutoff: 3600, vinyl: 0.014, kit: "bounce", hats: 1, melody: true, pad: false },
-  sloth: { bpm: 50, root: 46, scale: [0, 2, 4, 7, 9, 10], chords: [[0, 4, 7, 10], [5, 9, 12], [0, 4, 7], [7, 10, 14]], swing: 0.06, cutoff: 1400, vinyl: 0.03, kit: "none", hats: 8, melody: true, pad: true },
-  fox: { bpm: 70, root: 52, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7, 10], [5, 8, 12, 15], [8, 12, 15, 19], [0, 3, 7, 12]], swing: 0.14, cutoff: 2200, vinyl: 0.024, kit: "dust", hats: 3, melody: true, pad: true },
+  raccoon: { bpm: 76, root: 50, scale: [0, 2, 3, 5, 7, 9, 10], chords: [[0, 3, 7, 10], [5, 8, 12, 15], [7, 10, 14, 17], [0, 3, 7, 12]], swing: 0.18, cutoff: 2400, kit: "dust", hats: 2, melody: true, pad: true },
+  cat: { bpm: 86, root: 57, scale: [0, 2, 4, 7, 9, 11], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [7, 11, 14, 18], [0, 4, 7, 12]], swing: 0.12, cutoff: 3200, kit: "soft", hats: 2, melody: true, pad: true },
+  turtle: { bpm: 56, root: 48, scale: [0, 3, 5, 7, 10], chords: [[0, 3, 7], [5, 8, 12], [7, 10, 14], [0, 5, 10]], swing: 0.08, cutoff: 1600, kit: "none", hats: 8, melody: false, pad: true },
+  owl: { bpm: 66, root: 54, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7, 10], [8, 12, 15, 19], [5, 8, 12, 15], [0, 3, 7, 12]], swing: 0.16, cutoff: 2800, kit: "soft", hats: 4, melody: true, pad: true },
+  corgi: { bpm: 96, root: 55, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7], [7, 11, 14], [5, 9, 12], [0, 4, 7, 12]], swing: 0.2, cutoff: 3600, kit: "bounce", hats: 1, melody: true, pad: false },
+  sloth: { bpm: 50, root: 46, scale: [0, 2, 4, 7, 9, 10], chords: [[0, 4, 7, 10], [5, 9, 12], [0, 4, 7], [7, 10, 14]], swing: 0.06, cutoff: 1400, kit: "none", hats: 8, melody: true, pad: true },
+  fox: { bpm: 70, root: 52, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7, 10], [5, 8, 12, 15], [8, 12, 15, 19], [0, 3, 7, 12]], swing: 0.14, cutoff: 2200, kit: "dust", hats: 3, melody: true, pad: true },
   // 0.0.51 Giraffe: an easy loping 6-ish swing, major and airy, high root.
-  giraffe: { bpm: 72, root: 53, scale: [0, 2, 4, 5, 7, 9], chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], swing: 0.22, cutoff: 3000, vinyl: 0.018, kit: "soft", hats: 3, melody: true, pad: true },
+  giraffe: { bpm: 72, root: 53, scale: [0, 2, 4, 5, 7, 9], chords: [[0, 4, 7, 11], [9, 12, 16, 19], [5, 9, 12, 16], [7, 11, 14, 17]], swing: 0.22, cutoff: 3000, kit: "soft", hats: 3, melody: true, pad: true },
   // 0.1.47 Panda: an unhurried, humming major walk, mellow and round.
-  panda: { bpm: 68, root: 50, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [9, 12, 16, 19], [7, 11, 14, 17]], swing: 0.18, cutoff: 2400, vinyl: 0.02, kit: "soft", hats: 3, melody: true, pad: true },
-  lynx: { bpm: 64, root: 49, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7, 10], [5, 8, 12, 15], [8, 12, 15, 19], [0, 3, 7, 12]], swing: 0.1, cutoff: 1800, vinyl: 0.02, kit: "dust", hats: 4, melody: true, pad: true },
+  panda: { bpm: 68, root: 50, scale: [0, 2, 4, 7, 9], chords: [[0, 4, 7, 11], [5, 9, 12, 16], [9, 12, 16, 19], [7, 11, 14, 17]], swing: 0.18, cutoff: 2400, kit: "soft", hats: 3, melody: true, pad: true },
+  lynx: { bpm: 64, root: 49, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7, 10], [5, 8, 12, 15], [8, 12, 15, 19], [0, 3, 7, 12]], swing: 0.1, cutoff: 1800, kit: "dust", hats: 4, melody: true, pad: true },
 };
 
 const MAJ_PENTA = [0, 2, 4, 7, 9];
@@ -83,23 +82,23 @@ export const CITY_CHARACTER: Record<CityId, string> = {
   nashville: "Twangy major pentatonic, a triangle-wave pick and a two-beat shuffle.",
 };
 
-/** 0.1.62: no vinyl crackle on city beds. It was a constant looping noise bed (the hiss heard in previews). */
+/** 0.1.62: no vinyl crackle on city beds; 0.1.78 took it off the scout beds and out of the engine. It was a constant looping noise bed (the hiss heard in previews). */
 export const CITY_BEDS: Record<CityId, Bed> = {
-  austin: { bpm: 80, root: 52, scale: MIXO, chords: [[0, 4, 7, 10], [5, 9, 12, 15], [0, 4, 7, 10], [7, 10, 14, 17]], swing: 0.2, cutoff: 2600, vinyl: 0, kit: "dust", hats: 2, melody: true, pad: true, padVoice: "rhodes", bassLine: "roots", lead: lead("triangle", [2, 7, 10], "odd"), level: 0.89 },
-  temple: { bpm: 66, root: 55, scale: MAJ_PENTA, chords: [[0, 4, 7], [5, 9, 12], [0, 4, 7], [7, 11, 14]], swing: 0.12, cutoff: 2400, vinyl: 0, kit: "brush", hats: 0, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("sine", [4, 12], "odd"), level: 1.15 },
-  nyc: { bpm: 104, root: 50, scale: DORIAN, chords: [[0, 3, 7, 10], [5, 9, 12, 15], [0, 3, 7, 10], [7, 10, 14, 17]], swing: 0.08, cutoff: 3200, vinyl: 0, kit: "soft", hats: 2, melody: true, pad: false, padVoice: "rhodes", bassLine: "walk", lead: lead("triangle", [2, 6, 14], "odd", 12, 0.16, 0.07), level: 1.11 },
-  sf: { bpm: 62, root: 54, scale: LYDIAN, chords: [[0, 4, 7, 11], [2, 6, 9, 14], [0, 4, 7, 11], [7, 11, 14, 18]], swing: 0.06, cutoff: 2200, vinyl: 0, kit: "none", hats: 8, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("sine", [6], "all", 24, 0.5, 0.05), level: 1.27 },
-  london: { bpm: 72, root: 50, scale: AEOLIAN, chords: [[0, 3, 7], [8, 12, 15], [3, 7, 10], [10, 14, 17]], swing: 0.04, cutoff: 1900, vinyl: 0, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "organ", padBars: 1, bassLine: "roots", lead: lead("sine", [8], "odd", 12, 0.4, 0.06), level: 0.81 },
-  chicago: { bpm: 70, root: 52, scale: MIN_PENTA, chords: [[0, 4, 7, 10], [5, 9, 12, 15], [0, 4, 7, 10], [7, 11, 14, 17]], swing: 0.33, cutoff: 2200, vinyl: 0, kit: "shuffle", hats: 2, melody: true, pad: true, padVoice: "rhodes", bassLine: "walk", lead: lead("triangle", [2, 6, 10], "odd", 12, 0.28, 0.08), level: 0.9 },
-  detroit: { bpm: 88, root: 49, scale: DORIAN, chords: [[0, 3, 7, 10], [0, 3, 7, 10], [5, 8, 12, 15], [3, 7, 10, 14]], swing: 0.1, cutoff: 2000, vinyl: 0, kit: "dust", hats: 2, melody: false, pad: true, padVoice: "rhodes", padBars: 0.5, bassLine: "pulse" },
-  tucson: { bpm: 58, root: 50, scale: MIN_PENTA, chords: [[0, 7, 12], [5, 12, 17], [3, 10, 15], [7, 14, 19]], swing: 0.06, cutoff: 1800, vinyl: 0, kit: "none", hats: 0, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("triangle", [4, 11], "last", 12, 0.6, 0.06), level: 1.19 },
-  toronto: { bpm: 84, root: 53, scale: IONIAN, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [2, 5, 9, 12], [7, 11, 14, 17]], swing: 0.14, cutoff: 3000, vinyl: 0, kit: "brush", hats: 4, melody: true, pad: true, padVoice: "rhodes", bassLine: "roots", lead: lead("sine", [2, 10], "odd"), level: 0.88 },
-  la: { bpm: 76, root: 52, scale: LYDIAN, chords: [[0, 4, 7, 11], [2, 6, 9, 13], [0, 4, 7, 11], [11, 14, 18, 21]], swing: 0.16, cutoff: 2800, vinyl: 0, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("sine", [6, 14], "odd", 12, 0.3, 0.06), level: 1.2 },
-  boston: { bpm: 82, root: 50, scale: DORIAN, chords: [[0, 3, 7, 10], [5, 9, 12, 15], [10, 14, 17, 21], [7, 10, 14, 17]], swing: 0.12, cutoff: 2400, vinyl: 0, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "organ", bassLine: "walk", lead: lead("triangle", [6], "odd", 12, 0.3, 0.06) },
-  nola: { bpm: 92, root: 53, scale: MIXO, chords: [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 13, 16, 19]], swing: 0.3, cutoff: 2600, vinyl: 0, kit: "brush", hats: 2, melody: true, pad: false, padVoice: "rhodes", bassLine: "walk", lead: lead("triangle", [2, 6, 10, 14], "odd", 12, 0.18, 0.07), level: 1.15 },
-  seattle: { bpm: 54, root: 49, scale: AEOLIAN, chords: [[0, 3, 7, 10], [8, 12, 15, 19], [5, 8, 12, 15], [3, 7, 10, 14]], swing: 0, cutoff: 1500, vinyl: 0, kit: "none", hats: 0, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "none", lead: lead("sine", [10], "all", 24, 0.35, 0.04), level: 1.58 },
-  denver: { bpm: 86, root: 55, scale: MAJ_PENTA, chords: [[0, 7, 16], [5, 12, 21], [9, 16, 24], [7, 14, 23]], swing: 0.1, cutoff: 3400, vinyl: 0, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("triangle", [2, 6, 12], "odd", 12, 0.18, 0.06), level: 1.11 },
-  nashville: { bpm: 96, root: 55, scale: MAJ_PENTA, chords: [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]], swing: 0.22, cutoff: 3000, vinyl: 0, kit: "bounce", hats: 4, melody: true, pad: false, padVoice: "rhodes", bassLine: "pulse", lead: lead("triangle", [0, 3, 6, 10, 12], "odd", 12, 0.14, 0.07), level: 1.04 },
+  austin: { bpm: 80, root: 52, scale: MIXO, chords: [[0, 4, 7, 10], [5, 9, 12, 15], [0, 4, 7, 10], [7, 10, 14, 17]], swing: 0.2, cutoff: 2600, kit: "dust", hats: 2, melody: true, pad: true, padVoice: "rhodes", bassLine: "roots", lead: lead("triangle", [2, 7, 10], "odd"), level: 0.89 },
+  temple: { bpm: 66, root: 55, scale: MAJ_PENTA, chords: [[0, 4, 7], [5, 9, 12], [0, 4, 7], [7, 11, 14]], swing: 0.12, cutoff: 2400, kit: "brush", hats: 0, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("sine", [4, 12], "odd"), level: 1.15 },
+  nyc: { bpm: 104, root: 50, scale: DORIAN, chords: [[0, 3, 7, 10], [5, 9, 12, 15], [0, 3, 7, 10], [7, 10, 14, 17]], swing: 0.08, cutoff: 3200, kit: "soft", hats: 2, melody: true, pad: false, padVoice: "rhodes", bassLine: "walk", lead: lead("triangle", [2, 6, 14], "odd", 12, 0.16, 0.07), level: 1.11 },
+  sf: { bpm: 62, root: 54, scale: LYDIAN, chords: [[0, 4, 7, 11], [2, 6, 9, 14], [0, 4, 7, 11], [7, 11, 14, 18]], swing: 0.06, cutoff: 2200, kit: "none", hats: 8, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("sine", [6], "all", 24, 0.5, 0.05), level: 1.27 },
+  london: { bpm: 72, root: 50, scale: AEOLIAN, chords: [[0, 3, 7], [8, 12, 15], [3, 7, 10], [10, 14, 17]], swing: 0.04, cutoff: 1900, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "organ", padBars: 1, bassLine: "roots", lead: lead("sine", [8], "odd", 12, 0.4, 0.06), level: 0.81 },
+  chicago: { bpm: 70, root: 52, scale: MIN_PENTA, chords: [[0, 4, 7, 10], [5, 9, 12, 15], [0, 4, 7, 10], [7, 11, 14, 17]], swing: 0.33, cutoff: 2200, kit: "shuffle", hats: 2, melody: true, pad: true, padVoice: "rhodes", bassLine: "walk", lead: lead("triangle", [2, 6, 10], "odd", 12, 0.28, 0.08), level: 0.9 },
+  detroit: { bpm: 88, root: 49, scale: DORIAN, chords: [[0, 3, 7, 10], [0, 3, 7, 10], [5, 8, 12, 15], [3, 7, 10, 14]], swing: 0.1, cutoff: 2000, kit: "dust", hats: 2, melody: false, pad: true, padVoice: "rhodes", padBars: 0.5, bassLine: "pulse" },
+  tucson: { bpm: 58, root: 50, scale: MIN_PENTA, chords: [[0, 7, 12], [5, 12, 17], [3, 10, 15], [7, 14, 19]], swing: 0.06, cutoff: 1800, kit: "none", hats: 0, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("triangle", [4, 11], "last", 12, 0.6, 0.06), level: 1.19 },
+  toronto: { bpm: 84, root: 53, scale: IONIAN, chords: [[0, 4, 7, 11], [9, 12, 16, 19], [2, 5, 9, 12], [7, 11, 14, 17]], swing: 0.14, cutoff: 3000, kit: "brush", hats: 4, melody: true, pad: true, padVoice: "rhodes", bassLine: "roots", lead: lead("sine", [2, 10], "odd"), level: 0.88 },
+  la: { bpm: 76, root: 52, scale: LYDIAN, chords: [[0, 4, 7, 11], [2, 6, 9, 13], [0, 4, 7, 11], [11, 14, 18, 21]], swing: 0.16, cutoff: 2800, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("sine", [6, 14], "odd", 12, 0.3, 0.06), level: 1.2 },
+  boston: { bpm: 82, root: 50, scale: DORIAN, chords: [[0, 3, 7, 10], [5, 9, 12, 15], [10, 14, 17, 21], [7, 10, 14, 17]], swing: 0.12, cutoff: 2400, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "organ", bassLine: "walk", lead: lead("triangle", [6], "odd", 12, 0.3, 0.06) },
+  nola: { bpm: 92, root: 53, scale: MIXO, chords: [[2, 5, 9, 12], [7, 11, 14, 17], [0, 4, 7, 11], [9, 13, 16, 19]], swing: 0.3, cutoff: 2600, kit: "brush", hats: 2, melody: true, pad: false, padVoice: "rhodes", bassLine: "walk", lead: lead("triangle", [2, 6, 10, 14], "odd", 12, 0.18, 0.07), level: 1.15 },
+  seattle: { bpm: 54, root: 49, scale: AEOLIAN, chords: [[0, 3, 7, 10], [8, 12, 15, 19], [5, 8, 12, 15], [3, 7, 10, 14]], swing: 0, cutoff: 1500, kit: "none", hats: 0, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "none", lead: lead("sine", [10], "all", 24, 0.35, 0.04), level: 1.58 },
+  denver: { bpm: 86, root: 55, scale: MAJ_PENTA, chords: [[0, 7, 16], [5, 12, 21], [9, 16, 24], [7, 14, 23]], swing: 0.1, cutoff: 3400, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("triangle", [2, 6, 12], "odd", 12, 0.18, 0.06), level: 1.11 },
+  nashville: { bpm: 96, root: 55, scale: MAJ_PENTA, chords: [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]], swing: 0.22, cutoff: 3000, kit: "bounce", hats: 4, melody: true, pad: false, padVoice: "rhodes", bassLine: "pulse", lead: lead("triangle", [0, 3, 6, 10, 12], "odd", 12, 0.14, 0.07), level: 1.04 },
 };
 
 export const CITY_BED_NAME: Record<CityId, string> = {
