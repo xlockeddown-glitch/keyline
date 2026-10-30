@@ -4788,3 +4788,17 @@ h3 {
 .flight-screen.is-reduced, .flight-screen.is-reduced * { animation: none !important; }
 .flight-screen.is-reduced .flight-plane { transform: translate(-50%, 0); }
 .flight-route .kicker { color: #1d2735; opacity: 0.85; }
+
+/* 0.1.74 Help in Journal rows: icon, title, one-line summary, one topic open with a few bullets. */
+.help-topic { border-bottom: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent); padding: 6px 0; }
+.help-tap { min-height: 52px; }
+.help-ico { flex: none; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 17px; background: color-mix(in oklab, var(--color-bg-elevated) 80%, transparent); }
+.help-bullets { margin: 2px 0 8px 46px; padding: 0 0 0 14px; list-style: disc; display: grid; gap: 4px; font-size: .8125rem; line-height: 1.4; color: var(--color-fg-muted); }
+.help-bullets > .help-more, .help-bullets > .help-strip-wrap { list-style: none; margin-left: -14px; }
+.help-more-list { margin: 2px 0 0; padding: 0 0 0 14px; list-style: disc; display: grid; gap: 4px; font-size: .75rem; }
+.help-more-list > .badge-help-row { list-style: none; margin-left: -14px; display: flex; gap: 8px; align-items: center; }
+.help-strip { display: grid; gap: 6px; margin: 2px 0 4px; }
+.help-strip-row { display: grid; grid-template-columns: 22px 1fr auto; column-gap: 8px; align-items: center; }
+.help-strip-name { color: var(--color-fg); font-size: .875rem; }
+.help-strip-val { color: var(--color-fg); font-size: .8125rem; }
+.help-strip-sub { grid-column: 2 / 4; font-size: .6875rem; color: var(--color-fg-subtle); }
