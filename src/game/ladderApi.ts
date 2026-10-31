@@ -8,7 +8,7 @@ import type { TriviaCat } from "./types";
 
 const CATS = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music", "books", "geography"] as const satisfies readonly TriviaCat[];
 const Input = (u: unknown) => z.object({ cat: z.enum(CATS) }).parse(u);
-const empty = (cat: TriviaCat): LadderBoard => ({ cat, top: [], mine: { value: 0, rank: null, rung: null, rival: null } });
+const empty = (cat: TriviaCat): LadderBoard => ({ cat, top: [], mine: { value: 0, pct: null, rank: null, rung: null, rival: null } });
 
 /** 0.1.69: a category's Ladders board (top 5), for anyone. */
 export const fetchLadder = createServerFn({ method: "GET" })

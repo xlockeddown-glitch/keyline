@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
-import { LADDER_CATS, countByCat, ladderBoard, rankLadder, resetLadderCache, rungFor } from "./ladderBoard.ts";
+import { LADDER_CATS, countByCat, pctOf, ladderBoard, rankLadder, resetLadderCache, rungFor } from "./ladderBoard.ts";
 import type { TriviaCat } from "./types.ts";
 
 test("0.1.69 ladders: 14 categories; rung names at 250 / 1000 / 2000", () => {
@@ -26,14 +26,14 @@ test("0.1.69 ladders: counts per category, unknown cards skipped; top 5, my rank
     cat,
   );
   const s = by.get("sports")!;
-  assert.deepEqual(s.slice(0, 2), [{ userId: "b", n: 400 }, { userId: "a", n: 310 }]);
-  assert.deepEqual(by.get("music"), [{ userId: "c", n: 5 }]);
+  assert.deepEqual(s.slice(0, 2), [{ userId: "b", n: 400, tries: 400 }, { userId: "a", n: 310, tries: 310 }]);
+  assert.deepEqual(by.get("music"), [{ userId: "c", n: 5, tries: 5 }]);
   assert.ok(![...by.values()].flat().some((r) => r.userId === "d"));
   const names = new Map([["b", "Bob Builder"], ["a", "Amanda Gray"], ["g", "Gus Grill"]]);
   const r = rankLadder("sports", s, names, "a");
   assert.equal(r.top.length, 5);
-  assert.deepEqual(r.top[0], { userId: "b", name: "Bob B.", rank: 1, value: 400, rung: "Bench Warmer" });
-  assert.deepEqual(r.mine, { value: 310, rank: 2, rung: "Bench Warmer", rival: { name: "Bob B.", gap: 90 } });
+  assert.deepEqual(r.top[0], { userId: "b", name: "Bob B.", rank: 1, value: 400, pct: 100, rung: "Bench Warmer" });
+  assert.deepEqual(r.mine, { value: 310, pct: 100, rank: 2, rung: "Bench Warmer", rival: { name: "Bob B.", gap: 90 } });
   assert.equal(rankLadder("sports", s, names, "b").mine.rival, null, "first place has no rival");
   const h = rankLadder("sports", s, names, "h");
   assert.equal(h.mine.rank, 6);
@@ -78,10 +78,31 @@ test("0.1.69 ladders server: right answers only, by card category, names First L
   resetLadderCache();
   const b = await ladderBoard(sql, "sports", "a", catOf);
   assert.deepEqual(b.top.map((r) => [r.name, r.value]), [["Bo D.", 5], ["Amanda G.", 3]]);
-  assert.deepEqual(b.mine, { value: 3, rank: 2, rung: null, rival: { name: "Bo D.", gap: 2 } });
+  assert.deepEqual(b.top.map((r) => r.pct), [100, 38], "a: 3 of 8");
+  assert.deepEqual(b.mine, { value: 3, pct: 38, rank: 2, rung: null, rival: { name: "Bo D.", gap: 2 } });
   assert.deepEqual((await ladderBoard(sql, "music", "a", catOf)).top.map((r) => r.value), [7]);
   await ans("a", sport, 10);
   assert.equal((await ladderBoard(sql, "sports", "a", catOf)).mine.value, 3, "cached for a minute");
   resetLadderCache();
   assert.equal((await ladderBoard(sql, "sports", "a", catOf)).mine.value, 13);
+});
+
+test("0.1.90 ladders: percent right summed per category; 0 tries is null; order still by right answers", () => {
+  assert.equal(pctOf(0, 0), null);
+  assert.equal(pctOf(1, 3), 33);
+  assert.equal(pctOf(2, 3), 67);
+  assert.equal(pctOf(5, 5), 100);
+  const cat = (id: string): TriviaCat | null => (id.startsWith("s") ? "sports" : null);
+  const s = countByCat(
+    [
+      { userId: "a", plateId: "s1", n: 10, tries: 40 }, { userId: "a", plateId: "s2", n: 10, tries: 10 },
+      { userId: "b", plateId: "s1", n: 15, tries: 15 }, { userId: "c", plateId: "s1", n: 0, tries: 9 },
+    ],
+    cat,
+  ).get("sports")!;
+  assert.deepEqual(s.map((r) => r.userId), ["a", "b"], "more right ranks higher despite lower percent; zero right left off");
+  const r = rankLadder("sports", s, new Map(), "b");
+  assert.deepEqual(r.top.map((x) => x.pct), [40, 100]);
+  assert.equal(r.mine.pct, 100);
+  assert.equal(rankLadder("sports", s, new Map(), "zz").mine.pct, null);
 });

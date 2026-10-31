@@ -10,6 +10,9 @@ import { usePlayerId } from "./PlayerLink";
 
 const CATS = Object.keys(CAT_LADDERS) as TriviaCat[];
 
+/** 0.1.90: percent right in this category; "—" with no tries or an older cached board without the field. */
+const pctLabel = (p: number | null | undefined) => (typeof p === "number" && Number.isFinite(p) ? `${p}%` : "—");
+
 export function LadderBoardSection() {
   const user = useCurrentUser();
   const playerId = usePlayerId();
@@ -65,7 +68,10 @@ export function LadderBoardSection() {
                 <span className="jr-title">{r.name}</span>
                 {r.rung ? <span className="jr-sub">{r.rung}</span> : null}
               </span>
-              <span className="jr-val tabular-nums">{r.value.toLocaleString("en-US")}</span>
+              <span className="jr-val tabular-nums whitespace-nowrap">
+                {r.value.toLocaleString("en-US")}
+                <span className="ml-1.5 text-xs text-fg-muted" data-testid="ladder-pct">{pctLabel(r.pct)}</span>
+              </span>
             </li>
           ))}
           {mine?.rank && !inTop ? (
@@ -75,7 +81,10 @@ export function LadderBoardSection() {
                 <span className="jr-title">You</span>
                 {mine.rung ? <span className="jr-sub">{mine.rung}</span> : null}
               </span>
-              <span className="jr-val tabular-nums">{mine.value.toLocaleString("en-US")}</span>
+              <span className="jr-val tabular-nums whitespace-nowrap">
+                {mine.value.toLocaleString("en-US")}
+                <span className="ml-1.5 text-xs text-fg-muted" data-testid="ladder-pct">{pctLabel(mine.pct)}</span>
+              </span>
             </li>
           ) : null}
         </ol>
