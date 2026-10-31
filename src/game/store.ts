@@ -67,8 +67,6 @@ import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier
 import {
   grantScrap,
   hydrateQuests,
-  noteAnswer,
-  noteClear,
   clothCoin,
   clothName,
   printPattern,
@@ -843,12 +841,13 @@ function flashToast(set: (p: Partial<GameState>) => void, get: () => GameState, 
   }, ms);
 }
 
-function answered(get: () => GameState, correct: boolean, perfect: boolean) {
-  return noteAnswer(get().quests, correct, perfect);
+// 0.1.87: the errand is gone; answers no longer touch the quest log.
+function answered(get: () => GameState, _correct: boolean, _perfect: boolean) {
+  return get().quests;
 }
 
 function cleared(get: () => GameState, base: QuestLog, poi: { id: string; tier: Tier }) {
-  let quests = noteClear(base, { cityId: get().cityId, poiId: poi.id, tier: poi.tier });
+  let quests = base;
   const extra = rareExtra(poi.tier, Math.random());
   let line: string | null = null;
   if (extra === "scrap") {

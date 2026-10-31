@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  claimErrand,
-  errandDone,
   freshQuests,
   hydrateQuests,
   legacyOf,
-  noteAnswer,
-  noteClear,
   clothCoin,
   clothShelf,
   printPattern,
@@ -15,20 +11,12 @@ import {
 } from "./quests.ts";
 
 describe("quests", () => {
-  it("three clears in a row finish the errand; a miss resets it", () => {
-    let q = freshQuests("austin");
-    q = noteClear(noteAnswer(q, true, false), { cityId: "austin", poiId: "zilker", tier: "white" });
-    q = noteClear(noteAnswer(q, true, false), { cityId: "austin", poiId: "zilker", tier: "blue" });
-    assert.equal(errandDone(q.errand), false);
-    q = noteAnswer(q, false, false);
-    assert.equal(q.errand.kind === "row" && q.errand.n, 0);
-    q = noteClear(noteAnswer(q, true, true), { cityId: "austin", poiId: "a", tier: "green" });
-    q = noteClear(noteAnswer(q, true, false), { cityId: "austin", poiId: "b", tier: "green" });
-    q = noteClear(noteAnswer(q, true, false), { cityId: "austin", poiId: "c", tier: "green" });
-    const paid = claimErrand(q, "austin");
-    assert.ok(paid);
-    assert.equal(paid!.ingredient, "pecan");
-    assert.equal(paid!.log.errand.kind, "ladder");
+  it("an old save's errand is dropped without losing anything else (0.1.87)", () => {
+    const q = hydrateQuests({ errand: { kind: "row", n: 2 }, cloths: ["road-dust"], worn: "road-dust", patterns: 1 } as never);
+    assert.equal("errand" in q, false);
+    assert.deepEqual(q.cloths, ["road-dust"]);
+    assert.equal(q.worn, "road-dust");
+    assert.equal(q.patterns, 1);
   });
 
   it("worn cloth pays only when it applies", () => {

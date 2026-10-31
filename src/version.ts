@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.86";
+export const APP_VERSION = "0.1.87";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k186a";
+export const PUBLISH_STAMP = "k187a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -188,3 +188,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.84: the satchel cut: brass, ink, vellum, schematics and all 22 press-stock types stop dropping and are hidden (wallet fields left alone); a violet pattern alone prints Night glass; the Mystery Wheel's Stock slice is a coin Purse at the same odds (100 a stock, client and server); the satchel is Journal-style tap rows (Matches, Paint with car cans, Keepsakes) that fit about one phone screen; Journal Supplies drops the stock rows; Help and print copy no longer mention them (k184a).
 // 0.1.84: the retired stock is traded for coin once: 100 a press stock, 200 a brass, ink or vellum, 500 a schematic, each count held to its wallet cap (most 28,800 coin); signed-in players are paid from the server wallet's own counts under gift:stock-0182, guests get the same sum added on the device once (k184a).
 // 0.1.86: quests catch up with the satchel cut: the legacy Unbroken milestone pays 500 coin instead of a schematic, and a retired-charm refund pays its print cost in coin at the trade-in rates (scholar 3,000, sprinter 3,400, lantern 3,800) instead of brass, ink, vellum, a schematic and press stock; the tutorial's last card says "Tap ? for Help" now that HUD buttons are icons (k186a).
+// 0.1.87: the dead errand ("Three in a row" / "White, blue, green", "Pays one city ingredient") is removed from the quest log; old saves just drop the errand field on load, nothing else changes (k187a).

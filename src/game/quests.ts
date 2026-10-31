@@ -1,4 +1,3 @@
-import { cityStaple, type IngredientId } from "./ingredients.ts";
 import type { CityId, Tier } from "./types.ts";
 
 const CITY_NAME: Record<CityId, string> = {
@@ -21,8 +20,6 @@ const CITY_NAME: Record<CityId, string> = {
 
 export type ClothId = "road-dust" | "red-book" | "night-glass" | `scarf-${CityId}`;
 
-export type Errand = { kind: "row"; n: number } | { kind: "ladder"; seen: Array<"white" | "blue" | "green"> };
-
 /** 0.1.22: what an old save still owes from the retired milestones and charms, sent to the server once. */
 export type LegacyLog = {
   claimed: string[];
@@ -32,7 +29,6 @@ export type LegacyLog = {
 };
 
 export type QuestLog = {
-  errand: Errand;
   cloths: ClothId[];
   worn: ClothId | null;
   title: string | null;
@@ -41,9 +37,8 @@ export type QuestLog = {
   legacy: LegacyLog | null;
 };
 
-const LADDER = ["white", "blue", "green"] as const;
 export function freshQuests(_cityId?: CityId): QuestLog {
-  return { errand: { kind: "row", n: 0 }, cloths: [], worn: null, title: null, patterns: 0, legacy: null };
+  return { cloths: [], worn: null, title: null, patterns: 0, legacy: null };
 }
 
 type OldCircuit = { red?: boolean; ward?: boolean; printed?: boolean; claimed?: boolean };
@@ -85,42 +80,12 @@ export function hydrateQuests(raw: (Partial<QuestLog> & OldLog) | null | undefin
   if (!raw) return { ...base, legacy: charms.length ? legacyOf({}, charms) : null };
   const legacy = raw.legacy !== undefined ? raw.legacy : legacyOf(raw, charms);
   return {
-    errand: raw.errand ?? base.errand,
     cloths: raw.cloths ?? [],
     worn: raw.worn ?? null,
     title: raw.title ?? null,
     patterns: raw.patterns ?? 0,
     legacy,
   };
-}
-
-export function errandDone(errand: Errand): boolean {
-  if (errand.kind === "row") return errand.n >= 3;
-  return LADDER.every((t) => errand.seen.includes(t));
-}
-
-export function errandLabel(errand: Errand): { title: string; sub: string } {
-  if (errand.kind === "row") {
-    return { title: "Three in a row", sub: `${Math.min(errand.n, 3)}/3 vaults, no miss. Pays one city ingredient.` };
-  }
-  const n = LADDER.filter((t) => errand.seen.includes(t)).length;
-  return { title: "White, blue, green", sub: `${n}/3 colors in this city. Pays one city ingredient.` };
-}
-
-export function noteAnswer(log: QuestLog, correct: boolean, _perfect?: boolean): QuestLog {
-  if (correct || log.errand.kind !== "row") return log;
-  return { ...log, errand: { kind: "row", n: 0 } };
-}
-
-export function noteClear(log: QuestLog, hit: { cityId: CityId; poiId: string; tier: Tier }): QuestLog {
-  let errand = log.errand;
-  if (!errandDone(errand)) {
-    if (errand.kind === "row") errand = { kind: "row", n: errand.n + 1 };
-    else if (hit.tier === "white" || hit.tier === "blue" || hit.tier === "green") {
-      errand = { kind: "ladder", seen: errand.seen.includes(hit.tier) ? errand.seen : [...errand.seen, hit.tier] };
-    }
-  }
-  return errand === log.errand ? log : { ...log, errand };
 }
 
 export function rareExtra(tier: Tier, roll: number): "scrap" | "pattern" | null {
@@ -132,13 +97,6 @@ export function rareExtra(tier: Tier, roll: number): "scrap" | "pattern" | null 
 export function grantScrap(log: QuestLog): { log: QuestLog; fresh: boolean } {
   if (log.cloths.includes("road-dust")) return { log, fresh: false };
   return { log: { ...log, cloths: [...log.cloths, "road-dust"] }, fresh: true };
-}
-
-export function claimErrand(log: QuestLog, cityId: CityId): { log: QuestLog; ingredient: IngredientId } | null {
-  if (!errandDone(log.errand)) return null;
-  const ingredient = cityStaple(cityId);
-  const errand: Errand = log.errand.kind === "row" ? { kind: "ladder", seen: [] } : { kind: "row", n: 0 };
-  return { log: { ...log, errand }, ingredient };
 }
 
 /** Night glass: 0.1.82, a violet pattern alone (press stock and schematics are cut). */
