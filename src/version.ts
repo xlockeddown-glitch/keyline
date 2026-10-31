@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.79";
+export const APP_VERSION = "0.1.80";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k179a";
+export const PUBLISH_STAMP = "k180a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -182,3 +182,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.77: package.json had two "test" keys (last wins), so ladderBoard.test.ts and grounded.test.ts never ran; merged into one script (k177a).
 // 0.1.78: no vinyl crackle on the title-screen scout beds either; the looping noise layer is gone from the engine and the Bed type, and a test renders every city and scout bed offline and holds the floor under -70 dBFS (k178a).
 // 0.1.79: the Journal header's Map skins link is a palette-icon button now (44 px tall, aria-label "Map skins"), so it reads as a button and not faint text (k179a).
+// 0.1.80: real day and night on the map: each city's own sunrise and sunset (worked out on the device) replace the old 19-minute fade; dusk and dawn dim the map tiles a little and night a lot (pins, route and HUD stay bright; dark skins dim less), lanterns get a soft halo in their own color that breathes at night (still with reduced motion), and the HUD weather line always leads with a small sun or moon; dev ?sky=noon|dusk|midnight|dawn forces a look (k180a).

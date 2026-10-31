@@ -86,6 +86,16 @@ export function dayPhase(min: number, sun: { rise: number; set: number }): Phase
   return "night";
 }
 
+/** 0.1.80: how dark the map tiles get (0 = day). Mirrors the CSS so the HUD and tests share one number. */
+export const VEIL: Record<Phase, number> = { day: 0, dawn: 0.18, dusk: 0.22, night: 0.42 };
+
+/** 0.1.80 dev / QA: `?sky=noon|dusk|midnight|dawn` (or a phase name) → a forced phase; anything else → null. */
+export function phaseOverride(search: string): Phase | null {
+  const v = new URLSearchParams(search).get("sky");
+  const map: Record<string, Phase> = { noon: "day", day: "day", dusk: "dusk", midnight: "night", night: "night", dawn: "dawn" };
+  return (v && map[v]) || null;
+}
+
 /** 0 = new, 0.5 = full, from a known new moon (2000-01-06 18:14 UTC). */
 export function moonPhase(now: number): number {
   const SYN = 29.530588853 * 86_400_000;

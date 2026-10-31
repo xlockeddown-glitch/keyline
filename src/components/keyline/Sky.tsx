@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Cloud, CloudOff } from "lucide-react";
 import { CITIES } from "@/game/data";
-import { CITY_TZ, WEATHER_ICON, WEATHER_LABEL, arcAt, dayPhase, localClock, localMinutes, moonName, moonPhase, sunTimes, type CityWeather, type Phase, type Weather } from "@/game/sky";
+import { CITY_TZ, WEATHER_LABEL, arcAt, dayPhase, phaseOverride, localClock, localMinutes, moonName, moonPhase, sunTimes, type CityWeather, type Phase, type Weather } from "@/game/sky";
 import { getCityWeather } from "@/game/skyApi";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
@@ -15,7 +15,13 @@ const KEY = "keyline-sky-v1";
 const subs = new Set<() => void>();
 let on = typeof localStorage === "undefined" ? true : localStorage.getItem(KEY) !== "off";
 /** QA / screenshots: force a weather look or a clock (ms) without touching the real feed. */
-let force: { weather?: Weather; now?: number } = {};
+let force: { weather?: Weather; now?: number; phase?: Phase } = {};
+// 0.1.80: dev / QA only — `?sky=noon|dusk|midnight|dawn` forces the look, and window.__keylineSky(...) sets it live.
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  const ph = phaseOverride(window.location.search);
+  if (ph) force = { phase: ph };
+  (window as unknown as { __keylineSky?: typeof forceSky }).__keylineSky = (f) => forceSky(f);
+}
 const emit = () => subs.forEach((f) => f());
 export const skyOn = () => on;
 export function toggleSky() {
@@ -23,12 +29,12 @@ export function toggleSky() {
   try { localStorage.setItem(KEY, on ? "on" : "off"); } catch { /* private mode */ }
   emit();
 }
-export function forceSky(f: { weather?: Weather; now?: number }) {
+export function forceSky(f: { weather?: Weather; now?: number; phase?: Phase }) {
   force = f;
   emit();
 }
 const subscribe = (f: () => void) => (subs.add(f), () => subs.delete(f));
-const useSkyStore = () => useSyncExternalStore(subscribe, () => `${on}|${force.weather ?? ""}|${force.now ?? ""}`, () => "true||");
+const useSkyStore = () => useSyncExternalStore(subscribe, () => `${on}|${force.weather ?? ""}|${force.now ?? ""}|${force.phase ?? ""}`, () => "true||");
 
 const weatherCache = new Map<CityId, CityWeather>();
 const pulls = new Map<CityId, { at: number; p: Promise<CityWeather> }>();
@@ -69,8 +75,8 @@ export function useSky(): SkyView {
   const c = CITIES[cityId].spawn;
   const sun = sunTimes(c.lat, c.lng, tz, now);
   const min = localMinutes(tz, now);
-  const phase = dayPhase(min, sun);
-  const isDay = min >= sun.rise && min < sun.set;
+  const phase = force.phase ?? dayPhase(min, sun);
+  const isDay = force.phase ? force.phase === "day" || force.phase === "dawn" : min >= sun.rise && min < sun.set;
   return { phase, weather: force.weather ?? w?.weather ?? "clear", tempF: force.weather ? null : (w?.tempF ?? null), clock: localClock(tz, now), isDay, arc: arcAt(min, sun, isDay), moon: moonPhase(now), on };
 }
 
@@ -83,6 +89,12 @@ function moonPath(p: number): { d: string; flip: boolean } {
 
 export function SkyLayer() {
   const v = useSky();
+  // 0.1.80: the phase lives on <html> so CSS can darken the map tiles (not the pins) and light the lanterns.
+  const look = v.on ? v.phase : "day";
+  useEffect(() => {
+    document.documentElement.dataset.skyPhase = look;
+    return () => { delete document.documentElement.dataset.skyPhase; };
+  }, [look]);
   if (!v.on) return null;
   return (
     <div className={`sky-layer is-${v.phase} is-${v.weather}`} data-testid="sky" data-phase={v.phase} data-weather={v.weather} aria-hidden>
@@ -98,7 +110,7 @@ export function SkyLayer() {
 
 /** 0.1.6: the sun or today's moon as a small, soft glyph in the HUD line, so it never sits on map content. */
 function SkyGlyph({ v }: { v: SkyView }) {
-  if (v.weather !== "clear") return <span aria-hidden>{WEATHER_ICON[v.weather]}</span>;
+  // 0.1.80: always the sun or the moon (the weather is the word beside it), so the chip shows day or night at a glance.
   if (v.isDay) return <span className="sky-glyph sky-sun" aria-hidden data-testid="sky-sun" />;
   const m = moonPath(v.moon);
   return (

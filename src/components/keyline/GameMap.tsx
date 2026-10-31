@@ -1,4 +1,5 @@
 import { SkyLayer } from "./Sky";
+import { VEIL, type Phase } from "@/game/sky";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LMap, Circle, Marker, Polygon, Polyline } from "leaflet";
 import { anyPois, livePois } from "@/game/nightMarket";
@@ -269,7 +270,6 @@ export function GameMap() {
   // Battery: what the loop last pushed to Leaflet, and which pin was last marked near.
   const drawnPins = useRef(-1);
   const drawn = useRef({ lat: NaN, lng: NaN, pan: false, near: "" });
-  const nightRef = useRef<HTMLDivElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const distAcc = useRef(0);
   const snapping = useRef(false);
@@ -2280,8 +2280,8 @@ export function GameMap() {
         }
       }
 
-      const night = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(t / 180000));
-      if (nightRef.current) nightRef.current.style.opacity = String(night * 0.45);
+      // 0.1.80: the old 19-minute fade is gone; the city's real day phase (Sky.tsx, on <html>) sets how dark it is.
+      const night = VEIL[(document.documentElement.dataset.skyPhase as Phase | undefined) ?? "day"] ?? 0;
 
       const moving = stepped / Math.max(dt, 1e-3) > 8;
       anim.current.acc += dt;
@@ -2589,7 +2589,6 @@ const CACHE_PIN_HTML =
       }}
     >
       <div ref={hostRef} className="absolute inset-0 touch-none" />
-      <div ref={nightRef} className="night-veil bg-bg" />
       <SkyLayer />
       <Hud
         onVector={(x, y) => {
