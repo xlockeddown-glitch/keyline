@@ -121,6 +121,12 @@ export function FieldGuide() {
             </Topic>
 
             <li className="kicker jr-kicker">Getting around</li>
+            <Topic id="places" icon={<span aria-hidden>📍</span>} title="Places around town" sub="Outfitter, counter, board, car lot" open={topic} set={setTopic} testid="help-places">
+              <li>Outfitter (brass awning): hire scouts, print coats, and mix paint at the vat.</li>
+              <li>Street counter: buy from the tray, open your morning crate, and trade matches up or down.</li>
+              <li>Notice board: pick up jobs and play the Daily Blitz. Train stops open the station board.</li>
+              <li>Car lot: buy a car, repaint it, and pick which one you drive. Journal · Places lists the ones you&apos;ve found.</li>
+            </Topic>
             <Topic id="travel" icon={<span aria-hidden>🚆</span>} title="Travel & fly" sub="Train stops, the Loop, flights" open={topic} set={setTopic} testid="help-trains">
               <li>Tap a train stop on foot to open the station board. In a car, park first.</li>
               <li>Tickets come from lighting lamps. Each trip uses one.</li>
