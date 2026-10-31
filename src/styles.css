@@ -4758,6 +4758,10 @@ h3 {
 :root[data-map-skin="copper"] { --skin-route: #f0b47a; }
 :root[data-map-skin="neon"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(140deg) saturate(4) brightness(.62) contrast(1.25); }
 :root[data-map-skin="neon"] { --skin-route: #ff5fd2; }
+:root[data-map-skin="motorblue"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(170deg) saturate(2.2) brightness(.68) contrast(1.12); }
+:root[data-map-skin="motorblue"] { --skin-route: #d6dde4; }
+:root[data-map-skin="arcade"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(245deg) saturate(3) brightness(.6) contrast(1.2); }
+:root[data-map-skin="arcade"] { --skin-route: #ffd23f; }
 .skin-card { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 10px; border: 1px solid var(--color-border); background: rgb(255 255 255 / 0.03); }
 .skin-card.is-on { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
 .skin-try { display: grid; gap: 3px; text-align: left; }
@@ -4906,7 +4910,7 @@ h3 {
 /* 0.1.80 day/night: the city's real phase (html[data-sky-phase], set by SkyLayer) darkens only the map tiles, never the
    pins or the route, and lanterns get a soft halo in their own glow colour. Skins already dark dim less. */
 :root { --tiles-dusk: brightness(.82) saturate(.9); --tiles-night: brightness(.5) saturate(.75) hue-rotate(-8deg); }
-:root[data-map-skin="moonlight"], :root[data-map-skin="copper"], :root[data-map-skin="neon"] { --tiles-dusk: brightness(.9); --tiles-night: brightness(.72) saturate(.9); }
+:root[data-map-skin="moonlight"], :root[data-map-skin="copper"], :root[data-map-skin="neon"], :root[data-map-skin="motorblue"], :root[data-map-skin="arcade"] { --tiles-dusk: brightness(.9); --tiles-night: brightness(.72) saturate(.9); }
 .leaflet-tile-pane { transition: filter 2s ease; }
 :root[data-sky-phase="dawn"] .leaflet-tile-pane, :root[data-sky-phase="dusk"] .leaflet-tile-pane { filter: var(--tiles-dusk); }
 :root[data-sky-phase="night"] .leaflet-tile-pane { filter: var(--tiles-night); }

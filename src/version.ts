@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.88";
+export const APP_VERSION = "0.1.89";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k188a";
+export const PUBLISH_STAMP = "k189a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -190,3 +190,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.86: quests catch up with the satchel cut: the legacy Unbroken milestone pays 500 coin instead of a schematic, and a retired-charm refund pays its print cost in coin at the trade-in rates (scholar 3,000, sprinter 3,400, lantern 3,800) instead of brass, ink, vellum, a schematic and press stock; the tutorial's last card says "Tap ? for Help" now that HUD buttons are icons (k186a).
 // 0.1.87: the dead errand ("Three in a row" / "White, blue, green", "Pays one city ingredient") is removed from the quest log; old saves just drop the errand field on load, nothing else changes (k187a).
 // 0.1.88: Journal · Places can collect your Lantern Shop till and turn your house keys from anywhere (Collect / Turn key buttons, till countdown); same store actions and server checks (k188a).
+// 0.1.89: two more 50k map skins, Motor City Blue (blue tint, silver route) and Arcade (purple-pink tint, gold route) (k189a).

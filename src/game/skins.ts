@@ -6,7 +6,7 @@
  *   skinon:<ms>     the account's chosen skin (detail { id }); the latest row wins
  * Guests can preview any skin and keep a free one (saved locally); buying needs sign-in.
  */
-export type SkinId = "default" | "moonlight" | "copper" | "neon";
+export type SkinId = "default" | "moonlight" | "copper" | "neon" | "motorblue" | "arcade";
 
 export type SkinDef = { id: SkinId; name: string; blurb: string; price: number; swatch: [string, string] };
 
@@ -15,6 +15,8 @@ export const SKINS: readonly SkinDef[] = [
   { id: "moonlight", name: "Moonlight", blurb: "Cool silver-blue tint on the streets.", price: 0, swatch: ["#26324a", "#b9cdf0"] },
   { id: "copper", name: "Copper", blurb: "Warm copper-brown tint on the streets.", price: 50_000, swatch: ["#3e2618", "#d08a52"] },
   { id: "neon", name: "Neon", blurb: "Cyan tint with a pink route line.", price: 50_000, swatch: ["#07303a", "#3ef0ff"] },
+  { id: "motorblue", name: "Motor City Blue", blurb: "Bright blue tint with a silver route line.", price: 50_000, swatch: ["#0b2f52", "#0076b6"] },
+  { id: "arcade", name: "Arcade", blurb: "Purple-pink tint with a gold route line.", price: 50_000, swatch: ["#2a0f45", "#ff4fd8"] },
 ];
 
 export function skinOf(id: unknown): SkinDef | null {

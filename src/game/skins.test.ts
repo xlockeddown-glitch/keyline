@@ -34,7 +34,8 @@ async function db() {
 const snap: LocalSnap = { coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false } };
 
 test("skin list, prices and what shows", () => {
-  assert.deepEqual(SKINS.map((s) => [s.id, s.price]), [["default", 0], ["moonlight", 0], ["copper", 50_000], ["neon", 50_000]]);
+  assert.deepEqual(SKINS.map((s) => [s.id, s.price]), [["default", 0], ["moonlight", 0], ["copper", 50_000], ["neon", 50_000], ["motorblue", 50_000], ["arcade", 50_000]]);
+  for (const s of SKINS) assert.doesNotMatch(`${s.id} ${s.name} ${s.blurb}`, /lions|nfl|detroit|football|team/i, "neutral names only");
   for (const s of SKINS) assert.doesNotMatch(`${s.name} ${s.blurb}`, /mars|planet|earth|never sleeps|full moon/i, "skins are plain tints; copy says so");
   assert.equal(skinOwned("moonlight", []), true);
   assert.equal(skinOwned("copper", []), false);
@@ -57,17 +58,20 @@ test("buy and wear: coin price, no double charge, can't wear unowned, choice syn
   assert.equal((await applyClientOp(sql, "skn", { kind: "skin", id: "pluto" })).reason, "unknown");
   await sql`update player_wallets set coins = 120000 where user_id = ${wid}`;
   assert.equal((await applyClientOp(sql, "skn", { kind: "skin", id: "copper" })).ok, true);
+  assert.equal((await applyClientOp(sql, "skn", { kind: "skin", id: "motorblue" })).ok, true, "new skins pass server validation");
+  assert.equal(await coins(), 20_000);
+  await sql`update player_wallets set coins = 70000 where user_id = ${wid}`;
   assert.equal(await coins(), 70_000);
   assert.equal((await applyClientOp(sql, "skn", { kind: "skin", id: "copper" })).replay, true);
   assert.equal(await coins(), 70_000, "no double charge");
   assert.equal((await applyClientOp(sql, "skn", { kind: "skin", id: "moonlight" })).replay, true, "free skins cost nothing");
   assert.equal(await coins(), 70_000);
   assert.equal((await applyClientOp(sql, "skn", { kind: "skinOn", id: "copper" })).ok, true);
-  assert.deepEqual(await skinsOf(sql, "skn"), { skins: ["copper"], skin: "copper" });
+  assert.deepEqual(await skinsOf(sql, "skn"), { skins: ["copper", "motorblue"], skin: "copper" });
   await new Promise((r) => setTimeout(r, 5));
   assert.equal((await applyClientOp(sql, "skn", { kind: "skinOn", id: "moonlight" })).ok, true);
   const s = await syncPlayer(sql, "skn", snap, "sknphone2");
-  assert.deepEqual(s.owned?.skins, ["copper"]);
+  assert.deepEqual(s.owned?.skins, ["copper", "motorblue"]);
   assert.equal(s.owned?.skin, "moonlight", "the latest choice wins on another device");
 });
 
@@ -76,7 +80,7 @@ test("skins reuse the tile filter: one filter per skin, no animation, route acce
   const from = css.indexOf("/* 0.1.61 map skins");
   const next = css.indexOf("/* 0.1.", from + 10);
   const block = css.slice(from, next === -1 ? undefined : next).replace(/^\/\*.*?\*\//, "");
-  for (const id of ["moonlight", "copper", "neon"]) assert.match(block, new RegExp(`:root\\[data-map-skin="${id}"\\] \\.atlas-tiles \\{ filter: `));
+  for (const id of ["moonlight", "copper", "neon", "motorblue", "arcade"]) assert.match(block, new RegExp(`:root\\[data-map-skin="${id}"\\] \\.atlas-tiles \\{ filter: `));
   assert.doesNotMatch(block, /animation|@keyframes|transition/);
   const pkg = readFileSync(new URL("../../package.json", import.meta.url), "utf8");
   assert.match(pkg, /src\/game\/skins\.test\.ts/);
