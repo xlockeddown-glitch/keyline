@@ -7,7 +7,7 @@ import { PrintPanel } from "./Prints";
 import { LoopPosters } from "./LoopPosters";
 import { MarketLightsPanel } from "./NightMarket";
 import { Palette, X } from "lucide-react";
-import { CITIES, KIOSK, boardLine, cityShop, counterLine } from "@/game/data";
+import { CITIES, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { clothEarn, clothName, clothPerk, clothShelf, type ClothId, type QuestLog } from "@/game/quests";
@@ -42,8 +42,6 @@ export function HqPanel() {
   const points = useGame((s) => s.points);
   const quests = useGame((s) => s.quests);
   const wearCloth = useGame((s) => s.wearCloth);
-  const pressPass = useGame((s) => s.pressPass);
-  const keys = useGame((s) => s.keys);
   const lastCrateDay = useGame((s) => s.lastCrateDay);
   const lastBlitzDay = useGame((s) => s.lastBlitzDay);
   const blitzTake = useGame((s) => s.blitzTake);
@@ -128,35 +126,6 @@ export function HqPanel() {
 
           {tab === "Supplies" ? (
             <div className="grid gap-3">
-              {/* 0.1.82: brass, ink, vellum, schematics and press stock are cut; matches and paint live in the satchel. */}
-              <p className="kicker">Desk tray</p>
-              <p className="text-sm text-fg-muted">Buy these at {counterLine(cityId)}.</p>
-              {(Object.values(KIOSK) as (typeof KIOSK)[keyof typeof KIOSK][]).map((item) => {
-                const extra =
-                  item.id === "pass" && pressPass > 0
-                    ? `${pressPass} waiting`
-                    : item.id === "fare"
-                      ? `${fares} in the pocket`
-                      : item.id === "tinder"
-                        ? `${keys.white} white`
-                        : item.id === "wick"
-                          ? `${keys.blue} blue`
-                      : item.id === "amber" && keys.amber > 0
-                        ? `${keys.amber} amber`
-                        : item.id === "oil" && keys.violet > 0
-                          ? `${keys.violet} violet`
-                          : null;
-                return (
-                  <div key={item.id} className="hq-row">
-                    <ItemIcon item="coin" size={36} />
-                    <div className="hq-row-copy">
-                      <p className="hq-row-title">{item.name}</p>
-                      <p className="hq-row-sub">{item.blurb}</p>
-                      {extra ? <p className="hq-row-sub">{extra}</p> : null}
-                  </div>
-                </div>
-                );
-              })}
               <ul className="jr-list mt-2">
                 <TapRow title="Scouts" sub={`Hire and change coats at ${cityShop(cityId)?.name ?? "the outfitter"}.`} open={supOpen === "scouts"} onTap={() => setSupOpen((o) => (o === "scouts" ? null : "scouts"))} testid="sup-scouts" />
               </ul>
