@@ -68,7 +68,6 @@ They pay no coin or matches directly. They pay cloths, titles, a schematic and a
 | `w-lamps` | Light 25 lamps green or higher | `grade:` rows, poi tier ≥ green, correct | 2,000 coin + 1 green match |
 | `w-ladder` | One right lamp in each of white, blue, green, amber, red | distinct tiers in `plate_events_by_player` | 1,500 coin + 1 amber match |
 | `w-streak` | Reach a 15 right-in-a-row streak | longest correct run in the period's grade sequence | 1,000 coin + 1 blue + 1 green match |
-| `w-out` | Finish 3 different ride games on the train | distinct `ride:` ids in the window | 1,200 coin + 1 blue match |
 | bonus | All four done | the four `quest:` rows exist | 1 red match |
 
 Total for a full week: about 5,700 coin plus about 3,900 coin's worth of matches (`TIER_VALUE`: green 270, amber 810, red 2,430). That's roughly two to three evenings of play, and it doesn't outpace daily goals (60 coin per goal, a green for all three).
@@ -261,6 +260,7 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 - **Progress:** `src/game/questServer.ts` recounts from `wallet_ledger`:
   - `grade:` rows now carry `t` (lamp tier), `tp` (category), and `ql:1` (a right answer on a lamp that spent a match). A spark, a blitz card, or a walk-away replay that couldn't re-spend never gets `ql`.
   - Ride rounds come from `ride:<at>:r:<n>`, with the game read from the matching `ride:<at>:d:<n>` row.
+  - 0.1.95: the ride quests (`d-ride`, `w-out`, `w-out2`) are removed because the timed train is gone (travel is Loop, Arrive or airplane). The server still reads `ride:` rows, but no quest counts them.
   - Grade rows written before 0.1.22 have no `ql`, so they don't count. The first week after release starts from the release time.
 - **Payout:** op `{kind:"quest", period, id}` → `quest:<period>:<id>`, once. Reads come from `fetchQuests`.
 - **Lucky month:** stored in wallet `meta.luckyMonth` (jsonb). The grade pay honors it through `luckyLive`.

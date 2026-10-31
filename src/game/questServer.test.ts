@@ -282,7 +282,7 @@ test("claims are limited to the player's own set for the period", async () => {
   const sql = await db();
   await syncPlayer(sql, ann, snap(), "annphone2");
   const mine = questSet("week", ann, WEEK, { house: false }).map((d) => d.id);
-  const other = ["w-lamps", "w-ladder", "w-streak", "w-out", "w-cache", "w-roam", "w-street", "w-amber"].find((id) => !mine.includes(id))!;
+  const other = ["w-lamps", "w-ladder", "w-streak", "w-cache", "w-roam", "w-street", "w-amber"].find((id) => !mine.includes(id))!;
   assert.equal((await claimQuest(sql, ann, WEEK, other)).reason, "not-yours");
   const st = await questStatus(sql, ann);
   const rows = st.periods.find((p) => p.key === WEEK)!.rows.map((r) => r.id);
@@ -315,7 +315,8 @@ const CASES: Array<{ id: string; kind: "day" | "week" | "month"; house?: boolean
   { id: "w-house", kind: "week", house: true, rows: (e) => [1, 2, 3].map((i) => ({ key: `hook:austin:${chicagoDay(e - i * 24 * H)}`, at: e - i * 24 * H })) },
   { id: "w-roam", kind: "week", rows: (e) => Array.from({ length: 10 }, (_, i) => lampRow(i, e - H + i, { d: `d${i}` })) },
   { id: "w-street", kind: "week", rows: (e) => Array.from({ length: 12 }, (_, i) => ({ key: `street:sk:austin:${chicagoDay(e - H)}:${i}`, at: e - H + i })) },
-  { id: "w-amber", kind: "week", rows: (e) => Array.from({ length: 5 }, (_, i) => lampRow(i, e - H + i, { t: "amber" })) },
+  // 0.1.95: without w-out, the pre-0.1.27 week bank (forced on above) only fits w-amber in a house owner's set.
+  { id: "w-amber", kind: "week", house: true, rows: (e) => Array.from({ length: 5 }, (_, i) => lampRow(i, e - H + i, { t: "amber" })) },
   { id: "m-hop", kind: "month", rows: (e) => ["austin", "nyc", "la"].map((c, i) => lampRow(i, e - H + i, { c, mk: 1 })) },
   { id: "m-streak", kind: "month", rows: (e) => Array.from({ length: 25 }, (_, i) => lampRow(i, e - H + i)) },
   { id: "m-red", kind: "month", rows: (e) => Array.from({ length: 10 }, (_, i) => lampRow(i, e - H + i, { t: "red" })) },

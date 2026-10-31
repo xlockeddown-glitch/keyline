@@ -60,7 +60,6 @@ export const DAILY_BANK: QuestDef[] = [
   { id: "d-topics", kind: "day", title: "Mixed bag", sub: "Right lamps in 3 different categories.", need: 3, effort: 1, reward: r(60, "white") },
   { id: "d-cache", kind: "day", title: "Cache run", sub: "Open the daily match cache.", need: 1, effort: 1, reward: r(60, "white") },
   { id: "d-house", kind: "day", title: "Home key", sub: "Turn the key at one of your houses.", need: 1, effort: 1, reward: r(60, "white"), needs: "house" },
-  { id: "d-ride", kind: "day", title: "Ride along", sub: "Finish a ride game on the train.", need: 1, effort: 2, reward: r(100, "blue") },
   { id: "d-street", kind: "day", title: "Pocket finds", sub: "Pick up 3 street matches.", need: 3, effort: 2, reward: r(100, "blue") },
   { id: "d-roam", kind: "day", title: "Roamer", sub: "Light lamps in 3 different districts.", need: 3, effort: 2, reward: r(100, "blue") },
   { id: "d-streak", kind: "day", title: "Warm streak", sub: "6 right lamps in a row.", need: 6, effort: 2, reward: r(100, "blue") },
@@ -71,7 +70,6 @@ export const WEEKLY_BANK: QuestDef[] = [
   { id: "w-lamps", kind: "week", title: "Lamp lighter", sub: "Light 25 lamps, green or higher.", need: 25, effort: 2, reward: r(2_000, "green") },
   { id: "w-ladder", kind: "week", title: "Color ladder", sub: "One right lamp in each of white, blue, green, amber and red.", need: 5, effort: 2, reward: r(1_500, "amber") },
   { id: "w-streak", kind: "week", title: "Hot hand", sub: "15 right lamps in a row.", need: 15, effort: 2, reward: r(1_000, "blue", "green") },
-  { id: "w-out", kind: "week", title: "Out and about", sub: "Finish 3 different ride games on the train.", need: 3, effort: 1, reward: r(1_200, "blue") },
   { id: "w-cache", kind: "week", title: "Regular", sub: "Open the match cache on 4 days.", need: 4, effort: 1, reward: r(1_000, "green") },
   { id: "w-house", kind: "week", title: "Homebody", sub: "Turn a house key on 3 days.", need: 3, effort: 1, reward: r(1_000, "green"), needs: "house" },
   { id: "w-roam", kind: "week", title: "District walker", sub: "Light lamps in 10 different districts.", need: 10, effort: 2, reward: r(1_500, "amber") },
@@ -109,7 +107,6 @@ export const WEEKLY_BANK_V2: QuestDef[] = [
   v2(WEEKLY_BANK, "w-lamps", { sub: "Light 50 lamps, green or higher.", need: 50, effort: 3, reward: r(3_000, "green") }),
   v2(WEEKLY_BANK, "w-ladder", { effort: 1 }),
   v2(WEEKLY_BANK, "w-streak", { sub: "25 right lamps in a row.", need: 25, effort: 2, reward: r(1_500, "blue", "green") }),
-  v2(WEEKLY_BANK, "w-out", { effort: 1 }),
   v2(WEEKLY_BANK, "w-cache", { sub: "Open the match cache on 6 days.", need: 6, effort: 2, reward: r(1_500, "green") }),
   v2(WEEKLY_BANK, "w-house", { sub: "Turn a house key on 5 days.", need: 5, effort: 2, reward: r(1_500, "green") }),
   v2(WEEKLY_BANK, "w-roam", { sub: "Light lamps in 18 different districts.", need: 18, effort: 3, reward: r(2_000, "amber") }),
@@ -279,10 +276,6 @@ export function progressOf(def: QuestDef, events: QuestEvent[]): QuestRow {
       return row(events.filter((e) => e.k === "hook").length);
     case "w-house":
       return row(new Set(events.filter((e) => e.k === "hook").map((e) => (e as { day: string }).day)).size);
-    case "d-ride":
-      return row(events.filter((e) => e.k === "ride").length);
-    case "w-out":
-      return row(new Set(events.filter((e) => e.k === "ride").map((e) => (e as { game: string }).game)).size);
     case "d-street":
     case "w-street":
       return row(events.filter((e) => e.k === "street").length);

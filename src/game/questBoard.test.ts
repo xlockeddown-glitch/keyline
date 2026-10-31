@@ -10,8 +10,8 @@ const prog = (id: string, ev: QuestEvent[]) => progressOf(questDef(id)!, ev);
 const KINDS = ["day", "week", "month"] as const;
 
 test("bank sizes, rewards scaled to their siblings, no violet anywhere", () => {
-  assert.equal(BANK.day.length, 11);
-  assert.equal(BANK.week.length, 9);
+  assert.equal(BANK.day.length, 10);
+  assert.equal(BANK.week.length, 8);
   assert.equal(BANK.month.length, 7);
   for (const d of BANK.day) assert.ok(d.reward.coins >= 60 && d.reward.coins <= 150 && d.reward.matches.length === 1, d.id);
   for (const d of BANK.week) assert.ok(d.reward.coins >= 1_000 && d.reward.coins <= 2_000, d.id);
@@ -58,7 +58,8 @@ test("every set a player can draw is inside the fairness band, with or without a
   for (const k of KINDS)
     for (const house of [true, false]) {
       const sets = fairSets(k, { house });
-      assert.ok(sets.length >= 10, `${k} house=${house}: ${sets.length}`);
+      // 0.1.95: w-out removed; the pre-0.1.27 week bank (past periods only) leaves 5 fair sets without a house.
+      assert.ok(sets.length >= (k === "week" && !house ? 5 : 10), `${k} house=${house}: ${sets.length}`);
       for (const s of sets) {
         assert.equal(s.length, SET_SIZE[k]);
         assert.equal(new Set(s.map((d) => d.id)).size, s.length);
@@ -102,7 +103,6 @@ test("daily progress for each daily quest", () => {
   assert.equal(prog("d-amber", ev).done, true);
   assert.equal(prog("d-cache", [{ k: "cache", at: 1 }]).done, true);
   assert.equal(prog("d-house", [{ k: "hook", at: 1, day: "2026-10-21" }]).done, true);
-  assert.equal(prog("d-ride", [{ k: "ride", at: 1, game: "lamplighter" }]).done, true);
   assert.equal(prog("d-street", [1, 2].map((at) => ({ k: "street" as const, at }))).done, false);
   assert.equal(prog("d-street", [1, 2, 3].map((at) => ({ k: "street" as const, at }))).done, true);
 });
@@ -116,8 +116,6 @@ test("weekly progress, including the new weekly quests", () => {
   assert.equal(prog("w-ladder", ev).have, 4);
   ev.push(lamp(++t, "red"));
   assert.equal(prog("w-ladder", ev).done, true);
-  const rides: QuestEvent[] = ["a", "a", "b"].map((game, i) => ({ k: "ride", at: i, game }));
-  assert.equal(prog("w-out", rides).have, 2); // the same game twice counts once
   assert.equal(prog("w-cache", [1, 2, 3, 4].map((at) => ({ k: "cache" as const, at }))).done, true);
   assert.equal(prog("w-house", ["d1", "d1", "d2"].map((day, at) => ({ k: "hook" as const, at, day }))).have, 2); // two cities one day = one day
   assert.equal(prog("w-street", Array.from({ length: 12 }, (_, at) => ({ k: "street" as const, at }))).done, true);
@@ -189,7 +187,8 @@ test("0.1.27 regular slots stay inside their fairness band; challenges pay more 
   for (const k of ["week", "month"] as const)
     for (const house of [true, false]) {
       const sets = fairSets(k, { house }, true);
-      assert.ok(sets.length >= 20, `${k} ${house} ${sets.length}`);
+      // 0.1.95: w-out2 removed; a non-owner's week still has 16 fair sets.
+      assert.ok(sets.length >= (k === "week" && !house ? 15 : 20), `${k} ${house} ${sets.length}`);
       for (const set of sets) {
         assert.equal(set.length, SET_SIZE[k] - 1);
         const e = set.reduce((a, d) => a + d.effort, 0);
