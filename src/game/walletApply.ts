@@ -15,6 +15,7 @@ import { GOAL_ALL_PROOF_RIGHT, GOAL_ALL_TIER, GOAL_COIN, GOAL_PROOF_RIGHT, cache
 import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
 import { groupIds } from "./playerLinks.ts";
+import { STOCK_COIN_KEY, stockCoin, stockNote } from "./stockCoin.ts";
 import { mutateWallet, canonicalWallet, priorGrades, type MutateResult } from "./walletSql.ts";
 import {
   acceptNonces,
@@ -183,6 +184,32 @@ export async function grantLoveGift(sql: Sql, userId: string): Promise<string[]>
     return [clamped ? `${LOVE_NOTE} (your coins were near the cap, so this filled them to the top)` : LOVE_NOTE];
   } catch (e) {
     console.warn("[wallet] love gift skipped", e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
+/**
+ * 0.1.82: trade the retired stock (brass, ink, vellum, schematics, press) for coin once, from the server wallet's own
+ * counts (stockCoin.ts). One ledger key per canonical wallet, so a replay, a second device or a linked sign-in pays
+ * nothing more. The stock fields are left as they are. Never fails the sync.
+ */
+export async function grantStockCoin(sql: Sql, userId: string): Promise<string[]> {
+  try {
+    let coin = 0;
+    let clamped = false;
+    const r = await mutateWallet(sql, userId, STOCK_COIN_KEY, (w) => {
+      const m = w.meta;
+      coin = stockCoin({ brass: m.brass, ink: m.ink, vellum: m.vellum, schematic: m.schematic, press: m.press });
+      const next = applyDelta(w, { coins: coin });
+      if (!next.ok) return next;
+      const paid = next.wallet.coins - w.coins;
+      clamped = paid < coin;
+      return { ...next, detail: JSON.stringify({ coin, paid, brass: m.brass, ink: m.ink, vellum: m.vellum, schematic: m.schematic, press: m.press }) };
+    });
+    if (!r.ok || r.replay || coin <= 0) return [];
+    return [clamped ? `${stockNote(coin)} (your coins were near the cap, so this filled them to the top)` : stockNote(coin)];
+  } catch (e) {
+    console.warn("[wallet] stock trade-in skipped", e instanceof Error ? e.message : e);
     return [];
   }
 }
@@ -446,6 +473,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   // 0.1.44: the welcome pack needs the wallet's first row, so it runs after the first sync wrote it.
   giftNotes.push(...(await grantWelcomePack(sql, userId, startOfLocal(local))));
   giftNotes.push(...(await grantLoveGift(sql, userId)));
+  giftNotes.push(...(await grantStockCoin(sql, userId)));
   const pt = await paintOf(sql, userId);
   const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId), ...(await skinsOf(sql, userId)) };
   const until = await doubleUntil(sql, userId);

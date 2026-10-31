@@ -1,6 +1,7 @@
 import { payMatchesOf } from "./goals.ts";
 import { TIER_LABEL } from "./data.ts";
-import { ingredientName, type IngredientId } from "./ingredients.ts";
+import type { IngredientId } from "./ingredients.ts";
+import { STOCK_RATES } from "./stockCoin.ts";
 import type { CityId, Tier } from "./types.ts";
 
 export const WHEEL_EVERY = 25;
@@ -74,9 +75,9 @@ export function wheelUpTier(tier: Tier): Tier {
 }
 
 /** 0.1.82: what one press stock is worth now (the wheel slice and the one-time satchel conversion). */
-export const STOCK_COIN = 100;
+export const STOCK_COIN = STOCK_RATES.press;
 
-export function wheelSlices(tier: Tier, cityId: CityId): { prize: WheelPrize; w: number }[] {
+export function wheelSlices(tier: Tier, _cityId: CityId): { prize: WheelPrize; w: number }[] {
   const r = RANK[tier];
   const step = r + 1;
   const lesser = TIERS[Math.max(0, r - 1)]!;

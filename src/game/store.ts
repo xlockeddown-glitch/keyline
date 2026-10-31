@@ -59,8 +59,9 @@ import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE
 import { bonusDue, rideRamp, chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
-import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, type IngredientId, type PaintColor } from "./ingredients";
+import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, isPaintId, type IngredientId, type PaintColor } from "./ingredients";
 import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay";
+import { stockCoin, stockNote } from "./stockCoin";
 import { chooseStart, cleanUnlocks, freshUnlocks, goalsCheck, isUnlocked, lampLit, lockLine, migrateUnlocks, runFinished, unlockCity as unlockCityPass, type CityUnlocks } from "./cityPass";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, wheelClaimFailed, wheelDue, type WheelOffer } from "./wheel";
 import {
@@ -293,6 +294,8 @@ export type GameState = {
   rideHistory: RideGameId[];
   landAtStation: boolean;
   pressPass: number;
+  /** 0.1.82: this device already traded its retired stock for coin (guest path). */
+  stockPaid: boolean;
   loot: LootDrop | null;
   miss: MissFlash | null;
   openVault: OpenVault | null;
@@ -411,6 +414,8 @@ export type GameState = {
   toggleHq: (v?: boolean) => void;
   toggleGuide: (v?: boolean) => void;
   toggleInv: (v?: boolean) => void;
+  /** 0.1.82: guests only: trade the retired stock on this device for coin, once. */
+  convertGuestStock: () => void;
   dismissLoot: () => void;
   claimWheel: () => void;
   noteGoalKind: (kind: GoalKind, amount?: number) => void;
@@ -752,6 +757,7 @@ function persistable(s: GameState) {
     rideHistory: s.rideHistory,
     landAtStation: s.landAtStation,
     pressPass: s.pressPass,
+    stockPaid: s.stockPaid,
   };
 }
 
@@ -1243,6 +1249,7 @@ export const useGame = create<GameState>((set, get) => ({
   rideHistory: loadRideHistory(saved?.rideHistory),
   landAtStation: Boolean(saved?.landAtStation),
   pressPass: saved?.pressPass ?? 0,
+  stockPaid: saved?.stockPaid === true,
   loot: null,
   miss: null,
   openVault: null,
@@ -2434,6 +2441,16 @@ export const useGame = create<GameState>((set, get) => ({
     if (!owned) return;
     set({ quests: { ...get().quests, worn: id } });
     scheduleSave(get);
+  },
+  convertGuestStock: () => {
+    const s = get();
+    if (s.stockPaid) return;
+    let press = 0;
+    for (const [id, n] of Object.entries(s.pantry)) if (!isPaintId(id)) press += Math.max(0, n ?? 0);
+    const coin = stockCoin({ brass: s.brass, ink: s.ink, vellum: s.vellum, schematic: s.schematics, press });
+    set({ stockPaid: true, points: s.points + coin });
+    if (coin > 0) popMatch({ kind: "gift", big: "Old stock traded in", sub: stockNote(coin), tiers: [], coin: 0 });
+    saveNow(get);
   },
   printPattern: () => {
     const s = get();

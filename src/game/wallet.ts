@@ -46,11 +46,11 @@ export const WALK_CAP = 150_000;
 /** One of each real cloth (dust, book, glass, and a scarf per city). */
 export const CLOTH_CAP = 18;
 /** Craft stock the server will keep. A device does not bring its own. */
-const BRASS_CAP = 48;
-const INK_CAP = 32;
-const VELLUM_CAP = 32;
-const SCHEMATIC_CAP = 8;
-const PRESS_CAP = 24;
+export const BRASS_CAP = 48;
+export const INK_CAP = 32;
+export const VELLUM_CAP = 32;
+export const SCHEMATIC_CAP = 8;
+export const PRESS_CAP = 24;
 const PATTERN_CAP = 4;
 /** The long walk (quests.ts). Road dust is that distance, already on the wallet. */
 const DUST_WALK_M = 10_000;

@@ -52,6 +52,11 @@ export function WalletSync() {
   const { isPending } = useCurrentUserState();
   const userId = !isPending && user ? user.id : null;
 
+  // 0.1.82: a confirmed guest trades this device's retired stock for coin once (signed-in players are paid on the server).
+  useEffect(() => {
+    if (!isPending && !user) useGame.getState().convertGuestStock();
+  }, [isPending, user]);
+
   useEffect(() => {
     if (!userId) {
       setStreetPlayer("");
@@ -70,6 +75,8 @@ export function WalletSync() {
         if (!r.revised) r = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         if (!live) return;
         useGame.getState().adoptWallet(r);
+        // 0.1.82: the server pays this account's stock trade-in, so this device never pays it again locally.
+        useGame.setState({ stockPaid: true });
         if (r.owned) useGame.getState().adoptOwned(r.owned);
         void useGame.getState().runLegacy();
         notes.push(...(r.giftNotes ?? []));
