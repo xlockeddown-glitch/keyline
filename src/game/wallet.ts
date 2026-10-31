@@ -725,7 +725,7 @@ function redCities(visited: ReadonlySet<string> | undefined): number {
 
 /**
  * One real cloth, paid for in the same write.
- * Night glass spends a pattern and a press stock (0.1.22: or a pattern and a schematic). A scarf spends the circuit's three stock.
+ * Night glass spends one violet pattern (0.1.82: press stock and schematics are cut). A scarf spends the circuit's three stock (no UI).
  * Road dust needs the 10 km the server already counted. The red book needs a red vault in every city.
  */
 export function clothOp(w: WalletState, id: string, proof?: { meters?: number; visited?: ReadonlySet<string> }): OpResult {
@@ -735,7 +735,7 @@ export function clothOp(w: WalletState, id: string, proof?: { meters?: number; v
   if (w.meta.cloths.length >= CLOTH_CAP) return { ok: false, reason: "capped" };
   let meta = w.meta;
   if (cloth === "night-glass") {
-    const spent = spendStock(meta, { patterns: 1, press: 1 }) ?? spendStock(meta, { patterns: 1, schematic: 1 });
+    const spent = spendStock(meta, { patterns: 1 });
     if (!spent) return { ok: false, reason: "short" };
     meta = spent;
   } else if (cloth.startsWith("scarf-")) {

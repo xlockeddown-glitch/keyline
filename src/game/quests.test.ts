@@ -75,11 +75,13 @@ describe("quests", () => {
     assert.equal(legacyOf({ circuit: {}, claimed: {}, perfects: 0 })?.unfinished, false);
   });
 
-  it("night glass prints from a pattern plus press stock, or plus a schematic", () => {
+  it("night glass prints from a violet pattern alone, once", () => {
     const q = { ...freshQuests("austin"), patterns: 1 };
-    assert.equal(printPattern(q, { press: true, schematics: 0 })?.spend, "press");
-    assert.equal(printPattern(q, { press: false, schematics: 1 })?.spend, "schematic");
-    assert.equal(printPattern(q, { press: false, schematics: 0 }), null);
-    assert.equal(printPattern(freshQuests("austin"), { press: true, schematics: 1 }), null);
+    const p = printPattern(q);
+    assert.ok(p);
+    assert.equal(p.log.patterns, 0);
+    assert.ok(p.log.cloths.includes("night-glass"));
+    assert.equal(printPattern(p.log), null);
+    assert.equal(printPattern(freshQuests("austin")), null);
   });
 });

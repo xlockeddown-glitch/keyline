@@ -1,6 +1,5 @@
 import { cityShop, SCOUTS } from "@/game/data";
 import { CATALOGUE, owing, payable, priceLine, type Cosmetic, type CosmeticSlot } from "@/game/cosmetics";
-import { INGREDIENTS, cityStaple } from "@/game/ingredients";
 import { vaultPinHtml } from "@/game/pins";
 import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
@@ -179,9 +178,8 @@ export function PrintShop({ counter }: { counter: boolean }) {
   );
 }
 
-/** 0.1.22: charms are retired; the press only prints Night glass now (a pattern plus one press stock, or a schematic). */
+/** 0.1.22: charms are retired; the press only prints Night glass now (0.1.82: from the violet pattern alone). */
 function NightPress() {
-  const cityId = useGame((s) => s.cityId);
   const quests = useGame((s) => s.quests);
   const printNight = useGame((s) => s.printPattern);
   if (quests.patterns < 1 || quests.cloths.includes("night-glass")) return null;
@@ -191,7 +189,7 @@ function NightPress() {
       <div className="hq-row">
         <div className="hq-row-copy">
           <p className="hq-row-title">Night glass ×{quests.patterns}</p>
-          <p className="hq-row-sub">Spends the pattern and one {INGREDIENTS[cityStaple(cityId)].name}, or a schematic.</p>
+          <p className="hq-row-sub">Spends the violet pattern. Nothing else needed.</p>
           <div className="hq-row-actions">
             <button type="button" className="btn btn-quiet px-3 text-xs" onClick={() => printNight()}>
               Print

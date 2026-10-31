@@ -167,10 +167,21 @@ test("0.0.92 Take all / Nothing: half of the old Cut weight each; Take all pays 
   assert.equal(nothing.points, 7);
   assert.equal(nothing.line, WHEEL_NOTHING_LINE);
   const take = grantWheelPrize(w.find((x) => x.prize.kind === "all")!.prize, { keys: empty, points: 0, pantry: {} });
-  // White wheel: 20 + 45 + 80 + 140 coin, white ×1 + white ×2 (Pair) + blue ×1 (Rare), and the city staple.
-  assert.equal(take.points, 285);
+  // White wheel: 20 + 45 + 80 + 140 coin + 100 (0.1.82: the Purse, once the Stock slice), white ×1 + white ×2 (Pair) + blue ×1 (Rare).
+  assert.equal(take.points, 385);
   assert.equal(take.keys.white, 3);
   assert.equal(take.keys.blue, 1);
-  assert.equal(Object.values(take.pantry).reduce((a, b) => a + (b ?? 0), 0), 1);
+  assert.equal(Object.values(take.pantry).reduce((a, b) => a + (b ?? 0), 0), 0);
   console.log("white take-all:", take.line);
+});
+
+test("0.1.82: the Stock slice is a coin Purse at the same weight; no wheel pays an ingredient", async () => {
+  const { wheelSlices, STOCK_COIN } = await import("./wheel.ts");
+  for (const [r, tier] of (["white", "blue", "green", "amber", "red", "violet"] as const).entries()) {
+    const s = wheelSlices(tier, "chicago");
+    assert.ok(!s.some((x) => x.prize.kind === "ingredient"), tier);
+    const purse = s.find((x) => x.prize.face === "Purse")!;
+    assert.equal(purse.w, 14);
+    assert.equal(purse.prize.kind === "coins" ? purse.prize.n : -1, STOCK_COIN * (r >= 3 ? 2 : 1));
+  }
 });

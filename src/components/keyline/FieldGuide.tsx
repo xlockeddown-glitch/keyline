@@ -116,7 +116,7 @@ export function FieldGuide() {
                 <li className="badge-help-row"><span className="badge-ico"><ItemIcon item="blue" size={22} /><b>↺</b></span><span>Perfect score: your match comes back.</span></li>
                 <li className="badge-help-row"><span className="badge-ico"><ItemIcon item="green" size={22} /><b>↑</b></span><span>“2/3” means one more match makes the next color.</span></li>
                 <li className="badge-help-row"><span className="badge-ico"><ItemIcon item="coin" size={22} /><b>↺</b></span><span>Violet pocket full: extra violets pay coin instead.</span></li>
-                <li className="badge-help-row"><span className="badge-ico"><ItemIcon item="coin" size={20} /><b>+N</b></span><span>Items earned: coin, matches, brass, ink, vellum, ingredient, paint.</span></li>
+                <li className="badge-help-row"><span className="badge-ico"><ItemIcon item="coin" size={20} /><b>+N</b></span><span>Items earned: coin, matches, paint.</span></li>
               </More>
             </Topic>
 

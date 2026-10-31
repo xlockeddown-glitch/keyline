@@ -141,12 +141,10 @@ export function claimErrand(log: QuestLog, cityId: CityId): { log: QuestLog; ing
   return { log: { ...log, errand }, ingredient };
 }
 
-/** Night glass: a pattern plus one press stock, or (0.1.22) a pattern plus a schematic. */
-export function printPattern(log: QuestLog, stock: { press: boolean; schematics: number }): { log: QuestLog; spend: "press" | "schematic" } | null {
+/** Night glass: 0.1.82, a violet pattern alone (press stock and schematics are cut). */
+export function printPattern(log: QuestLog): { log: QuestLog } | null {
   if (log.patterns < 1 || log.cloths.includes("night-glass")) return null;
-  const spend = stock.press ? "press" : stock.schematics > 0 ? "schematic" : null;
-  if (!spend) return null;
-  return { spend, log: { ...log, patterns: log.patterns - 1, cloths: [...log.cloths, "night-glass"], worn: log.worn ?? "night-glass" } };
+  return { log: { ...log, patterns: log.patterns - 1, cloths: [...log.cloths, "night-glass"], worn: log.worn ?? "night-glass" } };
 }
 
 export function clothName(id: ClothId): string {
@@ -159,7 +157,7 @@ export function clothName(id: ClothId): string {
 export function clothEarn(id: ClothId): string {
   if (id === "road-dust") return "A rare red scrap from a red lamp.";
   if (id === "red-book") return "No longer earned. Kept by those who have it.";
-  if (id === "night-glass") return "Print a violet pattern. Spends one press stock, or a schematic.";
+  if (id === "night-glass") return "Print a violet pattern at the outfitter.";
   return "No longer earned. Kept by those who have it.";
 }
 

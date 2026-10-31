@@ -59,8 +59,8 @@ import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE
 import { bonusDue, rideRamp, chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
-import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, rollIngredient, spendIngredient, type IngredientId, type PaintColor } from "./ingredients";
-import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE, VELLUM_CHANCE, lampBrass } from "./vaultPay";
+import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, type IngredientId, type PaintColor } from "./ingredients";
+import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay";
 import { chooseStart, cleanUnlocks, freshUnlocks, goalsCheck, isUnlocked, lampLit, lockLine, migrateUnlocks, runFinished, unlockCity as unlockCityPass, type CityUnlocks } from "./cityPass";
 import { buildWheel, caughtUpClaims, emptyWheelClaims, grantWheelPrize, owedTier, wheelClaimFailed, wheelDue, type WheelOffer } from "./wheel";
 import {
@@ -1919,12 +1919,12 @@ export const useGame = create<GameState>((set, get) => ({
       const prizeCoin = prize ? PRIZE_COIN[series.kind] : 0;
       const points = sPay.coin + prizeCoin;
       const extraKeys: Partial<Record<Tier, number>> = sPay.keys;
-      const brass = series.kind === "stack" ? 6 : series.kind === "climb" ? 2 : 4;
-      const ink = series.kind === "stack" ? 4 : series.kind === "climb" ? 2 : 3;
-      const vellum = series.kind === "stack" ? 3 : series.kind === "climb" ? 1 : 2;
-      // 0.1.22: schematics no longer drop (the ones held print Night glass).
+      // 0.1.82: brass, ink, vellum and press stock are cut (nothing spent them); only paint still drops.
+      const brass = 0;
+      const ink = 0;
+      const vellum = 0;
       const schematic = false;
-      const ing = rollIngredient(get().cityId, { id: series.id, tier: series.cost });
+      const ing: IngredientId | null = null;
       const paints = paintsFromServer(series.cost, out.paints);
       let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
       for (const id of paints) pantry = addIngredient(pantry, id);
@@ -2049,12 +2049,12 @@ export const useGame = create<GameState>((set, get) => ({
     });
     const lampMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
     const lampMult = onMarket(lampMarket, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }) ? MARKET_MULT : 1;
-    const brass = lampBrass(poi.tier, diff);
-    const ink = poi.kind === "museum" || poi.kind === "library" || poi.kind === "theatre" ? 2 : 1;
-    const vellum = poi.kind === "park" || poi.kind === "campus" ? 2 : Math.random() < VELLUM_CHANCE ? 1 : 0;
-    // 0.1.22: schematics no longer drop (the ones held print Night glass).
+    // 0.1.82: brass, ink, vellum and press stock are cut (nothing spent them); only paint still drops.
+    const brass = 0;
+    const ink = 0;
+    const vellum = 0;
     const schematic = false;
-    const ing = rollIngredient(get().cityId, poi);
+    const ing: IngredientId | null = null;
     const paints = paintsFromServer(poi.tier, out.paints);
     let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
     for (const id of paints) pantry = addIngredient(pantry, id);
@@ -2437,18 +2437,14 @@ export const useGame = create<GameState>((set, get) => ({
   },
   printPattern: () => {
     const s = get();
-    const press = spendIngredient(s.cityId, s.pantry);
-    const printed = printPattern(s.quests, { press: Boolean(press), schematics: s.schematics });
+    // 0.1.82: a violet pattern alone prints Night glass.
+    const printed = printPattern(s.quests);
     if (!printed) {
-      flashToast(set, get, "Need a pattern and one press ingredient or a schematic.", 1600);
+      flashToast(set, get, "Need a violet pattern.", 1600);
       return;
     }
     sfx.craft();
-    set(
-      printed.spend === "press" && press
-        ? { quests: printed.log, pantry: { ...s.pantry, [press]: (s.pantry[press] ?? 1) - 1 } }
-        : { quests: printed.log, schematics: s.schematics - 1 },
-    );
+    set({ quests: printed.log });
     pushOp({ kind: "cloth", id: "night-glass" });
     flashToast(set, get, "Night glass printed.", 1600);
     scheduleSave(get);

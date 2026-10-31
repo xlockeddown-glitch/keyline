@@ -77,5 +77,5 @@ export function itemBlurb(id: ItemId): string {
   if (isMaterial(id)) return MATERIALS[id].blurb;
   if (id === "crate") return "A morning box from the print shop. Login days stack to 30. One missed day is forgiven.";
   if (id === "coin") return "Struck for a right answer. The ward pays in brass, not crypto.";
-  return "Your field bag. Matches and stock live here.";
+  return "Your field bag. Matches and paint live here.";
 }

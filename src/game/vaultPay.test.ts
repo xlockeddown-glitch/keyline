@@ -97,5 +97,6 @@ test("match and vellum notes stay tied to the roll", () => {
   assert.equal(VELLUM_CHANCE, 0.4);
   assert.ok(PAY_NOTES.some((n) => n.includes("1 in 10")));
   assert.ok(PAY_NOTES.some((n) => n.includes("about 1 in 7")));
-  assert.ok(PAY_NOTES.some((n) => n.includes("2 in 5")));
+  // 0.1.82: brass, ink, vellum and press stock are cut, so the notes no longer mention them.
+  assert.ok(!PAY_NOTES.some((n) => /brass|vellum|press stock|\bink\b/i.test(n)));
 });

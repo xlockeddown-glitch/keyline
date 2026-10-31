@@ -1,6 +1,6 @@
 import { payMatchesOf } from "./goals.ts";
 import { TIER_LABEL } from "./data.ts";
-import { cityStaple, ingredientName, INGREDIENTS, type IngredientId } from "./ingredients.ts";
+import { ingredientName, type IngredientId } from "./ingredients.ts";
 import type { CityId, Tier } from "./types.ts";
 
 export const WHEEL_EVERY = 25;
@@ -62,10 +62,6 @@ function keyPrize(tier: Tier, n: number): WheelPrize {
   return { kind: "key", tier, n, face: "Match", label: n > 1 ? `${n} ${name}es` : `A ${name.toLowerCase()}` };
 }
 
-function stock(id: IngredientId, n: number, face: string): WheelPrize {
-  const name = ingredientName(id);
-  return { kind: "ingredient", id, n, face, label: n > 1 ? `${n} ${name}` : name };
-}
 
 /**
  * 0.0.90: the tier one above the wheel's, for the rare match slice. Never violet unless the wheel is violet
@@ -77,10 +73,12 @@ export function wheelUpTier(tier: Tier): Tier {
   return up === "violet" ? tier : up;
 }
 
+/** 0.1.82: what one press stock is worth now (the wheel slice and the one-time satchel conversion). */
+export const STOCK_COIN = 100;
+
 export function wheelSlices(tier: Tier, cityId: CityId): { prize: WheelPrize; w: number }[] {
   const r = RANK[tier];
   const step = r + 1;
-  const staple = cityStaple(cityId);
   const lesser = TIERS[Math.max(0, r - 1)]!;
   const base: { prize: WheelPrize; w: number }[] = [
     { prize: coins(20 * step, "Coin"), w: Math.max(8, 28 - r * 3) },
@@ -89,7 +87,8 @@ export function wheelSlices(tier: Tier, cityId: CityId): { prize: WheelPrize; w:
     // 0.0.90: a pair of matches (the wheel's tier from amber up, one below it under that; white stays white).
     { prize: { ...keyPrize(r >= 3 ? tier : lesser, 2), face: "Pair" }, w: 7 },
     { prize: coins(80 * step, "Heap"), w: 8 + r },
-    { prize: stock(staple, r >= 3 ? 2 : 1, "Stock"), w: 14 },
+    // 0.1.82: the old Stock slice (1–2 press stock) pays its value in coin instead, same weight: 100 a stock.
+    { prize: coins(STOCK_COIN * (r >= 3 ? 2 : 1), "Purse"), w: 14 },
     // 0.0.90: the rare one: a match one tier up (white wheel → blue).
     { prize: { ...keyPrize(wheelUpTier(tier), 1), face: "Rare" }, w: 3 + r },
     { prize: coins(140 * step, "Jackpot"), w: 3 + r * 2 },

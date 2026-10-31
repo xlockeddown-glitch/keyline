@@ -404,12 +404,12 @@ test("each device is clamped to the first-sync caps", () => {
   assert.equal(realCloth("nope"), null);
   assert.equal(CLOTH_CAP, 18);
   assert.equal(clothOp(emptyWallet(), "nope").ok, false);
-  // 0.1.22: night glass takes a pattern and a press stock, or a pattern and a schematic.
+  // 0.1.82: night glass takes one violet pattern and nothing else; stock is left alone.
   const w0 = emptyWallet();
-  const bySchem = clothOp({ ...w0, meta: { ...w0.meta, patterns: 1, schematic: 1 } }, "night-glass");
-  assert.equal(bySchem.ok, true);
-  if (bySchem.ok) assert.deepEqual([bySchem.wallet.meta.patterns, bySchem.wallet.meta.schematic], [0, 0]);
-  assert.equal(clothOp({ ...w0, meta: { ...w0.meta, patterns: 1 } }, "night-glass").ok, false);
+  const byPattern = clothOp({ ...w0, meta: { ...w0.meta, patterns: 1, schematic: 1, press: 2 } }, "night-glass");
+  assert.equal(byPattern.ok, true);
+  if (byPattern.ok) assert.deepEqual([byPattern.wallet.meta.patterns, byPattern.wallet.meta.schematic, byPattern.wallet.meta.press], [0, 1, 2]);
+  assert.equal(clothOp({ ...w0, meta: { ...w0.meta, schematic: 1, press: 3 } }, "night-glass").ok, false);
 });
 
 test("a city pass pays only when every place has a graded visit", () => {
@@ -573,7 +573,7 @@ test("lucky and cloth are granted only when the craft spends its cost", async ()
   const glass = await applyClientOp(sql, "lux", { kind: "cloth", id: "night-glass" });
   assert.equal(glass.ok, true);
   assert.equal(glass.wallet.meta.patterns, 0);
-  assert.equal(glass.wallet.meta.press, 3);
+  assert.equal(glass.wallet.meta.press, 4);
   const dressedGrade = await awardGrade(sql, "lux", "luck2", { ...pay({ lucky: true, luckyHit: true, cloth: "road-dust" }), prevNonce: "" });
   assert.equal(dressedGrade.wallet.coins - glass.wallet.coins, dressed.award?.coins);
 });
@@ -1098,10 +1098,11 @@ test("0.0.92 server wheel: Take all pays the combined prizes and reports its sli
       assert.ok(r.ok);
       assert.equal(buildWheel("white", "austin", 0).slices[r.wheelWin!]!.face, face, "shown == paid");
       if (face === "Take all") {
-        assert.equal(r.wallet.coins - before.coins, 285);
+        // 0.1.82: the old Stock slice is the 100-coin Purse, so Take all is 385 coin and carries no ingredient.
+        assert.equal(r.wallet.coins - before.coins, 385);
         assert.equal(r.wallet.keys.white - before.keys.white, 3);
         assert.equal(r.wallet.keys.blue - before.keys.blue, 1);
-        assert.ok(r.ingredient, "the staple rides along");
+        assert.equal(r.ingredient, undefined);
       } else {
         assert.equal(r.wallet.coins, before.coins);
         assert.deepEqual(r.wallet.keys, before.keys);

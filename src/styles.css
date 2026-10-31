@@ -4918,3 +4918,11 @@ h3 {
 :root[data-sky-phase="night"] .vault-pin.cooling::before { opacity: 0; animation: none; }
 @keyframes lamp-breathe { 0%, 100% { transform: scale(2.2); opacity: .75; } 50% { transform: scale(2.5); opacity: .9; } }
 @media (prefers-reduced-motion: reduce) { :root[data-sky-phase="night"] .vault-pin::before { animation: none; } }
+
+/* 0.1.82 satchel rows: paint dots in the lamp colors; prism is a rainbow. */
+.satchel-paint.is-white { background: var(--color-vault-white); } .satchel-paint.is-blue { background: var(--color-vault-blue); }
+.satchel-paint.is-green { background: var(--color-vault-green); } .satchel-paint.is-amber { background: var(--color-vault-amber); }
+.satchel-paint.is-red { background: var(--color-vault-red); } .satchel-paint.is-violet { background: var(--color-vault-violet); }
+.satchel-paint.is-prism { background: conic-gradient(#e2574c, #f0a640, #f3d65a, #4fbf7a, #4a8fe0, #a77ce8, #e2574c); }
+[data-testid="satchel-rows"] .jr-row { padding: 4px 0; }
+[data-testid="satchel-rows"] .jr-row > .jr-tap { margin: 0; }

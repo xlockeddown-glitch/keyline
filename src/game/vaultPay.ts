@@ -125,9 +125,7 @@ export const PAY_NOTES = [
   "These coin amounts are for a normal question. Easy questions pay about 70% of that. Hard questions pay about 45% more. Answering several right in a row adds up to 40% more.",
   "Opening a lamp uses one match of its color. A very fast right answer has a 1 in 10 chance of a free blue match. With Lucky on (kept from the old Lucky bit, or a month from the Full month quest), about 1 in 7 lamps also give back a match of their color.",
   `Paint is that lamp's color. Prism is separate: any lamp, about 1 in ${ULTRA_DROP_IN.toLocaleString()}, and it can land with the color can.`,
-  "Green and up drop this city's press stock every time. Amber and up, at a named ward, drop that ward's cut instead.",
-  "Ink is 1, or 2 at a museum, library, or theater. A park or a campus drops 2 vellum. Other lamps drop 1 vellum about 2 in 5 times. Brass shows two numbers: what a normal question gives, then what a hard one gives.",
-  "The Run and The Stack give a match and extra brass. Lamps inside a night market pay double coin and double bonus matches (not paint, brass, ink or stock), then rest four times as long.",
+  "The Run and The Stack give a match. Lamps inside a night market pay double coin and double bonus matches (not paint), then rest four times as long.",
   "Each time you open the same lamp on the same day, it stays dark longer: the usual time after the 1st open, twice as long after the 2nd, three times after the 3rd, and so on. It starts over at midnight in that city. Night market lanterns open once per market.",
 ] as const;
 

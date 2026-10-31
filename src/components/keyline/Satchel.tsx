@@ -1,54 +1,50 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { X } from "lucide-react";
-import { CITIES } from "@/game/data";
-import {
-  MATERIAL_LIST,
-  TIERS,
-  isMaterial,
-  isTier,
-  itemBlurb,
-  itemName,
-  type ItemId,
-} from "@/game/items";
+import { CITIES, cityShop } from "@/game/data";
+import { TIERS, itemBlurb, itemName } from "@/game/items";
 import { INGREDIENTS, isPaintId, type IngredientId } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
 import { carOf } from "@/game/cars";
 import { colorOf, parseCan } from "@/game/carPaint";
 import { useGame } from "@/game/store";
 import { vaultColorNote } from "@/game/vaultNote";
+import { clothPerk } from "@/game/quests";
 import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 
+/**
+ * 0.1.82: the satchel in the Journal row style: Matches, Paint (vault cans and car cans) and Keepsakes, each row taps
+ * open in place. Brass, ink, vellum, schematics and press stock are cut, so the Stock grid, the Press stock list and the
+ * detail pane below the fold are gone; a typical bag fits on one phone screen.
+ */
 export function Satchel() {
   const invOpen = useGame((s) => s.invOpen);
   const toggleInv = useGame((s) => s.toggleInv);
   const keys = useGame((s) => s.keys);
-  const brass = useGame((s) => s.brass);
-  const ink = useGame((s) => s.ink);
-  const vellum = useGame((s) => s.vellum);
-  const schematics = useGame((s) => s.schematics);
   const pantry = useGame((s) => s.pantry);
   const cityId = useGame((s) => s.cityId);
   const atlas = useGame((s) => s.atlas);
   const vaults = useGame((s) => s.vaults);
   const carCans = useGame((s) => s.carCans);
-  const [sel, setSel] = useState<ItemId>("blue");
+  const quests = useGame((s) => s.quests);
+  const [open, setOpen] = useState<string | null>(null);
   const city = CITIES[cityId];
-  const have = { brass, ink, vellum, schematics };
+  const shop = cityShop(cityId)?.name ?? "the outfitter";
 
   useSheetOpen(invOpen);
   if (!invOpen) return null;
 
-  function pick(id: ItemId) {
+  const tap = (k: string) => {
     sfx.ui();
-    setSel(id);
-  }
-
-  const count = countOf(sel, keys, have);
+    setOpen((o) => (o === k ? null : k));
+  };
+  const paints = (Object.entries(pantry) as [IngredientId, number][]).filter(([id, n]) => n > 0 && isPaintId(id));
+  const cans = [...new Set(carCans)];
+  const glass = quests.cloths.includes("night-glass");
 
   return (
     <div className="absolute inset-0 z-[720] flex items-end justify-center bg-bg/60 sm:items-center sm:p-6">
-      <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
+      <div className="panel sheet-bottom flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div className="flex items-center gap-3">
             <ItemIcon item="satchel" size={44} />
@@ -62,158 +58,66 @@ export function Satchel() {
           </button>
         </header>
 
-        <div className="grid min-h-0 flex-1 overflow-y-auto sm:grid-cols-[minmax(0,1fr)_16rem]">
-          <div className="flex flex-col gap-5 px-5 py-4">
-            <section>
-              <p className="kicker mb-2">Matches</p>
-              <ul className="grid grid-cols-6 gap-2">
-                {TIERS.map((t) => (
-                  <li key={t}>
-                    <Slot item={t} qty={keys[t]} selected={sel === t} onClick={() => pick(t)} />
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4" data-testid="satchel-rows">
+          <p className="kicker jr-kicker">Matches</p>
+          <ul className="jr-list" data-testid="satchel-matches">
+            {TIERS.map((t) => (
+              <Fragment key={t}>
+                <Row k={`m:${t}`} open={open} onTap={tap} icon={<ItemIcon item={t} size={24} />} title={itemName(t)} val={`×${keys[t] ?? 0}`} />
+                {open === `m:${t}` ? (
+                  <li className="hq-row-sub jr-note">
+                    {itemBlurb(t)} {vaultColorNote(city.pois, t, city.name, atlas, vaults, Date.now())}
                   </li>
-                ))}
-              </ul>
-            </section>
-
-            <section>
-              <p className="kicker mb-2">Stock</p>
-              <ul className="grid grid-cols-4 gap-2">
-                {MATERIAL_LIST.map((m) => (
-                  <li key={m.id}>
-                    <Slot
-                      item={m.id}
-                      qty={m.id === "schematic" ? schematics : have[m.id]}
-                      selected={sel === m.id}
-                      onClick={() => pick(m.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section>
-              <p className="kicker mb-2">Press stock</p>
-              <ul className="grid gap-2">
-                {(Object.entries(pantry) as [IngredientId, number][])
-                  .filter(([id, n]) => n > 0 && !isPaintId(id))
-                  .map(([id, n]) => (
-                    <li key={id} className="flex items-baseline justify-between gap-3 text-sm">
-                      <span>{INGREDIENTS[id].name}</span>
-                      <span className="tabular-nums text-fg-muted">×{n}</span>
-                    </li>
-                  ))}
-                {Object.values(pantry).every((n) => !n) || (Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || isPaintId(id)) ? (
-                  <li className="text-sm text-fg-muted">Light green or higher lamps to find these. Making a print uses one.</li>
                 ) : null}
-              </ul>
-            </section>
+              </Fragment>
+            ))}
+          </ul>
 
-            <section>
-              <p className="kicker mb-2">Paint</p>
-              <ul className="grid gap-2">
-                {(Object.entries(pantry) as [IngredientId, number][])
-                  .filter(([id, n]) => n > 0 && isPaintId(id))
-                  .map(([id, n]) => (
-                    <li key={id} className="flex items-baseline justify-between gap-3 text-sm">
-                      <span>{INGREDIENTS[id].name}</span>
-                      <span className="tabular-nums text-fg-muted">×{n}</span>
-                    </li>
-                  ))}
-                {(Object.entries(pantry) as [IngredientId, number][]).every(([id, n]) => !n || !isPaintId(id)) ? (
-                  <li className="text-sm text-fg-muted">Lamps sometimes give paint in their color (rare rainbow “prism” paint: about 1 in 10,000). Use it at the outfitter shop.</li>
-                ) : null}
-              </ul>
-            </section>
-
-            <section data-testid="car-cans">
-              <p className="kicker mb-2">Car paint</p>
-              <ul className="grid gap-2">
-                {[...new Set(carCans)].map((id) => {
-                  const c = parseCan(id);
-                  const col = c ? colorOf(c.car, c.color) : null;
-                  if (!c || !col) return null;
-                  return (
-                    <li key={id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="flex items-center gap-2">
-                        <i className="paint-chip" style={{ background: col.hex }} />
-                        {col.name} · {carOf(c.car)?.name}
-                      </span>
-                      <span className="tabular-nums text-fg-muted">×{carCans.filter((x) => x === id).length}</span>
-                    </li>
-                  );
-                })}
-                {carCans.length ? null : (
-                  <li className="text-sm text-fg-muted">Paint cans turn up in amber and red vaults and the daily match cache. Bring one to a car lot to repaint a car you own.</li>
-                )}
-              </ul>
-            </section>
-          </div>
-
-          <aside className="border-t border-border bg-bg-subtle/40 px-5 py-4 sm:border-l sm:border-t-0">
-            <div className="flex items-start gap-3">
-              <ItemIcon item={sel} size={64} />
-              <div>
-                <p className="kicker">{isTier(sel) ? "Match" : isMaterial(sel) ? "Stock" : "Item"}</p>
-                <h3 className="font-display text-xl leading-tight">{itemName(sel)}</h3>
-                <p className="mt-1 text-sm tabular-nums text-fg-muted">
-                  {`${count} carried`}
-                </p>
-              </div>
-            </div>
-            <p className="mt-3 text-sm text-pretty text-fg-muted">{itemBlurb(sel)}</p>
-
-            {isTier(sel) ? (
-              <p className="mt-4 text-sm text-pretty text-fg-muted">
-                {vaultColorNote(city.pois, sel, city.name, atlas, vaults, Date.now())}
-              </p>
+          <p className="kicker jr-kicker">Paint</p>
+          <ul className="jr-list" data-testid="satchel-paint">
+            {paints.map(([id, n]) => (
+              <Fragment key={id}>
+                <Row k={`p:${id}`} open={open} onTap={tap} icon={<i className={`jr-dot satchel-paint is-${id.slice(6)}`} />} title={INGREDIENTS[id].name} val={`×${n}`} />
+                {open === `p:${id}` ? <li className="hq-row-sub jr-note">{INGREDIENTS[id].blurb} Mix it in the paint vat at {shop}: dyed coats and street-lamp colors.</li> : null}
+              </Fragment>
+            ))}
+            {cans.map((id) => {
+              const c = parseCan(id);
+              const col = c ? colorOf(c.car, c.color) : null;
+              if (!c || !col) return null;
+              return (
+                <Fragment key={id}>
+                  <Row k={`c:${id}`} open={open} onTap={tap} icon={<i className="jr-dot" style={{ background: col.hex }} />} title={`${col.name} · ${carOf(c.car)?.name ?? "car"}`} val={`×${carCans.filter((x) => x === id).length}`} />
+                  {open === `c:${id}` ? <li className="hq-row-sub jr-note">A car paint can. Bring it to a car lot to repaint a car you own.</li> : null}
+                </Fragment>
+              );
+            })}
+            {!paints.length && !cans.length ? (
+              <li className="hq-row-sub jr-note">No paint yet. Lamps sometimes give a can in their color; amber and red vaults and the match cache can give car paint.</li>
             ) : null}
+          </ul>
 
-            {isMaterial(sel) ? (
-              <p className="mt-4 text-xs text-fg-subtle">Use these at the outfitter shop.</p>
-            ) : null}
-          </aside>
+          <p className="kicker jr-kicker">Keepsakes</p>
+          <ul className="jr-list" data-testid="satchel-keepsakes">
+            <Row k="k:pattern" open={open} onTap={tap} icon={<i className="jr-dot satchel-paint is-violet" />} title="Violet pattern" val={`×${quests.patterns}`} />
+            {open === "k:pattern" ? <li className="hq-row-sub jr-note">From the long quests. {glass ? "Night glass is already printed." : `One prints Night glass at ${shop}.`}</li> : null}
+            <Row k="k:glass" open={open} onTap={tap} icon={<i className="jr-dot satchel-paint is-blue" />} title="Night glass" val={glass ? "Printed" : "Not yet"} />
+            {open === "k:glass" ? <li className="hq-row-sub jr-note">A lamp cloth. {clothPerk("night-glass")}</li> : null}
+          </ul>
         </div>
       </div>
     </div>
   );
 }
 
-function Slot({
-  item,
-  qty,
-  selected,
-  locked,
-  onClick,
-}: {
-  item: ItemId;
-  qty: number;
-  selected: boolean;
-  locked?: boolean;
-  onClick: () => void;
-}) {
+function Row({ k, open, onTap, icon, title, val }: { k: string; open: string | null; onTap: (k: string) => void; icon: React.ReactNode; title: string; val: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`item-slot ${selected ? "is-on" : ""} ${locked ? "is-locked" : ""}`}
-      aria-pressed={selected}
-      aria-label={`${itemName(item)}${qty ? `, ${qty}` : ""}`}
-    >
-      <ItemIcon item={item} size={36} />
-      {!locked ? <span className="item-qty tabular-nums">{qty}</span> : null}
-    </button>
+    <li className="jr-row jr-mini">
+      <button type="button" className="jr-tap" aria-expanded={open === k} onClick={() => onTap(k)} data-testid={`satchel-row-${k}`}>
+        {icon}
+        <span className="jr-main"><span className="jr-title">{title}</span></span>
+        <span className="jr-val tabular-nums">{val} {open === k ? "▴" : "›"}</span>
+      </button>
+    </li>
   );
-}
-
-function countOf(
-  id: ItemId,
-  keys: Record<string, number>,
-  have: { brass: number; ink: number; vellum: number; schematics: number },
-) {
-  if (isTier(id)) return keys[id] ?? 0;
-  if (id === "brass") return have.brass;
-  if (id === "ink") return have.ink;
-  if (id === "vellum") return have.vellum;
-  if (id === "schematic") return have.schematics;
-  return 0;
 }

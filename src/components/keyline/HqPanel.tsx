@@ -10,8 +10,6 @@ import { Palette, X } from "lucide-react";
 import { CITIES, KIOSK, boardLine, cityShop, counterLine } from "@/game/data";
 import { CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
-import { MATERIAL_LIST } from "@/game/items";
-import { INGREDIENTS, cityStaple, isPaintId, type IngredientId } from "@/game/ingredients";
 import { clothEarn, clothName, clothPerk, clothShelf, type ClothId, type QuestLog } from "@/game/quests";
 import { QuestBoard } from "./QuestBoard";
 import { BANK_DOWN, BANK_UP } from "@/game/rewards";
@@ -42,11 +40,6 @@ export function HqPanel() {
   const [supOpen, setSupOpen] = useState<string | null>(null);
   const [tab, setTab] = useState<(typeof TABS)[number]>("Places");
   const points = useGame((s) => s.points);
-  const brass = useGame((s) => s.brass);
-  const ink = useGame((s) => s.ink);
-  const vellum = useGame((s) => s.vellum);
-  const schematics = useGame((s) => s.schematics);
-  const pantry = useGame((s) => s.pantry);
   const quests = useGame((s) => s.quests);
   const wearCloth = useGame((s) => s.wearCloth);
   const pressPass = useGame((s) => s.pressPass);
@@ -65,7 +58,6 @@ export function HqPanel() {
   const desk = fareDesk(city);
   const survey = useGame((s) => s.survey);
   const today = new Date().toISOString().slice(0, 10);
-  const stock: Record<string, number> = { brass, ink, vellum, schematic: schematics };
   const claimed = lastCrateDay === today;
   const crateDay = claimed ? Math.max(1, crateStreak) : nextCrateStreak(lastCrateDay, crateStreak, today);
   const blitzReady = blitzDue(lastBlitzDay, today);
@@ -136,39 +128,8 @@ export function HqPanel() {
 
           {tab === "Supplies" ? (
             <div className="grid gap-3">
-              <ul className="jr-list" data-testid="supplies-materials">
-                {MATERIAL_LIST.map((m) => (
-                  <Fragment key={m.id}>
-                    <li className="jr-row">
-                      <button type="button" className="jr-tap" aria-expanded={supOpen === m.id} onClick={() => { sfx.ui(); setSupOpen((o) => (o === m.id ? null : m.id)); }}>
-                        <ItemIcon item={m.id} size={28} />
-                        <span className="jr-main"><span className="jr-title">{m.name}</span></span>
-                        <span className="jr-val tabular-nums">×{stock[m.id]} {supOpen === m.id ? "▴" : "›"}</span>
-                      </button>
-                    </li>
-                    {supOpen === m.id ? <li className="hq-row-sub jr-note">{m.blurb}</li> : null}
-                  </Fragment>
-                ))}
-              </ul>
-              <p className="kicker mt-2">Press stock</p>
-              <p className="hq-row-sub">Green, amber, red and violet lamps give this city's ingredient. Spend it on prints, paint and Night glass at {cityShop(cityId)?.name ?? "the outfitter"}.</p>
-              <ul className="grid gap-2">
-                {(Object.keys(pantry) as IngredientId[])
-                  .filter((id) => (pantry[id] ?? 0) > 0 && !isPaintId(id))
-                  .concat((pantry[cityStaple(cityId)] ?? 0) > 0 ? [] : [cityStaple(cityId)])
-                  .filter((id, i, arr) => arr.indexOf(id) === i)
-                  .map((id) => (
-                    <li key={id} className="hq-row">
-                      <div className="hq-row-copy">
-                        <p className="hq-row-title">
-                          {INGREDIENTS[id].name} <span className="tabular-nums text-fg-muted">×{pantry[id] ?? 0}</span>
-                        </p>
-                        <p className="hq-row-sub">{INGREDIENTS[id].blurb}</p>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-              <p className="kicker mt-2">Desk tray</p>
+              {/* 0.1.82: brass, ink, vellum, schematics and press stock are cut; matches and paint live in the satchel. */}
+              <p className="kicker">Desk tray</p>
               <p className="text-sm text-fg-muted">Buy these at {counterLine(cityId)}.</p>
               {(Object.values(KIOSK) as (typeof KIOSK)[keyof typeof KIOSK][]).map((item) => {
                 const extra =
@@ -208,7 +169,7 @@ export function HqPanel() {
                 <div className="hq-row">
                   <div className="hq-row-copy">
                     <p className="hq-row-title">Night glass ×{quests.patterns}</p>
-                    <p className="hq-row-sub">Print it at {cityShop(cityId)?.name ?? "the outfitter"}. One {INGREDIENTS[cityStaple(cityId)].name}, or a schematic.</p>
+                    <p className="hq-row-sub">Print it at {cityShop(cityId)?.name ?? "the outfitter"}. The violet pattern is all it needs.</p>
                   </div>
                 </div>
               ) : null}
