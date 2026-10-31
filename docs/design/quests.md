@@ -68,7 +68,7 @@ They pay no coin or matches directly. They pay cloths, titles, a schematic and a
 | `w-lamps` | Light 25 lamps green or higher | `grade:` rows, poi tier ≥ green, correct | 2,000 coin + 1 green match |
 | `w-ladder` | One right lamp in each of white, blue, green, amber, red | distinct tiers in `plate_events_by_player` | 1,500 coin + 1 amber match |
 | `w-streak` | Reach a 15 right-in-a-row streak | longest correct run in the period's grade sequence | 1,000 coin + 1 blue + 1 green match |
-| `w-out` | Finish 3 different ride games | distinct `ride:` ids in the window | 1,200 coin + 1 blue match |
+| `w-out` | Finish 3 different ride games on the train | distinct `ride:` ids in the window | 1,200 coin + 1 blue match |
 | bonus | All four done | the four `quest:` rows exist | 1 red match |
 
 Total for a full week: about 5,700 coin plus about 3,900 coin's worth of matches (`TIER_VALUE`: green 270, amber 810, red 2,430). That's roughly two to three evenings of play, and it doesn't outpace daily goals (60 coin per goal, a green for all three).

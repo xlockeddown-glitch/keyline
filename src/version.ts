@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.93";
+export const APP_VERSION = "0.1.94";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k193a";
+export const PUBLISH_STAMP = "k194a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -195,3 +195,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.91: remove the duplicate Desk tray list from the Journal Supplies tab; the street counter keeps its tray (k191a).
 // 0.1.92: +383 source-checked trivia cards in the thinnest topics: geography 194, books 63, music 63, food 38, arts 25; no math (k192a).
 // 0.1.93: +180 trivia cards (103 evergreen plus_20261031b: political/geography/books/food/music/games/celebrity; 77 current-events current_20261031, Oct 2026) + scripts/trivia-dupcheck.mjs fact-level duplicate check.
+// 0.1.94: ride quests say to take the train — daily d-ride and weekly w-out sub text (ride games only run on the timed train since 0.1.58) (k194a).
