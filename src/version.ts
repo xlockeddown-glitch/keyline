@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.87";
+export const APP_VERSION = "0.1.88";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k187a";
+export const PUBLISH_STAMP = "k188a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -189,3 +189,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.84: the retired stock is traded for coin once: 100 a press stock, 200 a brass, ink or vellum, 500 a schematic, each count held to its wallet cap (most 28,800 coin); signed-in players are paid from the server wallet's own counts under gift:stock-0182, guests get the same sum added on the device once (k184a).
 // 0.1.86: quests catch up with the satchel cut: the legacy Unbroken milestone pays 500 coin instead of a schematic, and a retired-charm refund pays its print cost in coin at the trade-in rates (scholar 3,000, sprinter 3,400, lantern 3,800) instead of brass, ink, vellum, a schematic and press stock; the tutorial's last card says "Tap ? for Help" now that HUD buttons are icons (k186a).
 // 0.1.87: the dead errand ("Three in a row" / "White, blue, green", "Pays one city ingredient") is removed from the quest log; old saves just drop the errand field on load, nothing else changes (k187a).
+// 0.1.88: Journal · Places can collect your Lantern Shop till and turn your house keys from anywhere (Collect / Turn key buttons, till countdown); same store actions and server checks (k188a).

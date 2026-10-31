@@ -94,3 +94,9 @@ export function formatWait(ms: number): string {
   const h = Math.floor(m / 60);
   return h ? `${h} h ${m % 60} min` : `${m} min`;
 }
+
+/** 0.1.88: the Journal till line, e.g. "4,000 waiting · 2/3" or "Next in 1 h 20 min". */
+export function tillLine(anchor: number, now: number): string {
+  const o = shopOutput(anchor, now);
+  return o.n ? `${o.coin.toLocaleString("en-US")} waiting · ${o.n}/${SHOP_CAP}` : `Next in ${formatWait(o.readyAt - now)}`;
+}

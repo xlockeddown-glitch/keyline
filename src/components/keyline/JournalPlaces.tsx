@@ -1,14 +1,15 @@
 /** 0.1.67: Journal · Places in the Progress-tab row style: summary bars, tap rows, compact lists. Screen only. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CAT_LABEL, cotdAt } from "@/game/carPerks";
 import { CITIES, KIND_LABEL, TIER_LABEL } from "@/game/data";
-import { houseArt, houseList } from "@/game/houses";
+import { KEY_MATCHES, houseArt, houseList } from "@/game/houses";
 import { MARKET_TAG } from "@/game/nightMarket";
 import { useOwnedLamps } from "@/game/ownLampsClient";
-import { SHOP_EVERY_MS, SHOP_NAME, SHOP_PAY, SHOP_PRICE } from "@/game/shop";
+import { SHOP_EVERY_MS, SHOP_NAME, SHOP_PAY, SHOP_PRICE, shopOutput, tillLine } from "@/game/shop";
 import { useGame } from "@/game/store";
 import type { Poi, PoiKind } from "@/game/types";
 import { sfx } from "@/game/audio";
+import { cityDay } from "@/game/vaultStack";
 import { ItemIcon } from "./ItemIcon";
 import { MarketJournalRow, useMarket } from "./NightMarket";
 import { OwnLampsSection, shortCoin } from "./OwnLamps";
@@ -102,6 +103,16 @@ export function PlacesTab() {
   const { market } = useMarket(cityId);
   const [open, setOpen] = useState<string | null>(null);
   const [more, setMore] = useState(false);
+  const claims = useGame((s) => s.homeClaims);
+  const turnKey = useGame((s) => s.turnKey);
+  const collectShop = useGame((s) => s.collectShop);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (open !== "shop" && open !== "house") return;
+    setNow(Date.now());
+    const t = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(t);
+  }, [open]);
   const toggle = (k: string) => setOpen((o) => (o === k ? null : k));
   const tiersOwned = new Set(owned.filter((o) => o.mine && !o.free).map((o) => o.tier)).size;
   const lit = city.pois.filter((p) => atlas[p.id]).length;
@@ -133,17 +144,35 @@ export function PlacesTab() {
         <>
           <li className="kicker jr-kicker">Your houses</li>
           {homes.owned.length === 0 ? <li className="hq-row-sub">No houses yet. Each city has one lot for sale.</li> : null}
-          {homes.owned.map((h) => (
-            <li key={h.city} className="hq-row jr-detail">
-              <img src={houseArt(h.house.id)} alt="" width={36} height={36} className="shrink-0 rounded object-cover" />
-              <div className="hq-row-copy">
-                <p className="hq-row-title">
-                  {CITIES[h.city].name} · {h.house.name}
-                </p>
-                <p className="hq-row-sub">{h.lot.name}</p>
-              </div>
-            </li>
-          ))}
+          {homes.owned.map((h) => {
+            // Same check as HouseSheet: the lamps-lit rule lives on the server, which answers with its own toast.
+            const done = claims.includes(`hook:${h.city}:${cityDay(h.city, now)}`);
+            return (
+              <li key={h.city} className="hq-row jr-detail" data-testid={`place-house-${h.city}`}>
+                <img src={houseArt(h.house.id)} alt="" width={36} height={36} className="shrink-0 rounded object-cover" />
+                <div className="hq-row-copy">
+                  <p className="hq-row-title">
+                    {CITIES[h.city].name} · {h.house.name}
+                  </p>
+                  <p className="hq-row-sub">
+                    {h.lot.name} · {KEY_MATCHES} {TIER_LABEL[h.house.match]} matches + {shortCoin(h.house.keyCoin)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={`btn ${done ? "btn-quiet" : "btn-primary"} shrink-0 px-3 text-xs`}
+                  data-testid={`place-turn-key-${h.city}`}
+                  disabled={done}
+                  onClick={() => {
+                    sfx.ui();
+                    turnKey(h.city);
+                  }}
+                >
+                  {done ? "Done today" : "Turn key"}
+                </button>
+              </li>
+            );
+          })}
           <li className="kicker jr-kicker">House lots for sale ({homes.forSale.length})</li>
           {homes.forSale.map((h) => (
             <li key={h.city} className="jr-row jr-mini">
@@ -163,11 +192,30 @@ export function PlacesTab() {
         onTap={() => toggle("shop")}
       />
       {open === "shop" ? (
+        myShop ? (
+          <li className="hq-row jr-detail" data-testid="place-shop-till">
+            <div className="hq-row-copy">
+              <p className="hq-row-title">Your {SHOP_NAME} in {city.name}</p>
+              <p className="hq-row-sub tabular-nums">{tillLine(myShop.anchor, now)}</p>
+            </div>
+            <button
+              type="button"
+              className={`btn ${shopOutput(myShop.anchor, now).n ? "btn-primary" : "btn-quiet"} shrink-0 px-3 text-xs`}
+              data-testid="place-shop-collect"
+              disabled={!shopOutput(myShop.anchor, now).n}
+              onClick={() => {
+                sfx.ui();
+                collectShop(cityId);
+              }}
+            >
+              Collect
+            </button>
+          </li>
+        ) : (
         <li className="hq-row-sub jr-note">
-          {myShop
-            ? `Your ${SHOP_NAME} in ${city.name}. Walk to it on the map to collect the till.`
-            : `One per city. Walk to the shop lot on the map to buy it for ${SHOP_PRICE.toLocaleString("en-US")} coin. It pays ${SHOP_PAY.toLocaleString("en-US")} every ${hours} h.`}
+          {`One per city. Walk to the shop lot on the map to buy it for ${SHOP_PRICE.toLocaleString("en-US")} coin. It pays ${SHOP_PAY.toLocaleString("en-US")} every ${hours} h.`}
         </li>
+        )
       ) : null}
       <OwnLampsSection compact />
       <li className="kicker jr-kicker">Places in {city.name}</li>

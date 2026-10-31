@@ -14,7 +14,7 @@ import type { LocalSnap } from "./wallet.ts";
 import { applyClientOp, shopsOf, syncPlayer } from "./walletApply.ts";
 import { canonicalWallet } from "./walletSql.ts";
 import { thanksClock } from "./thanksGift.ts";
-import { SHOP_REACH_M, SHOP_CAP, SHOP_EVERY_MS, SHOP_PAY, SHOP_PRICE, cleanShops, formatWait, shopAnchor, shopLot, shopOutput } from "./shop.ts";
+import { SHOP_REACH_M, SHOP_CAP, SHOP_EVERY_MS, SHOP_PAY, SHOP_PRICE, cleanShops, formatWait, tillLine, shopAnchor, shopLot, shopOutput } from "./shop.ts";
 import { HOUSE_LOTS } from "./houses.ts";
 import { distM } from "./geo.ts";
 thanksClock.cutoff = "2999-01-01T00:00:00Z";
@@ -58,6 +58,9 @@ test("collect math: 2k per 4 h, part-made payout carries over, till caps at 3 an
   assert.equal(SHOP_PRICE, 600_000);
   assert.equal(formatWait(H), "4 h 0 min");
   assert.equal(formatWait(61_000), "2 min");
+  assert.equal(tillLine(t0, t0 + H / 4), "Next in 3 h 0 min", "nothing ready: countdown");
+  assert.equal(tillLine(t0, t0 + 2 * H + 5), `${(2 * SHOP_PAY).toLocaleString("en-US")} waiting · 2/${SHOP_CAP}`);
+  assert.equal(tillLine(t0, t0 + 9 * H), `${(SHOP_CAP * SHOP_PAY).toLocaleString("en-US")} waiting · ${SHOP_CAP}/${SHOP_CAP}`, "capped");
   assert.deepEqual(cleanShops({ austin: { at: 5, anchor: 9 }, mars: { at: 5 }, nyc: { at: -1 }, la: { at: 7, anchor: 3 } }), { austin: { at: 5, anchor: 9 }, la: { at: 7, anchor: 7 } });
   for (const c of Object.keys(HOUSE_LOTS) as (keyof typeof HOUSE_LOTS)[]) {
     const d = distM(HOUSE_LOTS[c].lat, HOUSE_LOTS[c].lng, shopLot(c).lat, shopLot(c).lng);
