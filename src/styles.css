@@ -4758,7 +4758,7 @@ h3 {
 :root[data-map-skin="copper"] { --skin-route: #f0b47a; }
 :root[data-map-skin="neon"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(140deg) saturate(4) brightness(.62) contrast(1.25); }
 :root[data-map-skin="neon"] { --skin-route: #ff5fd2; }
-:root[data-map-skin="motorblue"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(170deg) saturate(2.2) brightness(.68) contrast(1.12); }
+:root[data-map-skin="motorblue"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(170deg) saturate(2.4) brightness(.8) contrast(1.08); }
 :root[data-map-skin="motorblue"] { --skin-route: #d6dde4; }
 :root[data-map-skin="arcade"] .atlas-tiles { filter: invert() hue-rotate(180deg) sepia(1) hue-rotate(245deg) saturate(3) brightness(.6) contrast(1.2); }
 :root[data-map-skin="arcade"] { --skin-route: #ffd23f; }
