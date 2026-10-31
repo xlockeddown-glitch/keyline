@@ -178,6 +178,18 @@ export function pocketRide(keys: Record<Tier, number>, owe: { white: number; blu
 }
 
 /**
+ * 0.1.95: the timed train is gone. A saved journey (an old train ride, or a tab closed mid-board) loads as already at
+ * the platform: arrival is now at the latest, any open ride-game round is dropped, and the next tick lands the player.
+ * A destination that is no longer a city clears it.
+ */
+export function landOldTrain(j: Journey | null | undefined, now: number): Journey | null {
+  if (!j || typeof j !== "object" || !CITIES[j.to] || !CITIES[j.from]) return null;
+  const departAt = Number.isFinite(j.departAt) ? j.departAt : now;
+  const arriveAt = Number.isFinite(j.arriveAt) ? Math.min(j.arriveAt, now) : now;
+  return { ...j, departAt, arriveAt, fullMs: j.fullMs ?? Math.max(0, (Number.isFinite(j.arriveAt) ? j.arriveAt : arriveAt) - departAt), roundAt: undefined, roundBonus: undefined };
+}
+
+/**
  * One carriage tick: advance the journey clock and pay whatever is newly owed.
  * Granted counts what the ride has settled, pocketed or not, so nothing pays twice.
  */

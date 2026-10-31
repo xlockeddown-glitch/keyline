@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { sfx } from "@/game/audio";
-import { fareMs, formatEta, otherWards } from "@/game/ticket";
+import { otherWards } from "@/game/ticket";
 import { canFly } from "@/game/flight";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
@@ -8,7 +8,7 @@ import { unlockCost } from "@/game/cityPass";
 import { LockNote, PassHelpCard, PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 
-export type Ride = "skip" | "loop" | "train" | "fly";
+export type Ride = "skip" | "loop" | "fly";
 type Props = { onClose: () => void; onPunch: (id: CityId, how: Ride) => void };
 
 export function Timetable({ onClose, onPunch }: Props) {
@@ -48,7 +48,6 @@ export function Timetable({ onClose, onPunch }: Props) {
             {otherWards(cityId).some((c) => unlockCost(cities, c.id) !== "open") ? <PassHelpCard /> : <PassProgressRow compact />}
           </li>
           {[...otherWards(cityId)].sort((a, b) => Number(unlockCost(cities, a.id) !== "open") - Number(unlockCost(cities, b.id) !== "open")).map((c) => {
-            const eta = formatEta(fareMs(cityId, c.id));
             const cost = unlockCost(cities, c.id);
             if (cost !== "open") {
               // 0.0.56: a locked city shows the lock, what it needs, and unlocks here (free second pick or a pass).
@@ -97,9 +96,6 @@ export function Timetable({ onClose, onPunch }: Props) {
                     ) : null}
                   </span>
                 </div>
-                <button type="button" className="mt-1 text-xs text-fg-subtle underline-offset-2 hover:underline disabled:opacity-50" disabled={off} data-testid={`train-${c.id}`} onClick={() => punch(c.id, "train")}>
-                  Or take the train · {eta} · games on board
-                </button>
               </li>
             );
           })}

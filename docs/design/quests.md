@@ -260,7 +260,7 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 - **Progress:** `src/game/questServer.ts` recounts from `wallet_ledger`:
   - `grade:` rows now carry `t` (lamp tier), `tp` (category), and `ql:1` (a right answer on a lamp that spent a match). A spark, a blitz card, or a walk-away replay that couldn't re-spend never gets `ql`.
   - Ride rounds come from `ride:<at>:r:<n>`, with the game read from the matching `ride:<at>:d:<n>` row.
-  - 0.1.95: the ride quests (`d-ride`, `w-out`, `w-out2`) are removed because the timed train is gone (travel is Loop, Arrive or airplane). The server still reads `ride:` rows, but no quest counts them.
+  - 0.1.95: the timed train and its ride games are gone from the game (travel is Arrive, Loop or Fly), and the ride quests (`d-ride`, `w-out`, `w-out2`) are removed. The server still accepts the old `ride` op and reads `ride:` rows for old tabs, but no quest counts them.
   - Grade rows written before 0.1.22 have no `ql`, so they don't count. The first week after release starts from the release time.
 - **Payout:** op `{kind:"quest", period, id}` → `quest:<period>:<id>`, once. Reads come from `fetchQuests`.
 - **Lucky month:** stored in wallet `meta.luckyMonth` (jsonb). The grade pay honors it through `luckyLive`.

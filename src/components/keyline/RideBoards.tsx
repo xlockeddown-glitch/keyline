@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { fetchMyRideRanks, fetchRideBoards } from "@/game/rolls";
-import { EMPTY_RIDE_BOARDS, formatDistance, ownLine, type MyRideRanks, type RideBoardRow, type RideBoards } from "@/game/standings";
+import { ownLine, type RideBoardRow } from "@/game/standings";
 import { usePlayerId } from "./PlayerLink";
-
-/** How often the side boards refresh while the ride runs. */
-const REFRESH_MS = 30_000;
 
 export function Board(props: { title: string; testid: string; rows: RideBoardRow[]; me: string | null; mine?: { value: number; rank: number | null }; fmt: (n: number) => string }) {
   const own = ownLine(props.rows, props.me, props.mine);
@@ -33,40 +30,6 @@ export function Board(props: { title: string; testid: string; rows: RideBoardRow
         <p className="text-xs text-fg-subtle">No one on the board yet.</p>
       )}
     </section>
-  );
-}
-
-/** 0.0.94: desktop ride side panel: whole-game top 5 by lanterns lit right and by distance walked, plus your own rank. */
-export function RideBoardsPanel() {
-  const user = useCurrentUser();
-  const playerId = usePlayerId();
-  const [boards, setBoards] = useState<RideBoards>(EMPTY_RIDE_BOARDS);
-  const [mine, setMine] = useState<MyRideRanks | null>(null);
-  useEffect(() => {
-    let live = true;
-    const load = () => {
-      void fetchRideBoards()
-        .then((b) => live && setBoards(b))
-        .catch(() => {});
-      if (user)
-        void fetchMyRideRanks()
-          .then((m) => live && setMine(m))
-          .catch(() => {});
-    };
-    load();
-    const id = window.setInterval(load, REFRESH_MS);
-    return () => {
-      live = false;
-      window.clearInterval(id);
-    };
-  }, [user]);
-  const me = playerId ?? user?.id ?? null;
-  return (
-    <aside className="ride-boards" aria-label="Leaderboards" data-testid="ride-boards">
-      <Board title="Lanterns lit right" testid="ride-board-lanterns" rows={boards.lanterns} me={me} mine={mine?.lanterns} fmt={(n) => n.toLocaleString()} />
-      <Board title="Distance walked" testid="ride-board-distance" rows={boards.distance} me={me} mine={mine?.distance} fmt={(n) => formatDistance(n)} />
-      <Board title="Longest streak" testid="ride-board-streak" rows={boards.streak ?? []} me={me} mine={mine?.streak} fmt={(n) => `${n} in a row`} />
-    </aside>
   );
 }
 

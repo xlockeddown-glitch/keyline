@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CITIES } from "./data.ts";
-import { fareDesk, fareMs, FARE_MAX_MS, formatEta, isFareDesk, lampCoolMs, sparkState, transitLoot } from "./ticket.ts";
+import { fareDesk, fareMs, FARE_MAX_MS, formatEta, isFareDesk, lampCoolMs, landOldTrain, settleRide, sparkState, transitLoot } from "./ticket.ts";
+import type { Journey, Tier } from "./types.ts";
 
 test("seven night marks, and a violet lamp sleeps six hours", () => {
   const ids = Object.values(CITIES).flatMap((c) => c.pois.filter((p) => p.tier === "violet").map((p) => p.id));
@@ -71,4 +72,23 @@ test("spark resets on a new day", () => {
   const next = sparkState("2026-09-21", 4, ["a"], "2026-09-22");
   assert.equal(next.sparkN, 0);
   assert.deepEqual(next.sparkLamps, []);
+});
+
+test("0.1.95: an old save mid-train loads at the platform, round dropped, and the next tick lands it", () => {
+  const now = Date.UTC(2026, 10, 1, 18);
+  const old = { from: "austin", to: "detroit", departAt: now - 60_000, arriveAt: now + 9 * 60_000, openMs: 30_000, lastTickAt: now - 5_000, grantedWhite: 1, rideGame: "lamplighter", roundAt: now - 2_000, roundBonus: true } as unknown as Journey;
+  const j = landOldTrain(old, now)!;
+  assert.ok(j && j.arriveAt <= now, "arrived");
+  assert.equal(j.to, "detroit");
+  assert.equal(j.roundAt, undefined);
+  assert.equal(j.fullMs, 10 * 60_000);
+  const tick = settleRide(j, { white: 0, blue: 0, green: 0, amber: 0, red: 0, violet: 0 } as Record<Tier, number>, now, false);
+  assert.equal(tick.arrived, true);
+  // Already-arrived rides keep their time; junk or a retired city clears instead of crashing.
+  const done = { ...old, arriveAt: now - 1_000 } as Journey;
+  assert.equal(landOldTrain(done, now)!.arriveAt, now - 1_000);
+  assert.equal(landOldTrain(null, now), null);
+  assert.equal(landOldTrain(undefined, now), null);
+  assert.equal(landOldTrain({ ...old, to: "atlantis" } as unknown as Journey, now), null);
+  assert.equal(landOldTrain("x" as unknown as Journey, now), null);
 });

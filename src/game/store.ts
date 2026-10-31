@@ -55,8 +55,7 @@ import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
 import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./matchSpend";
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
-import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareDeskNote, fareMs, formatCool, hurryCost, hurryTarget, lampCoolMs, matchCap, settleRide, sparkState, sparkTier, ticketHint } from "./ticket";
-import { bonusDue, rideRamp, chooseRideGame, dealForRide, forfeitRound, loadRideHistory, markRound, openRound, pushRideHistory, rideGameFits, rideGameFor, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames";
+import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareDeskNote, fareMs, formatCool, lampCoolMs, matchCap, landOldTrain, settleRide, sparkState, sparkTier, ticketHint } from "./ticket";
 import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, isPaintId, type IngredientId, type PaintColor } from "./ingredients";
@@ -289,7 +288,6 @@ export type GameState = {
   cityVaults: number;
   journey: Journey | null;
   /** Last few ride games dealt, oldest first; weights the next deal so games change up. */
-  rideHistory: RideGameId[];
   landAtStation: boolean;
   pressPass: number;
   /** 0.1.82: this device already traded its retired stock for coin (guest path). */
@@ -432,30 +430,13 @@ export type GameState = {
   replayTutorial: () => void;
   resetCity: () => void;
   clearFireworks: () => void;
-  /** 0.1.58: `skip` arrives at once, `loop` plays the tunnel ride, `train` is the old timed ride with games. */
-  boardFare: (to: CityId, how?: "skip" | "loop" | "train" | "fly") => string | null;
+  /** 0.1.58: `skip` arrives at once, `loop` plays the tunnel ride. 0.1.95: the timed train is gone. */
+  boardFare: (to: CityId, how?: "skip" | "loop" | "fly") => string | null;
   /** 0.1.70: end the flight cutscene: arrive and pin the souvenir. */
   finishFlight: () => void;
   /** 0.1.58: end the Loop cutscene (done or skipped): arrive, file the poster, open any crate. */
   finishLoop: () => void;
   tickJourney: () => void;
-  /** Pick this ride's game (0.0.41). Stored on the ride so a reload and every screen agree. */
-  chooseRideGame: (game: RideGameId) => void;
-  /** 0.1.2 Hurry up: skip `min` minutes of the ride for coin (30 s floor). Returns a refusal line or null. */
-  hurryRide: (min: number) => string | null;
-  /**
-   * Start a ride-game round of `game` (default: the ride's current game) and store it as the pick.
-   * Returns its length, pace and whether it is the midway bonus round (0.0.94), or null if that game no longer fits before the platform.
-   */
-  startRideRound: (game?: RideGameId, issued?: { ms: number; ramp?: number; bonus?: boolean }, n?: number) => { ms: number; ramp: number; bonus: boolean } | null;
-  /** Ask the server for this round's seed. Guests get null and deal locally. */
-  issueRide: (game: RideGameId) => Promise<{ seed: number; n: number; ms: number; game: string; ramp?: number; bonus?: boolean } | null>;
-  /** Send the round's moves. The server scores them. Guests no-op. */
-  submitRide: (n: number, moves: { taps?: number[]; picks?: string[]; boxes?: string[]; orders?: string[][] }) => void;
-  /** Bank a finished round (best outcome only) and pay what it newly earns. */
-  finishRideRound: (outcome: RideOutcome) => { white: number; blue: number; green: number; owed: number };
-  /** The player pressed Stop mid-round: forfeit it. Idle pay still stands. */
-  dropRideRound: () => void;
 };
 
 export type MatchPop = { id: number; big: string; sub: string; tiers: Tier[]; coin: number; kind: "streak" | "cache" | "gift" | "level" | "print" | "perfect"; cheer?: Cheer | null };
@@ -530,7 +511,6 @@ function sparksNow(get: () => GameState) {
   return sparkState(get().sparkDay, get().sparkN, get().sparkLamps, today());
 }
 
-let rideWatchAt = 0;
 let boarding = false;
 
 function streetFloor(cityId: CityId, keys: { id: string }[]): number {
@@ -752,7 +732,6 @@ function persistable(s: GameState) {
     fares: s.fares,
     cityVaults: s.cityVaults,
     journey: s.journey,
-    rideHistory: s.rideHistory,
     landAtStation: s.landAtStation,
     pressPass: s.pressPass,
     stockPaid: s.stockPaid,
@@ -1244,8 +1223,7 @@ export const useGame = create<GameState>((set, get) => ({
   lastKeyAt: Date.now(),
   fares: saved?.fares ?? 0,
   cityVaults: saved?.cityVaults ?? 0,
-  journey: saved?.journey ? forfeitRound(saved.journey) : null,
-  rideHistory: loadRideHistory(saved?.rideHistory),
+  journey: landOldTrain(saved?.journey, Date.now()),
   landAtStation: Boolean(saved?.landAtStation),
   pressPass: saved?.pressPass ?? 0,
   stockPaid: saved?.stockPaid === true,
@@ -3077,7 +3055,7 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
   },
   clearFireworks: () => set({ fireworks: null }),
-  boardFare: (to, how = "train") => {
+  boardFare: (to, how = "skip") => {
     if (get().hud.seated) return "Park at the curb. The door is on foot.";
     if (to === get().cityId) return "You're already in this ward.";
     if (!CITIES[to]) return "No ward by that name.";
@@ -3091,13 +3069,10 @@ export const useGame = create<GameState>((set, get) => ({
       if (get().fares < 1 || get().journey) return;
       const now = Date.now();
       const arriveAt = now + fareMs(from, to);
-      const rideGame = dealForRide(arriveAt - now, get().rideHistory ?? []);
       sfx.open();
       set({
         fares: get().fares - 1,
-        journey: { from, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0, rideGame },
-        rideHistory: pushRideHistory(get().rideHistory ?? [], rideGame),
-        screen: "ride",
+        journey: { from, to, departAt: now, arriveAt, openMs: 0, lastTickAt: now, grantedWhite: 0, grantedBlue: 0, grantedGreen: 0 },
         hqOpen: false,
         invOpen: false,
         shopOpen: false,
@@ -3109,7 +3084,7 @@ export const useGame = create<GameState>((set, get) => ({
       });
       scheduleSave(get);
       if (how === "fly") flyNow(set, get);
-      else if (how !== "train") arriveNow(set, get, how === "loop");
+      else arriveNow(set, get, how === "loop");
     };
     if (walletLive()) {
       if (boarding) return "You're already on a train.";
@@ -3159,97 +3134,6 @@ export const useGame = create<GameState>((set, get) => ({
     }
     scheduleSave(get);
   },
-  hurryRide: (min) => {
-    const j = get().journey;
-    const now = Date.now();
-    if (!j || now >= j.arriveAt) return "You're already there.";
-    const target = hurryTarget(j.departAt, j.arriveAt, now, min);
-    if (target == null) return "The train can't go any faster.";
-    const cost = hurryCost(j.arriveAt - target);
-    if (get().points < cost) return `Need ${cost} coin to hurry.`;
-    const before = { journey: j, points: get().points };
-    const fullMs = j.fullMs ?? j.arriveAt - j.departAt;
-    set({ points: get().points - cost, journey: { ...j, arriveAt: target, fullMs } });
-    saveNow(get);
-    if (walletLive()) {
-      void commitWallet({ kind: "hurry", min }).then((r) => {
-        if (r && !r.ok) set(before);
-        else if (r?.hurry && get().journey?.departAt === j.departAt) set({ journey: { ...get().journey!, arriveAt: r.hurry.arriveAt, fullMs } });
-      });
-    }
-    return null;
-  },
-  chooseRideGame: (game) => {
-    const j = get().journey;
-    if (!j || j.roundAt != null || j.chosenGame === game) return;
-    set({ journey: chooseRideGame(j, game) });
-    saveNow(get);
-  },
-  issueRide: async (game) => {
-    if (!walletLive()) return null;
-    const r = await commitWallet({ kind: "ride", deal: game });
-    const d = r?.rideDeal;
-    if (!d || d.game !== game) return null;
-    return d;
-  },
-  submitRide: (n, moves) => {
-    if (!walletLive()) return;
-    void commitWallet({
-      kind: "ride",
-      play: true,
-      round: {
-        n,
-        taps: moves.taps?.slice(0, 80),
-        picks: moves.picks?.slice(0, 8),
-        boxes: moves.boxes?.slice(0, 40),
-        orders: moves.orders?.slice(0, 4).map((o) => o.slice(0, 8)),
-      },
-    });
-  },
-  startRideRound: (pick, issued, n) => {
-    const j = get().journey;
-    if (!j) return null;
-    const now = Date.now();
-    const game = pick ?? rideGameFor(j);
-    const live = Boolean(issued && issued.ms > 0);
-    // Signed in, the server's deal decides the pace and the bonus; a guest works it out the same way here.
-    const bonus = live ? issued!.bonus === true : bonusDue(j.departAt, j.arriveAt, now, j.bonusDealt ? 0 : -1);
-    const ramp = live ? (issued!.ramp ?? 1) : rideRamp(n ?? (j.game?.rounds ?? 0) + (j.forfeits ?? 0), bonus);
-    const ms = live ? issued!.ms : rideRoundMs(game, j.arriveAt - now, ramp);
-    if (ms == null) return null;
-    if (!live && !rideGameFits(game, j.arriveAt - now)) return null;
-    // The ride's history entry follows what was actually played, so the next suggestion varies
-    // against the player's picks. Rides from before 0.0.35 never pushed an entry; leave theirs alone.
-    const hist = get().rideHistory ?? [];
-    const history = j.rideGame && hist.length && hist[hist.length - 1] !== game ? [...hist.slice(0, -1), game] : hist;
-    set({ journey: openRound(chooseRideGame(j, game), now, bonus), rideHistory: history });
-    saveNow(get);
-    return { ms, ramp, bonus };
-  },
-  finishRideRound: (outcome) => {
-    const j = get().journey;
-    if (!j) return { white: 0, blue: 0, green: 0, owed: 0 };
-    const before = get().keys;
-    const granted = (x: GameState["journey"]) => (x?.grantedWhite ?? 0) + (x?.grantedBlue ?? 0) + (x?.grantedGreen ?? 0);
-    set({ journey: markRound(j, outcome) });
-    get().noteGoalKind("ride");
-    get().tickJourney();
-    const after = get().keys;
-    saveNow(get);
-    return {
-      /** Matches the round newly settled, pocketed or not. 0 = it pays no more than the ride already had. */
-      owed: Math.max(0, granted(get().journey) - granted(j)),
-      white: Math.max(0, (after.white ?? 0) - (before.white ?? 0)),
-      blue: Math.max(0, (after.blue ?? 0) - (before.blue ?? 0)),
-      green: Math.max(0, (after.green ?? 0) - (before.green ?? 0)),
-    };
-  },
-  dropRideRound: () => {
-    const j = get().journey;
-    if (!j || j.roundAt == null) return;
-    set({ journey: forfeitRound(j, "stopped") });
-    saveNow(get);
-  },
   tickJourney: () => {
     const j = get().journey;
     if (!j) return;
@@ -3258,46 +3142,15 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     const now = Date.now();
-    const watching =
-      typeof document !== "undefined" &&
-      document.visibilityState === "visible" &&
-      get().screen === "ride";
-    const { journey: nextJourney, keys, add } = settleRide(j, get().keys, now, watching);
+    // 0.1.95: the timed train is gone; a journey only lives between boarding and Arrive/Loop/Fly closing it.
+    const { journey: nextJourney, keys, add } = settleRide(j, get().keys, now, false);
     const found = add.white + add.blue + add.green;
-    const beat = watching && now - rideWatchAt >= 20_000;
-    if ((found > 0 || beat) && walletLive()) {
-      if (beat) rideWatchAt = now;
-      const playing = Boolean((j.roundAt || j.game) && watching);
-      void commitWallet({ kind: "ride", watch: watching, play: playing });
-    }
     if (found > 0) {
       sfx.pickup();
-      if (now < j.arriveAt) {
-        set({
-          keys,
-          journey: nextJourney,
-          screen: "ride",
-          hqOpen: false,
-          invOpen: false,
-          shopOpen: false,
-        errandOpen: null,
-          openVault: null,
-        });
-        flashToast(set, get, rideFindCopy(add), 2200);
-        scheduleSave(get);
-        return;
-      }
       set({ keys, journey: nextJourney });
-    } else if (now < j.arriveAt) {
-      set({
-        journey: nextJourney,
-        screen: "ride",
-        hqOpen: false,
-        invOpen: false,
-        shopOpen: false,
-        errandOpen: null,
-        openVault: null,
-      });
+    }
+    if (now < j.arriveAt) {
+      set({ journey: nextJourney });
       scheduleSave(get);
       return;
     }

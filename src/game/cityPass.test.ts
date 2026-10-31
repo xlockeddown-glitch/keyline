@@ -143,7 +143,7 @@ test("migration: an old save keeps every city it played plus one free pass", () 
   assert.equal(cleanUnlocks(null).start, null);
 });
 
-test("store wiring: the save carries unlocks, old saves migrate, pickCity and the train respect locks", async () => {
+test("store wiring: the save carries unlocks, old saves migrate, pickCity and travel respect locks", async () => {
   const { readFileSync } = await import("node:fs");
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(src, /cities: s\.cities/, "persisted");
@@ -151,8 +151,8 @@ test("store wiring: the save carries unlocks, old saves migrate, pickCity and th
   assert.match(src, /lampLit\(/);
   assert.match(src, /goalsCheck\(/);
   assert.match(src, /runFinished\(/);
-  const board = src.slice(src.indexOf("boardFare: (to, how = \"train\") =>"), src.indexOf("chooseRideGame: (game) =>"));
-  assert.match(board, /isUnlocked\(/, "the train won't board a locked city");
+  const board = src.slice(src.indexOf("boardFare: (to, how = \"skip\") =>"), src.indexOf("finishFlight: () => {"));
+  assert.match(board, /isUnlocked\(/, "travel won't board a locked city");
   const pick = src.slice(src.indexOf("pickCity: (id) =>"), src.indexOf("setHud: (h) =>"));
   assert.match(pick, /isUnlocked\(|chooseStart\(/);
 });

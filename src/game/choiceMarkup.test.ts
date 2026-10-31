@@ -92,7 +92,7 @@ test("friend ticket choices only change after a pick, never by the answer", () =
 
 test("answer-button hover styles only apply on devices that really hover", () => {
   const css = read("../styles.css");
-  for (const sel of [".plate-choice:hover", ".field-card:hover", ".wh-choice:not(:disabled):hover", ".ms-box:hover"]) {
+  for (const sel of [".plate-choice:hover", ".field-card:hover"]) {
     const at = css.indexOf(sel);
     assert.ok(at > 0, `${sel} present`);
     // The nearest preceding @media or top-level rule close must be an @media (hover: hover) block.

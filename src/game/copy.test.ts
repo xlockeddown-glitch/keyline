@@ -25,7 +25,7 @@ test("HUD says Journal, Goals and train ticket — not HQ, Survey or fare", () =
   // 0.0.71: goals live in the Journal, not on the HUD.
   assert.match(read("../components/keyline/HqPanel.tsx"), />Goals</);
   assert.doesNotMatch(hud, /"Open HQ|>HQ<|>Survey<|Punch a fare|Fare desk|>Fare</);
-  for (const f of ["Timetable.tsx", "GameMap.tsx", "HqPanel.tsx", "RideScreen.tsx", "Tutorial.tsx"]) {
+  for (const f of ["Timetable.tsx", "GameMap.tsx", "HqPanel.tsx", "Tutorial.tsx"]) {
     assert.doesNotMatch(read(`../components/keyline/${f}`), /[Pp]unch(es)? a? ?fares?|Need a fare/, f);
   }
   assert.doesNotMatch(read("./store.ts"), /Need a fare|A fare printed|Another fare|in HQ/);

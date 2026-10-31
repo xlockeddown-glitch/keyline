@@ -996,7 +996,7 @@ test("a failed unlock reply rolls the local city list back", () => {
   assert.match(unlock, /const before = get\(\)\.cities/);
   assert.match(unlock, /if \(res == null\)/);
   assert.match(unlock, /cities: before/);
-  assert.match(store, /kind: "ride", watch: watching, play: playing/);
+  assert.doesNotMatch(store, /kind: "ride"/, "0.1.95: the client no longer sends ride ops");
   assert.match(store, /kind: "board"/);
   assert.match(store, /if \(!res\?\.ok\)/);
   assert.match(store, /Need a train ticket/);
