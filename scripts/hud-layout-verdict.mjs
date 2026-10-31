@@ -6,6 +6,8 @@
  * rect: { left, top, width, height } in CSS px.
  */
 export const MIN_STATUS_WIDTH = 200;
+/** 0.1.83: the desktop status card stays compact (260 px in the CSS). */
+export const MAX_DESKTOP_STATUS_WIDTH = 280;
 /** 0.0.48: the bottom-right lamp card ("Campus Martius Park / At the lamp · E or tap") keeps at least this much width. */
 export const MIN_SIGHT_WIDTH = 120;
 
@@ -39,6 +41,13 @@ export function hudLayoutProblems(m, opts = {}) {
   out.push(...sightProblems(m));
   const rowTop = m.row ? m.row.top : Math.min(...m.kits.map((k) => k.top));
   if (opts.desktop && m.kits.length && Math.abs(rowTop - m.status.top) > 1) out.push(`${tag}: desktop plate no longer beside the button row`);
+  // 0.1.83: desktop is a compact status card and one button cluster: every button on one line inside the row's plate.
+  if (opts.desktop && m.status.width > MAX_DESKTOP_STATUS_WIDTH) out.push(`${tag}: desktop status card ${Math.round(m.status.width)} px wide (> ${MAX_DESKTOP_STATUS_WIDTH})`);
+  if (opts.desktop && m.row && m.kits.length) {
+    if (m.kits.some((k) => k.left < m.row.left - 0.5 || right(k) > right(m.row) + 0.5 || k.top < m.row.top - 0.5 || bottom(k) > bottom(m.row) + 0.5))
+      out.push(`${tag}: desktop button outside the cluster`);
+    if (m.kits.some((k) => Math.abs(k.top - m.kits[0].top) > 1)) out.push(`${tag}: desktop buttons not on one line`);
+  }
   return out;
 }
 

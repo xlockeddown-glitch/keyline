@@ -69,6 +69,7 @@ export function DailyKitButton() {
         setPanel(true);
       }}
       aria-label="Daily Lantern Run"
+      title={done ? "Daily Lantern Run · done today" : "Daily Lantern Run · not run yet today"}
     >
       <Flame className="size-4 text-accent" strokeWidth={1.75} />
       <span className="kicker hidden lg:inline">Daily</span>

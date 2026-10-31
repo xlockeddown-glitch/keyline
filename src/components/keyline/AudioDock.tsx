@@ -29,7 +29,7 @@ export function AudioDock() {
           toggleMusic();
         }}
         aria-label={musicOn ? `Turn off ${bed}` : `Turn on ${bed}`}
-        title={musicOn ? `${bed} on` : `${bed} off`}
+        title={musicOn ? `Music · ${bed} on` : `Music · ${bed} off`}
       >
         {musicOn && !muted ? <Music className="size-4" strokeWidth={1.75} /> : <Music className="size-4 text-fg-muted" strokeWidth={1.75} />}
       </button>
@@ -41,7 +41,7 @@ export function AudioDock() {
           toggleMuted();
         }}
         aria-label={muted ? "Unmute audio" : "Mute all audio"}
-        title={muted ? "Audio off" : "Audio on"}
+        title={muted ? "Sound · off" : "Sound · on"}
       >
         {muted ? <VolumeX className="size-4 text-fg-muted" strokeWidth={1.75} /> : <Volume2 className="size-4" strokeWidth={1.75} />}
       </button>

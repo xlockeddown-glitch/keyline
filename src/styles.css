@@ -773,6 +773,66 @@ h3 {
     padding:8px 12px
   }
 }
+/* 0.1.83 desktop HUD (lg+ only): a compact status card and one grouped button cluster, icon-only with hover
+   tooltips (title). Phones and tablets are unchanged. */
+@media (width>=1024px){
+  .hud-status{
+    width:260px;
+    padding:8px 12px
+  }
+  .hud-status .text-3xl{
+    font-size:1.5rem
+  }
+  .hud-status .hud-compass{
+    width:30px;
+    height:30px
+  }
+  .hud-status .fare-hint,
+  .hud-status .daily-hud,
+  .hud-status .market-hud,
+  .hud-status .market-chip{
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
+  }
+  .hud-status .route-row .fare-hint{
+    min-width:0
+  }
+  .hud-kits{
+    gap:2px;
+    padding:4px;
+    border:1px solid var(--color-border);
+    border-radius:var(--radius-md);
+    background:color-mix(in oklab, var(--color-bg) 82%, transparent);
+    -webkit-backdrop-filter:blur(10px);
+    backdrop-filter:blur(10px)
+  }
+  .hud-kits > div{
+    gap:2px;
+    padding-right:4px;
+    margin-right:2px;
+    border-right:1px solid var(--color-border)
+  }
+  .hud-kits .hud-plate.is-kit{
+    width:40px;
+    height:40px;
+    padding:0;
+    gap:0;
+    justify-content:center;
+    border-color:transparent;
+    background:transparent;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none
+  }
+  .hud-kits .hud-plate.is-kit:hover{
+    background:color-mix(in oklab, var(--color-fg) 8%, transparent)
+  }
+  .hud-kits .hud-plate.is-kit .lg\:block,
+  .hud-kits .hud-plate.is-kit .lg\:inline{
+    display:none
+  }
+}
 .hud-plate.is-on{
   border-color:var(--color-accent);
   color:var(--color-accent)

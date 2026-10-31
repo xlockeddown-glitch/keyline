@@ -147,7 +147,7 @@ export function SkyToggle() {
       data-testid="sky-toggle"
       onClick={toggleSky}
       aria-label={v.on ? "Turn off sky and weather" : "Turn on sky and weather"}
-      title={v.on ? "Sky and weather on" : "Sky and weather off"}
+      title={v.on ? "Sky and weather · on" : "Sky and weather · off"}
     >
       {v.on ? <Cloud className="size-4" strokeWidth={1.75} /> : <CloudOff className="size-4 text-fg-muted" strokeWidth={1.75} />}
     </button>

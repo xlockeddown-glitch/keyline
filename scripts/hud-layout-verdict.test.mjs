@@ -25,10 +25,10 @@ test("buttons covering the plate, off-screen buttons and sideways scroll are cau
 });
 
 test("desktop keeps the plate beside the button row", () => {
-  const status = { left: 64, top: 16, width: 330, height: 149 };
+  const status = { left: 64, top: 16, width: 260, height: 149 };
   const side = { width: 1280, height: 800, status, kits: kitsRow(800, 16), zoom: null, overflowX: false };
   assert.deepEqual(hudLayoutProblems(side, { desktop: true }), []);
-  const centred = { ...side, row: { left: 800, top: 16, width: 300, height: 50 }, kits: kitsRow(800, 19) };
+  const centred = { ...side, row: { left: 795, top: 16, width: 290, height: 50 }, kits: kitsRow(800, 19) };
   assert.deepEqual(hudLayoutProblems(centred, { desktop: true }), []);
   const stacked = { ...side, kits: kitsRow(800, 16), status: { ...status, top: 64 } };
   assert.ok(hudLayoutProblems(stacked, { desktop: true }).some((s) => s.includes("beside")));
@@ -60,4 +60,17 @@ test("lamp card checks: missing card, squeezed card, name spilling out, unmeasur
   assert.ok(thin.some((s) => s.includes("squeezed")));
   assert.ok(thin.some((s) => s.includes("spills out")));
   assert.deepEqual(sightProblems({ width: 390, height: 844 }), []);
+});
+
+test("0.1.83 desktop: compact card and one cluster; the old wide plate and loose buttons fail", () => {
+  const row = { left: 955, top: 16, width: 309, height: 50 };
+  const kits = kitsRow(960, 21, 7, 40, 2);
+  const ok = { width: 1280, height: 800, status: { left: 64, top: 16, width: 260, height: 108 }, row, kits, zoom: null, overflowX: false };
+  assert.deepEqual(hudLayoutProblems(ok, { desktop: true }), []);
+  const wide = { ...ok, status: { ...ok.status, width: 324 } };
+  assert.ok(hudLayoutProblems(wide, { desktop: true }).some((s) => s.includes("status card")));
+  const loose = { ...ok, kits: [...kits.slice(0, 6), { left: 1300 - 60, top: 70, width: 40, height: 40 }] };
+  const p = hudLayoutProblems(loose, { desktop: true });
+  assert.ok(p.some((s) => s.includes("outside the cluster")), p.join("\n"));
+  assert.ok(p.some((s) => s.includes("one line")), p.join("\n"));
 });

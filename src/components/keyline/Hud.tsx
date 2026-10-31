@@ -228,6 +228,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             className="hud-plate is-kit pointer-events-auto"
             onClick={() => toggleGuide(true)}
             aria-label="How to play"
+            title="Help · how to play"
           >
             <CircleHelp className="size-4 text-fg-muted" strokeWidth={1.75} />
             <span className="hidden lg:block">
@@ -240,6 +241,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             className="hud-plate is-kit pointer-events-auto"
             onClick={() => toggleInv(true)}
             aria-label="Open satchel"
+            title="Satchel · I"
           >
             <span className="relative">
               <ItemIcon item="satchel" size={28} />
@@ -254,6 +256,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             className="hud-plate is-kit pointer-events-auto relative"
             onClick={() => toggleHq(true)}
             aria-label={blitzReady ? "Open Journal, Daily Blitz waiting" : "Open Journal"}
+            title={blitzReady ? "Journal · Tab · Daily Blitz waiting" : "Journal · Tab"}
           >
             <BookOpen className="size-4 text-fg-muted" strokeWidth={1.75} />
             <span className="kicker hidden lg:inline">Journal</span>
