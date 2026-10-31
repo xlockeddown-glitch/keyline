@@ -13,7 +13,7 @@ const STEPS = [
   },
   {
     title: "That's it",
-    lines: ["Follow the arrow to the Quest Board to see today's goals.", "Tap Help any time."],
+    lines: ["Follow the arrow to the Quest Board to see today's goals.", "Tap ? for Help any time."],
   },
 ] as const;
 

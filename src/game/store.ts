@@ -2407,32 +2407,20 @@ export const useGame = create<GameState>((set, get) => ({
     if (!r?.ok) return;
     const st = get();
     let q: QuestLog = { ...st.quests, legacy: null };
-    let schematics = st.schematics;
-    let brass = st.brass;
-    let ink = st.ink;
-    let vellum = st.vellum;
-    let pantry = st.pantry;
     let lucky = st.lucky;
     const lines: string[] = [];
     for (const g of r.legacy ?? []) {
       if (g.kind === "title") {
         q = { ...q, title: q.title ?? g.title };
         lines.push(`Title: ${g.title}`);
-      } else if (g.kind === "schematic") schematics += 1;
+      } else if (g.kind === "coin") lines.push(`+${g.coins.toLocaleString("en-US")} coin for Unbroken`);
       else if (g.kind === "pattern") q = { ...q, patterns: q.patterns + 1 };
       else if (g.kind === "cloth") q = { ...q, cloths: q.cloths.includes(g.cloth as ClothId) ? q.cloths : [...q.cloths, g.cloth as ClothId] };
       else if (g.kind === "thanks") lines.push(`+${g.coins.toLocaleString("en-US")} coin for milestone progress`);
       else if (g.kind === "lucky") lucky = true;
-      else if (g.kind === "refund") {
-        brass += g.cost.brass;
-        ink += g.cost.ink;
-        vellum += g.cost.vellum;
-        schematics += g.cost.schematic;
-        pantry = addIngredient(pantry, cityStaple(st.cityId));
-        lines.push("Charm refunded");
-      }
+      else if (g.kind === "refund") lines.push(`Charm refunded: +${g.coins.toLocaleString("en-US")} coin`);
     }
-    set({ quests: q, schematics, brass, ink, vellum, pantry, lucky });
+    set({ quests: q, lucky });
     if (lines.length) flashToast(set, get, `Milestones and charms retired. ${[...new Set(lines)].join(" · ")}.`, 3200);
     saveNow(get);
   },

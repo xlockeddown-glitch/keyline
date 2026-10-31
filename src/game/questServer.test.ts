@@ -12,7 +12,7 @@ import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { LUCKY_OWNED_COIN, V2_FROM, questSet } from "./questBoard.ts";
 import { chicagoDay, currentPeriod, dayKey, monthKey, nextMonthKey, previousPeriod, QUEST_GRACE_MS } from "./questPeriods.ts";
-import { LEGACY_CHARM_CAP, LEGACY_THANKS_COIN, applyLegacy, claimQuest, luckyLive, questCtx, questStatus } from "./questServer.ts";
+import { LEGACY_CHARM_CAP, LEGACY_THANKS_COIN, LEGACY_UNBROKEN_COIN, applyLegacy, legacyRefundCoin, claimQuest, luckyLive, questCtx, questStatus } from "./questServer.ts";
 import type { GradePay, LocalSnap } from "./wallet.ts";
 import { applyClientOp, awardGrade, syncPlayer } from "./walletApply.ts";
 import { canonicalWallet } from "./walletSql.ts";
@@ -235,9 +235,10 @@ test("legacy: verified done-but-unclaimed milestones pay once, unfinished progre
   const first = await applyLegacy(sql, "gi", input, { meters: 20_000, visited: new Set() });
   const kinds = first.grants.map((g) => g.kind + ("id" in g ? `:${g.id}` : "")).sort();
   // walk was already claimed on the device: no second Road dust; the red book isn't proven; nyc has no red.
-  assert.deepEqual(kinds, ["cloth:scarf-austin", "pattern:violet", "schematic:unbroken", "thanks", "title:hundred"]);
+  assert.deepEqual(kinds, ["cloth:scarf-austin", "coin:unbroken", "pattern:violet", "thanks", "title:hundred"]);
   assert.equal(first.wallet.meta.title, "Clean hundred");
-  assert.equal(first.wallet.meta.schematic, 1);
+  assert.equal(first.wallet.meta.schematic, 0);
+  assert.equal(first.wallet.coins >= LEGACY_THANKS_COIN + LEGACY_UNBROKEN_COIN, true);
   assert.equal(first.wallet.meta.patterns, 1);
   assert.ok(first.wallet.meta.cloths.includes("scarf-austin"));
   const coins = first.wallet.coins;
@@ -252,14 +253,18 @@ test("legacy: verified done-but-unclaimed milestones pay once, unfinished progre
   assert.deepEqual(none.grants, []);
 });
 
-test("legacy: retired charms refund their stock and schematic, at most 3 per account; a Lucky bit stays Lucky", async () => {
+test("legacy: retired charms refund their print cost in coin, at most 3 per account; a Lucky bit stays Lucky", async () => {
   const sql = await db();
   await syncPlayer(sql, "jo", snap(), "jophone01");
+  const before = (await canonicalWallet(sql, "jo")).wallet.coins;
   const r = await applyLegacy(sql, "jo", { claimed: [], circuits: [], unfinished: false, charms: ["scholar", "sprinter", "lantern", "lucky", "bogus"] }, { meters: 0, visited: new Set() });
   assert.deepEqual(r.grants.map((g) => (g.kind === "refund" ? g.charm : g.kind)).sort(), ["lantern", "lucky", "scholar", "sprinter"]);
   assert.equal(r.wallet.meta.lucky, true);
-  assert.equal(r.wallet.meta.brass, 8 + 6 + 10);
-  assert.equal(r.wallet.meta.schematic, 3);
+  // 0.1.86: coin at the trade-in rates (200 per brass/ink/vellum, 500 per schematic, 100 for the press stock); no stock.
+  assert.deepEqual([legacyRefundCoin("scholar"), legacyRefundCoin("sprinter"), legacyRefundCoin("lantern")], [3_000, 3_400, 3_800]);
+  assert.equal(r.wallet.coins - before, 3_000 + 3_400 + 3_800);
+  assert.equal(r.wallet.meta.brass, 0);
+  assert.equal(r.wallet.meta.schematic, 0);
   const again = await applyLegacy(sql, "jo", { claimed: [], circuits: [], unfinished: false, charms: ["scholar", "lantern"] }, { meters: 0, visited: new Set() });
   assert.deepEqual(again.grants, []);
   // The cap counts every refund row on the account, so a second device can't stack more.

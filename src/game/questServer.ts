@@ -7,6 +7,7 @@ import { payMatchesOf } from "./goals.ts";
 import { BONUS, LUCKY_OWNED_COIN, questDef, questProgress, questSet, type QuestCtx, type QuestDef, type QuestEvent, type QuestReward, type QuestRow } from "./questBoard.ts";
 import { claimOpen, currentPeriod, monthKey, nextMonthKey, periodOf, previousPeriod, QUEST_GRACE_MS, type Period, type PeriodKind } from "./questPeriods.ts";
 import type { CityId, Tier, TriviaCat } from "./types.ts";
+import { STOCK_RATES } from "./stockCoin.ts";
 import { applyDelta, type OpResult, type WalletState } from "./wallet.ts";
 import { canonicalWallet, mutateWallet, type MutateResult } from "./walletSql.ts";
 
@@ -194,6 +195,12 @@ export const LEGACY_CHARM_COST = {
   lantern: { brass: 10, ink: 6, vellum: 0, schematic: 1 },
 } as const;
 export type LegacyCharm = keyof typeof LEGACY_CHARM_COST;
+/** 0.1.86: stock and schematics are cut (0.1.84), so legacy rewards that paid them pay coin at the trade-in rates (STOCK_RATES). */
+export const LEGACY_UNBROKEN_COIN = STOCK_RATES.schematic;
+export function legacyRefundCoin(charm: LegacyCharm): number {
+  const c = LEGACY_CHARM_COST[charm];
+  return (c.brass + c.ink + c.vellum) * STOCK_RATES.brass + c.schematic * STOCK_RATES.schematic + STOCK_RATES.press;
+}
 export const LEGACY_CHARM_CAP = 3;
 export const LEGACY_THANKS_COIN = 1_000;
 
@@ -210,11 +217,11 @@ export type LegacyIn = {
 
 export type LegacyGrant =
   | { kind: "title"; id: LongId; title: string }
-  | { kind: "schematic"; id: LongId }
+  | { kind: "coin"; id: LongId; coins: number }
   | { kind: "pattern"; id: LongId }
   | { kind: "cloth"; id: LongId | `scarf-${CityId}`; cloth: string }
   | { kind: "thanks"; coins: number }
-  | { kind: "refund"; charm: LegacyCharm; cost: (typeof LEGACY_CHARM_COST)[LegacyCharm] }
+  | { kind: "refund"; charm: LegacyCharm; coins: number }
   | { kind: "lucky" };
 
 export type LegacyProof = { meters: number; visited: ReadonlySet<string> };
@@ -264,7 +271,7 @@ function addCloth(w: WalletState, cloth: string): OpResult {
 /**
  * The move off milestones and charms, once per account (each part has its own legacy:* op key).
  * Earned rewards stay; a milestone the device had not claimed pays here only if the server can prove it;
- * unfinished progress gets 1,000 coin once; retired charms refund their print cost, at most 3 per account;
+ * unfinished progress gets 1,000 coin once; retired charms refund their print cost in coin, at most 3 per account;
  * a device's Lucky bit stays Lucky for good.
  */
 export async function applyLegacy(sql: Sql, userId: string, input: LegacyIn, proof: LegacyProof): Promise<{ grants: LegacyGrant[]; wallet: WalletState }> {
@@ -281,7 +288,7 @@ export async function applyLegacy(sql: Sql, userId: string, input: LegacyIn, pro
   for (const lid of LONG_IDS) {
     if (claimed.has(lid) || !longProven(lid, grades, proof)) continue;
     if (lid === "hundred") await run(lid, (w) => applyDelta(w, { meta: { title: w.meta.title || "Clean hundred" } }), { kind: "title", id: lid, title: "Clean hundred" });
-    else if (lid === "unbroken") await run(lid, (w) => applyDelta(w, { meta: { schematic: w.meta.schematic + 1 } }), { kind: "schematic", id: lid });
+    else if (lid === "unbroken") await run(lid, (w) => applyDelta(w, { coins: LEGACY_UNBROKEN_COIN }), { kind: "coin", id: lid, coins: LEGACY_UNBROKEN_COIN });
     else if (lid === "violet") await run(lid, (w) => applyDelta(w, { meta: { patterns: w.meta.patterns + 1 } }), { kind: "pattern", id: lid });
     else if (lid === "walk") {
       await run(lid, (w) => {
@@ -305,17 +312,8 @@ export async function applyLegacy(sql: Sql, userId: string, input: LegacyIn, pro
     const charm = c as LegacyCharm;
     const done = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"legacy:charm:%"}`;
     if ((Number(done[0]?.n) || 0) >= LEGACY_CHARM_CAP) break;
-    const cost = LEGACY_CHARM_COST[charm];
-    await run(`charm:${charm}`, (w) =>
-      applyDelta(w, {
-        meta: {
-          brass: w.meta.brass + cost.brass,
-          ink: w.meta.ink + cost.ink,
-          vellum: w.meta.vellum + cost.vellum,
-          schematic: w.meta.schematic + cost.schematic,
-          press: w.meta.press + 1,
-        },
-      }), { kind: "refund", charm, cost });
+    const coins = legacyRefundCoin(charm);
+    await run(`charm:${charm}`, (w) => applyDelta(w, { coins }), { kind: "refund", charm, coins });
   }
   return { grants, wallet: last ?? (await canonicalWallet(sql, userId)).wallet };
 }
