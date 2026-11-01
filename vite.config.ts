@@ -203,6 +203,9 @@ export default defineConfig(({ command, isPreview }) => ({
       ? [
           nitro({
             preset: "vercel",
+            // Whitespace-only server minify (no mangle, no compress): keeps names and the
+            // sanitize/deploy-guard patterns intact while staying under the 5.5MB function cap.
+            rollupConfig: { output: { minify: { mangle: false, compress: false } } },
             // Auto-registers server/middleware/* (the PWA install page +
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.

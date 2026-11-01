@@ -58,6 +58,9 @@ else {
   if (!existsSync(indexPath)) errors.push("missing index.mjs");
   else {
     const index = readFileSync(indexPath, "utf8");
+    if (/Object\.defineProperty\(\s*req\.socket\s*,\s*"remoteAddress"\s*,\s*\{\s*get\(\)/.test(index)) {
+      errors.push("index.mjs remoteAddress define is unguarded (sanitize-server-chunks did not patch it)");
+    }
     if (!/export\s*\{\s*nodeHandler\s+as\s+default\s*\}/.test(index)) {
       errors.push("index.mjs does not export nodeHandler as default");
     }

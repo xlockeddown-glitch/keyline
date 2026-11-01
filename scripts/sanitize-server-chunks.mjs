@@ -54,11 +54,12 @@ console.log(
 
 // 0.1.15: Nitro's vercel node handler redefines req.socket.remoteAddress on every request; on a kept-alive socket
 // the second define throws "Cannot redefine property". Make it configurable and never throw.
-const RA = 'Object.defineProperty(req.socket, "remoteAddress", { get() {';
+// Whitespace-tolerant: 0.1.100 whitespace-strips the server bundle, so match both pretty and compact output.
+const RA = /Object\.defineProperty\(\s*req\.socket\s*,\s*"remoteAddress"\s*,\s*\{\s*get\(\)\s*\{/;
 for (const p of walk(root)) {
   if (!p.endsWith(".mjs")) continue;
   const src = readFileSync(p, "utf8");
-  if (!src.includes(RA)) continue;
+  if (!RA.test(src)) continue;
   const fixed = src.replace(RA, 'if (Object.getOwnPropertyDescriptor(req.socket, "remoteAddress")?.configurable !== false) Object.defineProperty(req.socket, "remoteAddress", { configurable: true, get() {');
   writeFileSync(p, fixed);
   console.log(`[sanitize-server-chunks] remoteAddress define guarded in ${p.split("/").pop()}`);
