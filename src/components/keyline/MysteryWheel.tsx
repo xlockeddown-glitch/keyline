@@ -99,7 +99,9 @@ export function MysteryWheel() {
   if (!wheel || loot || miss || openVault) return null;
 
   // 0.0.92: Take all and Nothing are half slices; everything else is a whole one.
-  const units = wheel.slices.map((s) => (s.kind === "all" || s.kind === "nothing" ? 0.5 : 1));
+  // 0.1.97: once the server answers, show its slices (the coin jitter comes from its roll).
+  const slices = paid?.slices ?? wheel.slices;
+  const units = slices.map((s) => (s.kind === "all" || s.kind === "nothing" ? 0.5 : 1));
   const unit = 360 / units.reduce((a, b) => a + b, 0);
   const starts: number[] = [];
   units.reduce((acc, u) => (starts.push(acc), acc + u * unit), 0);
@@ -116,7 +118,7 @@ export function MysteryWheel() {
   const win = paid?.win ?? wheel.win;
   const targetFor = (i: number) => TURNS * 360 + (360 - midOf(i));
   const target = targetFor(win);
-  const prize = wheel.slices[win]!;
+  const prize = slices[win]!;
 
   function tickPointer() {
     sfx.tick();
@@ -197,7 +199,7 @@ export function MysteryWheel() {
               </linearGradient>
             </defs>
             <circle cx={R} cy={R} r={R - 1} fill="#1a140e" />
-            {wheel.slices.map((s, i) => {
+            {slices.map((s, i) => {
               const tone = wheelSliceTone(s);
               const [fill, ink] = FILL[tone]!;
               const mid = midOf(i);

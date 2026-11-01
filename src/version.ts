@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.96";
+export const APP_VERSION = "0.1.97";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k196a";
+export const PUBLISH_STAMP = "k197a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -198,3 +198,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.94: ride quests say to take the train — daily d-ride and weekly w-out sub text (ride games only run on the timed train since 0.1.58) (k194a).
 // 0.1.95: the timed train and its ride games are gone. The Timetable offers Arrive, Loop and Fly; the "Or take the train" link, RideScreen, Lamplighter, Match sorter, Where am I? and Route puzzle screens, their store actions and CSS are removed. Ride quests removed (daily d-ride, weekly w-out/w-out2); banks 10 daily / 8 weekly. An old save mid-train loads at the platform and lands on the next tick. Server keeps payRide, the "ride" op and ride: ledger reads for old tabs (k195a).
 // 0.1.96: chore — docs history (quests.md marks milestones, charms, press stock/schematics, daily goals and the train/ride quests as history; houses.md notes the train is gone) + unused exports removed (CostIcons, useUnlockCost, skyOn, streakLine, atDealer, nextSurvey, server fn fetchBoard and its helpers, RIDE_WHITE_POCKET alias folded into WHITE_POCKET, scripts/apply-weekly-wire.mjs; internal-only helpers un-exported). No behavior change (k196a).
+// 0.1.97: Fortune wheel coin prizes x4.2 (WHEEL_COIN_MULT, nearest 5); the Purse grows with the tier (100 x step x4.2, same weight 14; STOCK_COIN stays the satchel rate). Each coin slice jitters ±10% per spin, deterministic from the server's spin roll, which is sent back (wheelRoll) so the faces show what was paid (k197a).

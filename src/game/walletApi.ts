@@ -145,6 +145,7 @@ export type WalletWire = {
   ingredient?: { id: string; n: number };
   line?: string;
   wheelWin?: number;
+  wheelRoll?: number;
   cache?: { got: Tier[]; coin: number; already?: boolean };
   rideDeal?: RideDeal;
   hurry?: { arriveAt: number; cost: number };
@@ -213,6 +214,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       ingredient: r.ingredient,
       line: r.line,
       wheelWin: r.wheelWin,
+      wheelRoll: r.wheelRoll,
       cache: r.cache,
       rideDeal: r.rideDeal,
       hurry: r.hurry,

@@ -54,7 +54,7 @@ export function owedTier(correct: Record<Tier, number>, claimed: Record<Tier, nu
 }
 
 
-function coins(n: number, face: string): WheelPrize {
+function coinPrize(n: number, face: string): WheelPrize {
   return { kind: "coins", n, face, label: `${n.toLocaleString()} coin` };
 }
 
@@ -77,9 +77,41 @@ export function wheelUpTier(tier: Tier): Tier {
 /** 0.1.82: what one press stock is worth now (the wheel slice and the one-time satchel conversion). */
 export const STOCK_COIN = STOCK_RATES.press;
 
-export function wheelSlices(tier: Tier, _cityId: CityId): { prize: WheelPrize; w: number }[] {
+/** 0.1.97 (Ryan): every coin slice pays 4.2x its 0.1.96 amount (rounded to the nearest 5). */
+export const WHEEL_COIN_MULT = 4.2;
+/** 0.1.97 (Ryan): each coin slice wobbles up to ±10% per spin, symmetric, so the average stays the same. */
+export const WHEEL_COIN_JITTER = 0.1;
+
+const round5 = (n: number) => Math.round(n / 5) * 5;
+
+/** The 4.2x base for one coin slice (before jitter). */
+export function wheelCoinBase(old: number): number {
+  return round5(old * WHEEL_COIN_MULT);
+}
+
+/**
+ * 0.1.97: a per-slice jitter factor in [1 - J, 1 + J], deterministic from the spin roll (the same number that
+ * picks the winning slice) and the slice index. The server rolls once and sends it back, so faces == payout.
+ */
+export function wheelJitter(roll: number, i: number): number {
+  let h = (Math.floor(Math.max(0, Math.min(0.999999, roll)) * 2 ** 32) ^ Math.imul(i + 1, 0x9e3779b1)) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+  h = (h ^ (h >>> 16)) >>> 0;
+  return 1 + WHEEL_COIN_JITTER * ((h / 2 ** 32) * 2 - 1);
+}
+
+/** Base slices (no jitter: roll omitted) or a spin's slices (roll given). */
+export function wheelSlices(tier: Tier, _cityId: CityId, roll?: number): { prize: WheelPrize; w: number }[] {
   const r = RANK[tier];
   const step = r + 1;
+  let ci = 0;
+  const coins = (old: number, face: string): WheelPrize => {
+    const base = wheelCoinBase(old);
+    const n = roll === undefined ? base : Math.max(5, round5(base * wheelJitter(roll, ci)));
+    ci++;
+    return coinPrize(n, face);
+  };
   const lesser = TIERS[Math.max(0, r - 1)]!;
   const base: { prize: WheelPrize; w: number }[] = [
     { prize: coins(20 * step, "Coin"), w: Math.max(8, 28 - r * 3) },
@@ -88,8 +120,8 @@ export function wheelSlices(tier: Tier, _cityId: CityId): { prize: WheelPrize; w
     // 0.0.90: a pair of matches (the wheel's tier from amber up, one below it under that; white stays white).
     { prize: { ...keyPrize(r >= 3 ? tier : lesser, 2), face: "Pair" }, w: 7 },
     { prize: coins(80 * step, "Heap"), w: 8 + r },
-    // 0.1.82: the old Stock slice (1–2 press stock) pays its value in coin instead, same weight: 100 a stock.
-    { prize: coins(STOCK_COIN * (r >= 3 ? 2 : 1), "Purse"), w: 14 },
+    // 0.1.82: the old Stock slice pays in coin, same weight. 0.1.97: it grows with the tier (100 x step, then x4.2).
+    { prize: coins(100 * step, "Purse"), w: 14 },
     // 0.0.90: the rare one: a match one tier up (white wheel → blue).
     { prize: { ...keyPrize(wheelUpTier(tier), 1), face: "Rare" }, w: 3 + r },
     { prize: coins(140 * step, "Jackpot"), w: 3 + r * 2 },
@@ -110,7 +142,7 @@ export function wheelSliceTone(p: WheelPrize): Tier | "brass" | "ink" | "jackpot
 }
 
 export function buildWheel(tier: Tier, cityId: CityId, roll: number): WheelOffer {
-  const slices = wheelSlices(tier, cityId);
+  const slices = wheelSlices(tier, cityId, roll);
   const total = slices.reduce((n, s) => n + s.w, 0);
   let cursor = Math.max(0, Math.min(0.999999, roll)) * total;
   let win = slices.length - 1;

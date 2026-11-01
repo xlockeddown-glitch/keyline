@@ -227,7 +227,7 @@ export type GameState = {
   wheelClaimed: Record<Tier, number>;
   wheel: WheelOffer | null;
   /** 0.0.92: signed in, the server already rolled and paid this spin; the wheel lands on `win`. */
-  wheelPaid: { win: number; line: string } | null;
+  wheelPaid: { win: number; line: string; slices?: WheelOffer["slices"] } | null;
   /** 0.0.93: today's three daily goals (replace the old errand). */
   goals: GoalDay;
   /** 0.0.93: UTC day the match cache was last opened (once per player per day). */
@@ -2966,14 +2966,16 @@ export const useGame = create<GameState>((set, get) => ({
     if (r.ingredient) {
       for (let i = 0; i < r.ingredient.n; i++) pantry = addIngredient(pantry, r.ingredient.id as IngredientId);
     }
-    const line = r.line || offer.slices[r.wheelWin]?.label || "";
+    // 0.1.97: rebuild from the server's roll so the coin faces show what was paid.
+    const slices = typeof r.wheelRoll === "number" ? buildWheel(tier, city, r.wheelRoll).slices : offer.slices;
+    const line = r.line || slices[r.wheelWin]?.label || "";
     if (gone) {
       // Closed mid-spin: the prize is paid anyway, so say what it was.
       set({ pantry, wheelClaimed, wheelPaid: null, toast: line || null });
       saveNow(get);
       return null;
     }
-    set({ pantry, wheelClaimed, wheelPaid: { win: r.wheelWin, line } });
+    set({ pantry, wheelClaimed, wheelPaid: { win: r.wheelWin, line, slices } });
     saveNow(get);
     return r.wheelWin;
   },

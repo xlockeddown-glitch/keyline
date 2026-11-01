@@ -1097,9 +1097,14 @@ test("0.0.92 server wheel: Take all pays the combined prizes and reports its sli
       Math.random = real;
       assert.ok(r.ok);
       assert.equal(buildWheel("white", "austin", 0).slices[r.wheelWin!]!.face, face, "shown == paid");
+      // 0.1.97: the server sends its roll back; the client's rebuild shows exactly what was paid.
+      assert.equal(r.wheelRoll, roll);
+      const shown = buildWheel("white", "austin", r.wheelRoll!);
       if (face === "Take all") {
-        // 0.1.82: the old Stock slice is the 100-coin Purse, so Take all is 385 coin and carries no ingredient.
-        assert.equal(r.wallet.coins - before.coins, 385);
+        const all = shown.slices[r.wheelWin!]!;
+        const coin = all.kind === "all" ? all.parts.reduce((n, p) => n + (p.kind === "coins" ? p.n : 0), 0) : -1;
+        assert.equal(r.wallet.coins - before.coins, coin, "server pays the jittered faces");
+        assert.ok(coin >= 1460 && coin <= 1780);
         assert.equal(r.wallet.keys.white - before.keys.white, 3);
         assert.equal(r.wallet.keys.blue - before.keys.blue, 1);
         assert.equal(r.ingredient, undefined);

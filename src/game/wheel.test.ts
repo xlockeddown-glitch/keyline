@@ -139,7 +139,7 @@ test("0.0.92 signed-in wheel lands on the server's slice: Spin claims first, the
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(ui, /const won = await spinWheel\(\);/);
   assert.match(ui, /const win = paid\?\.win \?\? wheel\.win;/);
-  assert.match(store, /wheelPaid: \{ win: r\.wheelWin, line \}/);
+  assert.match(store, /wheelPaid: \{ win: r\.wheelWin, line, slices \}/);
   assert.match(store, /if \(!walletLive\(\)\) return offer\.win;/, "guests keep their own roll");
 });
 
@@ -167,8 +167,8 @@ test("0.0.92 Take all / Nothing: half of the old Cut weight each; Take all pays 
   assert.equal(nothing.points, 7);
   assert.equal(nothing.line, WHEEL_NOTHING_LINE);
   const take = grantWheelPrize(w.find((x) => x.prize.kind === "all")!.prize, { keys: empty, points: 0, pantry: {} });
-  // White wheel: 20 + 45 + 80 + 140 coin + 100 (0.1.82: the Purse, once the Stock slice), white ×1 + white ×2 (Pair) + blue ×1 (Rare).
-  assert.equal(take.points, 385);
+  // 0.1.97: white base coin 85 + 190 + 335 + 420 (Purse) + 590 = 1,620, white ×1 + white ×2 (Pair) + blue ×1 (Rare).
+  assert.equal(take.points, 1620);
   assert.equal(take.keys.white, 3);
   assert.equal(take.keys.blue, 1);
   assert.equal(Object.values(take.pantry).reduce((a, b) => a + (b ?? 0), 0), 0);
@@ -182,6 +182,64 @@ test("0.1.82: the Stock slice is a coin Purse at the same weight; no wheel pays 
     assert.ok(!s.some((x) => x.prize.kind === "ingredient"), tier);
     const purse = s.find((x) => x.prize.face === "Purse")!;
     assert.equal(purse.w, 14);
-    assert.equal(purse.prize.kind === "coins" ? purse.prize.n : -1, STOCK_COIN * (r >= 3 ? 2 : 1));
+    // 0.1.97: the Purse grows with the tier (100 x step, x4.2); STOCK_COIN stays the satchel rate.
+    assert.equal(purse.prize.kind === "coins" ? purse.prize.n : -1, Math.round((100 * (r + 1) * 4.2) / 5) * 5);
+  }
+  assert.equal(STOCK_COIN, 100);
+});
+
+const TIERS6 = ["white", "blue", "green", "amber", "red", "violet"] as const;
+const OLD = (step: number) => ({ Coin: 20 * step, Pile: 45 * step, Heap: 80 * step, Purse: 100 * step, Jackpot: 140 * step });
+
+test("0.1.97: base coin slices are 4.2x the old table; weights and non-coin slices unchanged", async () => {
+  const { wheelSlices, WHEEL_COIN_MULT } = await import("./wheel.ts");
+  assert.equal(WHEEL_COIN_MULT, 4.2);
+  for (const [r, tier] of TIERS6.entries()) {
+    const old = OLD(r + 1);
+    const coinSlices = wheelSlices(tier, "nyc").filter((s) => s.prize.kind === "coins");
+    assert.equal(coinSlices.length, 5);
+    for (const s of coinSlices) {
+      const want = Math.round((old[s.prize.face as keyof typeof old] * 4.2) / 5) * 5;
+      assert.equal(s.prize.kind === "coins" && s.prize.n, want, `${tier} ${s.prize.face}`);
+    }
+    assert.deepEqual(
+      wheelSlices(tier, "nyc").map((s) => s.w),
+      [Math.max(8, 28 - r * 3), 6 + r * 3, 16, 7, 8 + r, 14, 3 + r, 3 + r * 2, (5 + r * 2) / 2, (5 + r * 2) / 2],
+    );
+  }
+});
+
+test("0.1.97: coin jitter stays within ±10% (to the nearest 5), is deterministic, and spreads", async () => {
+  const { wheelSlices, buildWheel } = await import("./wheel.ts");
+  for (const tier of TIERS6) {
+    const base = wheelSlices(tier, "nyc");
+    const seen = new Set<number>();
+    for (let k = 0; k < 400; k++) {
+      const roll = (k * 0.6180339887) % 1;
+      const a = buildWheel(tier, "nyc", roll);
+      assert.deepEqual(a, buildWheel(tier, "nyc", roll), "same roll, same wheel");
+      a.slices.forEach((p, i) => {
+        const b = base[i]!.prize;
+        if (p.kind === "coins" && b.kind === "coins") {
+          assert.ok(p.n % 5 === 0);
+          assert.ok(p.n >= Math.round((b.n * 0.9) / 5) * 5 && p.n <= Math.round((b.n * 1.1) / 5) * 5, `${tier} ${p.face} ${p.n}`);
+          if (p.face === "Jackpot") seen.add(p.n);
+        } else if (p.kind !== "all") assert.deepEqual(p, b);
+      });
+      const all = a.slices.find((p) => p.kind === "all")!;
+      if (all.kind === "all") assert.deepEqual(all.parts, a.slices.slice(0, 8));
+    }
+    assert.ok(seen.size > 3, `${tier} jitter varies`);
+  }
+});
+
+test("0.1.97: the client rebuild from the server's roll matches the server's slices exactly", async () => {
+  const { buildWheel } = await import("./wheel.ts");
+  // Server: buildWheel(tier, city, roll) then sends { wheelWin, wheelRoll }. Client: buildWheel(tier, city, wheelRoll).
+  for (const roll of [0, 0.123, 0.5, 0.987654, 0.999999]) {
+    const server = buildWheel("amber", "austin", roll);
+    const client = buildWheel("amber", "austin", JSON.parse(JSON.stringify({ roll })).roll);
+    assert.deepEqual(client.slices, server.slices);
+    assert.equal(client.win, server.win);
   }
 });

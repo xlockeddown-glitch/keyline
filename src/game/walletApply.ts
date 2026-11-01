@@ -948,6 +948,7 @@ export type ClientResult = Applied & {
   line?: string;
   /** 0.0.92: index of the slice the server rolled and paid (the client animates to it). */
   wheelWin?: number;
+  wheelRoll?: number;
   /** 0.0.93: the matches a cache paid (the rest became coin). */
   cache?: { got: Tier[]; coin: number; already?: boolean };
   rideDeal?: RideDeal;
@@ -1040,7 +1041,9 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
       return { ...applied({ ok: false, replay: false, reason: "no-spin", wallet }), authoritative: true };
     }
     // Roll once. A compare-and-swap retry must not land a different prize.
-    const offer = buildWheel(op.tier, op.city, Math.random());
+    // 0.1.97: the same roll sets the coin jitter; it goes back to the client so its faces match the payout.
+    const wheelRoll = Math.random();
+    const offer = buildWheel(op.tier, op.city, wheelRoll);
     const prize = offer.slices[offer.win]!;
     // 0.0.92: Take all carries the wheel's one ingredient slice (Stock) too.
     const ing = prize.kind === "ingredient" ? prize : prize.kind === "all" ? prize.parts.find((p) => p.kind === "ingredient") : undefined;
@@ -1063,7 +1066,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
         detail: line,
       };
     });
-    return { ...applied(r), ingredient, line, wheelWin: offer.win };
+    return { ...applied(r), ingredient, line, wheelWin: offer.win, wheelRoll };
   }
 
   // 0.0.93: the day's match cache. Once per player per day (any city); the prize is seeded per player and day.
