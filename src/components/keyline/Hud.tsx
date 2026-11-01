@@ -2,7 +2,7 @@ import { SHOP_NAME } from "@/game/shop";
 import { SkyChip } from "./Sky";
 import { useDoubleMinutes } from "@/game/doubleClient";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, CircleHelp } from "lucide-react";
+import { Backpack, BookOpen, CircleHelp } from "lucide-react";
 import { creditHint } from "@/game/goals";
 import { CREDIT_CALM_MS, Calm } from "@/game/calm";
 import { LevelHudBadge } from "./Levels";
@@ -19,7 +19,7 @@ import type { Tier } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
 import { TouchPad } from "./TouchPad";
 import { AudioDock } from "./AudioDock";
-import { DailyHudLine, DailyKitButton } from "./DailyRun";
+import { DailyHudLine } from "./DailyRun";
 import { MarketHudLine, useMarket } from "./NightMarket";
 import { MARKET_TAG, onMarket } from "@/game/nightMarket";
 
@@ -157,6 +157,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
     else cue = hud.routeStops > 0 ? `${formatDist(hud.nearestDist)} · tap to go there instead` : `${formatDist(hud.nearestDist)} · click to walk`;
   }
 
+  const wide = useWide();
   return (
     <div className="pointer-events-none absolute inset-0 z-[500] flex flex-col justify-between p-3 sm:p-4">
       {/* Phones (<640px): the button row sits on top and the status plate stacks under it at full width
@@ -216,13 +217,14 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             </p>
           ) : null}
           <DailyHudLine />
-          <MarketHudLine onWalk={onMarketWalk} />
+          {/* 0.1.98: phones keep the market line in the plate; sm and up it sits under the kit row. */}
+          {wide ? null : <MarketHudLine onWalk={onMarketWalk} />}
           <SkyChip />
         </div>
 
-        <div className="hud-kits flex shrink-0 items-center gap-2 self-end sm:self-auto">
+        <div className="hud-right flex shrink-0 flex-col items-end gap-1 self-end sm:self-auto">
+        <div className="hud-kits flex shrink-0 items-center gap-2">
           <AudioDock />
-          <DailyKitButton />
           <button
             type="button"
             className="hud-plate is-kit pointer-events-auto"
@@ -243,9 +245,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             aria-label="Open satchel"
             title="Satchel · I"
           >
-            <span className="relative">
-              <ItemIcon item="satchel" size={28} />
-            </span>
+            <Backpack className="size-4 text-fg-muted" strokeWidth={1.75} />
             <span className="hidden lg:block">
               <span className="kicker">Satchel</span>
               <span className="block text-xs text-fg-muted">I</span>
@@ -262,6 +262,12 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             <span className="kicker hidden lg:inline">Journal</span>
             {blitzReady ? <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" aria-hidden /> : null}
           </button>
+        </div>
+        {wide ? (
+          <div className="hud-market flex flex-col items-end">
+            <MarketHudLine onWalk={onMarketWalk} />
+          </div>
+        ) : null}
         </div>
       </div>
 
@@ -385,4 +391,18 @@ function DoubleNote() {
       Double rewards: {min} min left
     </p>
   );
+}
+
+/** 0.1.98: sm and up (640 px+), where the market line sits under the kit row; one mount, so its testids stay unique. */
+function useWide() {
+  const q = "(min-width: 640px)";
+  const [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const on = () => setWide(m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  return wide;
 }

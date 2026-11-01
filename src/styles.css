@@ -796,6 +796,12 @@ h3 {
     text-overflow:ellipsis;
     white-space:nowrap
   }
+  .hud-market .market-hud{
+    max-width:min(360px,40vw);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
+  }
   .hud-status .route-row .fare-hint{
     min-width:0
   }

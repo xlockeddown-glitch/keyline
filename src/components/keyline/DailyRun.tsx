@@ -31,17 +31,16 @@ function elapsed(p: DailyProgress | null) {
 
 const REWARD_LINE = (Object.entries(DAILY_REWARD) as [Tier, number][]).map(([t, n]) => `${n} ${TIER_LABEL[t].toLowerCase()}`).join(" + ");
 
-/** HUD line under the city plate: progress and the running clock. */
+/** HUD line under the city plate: the live clock, only while a run is under way (0.1.98: idle/finished moved to the Quest Board). */
 export function DailyHudLine() {
   const cityId = useGame((s) => s.cityId);
-  const show = useDaily((s) => s.show);
   const prog = useDaily((s) => activeProgress(s.runs, cityId));
   const setPanel = useDaily((s) => s.setPanel);
   const running = Boolean(prog?.startedAt && prog.timeMs == null);
   useTick(running);
-  if (!show && !running) return null;
-  const route = prog ? dailyRoute(prog.city, prog.day) : todayRoute(cityId);
-  const lit = prog?.lit ?? 0;
+  if (!prog || !running) return null;
+  const route = dailyRoute(prog.city, prog.day);
+  const lit = prog.lit;
   const next = route.lamps[lit];
   const t = elapsed(prog);
   return (
@@ -49,31 +48,40 @@ export function DailyHudLine() {
       <span className="kicker mr-1.5">Lantern Run</span>
       <span className="tabular-nums">{lit}/5</span>
       <span className="tabular-nums text-fg"> · {t == null ? "0:00.0" : formatRunTime(t)}</span>
-      {next ? <span className="text-fg-subtle"> · {lit === 0 ? "start at" : "next"} {next.name}</span> : <span className="text-fg-subtle"> · finished</span>}
+      {next ? <span className="text-fg-subtle"> · next {next.name}</span> : null}
     </button>
   );
 }
 
-/** Top-right kit button. */
-export function DailyKitButton() {
+/** 0.1.98: Quest Board / Journal Goals row (was the top-right Daily kit button): today's state; opens the run panel. */
+export function DailyRunRow() {
   const setPanel = useDaily((s) => s.setPanel);
   const cityId = useGame((s) => s.cityId);
   const prog = useDaily((s) => activeProgress(s.runs, cityId));
+  const running = Boolean(prog?.startedAt && prog.timeMs == null);
+  useTick(running, 1000);
   const done = prog?.timeMs != null;
+  const state = done
+    ? `Done · ${formatRunTime(prog?.serverMs ?? prog?.timeMs)}`
+    : running
+      ? `Lit ${prog?.lit ?? 0}/5 · ${formatRunTime(elapsed(prog) ?? 0)}`
+      : "Not run yet today";
   return (
     <button
       type="button"
-      className="hud-plate is-kit pointer-events-auto relative"
+      className="hq-row w-full text-left"
+      data-testid="daily-row"
       onClick={() => {
         sfx.ui();
         setPanel(true);
       }}
-      aria-label="Daily Lantern Run"
-      title={done ? "Daily Lantern Run · done today" : "Daily Lantern Run · not run yet today"}
+      aria-label={`Daily Lantern Run, ${state}`}
     >
-      <Flame className="size-4 text-accent" strokeWidth={1.75} />
-      <span className="kicker hidden lg:inline">Daily</span>
-      {!done ? <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" aria-hidden /> : null}
+      <Flame className="size-5 shrink-0 text-accent" strokeWidth={1.75} />
+      <span className="hq-row-copy">
+        <span className="hq-row-title block">Daily Lantern Run</span>
+        <span className="hq-row-sub block tabular-nums">{state}</span>
+      </span>
     </button>
   );
 }
