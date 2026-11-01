@@ -54,6 +54,7 @@ import {
   type WalletState,
 } from "./wallet.ts";
 import { CITIES, SCOUTS, type KioskId } from "./data.ts";
+import { PLANT_OK_KEY, findPerfectStack, perfectStackClear } from "./placedLantern.ts";
 import type { ScoutId } from "./types.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
 import { rideRamp } from "./rideGames.ts";
@@ -846,6 +847,10 @@ export async function awardGrade(
     return withV2l({ ...grant, detail });
   });
   if (r.ok && !r.replay && matchLost && !full.series && full.poiId) await payOwner(sql, id, nonce, full.poiId);
+  // 0.1.99: a perfect Stack (server grades only) unlocks the placed lantern, once.
+  if (r.ok && full.correct && perfectStackClear(full.series, full.step, full.steps, [...full.prior, letter])) {
+    await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${PLANT_OK_KEY}, ${JSON.stringify({ g: "grade:" + nonce })}) on conflict (user_id, op_key) do nothing`;
+  }
   // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.
   const odds = full.clearTier === "amber" ? CAN_ODDS.amber : full.clearTier === "red" ? CAN_ODDS.red : 0;
   if (r.ok && !r.replay && r.wallet.migrated && full.correct && odds && pay.canRoll) {
@@ -1928,4 +1933,21 @@ async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: Wall
     rideOp(w, { ...clock, watch, play }),
   );
   return applied(r);
+}
+
+/**
+ * 0.1.99: has this player unlocked the placed lantern? The `plantok` row, or (back-fill) a past perfect Stack in
+ * their grade rows since 0.1.36, which writes the row the first time it's found.
+ */
+export async function plantUnlocked(sql: Sql, userId: string): Promise<boolean> {
+  const { id } = await canonicalWallet(sql, userId);
+  const have = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${PLANT_OK_KEY} limit 1`;
+  if (have.length) return true;
+  const rows = await sql<{ op_key: string; detail: string }>`
+    select op_key, detail from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and detail like ${'%"pi":"__stack__"%'} and detail like ${"%Perfect ladder:%"}
+  `;
+  const proof = findPerfectStack(rows);
+  if (!proof) return false;
+  await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${PLANT_OK_KEY}, ${JSON.stringify({ g: proof, backfill: 1 })}) on conflict (user_id, op_key) do nothing`;
+  return true;
 }
