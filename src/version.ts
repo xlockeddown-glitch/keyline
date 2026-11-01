@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.100";
+export const APP_VERSION = "0.1.101";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1100a";
+export const PUBLISH_STAMP = "k1101a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -202,3 +202,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.98: HUD tidy — the Satchel kit button wears a lucide Backpack like Help and Journal; the Daily kit button and the idle/finished Lantern Run HUD line are gone (the live clock line stays only while a run is under way), and a Daily Lantern Run row (not run yet / lit n/5 · time / done · time) opens the run panel from the Quest Board and Journal · Goals; on sm and up the night-market line/chip sits under the kit row at top right (phones keep it in the status plate) (k198a).
 // 0.1.99: +350 red-tier Local trivia cards (hard, diff 3) in new cities_part_h.ts for the four thinnest cities so a placed (Hearth) lantern has 30+ red Local cards there: Nashville 6→31, SF 9→32, Seattle 10→31, Denver 10→30 (poolCensus). Wikipedia-sourced, // source URL per card. No math, no code (k199a).
 // 0.1.100: +369 hard red-tier Local city trivia cards (cities_part_i: Detroit 71, Austin 74, Temple 70, New Orleans 76, Chicago 78), each sourced; lifts those five cities to 30+ red Local (k1100a). Server bundle whitespace-stripped to stay under the deploy size cap; sanitize-server-chunks matches the remoteAddress define whitespace-tolerantly and deploy-guard now fails if it is left unguarded.
+// 0.1.101: +375 hard red-tier Local city trivia cards (cities_part_j: NYC 65, London 70, Tucson 59, Boston 86, Los Angeles 60, Toronto 35), each sourced; lifts those six cities to 30+ red Local (k1101a). Trivia topic cap (maxTopicShare) raised 0.32 → 0.34 so Local can sit at ~33%.

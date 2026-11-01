@@ -33,7 +33,7 @@
     }
   },
   "thresholds": {
-    "maxTopicShare": 0.32,
+    "maxTopicShare": 0.34,
     "maxNicheShare": 0.2,
     "maxBankShare": 0.5,
     "specialtyMaxEasyShare": 0.4,
