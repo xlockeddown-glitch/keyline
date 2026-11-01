@@ -14,7 +14,7 @@ const CAT_LABEL: Record<TriviaCat, string> = {
   sports: "Sports", political: "Political", food: "Food", arts: "Arts", nature: "Nature",
 };
 
-export function rewardLine(r: LevelReward): string {
+function rewardLine(r: LevelReward): string {
   const bits = [`+${r.match.n} ${TIER_LABEL[r.match.tier]} match${r.match.n === 1 ? "" : "es"}`];
   if (r.nameColor) bits.push(`${NAME_COLORS.find((c) => c.id === r.nameColor)?.label} name color`);
   if (r.boost) bits.push("a 15-min double streak boost");
@@ -23,7 +23,7 @@ export function rewardLine(r: LevelReward): string {
 }
 
 /** Show a level-up pop per newly paid level (the highest last), then adopt the wallet. */
-export function celebrate(view: LevelView) {
+function celebrate(view: LevelView) {
   if (!view.paid.length) return;
   const top = view.paid[view.paid.length - 1]!;
   sfx.levelUp(`level:${top.level}`);

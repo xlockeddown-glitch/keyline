@@ -9,12 +9,6 @@ export const FARES_CAP = 2;
 export const WHITE_POCKET = 30;
 export const BLUE_POCKET = 30;
 export const GREEN_POCKET = 30;
-/**
- * Ride grants alone may fill whites this far, so a 14-minute win lands whole.
- * Every other source still stops at WHITE_POCKET.
- */
-/** 0.0.97: no ride special case; rides use the same 30 pocket (and overflow merges like everything else). */
-export const RIDE_WHITE_POCKET = WHITE_POCKET;
 export const SPARK_DAY = 6;
 /** Longest train. Coast-to-coast and overseas sit on this; nearer wards stay on the distance line.
  *  0.0.94: 8 min (was 11) and a gentler distance line, so most rides land around 6-8 min. */
@@ -165,7 +159,7 @@ export function transitLoot(wallMs: number, openMs: number, rideMs = wallMs, out
 }
 
 /**
- * Put ride matches in the pocket. Whites may stack to RIDE_WHITE_POCKET; a blue with no room
+ * Put ride matches in the pocket. Whites may stack to WHITE_POCKET; a blue with no room
  * comes as three whites instead; anything still over is dropped.
  */
 export function pocketRide(keys: Record<Tier, number>, owe: { white: number; blue: number; green: number }) {

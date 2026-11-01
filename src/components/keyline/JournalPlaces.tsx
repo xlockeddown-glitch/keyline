@@ -16,7 +16,7 @@ import { OwnLampsSection, shortCoin } from "./OwnLamps";
 
 const TIER_COUNT = 6;
 
-export function BarRow({ title, have, need, sub, testid }: { title: string; have: number; need: number; sub?: string; testid?: string }) {
+function BarRow({ title, have, need, sub, testid }: { title: string; have: number; need: number; sub?: string; testid?: string }) {
   const pct = need > 0 ? Math.min(100, Math.round((have / need) * 100)) : 0;
   return (
     <li className="jr-row jr-bar-row" data-testid={testid}>

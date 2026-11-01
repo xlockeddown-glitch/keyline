@@ -8,13 +8,13 @@ import { popMatch, useGame } from "@/game/store";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
 
 /** 0.0.99: the signed-in player's city-print progress as the server last reported it. */
-export const usePrints = create<{ rows: PrintRow[] | null }>(() => ({ rows: null }));
+const usePrints = create<{ rows: PrintRow[] | null }>(() => ({ rows: null }));
 
 const km = (m: number) => Math.floor(m / 1000).toLocaleString("en-US");
 const cityName = (id: string) => (CITIES as Record<string, { name: string }>)[id]?.name ?? id;
 
 /** New earns pop once each (the 0.0.98 pop queue holds them until any card or sheet closes). */
-export function celebratePrints(rows: PrintRow[]) {
+function celebratePrints(rows: PrintRow[]) {
   const st = useGame.getState();
   const fresh = rows.filter((r) => r.earned && !st.printsSeen.includes(r.id));
   if (!fresh.length) return;

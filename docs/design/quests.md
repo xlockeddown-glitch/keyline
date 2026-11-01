@@ -1,5 +1,14 @@
 # Weekly and monthly quests to replace milestones (design only)
 
+> **History notice (0.1.96).** Parts 1–3 and Part B are the 2026-10-21 design record, kept for history. Several systems they describe are **retired**:
+> - **Milestones** retired in 0.1.22 (legacy `legacy:*` payouts only).
+> - **Charms** retired in 0.1.22 (Lucky kept for owners via `meta.lucky` / `charm:lucky`; refunds paid in coin since 0.1.86).
+> - **Press stock, brass/ink/vellum and schematics** cut in 0.1.84 (traded for coin once under `gift:stock-0182`).
+> - **Daily goals (`dgoal`)** became server-counted day quests in 0.1.22.
+> - **The timed train and ride games** removed in 0.1.95; ride quests (`d-ride`, `w-out`, `w-out2`) removed. The server still accepts the old `ride` op and reads `ride:` rows for old tabs.
+>
+> The sections from "Implementation notes (0.1.22, built)" onward describe what shipped. Server code that honors old ledger rows (`legacy:*`, `charm:*`, `gift:stock-0182`, `ride:*`) must stay.
+
 Status: draft for Ryan, 2026-10-21, against origin/main 2c10d6d (0.1.20). No code has changed.
 
 ## 1. What exists today
@@ -44,7 +53,7 @@ They pay no coin or matches directly. They pay cloths, titles, a schematic and a
 - **Wallet:** `clothCoin` (`quests.ts`) pays cloth tips on every clear (`wallet.ts` ~l.899). `CLOTH_CAP`, `realCloth` and `clothOp` live in `wallet.ts`. **Keep all of these.**
 - **City passes:** `cityPass.ts migrateUnlocks` reads old `save.quests.circuit` to unlock cities for pre-0.0.56 saves. It only reads, so keep that read.
 - **Levels/XP:** they don't use milestones. `levels.ts xpOf` comes from server counts (correct answers by tier, km, `goal:` rows, `ride:` rows), and the ladder titles come from `levelsServer.ts`, so they're separate from the "Clean hundred" and "Walker" titles.
-- **Goals:** the daily goals (`goals.ts`, `dgoal` op) are a separate system. They stay.
+- **Goals:** the daily goals (`goals.ts`, `dgoal` op) were a separate system at the time. *(History: folded into day quests in 0.1.22.)*
 - **Tests:** `src/game/quests.test.ts` (circuit and long-milestone cases) and `cityPass.test.ts` (reads `quests.circuit`).
 - **Errand / notice-board contract** (`Errand` in the same file): not a milestone. It stays.
 
@@ -132,14 +141,14 @@ About 47k coin a month: a Lamp cottage (40k) in a month, a Row house (130k) in a
 - **Guests:** never pay.
 - **Legacy pass:** pays each earned-but-unclaimed milestone once, and never re-pays an owned cloth.
 
-## 6. Open decisions for Ryan
+## 6. Open decisions for Ryan (history: decided, see Implementation notes)
 1. **Reset clock:** a single Chicago clock (recommended), or each player's city time?
 2. **Cloths:** do the scarves, Road-dust and Red-book cloths come back as rare monthly rewards (for example, a city scarf for `m-tour` in that city), or are they frozen as legacy items for current owners only?
 3. **Reward size:** about 5.7k coin a week and 47k a month plus matches, with a violet for a full month. Keep it, halve it, or make the bonus a car or house discount instead?
 
 ---
 
-# Part B: charms (Ryan: "isn't really working either, scrap or change it?")
+# Part B: charms (history: retired in 0.1.22) (Ryan: "isn't really working either, scrap or change it?")
 
 ## B1. What charms are today
 Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at a print counter (`PrintShop.tsx` `CharmPress`). A print costs stock plus **1 schematic** plus 1 press stock (the city staple). You can **equip only one** (`store.equipped`).
@@ -210,7 +219,7 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 - **Give each charm one clear, distinct job tied to a verb:**
   - **Scholar:** the server adds +3 s to the dealt window *only if owned*, and the shared window shrinks back.
   - **Lantern:** +60 m reach, and the server checks claim distance against `interactRadius(owned)`. This needs the lamp claim to send a position check; today it's device-only.
-  - **Sprinter → "Rider's strap":** +25% coin on ride games.
+  - **Sprinter → "Rider's strap":** +25% coin on ride games. *(History: not built; ride games removed in 0.1.95.)*
   - **Lucky:** unchanged.
   - **New "Night owl's charm":** +1 match on a night-market lamp once a day.
 - **Allow 2 slots**, the second unlocked at level 20, so owning several makes sense.
@@ -247,7 +256,7 @@ Defined in `CHARMS` (`src/game/data.ts` ~l.3761). Each charm is printed once at 
 - Don't do (b): it's the most work and adds power when the economy is being reset around quests.
 - **Schematics:** stop dropping new ones, and convert what players hold into a new **Night-glass alternative recipe**, schematic + pattern instead of press stock, so held schematics stay worth something.
 
-## B5. Open decisions for Ryan (charms)
+## B5. Open decisions for Ryan (charms) (history: decided, see Implementation notes)
 1. Scrap with the Lucky legacy perk (recommended), or full rework (b)?
 2. Raise base reach to 160 m for everyone, or leave 140 m and just refund Lantern owners?
 3. Schematics: give them the Night-glass sink, or retire them and convert held ones to coin (for example, 2,000 each)?

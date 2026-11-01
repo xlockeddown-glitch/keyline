@@ -42,36 +42,6 @@ export function ItemIcon({
   );
 }
 
-export function CostIcons({
-  cost,
-  have,
-}: {
-  cost: { brass: number; ink: number; vellum: number; schematic: number };
-  have: { brass: number; ink: number; vellum: number; schematics: number };
-}) {
-  const rows: { id: ItemId; need: number; got: number }[] = [
-    { id: "brass", need: cost.brass, got: have.brass },
-    { id: "ink", need: cost.ink, got: have.ink },
-    { id: "vellum", need: cost.vellum, got: have.vellum },
-    { id: "schematic", need: cost.schematic, got: have.schematics },
-  ];
-  return (
-    <ul className="flex flex-wrap gap-2">
-      {rows
-        .filter((r) => r.need > 0)
-        .map((r) => (
-          <li
-            key={r.id}
-            className={`inline-flex items-center gap-1 text-xs tabular-nums ${r.got >= r.need ? "text-fg" : "text-danger"}`}
-          >
-            <ItemIcon item={r.id} size={20} />
-            {r.got}/{r.need}
-          </li>
-        ))}
-    </ul>
-  );
-}
-
 export function QtyChip({ item, n }: { item: ItemId; n: number }) {
   if (!n) return null;
   return (

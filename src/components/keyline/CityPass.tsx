@@ -1,6 +1,6 @@
 import { Lock, Ticket } from "lucide-react";
 import { CITIES } from "@/game/data";
-import { PASS_POINTS, lockLine, lockShort, passProgress, unlockCost } from "@/game/cityPass";
+import { PASS_POINTS, lockLine, lockShort, passProgress } from "@/game/cityPass";
 import { useGame } from "@/game/store";
 import type { CityId } from "@/game/types";
 
@@ -96,7 +96,3 @@ export function LockNote({ id, short = false }: { id: CityId; short?: boolean })
   );
 }
 
-export function useUnlockCost(id: CityId) {
-  const cities = useGame((s) => s.cities);
-  return unlockCost(cities, id);
-}

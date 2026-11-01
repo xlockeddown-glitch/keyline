@@ -5,7 +5,7 @@ import { useGame } from "@/game/store";
 import { CITY_BED_NAME } from "@/game/music";
 import { SkyToggle } from "./Sky";
 
-export function useAudioUi() {
+function useAudioUi() {
   const [, setN] = useState(0);
   useEffect(() => subscribeAudio(() => setN((n) => n + 1)), []);
   return { muted: isMuted(), musicOn: isMusicOn() };

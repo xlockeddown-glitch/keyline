@@ -31,10 +31,6 @@ export function streakSub(tier: Tier): string {
   return `You won a ${tier} match. Use it on a ${tier} lamp.`;
 }
 
-export function streakLine(run: number, tier: Tier): string {
-  return `${run} in a row! A ${tier} match.`;
-}
-
 /**
  * 0.0.97 pocket rule (Ryan): every colour holds POCKET (30). A match landing on a full pocket becomes one
  * overflow credit of that colour; every 3 credits merge into 1 match of the NEXT colour only (white→blue→
@@ -159,7 +155,7 @@ export function cacheLine(got: Tier[], coin: number, label: Record<Tier, string>
 }
 
 /** Pay a list of matches with overflow coin. */
-export const STEP_TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
+const STEP_TIERS: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 
 /**
  * The cache always pays (0.0.95): a rolled colour whose pocket is full steps up to the next

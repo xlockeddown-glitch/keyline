@@ -23,13 +23,12 @@ if (import.meta.env.DEV && typeof window !== "undefined") {
   (window as unknown as { __keylineSky?: typeof forceSky }).__keylineSky = (f) => forceSky(f);
 }
 const emit = () => subs.forEach((f) => f());
-export const skyOn = () => on;
-export function toggleSky() {
+function toggleSky() {
   on = !on;
   try { localStorage.setItem(KEY, on ? "on" : "off"); } catch { /* private mode */ }
   emit();
 }
-export function forceSky(f: { weather?: Weather; now?: number; phase?: Phase }) {
+function forceSky(f: { weather?: Weather; now?: number; phase?: Phase }) {
   force = f;
   emit();
 }

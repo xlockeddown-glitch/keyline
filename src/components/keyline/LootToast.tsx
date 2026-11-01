@@ -190,7 +190,7 @@ function Jar() {
 }
 
 /** 0.0.93: the lantern result as emblems + amounts and a big rating word; essentials are badges, not sentences. */
-export function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
+function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
   type Emb = { key: string; title: string; node: React.ReactNode; amt?: React.ReactNode; cls?: string; testid?: string };
   const list: Emb[] = [];
   list.push({ key: "coin", title: `${loot.points} coin`, node: <ItemIcon item="coin" size={44} />, amt: <>+<CountUp to={loot.points} delay={120} /></>, cls: "is-coin" });

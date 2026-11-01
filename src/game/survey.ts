@@ -1,4 +1,4 @@
-import { CITY_LIST, KIND_LABEL, TIER_LABEL } from "./data.ts";
+import { CITY_LIST, TIER_LABEL } from "./data.ts";
 import { RETIRED_POIS } from "./retired.ts";
 import type { CityId, PoiKind, Tier } from "./types.ts";
 
@@ -138,30 +138,4 @@ export function takeSurvey(s: SurveySnap): { keys: Record<Tier, number>; survey:
     survey,
     message: `${top.label} · ${TIER_LABEL[top.reward]} match${extra}`,
   };
-}
-
-export function nextSurvey(s: SurveySnap & { cityId: CityId }) {
-  const open = SURVEY_GOALS.filter((g) => {
-    if (s.survey[g.id]) return false;
-    if (g.kind === "ward" && g.cityId !== s.cityId) return false;
-    return true;
-  });
-  if (!open.length) return null;
-  let best = open[0]!;
-  let bestRatio = -1;
-  for (const g of open) {
-    const have = surveyHave(g, s.atlas, s.distanceM);
-    const ratio = have / g.need;
-    if (ratio > bestRatio) {
-      best = g;
-      bestRatio = ratio;
-    }
-  }
-  const have = surveyHave(best, s.atlas, s.distanceM);
-  const kindBit = best.poiKind ? KIND_LABEL[best.poiKind].toLowerCase() : "places";
-  const progress =
-    best.kind === "walk"
-      ? `${(have / 1000).toFixed(1)} / ${(best.need / 1000).toFixed(0)} km`
-      : `${Math.min(have, best.need)} / ${best.need} ${best.kind === "kind" ? kindBit : "places"}`;
-  return { goal: best, have, line: `${progress} · ${TIER_LABEL[best.reward]}` };
 }

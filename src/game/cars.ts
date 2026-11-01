@@ -6,7 +6,6 @@
  * Bought once with coin at a dealership (one real car lot per city); the server keeps ownership in its ledger
  * (car:<id>) and checks the price, like market lights. No new table.
  */
-import { distM } from "./geo.ts";
 import type { CityId } from "./types";
 
 export type CarId = "civic" | "f150" | "ioniq5" | "mustang" | "belair57" | "model3" | "roadster" | "roadster2";
@@ -87,9 +86,4 @@ export function dealerTap(distanceM: number, seated: boolean): "open" | "walk" |
 
 export function dealerOf(city: CityId): Dealer {
   return DEALERS[city];
-}
-
-export function atDealer(city: CityId, lat: number, lng: number, door?: { lat: number; lng: number } | null): boolean {
-  const d = door ?? DEALERS[city];
-  return distM(lat, lng, d.lat, d.lng) <= DEALER_REACH_M;
 }

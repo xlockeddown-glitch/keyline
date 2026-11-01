@@ -22,7 +22,7 @@ import {
   rideValue,
   type RideOutcome,
 } from "./rideGames.ts";
-import { BLUE_POCKET, RIDE_WHITE_POCKET, WHITE_POCKET, matchCap, pocketRide, settleRide, transitLoot } from "./ticket.ts";
+import { BLUE_POCKET, WHITE_POCKET, matchCap, pocketRide, settleRide, transitLoot } from "./ticket.ts";
 import type { Journey, Tier } from "./types.ts";
 
 const MIN = 37_500; // 0.1.2: tables kept in old minutes; rides now run 5/8 as long and pay the same per ride
@@ -156,7 +156,7 @@ test("forfeit keeps an earlier best", () => {
 });
 
 test("0.0.97: rides use the same 30 pocket; everything owed lands (overflow merges later)", () => {
-  assert.equal(RIDE_WHITE_POCKET, 30);
+  assert.equal(WHITE_POCKET, 30);
   assert.equal(matchCap("white"), WHITE_POCKET);
   const best = rideReward(10.5 * MIN - 1, won(0.74));
   const full = { ...empty(), white: WHITE_POCKET };

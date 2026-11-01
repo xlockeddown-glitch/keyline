@@ -73,7 +73,7 @@ Before you own it, the marker is the cottage painting with a **For sale** chip (
 2. The sheet opens. For sale: four tiers, prices, what the key pays. Owned: the painting, the car in the drive, the key, and the step-up if there is a higher tier.
 3. **Buy** spends coin and swaps the marker. The server checks the price.
 4. Later, after three correct lamps in that city today, **Turn the key**. You get the city’s match if you have not taken that today. Toast, porch stays lit, sheet can close.
-5. CAB, lamps, the market, and the train are unchanged. You walk away.
+5. CAB, lamps, the market, and the train are unchanged. You walk away. *(History: the timed train was removed in 0.1.95; travel is Arrive, Loop or Fly.)*
 
 The buy mock shows a wallet of 184,420: cottage, row house, and townhouse are affordable; the villa says what is still missing. The owned mock is the moment after buying the townhouse (34,420 left), Civic in Rallye Red in the drive, key ready.
 

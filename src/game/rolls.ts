@@ -3,7 +3,6 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import type { CityId, Tier } from "./types";
-import { standingName } from "./standingName";
 import { canonicalId } from "./playerLinks";
 import {
   emptyStandingBoard,
@@ -58,19 +57,6 @@ export type MyPlates = {
   byTier: Record<Tier, { correct: number; rank: number | null }>;
 };
 
-function emptyBoard(): Board {
-  return {
-    byTier: {
-      white: [],
-      blue: [],
-      green: [],
-      amber: [],
-      red: [],
-      violet: [],
-    },
-  };
-}
-
 function emptyMine(): MyPlates {
   return {
     byTier: {
@@ -83,59 +69,6 @@ function emptyMine(): MyPlates {
     },
   };
 }
-
-function publicName(name: string | null | undefined) {
-  return standingName(name);
-}
-
-function boardFromClears(rows: { user_id: string; display_name: string; tier: Tier; correct: number; rank: number }[]): Board {
-  const board = emptyBoard();
-  for (const row of rows) {
-    if (!ROLL_TIERS.includes(row.tier)) continue;
-    board.byTier[row.tier].push({
-      userId: row.user_id,
-      name: publicName(row.display_name),
-      correct: Number(row.correct) || 0,
-      rank: Number(row.rank) || 0,
-    });
-  }
-  return board;
-}
-
-/** Public ranked read — guests may view. Writes stay behind authMiddleware. */
-export const fetchBoard = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const sql = await getSql();
-    const rows = await sql<{
-      user_id: string;
-      display_name: string;
-      tier: Tier;
-      correct: number;
-      rank: number;
-    }>`
-    with ranked as (
-      select
-        user_id,
-        display_name,
-        tier,
-        correct,
-        row_number() over (
-          partition by tier
-          order by correct desc, updated_at asc, user_id asc
-        ) as rank
-      from vault_clears_by_player
-      where correct > 0
-    )
-    select user_id, display_name, tier, correct, rank
-    from ranked
-    where rank <= 25
-    order by tier, rank
-  `;
-    return boardFromClears(rows);
-  } catch {
-    return emptyBoard();
-  }
-});
 
 export const fetchMe = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
