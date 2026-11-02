@@ -123,8 +123,8 @@ export function FriendJournalRow() {
         <p className="hq-row-title">Send a friend ticket</p>
         <p className="hq-row-sub">
           {recent.length
-            ? `Your friend gets the same question and 25 seconds. If they’re right, you each get a match, and your streak with them moves up a color (White → Red). ${DAILY_TICKETS} a day.`
-            : "Answer a trivia card at a lamp and it waits here to send to a friend."}
+            ? `Your friend gets the same question and 25 seconds. If they’re right, you each get a key, and your streak with them moves up a color (White → Red). ${DAILY_TICKETS} a day.`
+            : "Answer a trivia card at a vault and it waits here to send to a friend."}
         </p>
         {recent.length ? (
           <ul className="mt-2 grid min-w-0 gap-2">
@@ -208,7 +208,7 @@ function FriendSheet({ card, onClose }: { card: Offer; onClose: () => void }) {
 
   const share = async (url: string) => {
     try {
-      await navigator.share({ title: "Keyline friend ticket", text: "One trivia card, 25 seconds. Get it right and we both get a match. Each right answer moves our streak up a color.", url });
+      await navigator.share({ title: "Keyline friend ticket", text: "One trivia card, 25 seconds. Get it right and we both get a key. Each right answer moves our streak up a color.", url });
     } catch (e) {
       // Cancelled is fine; anything else falls back to the clipboard.
       if (!(e instanceof DOMException && e.name === "AbortError")) void copy(url);
@@ -231,7 +231,7 @@ function FriendSheet({ card, onClose }: { card: Offer; onClose: () => void }) {
         </div>
         <p className="ft-q">{card.q}</p>
         <p className="mt-3 text-sm text-pretty text-fg-muted">
-          Your friend gets this exact question with 25 seconds to answer. If they’re right, you each get a match, and your streak with them moves up a color (White → Red).
+          Your friend gets this exact question with 25 seconds to answer. If they’re right, you each get a key, and your streak with them moves up a color (White → Red).
         </p>
 
         {state.kind === "making" ? <div className="mt-4 h-11 animate-pulse rounded-md bg-bg-subtle" aria-label="Making your ticket" /> : null}
@@ -261,7 +261,7 @@ function FriendSheet({ card, onClose }: { card: Offer; onClose: () => void }) {
 
         {state.kind === "guest" ? (
           <div className="mt-4 flex flex-col gap-2">
-            <p className="text-sm text-fg">Friend tickets need an account, so the match knows where to go.</p>
+            <p className="text-sm text-fg">Friend tickets need an account, so the key knows where to go.</p>
             <SignInActions />
           </div>
         ) : null}
@@ -342,9 +342,9 @@ export function newsLine(items: { role: "sender" | "friend"; name: string; pay?:
     const pay = it.pay ?? { tier: "white" as const, rung: 0 };
     const name = pay.tier[0]!.toUpperCase() + pay.tier.slice(1);
     const who = it.name.replace(/\.$/, "");
-    return `${it.role === "sender" ? `${who} got your friend ticket right.` : `Friend ticket from ${who}.`} You each got ${/^[AEIOU]/i.test(name) ? "an" : "a"} ${name} match. Streak ${pay.rung + 1} of ${LADDER.length}.`;
+    return `${it.role === "sender" ? `${who} got your friend ticket right.` : `Friend ticket from ${who}.`} You each got ${/^[AEIOU]/i.test(name) ? "an" : "a"} ${name} key. Streak ${pay.rung + 1} of ${LADDER.length}.`;
   }
-  const tail = added && coins ? ` · +${added} match${added === 1 ? "" : "es"} (match ↑), +${coins} coin (every pocket full)` : coins ? ` · +${coins} coin (every pocket full)` : ` · +${n} match${n === 1 ? "" : "es"}`;
+  const tail = added && coins ? ` · +${added} key${added === 1 ? "" : "s"} (key ↑), +${coins} coin (every pocket full)` : coins ? ` · +${coins} coin (every pocket full)` : ` · +${n} key${n === 1 ? "" : "s"}`;
   if (n === 1) {
     const it = items[0]!;
     return it.role === "sender" ? `${it.name} got your friend ticket right${tail}` : `Friend ticket from ${it.name}${tail}`;

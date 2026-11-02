@@ -807,10 +807,10 @@ function rideFindCopy(add: { white: number; blue: number; green: number }) {
   if (!parts.length) return "";
   const list =
     parts.length === 1 ? parts[0]! : parts.length === 2 ? `${parts[0]} and ${parts[1]}` : `${parts[0]}, ${parts[1]}, and ${parts[2]}`;
-  if (add.green) return `${list} match${parts.length > 1 || add.white > 1 ? "es" : ""}. You sat the whole haul.`;
-  if (add.blue) return `${list} match${parts.length > 1 || add.white > 1 ? "es" : ""} in the car.`;
-  if (add.white === 1) return "White match. Left on the seat.";
-  return `${add.white} white matches in the car.`;
+  if (add.green) return `${list} key${parts.length > 1 || add.white > 1 ? "s" : ""}. You sat the whole haul.`;
+  if (add.blue) return `${list} key${parts.length > 1 || add.white > 1 ? "s" : ""} in the car.`;
+  if (add.white === 1) return "White key. Left on the seat.";
+  return `${add.white} white keys in the car.`;
 }
 
 function flashToast(set: (p: Partial<GameState>) => void, get: () => GameState, msg: string, ms = 2000) {
@@ -858,7 +858,7 @@ function foldWheel(get: () => GameState, tier: Tier): { correctByTier: Record<Ti
   return { correctByTier, wheel: held };
 }
 
-const DEAL_FAIL = "The lamp can't reach the card office. Check your connection and try again — no match spent.";
+const DEAL_FAIL = "The vault can't reach the card office. Check your connection and try again — no key spent.";
 const SEEN_ID = /^[A-Za-z0-9_:.~-]{1,80}$/;
 
 /**
@@ -1402,10 +1402,10 @@ export const useGame = create<GameState>((set, get) => ({
       lastKeyAt: Date.now(),
       toast:
         mult > 1
-          ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} match${add === 1 ? "" : "es"}${coin ? ` + ${coin} coin (every pocket full)` : ""}`
+          ? `${MARKET_TAG} · ${add} ${TIER_LABEL[k.tier]} key${add === 1 ? "" : "s"}${coin ? ` + ${coin} coin (every pocket full)` : ""}`
           : via === "magnet"
             ? `Magnet: +1 ${TIER_LABEL[k.tier]}`
-            : `${TIER_LABEL[k.tier]} match`,
+            : `${TIER_LABEL[k.tier]} key`,
     });
     if (via === "magnet") {
       const city = get().cityId;
@@ -1413,7 +1413,7 @@ export const useGame = create<GameState>((set, get) => ({
     } else pushOp({ kind: "street", id: k.id, tier: k.tier, city: get().cityId, lat: k.lat, lng: k.lng });
     scheduleSave(get);
     window.setTimeout(() => {
-      if (get().toast?.includes("match") || get().toast?.startsWith("Magnet:")) set({ toast: null });
+      if (get().toast?.includes(" key") || get().toast?.startsWith("Magnet:")) set({ toast: null });
     }, 1400);
   },
   maybeSpawnKey: (now) => {
@@ -1467,7 +1467,7 @@ export const useGame = create<GameState>((set, get) => ({
       if (live && live.readyAt === 0) continue;
       if (live && live.readyAt > now) continue;
       patch[def.kind] = placeRun(cityId);
-      notes.push(live ? `${def.name} is back on the street.` : `${def.name} is up. ${def.kicker[0]!.toUpperCase()}${def.kicker.slice(1)} match.`);
+      notes.push(live ? `${def.name} is back on the street.` : `${def.name} is up. ${def.kicker[0]!.toUpperCase()}${def.kicker.slice(1)} key.`);
     }
     if (!notes.length) return;
     sfx.ui();
@@ -1493,7 +1493,7 @@ export const useGame = create<GameState>((set, get) => ({
     const city = CITIES[get().cityId];
     const series = seriesOf(poiId);
     const poi = series ? seriesPoi(series) : livePois(city, get().blanks).find((p) => p.id === poiId);
-    if (!poi) return "No lamp.";
+    if (!poi) return "No vault.";
     // 0.0.57: one lamp at a time. An answer with the server stays; any other open card is walked away from first (its held match comes back).
     if (get().openVault?.poiId === poiId) return null;
     if (get().openVault?.pending === "grade") return "Finish this trivia card first.";
@@ -1518,7 +1518,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (series) {
       const live = seriesLive(get(), series.kind);
       if (!live || live.readyAt > Date.now()) return `${series.name} is recasting.`;
-      if (!hasMatch(get().keys, series.cost)) return `Need a ${TIER_LABEL[series.cost]} match.`;
+      if (!hasMatch(get().keys, series.cost)) return `Need a ${TIER_LABEL[series.cost]} key.`;
       sfx.open();
       set({
         openVault: {
@@ -1540,13 +1540,13 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const v = get().vaults[poiId];
     const clock = Date.now();
-    if (v && v.state === "cooling" && v.coolUntil > clock) return `This lamp is dark for ${formatCool(v.coolUntil - clock)}.`;
+    if (v && v.state === "cooling" && v.coolUntil > clock) return `This vault is dark for ${formatCool(v.coolUntil - clock)}.`;
     if (!hasMatch(get().keys, poi.tier)) {
       // 0.1.19 (Ryan): violet never sparks; it needs a violet match.
-      if (!sparkTier(poi.tier)) return `Need a ${TIER_LABEL[poi.tier]} match.`;
+      if (!sparkTier(poi.tier)) return `Need a ${TIER_LABEL[poi.tier]} key.`;
       const spark = sparksNow(get);
-      if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} match. Sparks are spent today.`;
-      if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} match. This wick already sparked.`;
+      if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} key. Sparks are spent today.`;
+      if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} key. This wick already sparked.`;
       sfx.open();
       set({
         openVault: { poiId, startedAt: now, question: null, category: null, deadline: now, spark: true },
@@ -1579,7 +1579,7 @@ export const useGame = create<GameState>((set, get) => ({
     const cost: Tier | null = ov.spark ? null : series ? series.cost : (anyPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
     if (!ov.spark && !cost) return;
     if (cost && !hasMatch(get().keys, cost)) {
-      flashToast(set, get, `Need a ${TIER_LABEL[cost]} match.`, 2400);
+      flashToast(set, get, `Need a ${TIER_LABEL[cost]} key.`, 2400);
       set({ openVault: null });
       return;
     }
@@ -1595,7 +1595,7 @@ export const useGame = create<GameState>((set, get) => ({
       }
       if ("need" in dealt) {
         set({ openVault: null });
-        flashToast(set, get, `Need a ${TIER_LABEL[cost!]} match.`, 2400);
+        flashToast(set, get, `Need a ${TIER_LABEL[cost!]} key.`, 2400);
         return;
       }
       const spark = Boolean(cur.spark);
@@ -1605,7 +1605,7 @@ export const useGame = create<GameState>((set, get) => ({
       const keys = dealt.wallet ? cleanKeys(dealt.wallet.keys) : cost ? spendMatch(get().keys, cost) : get().keys;
       if (!keys) {
         set({ openVault: null });
-        flashToast(set, get, `Need a ${TIER_LABEL[cost!]} match.`, 2400);
+        flashToast(set, get, `Need a ${TIER_LABEL[cost!]} key.`, 2400);
         return;
       }
       const pressPass = !spark && extra >= 5000 && get().pressPass > 0 ? get().pressPass - 1 : get().pressPass;
@@ -1648,11 +1648,11 @@ export const useGame = create<GameState>((set, get) => ({
       if (timeout || performance.now() >= cur.deadline) {
         // The wick is out and the lamp can't be reached: a miss (never a reward without the server's grade).
         set({ openVault: { ...cur, pending: undefined } });
-        get().settleAnswer({ correct: false, elapsed: clientMs, reveal: "The lamp lost its line — no answer this time.", credited: false }, performance.now());
+        get().settleAnswer({ correct: false, elapsed: clientMs, reveal: "The vault lost its line — no answer this time.", credited: false }, performance.now());
         return;
       }
       set({ openVault: { ...cur, pending: undefined } });
-      flashToast(set, get, "The lamp lost its line. Tap your answer again.", 2600);
+      flashToast(set, get, "The vault lost its line. Tap your answer again.", 2600);
     };
     void gradeTrivia({ data: { token, choice: timeout ? null : choice, clientMs } })
       .then((res: GradeResult) => {
@@ -1705,7 +1705,7 @@ export const useGame = create<GameState>((set, get) => ({
           openVault: null,
           loot: null,
           miss: { answer: out.reveal, fact: out.fact },
-          toast: "Not quite. The lamp goes dark for now.",
+          toast: "Not quite. The vault goes dark for now.",
           quests: answered(get, false, false),
         });
         scheduleSave(get);
@@ -1718,7 +1718,7 @@ export const useGame = create<GameState>((set, get) => ({
       const sparkCoin = sparkMult > 1 && have < cap ? marketOverflowCoin(poi.tier, sparkMult, sparkAdd) : 0;
       const sparkTag =
         sparkMult > 1
-          ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} match${sparkAdd === 1 ? "" : "es"} from the wick${sparkCoin ? ` + ${sparkCoin} coin (every pocket full)` : ""}.`
+          ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} key${sparkAdd === 1 ? "" : "s"} from the wick${sparkCoin ? ` + ${sparkCoin} coin (every pocket full)` : ""}.`
           : null;
       const spun = foldWheel(get, poi.tier);
       const boost = rollBoosts(get, true, elapsed, ov.category);
@@ -1744,7 +1744,7 @@ export const useGame = create<GameState>((set, get) => ({
           miss: null,
           ...spun,
           toast: [
-            upTiers ? `Match ↑ ${upTiers}.${sparkMult > 1 ? ` ${MARKET_TAG}.` : ""}` : `Every pocket is full: +${stepped.coin} coin.`,
+            upTiers ? `Key ↑ ${upTiers}.${sparkMult > 1 ? ` ${MARKET_TAG}.` : ""}` : `Every pocket is full: +${stepped.coin} coin.`,
             paid.boosts.length ? `${paid.boosts.join(" · ")}.` : null,
           ]
             .filter(Boolean)
@@ -1770,8 +1770,8 @@ export const useGame = create<GameState>((set, get) => ({
           ...spun,
           toast: [
             sparkTag ?? (paid.boosts.length
-              ? `A ${TIER_LABEL[poi.tier]} match from the wick. ${paid.boosts.join(" · ")}.`
-              : `A ${TIER_LABEL[poi.tier]} match from the wick.`),
+              ? `A ${TIER_LABEL[poi.tier]} key from the wick. ${paid.boosts.join(" · ")}.`
+              : `A ${TIER_LABEL[poi.tier]} key from the wick.`),
             sparkTag && paid.boosts.length ? `${paid.boosts.join(" · ")}.` : null,
             questHit.line,
           ]
@@ -1947,14 +1947,14 @@ export const useGame = create<GameState>((set, get) => ({
       if (paid.whiteAdded) extraKeys.white = (extraKeys.white ?? 0) + paid.whiteAdded;
       loot.keys = extraKeys;
       loot.points = paid.points - get().points;
-      const boostLines = prize ? [...paid.boosts, `${PRIZE_TAG}: ${prize} match +${prizeCoin}`] : paid.boosts;
+      const boostLines = prize ? [...paid.boosts, `${PRIZE_TAG}: ${prize} key +${prizeCoin}`] : paid.boosts;
       loot.boosts = boostLines.length ? boostLines : undefined;
       if (loot.grade === "perfect") sfx.perfect();
       else sfx.correct();
       const spun = foldWheel(get, series.cost);
       const clearLine = (prize
-        ? `${series.name} is clear, all perfect. ${TIER_LABEL[series.pay]} match and a prize match.`
-        : `${series.name} is clear. ${TIER_LABEL[series.pay]} match.`) + (sMult > 1 ? ` ${MARKET_TAG}.` : "");
+        ? `${series.name} is clear, all perfect. ${TIER_LABEL[series.pay]} key and a prize key.`
+        : `${series.name} is clear. ${TIER_LABEL[series.pay]} key.`) + (sMult > 1 ? ` ${MARKET_TAG}.` : "");
       const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
       const paintLine = paints.length ? paints.map((id) => paintFoundLine(id)).join(" ") : null;
       const questHit = cleared(get, answered(get, true, grade === "perfect"), { id: series.id, tier: series.cost });
@@ -2114,7 +2114,7 @@ export const useGame = create<GameState>((set, get) => ({
       if (done.length >= contract.ids.length) {
         nextKeys.amber += 1;
         loot.points += 1500;
-        contractToast = "Contract complete. Amber match issued.";
+        contractToast = "Contract complete. Amber key issued.";
         contract = seedContract(get().cityId);
       }
     }
@@ -2131,7 +2131,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (grade === "perfect") sfx.perfect();
     else sfx.correct();
     if (grade === "perfect" && poi.tier === "violet") {
-      popMatch({ kind: "perfect", big: "Perfect on violet!", sub: "The hardest lamp, answered fast. Well done!", tiers: [], coin: 0, cheer: "violet" });
+      popMatch({ kind: "perfect", big: "Perfect on violet!", sub: "The hardest vault, answered fast. Well done!", tiers: [], coin: 0, cheer: "violet" });
     }
     const spun = foldWheel(get, poi.tier);
     const wornCloth = get().quests.worn;
@@ -2189,7 +2189,7 @@ export const useGame = create<GameState>((set, get) => ({
       set({
         openVault: null,
         ...seriesPatch(series.kind, coolSeries(get(), series)),
-        toast: `You walked away from ${series.name}, so that match is used up.`,
+        toast: `You walked away from ${series.name}, so that key is used up.`,
         ...missStreak(get),
       });
       scheduleSave(get);
@@ -2489,7 +2489,7 @@ export const useGame = create<GameState>((set, get) => ({
     set({ points: st.points - cost, houses: { ...st.houses, [city]: { ...st.houses[city], tier: def.id } } });
     pushOp({ kind: "house", city, tier: def.id }, () => set(before));
     sfx.craft();
-    flashToast(set, get, owned ? `Upgraded to the ${def.name}.` : `The ${def.name} is yours! Light ${HOME_LAMPS} lamps here, then turn the key for your daily match.`, 2400);
+    flashToast(set, get, owned ? `Upgraded to the ${def.name}.` : `The ${def.name} is yours! Open ${HOME_LAMPS} vaults here, then turn the key for your daily key.`, 2400);
     scheduleSave(get);
   },
   turnKey: (city) => {
@@ -2501,14 +2501,14 @@ export const useGame = create<GameState>((set, get) => ({
     }
     void commitWallet({ kind: "home", city }).then((r) => {
       if (!r) return flashToast(set, get, "Couldn't turn the key. Try again in a moment.", 2000);
-      if (!r.ok && r.reason === "unproven") return flashToast(set, get, `Light ${HOME_LAMPS} lamps in this city today first, then turn the key.`, 2400);
+      if (!r.ok && r.reason === "unproven") return flashToast(set, get, `Open ${HOME_LAMPS} vaults in this city today first, then turn the key.`, 2400);
       if (!r.ok) return flashToast(set, get, "Couldn't turn the key. Try again in a moment.", 2000);
       const h = r.home;
       const day = h?.day ?? cityDay(city, Date.now());
       set({ homeClaims: Array.from(new Set([...get().homeClaims, `hook:${city}:${day}`])).slice(-40) });
 
       sfx.pickup();
-      flashToast(set, get, h?.match ? `You got ${h.n ?? 2} ${TIER_LABEL[h.match]} matches${h.coin ? ` and ${h.coin.toLocaleString("en-US")} coins` : ""}. Come back tomorrow for more.` : "You already got today's key. More at midnight.", 2600);
+      flashToast(set, get, h?.match ? `You got ${h.n ?? 2} ${TIER_LABEL[h.match]} keys${h.coin ? ` and ${h.coin.toLocaleString("en-US")} coins` : ""}. Come back tomorrow for more.` : "You already got today's key. More at midnight.", 2600);
       saveNow(get);
     });
   },
@@ -2762,7 +2762,7 @@ export const useGame = create<GameState>((set, get) => ({
     flashToast(
       set,
       get,
-      !use ? (job === "coat" ? "Back in the field coat." : "Vaults back to brass.") : job === "coat" ? `${use.name} on the coat.` : `Street vaults in ${use.name.toLowerCase()}.`,
+      !use ? (job === "coat" ? "Back in the field coat." : "Lamps back to brass.") : job === "coat" ? `${use.name} on the coat.` : `Street vaults in ${use.name.toLowerCase()}.`,
       1400,
     );
     saveNow(get);
@@ -2804,7 +2804,7 @@ export const useGame = create<GameState>((set, get) => ({
         points: get().points - item.cost,
         keys: { ...get().keys, [tier]: have + n },
       });
-      flashToast(set, get, n === 1 ? `${TIER_LABEL[tier]} match from the desk.` : `Two white matches from the desk.`, 2200);
+      flashToast(set, get, n === 1 ? `${TIER_LABEL[tier]} key from the desk.` : `Two white keys from the desk.`, 2200);
       pushOp({ kind: "kiosk", id });
       scheduleSave(get);
       return;
@@ -2836,7 +2836,7 @@ export const useGame = create<GameState>((set, get) => ({
         points: get().points - item.cost,
         keys: { ...get().keys, [tier]: get().keys[tier] + 1 },
       });
-      flashToast(set, get, `${TIER_LABEL[tier]} match from the desk.`, 2200);
+      flashToast(set, get, `${TIER_LABEL[tier]} key from the desk.`, 2200);
       pushOp({ kind: "kiosk", id });
       scheduleSave(get);
       return;
@@ -2893,7 +2893,7 @@ export const useGame = create<GameState>((set, get) => ({
     const all = i === 3;
     if (all ? !(g.paid.every(Boolean) && !g.all) : !goalDone(g, i) || g.paid[i]) return;
     const mark = (): GoalDay => (all ? { ...g, all: true } : { ...g, paid: g.paid.map((p, k) => p || k === i) as GoalDay["paid"] });
-    const line = all ? "All three goals! A green match." : `Goal done. +${GOAL_COIN} coin.`;
+    const line = all ? "All three goals! A green key." : `Goal done. +${GOAL_COIN} coin.`;
     if (walletLive()) {
       void commitWallet({ kind: "dgoal", i }).then((r) => {
         if (!r?.ok && !r?.replay) {
@@ -2927,18 +2927,18 @@ export const useGame = create<GameState>((set, get) => ({
         if (r.can) gotCan(r.can);
         // 0.1.23: already opened today (another device): say so, no empty "pockets full" pop.
         if (r.replay || r.cache?.already || !r.cache) {
-          set({ toast: "You already opened today's match cache. A new one appears tomorrow." });
+          set({ toast: "You already opened today's key cache. A new one appears tomorrow." });
           saveNow(get);
           return;
         }
-        popMatch({ kind: "cache", big: "Match cache!", sub: say(r.cache?.got ?? [], r.cache?.coin ?? 0).replace(/^Match cache! /, ""), tiers: r.cache?.got ?? [], coin: r.cache?.coin ?? 0 });
+        popMatch({ kind: "cache", big: "Key cache!", sub: say(r.cache?.got ?? [], r.cache?.coin ?? 0).replace(/^Key cache! /, ""), tiers: r.cache?.got ?? [], coin: r.cache?.coin ?? 0 });
         saveNow(get);
       });
       return;
     }
     const paid = payMatches(get().keys, cachePrize(streetPlayer() || "guest", d));
     set({ keys: paid.keys, points: get().points + paid.coin });
-    popMatch({ kind: "cache", big: "Match cache!", sub: say(paid.got, paid.coin).replace(/^Match cache! /, ""), tiers: paid.got, coin: paid.coin });
+    popMatch({ kind: "cache", big: "Key cache!", sub: say(paid.got, paid.coin).replace(/^Key cache! /, ""), tiers: paid.got, coin: paid.coin });
     scheduleSave(get);
   },
   spinWheel: async () => {

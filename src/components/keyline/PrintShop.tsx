@@ -110,7 +110,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
                   <div className="mt-2 grid gap-1.5">
                     <Price c={c} paidW={paid.white} paidB={paid.blue} />
                     {done > 0 ? (
-                      <div className="paid-bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={`${done} of ${total} matches paid`}>
+                      <div className="paid-bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={`${done} of ${total} keys paid`}>
                         <i style={{ width: `${(done / total) * 100}%` }} />
                       </div>
                     ) : null}
@@ -156,7 +156,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
         <div className="hq-row items-center">
           <div className="hq-row-copy">
             <p className="hq-row-title">Your pocket</p>
-            <p className="hq-row-sub">Pay for prints with matches. You can pay a little at a time; the shop remembers what you've paid.</p>
+            <p className="hq-row-sub">Pay for prints with keys. You can pay a little at a time; the shop remembers what you've paid.</p>
           </div>
           <span className="inline-flex items-center gap-3 text-sm tabular-nums">
             <span className="inline-flex items-center gap-1">
@@ -171,7 +171,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
         </div>
       ) : null}
       {section("coat", "Coats", "A new coat for your character. It only changes how you look.")}
-      {section("lantern", "Lantern skins", "Gives every street lamp a new metal frame. The glass keeps its color, so you can still tell which match a lamp needs.")}
+      {section("lantern", "Lantern skins", "Gives every street lamp a new metal frame. The glass keeps its color, so you can still tell which key a lamp needs.")}
       <PaintVat counter={counter} />
       {counter ? <NightPress /> : null}
     </div>

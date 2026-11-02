@@ -123,10 +123,10 @@ export function paintFromClears(clears: number, paintIn: number): string | null 
 
 export const PAY_NOTES = [
   "These coin amounts are for a normal question. Easy questions pay about 70% of that. Hard questions pay about 45% more. Answering several right in a row adds up to 40% more.",
-  "Opening a lamp uses one match of its color. A very fast right answer has a 1 in 10 chance of a free blue match. With Lucky on (kept from the old Lucky bit, or a month from the Full month quest), about 1 in 7 lamps also give back a match of their color.",
-  `Paint is that lamp's color. Prism is separate: any lamp, about 1 in ${ULTRA_DROP_IN.toLocaleString()}, and it can land with the color can.`,
-  "The Run and The Stack give a match. Lamps inside a night market pay double coin and double bonus matches (not paint), then rest four times as long.",
-  "Each time you open the same lamp on the same day, it stays dark longer: the usual time after the 1st open, twice as long after the 2nd, three times after the 3rd, and so on. It starts over at midnight in that city. Night market lanterns open once per market.",
+  "Opening a vault uses one key of its color. A very fast right answer has a 1 in 10 chance of a free blue key. With Lucky on (kept from the old Lucky bit, or a month from the Full month quest), about 1 in 7 vaults also give back a key of their color.",
+  `Paint is that vault's color. Prism is separate: any vault, about 1 in ${ULTRA_DROP_IN.toLocaleString()}, and it can land with the color can.`,
+  "The Run and The Stack give a key. Vaults inside a night market pay double coin and double bonus keys (not paint), then rest four times as long.",
+  "Each time you open the same vault on the same day, it stays dark longer: the usual time after the 1st open, twice as long after the 2nd, three times after the 3rd, and so on. It starts over at midnight in that city. Night market lanterns open once per market.",
 ] as const;
 
 /** Ladder check used by the guide test: a perfect ordinary clear is the tier's coin value. */

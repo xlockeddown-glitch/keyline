@@ -65,7 +65,7 @@ export function MarketLightsPanel() {
   return (
     <div data-testid="market-lights">
       <p className="kicker">Market lights</p>
-      <p className="mt-1 text-xs text-fg-muted">Brighter lights draw a bigger crowd: night-market coin pays more. Matches stay ×2. Owl stacks; combined cap ×{MARKET_COIN_CAP}.</p>
+      <p className="mt-1 text-xs text-fg-muted">Brighter lights draw a bigger crowd: night-market coin pays more. Keys stay ×2. Owl stacks; combined cap ×{MARKET_COIN_CAP}.</p>
       <ul className="mt-1">
         {MARKET_LIGHTS.map((l) => {
           const have = owned.includes(l.id);
@@ -102,7 +102,7 @@ export function MarketJournalRow() {
   if (!market) return null;
   const city = CITIES[cityId];
   const lamps = market.street.lamps.map((id) => city.pois.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => Boolean(p));
-  const named = lamps.map((p) => (atlas[p.id] ? p.name : "an undiscovered lamp"));
+  const named = lamps.map((p) => (atlas[p.id] ? p.name : "an undiscovered vault"));
   const next = nextMarket(cityId, now);
   const until = new Date(market.endsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   return (
@@ -114,7 +114,7 @@ export function MarketJournalRow() {
         </p>
         <p className="hq-row-title">{market.street.name}</p>
         <p className="hq-row-sub">
-          Lamps, trivia cards and matches in the market zone pay double while it's open (10 minutes, then 5 dark before it opens somewhere new)
+          Vaults, trivia cards and keys in the market zone pay double while it's open (10 minutes, then 5 dark before it opens somewhere new)
           {named.length ? ` — ${named.join(", ")}.` : "."} Every walker in {city.name} shares the same market.
           {next ? ` Next: ${next.street.name}.` : ""}
         </p>

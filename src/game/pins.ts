@@ -6,10 +6,35 @@ import type { Poi, Tier } from "./types";
  * "Need a X match": poi.tier for lamps, series.cost for The Run / The Stack.
  * (v0.0.18: the Run marker was hard-coded tier-amber while it costs a blue match.)
  */
-const LANTERN = `<span class="lantern"><i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"><i class="lantern-flick"></i></i></i><i class="lantern-post"></i></span>`;
+
+/**
+ * 0.1.102 Vault Keys: the street marker is a layered-SVG vault (steel box, brass trim, bolt-ringed dial), one drawing
+ * recoloured per tier through --glow. The dial carries the tier glyph and numeral and the card slot repeats the glyph,
+ * so a tier reads by shape and numeral as well as colour (I circle, II square, III triangle, IV hexagon, V diamond,
+ * VI star). The gradients are the same in every copy, so the shared ids are harmless. The ground shadow is the
+ * world-obj CSS ellipse.
+ */
+const VK_GLYPH: Record<Tier, string> = {
+  white: '<circle cx="0" cy="0" r="6"/>',
+  blue: '<rect x="-5.4" y="-5.4" width="10.8" height="10.8" rx="1.4"/>',
+  green: '<polygon points="0,-7.2 6.3,3.8 -6.3,3.8"/>',
+  amber: '<polygon points="6.4,0 3.2,5.5 -3.2,5.5 -6.4,0 -3.2,-5.5 3.2,-5.5"/>',
+  red: '<polygon points="0,-7.4 6.2,0 0,7.4 -6.2,0"/>',
+  violet: '<polygon points="0,-7.6 1.9,-2.4 7.2,-2.4 2.9,0.9 4.5,6.1 0,3 -4.5,6.1 -2.9,0.9 -7.2,-2.4 -1.9,-2.4"/>',
+};
+const VK_NUM: Record<Tier, string> = { white: "I", blue: "II", green: "III", amber: "IV", red: "V", violet: "VI" };
+const VK_DEFS = `<defs><linearGradient id="vk-f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7d8794"/><stop offset=".5" stop-color="#4c5561"/><stop offset="1" stop-color="#2b3139"/></linearGradient><linearGradient id="vk-s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22272f"/><stop offset="1" stop-color="#3b424c"/></linearGradient><radialGradient id="vk-d" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#9aa4b0"/><stop offset=".6" stop-color="#58616d"/><stop offset="1" stop-color="#30363f"/></radialGradient><linearGradient id="vk-b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2d38a"/><stop offset=".5" stop-color="#b8913f"/><stop offset="1" stop-color="#6e5320"/></linearGradient></defs>`;
+const VK_BOLTS = Array.from({ length: 8 }, (_, k) => {
+  const a = (k * Math.PI) / 4;
+  return `<circle cx="${(30 + Math.cos(a) * 14.5).toFixed(1)}" cy="${(30 + Math.sin(a) * 14.5).toFixed(1)}" r="1.5"/>`;
+}).join("");
+
+export function vaultSvg(tier: Tier) {
+  return `<svg class="vk-vault" viewBox="0 0 60 60" aria-hidden="true">${VK_DEFS}<path d="M9 9 l-5 4 v40 l5 2z" fill="url(#vk-s)" stroke="#1a1410" stroke-width="1"/><rect x="9" y="7" width="47" height="50" rx="4" fill="url(#vk-f)" stroke="#1a1410" stroke-width="1.2"/><rect x="11.5" y="9.5" width="42" height="45" rx="3" fill="none" stroke="url(#vk-b)" stroke-width="1.6"/><rect x="14" y="4" width="37" height="4" rx="1.5" fill="url(#vk-b)" stroke="#1a1410" stroke-width=".7"/><circle class="vk-ring" cx="30" cy="30" r="18" fill="url(#vk-d)" stroke-width="1.8"/><g class="vk-bolts" fill="#8d97a3" stroke="#1a1410" stroke-width=".5">${VK_BOLTS}</g><circle cx="30" cy="29" r="9.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="2"/><g class="vk-glyph" transform="translate(30 29)" stroke="#1a1410" stroke-width=".8" stroke-linejoin="round">${VK_GLYPH[tier]}</g><text class="vk-num" x="30" y="31.4" text-anchor="middle">${VK_NUM[tier]}</text><rect x="23" y="46" width="14" height="7" rx="1.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="1"/><rect class="vk-slot" x="27.5" y="48" width="7.5" height="3" rx=".6"/><g class="vk-glyph" transform="translate(25.3 49.5) scale(.22)">${VK_GLYPH[tier]}</g></svg>`;
+}
 
 export function vaultPinHtml(poi: Pick<Poi, "tier">, o: { cooling?: boolean } = {}) {
-  return `<div class="vault-pin tier-${poi.tier}${o.cooling ? " cooling" : ""}">${LANTERN}</div>`;
+  return `<div class="vault-pin tier-${poi.tier}${o.cooling ? " cooling" : ""}">${vaultSvg(poi.tier)}</div>`;
 }
 
 /** Front of a carriage on rails: lamps, windscreen, buffers. Reads as "train" at 20px. */

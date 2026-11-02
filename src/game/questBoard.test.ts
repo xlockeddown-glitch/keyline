@@ -17,10 +17,10 @@ test("bank sizes, rewards scaled to their siblings, no violet anywhere", () => {
   for (const d of BANK.week) assert.ok(d.reward.coins >= 1_000 && d.reward.coins <= 2_000, d.id);
   for (const d of BANK.month) assert.ok(d.reward.coins >= 12_000 && d.reward.coins <= 20_000, d.id);
   for (const k of KINDS) for (const d of [...BANK[k], BONUS[k]]) assert.ok(!d.reward.matches.includes("violet"), d.id);
-  assert.equal(rewardLine(BONUS.day.reward), "green match");
-  assert.equal(rewardLine(BONUS.week.reward), "red match");
+  assert.equal(rewardLine(BONUS.day.reward), "green key");
+  assert.equal(rewardLine(BONUS.week.reward), "red key");
   assert.equal(rewardLine(BONUS.month.reward), "Lucky next month");
-  assert.equal(rewardLine(questDef("w-streak")!.reward), "1,000 coin + blue match + green match");
+  assert.equal(rewardLine(questDef("w-streak")!.reward), "1,000 coin + blue key + green key");
 });
 
 test("a set is the same every time for the same player and period, and fixed for the period", () => {
@@ -203,7 +203,7 @@ test("0.1.27 regular slots stay inside their fairness band; challenges pay more 
         assert.ok(c.reward.matches.includes("red") && !c.reward.matches.includes("violet"));
       }
     }
-  assert.equal(rewardLine(questDef("mc-run")!.reward), "40,000 coin + 2 red matches");
+  assert.equal(rewardLine(questDef("mc-run")!.reward), "40,000 coin + 2 red keys");
   // Higher targets on the busiest quests.
   assert.equal(questDef("w-lamps2")!.need, 50);
   assert.equal(questDef("w-street2")!.need, 25);

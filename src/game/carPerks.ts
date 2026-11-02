@@ -21,14 +21,14 @@ export const V2L_DAY_CAP = 20;
 export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number; roadTrip?: boolean };
 
 export const CAR_PERKS: Record<CarId, CarPerk> = {
-  civic: { label: "Glovebox · +1 s on lamp timers", vaultMs: 1000 },
-  f150: { label: "Truck bed · 1.5× match pickup reach", reach: 1.5 },
-  ioniq5: { label: `Vehicle-to-load · each lamp lit pays +1 white match, ${V2L_DAY_CAP} a day`, v2l: 1 },
-  mustang: { label: "Quick stop · lamp rests 15% shorter", cool: 0.85 },
-  belair57: { label: "Road trip · the first lamp you light in each city each day pays +1 white match", roadTrip: true },
-  model3: { label: "Autopilot · 1 in 10 lamp questions drop a wrong answer", autopilot: 10 },
-  roadster: { label: "Regen · 1 in 5 failed lamps refund the match", refund: 5 },
-  roadster2: { label: `Magnet · pulls in street matches within ${MAGNET_M} m as you drive`, magnet: true },
+  civic: { label: "Glovebox · +1 s on vault timers", vaultMs: 1000 },
+  f150: { label: "Truck bed · 1.5× key pickup reach", reach: 1.5 },
+  ioniq5: { label: `Vehicle-to-load · each vault opened pays +1 white key, ${V2L_DAY_CAP} a day`, v2l: 1 },
+  mustang: { label: "Quick stop · vault rests 15% shorter", cool: 0.85 },
+  belair57: { label: "Road trip · the first vault you open in each city each day pays +1 white key", roadTrip: true },
+  model3: { label: "Autopilot · 1 in 10 vault questions drop a wrong answer", autopilot: 10 },
+  roadster: { label: "Regen · 1 in 5 failed vaults refund the key", refund: 5 },
+  roadster2: { label: `Magnet · pulls in street keys within ${MAGNET_M} m as you drive`, magnet: true },
 };
 
 export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].magnet);

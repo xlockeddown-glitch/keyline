@@ -78,7 +78,7 @@ const cap = (t: Tier) => t[0]!.toUpperCase() + t.slice(1);
 
 /** "Get this right for an Amber match each. Streak 4 of 5." (0.1.26 plain words). */
 export function ladderNextLine(tier: Tier, rung: number): string {
-  return `Get this right for ${/^[AEIOU]/i.test(tier) ? "an" : "a"} ${cap(tier)} match each. Streak ${rung + 1} of ${LADDER.length}.`;
+  return `Get this right for ${/^[AEIOU]/i.test(tier) ? "an" : "a"} ${cap(tier)} key each. Streak ${rung + 1} of ${LADDER.length}.`;
 }
 
 /** Shown under the card when its difficulty is below the streak's floor. */
@@ -199,9 +199,9 @@ export function rewardDecision(p: { correct: boolean; late: boolean; senderRewar
 }
 
 export function rewardLine(why: RewardWhy | null, from: string, pay: LadderPay = { tier: FRIEND_REWARD, rung: 0 }): string {
-  if (why == null) return `You and ${from} each got ${/^[AEIOU]/i.test(pay.tier) ? "an" : "a"} ${cap(pay.tier)} match. Streak ${pay.rung + 1} of ${LADDER.length}.`;
-  if (why === "pair-cap") return `Right! You two already got a friend ticket match today, so no match this time. Your streak stays.`;
-  if (why === "sender-cap") return `Right! ${from} already got three friend ticket matches today, so no match this time. Your streak stays.`;
+  if (why == null) return `You and ${from} each got ${/^[AEIOU]/i.test(pay.tier) ? "an" : "a"} ${cap(pay.tier)} key. Streak ${pay.rung + 1} of ${LADDER.length}.`;
+  if (why === "pair-cap") return `Right! You two already got a friend ticket key today, so no key this time. Your streak stays.`;
+  if (why === "sender-cap") return `Right! ${from} already got three friend ticket keys today, so no key this time. Your streak stays.`;
   if (why === "late") return "Time ran out before your answer arrived. Your streak starts over at White.";
   return "Not this time. Your streak starts over at White.";
 }

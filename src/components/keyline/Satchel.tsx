@@ -59,7 +59,7 @@ export function Satchel() {
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4" data-testid="satchel-rows">
-          <p className="kicker jr-kicker">Matches</p>
+          <p className="kicker jr-kicker">Keys</p>
           <ul className="jr-list" data-testid="satchel-matches">
             {TIERS.map((t) => (
               <Fragment key={t}>
@@ -93,7 +93,7 @@ export function Satchel() {
               );
             })}
             {!paints.length && !cans.length ? (
-              <li className="hq-row-sub jr-note">No paint yet. Lamps sometimes give a can in their color; amber and red vaults and the match cache can give car paint.</li>
+              <li className="hq-row-sub jr-note">No paint yet. Vaults sometimes give a can in their color; amber and red vaults and the key cache can give car paint.</li>
             ) : null}
           </ul>
 
@@ -102,7 +102,7 @@ export function Satchel() {
             <Row k="k:pattern" open={open} onTap={tap} icon={<i className="jr-dot satchel-paint is-violet" />} title="Violet pattern" val={`×${quests.patterns}`} />
             {open === "k:pattern" ? <li className="hq-row-sub jr-note">From the long quests. {glass ? "Night glass is already printed." : `One prints Night glass at ${shop}.`}</li> : null}
             <Row k="k:glass" open={open} onTap={tap} icon={<i className="jr-dot satchel-paint is-blue" />} title="Night glass" val={glass ? "Printed" : "Not yet"} />
-            {open === "k:glass" ? <li className="hq-row-sub jr-note">A lamp cloth. {clothPerk("night-glass")}</li> : null}
+            {open === "k:glass" ? <li className="hq-row-sub jr-note">A vault cloth. {clothPerk("night-glass")}</li> : null}
           </ul>
         </div>
       </div>

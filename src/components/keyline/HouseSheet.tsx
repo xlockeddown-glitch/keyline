@@ -40,8 +40,8 @@ export function HouseSheet() {
             <h2 className="font-display text-2xl">{owned ? owned.name : "Buy a house here"}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
               {owned
-                ? `Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for ${keyPay(owned)}.`
-                : `Yours for good. Once a day: light ${HOME_LAMPS} lamps in this city, then turn the key for free matches and coins.`}
+                ? `Once a day: open ${HOME_LAMPS} vaults in this city, then turn the key for ${keyPay(owned)}.`
+                : `Yours for good. Once a day: open ${HOME_LAMPS} vaults in this city, then turn the key for free keys and coins.`}
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={() => close(false)} aria-label="Close">
@@ -119,5 +119,5 @@ export function HouseSheet() {
 
 /** 0.1.42: what the daily key pays, e.g. "2 Amber matches + 25,000 coins". */
 function keyPay(h: { match: Tier; keyCoin: number }) {
-  return `${KEY_MATCHES} ${TIER_LABEL[h.match]} matches + ${h.keyCoin.toLocaleString("en-US")} coins`;
+  return `${KEY_MATCHES} ${TIER_LABEL[h.match]} keys + ${h.keyCoin.toLocaleString("en-US")} coins`;
 }

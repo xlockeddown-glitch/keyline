@@ -9,7 +9,7 @@ export type MatchGift = { key: string; userId: string; tier: Tier; n: number; no
 
 export const MATCH_GIFTS: readonly MatchGift[] = [
   // "Amanda G." on the public standings (Ryan's wife), the only account with that name there.
-  { key: "gift:amanda-red-0095", userId: "j9k4J0Lv4ffeRdJF9577cNY6qZaOcWv6", tier: "red", n: 2, note: "A make-up gift: 2 red matches." },
+  { key: "gift:amanda-red-0095", userId: "j9k4J0Lv4ffeRdJF9577cNY6qZaOcWv6", tier: "red", n: 2, note: "A make-up gift: 2 red keys." },
 ];
 
 /**

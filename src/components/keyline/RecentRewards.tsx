@@ -63,7 +63,7 @@ export function RecentRewards() {
           ))}
         </ul>
       ) : (
-        <p className="mt-1 text-xs text-fg-subtle">Answer a lamp or pick up a match and it shows here.</p>
+        <p className="mt-1 text-xs text-fg-subtle">Answer a vault or pick up a key and it shows here.</p>
       )}
     </div>
   );

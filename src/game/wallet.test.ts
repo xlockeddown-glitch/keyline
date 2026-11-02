@@ -198,7 +198,7 @@ test("sync, award, replay and spend survive a second call and a linked sign-in",
   await sql`insert into player_links (alias_id, primary_id, how) values ('ann-y', 'ann', 'code')`;
   const linked = await syncPlayer(sql, "ann-y", snap({ coins: 1, keys: { white: 1, violet: 80 } }), "annyphon1");
   assert.equal(linked.deviceClosed, false);
-  assert.equal(linked.wallet.keys.violet, 80, "a second device keeps a higher match count");
+  assert.equal(linked.wallet.keys.violet, 80, "a second device keeps a higher key count");
   assert.equal(linked.wallet.keys.white, 9, "a second device does not lower a count");
   const linkedRevise = await syncPlayer(sql, "ann-y", snap({ coins: 1, keys: { violet: 1 } }), "annyphon1");
   assert.equal(linkedRevise.deviceClosed, true);
@@ -431,7 +431,7 @@ test("a city pass pays only when every place has a graded visit", () => {
   assert.equal(again.wallet.cities.passes, 1);
 });
 
-test("survey matches pay only for goals graded visits can prove", () => {
+test("survey keys pay only for goals graded visits can prove", () => {
   const ids = CITIES.austin.pois.map((p) => p.id);
   assert.equal(surveyProven("walk-4", new Set(ids)), false);
   assert.equal(surveyProven("walk-4", new Set(), 3_999), false);
@@ -789,7 +789,7 @@ test("a dealt ride is scored from the server seed and does not pay a win in one 
   assert.equal(replay.wallet.meta.rideRank, 2);
 });
 
-test("a market spot pays two matches while the market is open, and a kiosk name counts as a visit", async (t) => {
+test("a market spot pays two keys while the market is open, and a kiosk name counts as a visit", async (t) => {
   t.after(inOpenMarket());
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false };
@@ -1007,13 +1007,13 @@ test("a failed unlock reply rolls the local city list back", () => {
 });
 
 // 0.0.90: perfect lamp refunds the spent match, same tier; violet excluded; a miss refunds nothing.
-test("0.0.90 perfect refund: single lamp gets its match back", () => {
+test("0.0.90 perfect refund: single lamp gets its key back", () => {
   const w = emptyWallet();
   const g = gradeGrant(w, pay({ elapsedMs: 9000, mult: 0.7 }));
   assert.equal(g.award?.keys.blue, 1);
 });
 
-test("0.0.90 perfect refund: a Run/Stack cleared gets the cost match back on the last card only", () => {
+test("0.0.90 perfect refund: a Run/Stack cleared gets the cost key back on the last card only", () => {
   const def = SERIES.stack;
   const mid = gradeGrant(emptyWallet(), pay({ series: "stack", step: 0, steps: def.steps, clearTier: def.cost, poiTier: def.cost }));
   assert.equal(mid.award?.keys[def.cost] ?? 0, 0);
@@ -1051,7 +1051,7 @@ test("0.0.90 pass gift: new player gets 1, a second grant is a no-op, existing p
   assert.equal(giftPass({ ...freshUnlocks(), passes: 25 }).passes, 25);
 });
 
-test("0.0.92 server wheel: a rare slice pays a match one tier up, once per earned spin", async () => {
+test("0.0.92 server wheel: a rare slice pays a key one tier up, once per earned spin", async () => {
   const { buildWheel } = await import("./wheel.ts");
   const sql = await db(["0002_vault_clears.sql"]);
   await sql`create view vault_clears_by_player as select user_id, tier, correct from vault_clears`;
@@ -1119,7 +1119,7 @@ test("0.0.92 server wheel: Take all pays the combined prizes and reports its sli
   }
 });
 
-test("0.0.93 streaks: 5 right in a row pays a white match on the server; a miss resets", async () => {
+test("0.0.93 streaks: 5 right in a row pays a white key on the server; a miss resets", async () => {
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
   await syncPlayer(sql, "stk", snap({ cities }), "stkphone1");
@@ -1132,14 +1132,14 @@ test("0.0.93 streaks: 5 right in a row pays a white match on the server; a miss 
   for (const n of ["a", "aa", "aaa", "aaaa"]) last = await at(n, true);
   const white4 = last!.wallet.keys.white;
   const fifth = await at("aaaaa", true);
-  assert.equal(fifth.wallet.keys.white, white4 + 1, "5 in a row: a white match");
+  assert.equal(fifth.wallet.keys.white, white4 + 1, "5 in a row: a white key");
   assert.ok(fifth.award?.boosts.includes("5 in a row"));
   await at("aaaaaa", false);
   const after = await at("aaaaaaa", true);
   assert.equal(after.wallet.keys.white, fifth.wallet.keys.white, "a miss reset the run");
 });
 
-test("0.0.93 cache and daily goals: once a day, 2-3 amber/red matches (0.1.7); goals need proof of play", async () => {
+test("0.0.93 cache and daily goals: once a day, 2-3 amber/red keys (0.1.7); goals need proof of play", async () => {
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
   await syncPlayer(sql, "cac", snap({ cities }), "cacphone1");
@@ -1169,7 +1169,7 @@ test("0.0.93 cache and daily goals: once a day, 2-3 amber/red matches (0.1.7); g
   assert.equal(all.wallet.keys.green, green0 + 1);
 });
 
-test("0.0.97 cache into full pockets: matches become merge credits on the server, never coin below violet", async () => {
+test("0.0.97 cache into full pockets: keys become merge credits on the server, never coin below violet", async () => {
   const sql = await db();
   const cities = { ...freshUnlocks(), start: "austin", unlocked: ["austin"] as const, freePick: false };
   await syncPlayer(sql, "cfull", snap({ cities }), "cfullphone1");
@@ -1187,7 +1187,7 @@ test("0.0.95 Amanda's make-up gift: 2 red once, idempotent, only her account, ov
   const sql = await db();
   const g = MATCH_GIFTS.find((x) => x.key === "gift:amanda-red-0095")!;
   assert.equal(g.userId, "j9k4J0Lv4ffeRdJF9577cNY6qZaOcWv6");
-  assert.equal(g.note, "A make-up gift: 2 red matches.");
+  assert.equal(g.note, "A make-up gift: 2 red keys.");
   const first = await syncPlayer(sql, g.userId, snap({}), "amandaphone1");
   assert.deepEqual(first.giftNotes, [g.note]);
   assert.equal(first.wallet.keys.red, 2);
@@ -1344,7 +1344,7 @@ test("0.1.47 Panda Bamboo luck: the server's roll pays the lamp coin twice; no r
   assert.ok(hit.award!.coins > plain.award!.coins, "double lamp coin");
   assert.ok(hit.award!.boosts.some((b) => b.startsWith("Bamboo luck +")), hit.award!.boosts.join(","));
   assert.equal(other.award!.coins, gradeGrant(emptyWallet(), pay({ scout: "fox" })).award!.coins, "only the Panda's perk pays");
-  assert.deepEqual(hit.award!.keys, plain.award!.keys, "matches unchanged");
+  assert.deepEqual(hit.award!.keys, plain.award!.keys, "keys unchanged");
   const miss = gradeGrant(emptyWallet(), pay({ scout: "panda", doubleUp: true, correct: false }));
   assert.equal(miss.award!.coins, 0);
 });
@@ -1355,7 +1355,7 @@ test("0.0.96 Plate refunds 1 in 3 failed lamps (server roll); Tabby keeps a stre
   const spent = await spendDealt(sql, "shl", "f1", "blue");
   assert.equal(spent.wallet.keys.blue, 1);
   const miss = await awardGrade(sql, "shl", "f1", { ...pay({ correct: false, scout: "turtle", shellBack: true }), prevNonce: "" });
-  assert.equal(miss.wallet.keys.blue, 2, "match back");
+  assert.equal(miss.wallet.keys.blue, 2, "key back");
   const missAgain = await awardGrade(sql, "shl", "f1", { ...pay({ correct: false, scout: "turtle", shellBack: true }), prevNonce: "" });
   assert.equal(missAgain.replay, true);
   assert.equal(missAgain.wallet.keys.blue, 2);
@@ -1486,7 +1486,7 @@ test("0.1.12 houses: any tier first, step-up costs the difference, the key needs
   assert.equal(k.home?.coin, 25_000);
   const after = (await canonicalWallet(sql, "hse")).wallet;
   assert.equal(after.coins, before.coins + 25_000, "0.1.42: the villa key pays 25,000 coin");
-  assert.equal(after.keys.amber, before.keys.amber + 2, "0.1.42: and 2 amber matches");
+  assert.equal(after.keys.amber, before.keys.amber + 2, "0.1.42: and 2 amber keys");
   const again = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
   assert.equal(again.home?.match, null, "once a day");
   assert.equal(again.home?.coin, 0);
@@ -1508,7 +1508,7 @@ test("0.1.12: the wallet holds 5,000,000, but a first sync still carries at most
   assert.equal((await canonicalWallet(sql, "big")).wallet.coins, COIN_CAP);
 });
 
-test("0.1.19: sparks (no match held) are capped on the server — six a day, once per lamp", async () => {
+test("0.1.19: sparks (no key held) are capped on the server — six a day, once per lamp", async () => {
   const sql = await db();
   await syncPlayer(sql, "beth", snap({ coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "detroit", unlocked: ["detroit"] } }), "bethphone");
   const spark = (poiId: string) => ({ ...pay({ clearTier: null, poiTier: "red", poiId, city: "detroit", series: null }), prevNonce: "" });
@@ -1537,7 +1537,7 @@ test("0.1.19: the device offers no spark at a violet lamp", () => {
   assert.equal(sparkTier("violet"), false);
   for (const t of ["white", "blue", "green", "amber", "red"]) assert.equal(sparkTier(t), true);
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
-  assert.match(src, /if \(!sparkTier\(poi\.tier\)\) return `Need a \$\{TIER_LABEL\[poi\.tier\]\} match\.`;/);
+  assert.match(src, /if \(!sparkTier\(poi\.tier\)\) return `Need a \$\{TIER_LABEL\[poi\.tier\]\} key\.`;/);
 });
 
 test("0.1.23: a second cache open (another device) says already opened, never an empty 'pockets full'", async () => {
@@ -1552,7 +1552,7 @@ test("0.1.23: a second cache open (another device) says already opened, never an
   assert.equal(again.replay, true);
   assert.equal(again.cache!.already, true);
   assert.deepEqual(again.cache!.got, first.cache!.got, "the replay reports what the first open paid");
-  assert.equal(cacheLine([], 0), "Match cache! It was empty.");
+  assert.equal(cacheLine([], 0), "Key cache! It was empty.");
   assert.doesNotMatch(cacheLine([], 0), /full/);
   assert.match(cacheLine([], 90), /Every pocket is full: \+90 coin/);
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
@@ -1629,7 +1629,7 @@ test("0.1.42 owned lanterns: one per color, one owner per lamp, misses pay the o
   await awardGrade(sql, "vis", "m2", miss("white", w0.id));
   assert.equal(await ownerCoins(), before.coins + 15, "only at the lamp's normal cooldown");
   for (const t of tiers) assert.equal(ownPayFor(t, "x").coins, { white: 15, blue: 45, green: 135, amber: 405, red: 1215, violet: 3645 }[t]);
-  assert.ok([...Array(40).keys()].some((i) => ownPayFor("blue", `n${i}`).match) && [...Array(40).keys()].some((i) => !ownPayFor("blue", `n${i}`).match), "the match is a coin flip");
+  assert.ok([...Array(40).keys()].some((i) => ownPayFor("blue", `n${i}`).match) && [...Array(40).keys()].some((i) => !ownPayFor("blue", `n${i}`).match), "the key is a coin flip");
 
   // Daily cap: OWN_DAILY_CAP paid misses on one lamp today, then nothing (cooldowns aged out).
   await sql`update wallet_ledger set created_at = now() - interval '100 seconds' where user_id = ${oid} and op_key like 'ownpay:%'`;
@@ -1648,7 +1648,7 @@ test("0.1.42 owned lanterns: one per color, one owner per lamp, misses pay the o
   void OWN_CLAIM_USER;
 });
 
-test("0.1.42 house keys: every tier pays 2 matches of its color plus its coin, once a day, clamped at the coin cap", async () => {
+test("0.1.42 house keys: every tier pays 2 keys of its color plus its coin, once a day, clamped at the coin cap", async () => {
   const want = { cottage: ["white", 1_000], row: ["blue", 3_000], town: ["green", 8_000], villa: ["amber", 25_000] } as const;
   for (const [tier, [color, coin]] of Object.entries(want)) {
     const sql = await db();

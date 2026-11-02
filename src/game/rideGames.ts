@@ -140,7 +140,7 @@ export type RideGameId = "lamplighter" | "where-am-i" | "match-sorter" | "route-
 export const RIDE_GAME_NAME: Record<RideGameId, string> = {
   lamplighter: "Lamplighter",
   "where-am-i": "Where am I?",
-  "match-sorter": "Match sorter",
+  "match-sorter": "Key sorter",
   "route-puzzle": "Route puzzle",
 };
 
@@ -496,7 +496,7 @@ export function chooseRideGame<J extends RideGameMark>(j: J, game: RideGameId): 
 export const RIDE_GAME_PITCH: Record<RideGameId, string> = {
   lamplighter: "Tap as each street lamp passes the window.",
   "where-am-i": "Name the place from a clue about the city ahead.",
-  "match-sorter": "Sort tumbling matches into their tier boxes.",
+  "match-sorter": "Sort tumbling keys into their tier boxes.",
   "route-puzzle": "Plot the shortest trip between real places ahead.",
 };
 

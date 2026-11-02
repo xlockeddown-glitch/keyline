@@ -136,6 +136,6 @@ export function takeSurvey(s: SurveySnap): { keys: Record<Tier, number>; survey:
   return {
     keys,
     survey,
-    message: `${top.label} · ${TIER_LABEL[top.reward]} match${extra}`,
+    message: `${top.label} · ${TIER_LABEL[top.reward]} key${extra}`,
   };
 }

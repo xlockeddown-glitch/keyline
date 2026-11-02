@@ -34,7 +34,7 @@ export function Showroom() {
             <p className="kicker">Car lot · Showroom</p>
             <h2 className="font-display text-2xl">{lot.name}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
-              Your car is your own cab. It waits at the curb when you tap Car, and it drives a little faster than the city cab. Lamps, vaults and matches answer from your car; the city cab parks you first.
+              Your car is your own cab. It waits at the curb when you tap Car, and it drives a little faster than the city cab. Vaults and keys answer from your car; the city cab parks you first.
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={() => close(false)} aria-label="Close">
@@ -136,7 +136,7 @@ export function Showroom() {
                           );
                         })}
                       </ul>
-                      <p className="mt-2 text-xs text-fg-subtle">Paint cans turn up in amber and red vaults and in the daily match cache.</p>
+                      <p className="mt-2 text-xs text-fg-subtle">Paint cans turn up in amber and red vaults and in the daily key cache.</p>
                     </div>
                   ) : null}
                 </div>

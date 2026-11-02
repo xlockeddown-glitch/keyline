@@ -79,12 +79,12 @@
   height:40px;
   object-fit:contain
 }
-.match-pin.tier-white{ background-image:url("/sprites/matches/white.png") }
-.match-pin.tier-blue{ background-image:url("/sprites/matches/blue.png") }
-.match-pin.tier-green{ background-image:url("/sprites/matches/green.png") }
-.match-pin.tier-amber{ background-image:url("/sprites/matches/amber.png") }
-.match-pin.tier-red{ background-image:url("/sprites/matches/red.png") }
-.match-pin.tier-violet{ background-image:url("/sprites/matches/violet.png") }
+.match-pin.tier-white{ background-image:none }
+.match-pin.tier-blue{ background-image:none }
+.match-pin.tier-green{ background-image:none }
+.match-pin.tier-amber{ background-image:none }
+.match-pin.tier-red{ background-image:none }
+.match-pin.tier-violet{ background-image:none }
 
 .matchbook-stick{
   width:1.7rem;

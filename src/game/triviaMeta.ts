@@ -12,7 +12,7 @@ export const TRIVIA_CATS: { id: TriviaCat; label: string; blurb: string }[] = [
   { id: "political", label: "Political", blurb: "Capitals, councils, who holds the keys." },
   { id: "food", label: "Food", blurb: "Tables, smoke, the city's appetite." },
   { id: "arts", label: "Arts", blurb: "Stages, walls, songs that stuck." },
-  { id: "math", label: "Math", blurb: "Numbers. White is arithmetic. Higher lamps bite." },
+  { id: "math", label: "Math", blurb: "Numbers. White is arithmetic. Higher vaults bite." },
   { id: "science", label: "Science", blurb: "Earth, sky, the stuff of the lab." },
   { id: "history", label: "History", blurb: "Years, wars, who wrote the plate." },
   { id: "nature", label: "Nature", blurb: "Woods, water, the living street." },

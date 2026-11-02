@@ -168,7 +168,7 @@ export function lockLine(u: CityUnlocks, id: CityId): string {
   if (cost === "open" || cost === "start") return "";
   if (cost === "free") return "Locked · Your second city is free. Pick it at the train station.";
   if (cost === "pass") return `Locked · 1 city pass (you have ${u.passes}). Unlock at the train station.`;
-  return `Locked · Needs a city pass: ${PASS_POINTS} lamp points (amber 1, red 4, violet 10), every place in a city, or ${RUNS_PER_PASS} Lantern Runs in one city.`;
+  return `Locked · Needs a city pass: ${PASS_POINTS} vault points (amber 1, red 4, violet 10), every place in a city, or ${RUNS_PER_PASS} Lantern Runs in one city.`;
 }
 
 type OldSave = {

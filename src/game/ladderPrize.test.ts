@@ -61,7 +61,7 @@ function last(kind: (typeof KINDS)[number], over: Partial<GradePay>): GradePay {
   };
 }
 
-test("0.1.36: a perfect ladder pays the server-rolled prize match and coin; a non-perfect one pays as before", () => {
+test("0.1.36: a perfect ladder pays the server-rolled prize key and coin; a non-perfect one pays as before", () => {
   for (const k of KINDS) {
     const def = SERIES[k];
     const lo = gradeGrant(emptyWallet(), last(k, { prizeRoll: 0 }));
@@ -71,7 +71,7 @@ test("0.1.36: a perfect ladder pays the server-rolled prize match and coin; a no
     const plain = gradeGrant(emptyWallet(), last(k, { prior: Array(def.steps - 1).fill("great"), elapsedMs: 9000, prizeRoll: 0.9999 }));
     assert.equal(plain.award?.keys.violet ?? 0, 0, "non-perfect: no prize");
     assert.ok(!plain.award!.boosts.some((b) => b.startsWith("Perfect ladder")));
-    assert.ok(hi.award!.boosts.some((b) => b === `Perfect ladder: violet match +${PRIZE_COIN[k]}`));
+    assert.ok(hi.award!.boosts.some((b) => b === `Perfect ladder: violet key +${PRIZE_COIN[k]}`));
     // Non-perfect keeps the old shape: pay match (+ cost refund), nothing else.
     const keys = Object.entries(plain.award!.keys).filter(([, n]) => n);
     const want: Record<string, number> = { [def.pay]: 1 };

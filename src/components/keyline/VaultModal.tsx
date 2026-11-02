@@ -145,10 +145,10 @@ export function VaultModal() {
             <div className="min-w-0">
               <p className="kicker">
                 {openVault.spark
-                  ? `Spark · earn a ${TIER_LABEL[poi.tier]} match`
+                  ? `Spark · earn a ${TIER_LABEL[poi.tier]} key`
                   : series
                   ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
-                  : `${TIER_LABEL[poi.tier]} lamp · ${KIND_LABEL[poi.kind]}`}
+                  : `${TIER_LABEL[poi.tier]} vault · ${KIND_LABEL[poi.kind]}`}
                 {catMeta ? ` · ${catMeta.label}` : ""}
                 {!series && openVault.category === today ? <span className="cotd-badge ml-1.5">+25% today</span> : null}
               </p>
@@ -161,11 +161,11 @@ export function VaultModal() {
                   <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-fg-subtle">
                     {openVault.spark ? (
                       <>
-                        No match spent. A right answer is a spare <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]}
+                        No key spent. A right answer is a spare <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]}
                       </>
                     ) : (
                       <>
-                        Spends one <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]} match
+                        Spends one <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]} key
                         {series ? ` · pays a ${TIER_LABEL[series.pay].toLowerCase()} if you clear` : ""}
                       </>
                     )}
@@ -178,7 +178,7 @@ export function VaultModal() {
           {!quiz && openVault.pending === "deal" ? (
             <div className="mt-5" aria-live="polite" data-testid="lamp-dealing">
               <p className="kicker">Lighting the card</p>
-              <p className="mt-1 text-sm text-fg-muted">The card office is pulling a trivia card for this lamp…</p>
+              <p className="mt-1 text-sm text-fg-muted">The card office is pulling a trivia card for this vault…</p>
             </div>
           ) : !quiz ? (
             <div className="mt-5">
@@ -186,7 +186,7 @@ export function VaultModal() {
               <p className="mt-1 text-sm text-fg-muted">
                 {series
                   ? "One field for all trivia cards — they get harder as you go."
-                  : "Six this lamp. They rotate. The trivia cards prefer the ground you're on."}
+                  : "Six this vault. They rotate. The trivia cards prefer the ground you're on."}
               </p>
               <div className="field-grid mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {offered.map((id) => {
@@ -269,7 +269,7 @@ export function VaultModal() {
         {/* 0.0.52: the leave/forfeit action sits in a footer that never scrolls, so it is on screen on short phones. */}
         <div className="lamp-card-foot px-5 pt-4 pb-5 sm:px-6 sm:pb-6">
           <button type="button" className="btn btn-ghost w-full" onClick={closeVault} disabled={openVault.pending === "grade"}>
-            {series && openVault.run?.spent ? `Forfeit ${series.name}` : "Leave lamp"}
+            {series && openVault.run?.spent ? `Forfeit ${series.name}` : "Leave vault"}
           </button>
         </div>
       </div>

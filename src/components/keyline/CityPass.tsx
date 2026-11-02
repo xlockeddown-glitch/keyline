@@ -26,7 +26,7 @@ export function PassProgressRow({ compact = false }: { compact?: boolean }) {
         <p className="hq-row-sub">{next} Any one of these pays a pass:</p>
         <ul className="hq-row-sub mt-1 grid gap-0.5 tabular-nums">
           <li>
-            Lamp points {p.lamps.have}/{PASS_POINTS} · amber 1, red 4, violet 10
+            Vault points {p.lamps.have}/{PASS_POINTS} · amber 1, red 4, violet 10
           </li>
           <li>{p.goals.paid ? `Every place in ${name} · pass paid` : `Every place in ${name} ${p.goals.have}/${p.goals.need}`}</li>
           <li>{p.runs.paid ? `Lantern Runs in ${name} · pass paid` : `Lantern Runs in ${name} ${p.runs.have}/${p.runs.need}`}</li>
@@ -64,7 +64,7 @@ export function PassHelpCard() {
       </p>
       <ul className="mt-2 grid gap-2 text-sm">
         <li>
-          <span className="flex justify-between gap-2"><span>Light amber, red or violet lamps</span><span className="tabular-nums text-fg-muted">{p.lamps.have}/{PASS_POINTS} pts</span></span>
+          <span className="flex justify-between gap-2"><span>Open amber, red or violet vaults</span><span className="tabular-nums text-fg-muted">{p.lamps.have}/{PASS_POINTS} pts</span></span>
           <span className="block text-xs text-fg-muted">Amber 1 point, red 4, violet 10. 10 points = 1 pass.</span>
           <Bar have={p.lamps.have} need={p.lamps.need} />
         </li>

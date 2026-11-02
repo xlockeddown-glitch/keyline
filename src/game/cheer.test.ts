@@ -15,5 +15,5 @@ test("every cheer streak is also a streak that pays, so the cheer always rides a
 });
 
 test("the streak line says what you won and what it's for", () => {
-  assert.equal(streakSub("blue"), "You won a blue match. Use it on a blue lamp.");
+  assert.equal(streakSub("blue"), "You won a blue key. Use it on a blue vault.");
 });

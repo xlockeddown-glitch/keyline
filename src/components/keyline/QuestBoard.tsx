@@ -114,12 +114,12 @@ export function QuestBoard({ kinds = ["week", "month"], heading = true }: { kind
       <p className="mt-1 text-xs text-fg-muted">
         {!signed ? "A sample set: every player draws their own each period. " : "Your own set for each period, drawn fresh at each reset. "}
         {signed
-          ? "Counted by the server from your lamps (a match spent, never a spark), rides and night markets. Collect anywhere."
+          ? "Counted by the server from your vaults (a key spent, never a spark), rides and night markets. Collect anywhere."
           : "Sign in to track and collect quests. Progress is counted on the server, so guest play doesn't count."}
       </p>
       {lucky ? (
         <p className="mt-1 text-xs text-fg-muted">
-          <ItemIcon item="coin" size={14} /> Lucky is on{forever ? " for good" : " this month"}: about 1 in 7 lamps give back a match of their colour.
+          <ItemIcon item="coin" size={14} /> Lucky is on{forever ? " for good" : " this month"}: about 1 in 7 vaults give back a key of their colour.
         </p>
       ) : null}
       {kinds.map((k) => section(k))}

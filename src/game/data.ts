@@ -359,7 +359,7 @@ const temple: City = {
       lng: -97.34139,
       kind: "park",
       tier: "white",
-      lore: "A neighborhood green south of downtown. Good for spotting a white lamp at dusk.",
+      lore: "A neighborhood green south of downtown. Good for spotting a white vault at dusk.",
       noClue: true,
     }),
     poi({
@@ -423,7 +423,7 @@ const nyc: City = {
   id: "nyc",
   name: "New York",
   region: "New York",
-  blurb: "A compressed atlas. Lamps on every other corner.",
+  blurb: "A compressed atlas. Vaults on every other corner.",
   spawn: { lat: 40.758, lng: -73.9855 },
   pois: [
     poi({
@@ -2985,7 +2985,7 @@ function withMarks(city: City, extra: Poi[]): City {
 }
 
 const AUSTIN_MARKS: Poi[] = [
-  poi({ id: "wooldridge", name: "Wooldridge Square", lat: 30.2715, lng: -97.7445, kind: "park", tier: "white", lore: "A courthouse lawn of live oaks. Chess tables, shade, a small lamp in the grass." }),
+  poi({ id: "wooldridge", name: "Wooldridge Square", lat: 30.2715, lng: -97.7445, kind: "park", tier: "white", lore: "A courthouse lawn of live oaks. Chess tables, shade, a small vault in the grass." }),
   poi({ id: "republic-sq", name: "Republic Square", lat: 30.2676, lng: -97.7471, kind: "park", tier: "white", lore: "One of the four greens in the 1839 city plan, with a Saturday farmers' market under old live oaks." }),
   poi({ id: "brush-sq", name: "Brush Square", lat: 30.2668, lng: -97.7395, kind: "park", tier: "white", lore: "O. Henry's house on the edge. A pocket park on the east side of downtown." }),
   poi({ id: "waterloo-pk", name: "Waterloo Park", lat: 30.2689, lng: -97.7312, kind: "park", tier: "white", lore: "A creek pulled out from under the highway. Stage, lawn, the skyline from the east." }),
@@ -2993,14 +2993,14 @@ const AUSTIN_MARKS: Poi[] = [
   poi({ id: "rainey", name: "Rainey Street", lat: 30.2583, lng: -97.7388, kind: "landmark", tier: "white", lore: "Bungalows turned into bars. The lake at the south end." }),
   poi({ id: "mexic-arte", name: "Mexic-Arte Museum", lat: 30.2665, lng: -97.7434, kind: "museum", tier: "white", lore: "Congress and 5th. A small house of Mexican and Latinx work." }),
   poi({ id: "pfluger", name: "Pfluger Pedestrian Bridge", lat: 30.2641, lng: -97.7546, kind: "landmark", tier: "white", lore: "Bikes and walkers over Lady Bird Lake. The boardwalk starts here." }),
-  poi({ id: "auditorium-shores", name: "Auditorium Shores", lat: 30.2628, lng: -97.7515, kind: "park", tier: "white", lore: "The south bank lawn. Skyline across the water, a small lamp on the path." }),
-  poi({ id: "sixth-st", name: "Sixth Street", lat: 30.2674, lng: -97.7398, kind: "landmark", tier: "white", lore: "The strip of neon between Congress and I-35. A blank on a lamp." }),
-  poi({ id: "city-hall-atx", name: "Austin City Hall", lat: 30.2648, lng: -97.747, kind: "civic", tier: "blue", lore: "Copper and limestone on the lake. Council chambers, a civic lamp in the courtyard." }),
-  poi({ id: "jones-center", name: "The Contemporary Austin — Jones Center", lat: 30.2688, lng: -97.7428, kind: "museum", tier: "blue", lore: "Congress Avenue's art house. A lamp in the stairwell light." }),
+  poi({ id: "auditorium-shores", name: "Auditorium Shores", lat: 30.2628, lng: -97.7515, kind: "park", tier: "white", lore: "The south bank lawn. Skyline across the water, a small vault on the path." }),
+  poi({ id: "sixth-st", name: "Sixth Street", lat: 30.2674, lng: -97.7398, kind: "landmark", tier: "white", lore: "The strip of neon between Congress and I-35. A blank on a vault." }),
+  poi({ id: "city-hall-atx", name: "Austin City Hall", lat: 30.2648, lng: -97.747, kind: "civic", tier: "blue", lore: "Copper and limestone on the lake. Council chambers, a civic vault in the courtyard." }),
+  poi({ id: "jones-center", name: "The Contemporary Austin — Jones Center", lat: 30.2688, lng: -97.7428, kind: "museum", tier: "blue", lore: "Congress Avenue's art house. A vault in the stairwell light." }),
   poi({ id: "o-henry", name: "O. Henry Museum", lat: 30.2664, lng: -97.7393, kind: "museum", tier: "blue", lore: "The writer's cottage on Brush Square. Short stories, a blue plate." }),
-  poi({ id: "long-center", name: "Long Center", lat: 30.2608, lng: -97.7514, kind: "theatre", tier: "blue", lore: "The city's hall on the south shore. A lamp by the terrace." }),
+  poi({ id: "long-center", name: "Long Center", lat: 30.2608, lng: -97.7514, kind: "theatre", tier: "blue", lore: "The city's hall on the south shore. A vault by the terrace." }),
   poi({ id: "zavala-archive", name: "Texas State Library", lat: 30.2699, lng: -97.7386, kind: "library", tier: "blue", lore: "Lorenzo de Zavala. The state's paper, a civic stack." }),
-  poi({ id: "macc", name: "Emma S. Barrientos MACC", lat: 30.2588, lng: -97.7365, kind: "museum", tier: "blue", lore: "Mexican American Cultural Center on the lake. A lamp in the plaza." }),
+  poi({ id: "macc", name: "Emma S. Barrientos MACC", lat: 30.2588, lng: -97.7365, kind: "museum", tier: "blue", lore: "Mexican American Cultural Center on the lake. A vault in the plaza." }),
 ];
 
 const TEMPLE_MARKS: Poi[] = [
@@ -3024,7 +3024,7 @@ const TEMPLE_MARKS: Poi[] = [
 
 const NYC_MARKS: Poi[] = [
   poi({ id: "columbus-cir", name: "Columbus Circle", lat: 40.7681, lng: -73.9819, kind: "landmark", tier: "white", lore: "A traffic ring at the park's southwest corner, around an 1892 column topped by the Genoese explorer." }),
-  poi({ id: "tompkins", name: "Tompkins Square Park", lat: 40.7265, lng: -73.9818, kind: "park", tier: "white", lore: "Elms, dogs, the East Village's square. A lamp on a bench end." }),
+  poi({ id: "tompkins", name: "Tompkins Square Park", lat: 40.7265, lng: -73.9818, kind: "park", tier: "white", lore: "Elms, dogs, the East Village's square. A vault on a bench end." }),
   poi({ id: "madison-sq-pk", name: "Madison Square Park", lat: 40.742, lng: -73.988, kind: "park", tier: "white", lore: "Shake Shack's original lawn. Flatiron in the sightline." }),
   poi({ id: "stonewall-pk", name: "Christopher Park", lat: 40.7336, lng: -74.0027, kind: "park", tier: "white", lore: "A small triangle across from the Stonewall Inn, the heart of the first national monument to LGBTQ rights." }),
   poi({ id: "little-island", name: "Little Island", lat: 40.742, lng: -74.01, kind: "park", tier: "white", lore: "A park on 132 tulip-shaped concrete pots in the Hudson, off West 13th Street." }),
@@ -3032,32 +3032,32 @@ const NYC_MARKS: Poi[] = [
   poi({ id: "battery-pk", name: "Battery Park", lat: 40.7033, lng: -74.017, kind: "park", tier: "white", lore: "The harbor's edge. Ferries, a breeze, Castle Clinton in the trees." }),
   poi({ id: "st-marks", name: "St. Mark's Place", lat: 40.7289, lng: -73.988, kind: "landmark", tier: "white", lore: "The East Village stretch of Eighth Street from Third Avenue to Avenue A, a punk-era hangout of stoop-level shops." }),
   poi({ id: "bowery-ball", name: "Bowery", lat: 40.7205, lng: -73.9936, kind: "landmark", tier: "white", lore: "The old road north. A blank on a corner that used to be the city line." }),
-  poi({ id: "gramercy", name: "Gramercy Park", lat: 40.7379, lng: -73.986, kind: "park", tier: "white", lore: "A locked square. You can still walk the fence and light a lamp." }),
-  poi({ id: "chelsea-mkt", name: "Chelsea Market", lat: 40.7424, lng: -74.0061, kind: "food", tier: "blue", lore: "The Nabisco factory, now a hall of counters. A lamp by the High Line stairs." }),
+  poi({ id: "gramercy", name: "Gramercy Park", lat: 40.7379, lng: -73.986, kind: "park", tier: "white", lore: "A locked square. You can still walk the fence and open a vault." }),
+  poi({ id: "chelsea-mkt", name: "Chelsea Market", lat: 40.7424, lng: -74.0061, kind: "food", tier: "blue", lore: "The Nabisco factory, now a hall of counters. A vault by the High Line stairs." }),
   poi({ id: "strand-books", name: "Strand Book Store", lat: 40.7333, lng: -73.9908, kind: "landmark", tier: "blue", lore: "Eighteen miles of books. A blue plate in the stacks." }),
   poi({ id: "cooper-union", name: "Cooper Union", lat: 40.7294, lng: -73.9903, kind: "campus", tier: "blue", lore: "The Foundation Building on the Bowery. Lincoln spoke here." }),
   poi({ id: "whitney", name: "Whitney Museum", lat: 40.7396, lng: -74.0089, kind: "museum", tier: "blue", lore: "American art on Gansevoort. The Hudson in the windows." }),
-  poi({ id: "radio-city", name: "Radio City Music Hall", lat: 40.76, lng: -73.98, kind: "theatre", tier: "blue", lore: "The Rockettes' house. A lamp under the marquee." }),
-  poi({ id: "new-museum", name: "New Museum", lat: 40.7223, lng: -73.9928, kind: "museum", tier: "blue", lore: "Stacked boxes on the Bowery. Contemporary work, a blue lamp." }),
+  poi({ id: "radio-city", name: "Radio City Music Hall", lat: 40.76, lng: -73.98, kind: "theatre", tier: "blue", lore: "The Rockettes' house. A vault under the marquee." }),
+  poi({ id: "new-museum", name: "New Museum", lat: 40.7223, lng: -73.9928, kind: "museum", tier: "blue", lore: "Stacked boxes on the Bowery. Contemporary work, a blue vault." }),
 ];
 
 const SF_MARKS: Poi[] = [
   poi({ id: "civic-plaza-sf", name: "Civic Center Plaza", lat: 37.7796, lng: -122.4169, kind: "park", tier: "white", lore: "Between City Hall and the library. A wide stone lawn." }),
   poi({ id: "wash-sq-nb", name: "Washington Square — North Beach", lat: 37.8008, lng: -122.4101, kind: "park", tier: "white", lore: "Saints Peter and Paul over the grass. Tai chi in the morning." }),
   poi({ id: "dolores-pk", name: "Dolores Park", lat: 37.7596, lng: -122.4269, kind: "park", tier: "white", lore: "A sloping lawn in the Mission with the downtown skyline over it, and the J streetcar cutting across the hill." }),
-  poi({ id: "tea-garden", name: "Japanese Tea Garden", lat: 37.7701, lng: -122.4703, kind: "park", tier: "white", lore: "Hagiwara's garden in Golden Gate Park. A moon bridge, a lamp in the shade." }),
+  poi({ id: "tea-garden", name: "Japanese Tea Garden", lat: 37.7701, lng: -122.4703, kind: "park", tier: "white", lore: "Hagiwara's garden in Golden Gate Park. A moon bridge, a vault in the shade." }),
   poi({ id: "fort-mason", name: "Fort Mason", lat: 37.8069, lng: -122.4313, kind: "park", tier: "white", lore: "Piers turned into arts space. The bay from a former post." }),
   poi({ id: "valencia-16", name: "16th and Valencia", lat: 37.7553, lng: -122.4209, kind: "landmark", tier: "white", lore: "The Mission's crossroads. Murals, a BART mouth, a blank on the corner." }),
   poi({ id: "ina-coolbrith", name: "Ina Coolbrith Park", lat: 37.7994, lng: -122.4136, kind: "park", tier: "white", lore: "Stairs, a poet's name, the bay between trees." }),
   poi({ id: "embarcadero-pl", name: "Embarcadero Plaza", lat: 37.7946, lng: -122.3965, kind: "park", tier: "white", lore: "Vaillancourt's fountain and the Ferry Building clock." }),
   poi({ id: "justin-herman", name: "Justin Herman Plaza path", lat: 37.7954, lng: -122.396, kind: "landmark", tier: "white", lore: "The ferry foot of Market. A blank on the promenade." }),
   poi({ id: "south-park-sf", name: "South Park", lat: 37.7816, lng: -122.394, kind: "park", tier: "white", lore: "An oval lawn south of Market. SoMa's old square." }),
-  poi({ id: "asian-art", name: "Asian Art Museum", lat: 37.7802, lng: -122.4163, kind: "museum", tier: "blue", lore: "The old main library's stone. Jade, a civic lamp in the court." }),
+  poi({ id: "asian-art", name: "Asian Art Museum", lat: 37.7802, lng: -122.4163, kind: "museum", tier: "blue", lore: "The old main library's stone. Jade, a civic vault in the court." }),
   poi({ id: "exploratorium", name: "Exploratorium", lat: 37.8014, lng: -122.3973, kind: "museum", tier: "blue", lore: "Piers 15 and 17. Hands-on science on the bay." }),
-  poi({ id: "cable-car-mus", name: "Cable Car Museum", lat: 37.7946, lng: -122.4116, kind: "museum", tier: "blue", lore: "The winding machinery under Nob Hill. A lamp by the sheaves." }),
+  poi({ id: "cable-car-mus", name: "Cable Car Museum", lat: 37.7946, lng: -122.4116, kind: "museum", tier: "blue", lore: "The winding machinery under Nob Hill. A vault by the sheaves." }),
   poi({ id: "sfmoma", name: "SFMOMA", lat: 37.7857, lng: -122.4011, kind: "museum", tier: "blue", lore: "Third Street's brick and snorkel. Modern work, a blue plate." }),
   poi({ id: "war-memorial", name: "War Memorial Opera House", lat: 37.7785, lng: -122.4207, kind: "theatre", tier: "blue", lore: "Civic Center's hall. The UN Charter was signed next door." }),
-  poi({ id: "mission-dolores", name: "Mission Dolores", lat: 37.7642, lng: -122.4269, kind: "civic", tier: "blue", lore: "The city's oldest surviving building. Adobe, a cemetery, a lamp." }),
+  poi({ id: "mission-dolores", name: "Mission Dolores", lat: 37.7642, lng: -122.4269, kind: "civic", tier: "blue", lore: "The city's oldest surviving building. Adobe, a cemetery, a vault." }),
 ];
 
 const LONDON_MARKS: Poi[] = [
@@ -3069,32 +3069,32 @@ const LONDON_MARKS: Poi[] = [
   poi({ id: "leadenhall", name: "Leadenhall Market", lat: 51.5128, lng: -0.0833, kind: "food", tier: "white", lore: "Victorian iron, the City's covered lane. A pint after the Tower." }),
   poi({ id: "brick-lane", name: "Brick Lane", lat: 51.5203, lng: -0.0718, kind: "food", tier: "white", lore: "Curry houses, a Sunday market and the old Truman Brewery in the heart of Banglatown." }),
   poi({ id: "carnaby", name: "Carnaby Street", lat: 51.5133, lng: -0.1387, kind: "landmark", tier: "white", lore: "A pedestrian lane with a pop history. Soho's shop window." }),
-  poi({ id: "lincoln-inn", name: "Lincoln's Inn Fields", lat: 51.516, lng: -0.1163, kind: "park", tier: "white", lore: "London's largest square. Lawns, a lamp on a bench." }),
+  poi({ id: "lincoln-inn", name: "Lincoln's Inn Fields", lat: 51.516, lng: -0.1163, kind: "park", tier: "white", lore: "London's largest square. Lawns, a vault on a bench." }),
   poi({ id: "bermondsey", name: "Bermondsey Square", lat: 51.4984, lng: -0.0812, kind: "landmark", tier: "white", lore: "Antiques on Friday. A blank south of the river." }),
-  poi({ id: "southbank-centre", name: "Southbank Centre", lat: 51.5058, lng: -0.1165, kind: "theatre", tier: "blue", lore: "Festival Hall on the Thames. A lamp under the brutalist soffit." }),
+  poi({ id: "southbank-centre", name: "Southbank Centre", lat: 51.5058, lng: -0.1165, kind: "theatre", tier: "blue", lore: "Festival Hall on the Thames. A vault under the brutalist soffit." }),
   poi({ id: "science-museum", name: "Science Museum", lat: 51.4978, lng: -0.1745, kind: "museum", tier: "blue", lore: "South Kensington's machines. Stephenson, a blue plate." }),
-  poi({ id: "royal-opera", name: "Royal Opera House", lat: 51.513, lng: -0.122, kind: "theatre", tier: "blue", lore: "Covent Garden's house. A lamp in the colonnade." }),
-  poi({ id: "the-monument", name: "The Monument", lat: 51.5102, lng: -0.086, kind: "landmark", tier: "blue", lore: "Wren's column for the Great Fire. 202 steps, a civic lamp." }),
-  poi({ id: "smithfield", name: "Smithfield Market", lat: 51.5186, lng: -0.1015, kind: "food", tier: "blue", lore: "The meat market that still runs. Iron, a lamp at dawn." }),
-  poi({ id: "imperial-war", name: "Imperial War Museum", lat: 51.4975, lng: -0.1087, kind: "museum", tier: "blue", lore: "Lambeth's guns on the lawn. A lamp in the former hospital." }),
+  poi({ id: "royal-opera", name: "Royal Opera House", lat: 51.513, lng: -0.122, kind: "theatre", tier: "blue", lore: "Covent Garden's house. A vault in the colonnade." }),
+  poi({ id: "the-monument", name: "The Monument", lat: 51.5102, lng: -0.086, kind: "landmark", tier: "blue", lore: "Wren's column for the Great Fire. 202 steps, a civic vault." }),
+  poi({ id: "smithfield", name: "Smithfield Market", lat: 51.5186, lng: -0.1015, kind: "food", tier: "blue", lore: "The meat market that still runs. Iron, a vault at dawn." }),
+  poi({ id: "imperial-war", name: "Imperial War Museum", lat: 51.4975, lng: -0.1087, kind: "museum", tier: "blue", lore: "Lambeth's guns on the lawn. A vault in the former hospital." }),
 ];
 
 const CHICAGO_MARKS: Poi[] = [
-  poi({ id: "maggie-daley", name: "Maggie Daley Park", lat: 41.8826, lng: -87.619, kind: "park", tier: "white", lore: "Play hills east of Millennium. A lamp by the climbing wall." }),
+  poi({ id: "maggie-daley", name: "Maggie Daley Park", lat: 41.8826, lng: -87.619, kind: "park", tier: "white", lore: "Play hills east of Millennium. A vault by the climbing wall." }),
   poi({ id: "crown-fountain", name: "Crown Fountain", lat: 41.8836, lng: -87.6238, kind: "park", tier: "white", lore: "Faces that spit water in summer. Millennium Park's other landmark." }),
   poi({ id: "chinatown-chi", name: "Chinatown Square", lat: 41.853, lng: -87.632, kind: "landmark", tier: "white", lore: "The gate and the square south of the Loop. A blank under the 'L'." }),
-  poi({ id: "riverwalk-chi", name: "Chicago Riverwalk", lat: 41.8885, lng: -87.6212, kind: "water", tier: "white", lore: "Below street level along the river. Kayaks and a lamp on a landing." }),
+  poi({ id: "riverwalk-chi", name: "Chicago Riverwalk", lat: 41.8885, lng: -87.6212, kind: "water", tier: "white", lore: "Below street level along the river. Kayaks and a vault on a landing." }),
   poi({ id: "wicker-pk", name: "Wicker Park", lat: 41.9086, lng: -87.6773, kind: "park", tier: "white", lore: "A triangle of lawn near the six-way crossing of North, Damen and Milwaukee. The neighborhood took its name." }),
-  poi({ id: "second-city", name: "Second City — Old Town", lat: 41.9116, lng: -87.635, kind: "theatre", tier: "white", lore: "The brick theater on Wells. A small lamp by the marquee." }),
+  poi({ id: "second-city", name: "Second City — Old Town", lat: 41.9116, lng: -87.635, kind: "theatre", tier: "white", lore: "The brick theater on Wells. A small vault by the marquee." }),
   poi({ id: "pilsen-18", name: "18th Street — Pilsen", lat: 41.8578, lng: -87.656, kind: "landmark", tier: "white", lore: "Murals on the Pink Line. A neighborhood corner south of the Loop." }),
   poi({ id: "grant-field", name: "Hutchinson Field", lat: 41.8722, lng: -87.6189, kind: "park", tier: "white", lore: "Grant Park's south lawn. The fountain uphill, the museum campus south." }),
-  poi({ id: "oz-park", name: "Oz Park", lat: 41.9215, lng: -87.6465, kind: "park", tier: "white", lore: "Lincoln Park's yellow brick. A tin man, a small lamp." }),
+  poi({ id: "oz-park", name: "Oz Park", lat: 41.9215, lng: -87.6465, kind: "park", tier: "white", lore: "Lincoln Park's yellow brick. A tin man, a small vault." }),
   poi({ id: "ping-tom", name: "Ping Tom Memorial Park", lat: 41.8554, lng: -87.6343, kind: "park", tier: "white", lore: "Chinatown on the river. A pagoda, a blank on the path." }),
-  poi({ id: "cultural-center", name: "Chicago Cultural Center", lat: 41.8837, lng: -87.6247, kind: "civic", tier: "blue", lore: "The old main library. Tiffany glass, a civic lamp in the hall." }),
+  poi({ id: "cultural-center", name: "Chicago Cultural Center", lat: 41.8837, lng: -87.6247, kind: "civic", tier: "blue", lore: "The old main library. Tiffany glass, a civic vault in the hall." }),
   poi({ id: "tribune-tower", name: "Tribune Tower", lat: 41.8904, lng: -87.6233, kind: "landmark", tier: "blue", lore: "Gothic stone on Michigan. Fragments from other buildings in the walls." }),
-  poi({ id: "merch-mart", name: "Merchandise Mart", lat: 41.8885, lng: -87.635, kind: "landmark", tier: "blue", lore: "A city block of floor space on the river. A lamp at the doors." }),
+  poi({ id: "merch-mart", name: "Merchandise Mart", lat: 41.8885, lng: -87.635, kind: "landmark", tier: "blue", lore: "A city block of floor space on the river. A vault at the doors." }),
   poi({ id: "civic-opera", name: "Civic Opera House", lat: 41.8826, lng: -87.6373, kind: "theatre", tier: "blue", lore: "Wacker Drive's throne. A blue plate at the river." }),
-  poi({ id: "chi-history", name: "Chicago History Museum", lat: 41.912, lng: -87.6313, kind: "museum", tier: "blue", lore: "Lincoln Park's attic. The city's paper, a lamp in the court." }),
+  poi({ id: "chi-history", name: "Chicago History Museum", lat: 41.912, lng: -87.6313, kind: "museum", tier: "blue", lore: "Lincoln Park's attic. The city's paper, a vault in the court." }),
   poi({ id: "palmer-house", name: "Palmer House", lat: 41.8802, lng: -87.6267, kind: "landmark", tier: "blue", lore: "A Loop hotel with a frescoed lobby. Brownies were born in the kitchen." }),
   poi({ id: "chi-soldier-field", name: "Soldier Field", lat: 41.86245, lng: -87.61672, kind: "stadium", tier: "blue", lore: "The Bears' lakefront stadium, its Doric colonnades from 1924." }),
   poi({ id: "chi-old-st-pats", name: "Old St. Patrick's Church", lat: 41.87946, lng: -87.6445, kind: "civic", tier: "white", lore: "The city's oldest public building, survivor of the 1871 fire, at Adams and Desplaines." }),
@@ -3116,11 +3116,11 @@ const DETROIT_MARKS: Poi[] = [
   poi({ id: "belle-isle-cas", name: "Belle Isle — Casino building", lat: 42.3384, lng: -82.9858, kind: "park", tier: "white", lore: "A park in the river. The 1908 casino is a hall, not a wager." }),
   poi({ id: "capitol-park-det", name: "Capitol Park", lat: 42.3334, lng: -83.0498, kind: "park", tier: "white", lore: "A small green west of Woodward. The old capitol sat here." }),
   poi({ id: "brush-park", name: "Brush Park", lat: 42.3452, lng: -83.0522, kind: "landmark", tier: "white", lore: "Victorian mansions just north of downtown, built in the late 1800s for the city's lumber and industry barons." }),
-  poi({ id: "music-hall-det", name: "Music Hall", lat: 42.3378, lng: -83.0462, kind: "theatre", tier: "blue", lore: "Madison Avenue's hall. A lamp under the marquee." }),
+  poi({ id: "music-hall-det", name: "Music Hall", lat: 42.3378, lng: -83.0462, kind: "theatre", tier: "blue", lore: "Madison Avenue's hall. A vault under the marquee." }),
   poi({ id: "fillmore-det", name: "The Fillmore Detroit", lat: 42.3376, lng: -83.0522, kind: "theatre", tier: "blue", lore: "The old State Theatre. A blue plate on Woodward's west side." }),
   poi({ id: "detroit-hist", name: "Detroit Historical Museum", lat: 42.3594, lng: -83.0674, kind: "museum", tier: "blue", lore: "Woodward at Kirby. Streets of Old Detroit in the basement." }),
-  poi({ id: "charles-wright", name: "Charles H. Wright Museum", lat: 42.3592, lng: -83.0607, kind: "museum", tier: "blue", lore: "African American history on the cultural center. A lamp in the rotunda." }),
-  poi({ id: "pewabic", name: "Pewabic Pottery", lat: 42.3428, lng: -83.0147, kind: "museum", tier: "blue", lore: "East Jefferson's kiln. Iridescent tile, a blue lamp." }),
+  poi({ id: "charles-wright", name: "Charles H. Wright Museum", lat: 42.3592, lng: -83.0607, kind: "museum", tier: "blue", lore: "African American history on the cultural center. A vault in the rotunda." }),
+  poi({ id: "pewabic", name: "Pewabic Pottery", lat: 42.3428, lng: -83.0147, kind: "museum", tier: "blue", lore: "East Jefferson's kiln. Iridescent tile, a blue vault." }),
   poi({ id: "fisher-bldg", name: "Fisher Building", lat: 42.3695, lng: -83.0775, kind: "landmark", tier: "blue", lore: "New Center's cathedral of commerce. Gold leaf in the lobby." }),
   poi({ id: "det-milliken", name: "Milliken State Park", lat: 42.33201, lng: -83.02775, kind: "park", tier: "white", lore: "Michigan's first urban state park, on the riverfront with a small lighthouse." }),
   poi({ id: "det-elmwood", name: "Elmwood Cemetery", lat: 42.34899, lng: -83.01933, kind: "landmark", tier: "white", lore: "Founded in 1846, rolling grounds over Parent's Creek, site of the 1763 Battle of Bloody Run." }),
@@ -3179,7 +3179,7 @@ const TORONTO_MARKS: Poi[] = [
   poi({ id: "tiff-lightbox", name: "TIFF Lightbox", lat: 43.6467, lng: -79.3903, kind: "theatre", tier: "blue", lore: "King West. The film festival's year-round house." }),
   poi({ id: "st-james-to", name: "Cathedral Church of St. James", lat: 43.6502, lng: -79.3741, kind: "civic", tier: "blue", lore: "The Anglican cathedral on King. A spire over the old town." }),
   poi({ id: "osgoode", name: "Osgoode Hall", lat: 43.652, lng: -79.3858, kind: "civic", tier: "blue", lore: "The Law Society's iron fence. Courts, a lawn, Queen and University." }),
-  poi({ id: "steam-whistle", name: "Steam Whistle", lat: 43.6406, lng: -79.3858, kind: "food", tier: "blue", lore: "Pilsner in the roundhouse. A lamp by the turntable." }),
+  poi({ id: "steam-whistle", name: "Steam Whistle", lat: 43.6406, lng: -79.3858, kind: "food", tier: "blue", lore: "Pilsner in the roundhouse. A vault by the turntable." }),
   poi({ id: "bata-shoe", name: "Bata Shoe Museum", lat: 43.6674, lng: -79.4003, kind: "museum", tier: "blue", lore: "Bloor West. A shoebox of a building, shoes from everywhere." }),
   poi({ id: "high-park", name: "High Park", lat: 43.6465, lng: -79.4637, kind: "park", tier: "white", lore: "The west-end woods. A pond, cherry trees, a long walk from the core." }),
 ];
@@ -3191,10 +3191,10 @@ const LA_MARKS: Poi[] = [
   poi({ id: "macarthur-pk", name: "MacArthur Park", lat: 34.0574, lng: -118.2769, kind: "park", tier: "white", lore: "A lake west of downtown. The song, the street vendors, Wilshire at the south." }),
   poi({ id: "hollywood-highland", name: "Hollywood & Highland", lat: 34.1025, lng: -118.3398, kind: "landmark", tier: "white", lore: "The boulevard's tourist knot. Stars in the sidewalk, the Dolby up the stairs." }),
   poi({ id: "vista-hermosa", name: "Vista Hermosa Park", lat: 34.0615, lng: -118.2612, kind: "park", tier: "white", lore: "A hillside lawn with downtown in it. Echo Park's quieter cousin." }),
-  poi({ id: "bunker-steps", name: "Bunker Hill steps", lat: 34.0548, lng: -118.2502, kind: "landmark", tier: "white", lore: "A cascade between Fifth and Fourth. Office gardens, a lamp on a landing." }),
+  poi({ id: "bunker-steps", name: "Bunker Hill steps", lat: 34.0548, lng: -118.2502, kind: "landmark", tier: "white", lore: "A cascade between Fifth and Fourth. Office gardens, a vault on a landing." }),
   poi({ id: "cathedral-la", name: "Cathedral of Our Lady of the Angels", lat: 34.0577, lng: -118.2456, kind: "civic", tier: "blue", lore: "Rafael Moneo's concrete nave. Alameda and the 101." }),
   poi({ id: "orpheum-la", name: "Orpheum Theatre", lat: 34.0424, lng: -118.2548, kind: "theatre", tier: "blue", lore: "Broadway's 1926 palace. Still a room that can hold a picture." }),
-  poi({ id: "janm", name: "Japanese American National Museum", lat: 34.0494, lng: -118.2389, kind: "museum", tier: "blue", lore: "Little Tokyo. A lamp in the plaza, history in the galleries." }),
+  poi({ id: "janm", name: "Japanese American National Museum", lat: 34.0494, lng: -118.2389, kind: "museum", tier: "blue", lore: "Little Tokyo. A vault in the plaza, history in the galleries." }),
   poi({ id: "grammy-museum", name: "GRAMMY Museum", lat: 34.0446, lng: -118.2656, kind: "museum", tier: "blue", lore: "L.A. Live. A small house of recorded sound next to the arena." }),
   poi({ id: "last-bookstore", name: "The Last Bookstore", lat: 34.0476, lng: -118.2496, kind: "landmark", tier: "blue", lore: "Spring Street's old bank. Books in the vault, a labyrinth upstairs." }),
   poi({ id: "cliftons", name: "Clifton's", lat: 34.046, lng: -118.2535, kind: "food", tier: "blue", lore: "A 1935 Broadway cafeteria built as a forest indoors, with a faux redwood rising through the floors." }),
@@ -3217,7 +3217,7 @@ const BOSTON_MARKS: Poi[] = [
   poi({ id: "beacon-hill", name: "Acorn Street", lat: 42.3576, lng: -71.0689, kind: "landmark", tier: "white", lore: "Cobbles and federal houses. Beacon Hill's most photographed lane." }),
   poi({ id: "esplanade", name: "Charles River Esplanade", lat: 42.3572, lng: -71.0758, kind: "park", tier: "white", lore: "The Hatch Shell, a path on the water. July 4 from the grass." }),
   poi({ id: "haymarket-b", name: "Haymarket", lat: 42.3634, lng: -71.0585, kind: "food", tier: "white", lore: "A weekend produce crush under the Greenway. Cheap fruit, loud vendors." }),
-  poi({ id: "newbury", name: "Newbury Street", lat: 42.3488, lng: -71.0845, kind: "landmark", tier: "white", lore: "Back Bay's shopping street. Brownstones, a lamp in a stoop." }),
+  poi({ id: "newbury", name: "Newbury Street", lat: 42.3488, lng: -71.0845, kind: "landmark", tier: "white", lore: "Back Bay's shopping street. Brownstones, a vault in a stoop." }),
   poi({ id: "park-st-church", name: "Park Street Church", lat: 42.3566, lng: -71.0621, kind: "civic", tier: "blue", lore: "Brimstone Corner. A steeple at the Common's northeast." }),
   poi({ id: "old-south", name: "Old South Meeting House", lat: 42.357, lng: -71.0586, kind: "civic", tier: "blue", lore: "The Tea Party was argued here before the harbor." }),
   poi({ id: "kings-chapel", name: "King's Chapel", lat: 42.3581, lng: -71.0603, kind: "civic", tier: "blue", lore: "Stone on Tremont. An Anglican church that became Unitarian." }),
@@ -3229,7 +3229,7 @@ const BOSTON_MARKS: Poi[] = [
 ];
 
 const NOLA_MARKS: Poi[] = [
-  poi({ id: "nola-bourbon", name: "Bourbon Street", lat: 29.9568, lng: -90.0682, kind: "landmark", tier: "white", lore: "The loudest block. Neon, brass, a lamp in a doorway if you can hear it." }),
+  poi({ id: "nola-bourbon", name: "Bourbon Street", lat: 29.9568, lng: -90.0682, kind: "landmark", tier: "white", lore: "The loudest block. Neon, brass, a vault in a doorway if you can hear it." }),
   poi({ id: "nola-royal", name: "Royal Street", lat: 29.9572, lng: -90.0654, kind: "landmark", tier: "white", lore: "Antiques and galleries one street off Bourbon. A quieter French Quarter." }),
   poi({ id: "nola-canal", name: "Canal Streetcar", lat: 29.9536, lng: -90.0698, kind: "station", tier: "white", lore: "The wide neutral ground. Red cars toward the cemeteries and the park." }),
   poi({ id: "nola-jax", name: "Jax Brewery", lat: 29.9558, lng: -90.0632, kind: "landmark", tier: "white", lore: "The old river brewery. Shops now, the levee still at the door." }),
@@ -3406,7 +3406,7 @@ const SCOUT_SHOPS: Record<CityId, Poi> = {
     lng: -83.0495,
     kind: "shop",
     tier: "white",
-    lore: "Capitol Park. A lamp in the window, scouts on the pegs.",
+    lore: "Capitol Park. A vault in the window, scouts on the pegs.",
   }),
   tucson: poi({
     id: "shop-tucson",
@@ -3626,7 +3626,7 @@ for (const id of Object.keys(CITIES) as CityId[]) {
         tier: "white",
         lore:
           kind === "counter"
-            ? "A street counter. Matches, the morning crate, and the exchange — nothing you can finish from the journal."
+            ? "A street counter. Keys, the morning crate, and the exchange — nothing you can finish from the journal."
             : "A notice board. Contracts, errands, and the day's blitz are posted here. You take them in person.",
       }),
     );
@@ -3649,7 +3649,7 @@ for (const id of Object.keys(CITIES) as CityId[]) {
         lng: at.lng,
         kind: "board",
         tier: "white",
-        lore: "The Quest Board. Three goals a day, a little pay each, and a green match for all three.",
+        lore: "The Quest Board. Three goals a day, a little pay each, and a green key for all three.",
       }),
     );
   }
@@ -3802,7 +3802,7 @@ export const SERIES: Record<SeriesKind, SeriesDef> = {
     steps: 3,
     diffs: [1, 1, 2],
     coolMs: 8 * 60_000,
-    lore: "Three trivia cards, one white match. Two easy, then a step up. Clear the lamp and a blue match drops. Miss any trivia card and the match is gone — eight minutes dark.",
+    lore: "Three trivia cards, one white key. Two easy, then a step up. Clear the vault and a blue key drops. Miss any trivia card and the key is gone — eight minutes dark.",
     kicker: "three trivia cards, one white",
   },
   run: {
@@ -3815,7 +3815,7 @@ export const SERIES: Record<SeriesKind, SeriesDef> = {
     steps: 3,
     diffs: [1, 2, 3],
     coolMs: RUN_COOL_MS,
-    lore: "Three trivia cards, one blue match. Easy, then harder, then the last. Clear the lamp and a green match drops. Miss any trivia card and the match is gone — the street goes dark for ten minutes.",
+    lore: "Three trivia cards, one blue key. Easy, then harder, then the last. Clear the vault and a green key drops. Miss any trivia card and the key is gone — the street goes dark for ten minutes.",
     kicker: "three trivia cards, one blue",
   },
   stack: {
@@ -3828,7 +3828,7 @@ export const SERIES: Record<SeriesKind, SeriesDef> = {
     steps: 4,
     diffs: [1, 2, 3, 3],
     coolMs: 12 * 60_000,
-    lore: "Four trivia cards, one green match. The last two bite. Clear both globes and an amber match drops. Miss any trivia card and the match is gone — twelve minutes dark.",
+    lore: "Four trivia cards, one green key. The last two bite. Clear both globes and an amber key drops. Miss any trivia card and the key is gone — twelve minutes dark.",
     kicker: "four trivia cards, one green",
   },
 };
@@ -3904,7 +3904,7 @@ export const SCOUTS: Record<
     icon: "/sprites/scouts/raccoon.png",
     gait: 1,
     bed: "Lantern dust",
-    perk: { label: "Rummager · 1 in 15 lamps drops a blue match", rummage: 15 },
+    perk: { label: "Rummager · 1 in 15 vaults drops a blue key", rummage: 15 },
   },
   cat: {
     id: "cat",
@@ -3928,7 +3928,7 @@ export const SCOUTS: Record<
     icon: "/sprites/scouts/turtle.png",
     gait: 1,
     bed: "Shell tide",
-    perk: { label: "Shell · 1 in 3 failed lamps refund the match", shellBack: 3 },
+    perk: { label: "Shell · 1 in 3 failed vaults refund the key", shellBack: 3 },
   },
   owl: {
     id: "owl",
@@ -3964,7 +3964,7 @@ export const SCOUTS: Record<
     icon: "/sprites/scouts/sloth.png",
     gait: 1,
     bed: "The long way",
-    perk: { label: "Hang time · +4 s per lamp · walks 10% slower", vaultMs: 4000, pace: 0.9 },
+    perk: { label: "Hang time · +4 s per vault · walks 10% slower", vaultMs: 4000, pace: 0.9 },
   },
   giraffe: {
     id: "giraffe",
@@ -3978,7 +3978,7 @@ export const SCOUTS: Record<
     bed: "Over the rooftops",
     // 0.0.96 Long neck: 2× reach for lamps and match pick-ups (the server never checked reach), and places still
     // get their atlas name from 20% farther off (sight 1.2).
-    perk: { label: "Long neck · 2× reach for lamps and matches", reach: 2, sight: 1.2 },
+    perk: { label: "Long neck · 2× reach for vaults and keys", reach: 2, sight: 1.2 },
   },
   panda: {
     id: "panda",
@@ -3991,7 +3991,7 @@ export const SCOUTS: Record<
     gait: 1,
     bed: "Bamboo hum",
     // 0.1.47: 1 in 15 right lamps pay the lamp coin twice (server-rolled; about +7% on average, under the Fox's +10%).
-    perk: { label: "Bamboo luck · 1 in 15 right lamps pay double coin", doubleUp: 15 },
+    perk: { label: "Bamboo luck · 1 in 15 right vaults pay double coin", doubleUp: 15 },
   },
   fox: {
     id: "fox",
@@ -4003,7 +4003,7 @@ export const SCOUTS: Record<
     icon: "/sprites/scouts/fox.png",
     gait: 1,
     bed: "Coal dusk",
-    perk: { label: "Clever · +10% lamp coin · a wrong option struck on red/violet", loot: 1.1, strike: true },
+    perk: { label: "Clever · +10% vault coin · a wrong option struck on red/violet", loot: 1.1, strike: true },
   },
   lynx: {
     id: "lynx",
@@ -4033,19 +4033,19 @@ export const KIOSK = {
     id: "tinder" as const,
     cost: 160,
     name: "Tinder tin",
-    blurb: "Two white matches. The desk sells light when the street is dry.",
+    blurb: "Two white keys. The desk sells light when the street is dry.",
   },
   wick: {
     id: "wick" as const,
     cost: 420,
     name: "Blue wick",
-    blurb: "One blue match. For civic lamps when you can't wait on a drop.",
+    blurb: "One blue key. For civic vaults when you can't wait on a drop.",
   },
   fare: {
     id: "fare" as const,
     cost: 1800,
     name: "Reprint a train ticket",
-    blurb: "A ticket without the three lamps. Board at the station.",
+    blurb: "A ticket without the three vaults. Board at the station.",
   },
   smear: {
     id: "smear" as const,
@@ -4063,13 +4063,13 @@ export const KIOSK = {
     id: "amber" as const,
     cost: 5400,
     name: "Amber reprint",
-    blurb: "One amber match from the desk. Not a street find.",
+    blurb: "One amber key from the desk. Not a street find.",
   },
   oil: {
     id: "oil" as const,
     cost: 24000,
     name: "Night oil",
-    blurb: "One violet match. The rarest lamp — a long night of coin.",
+    blurb: "One violet key. The rarest vault — a long night of coin.",
   },
 };
 

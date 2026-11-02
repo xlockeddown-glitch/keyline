@@ -71,7 +71,7 @@ export function CitySelect() {
                     <p className="mt-1 kicker">{c.region}</p>
                   </div>
                   <span className="rounded-full border border-border px-2 py-1 text-xs text-fg-muted tabular-nums">
-                    {c.pois.length} lamps
+                    {c.pois.length} vaults
                   </span>
                 </div>
                 <p className="mt-3 text-sm text-fg-muted">{c.blurb}</p>

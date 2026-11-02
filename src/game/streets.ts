@@ -891,7 +891,7 @@ export function scatterStreetLamps(g: StreetGraph, hubs: Pt[], cityId: string): 
       lng: p.lng,
       kind: "landmark",
       tier,
-      lore: "A lamp the atlas left unnamed. The block still has a question.",
+      lore: "A vault the atlas left unnamed. The block still has a question.",
     });
     used.push(p);
   }

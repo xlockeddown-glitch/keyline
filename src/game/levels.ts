@@ -143,11 +143,11 @@ export type TitleStats = {
 };
 
 export const BONUS_TITLES = [
-  { id: "night-owl", name: "Night Owl", need: 500, what: "night-market lamps" },
+  { id: "night-owl", name: "Night Owl", need: 500, what: "night-market vaults" },
   { id: "hot-streak", name: "Hot Streak", need: 25, what: "right in a row" },
   { id: "globetrotter", name: "Globetrotter", need: 100, what: "right in every city" },
   { id: "perfectionist", name: "Perfectionist", need: 1000, what: "perfects" },
-  { id: "violet-hunter", name: "Violet Hunter", need: 100, what: "violet lamps" },
+  { id: "violet-hunter", name: "Violet Hunter", need: 100, what: "violet vaults" },
 ] as const;
 
 export type TitleRow = { id: string; name: string; have: number; need: number; earned: boolean; group: string };

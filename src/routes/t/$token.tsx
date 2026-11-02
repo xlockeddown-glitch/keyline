@@ -27,7 +27,7 @@ type View =
 
 const closed = (status: string, from: string | null): View => {
   const who = from ?? "A friend";
-  if (status === "self") return { kind: "closed", title: "This one's yours", body: "You sent this ticket. Pass the link to a friend — they answer, you both get a match." };
+  if (status === "self") return { kind: "closed", title: "This one's yours", body: "You sent this ticket. Pass the link to a friend — they answer, you both get a key." };
   if (status === "expired") return { kind: "closed", title: "This ticket expired", body: `Friend tickets are good for 48 hours. Ask ${who} for a fresh one.` };
   if (status === "used" || status === "taken") return { kind: "closed", title: "Already redeemed", body: `Someone else answered ${who}'s card first. One friend per ticket.` };
   if (status === "slow") return { kind: "closed", title: "One moment", body: "Too many tries just now. Wait a minute and reload." };
@@ -108,7 +108,7 @@ function FriendTicketPage() {
             </p>
             <h1 className="font-display mt-2 text-2xl leading-tight text-balance">{view.from} sent you a trivia card</h1>
             <p className="mt-2 text-sm text-pretty text-fg-muted">
-              One question, {Math.round(CARD_MS / 1000)} seconds. Get it right and you each get a match. Each right answer between you two moves your streak up a color: White, Blue, Green, Amber, Red.
+              One question, {Math.round(CARD_MS / 1000)} seconds. Get it right and you each get a key. Each right answer between you two moves your streak up a color: White, Blue, Green, Amber, Red.
             </p>
             <p className="mt-1 text-xs text-pretty text-fg-subtle">A one-card preview: it plays even if its city isn't unlocked in your game yet.</p>
             {user ? (
@@ -117,7 +117,7 @@ function FriendTicketPage() {
               </button>
             ) : (
               <div className="mt-4 flex flex-col gap-2">
-                <p className="text-sm text-fg">Sign in to play — the match goes to your account.</p>
+                <p className="text-sm text-fg">Sign in to play — the key goes to your account.</p>
                 <SignInActions callbackURL={`/t/${token}`} />
               </div>
             )}
@@ -136,7 +136,7 @@ function FriendTicketPage() {
         ) : null}
 
         <Link to="/" className="title-more">
-          {view.kind === "result" && view.result.rewarded ? "Open Keyline — your match is waiting" : "Open Keyline"}
+          {view.kind === "result" && view.result.rewarded ? "Open Keyline — your key is waiting" : "Open Keyline"}
         </Link>
       </main>
     </div>
@@ -220,7 +220,7 @@ export function ResultCard({ from, result }: { from: string; result: Result }) {
     <section className={`plate p-5 ft-result ${result.correct ? "is-hit" : "is-miss"}`} data-testid="friend-result">
       <p className="kicker">{result.correct ? "Right" : result.choice == null ? "Out of time" : "Miss"}</p>
       <h1 className="font-display mt-1 text-2xl leading-tight text-balance">{rewardLine(why, from, result.pay)}</h1>
-      {result.rewarded ? <p className="mt-2 text-sm text-fg-muted">Your match will be in your pocket the next time you open Keyline. {from} gets theirs next time they play.</p> : null}
+      {result.rewarded ? <p className="mt-2 text-sm text-fg-muted">Your key will be in your pocket the next time you open Keyline. {from} gets theirs next time they play.</p> : null}
       <p className="mt-3 text-sm text-fg-muted">The answer was:</p>
       <p className="mt-1 text-base font-medium text-pretty">{result.answer}</p>
       {result.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{result.fact}</p> : null}

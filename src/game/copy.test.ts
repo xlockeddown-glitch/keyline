@@ -5,9 +5,9 @@ import { lampsToTicket, ticketHint } from "./ticket.ts";
 
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
 
-test("empty-pocket hint counts the lamps still owed", () => {
-  assert.equal(ticketHint(0), "Light 3 more lamps to earn a train ticket");
-  assert.equal(ticketHint(2), "Light 1 more lamp to earn a train ticket");
+test("empty-pocket hint counts the vaults still owed", () => {
+  assert.equal(ticketHint(0), "Open 3 more vaults to earn a train ticket");
+  assert.equal(ticketHint(2), "Open 1 more vault to earn a train ticket");
   assert.equal(lampsToTicket(5), 1);
 });
 

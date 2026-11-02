@@ -214,7 +214,7 @@ export function DailyBlitz() {
           {phase === "intro" ? (
             <div className="mt-4">
               <p className="text-sm text-pretty text-fg-muted">
-                Six lanterns, white through violet. Each one pays coin and a match of that color. A miss ends it, and you keep what you lit.
+                Six lanterns, white through violet. Each one pays coin and a key of that color. A miss ends it, and you keep what you lit.
               </p>
               <ol className="mt-4 grid gap-1.5">
                 {BLITZ_STEPS.map((s, i) => (
@@ -222,7 +222,7 @@ export function DailyBlitz() {
                     <span>
                       {i + 1}. {TIER_LABEL[s.tier]}
                     </span>
-                    <span className="tabular-nums text-fg-muted">+{s.pay} · match</span>
+                    <span className="tabular-nums text-fg-muted">+{s.pay} · key</span>
                   </li>
                 ))}
               </ol>
@@ -244,7 +244,7 @@ export function DailyBlitz() {
                 <span>{DIFF_LABEL[card.diff]}</span>
                 <span className="tabular-nums">{(left / 1000).toFixed(1)}s</span>
                 <span className="tabular-nums">
-                  {take > 0 ? `${take} in · ` : ""}+{rung.pay} · match
+                  {take > 0 ? `${take} in · ` : ""}+{rung.pay} · key
                 </span>
               </p>
               <div className="mt-2 flex gap-1.5" aria-hidden>
@@ -278,7 +278,7 @@ export function DailyBlitz() {
               <p className="text-sm">
                 {reveal.correct
                   ? reveal.match
-                    ? `Right. +${rung.pay} coin and a ${TIER_LABEL[rung.tier]} match.`
+                    ? `Right. +${rung.pay} coin and a ${TIER_LABEL[rung.tier]} key.`
                     : `Right. +${rung.pay} coin. The ${TIER_LABEL[rung.tier].toLowerCase()} pocket is full, so ${reveal.overflow} coin instead.`
                   : "Miss. The run stops here."}
               </p>

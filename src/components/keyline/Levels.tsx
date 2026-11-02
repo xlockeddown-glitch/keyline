@@ -15,10 +15,10 @@ const CAT_LABEL: Record<TriviaCat, string> = {
 };
 
 function rewardLine(r: LevelReward): string {
-  const bits = [`+${r.match.n} ${TIER_LABEL[r.match.tier]} match${r.match.n === 1 ? "" : "es"}`];
+  const bits = [`+${r.match.n} ${TIER_LABEL[r.match.tier]} key${r.match.n === 1 ? "" : "s"}`];
   if (r.nameColor) bits.push(`${NAME_COLORS.find((c) => c.id === r.nameColor)?.label} name color`);
   if (r.boost) bits.push("a 15-min double streak boost");
-  if (r.gift) bits.push("a match to gift a friend");
+  if (r.gift) bits.push("a key to gift a friend");
   return bits.join(" · ");
 }
 
@@ -58,7 +58,7 @@ export function LevelSync() {
         celebrate(view);
         if (view.paid.length) useGame.getState().adoptWallet({ ...view.wallet, cities: useGame.getState().cities });
         for (const g of view.giftsIn) {
-          useGame.setState({ toast: g.item === "boost" ? `${g.from} sent you a 15-min boost!` : `${g.from} sent you a ${TIER_LABEL[g.tier ?? "white"]} match!` });
+          useGame.setState({ toast: g.item === "boost" ? `${g.from} sent you a 15-min boost!` : `${g.from} sent you a ${TIER_LABEL[g.tier ?? "white"]} key!` });
         }
       } catch {
         /* offline: keep the last view */
@@ -151,7 +151,7 @@ export function LevelPanel() {
           ⚡ {boostLeft > 0 ? `Boost on · ${Math.ceil(boostLeft / 60_000)} min` : `${BOOST_LABEL} ×${v.boosts}`}
         </button>
         <button type="button" className="lvl-btn" disabled={v.gifts <= 0 && v.boosts <= 0} onClick={() => setOpen((o) => !o)}>
-          🎁 Gift a friend ({v.gifts} match{v.gifts === 1 ? "" : "es"})
+          🎁 Gift a friend ({v.gifts} key{v.gifts === 1 ? "" : "es"})
         </button>
       </div>
       {open ? (
@@ -168,7 +168,7 @@ export function LevelPanel() {
               const nonce = `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
               const r = await sendFriendGift({ data: { to: friend, item, nonce } });
               setBusy(false);
-              setLine(r.ok ? `Sent ${item === "match" ? "a match" : "a boost"}!` : "Couldn't send that gift.");
+              setLine(r.ok ? `Sent ${item === "match" ? "a key" : "a boost"}!` : "Couldn't send that gift.");
               refresh();
             }}>
               Send {item === "match" ? "match" : "boost"}

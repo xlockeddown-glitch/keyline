@@ -29,7 +29,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
 
   const picker = pick ? (
         <li className="own-pick grid gap-2 rounded-lg border border-border p-3" data-testid="own-pick">
-          <p className="hq-row-title">Pick a {TIER_LABEL[pick]} lamp · {free ? "free gift" : `${OWN_PRICE[pick].toLocaleString("en-US")} coins`}</p>
+          <p className="hq-row-title">Pick a {TIER_LABEL[pick]} vault · {free ? "free gift" : `${OWN_PRICE[pick].toLocaleString("en-US")} coins`}</p>
           <label className="hq-row-sub flex items-center gap-2">
             City
             <select className="min-h-11 rounded border border-border bg-bg px-2" value={city} onChange={(e) => setCity(e.target.value as CityId)}>
@@ -40,7 +40,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
               ))}
             </select>
           </label>
-          {lamps.length === 0 ? <p className="hq-row-sub">No free {TIER_LABEL[pick]} lamps in {CITIES[city].name}. Try another city.</p> : null}
+          {lamps.length === 0 ? <p className="hq-row-sub">No free {TIER_LABEL[pick]} vaults in {CITIES[city].name}. Try another city.</p> : null}
           <ul className="grid gap-1">
             {lamps.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-2">
@@ -73,8 +73,8 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
 
   return (
     <>
-      {compact ? <li className="kicker jr-kicker">Lanterns · tap a row to pick a lamp</li> : <li className="kicker">Your lanterns</li>}
-      {compact ? null : <li className="hq-row-sub">Own one lamp of each color. When a visitor misses there, you get half its value.</li>}
+      {compact ? <li className="kicker jr-kicker">Lanterns · tap a row to pick a vault</li> : <li className="kicker">Your lanterns</li>}
+      {compact ? null : <li className="hq-row-sub">Own one vault of each color. When a visitor misses there, you get half its value.</li>}
       {TIERS.map((t) => {
         const mine = owned.find((o) => o.mine && !o.free && o.tier === t);
         const poi = mine ? CITIES[mine.city as CityId]?.pois.find((p) => p.id === mine.poi) : null;
@@ -98,7 +98,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
                   <span className={`own-dot tier-${t}`} aria-hidden />
                   <span className="jr-main">
                     <span className="jr-title">{TIER_LABEL[t]}</span>
-                    {mine ? <span className="jr-sub">Yours · {poi?.name ?? "Your lamp"} · {CITIES[mine.city as CityId]?.name ?? ""}</span> : null}
+                    {mine ? <span className="jr-sub">Yours · {poi?.name ?? "Your vault"} · {CITIES[mine.city as CityId]?.name ?? ""}</span> : null}
                   </span>
                   <span className="jr-val tabular-nums">{mine ? "Owned" : `${shortCoin(OWN_PRICE[t])} ${on ? "▴" : "›"}`}</span>
                 </button>
@@ -111,7 +111,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
           <li key={t} className={`hq-row own-row tier-${t}`} data-testid={`own-${t}`}>
             <span className={`own-dot tier-${t}`} aria-hidden />
             <div className="hq-row-copy">
-              <p className="hq-row-title">{mine ? `${poi?.name ?? "Your lamp"} · ${CITIES[mine.city as CityId]?.name ?? ""}` : `${TIER_LABEL[t]} lantern`}</p>
+              <p className="hq-row-title">{mine ? `${poi?.name ?? "Your vault"} · ${CITIES[mine.city as CityId]?.name ?? ""}` : `${TIER_LABEL[t]} lantern`}</p>
               <p className="hq-row-sub tabular-nums">{mine ? `Your ${TIER_LABEL[t]} lantern` : `${OWN_PRICE[t].toLocaleString("en-US")} coins`}</p>
             </div>
             {mine ? null : (
@@ -126,7 +126,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
                   setPick(pick === t && !free ? null : t);
                 }}
               >
-                {pick === t && !free ? "Close" : "Pick a lamp"}
+                {pick === t && !free ? "Close" : "Pick a vault"}
               </button>
             )}
           </li>
@@ -139,7 +139,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
             <span className={`own-dot tier-${o.tier}`} aria-hidden />
             <div className="hq-row-copy">
               <p className="hq-row-title">
-                {CITIES[o.city as CityId]?.pois.find((p) => p.id === o.poi)?.name ?? "Your lamp"} · {CITIES[o.city as CityId]?.name ?? ""}
+                {CITIES[o.city as CityId]?.pois.find((p) => p.id === o.poi)?.name ?? "Your vault"} · {CITIES[o.city as CityId]?.name ?? ""}
               </p>
               <p className="hq-row-sub">Your free {TIER_LABEL[o.tier]} lantern (a gift)</p>
             </div>
@@ -149,7 +149,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
         <li key={`gift-${t}`} className={`hq-row own-row own-gift tier-${t}`} data-testid={`own-gift-${t}`}>
           <span className={`own-dot tier-${t}`} aria-hidden />
           <div className="hq-row-copy">
-            <p className="hq-row-title">Free {TIER_LABEL[t]} lantern: pick a lamp</p>
+            <p className="hq-row-title">Free {TIER_LABEL[t]} lantern: pick a vault</p>
             <p className="hq-row-sub">A gift. It's extra: you can still buy your own {TIER_LABEL[t]}.</p>
           </div>
           <button
@@ -164,7 +164,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
               setPick(open ? null : t);
             }}
           >
-            {pick === t && free ? "Close" : "Pick a lamp"}
+            {pick === t && free ? "Close" : "Pick a vault"}
           </button>
         </li>
       ))}

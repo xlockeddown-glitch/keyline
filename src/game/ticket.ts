@@ -76,7 +76,7 @@ export function lampsToTicket(cityVaults: number) {
 /** "Light 2 more lamps to earn a train ticket" — the empty-pocket hint. */
 export function ticketHint(cityVaults: number) {
   const n = lampsToTicket(cityVaults);
-  return `Light ${n} more lamp${n === 1 ? "" : "s"} to earn a train ticket`;
+  return `Open ${n} more vault${n === 1 ? "" : "s"} to earn a train ticket`;
 }
 
 export function fareDesk(city: City): Poi {

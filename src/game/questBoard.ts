@@ -54,45 +54,45 @@ export const SET_SIZE: Record<PeriodKind, number> = { day: 4, week: 5, month: 4 
 const r = (coins: number, ...matches: Tier[]): QuestReward => ({ coins, matches });
 
 export const DAILY_BANK: QuestDef[] = [
-  { id: "d-right", kind: "day", title: "Busy lamplighter", sub: "Answer 8 lamps right.", need: 8, effort: 1, reward: r(60, "white") },
-  { id: "d-green", kind: "day", title: "Green and up", sub: "Light 3 lamps, green or higher.", need: 3, effort: 1, reward: r(60, "white") },
-  { id: "d-blue", kind: "day", title: "Blue hour", sub: "Light 3 blue lamps.", need: 3, effort: 1, reward: r(60, "white") },
-  { id: "d-topics", kind: "day", title: "Mixed bag", sub: "Right lamps in 3 different categories.", need: 3, effort: 1, reward: r(60, "white") },
-  { id: "d-cache", kind: "day", title: "Cache run", sub: "Open the daily match cache.", need: 1, effort: 1, reward: r(60, "white") },
+  { id: "d-right", kind: "day", title: "Busy lamplighter", sub: "Answer 8 vaults right.", need: 8, effort: 1, reward: r(60, "white") },
+  { id: "d-green", kind: "day", title: "Green and up", sub: "Open 3 vaults, green or higher.", need: 3, effort: 1, reward: r(60, "white") },
+  { id: "d-blue", kind: "day", title: "Blue hour", sub: "Open 3 blue vaults.", need: 3, effort: 1, reward: r(60, "white") },
+  { id: "d-topics", kind: "day", title: "Mixed bag", sub: "Right vaults in 3 different categories.", need: 3, effort: 1, reward: r(60, "white") },
+  { id: "d-cache", kind: "day", title: "Cache run", sub: "Open the daily key cache.", need: 1, effort: 1, reward: r(60, "white") },
   { id: "d-house", kind: "day", title: "Home key", sub: "Turn the key at one of your houses.", need: 1, effort: 1, reward: r(60, "white"), needs: "house" },
-  { id: "d-street", kind: "day", title: "Pocket finds", sub: "Pick up 3 street matches.", need: 3, effort: 2, reward: r(100, "blue") },
-  { id: "d-roam", kind: "day", title: "Roamer", sub: "Light lamps in 3 different districts.", need: 3, effort: 2, reward: r(100, "blue") },
-  { id: "d-streak", kind: "day", title: "Warm streak", sub: "6 right lamps in a row.", need: 6, effort: 2, reward: r(100, "blue") },
-  { id: "d-amber", kind: "day", title: "Amber glow", sub: "Light an amber lamp or higher.", need: 1, effort: 3, reward: r(150, "green") },
+  { id: "d-street", kind: "day", title: "Pocket finds", sub: "Pick up 3 street keys.", need: 3, effort: 2, reward: r(100, "blue") },
+  { id: "d-roam", kind: "day", title: "Roamer", sub: "Open vaults in 3 different districts.", need: 3, effort: 2, reward: r(100, "blue") },
+  { id: "d-streak", kind: "day", title: "Warm streak", sub: "6 right vaults in a row.", need: 6, effort: 2, reward: r(100, "blue") },
+  { id: "d-amber", kind: "day", title: "Amber glow", sub: "Open an amber vault or higher.", need: 1, effort: 3, reward: r(150, "green") },
 ];
 
 export const WEEKLY_BANK: QuestDef[] = [
-  { id: "w-lamps", kind: "week", title: "Lamp lighter", sub: "Light 25 lamps, green or higher.", need: 25, effort: 2, reward: r(2_000, "green") },
-  { id: "w-ladder", kind: "week", title: "Color ladder", sub: "One right lamp in each of white, blue, green, amber and red.", need: 5, effort: 2, reward: r(1_500, "amber") },
-  { id: "w-streak", kind: "week", title: "Hot hand", sub: "15 right lamps in a row.", need: 15, effort: 2, reward: r(1_000, "blue", "green") },
-  { id: "w-cache", kind: "week", title: "Regular", sub: "Open the match cache on 4 days.", need: 4, effort: 1, reward: r(1_000, "green") },
+  { id: "w-lamps", kind: "week", title: "Vault cracker", sub: "Open 25 vaults, green or higher.", need: 25, effort: 2, reward: r(2_000, "green") },
+  { id: "w-ladder", kind: "week", title: "Color ladder", sub: "One right vault in each of white, blue, green, amber and red.", need: 5, effort: 2, reward: r(1_500, "amber") },
+  { id: "w-streak", kind: "week", title: "Hot hand", sub: "15 right vaults in a row.", need: 15, effort: 2, reward: r(1_000, "blue", "green") },
+  { id: "w-cache", kind: "week", title: "Regular", sub: "Open the key cache on 4 days.", need: 4, effort: 1, reward: r(1_000, "green") },
   { id: "w-house", kind: "week", title: "Homebody", sub: "Turn a house key on 3 days.", need: 3, effort: 1, reward: r(1_000, "green"), needs: "house" },
-  { id: "w-roam", kind: "week", title: "District walker", sub: "Light lamps in 10 different districts.", need: 10, effort: 2, reward: r(1_500, "amber") },
-  { id: "w-street", kind: "week", title: "Gutter gold", sub: "Pick up 12 street matches.", need: 12, effort: 2, reward: r(1_500, "green") },
-  { id: "w-amber", kind: "week", title: "High lamps", sub: "Light 5 lamps, amber or higher.", need: 5, effort: 3, reward: r(2_000, "amber") },
+  { id: "w-roam", kind: "week", title: "District walker", sub: "Open vaults in 10 different districts.", need: 10, effort: 2, reward: r(1_500, "amber") },
+  { id: "w-street", kind: "week", title: "Gutter gold", sub: "Pick up 12 street keys.", need: 12, effort: 2, reward: r(1_500, "green") },
+  { id: "w-amber", kind: "week", title: "High vaults", sub: "Open 5 vaults, amber or higher.", need: 5, effort: 3, reward: r(2_000, "amber") },
 ];
 
 export const MONTHLY_BANK: QuestDef[] = [
-  { id: "m-tour", kind: "month", title: "City tour", sub: "Right lamps in 4 different cities.", need: 4, effort: 3, reward: r(15_000, "red") },
-  { id: "m-night", kind: "month", title: "Night shift", sub: "12 right night-market lamps.", need: 12, effort: 3, reward: r(20_000, "amber") },
+  { id: "m-tour", kind: "month", title: "City tour", sub: "Right vaults in 4 different cities.", need: 4, effort: 3, reward: r(15_000, "red") },
+  { id: "m-night", kind: "month", title: "Night shift", sub: "12 right night-market vaults.", need: 12, effort: 3, reward: r(20_000, "amber") },
   {
     id: "m-shelf",
     kind: "month",
     title: "Well read",
-    sub: `${SHELF_TOTAL} right lamps across ${SHELF_TOPICS} or more categories, at least ${SHELF_EACH} in each.`,
+    sub: `${SHELF_TOTAL} right vaults across ${SHELF_TOPICS} or more categories, at least ${SHELF_EACH} in each.`,
     need: SHELF_TOTAL,
     effort: 2,
     reward: r(12_000, "red"),
   },
-  { id: "m-hop", kind: "month", title: "Market hopper", sub: "Right night-market lamps in 3 different cities.", need: 3, effort: 3, reward: r(16_000, "red") },
-  { id: "m-streak", kind: "month", title: "Long run", sub: "25 right lamps in a row.", need: 25, effort: 2, reward: r(12_000, "amber") },
-  { id: "m-red", kind: "month", title: "Red letter", sub: "Light 10 lamps, red or higher.", need: 10, effort: 2, reward: r(12_000, "red") },
-  { id: "m-days", kind: "month", title: "Steady hand", sub: "Right lamps on 12 different days.", need: 12, effort: 2, reward: r(12_000, "amber") },
+  { id: "m-hop", kind: "month", title: "Market hopper", sub: "Right night-market vaults in 3 different cities.", need: 3, effort: 3, reward: r(16_000, "red") },
+  { id: "m-streak", kind: "month", title: "Long run", sub: "25 right vaults in a row.", need: 25, effort: 2, reward: r(12_000, "amber") },
+  { id: "m-red", kind: "month", title: "Red letter", sub: "Open 10 vaults, red or higher.", need: 10, effort: 2, reward: r(12_000, "red") },
+  { id: "m-days", kind: "month", title: "Steady hand", sub: "Right vaults on 12 different days.", need: 12, effort: 2, reward: r(12_000, "amber") },
 ];
 
 /**
@@ -104,42 +104,42 @@ export const V2_FROM: Record<PeriodKind, string | null> = { day: null, week: "W2
 const v2 = (base: QuestDef[], id: string, over: Partial<QuestDef>): QuestDef => ({ ...base.find((d) => d.id === id)!, id: `${id}2`, calc: id, ...over });
 
 export const WEEKLY_BANK_V2: QuestDef[] = [
-  v2(WEEKLY_BANK, "w-lamps", { sub: "Light 50 lamps, green or higher.", need: 50, effort: 3, reward: r(3_000, "green") }),
+  v2(WEEKLY_BANK, "w-lamps", { sub: "Open 50 vaults, green or higher.", need: 50, effort: 3, reward: r(3_000, "green") }),
   v2(WEEKLY_BANK, "w-ladder", { effort: 1 }),
-  v2(WEEKLY_BANK, "w-streak", { sub: "25 right lamps in a row.", need: 25, effort: 2, reward: r(1_500, "blue", "green") }),
-  v2(WEEKLY_BANK, "w-cache", { sub: "Open the match cache on 6 days.", need: 6, effort: 2, reward: r(1_500, "green") }),
+  v2(WEEKLY_BANK, "w-streak", { sub: "25 right vaults in a row.", need: 25, effort: 2, reward: r(1_500, "blue", "green") }),
+  v2(WEEKLY_BANK, "w-cache", { sub: "Open the key cache on 6 days.", need: 6, effort: 2, reward: r(1_500, "green") }),
   v2(WEEKLY_BANK, "w-house", { sub: "Turn a house key on 5 days.", need: 5, effort: 2, reward: r(1_500, "green") }),
-  v2(WEEKLY_BANK, "w-roam", { sub: "Light lamps in 18 different districts.", need: 18, effort: 3, reward: r(2_000, "amber") }),
-  v2(WEEKLY_BANK, "w-street", { sub: "Pick up 25 street matches.", need: 25, effort: 2, reward: r(2_000, "green") }),
-  v2(WEEKLY_BANK, "w-amber", { sub: "Light 10 lamps, amber or higher.", need: 10, effort: 3, reward: r(2_500, "amber") }),
+  v2(WEEKLY_BANK, "w-roam", { sub: "Open vaults in 18 different districts.", need: 18, effort: 3, reward: r(2_000, "amber") }),
+  v2(WEEKLY_BANK, "w-street", { sub: "Pick up 25 street keys.", need: 25, effort: 2, reward: r(2_000, "green") }),
+  v2(WEEKLY_BANK, "w-amber", { sub: "Open 10 vaults, amber or higher.", need: 10, effort: 3, reward: r(2_500, "amber") }),
 ];
 
 export const WEEKLY_CHALLENGES: QuestDef[] = [
   { id: "wc-perfect", kind: "week", title: "Sharpshooter", sub: "30 perfect answers (right and fast).", need: 30, effort: 3, reward: r(5_000, "red"), challenge: true },
-  { id: "wc-run", kind: "week", title: "Unbroken", sub: "40 right lamps in a row.", need: 40, effort: 3, reward: r(5_000, "red"), challenge: true, calc: "streak" },
-  { id: "wc-red", kind: "week", title: "Red week", sub: "Light 6 lamps, red or higher.", need: 6, effort: 3, reward: r(5_000, "red"), challenge: true, calc: "m-red" },
+  { id: "wc-run", kind: "week", title: "Unbroken", sub: "40 right vaults in a row.", need: 40, effort: 3, reward: r(5_000, "red"), challenge: true, calc: "streak" },
+  { id: "wc-red", kind: "week", title: "Red week", sub: "Open 6 vaults, red or higher.", need: 6, effort: 3, reward: r(5_000, "red"), challenge: true, calc: "m-red" },
 ];
 
 export const MONTHLY_BANK_V2: QuestDef[] = [
   v2(MONTHLY_BANK, "m-tour", { effort: 2 }),
-  v2(MONTHLY_BANK, "m-night", { sub: "25 right night-market lamps.", need: 25, effort: 3, reward: r(24_000, "amber") }),
+  v2(MONTHLY_BANK, "m-night", { sub: "25 right night-market vaults.", need: 25, effort: 3, reward: r(24_000, "amber") }),
   {
     ...v2(MONTHLY_BANK, "m-shelf", {}),
-    sub: "120 right lamps across 4 or more categories, at least 20 in each.",
+    sub: "120 right vaults across 4 or more categories, at least 20 in each.",
     need: 120,
     effort: 3,
     reward: r(18_000, "red"),
   },
   v2(MONTHLY_BANK, "m-hop", { effort: 2 }),
-  v2(MONTHLY_BANK, "m-streak", { sub: "40 right lamps in a row.", need: 40, effort: 3, reward: r(16_000, "amber") }),
-  v2(MONTHLY_BANK, "m-red", { sub: "Light 20 lamps, red or higher.", need: 20, effort: 3, reward: r(16_000, "red") }),
-  v2(MONTHLY_BANK, "m-days", { sub: "Right lamps on 18 different days.", need: 18, effort: 2, reward: r(14_000, "amber") }),
+  v2(MONTHLY_BANK, "m-streak", { sub: "40 right vaults in a row.", need: 40, effort: 3, reward: r(16_000, "amber") }),
+  v2(MONTHLY_BANK, "m-red", { sub: "Open 20 vaults, red or higher.", need: 20, effort: 3, reward: r(16_000, "red") }),
+  v2(MONTHLY_BANK, "m-days", { sub: "Right vaults on 18 different days.", need: 18, effort: 2, reward: r(14_000, "amber") }),
 ];
 export const SHELF2_EACH = 20;
 
 export const MONTHLY_CHALLENGES: QuestDef[] = [
-  { id: "mc-run", kind: "month", title: "Iron streak", sub: "75 right lamps in a row.", need: 75, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "streak" },
-  { id: "mc-volume", kind: "month", title: "Lamplighter of the month", sub: "Answer 500 lamps right.", need: 500, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "d-right" },
+  { id: "mc-run", kind: "month", title: "Iron streak", sub: "75 right vaults in a row.", need: 75, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "streak" },
+  { id: "mc-volume", kind: "month", title: "Lamplighter of the month", sub: "Answer 500 vaults right.", need: 500, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "d-right" },
   { id: "mc-perfect", kind: "month", title: "Dead eye", sub: "150 perfect answers (right and fast).", need: 150, effort: 3, reward: r(40_000, "red", "red"), challenge: true, calc: "wc-perfect" },
 ];
 
@@ -327,7 +327,7 @@ export function rewardLine(rw: QuestReward): string {
   if (rw.coins) bits.push(`${rw.coins.toLocaleString("en-US")} coin`);
   const by = new Map<Tier, number>();
   for (const t of rw.matches) by.set(t, (by.get(t) ?? 0) + 1);
-  for (const [t, n] of by) bits.push(`${n > 1 ? `${n} ` : ""}${t} match${n > 1 ? "es" : ""}`);
+  for (const [t, n] of by) bits.push(`${n > 1 ? `${n} ` : ""}${t} key${n > 1 ? "s" : ""}`);
   if (rw.lucky) bits.push("Lucky next month");
   return bits.join(" + ");
 }
@@ -336,7 +336,7 @@ export function rewardLine(rw: QuestReward): string {
 export function questClaimLine(reason: string | undefined): string {
   switch (reason) {
     case "unproven":
-      return "Not done yet. The server counts it from your lamps.";
+      return "Not done yet. The server counts it from your vaults.";
     case "closed":
       return "That quest has closed.";
     case "not-yours":

@@ -214,7 +214,7 @@ export function HqPanel() {
                 })}
               </ul>
               <p className="text-xs text-fg-subtle">
-                Contracts are taken at {boardLine(cityId)}. The atlas is a record, not a ride. Earn a fare in this city — three lamps — then punch it at{" "}
+                Contracts are taken at {boardLine(cityId)}. The atlas is a record, not a ride. Earn a fare in this city — three vaults — then punch it at{" "}
                 {desk.name}.
               </p>
             </div>
@@ -238,7 +238,7 @@ export function HqPanel() {
                 <li className="hq-row">
                   <div className="hq-row-copy">
                     <p className="hq-row-title tabular-nums">{vaultsOpened}</p>
-                    <p className="hq-row-sub">Lamps lit.</p>
+                    <p className="hq-row-sub">Vaults opened.</p>
                   </div>
                 </li>
                 <li className="hq-row">
@@ -298,7 +298,7 @@ export function QuestDesk({
     <div>
       <QuestBoard />
       <p className="kicker mt-4">Cloth</p>
-      <p className="mt-1 text-xs text-fg-muted">Wear one to get extra coin each time you light a lamp. It doesn't change how you look.</p>
+      <p className="mt-1 text-xs text-fg-muted">Wear one to get extra coin each time you open a vault. It doesn't change how you look.</p>
       <div className="mt-2 grid gap-2">
         {clothShelf(quests, cityId).map((id) => {
           const owned = quests.cloths.includes(id);

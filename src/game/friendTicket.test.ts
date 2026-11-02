@@ -135,12 +135,12 @@ test("markFriendPaid: a reward lands in a save once, however often the news repe
 });
 
 test("result lines: First L. names don't get a doubled full stop", () => {
-  assert.equal(rewardLine(null, "Ryan G."), "You and Ryan G. each got a White match. Streak 1 of 5.");
-  assert.equal(rewardLine(null, "Beth B.", { tier: "green", rung: 2 }), "You and Beth B. each got a Green match. Streak 3 of 5.");
-  assert.equal(rewardLine(null, "Beth B.", { tier: "amber", rung: 3 }), "You and Beth B. each got an Amber match. Streak 4 of 5.");
+  assert.equal(rewardLine(null, "Ryan G."), "You and Ryan G. each got a White key. Streak 1 of 5.");
+  assert.equal(rewardLine(null, "Beth B.", { tier: "green", rung: 2 }), "You and Beth B. each got a Green key. Streak 3 of 5.");
+  assert.equal(rewardLine(null, "Beth B.", { tier: "amber", rung: 3 }), "You and Beth B. each got an Amber key. Streak 4 of 5.");
   assert.match(rewardLine("pair-cap", "Ryan G."), /Your streak stays\.$/);
   for (const why of ["pair-cap", "sender-cap", "late", "wrong"] as const) assert.doesNotMatch(rewardLine(why, "Ryan G."), /rung|wick|street|lands/i);
-  assert.match(rewardLine("sender-cap", "Ryan G."), /three friend ticket matches today.*streak stays/);
+  assert.match(rewardLine("sender-cap", "Ryan G."), /three friend ticket keys today.*streak stays/);
 });
 
 test("0.1.26 ladder replay: climb, wrong/late reset, cap holds, idle reset, difficulty floor, no violet", async () => {
@@ -172,8 +172,8 @@ test("0.1.26 ladder replay: climb, wrong/late reset, cap holds, idle reset, diff
   const idle = replayLadder([step(), step()]);
   assert.equal(ladderNext(idle, idle.lastAt! + LADDER_IDLE_MS + 1).rung, 0, "48 h idle resets");
   assert.equal(ladderNext(idle, idle.lastAt! + H).tier, "green");
-  assert.equal(ladderNextLine("amber", 3), "Get this right for an Amber match each. Streak 4 of 5.");
-  assert.equal(ladderNextLine("green", 2), "Get this right for a Green match each. Streak 3 of 5.");
+  assert.equal(ladderNextLine("amber", 3), "Get this right for an Amber key each. Streak 4 of 5.");
+  assert.equal(ladderNextLine("green", 2), "Get this right for a Green key each. Streak 3 of 5.");
   assert.equal(tooEasyLine("amber"), "This card is too easy for Amber, so it pays White.");
 });
 

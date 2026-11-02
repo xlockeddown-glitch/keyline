@@ -693,7 +693,7 @@ export async function awardGrade(
       base = spent.wallet;
     }
     if (!sparkOk) {
-      const award = { coins: 0, keys: {}, boosts: [sparkTier(full.poiTier) ? "Sparks are spent today" : "Violet needs a violet match"] };
+      const award = { coins: 0, keys: {}, boosts: [sparkTier(full.poiTier) ? "Sparks are spent today" : "Violet needs a violet key"] };
       return { ok: true, wallet: base, award, detail: detailOf(award) };
     }
     const grant = gradeGrant(base, full);
@@ -707,7 +707,7 @@ export async function awardGrade(
       const back = applyDelta(base, { coins: p.coin, keys: k });
       if (back.ok) {
         matchLost = false;
-        const award = { coins: p.coin, keys: k, boosts: p.up ? ["Shell: match back ↑"] : ["Shell: match back"] };
+        const award = { coins: p.coin, keys: k, boosts: p.up ? ["Shell: key back ↑"] : ["Shell: key back"] };
         return { ok: true, wallet: back.wallet, award, detail: detailOf(award) };
       }
     }

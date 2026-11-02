@@ -38,7 +38,7 @@ export function DailyPop() {
           <>
             <p className="kicker">Notice board</p>
             <h2 className="font-display mt-1 text-2xl leading-tight">Daily Blitz is ready</h2>
-            <p className="mt-2 text-sm text-pretty text-fg-muted">Six quick lamps for today's pay.</p>
+            <p className="mt-2 text-sm text-pretty text-fg-muted">Six quick vaults for today's pay.</p>
             <div className="mt-3 flex gap-2">
               <button
                 type="button"

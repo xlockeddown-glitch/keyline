@@ -125,20 +125,20 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const canDesk = canPunch || canUnlock;
 
   const cabSeat = hud.seated && !hud.ownCar; // 0.1.14: your own car answers lamps; the cab still parks first
-  let cue = cabSeat ? "Park at the curb. The door is on foot." : hud.seated ? "Tap a lamp to drive to its curb." : "Click the map to walk.";
+  let cue = cabSeat ? "Park at the curb. The door is on foot." : hud.seated ? "Tap a vault to drive to its curb." : "Click the map to walk.";
   if (nearest) {
     if (cabSeat || (hud.seated && service)) cue = `${formatDist(hud.nearestDist)} · curb, then walk`;
     else if (canPunch) cue = `Travel · T · ${nearest.name}`;
     else if (canUnlock) cue = `Train station · T · unlock a city (${freePick ? "free pick" : `${passes} pass${passes === 1 ? "" : "es"}`})`;
     else if (atDesk && !fares) cue = `Train station. ${ticketHint(cityVaults)}.`;
     else if (atShop) cue = `${nearest.name} · coats for hire · E`;
-    else if (atCounter) cue = `${nearest.name} · crate, matches, exchange · E`;
+    else if (atCounter) cue = `${nearest.name} · crate, keys, exchange · E`;
     else if (atBoard) cue = `${nearest.name} · contracts and the blitz · E`;
     else if (nearest && isScoutShop(nearest)) cue = `${formatDist(hud.nearestDist)} · brass awning, coats`;
     else if (nearest && isCounter(nearest)) cue = `${formatDist(hud.nearestDist)} · street counter`;
     else if (nearest && isBoard(nearest)) cue = `${formatDist(hud.nearestDist)} · notice board`;
     else if (seriesNear) {
-      if (inReach && !haveKey) cue = `Need a ${TIER_LABEL[seriesNear.cost]} match for ${seriesNear.name}`;
+      if (inReach && !haveKey) cue = `Need a ${TIER_LABEL[seriesNear.cost]} key for ${seriesNear.name}`;
       else if (armed) cue = `${seriesNear.name} · ${seriesNear.steps} trivia cards · E`;
       else cue = `${formatDist(hud.nearestDist)} · ${seriesNear.kicker}`;
     } else if (recasting) {
@@ -146,14 +146,14 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       cue = left > 45 * 60_000 ? `Dark for ${formatCool(left)}` : "Resting. Come back soon to try it again.";
     } else if (inReach && !haveKey) {
       cue = canSpark
-        ? `Strike a spark · E — earn a ${TIER_LABEL[nearest.tier]} match`
+        ? `Strike a spark · E — earn a ${TIER_LABEL[nearest.tier]} key`
         : sparkedHere
-          ? `Need a ${TIER_LABEL[nearest.tier]} match. Wick is spent here.`
+          ? `Need a ${TIER_LABEL[nearest.tier]} key. Wick is spent here.`
           : sparksLeft < 1
-            ? `Need a ${TIER_LABEL[nearest.tier]} match. Sparks are spent today.`
-            : `Need a ${TIER_LABEL[nearest.tier]} match`;
+            ? `Need a ${TIER_LABEL[nearest.tier]} key. Sparks are spent today.`
+            : `Need a ${TIER_LABEL[nearest.tier]} key`;
     }
-    else if (armed) cue = "At the lamp · E or tap";
+    else if (armed) cue = "At the vault · E or tap";
     else cue = hud.routeStops > 0 ? `${formatDist(hud.nearestDist)} · tap to go there instead` : `${formatDist(hud.nearestDist)} · click to walk`;
   }
 
@@ -297,7 +297,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
               type="button"
               className="key-belt pointer-events-auto"
               onClick={() => toggleInv(true)}
-              aria-label="Matches, open satchel"
+              aria-label="Keys, open satchel"
             >
               {belt.map((t) => (
                 <span key={t} className={`key-slot ${needTier === t ? "is-mark" : ""}`} title={creditHint(credit, t) ?? undefined}>
@@ -372,7 +372,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             type="button"
             className={`act-btn pointer-events-auto ${canDesk ? "is-armed" : armed ? "is-armed" : ""}`}
             onClick={canDesk ? onTimetable : onInteract}
-            aria-label={canPunch ? "Travel" : canUnlock ? "Open timetable" : atShop ? "Open outfitter" : atCounter ? "Open counter" : atBoard ? "Open notice" : armed ? "Light lamp" : "Interact"}
+            aria-label={canPunch ? "Travel" : canUnlock ? "Open timetable" : atShop ? "Open outfitter" : atCounter ? "Open counter" : atBoard ? "Open notice" : armed ? "Open vault" : "Interact"}
           >
             {canDesk ? "T" : "E"}
           </button>

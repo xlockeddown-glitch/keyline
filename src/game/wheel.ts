@@ -59,7 +59,7 @@ function coinPrize(n: number, face: string): WheelPrize {
 }
 
 function keyPrize(tier: Tier, n: number): WheelPrize {
-  const name = `${TIER_LABEL[tier]} match`;
+  const name = `${TIER_LABEL[tier]} key`;
   return { kind: "key", tier, n, face: "Match", label: n > 1 ? `${n} ${name}es` : `A ${name.toLowerCase()}` };
 }
 
@@ -181,7 +181,7 @@ export function grantWheelPrize(
   const paid = payMatchesOf(bag.keys as Record<Tier, number>, prize.tier, prize.n);
   const keys = paid.keys;
   const ups = (Object.entries(paid.add) as [Tier, number][]).filter(([t]) => t !== prize.tier);
-  const upLine = ups.length ? ` Match ↑ ${ups.map(([t, n]) => `${n} ${t}`).join(", ")}.` : "";
+  const upLine = ups.length ? ` Key ↑ ${ups.map(([t, n]) => `${n} ${t}`).join(", ")}.` : "";
   if (paid.coin) return { keys, points: bag.points + paid.coin, pantry: bag.pantry, line: `${prize.label}.${upLine} Every pocket is full: +${paid.coin} coin.` };
   return { keys, points: bag.points, pantry: bag.pantry, line: `${prize.label}.${upLine}`.replace(/\.\.$/, ".") };
 }

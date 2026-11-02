@@ -893,7 +893,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     const sKeys = { ...pay.keys };
     if (back.match) sKeys[back.tier] = (sKeys[back.tier] ?? 0) + back.match;
     const prizeCoin = prize ? PRIZE_COIN[p.series] : 0;
-    const tagged = prize ? { ...boost, labels: [...boost.labels, `${PRIZE_TAG}: ${prize} match +${prizeCoin}`] } : boost;
+    const tagged = prize ? { ...boost, labels: [...boost.labels, `${PRIZE_TAG}: ${prize} key +${prizeCoin}`] } : boost;
     return withBoost(w, pay.coin + back.coin + prizeCoin, sKeys, tagged);
   }
 

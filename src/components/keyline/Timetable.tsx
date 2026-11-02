@@ -36,7 +36,7 @@ export function Timetable({ onClose, onPunch }: Props) {
                 ? "Park first. The window doesn’t take a ticket."
                 : fares
                   ? `${fares} ticket${fares === 1 ? "" : "s"} in the pocket. Arrive now, ride the Loop for a tunnel poster, or fly far trips for a souvenir.`
-                  : "Need a train ticket. Light 3 lamps in this city."}
+                  : "Need a train ticket. Open 3 vaults in this city."}
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={onClose} aria-label="Close">

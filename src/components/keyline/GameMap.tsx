@@ -807,7 +807,7 @@ export function GameMap() {
       const match = useGame.getState().mapKeys.find((k) => k.id === keyId);
       if (match) {
         if (canGrabMatch(graphRef.current, pos.current, match, bestReach(reachMult(useGame.getState().scout), seatedCar(useGame.getState())))) useGame.getState().collectKey(match.id);
-        else flash("That match is off the street.");
+        else flash("That key is off the street.");
         queue.current = queue.current.filter((s) => s.keyId !== keyId);
         legKey.current = null;
       }
@@ -1030,7 +1030,7 @@ export function GameMap() {
     const pin = L.marker([at.lat, at.lng], {
       icon: L.divIcon({
         className: "",
-        html: `<div class="market-pin" data-testid="market-pin" title="${safe}: lamps, trivia cards and matches pay double this hour"><i class="market-lantern" aria-hidden="true"></i><span class="market-pin-copy"><b>${MARKET_TAG}</b><em>${safe}</em><small class="market-pin-left">${marketLeft(m, now)}</small></span></div>`,
+        html: `<div class="market-pin" data-testid="market-pin" title="${safe}: vaults, trivia cards and keys pay double this hour"><i class="market-lantern" aria-hidden="true"></i><span class="market-pin-copy"><b>${MARKET_TAG}</b><em>${safe}</em><small class="market-pin-left">${marketLeft(m, now)}</small></span></div>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       }),
@@ -1064,7 +1064,7 @@ export function GameMap() {
     if (!m) return;
     const p = closestOnStreet(m.street, pos.current.lat, pos.current.lng);
     if (p.dist <= 25) {
-      flash(`You're on ${m.street.name}. ${MARKET_TAG} on its lamps and matches.`);
+      flash(`You're on ${m.street.name}. ${MARKET_TAG} on its lamps and keys.`);
       return;
     }
     void setDestination(p.lat, p.lng);
@@ -1740,12 +1740,12 @@ export function GameMap() {
             : desk
               ? stationPinHtml({ cooling, fare: lit })
               : vaultPinHtml(poi, { cooling });
-      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : [20, 50];
-      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : [10, 28];
-      // 0.1.68: one z band so Leaflet's own latitude order puts nearer (southern) pins in front; lanterns get no ground shadow.
-      const lantern = !(shop || counter || board || desk);
+      // 0.1.102 Vault Keys: street vaults are 40 px SVG boxes standing on the CSS ground shadow.
+      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : [40, 44];
+      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : [20, 40];
+      // 0.1.68: one z band so Leaflet's own latitude order puts nearer (southern) pins in front. 0.1.102: vaults get the ground shadow too.
       const marker = L.marker([poi.lat, poi.lng], {
-        icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1], !lantern), iconSize: size, iconAnchor: anchor }),
+        icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1]), iconSize: size, iconAnchor: anchor }),
         keyboard: false,
         zIndexOffset: lit ? 460 : 400,
       }).addTo(map);
@@ -1799,7 +1799,7 @@ export function GameMap() {
       const marker = L.marker([k.lat, k.lng], {
         icon: L.divIcon({
           className: "",
-          html: worldObj(`<div class="match-pin tier-${k.tier}" title="${k.tier} match"><i class="match-head"></i><i class="match-stick"></i></div>`, 10, 21),
+          html: worldObj(`<div class="match-pin tier-${k.tier}" title="${k.tier} key"><img class="key-pin-art" src="/sprites/keys/${k.tier}.png" alt="" draggable="false"></div>`, 10, 21),
           iconSize: [20, 42],
           iconAnchor: [10, 21],
         }),
@@ -1841,7 +1841,7 @@ export function GameMap() {
     const k = useGame.getState().mapKeys.find((x) => x.id === keyId);
     if (!k) return;
     if (!lampFromRide(ride())) {
-      flash("Park at the curb. Matches are on foot.", 1800);
+      flash("Park at the curb. Keys are on foot.", 1800);
       void setDestination(k.lat, k.lng);
       return;
     }
@@ -2513,7 +2513,7 @@ export function GameMap() {
 
   // 0.0.95: the match cache marker: a brass-banded wooden crate with a lit match on the lid and a warm glow.
 const CACHE_PIN_HTML =
-  '<div class="cache-pin" data-testid="cache-pin" title="Match cache">' +
+  '<div class="cache-pin" data-testid="cache-pin" title="Key cache">' +
   '<svg viewBox="0 0 46 50" width="46" height="50" aria-hidden="true">' +
   '<ellipse cx="23" cy="44" rx="15" ry="3.5" fill="rgba(0,0,0,.45)"/>' +
   '<path d="M6 20h34v20a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" fill="#7a4a24" stroke="#3b2210" stroke-width="1.5"/>' +

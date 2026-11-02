@@ -12,7 +12,7 @@ export function ItemIcon({
   if (isTier(item)) {
     return (
       <img
-        src={`/sprites/matches/${item}.png`}
+        src={`/sprites/keys/${item}.png`}
         alt=""
         width={size}
         height={Math.round(size * 1.45)}

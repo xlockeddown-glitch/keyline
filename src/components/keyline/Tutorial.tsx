@@ -9,7 +9,7 @@ const STEPS = [
   },
   {
     title: "Lamps",
-    lines: ["Tap a glowing lamp.", "Answer its question to earn coins. Each lamp uses one match of its color."],
+    lines: ["Tap a glowing vault.", "Answer its question to earn coins. Each vault uses one key of its color."],
   },
   {
     title: "That's it",

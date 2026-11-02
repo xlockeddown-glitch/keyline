@@ -9,7 +9,7 @@ import { stepMatch } from "./goals.ts";
  */
 export type PerfectRefund = { match: number; coin: number };
 
-export const PERFECT_REFUND_LINE = "Perfect · match back";
+export const PERFECT_REFUND_LINE = "Perfect · key back";
 
 export function perfectRefund(tier: Tier, have: number, cap: number): PerfectRefund {
   if (tier === "violet") return { match: 0, coin: 0 };

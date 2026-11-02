@@ -74,7 +74,7 @@ function PoiRow({ p, known, marketLamp }: { p: Poi; known: boolean; marketLamp: 
           {marketLamp ? <span className="market-x"> · {MARKET_TAG}</span> : null}
         </p>
         <p className="hq-row-title">
-          {known ? p.name : p.kind === "shop" ? "Undiscovered outfitter" : p.kind === "counter" ? "Undiscovered counter" : p.kind === "board" ? "Undiscovered notice" : "Undiscovered lamp"}
+          {known ? p.name : p.kind === "shop" ? "Undiscovered outfitter" : p.kind === "counter" ? "Undiscovered counter" : p.kind === "board" ? "Undiscovered notice" : "Undiscovered vault"}
         </p>
         <p className="hq-row-sub">
           {known
@@ -82,7 +82,7 @@ function PoiRow({ p, known, marketLamp }: { p: Poi; known: boolean; marketLamp: 
             : p.kind === "shop"
               ? "Look for the brass awning on the street."
               : p.kind === "counter"
-                ? "A street counter. Get matches, open your daily crate, or trade matches."
+                ? "A street counter. Get keys, open your daily crate, or trade keys."
                 : p.kind === "board"
                   ? "A notice board. Pick up jobs and play the Daily Blitz."
                   : "Walk up to it to add it to Places."}
@@ -155,7 +155,7 @@ export function PlacesTab() {
                     {CITIES[h.city].name} · {h.house.name}
                   </p>
                   <p className="hq-row-sub">
-                    {h.lot.name} · {KEY_MATCHES} {TIER_LABEL[h.house.match]} matches + {shortCoin(h.house.keyCoin)}
+                    {h.lot.name} · {KEY_MATCHES} {TIER_LABEL[h.house.match]} keys + {shortCoin(h.house.keyCoin)}
                   </p>
                 </div>
                 <button

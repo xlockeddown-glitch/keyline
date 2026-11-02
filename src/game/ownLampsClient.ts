@@ -62,7 +62,7 @@ export async function buyLamp(poi: string, tier: Tier, free = false): Promise<st
   if (r.view) useGame.getState().adoptWallet(r.view);
   await refreshOwnedLamps();
   if (r.ok) return `This ${TIER_LABEL[tier]} lantern is yours.`;
-  if (r.reason === "taken") return "Someone else owns that lamp now. Pick another.";
+  if (r.reason === "taken") return "Someone else owns that vault now. Pick another.";
   if (r.reason === "no-gift") return "That free lantern isn't yours to place.";
   if (r.reason === "owned") return `You already own a ${TIER_LABEL[tier]} lantern.`;
   if (r.reason === "short-coins") return "Need more coins.";

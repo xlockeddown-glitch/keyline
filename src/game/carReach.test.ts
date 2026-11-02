@@ -28,7 +28,7 @@ test("a drive to a lamp stops at the curb within reach, not at the road's end", 
 test("GameMap: lamp, vault and match taps use the ride rule; dealer and house stay on foot", () => {
   const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
   assert.match(src, /if \(d > reach\(\) \|\| !lampFromRide\(ride\(\)\)\)/);
-  assert.match(src, /if \(!lampFromRide\(ride\(\)\)\) \{\n\s*flash\("Park at the curb. Matches are on foot."/);
+  assert.match(src, /if \(!lampFromRide\(ride\(\)\)\) \{\n\s*flash\("Park at the curb. Keys are on foot."/);
   assert.match(src, /trimToReach\(raw, target/);
   assert.match(src, /Step out of the car to visit the lot\./);
   assert.match(src, /Step out of the car to go home\./);

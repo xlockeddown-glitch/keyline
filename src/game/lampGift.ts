@@ -29,7 +29,7 @@ const list = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1)
 export function lampGiftNote(tiers: readonly Tier[]): string {
   const names = tiers.map((t) => TIER_LABEL[t]);
   const what = names.length === 1 ? `A free ${names[0]} lantern is` : `Free ${list(names)} lanterns are`;
-  return `Thanks for playing Keyline! ${what} waiting for you. Open Journal · Places and pick a lamp for ${names.length === 1 ? "it" : "each"}. — Ryan & Grok`;
+  return `Thanks for playing Keyline! ${what} waiting for you. Open Journal · Places and pick a vault for ${names.length === 1 ? "it" : "each"}. — Ryan & Grok`;
 }
 
 /* ---------------------------------------------------------------- 0.1.44 welcome pack (new players) */
@@ -48,7 +48,7 @@ export const DOUBLE_PREFIXES = ["grade:", "street:", "ride:", "cache:", "crate:"
 export const doubles = (opKey: string) => DOUBLE_PREFIXES.some((p) => opKey.startsWith(p));
 
 export function welcomeNote(cityName: string | null): string {
-  const parts = [cityName ? `a Lantern Cottage in ${cityName}` : null, `${WELCOME_COIN.toLocaleString("en-US")} coins`, "a free White lantern (pick a lamp in Journal · Places)", "double rewards for your first hour"].filter(Boolean) as string[];
+  const parts = [cityName ? `a Lantern Cottage in ${cityName}` : null, `${WELCOME_COIN.toLocaleString("en-US")} coins`, "a free White lantern (pick a vault in Journal · Places)", "double rewards for your first hour"].filter(Boolean) as string[];
   return `Welcome to Keyline! Here's ${list(parts)}. — Ryan & Grok`;
 }
 

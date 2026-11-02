@@ -63,9 +63,9 @@ export function cleanBlitzMatches(raw: unknown): Tier[] {
 export function blitzMatchLine(tiers: readonly Tier[]): string {
   if (tiers.length === 0) return "";
   const names = tiers.map((t) => TIER_LABEL[t]);
-  if (names.length === 1) return `a ${names[0]} match`;
-  if (names.length === 2) return `${names[0]} and ${names[1]} matches`;
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} matches`;
+  if (names.length === 1) return `a ${names[0]} key`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} keys`;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} keys`;
 }
 
 export function blitzTakeLine(coin: number, tiers: readonly Tier[]): string {

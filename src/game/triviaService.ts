@@ -251,7 +251,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
         if (!spent.skipped && spent.ok) wallet = spent.view;
       }
     } catch (e) {
-      console.warn("[trivia] match spend failed", e instanceof Error ? e.message : e);
+      console.warn("[trivia] key spend failed", e instanceof Error ? e.message : e);
     }
   }
   if (sql && viewer.userId) {

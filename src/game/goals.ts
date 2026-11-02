@@ -28,7 +28,7 @@ export function cheerFor(run: number): Cheer | null {
 
 /** The plain line under a streak pop: what you won and what it is for. */
 export function streakSub(tier: Tier): string {
-  return `You won a ${tier} match. Use it on a ${tier} lamp.`;
+  return `You won a ${tier} key. Use it on a ${tier} vault.`;
 }
 
 /**
@@ -150,8 +150,8 @@ export function cachePrize(player: string, day: string): Tier[] {
 
 /** 0.1.23: the cache pop line. "Pockets full" only when it really paid overflow coin. */
 export function cacheLine(got: Tier[], coin: number, label: Record<Tier, string> = { white: "White", blue: "Blue", green: "Green", amber: "Amber", red: "Red", violet: "Violet" }): string {
-  if (got.length) return `Match cache! ${got.map((t) => label[t]).join(", ")}${coin ? ` + ${coin} coin (pockets full)` : ""}.`;
-  return coin > 0 ? `Match cache! Every pocket is full: +${coin} coin.` : "Match cache! It was empty.";
+  if (got.length) return `Key cache! ${got.map((t) => label[t]).join(", ")}${coin ? ` + ${coin} coin (pockets full)` : ""}.`;
+  return coin > 0 ? `Key cache! Every pocket is full: +${coin} coin.` : "Key cache! It was empty.";
 }
 
 /** Pay a list of matches with overflow coin. */
@@ -187,7 +187,7 @@ const POOL: GoalDef[] = [
   { kind: "cab", need: 1, title: "Take a cab" },
   { kind: "ride", need: 1, title: "Finish a ride game" },
   { kind: "walk", need: 800, title: "Walk 800 m" },
-  { kind: "street", need: 5, title: "Pick up 5 street matches" },
+  { kind: "street", need: 5, title: "Pick up 5 street keys" },
 ];
 
 export const GOAL_COIN = 60;

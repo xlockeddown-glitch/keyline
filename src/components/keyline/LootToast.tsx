@@ -59,7 +59,7 @@ export function LootToast() {
               <>
                 <p className="kicker">Wrong answer</p>
                 <p className="font-display mt-1 text-3xl leading-none">Not quite</p>
-                <p className="mt-3 text-sm text-fg-muted">Not this time (the match is used up). The right answer was:</p>
+                <p className="mt-3 text-sm text-fg-muted">Not this time (the key is used up). The right answer was:</p>
                 <p className="mt-1 text-base font-medium text-pretty">{miss!.answer}</p>
                 {miss!.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{miss!.fact}</p> : null}
               </>
@@ -194,7 +194,7 @@ function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
   type Emb = { key: string; title: string; node: React.ReactNode; amt?: React.ReactNode; cls?: string; testid?: string };
   const list: Emb[] = [];
   list.push({ key: "coin", title: `${loot.points} coin`, node: <ItemIcon item="coin" size={44} />, amt: <>+<CountUp to={loot.points} delay={120} /></>, cls: "is-coin" });
-  for (const [t, n] of Object.entries(loot.keys) as [Tier, number][]) if (n) list.push({ key: t, title: `${n} ${t} match`, node: <ItemIcon item={t} size={26} />, amt: `×${n}` });
+  for (const [t, n] of Object.entries(loot.keys) as [Tier, number][]) if (n) list.push({ key: t, title: `${n} ${t} key`, node: <ItemIcon item={t} size={26} />, amt: `×${n}` });
   if (loot.refund) {
     list.push(
       loot.refund.match
@@ -227,7 +227,7 @@ function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
       <p className="emb-rating font-display" data-testid="loot-rating">{RATING[loot.grade]}</p>
       {prize ? (
         <p className="emb-prize" data-testid="ladder-prize">
-          <ItemIcon item={prize.tier} size={22} /> Ladder prize: {TIER_LABEL[prize.tier]} match · +{prize.coin} coin
+          <ItemIcon item={prize.tier} size={22} /> Ladder prize: {TIER_LABEL[prize.tier]} key · +{prize.coin} coin
         </p>
       ) : null}
       <div className="emb-badges">

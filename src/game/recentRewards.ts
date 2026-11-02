@@ -69,7 +69,7 @@ export function pushRecent(list: readonly RecentReward[], r: RecentReward): Rece
 
 export const SOURCE_LABEL: Record<RewardSource, string> = {
   lamp: "Lamp", market: "Night market", streak: "Streak", cache: "Cache", gift: "Gift", wheel: "Wheel", ride: "Ride", merge: "Merge ↑",
-  level: "Level-up", street: "Street match", goal: "Goal", daily: "Daily run", blitz: "Blitz", quest: "Quest", reward: "Reward", own: "Your lamp (a visitor missed)", house: "House key", shop: "Shop",
+  level: "Level-up", street: "Street key", goal: "Goal", daily: "Daily run", blitz: "Blitz", quest: "Quest", reward: "Reward", own: "Your vault (a visitor missed)", house: "House key", shop: "Shop",
 };
 
 export function ago(at: number, now: number): string {
