@@ -18,7 +18,7 @@ export const CATALOG: Record<
     id: "sparkKit",
     cost: SPARK_KIT_COST,
     name: "Spark kit",
-    blurb: "Three extra wick sparks today. The desk sells the strike.",
+    blurb: "Three extra sparks today. The desk sells the strike.",
   },
   ribbon: {
     id: "ribbon",

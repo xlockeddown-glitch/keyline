@@ -3,6 +3,7 @@ import { autopilotStrike, perkFavs, regenHit } from "./carPerks.ts";
 import { isCarId, type CarId } from "./cars.ts";
 import { doubleUpHit, rummageHit, scoutOf, shellBackHit, strikeOption } from "./scoutPerks.ts";
 import type { Sql } from "../lib/db.ts";
+import { lockable, lockoutLeftFor, lockoutMs, noteLockout } from "./lockout.ts";
 import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
 import type { PaintId } from "./ingredients.ts";
@@ -237,6 +238,15 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
       console.warn("[trivia] recent list unavailable", e instanceof Error ? e.message : e);
     }
   }
+  // 0.1.107: a vault locked out after a wrong answer deals nothing until the ledger's unlock time.
+  if (deps.sql && viewer.userId && lockable(input.poiId, deps.series(input.poiId) != null) && (input.step ?? 0) === 0) {
+    try {
+      const leftMs = await lockoutLeftFor(sql ?? (await deps.sql()), viewer.userId, input.poiId, deps.now());
+      if (leftMs > 0) return { ok: false, reason: "locked-out", leftMs };
+    } catch (e) {
+      console.warn("[trivia] lockout read failed", e instanceof Error ? e.message : e);
+    }
+  }
   const r = deal(deps, viewer, input, recent, proven);
   if (!r.ok) return r;
   // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
@@ -460,6 +470,17 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     }
   }
   if (!prior) ringPut(t.n, { correct, elapsedMs, timedOut });
+  // 0.1.107: a wrong answer with a key at a street or placed vault locks it (3 min I-III, 5 min IV-VI).
+  const lockPoi = t.x?.pi ?? "";
+  const lockTier = (t.x?.pt ?? t.k ?? null) as Tier | null;
+  const lockMs = !correct && t.k != null && lockTier && !t.x?.sy && lockable(lockPoi, false) ? lockoutMs(lockTier) : 0;
+  if (lockMs && signedIn && !replay && deps.sql) {
+    try {
+      await noteLockout(await deps.sql(), viewer.userId!, lockPoi, now + lockMs);
+    } catch (e) {
+      console.warn("[trivia] lockout write failed", e instanceof Error ? e.message : e);
+    }
+  }
   const g = correct ? gradeOf(elapsedMs) : null;
   // Blitz pays through its own ladder (bankBlitz), not the street spark formula.
   const blitz = t.x?.pi?.startsWith("blitz-") === true;
@@ -527,6 +548,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     clearTier: correct ? t.k : null,
     credited,
     replay,
+    ...(lockMs ? { lockoutMs: lockMs } : {}),
     ...(paints !== undefined ? { paints } : {}),
     ...(wallet ? { wallet, ...(award ? { award } : {}) } : {}),
     ...(can ? { can } : {}),

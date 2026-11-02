@@ -270,9 +270,9 @@ export function HqPanel() {
               </ul>
               <RecentRewards />
               <div>
-                <p className="kicker mt-2">Bank</p>
+                <p className="kicker mt-2">Key forge</p>
                 <p className="mt-1 text-xs text-fg-muted">
-                  The exchange is at {counterLine(cityId)}. Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower.
+                  The forge is at {counterLine(cityId)}. Fuse {BANK_UP} keys into 1 of the next tier, or split 1 key into {BANK_DOWN} of the tier below.
                 </p>
               </div>
             </div>

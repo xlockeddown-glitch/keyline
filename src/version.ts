@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.106";
+export const APP_VERSION = "0.1.107";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1106a";
+export const PUBLISH_STAMP = "k1107a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -208,3 +208,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.104: satchel groups car paint cans into one row per car (car name, total cans); tapping it lists each color and count. No rule or server change (k1104a).
 // 0.1.105: coat and vault paint follow the account. Mixing writes dye:<job>:<color> (the server checks the cans: green+ and prism from paint_finds, white/blue capped by right answers on that tier; coat and vault share a colour's cans), wearing writes dyeon:<job>:<ms> (owned mixes only, latest wins). Sign-in sync returns owned.dyes; the first device to sync offers its existing mixes and worn picks, refused ones stay on that device. No migration (ledger rows) (k1105a).
 // 0.1.106: worn picks follow the account: city print on the coat, cloth, the car you drive (or the cab) and the market light colour. Each pick writes worn:<slot>:<ms> (latest wins; the server checks the print is earned, the cloth/car/light owned); buying a car or light puts it on, a gifted car does not. Sign-in sync returns owned.worn; a slot the account never set takes this device's pick (refused ones stay on the device). Sound, sky and last city stay per device. No migration (ledger rows) (k1106a).
+// 0.1.107: Vault Keys slice 2 (Ryan). Lock-out: a wrong answer at a keyed street or placed vault locks that vault for 3 min (tiers I-III) or 5 min (IV-VI). It shows a red rim, red reader and a striped LOCKED bar, and the miss card and street cue show the countdown. The key is used up as before and nothing is ejected. Signed in, the server writes a `lockout:<poiId>` wallet_ledger row and refuses a new deal there until it runs out, so a reload cannot clear it (no migration). Guests keep the lock in the save. Ladders, Blitz and sparks are unchanged. The counter exchange is now the Key forge (fuse 4 into 1 of the next tier, split 1 into 3 of the tier below), with the same rates. Leftover lantern/lamp/wick wording about keys and vaults on visible screens now says vault, key or spark; event names (Lantern Run, Lantern Shop, Lantern Cottage) and real-place lore are kept. Keys II and IV lose the stray bump on the blade edge (k1107a).

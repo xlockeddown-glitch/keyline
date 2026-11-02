@@ -38,7 +38,7 @@ export function PaintVat({ counter }: { counter: boolean }) {
     <section className="grid gap-2" data-testid="paint-vat">
       <p className="kicker mt-2">The vat</p>
       <p className="text-sm text-pretty text-fg-muted">
-        A vault sometimes drops a can of its own colour. White is about 1 in 2. Each step after that is about twice as rare, up to violet at 1 in 80. Prism can drop from any colour, about 1 in {ULTRA_DROP_IN.toLocaleString()}. A coat and the street vaults each take a set number of that colour. The glass still shows what the lamp costs.
+        A vault sometimes drops a can of its own colour. White is about 1 in 2. Each step after that is about twice as rare, up to violet at 1 in 80. Prism can drop from any colour, about 1 in {ULTRA_DROP_IN.toLocaleString()}. A coat and the street vaults each take a set number of that colour. The slot still shows which key the vault takes.
       </p>
       {PAINT_COLORS.map((color) => {
         const use = PAINT_USE[color];

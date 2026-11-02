@@ -51,7 +51,7 @@ test("cutoff: a first row 1 ms before is a current player (four lanterns, no pac
   const iso = new Date(cut).toISOString();
   await account(sql, "cur", cut - 1, iso);
   const c = await syncPlayer(sql, "cur", snap(), "cur-phone1");
-  assert.match(c.giftNotes?.[0] ?? "", /Free White, Blue, Green and Amber lanterns/);
+  assert.match(c.giftNotes?.[0] ?? "", /Free White, Blue, Green and Amber vaults/);
   assert.equal(c.giftNotes?.length, 1);
   assert.equal(c.doubleUntil, undefined, "existing players get no double hour");
   assert.equal((await sql`select op_key from wallet_ledger where op_key = ${WELCOME_KEY}`).length, 0);
@@ -61,7 +61,7 @@ test("cutoff: a first row 1 ms before is a current player (four lanterns, no pac
   const before = await coins(sql, "neo");
   const n = await syncPlayer(sql, "neo", snap(), "neo-phone1");
   assert.deepEqual(n.giftNotes, [welcomeNote(CITIES.detroit.name)]);
-  assert.match(n.giftNotes![0]!, /Lantern Cottage in Detroit, 15,000 coins, a free White lantern .* and double rewards for your first hour/);
+  assert.match(n.giftNotes![0]!, /Lantern Cottage in Detroit, 15,000 coins, a free White vault .* and double rewards for your first hour/);
   assert.equal(await coins(sql, "neo"), before + WELCOME_COIN, "coins exact");
   assert.deepEqual(await housesOf(sql, "neo"), { detroit: { tier: "cottage" } }, "house in the start city");
   assert.deepEqual(await lampGiftsOpen(sql, "neo"), ["white"]);

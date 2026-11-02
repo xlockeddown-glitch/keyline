@@ -152,7 +152,7 @@ export function DailyBoard({ city, day }: { city: CityId; day?: string }) {
           ))}
         </ul>
       ) : rows.length === 0 ? (
-        <p className="mt-3 text-sm text-pretty text-fg-muted">No times in {cityName} yet today. Light all five lamps and yours is first.</p>
+        <p className="mt-3 text-sm text-pretty text-fg-muted">No times in {cityName} yet today. Open all five vaults and yours is first.</p>
       ) : (
         <ol className="mt-3 grid gap-2">
           {rows.map((row) => {
@@ -233,9 +233,9 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Daily Lantern Run · {route.day} UTC</p>
-            <h2 className="font-display text-xl leading-tight">{CITIES[route.city].name} · five lamps</h2>
+            <h2 className="font-display text-xl leading-tight">{CITIES[route.city].name} · five vaults</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
-              Same route for every walker today. The clock starts at lamp 1 and stops at lamp 5. On foot only.
+              Same route for every walker today. The clock starts at vault 1 and stops at vault 5. On foot only.
             </p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={() => setPanel(false)} aria-label="Close">
@@ -250,7 +250,7 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{lamp.name}</span>
                   <span className="block text-xs text-fg-subtle">
-                    {i === 0 ? "Start · the clock begins here" : `${formatDist(legMeters(route, i))} from lamp ${i}`}
+                    {i === 0 ? "Start · the clock begins here" : `${formatDist(legMeters(route, i))} from vault ${i}`}
                     {prog && i > 0 && prog.splits[i - 1] != null ? ` · ${formatRunTime(prog.splits[i - 1])}` : ""}
                   </span>
                 </span>
@@ -258,7 +258,7 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
               </li>
             ))}
           </ol>
-          <p className="mt-2 text-xs text-fg-subtle tabular-nums">About {formatDist(total)} lamp to lamp, more by street.</p>
+          <p className="mt-2 text-xs text-fg-subtle tabular-nums">About {formatDist(total)} vault to vault, more by street.</p>
 
           <div className="daily-status mt-4">
             {done ? (
@@ -273,7 +273,7 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
                 <span className="text-fg-muted"> · {lit}/5 lit{next ? ` · next ${next.name}` : ""}</span>
               </p>
             ) : (
-              <p className="text-sm text-fg-muted">Walk to lamp 1 with the route shown. It lights when you reach it.</p>
+              <p className="text-sm text-fg-muted">Walk to vault 1 with the route shown. It opens when you reach it.</p>
             )}
             {prog?.note ? <p className="mt-1 text-xs text-fg-muted">{prog.note}</p> : null}
             <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
@@ -300,7 +300,7 @@ export function DailyRunPanel({ onWalk }: { onWalk: (lat: number, lng: number) =
                       onWalk(next.lat, next.lng);
                     }}
                   >
-                    Walk to lamp {lit + 1}
+                    Walk to vault {lit + 1}
                   </button>
                 ) : null
               ) : (
@@ -351,7 +351,7 @@ export function DailyFinishCard() {
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
             <p className="kicker">Daily Lantern Run · {CITIES[finish.city].name}</p>
-            <h2 className="font-display text-2xl leading-tight">All five lamps lit</h2>
+            <h2 className="font-display text-2xl leading-tight">All five vaults open</h2>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={close} aria-label="Close">
             <X className="size-4" />

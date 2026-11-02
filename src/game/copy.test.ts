@@ -48,7 +48,7 @@ test("0.1.28 Journal: Goals tab holds the goals in order; Progress keeps standin
     assert.deepEqual([...at].sort((a, b) => a - b), at);
   };
   const goals = ["<DailyGoals", 'kicker">Daily Blitz', "Login streak", "<QuestDesk", "<FriendJournalRow", 'kicker mt-2">Goals'];
-  const progress = ["<LevelPanel />", "<PassProgressRow />", "<PrintPanel />", "<MarketLightsPanel />", 'className="hq-stats"', "<RecentRewards />", 'kicker mt-2">Bank'];
+  const progress = ["<LevelPanel />", "<PassProgressRow />", "<PrintPanel />", "<MarketLightsPanel />", 'className="hq-stats"', "<RecentRewards />", 'kicker mt-2">Key forge'];
   inOrder('tab === "Goals"', ") : null}", goals);
   inOrder('tab === "Progress"', ") : null}", progress);
   const prog = src.slice(src.indexOf('tab === "Progress"'), src.indexOf(") : null}", src.indexOf('tab === "Progress"')));

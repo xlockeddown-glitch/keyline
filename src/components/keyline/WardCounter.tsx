@@ -2,14 +2,15 @@ import { X } from "lucide-react";
 import { CITIES, KIOSK, TIER_LABEL, cityCounter } from "@/game/data";
 import { crateLoot, CRATE_MAX, nextCrateStreak } from "@/game/crate";
 import { TIERS } from "@/game/items";
-import { BANK_DOWN, BANK_UP, TIER_ORDER, TIER_VALUE, bankDownSpec, bankUpSpec } from "@/game/rewards";
+import { BANK_DOWN, BANK_UP, TIER_ORDER, bankDownSpec, bankUpSpec } from "@/game/rewards";
 import { matchCap } from "@/game/ticket";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
+import { VK_NUM } from "@/game/pins";
 import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 
-/** The street counter: buy from the tray, pick up the morning crate, exchange matches. */
+/** The street counter: buy from the tray, pick up the morning crate, and the key forge (0.1.107; was the exchange). */
 export function WardCounter() {
   const open = useGame((s) => s.errandOpen === "counter");
   const close = useGame((s) => s.closeErrand);
@@ -104,52 +105,78 @@ export function WardCounter() {
                 </div>
               );
             })}
-            <p className="kicker mt-2">Exchange</p>
+            <p className="kicker mt-2">Key forge</p>
             <p className="text-xs text-fg-muted">
-              Craft {BANK_UP} lower → 1 higher, tax. Break 1 higher → {BANK_DOWN} lower, none. White {TIER_VALUE.white} coin.
+              Fuse {BANK_UP} keys into 1 of the next tier. Split 1 key into {BANK_DOWN} of the tier below. Use it when you hold keys that don&apos;t fit
+              the vault in front of you.
             </p>
-            <ul className="grid gap-2">
+            <ul className="grid gap-2" data-testid="key-forge">
               {TIER_ORDER.map((tier) => {
                 const up = bankUpSpec(tier);
                 const down = bankDownSpec(tier);
                 if (!up && !down) return null;
                 const have = keys[tier] ?? 0;
+                const canUp = up ? have >= up.payN && (keys[up.get] ?? 0) + up.getN <= matchCap(up.get) : false;
+                const canDown = down ? have >= down.payN && (keys[down.get] ?? 0) + down.getN <= matchCap(down.get) : false;
                 return (
-                  <li key={tier} className="hq-row">
-                    <ItemIcon item={tier} size={36} />
-                    <div className="hq-row-copy">
-                      <p className="hq-row-title">
-                        {TIER_LABEL[tier]} <span className="tabular-nums text-fg-muted">×{have}</span>
+                  <li key={tier} className={`forge-row tier-${tier}`}>
+                    <div className="forge-have">
+                      <ItemIcon item={tier} size={34} />
+                      <p className="forge-have-label">
+                        <b>{VK_NUM[tier]}</b> {TIER_LABEL[tier]}
+                        <span className="tabular-nums">×{have}</span>
                       </p>
-                      <div className="hq-row-actions">
-                        {up ? (
-                          <button
-                            type="button"
-                            className="btn btn-quiet px-3 text-xs"
-                            disabled={have < up.payN || (keys[up.get] ?? 0) + up.getN > matchCap(up.get)}
-                            onClick={() => {
-                              sfx.ui();
-                              bankUp(tier);
-                            }}
-                          >
-                            {up.payN} {TIER_LABEL[tier]} → 1 {TIER_LABEL[up.get]}
-                          </button>
-                        ) : null}
-                        {down ? (
-                          <button
-                            type="button"
-                            className="btn btn-quiet px-3 text-xs"
-                            disabled={have < down.payN || (keys[down.get] ?? 0) + down.getN > matchCap(down.get)}
-                            onClick={() => {
-                              sfx.ui();
-                              bankDown(tier);
-                            }}
-                          >
-                            1 {TIER_LABEL[tier]} → {down.getN} {TIER_LABEL[down.get]}
-                          </button>
-                        ) : null}
-                      </div>
                     </div>
+                    {up ? (
+                      <button
+                        type="button"
+                        className={`forge-recipe is-up${canUp ? " is-ready" : ""}`}
+                        disabled={!canUp}
+                        aria-label={`Forge ${up.payN} ${TIER_LABEL[tier]} keys into 1 ${TIER_LABEL[up.get]}`}
+                        onClick={() => {
+                          sfx.ui();
+                          bankUp(tier);
+                        }}
+                      >
+                        <span className="forge-stack" aria-hidden>
+                          {Array.from({ length: up.payN }, (_, i) => (
+                            <ItemIcon key={i} item={tier} size={20} />
+                          ))}
+                        </span>
+                        <span className="forge-anvil" aria-hidden>
+                          FORGE
+                        </span>
+                        <ItemIcon item={up.get} size={26} />
+                        <span className="forge-label">
+                          {up.payN} {VK_NUM[tier]} → 1 {VK_NUM[up.get]}
+                        </span>
+                      </button>
+                    ) : null}
+                    {down ? (
+                      <button
+                        type="button"
+                        className={`forge-recipe is-down${canDown ? " is-ready" : ""}`}
+                        disabled={!canDown}
+                        aria-label={`Split 1 ${TIER_LABEL[tier]} key into ${down.getN} ${TIER_LABEL[down.get]}`}
+                        onClick={() => {
+                          sfx.ui();
+                          bankDown(tier);
+                        }}
+                      >
+                        <ItemIcon item={tier} size={22} />
+                        <span className="forge-anvil is-split" aria-hidden>
+                          SPLIT
+                        </span>
+                        <span className="forge-stack" aria-hidden>
+                          {Array.from({ length: down.getN }, (_, i) => (
+                            <ItemIcon key={i} item={down.get} size={20} />
+                          ))}
+                        </span>
+                        <span className="forge-label">
+                          1 {VK_NUM[tier]} → {down.getN} {VK_NUM[down.get]}
+                        </span>
+                      </button>
+                    ) : null}
                   </li>
                 );
               })}

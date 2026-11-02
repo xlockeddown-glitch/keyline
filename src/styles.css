@@ -4242,3 +4242,38 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .vault-pin.is-ladder.is-ladder.is-ladder.tier-red{ --glow:var(--color-vault-red) }
 .vault-pin.is-ladder.is-ladder.is-ladder.tier-violet{ --glow:var(--color-vault-violet) }
 .vault-hero.is-ladder.is-ladder.is-ladder{ transform:none; width:76px; height:auto }
+
+/* 0.1.107 Vault Keys lock-out: red rim + red reader + striped LOCKED bar (shape and text, not colour alone). */
+.vault-pin.locked-out{ position:relative; --lock:#ff4a4a }
+.vault-pin.locked-out .vk-vault{ z-index:0 }
+.vault-pin.locked-out .vk-vault{ filter:drop-shadow(0 0 5px #ff3b3bcc) saturate(.6) }
+.vault-pin.locked-out .vk-ring{ stroke:var(--lock); stroke-width:2.6 }
+.vault-pin.locked-out .vk-slot{ fill:var(--lock); animation:none }
+.vault-pin.locked-out .vk-glyph{ fill:#8a2a2a }
+.vk-lockbar{ position:absolute; left:-4px; right:-4px; top:15px; padding:1px 0; font:800 7px/1.1 system-ui, sans-serif; letter-spacing:.08em; text-align:center; color:#ffd6d6;
+  background:repeating-linear-gradient(135deg,#7a0d0d 0 4px,#2a0606 4px 8px); border:1px solid #ff4a4a; border-radius:2px; box-shadow:0 0 6px #ff3b3b99; pointer-events:none; z-index:3 }
+.vault-pin.locked-out .vk-lockbar{ animation:vk-lockpulse 1.6s ease-in-out infinite }
+@keyframes vk-lockpulse{ 50%{ box-shadow:0 0 1px #ff3b3b55 } }
+.lockout-bar{ display:inline-block; margin-bottom:8px; padding:3px 10px; font-size:12px; letter-spacing:.06em; color:#ffd6d6;
+  background:repeating-linear-gradient(135deg,#7a0d0d 0 6px,#2a0606 6px 12px); border:1px solid #ff4a4a; border-radius:4px }
+@media (prefers-reduced-motion: reduce){ .vault-pin.locked-out .vk-lockbar{ animation:none } }
+
+/* 0.1.107 key forge (the counter's exchange in the Vault Keys look). */
+.forge-row{ display:grid; grid-template-columns:auto 1fr; gap:6px 10px; align-items:center; padding:10px; border:1px solid color-mix(in srgb, var(--glow, #b8913f) 35%, #2a2f37); border-radius:10px;
+  background:linear-gradient(180deg,#1b2027,#12161b) }
+.forge-have{ grid-row:span 2; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:58px }
+.forge-have-label{ font-size:12px; text-align:center; line-height:1.15; color:var(--color-fg-muted, #b8b2a7) }
+.forge-have-label b{ font:800 13px Georgia, serif; color:#f2d38a; margin-right:2px }
+.forge-have-label span{ display:block }
+.forge-recipe{ display:flex; align-items:center; gap:6px; min-height:44px; padding:4px 10px; border:1px solid #3a414c; border-radius:8px; background:#161a20; color:#9aa3ae; font-size:12px; text-align:left }
+.forge-recipe.is-ready{ border-color:#b8913f; background:linear-gradient(180deg,#241d12,#17130d); color:#f2d38a; cursor:pointer }
+.forge-recipe.is-ready:hover{ box-shadow:0 0 0 1px #f2d38a55, 0 0 10px #f2a13d44 }
+.forge-recipe:disabled{ opacity:.55; cursor:not-allowed }
+.forge-stack{ display:inline-flex }
+.forge-stack > *{ margin-left:-6px }
+.forge-stack > *:first-child{ margin-left:0 }
+.forge-anvil{ display:inline-grid; place-items:center; width:42px; height:22px; border-radius:11px; font:800 8px system-ui, sans-serif; letter-spacing:.1em; color:#1a1410;
+  background:radial-gradient(circle at 50% 40%,#ffd27a,#c27a22 70%); box-shadow:0 0 8px #f2a13d66 }
+.forge-anvil.is-split{ background:radial-gradient(circle at 50% 40%,#cfe3ff,#5f86b8 70%); box-shadow:0 0 8px #7fb0ff55 }
+.forge-recipe:disabled .forge-anvil{ filter:grayscale(.8) brightness(.7); box-shadow:none }
+.forge-label{ margin-left:auto; font:700 12px Georgia, serif; white-space:nowrap }

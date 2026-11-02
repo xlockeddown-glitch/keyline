@@ -109,6 +109,8 @@ export type VaultRuntime = {
   /** 0.1.7: opens of this lamp today (the city's local day, `openDay` as YYYY-MM-DD); the nth open rests n times as long. */
   opens?: number;
   openDay?: string;
+  /** 0.1.107: this cooling is an electronic lock-out after a wrong answer (red "locked out" vault), not a rest. */
+  lockout?: boolean;
 };
 
 export type MapKey = {
@@ -172,6 +174,8 @@ export type LootDrop = {
 export type MissFlash = {
   answer: string;
   fact?: string;
+  /** 0.1.107: the vault locked out for this long (ms) after the wrong answer. */
+  lockMs?: number;
 };
 
 export type StreetRun = {

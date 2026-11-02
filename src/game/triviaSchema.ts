@@ -66,7 +66,9 @@ export type ServerWallet = { coins: number; keys: Record<Tier, number>; cities: 
 export type ServerAward = { coins: number; keys: Partial<Record<Tier, number>>; boosts: string[] };
 export type DealResult =
   | { ok: true; token: string; card: PublicCard; windowMs: number; wallet?: ServerWallet }
-  | { ok: false; reason: "unknown-lamp" | "slow" | "no-match" };
+  | { ok: false; reason: "unknown-lamp" | "slow" | "no-match" }
+  /** 0.1.107: this vault is locked out after a wrong answer (server ledger); `leftMs` until it opens. */
+  | { ok: false; reason: "locked-out"; leftMs: number };
 
 export type Grade = "perfect" | "great" | "good";
 export type GradeResult =
@@ -90,6 +92,8 @@ export type GradeResult =
       can?: { car: string; color: string };
       /** True when this token had already been graded: the first result stands and nothing is credited. */
       replay: boolean;
+      /** 0.1.107: a wrong answer at a keyed vault locks it this long (ms). Absent when nothing locks. */
+      lockoutMs?: number;
       /**
        * Present only when the server rolled this clear's paint. An empty list means it rolled and
        * nothing dropped. Absent means the browser rolls at the posted rate (a guest, a spark, or a

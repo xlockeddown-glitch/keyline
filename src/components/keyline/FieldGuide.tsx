@@ -170,12 +170,12 @@ export function FieldGuide() {
                 <li>Houses: {HOUSES.map((h) => `${h.name} ${fmt(h.price)} (key ${h.keyCoin.toLocaleString("en-US")})`).join(", ")}.</li>
               </More>
             </Topic>
-            <Topic id="own" icon={<ItemIcon item="amber" size={26} />} title="Owned lanterns" sub="Earn when visitors miss" open={topic} set={setTopic} testid="help-own-lamps">
+            <Topic id="own" icon={<ItemIcon item="amber" size={26} />} title="Owned vaults" sub="Earn when visitors miss" open={topic} set={setTopic} testid="help-own-lamps">
               <li>Buy one vault of each color in Journal · Places; visitors see your name.</li>
               <li>A visitor&apos;s miss pays you half its coin, plus a 50% chance of a key.</li>
               <li>Up to {OWN_DAILY_CAP} paid misses per vault a day; your own plays pay nothing.</li>
               <More>
-                <li>Prices: {TIERS.map((t) => `${TIER_LABEL[t]} ${fmt(OWN_PRICE[t])}`).join(", ")}. Free gift lanterns don&apos;t count toward the one per color.</li>
+                <li>Prices: {TIERS.map((t) => `${TIER_LABEL[t]} ${fmt(OWN_PRICE[t])}`).join(", ")}. Free gift vaults don&apos;t count toward the one per color.</li>
               </More>
             </Topic>
             <Topic id="boost" icon={<span aria-hidden>✨</span>} title="Boosts" sub="Coat, car and category of the day" open={topic} set={setTopic} testid="help-categories">
@@ -196,7 +196,7 @@ export function FieldGuide() {
             <Topic id="account" icon={<span aria-hidden>👤</span>} title="Account & new players" sub="Sign in, first-hour bonus" open={topic} set={setTopic} testid="help-welcome">
               <li>Sign in to post times and scores; guests can still read the boards.</li>
               <li>
-                A new account gets a Lantern Cottage, {WELCOME_COIN.toLocaleString("en-US")} coins and a free White lantern.
+                A new account gets a Lantern Cottage, {WELCOME_COIN.toLocaleString("en-US")} coins and a free White vault.
               </li>
               <li>Vaults, street keys, rides, caches, quests and house keys pay double coin for the first hour.</li>
             </Topic>

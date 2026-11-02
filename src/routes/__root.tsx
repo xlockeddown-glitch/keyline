@@ -18,7 +18,7 @@ export const Route = createRootRoute({
       { name: "keyline-sheet-src", content: String(appCss) },
       {
         name: "description",
-        content: "Walk a real city. Light lamps. Answer trivia.",
+        content: "Walk a real city. Open vaults. Answer trivia.",
       },
     ],
     links: [

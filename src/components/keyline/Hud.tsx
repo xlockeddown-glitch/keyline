@@ -1,3 +1,4 @@
+import { lockClock } from "@/game/lockout";
 import { SHOP_NAME } from "@/game/shop";
 import { SkyChip } from "./Sky";
 import { useDoubleMinutes } from "@/game/doubleClient";
@@ -132,7 +133,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
     else if (canUnlock) cue = `Train station · T · unlock a city (${freePick ? "free pick" : `${passes} pass${passes === 1 ? "" : "es"}`})`;
     else if (atDesk && !fares) cue = `Train station. ${ticketHint(cityVaults)}.`;
     else if (atShop) cue = `${nearest.name} · coats for hire · E`;
-    else if (atCounter) cue = `${nearest.name} · crate, keys, exchange · E`;
+    else if (atCounter) cue = `${nearest.name} · crate, keys, forge · E`;
     else if (atBoard) cue = `${nearest.name} · contracts and the blitz · E`;
     else if (nearest && isScoutShop(nearest)) cue = `${formatDist(hud.nearestDist)} · brass awning, coats`;
     else if (nearest && isCounter(nearest)) cue = `${formatDist(hud.nearestDist)} · street counter`;
@@ -143,12 +144,12 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       else cue = `${formatDist(hud.nearestDist)} · ${seriesNear.kicker}`;
     } else if (recasting) {
       const left = (vaults[nearest.id]?.coolUntil ?? 0) - Date.now();
-      cue = left > 45 * 60_000 ? `Dark for ${formatCool(left)}` : "Resting. Come back soon to try it again.";
+      cue = vaults[nearest.id]?.lockout ? `Locked out · ${lockClock(left)} · try another vault` : left > 45 * 60_000 ? `Dark for ${formatCool(left)}` : "Resting. Come back soon to try it again.";
     } else if (inReach && !haveKey) {
       cue = canSpark
         ? `Strike a spark · E — earn a ${TIER_LABEL[nearest.tier]} key`
         : sparkedHere
-          ? `Need a ${TIER_LABEL[nearest.tier]} key. Wick is spent here.`
+          ? `Need a ${TIER_LABEL[nearest.tier]} key. This vault already sparked.`
           : sparksLeft < 1
             ? `Need a ${TIER_LABEL[nearest.tier]} key. Sparks are spent today.`
             : `Need a ${TIER_LABEL[nearest.tier]} key`;

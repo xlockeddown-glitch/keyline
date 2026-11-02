@@ -1,3 +1,4 @@
+import { lockClock } from "@/game/lockout";
 import { visibleCoat } from "@/game/paint";
 import { PERFECT_REFUND_LINE } from "@/game/perfectRefund";
 import { useEffect, useState } from "react";
@@ -57,9 +58,16 @@ export function LootToast() {
               <LootEmblems loot={loot} streak={streak} />
             ) : (
               <>
+                {miss!.lockMs ? (
+                  <p className="lockout-bar" data-testid="miss-lockout" role="status">
+                    <b>LOCKED OUT</b> · {lockClock(miss!.lockMs)} · this vault only
+                  </p>
+                ) : null}
                 <p className="kicker">Wrong answer</p>
                 <p className="font-display mt-1 text-3xl leading-none">Not quite</p>
-                <p className="mt-3 text-sm text-fg-muted">Not this time (the key is used up). The right answer was:</p>
+                <p className="mt-3 text-sm text-fg-muted">
+                  {miss!.lockMs ? "The vault locked you out and kept the key. Other vaults are still open. The right answer was:" : "Not this time (the key is used up). The right answer was:"}
+                </p>
                 <p className="mt-1 text-base font-medium text-pretty">{miss!.answer}</p>
                 {miss!.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{miss!.fact}</p> : null}
               </>

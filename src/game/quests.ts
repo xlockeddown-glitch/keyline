@@ -113,7 +113,7 @@ export function clothName(id: ClothId): string {
 }
 
 export function clothEarn(id: ClothId): string {
-  if (id === "road-dust") return "A rare red scrap from a red lamp.";
+  if (id === "road-dust") return "A rare red scrap from a red vault.";
   if (id === "red-book") return "No longer earned. Kept by those who have it.";
   if (id === "night-glass") return "Print a violet pattern at the outfitter.";
   return "No longer earned. Kept by those who have it.";

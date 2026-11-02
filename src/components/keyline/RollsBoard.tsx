@@ -282,7 +282,7 @@ export function RollsBoard() {
                     {distanceM > 0 ? (
                       <>
                         {" "}
-                        This lantern has walked{" "}
+                        This device has walked{" "}
                         <span className="tabular-nums text-fg">{(distanceM / 1000).toFixed(1)} km</span>.
                       </>
                     ) : null}
@@ -293,7 +293,7 @@ export function RollsBoard() {
                     {local[tier] > 0 ? (
                       <>
                         {" "}
-                        This lantern holds{" "}
+                        This device holds{" "}
                         <span className="tabular-nums text-fg">{local[tier].toLocaleString()}</span>{" "}
                         {TIER_LABEL[tier].toLowerCase()} so far.
                       </>
@@ -320,7 +320,7 @@ export function RollsBoard() {
                 )}
                 {distanceM > (myWalk?.meters ?? 0) + 50 ? (
                   <>
-                    . This lantern has{" "}
+                    . This device has{" "}
                     <span className="tabular-nums text-fg">{(distanceM / 1000).toFixed(1)} km</span>, including the
                     walk from before the board watched.
                   </>

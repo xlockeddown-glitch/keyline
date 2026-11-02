@@ -637,7 +637,7 @@ export function GameMap() {
       spawnCabAt(snap.lat, snap.lng, faceAlongStreet(drive, snap.lat, snap.lng));
       if (cabRef.current) cabRef.current.own = true;
       enterCab();
-      flash(`${own.name}. Lamps answer from the car; park to step out.`);
+      flash(`${own.name}. Vaults open from the car; park to step out.`);
       return;
     }
     if (snap.dist <= 16) {
@@ -937,7 +937,7 @@ export function GameMap() {
       L.marker([lamp.lat, lamp.lng], {
         icon: L.divIcon({
           className: "",
-          html: `<div class="daily-pin${i < lit ? " is-lit" : i === lit ? " is-next" : ""}" title="Lantern Run lamp ${i + 1}: ${lamp.name.replace(/"/g, "&quot;")}"><span>${i + 1}</span></div>`,
+          html: `<div class="daily-pin${i < lit ? " is-lit" : i === lit ? " is-next" : ""}" title="Lantern Run vault ${i + 1}: ${lamp.name.replace(/"/g, "&quot;")}"><span>${i + 1}</span></div>`,
           iconSize: [30, 30],
           iconAnchor: [15, 44],
         }),
@@ -1064,7 +1064,7 @@ export function GameMap() {
     if (!m) return;
     const p = closestOnStreet(m.street, pos.current.lat, pos.current.lng);
     if (p.dist <= 25) {
-      flash(`You're on ${m.street.name}. ${MARKET_TAG} on its lamps and keys.`);
+      flash(`You're on ${m.street.name}. ${MARKET_TAG} on its vaults and keys.`);
       return;
     }
     void setDestination(p.lat, p.lng);
@@ -1746,7 +1746,7 @@ export function GameMap() {
               : boardPinHtml(poi.name)
             : desk
               ? stationPinHtml({ cooling, fare: lit })
-              : vaultPinHtml(poi, { cooling });
+              : vaultPinHtml(poi, { cooling, lockout: cooling && v?.lockout === true });
       // 0.1.102 Vault Keys: street vaults are 40 px SVG boxes standing on the CSS ground shadow.
       const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : [40, 44];
       const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : [20, 40];

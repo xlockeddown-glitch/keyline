@@ -73,7 +73,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
 
   return (
     <>
-      {compact ? <li className="kicker jr-kicker">Lanterns · tap a row to pick a vault</li> : <li className="kicker">Your lanterns</li>}
+      {compact ? <li className="kicker jr-kicker">Owned vaults · tap a row to pick one</li> : <li className="kicker">Your vaults</li>}
       {compact ? null : <li className="hq-row-sub">Own one vault of each color. When a visitor misses there, you get half its value.</li>}
       {TIERS.map((t) => {
         const mine = owned.find((o) => o.mine && !o.free && o.tier === t);
@@ -141,7 +141,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
               <p className="hq-row-title">
                 {CITIES[o.city as CityId]?.pois.find((p) => p.id === o.poi)?.name ?? "Your vault"} · {CITIES[o.city as CityId]?.name ?? ""}
               </p>
-              <p className="hq-row-sub">Your free {TIER_LABEL[o.tier]} lantern (a gift)</p>
+              <p className="hq-row-sub">Your free {TIER_LABEL[o.tier]} vault (a gift)</p>
             </div>
           </li>
         ))}
@@ -149,7 +149,7 @@ export function OwnLampsSection({ compact = false }: { compact?: boolean } = {})
         <li key={`gift-${t}`} className={`hq-row own-row own-gift tier-${t}`} data-testid={`own-gift-${t}`}>
           <span className={`own-dot tier-${t}`} aria-hidden />
           <div className="hq-row-copy">
-            <p className="hq-row-title">Free {TIER_LABEL[t]} lantern: pick a vault</p>
+            <p className="hq-row-title">Free {TIER_LABEL[t]} vault: pick one</p>
             <p className="hq-row-sub">A gift. It's extra: you can still buy your own {TIER_LABEL[t]}.</p>
           </div>
           <button
@@ -184,7 +184,7 @@ export function OwnerPlate({ poiId }: { poiId: string }) {
   if (!o) return null;
   return (
     <p className={`own-plate tier-${o.tier}`} data-testid="own-plate">
-      {o.mine ? "Your lantern" : `${o.name}'s lantern`}
+      {o.mine ? "Your vault" : `${o.name}'s vault`}
     </p>
   );
 }

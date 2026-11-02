@@ -53,7 +53,7 @@ test("eligibility: an account from before the cutoff gets both, once; a newer on
   await veteran(sql, "old");
   const r = await syncPlayer(sql, "old", snap(), "old-phone1");
   assert.deepEqual(r.giftNotes, [lampGiftNote(["white", "blue", "green", "amber"])], "0.1.44: one note for all four");
-  assert.match(r.giftNotes![0]!, /Free White, Blue, Green and Amber lanterns are waiting/);
+  assert.match(r.giftNotes![0]!, /Free White, Blue, Green and Amber vaults are waiting/);
   assert.deepEqual(await lampGiftsOpen(sql, "old"), ["white", "blue", "green", "amber"]);
   const again = await syncPlayer(sql, "old", snap(), "old-phone1");
   assert.equal(again.giftNotes, undefined, "grant is idempotent");

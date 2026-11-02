@@ -55,15 +55,15 @@ export function useLampGifts(): Tier[] {
 
 /** Buy `poi` (a lamp of `tier`), or place a gift lantern there (`free`). Returns the line to show. */
 export async function buyLamp(poi: string, tier: Tier, free = false): Promise<string> {
-  if (!walletLive()) return "Sign in to own a lantern.";
+  if (!walletLive()) return "Sign in to own a vault.";
   if (!free && useGame.getState().points < OWN_PRICE[tier]) return "Need more coins.";
   const r = await commitWallet({ kind: "own", poi, ...(free ? { free: true } : {}) });
   if (!r) return "Couldn't buy it. Try again in a moment.";
   if (r.view) useGame.getState().adoptWallet(r.view);
   await refreshOwnedLamps();
-  if (r.ok) return `This ${TIER_LABEL[tier]} lantern is yours.`;
+  if (r.ok) return `This ${TIER_LABEL[tier]} vault is yours.`;
   if (r.reason === "taken") return "Someone else owns that vault now. Pick another.";
-  if (r.reason === "no-gift") return "That free lantern isn't yours to place.";
+  if (r.reason === "no-gift") return "That free vault isn't yours to place.";
   if (r.reason === "owned") return `You already own a ${TIER_LABEL[tier]} lantern.`;
   if (r.reason === "short-coins") return "Need more coins.";
   return "Couldn't buy it. Try again in a moment.";

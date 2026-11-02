@@ -214,7 +214,7 @@ export function DailyBlitz() {
           {phase === "intro" ? (
             <div className="mt-4">
               <p className="text-sm text-pretty text-fg-muted">
-                Six lanterns, white through violet. Each one pays coin and a key of that color. A miss ends it, and you keep what you lit.
+                Six vaults, white through violet. Each one pays coin and a key of that color. A miss ends it, and you keep what you opened.
               </p>
               <ol className="mt-4 grid gap-1.5">
                 {BLITZ_STEPS.map((s, i) => (
@@ -292,14 +292,14 @@ export function DailyBlitz() {
             <div className="mt-4">
               <p className="text-sm text-pretty text-fg-muted">
                 {ending === "clear"
-                  ? `Every lantern held. ${haul}.`
+                  ? `Every vault opened. ${haul}.`
                   : ending === "office"
                     ? blitzDue(lastBlitzDay, new Date().toISOString().slice(0, 10))
                       ? "The card office didn't answer. Nothing was spent."
                       : "The card office didn't answer. What you already lit stays; the rest waits until tomorrow."
                     : ending === "left"
                       ? `You stopped. ${haul} stays in the pocket.`
-                      : `The ${TIER_LABEL[rung.tier].toLowerCase()} lantern went out. ${haul} stays.`}
+                      : `The ${TIER_LABEL[rung.tier].toLowerCase()} vault locked. ${haul} stays.`}
               </p>
               {reveal && !reveal.correct ? (
                 <p className="mt-3 text-sm text-pretty">

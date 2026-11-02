@@ -181,9 +181,9 @@ export type GoalKind = "green" | "blue" | "right" | "cab" | "ride" | "walk" | "s
 export type GoalDef = { kind: GoalKind; need: number; title: string };
 
 const POOL: GoalDef[] = [
-  { kind: "green", need: 3, title: "Light 3 green lanterns" },
-  { kind: "blue", need: 3, title: "Light 3 blue lanterns" },
-  { kind: "right", need: 8, title: "Answer 8 lanterns right" },
+  { kind: "green", need: 3, title: "Open 3 green vaults" },
+  { kind: "blue", need: 3, title: "Open 3 blue vaults" },
+  { kind: "right", need: 8, title: "Open 8 vaults" },
   { kind: "cab", need: 1, title: "Take a cab" },
   { kind: "ride", need: 1, title: "Finish a ride game" },
   { kind: "walk", need: 800, title: "Walk 800 m" },

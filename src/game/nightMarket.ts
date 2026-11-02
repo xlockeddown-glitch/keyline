@@ -717,7 +717,7 @@ export function marketLanterns(m: NightMarket | null): Poi[] {
   }
   const out: Poi[] = picked.map((p, i) => {
     const tier = MARKET_LANTERN_TIERS[i]!;
-    return { id: `mkt-${m.city}-${m.hour}-${tier}`, name: "Market lantern", kind: "landmark", tier, lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), lore: `A ${tier} lantern hung for tonight's market on ${m.street.name}. Gone when the market closes.`, noClue: true };
+    return { id: `mkt-${m.city}-${m.hour}-${tier}`, name: "Market vault", kind: "landmark", tier, lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), lore: `A ${tier} vault set out for tonight's market on ${m.street.name}. Gone when the market closes.`, noClue: true };
   });
   if (LANTERNS.size > 64) LANTERNS.clear();
   LANTERNS.set(key, out);

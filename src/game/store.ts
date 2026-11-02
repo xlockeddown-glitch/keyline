@@ -49,6 +49,7 @@ import { PASS_GIFT_LINE, giftPass } from "./cityPass";
 import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cacheLine, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
 import { PRIZE_COIN, PRIZE_TAG, prizeTier } from "./ladderPrize.ts";
+import { lockClock } from "./lockout.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
 import { applyBank, bankDownSpec, bankUpSpec, rewardPoints } from "./rewards";
@@ -130,7 +131,7 @@ type Hud = {
 export type DealtCard = PublicCard;
 
 /** The server's grade of the open card, as `settleAnswer` applies it. */
-type Graded = { correct: boolean; elapsed: number; reveal: string; fact?: string; credited: boolean; paints?: string[] };
+type Graded = { correct: boolean; elapsed: number; reveal: string; fact?: string; credited: boolean; paints?: string[]; lockoutMs?: number };
 
 type OpenVault = {
   poiId: string;
@@ -903,7 +904,7 @@ async function dealCard(
   cat: TriviaCat,
   step: number,
   prevToken?: string,
-): Promise<{ card: DealtCard; token: string; windowMs: number; wallet?: ServerWallet } | { need: true } | null> {
+): Promise<{ card: DealtCard; token: string; windowMs: number; wallet?: ServerWallet } | { need: true } | { lockedMs: number } | null> {
   foldSavedSeen(set, get);
   const st = get();
   const city = CITIES[st.cityId];
@@ -945,7 +946,7 @@ async function dealCard(
   };
   try {
     const r = await dealTrivia({ data: input });
-    if (!r.ok) return r.reason === "no-match" ? { need: true } : null;
+    if (!r.ok) return r.reason === "no-match" ? { need: true } : r.reason === "locked-out" ? { lockedMs: r.leftMs } : null;
     return { card: r.card, token: r.token, windowMs: r.windowMs, wallet: r.wallet };
   } catch {
     return null;
@@ -1563,13 +1564,14 @@ export const useGame = create<GameState>((set, get) => ({
     }
     const v = get().vaults[poiId];
     const clock = Date.now();
-    if (v && v.state === "cooling" && v.coolUntil > clock) return `This vault is dark for ${formatCool(v.coolUntil - clock)}.`;
+    if (v && v.state === "cooling" && v.coolUntil > clock)
+      return v.lockout ? `Locked out for ${lockClock(v.coolUntil - clock)}. Wrong answer; try another vault.` : `This vault is dark for ${formatCool(v.coolUntil - clock)}.`;
     if (!hasMatch(get().keys, poi.tier)) {
       // 0.1.19 (Ryan): violet never sparks; it needs a violet match.
       if (!sparkTier(poi.tier)) return `Need a ${TIER_LABEL[poi.tier]} key.`;
       const spark = sparksNow(get);
       if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} key. Sparks are spent today.`;
-      if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} key. This wick already sparked.`;
+      if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} key. This vault already sparked.`;
       sfx.open();
       set({
         openVault: { poiId, startedAt: now, question: null, category: null, deadline: now, spark: true },
@@ -1614,6 +1616,14 @@ export const useGame = create<GameState>((set, get) => ({
       if (!dealt) {
         set({ openVault: { ...cur, category: null, pending: undefined } });
         flashToast(set, get, DEAL_FAIL, 3200);
+        return;
+      }
+      if ("lockedMs" in dealt) {
+        // 0.1.107: the server's ledger still has this vault locked out (a reload or another device can't skip it).
+        const prev = get().vaults[ov.poiId];
+        set({ openVault: null, vaults: { ...get().vaults, [ov.poiId]: { ...prev, state: "cooling", coolUntil: Date.now() + dealt.lockedMs, lockout: true } } });
+        flashToast(set, get, `Locked out for ${lockClock(dealt.lockedMs)}.`, 2400);
+        scheduleSave(get);
         return;
       }
       if ("need" in dealt) {
@@ -1686,7 +1696,7 @@ export const useGame = create<GameState>((set, get) => ({
         const surveyBefore = get().survey;
         const goalsBefore = get().cities.goalsPaid;
         const contractBefore = get().contract;
-        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited, paints: res.paints }, performance.now());
+        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited, paints: res.paints, lockoutMs: res.lockoutMs }, performance.now());
         if (res.wallet) applyServerGrade(res.wallet, res.award, surveyBefore, goalsBefore, contractBefore);
         if (res.can) gotCan(res.can);
       })
@@ -1741,7 +1751,7 @@ export const useGame = create<GameState>((set, get) => ({
       const sparkCoin = sparkMult > 1 && have < cap ? marketOverflowCoin(poi.tier, sparkMult, sparkAdd) : 0;
       const sparkTag =
         sparkMult > 1
-          ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} key${sparkAdd === 1 ? "" : "s"} from the wick${sparkCoin ? ` + ${sparkCoin} coin (every pocket full)` : ""}.`
+          ? `${MARKET_TAG}: ${sparkAdd} ${TIER_LABEL[poi.tier]} key${sparkAdd === 1 ? "" : "s"} from the spark${sparkCoin ? ` + ${sparkCoin} coin (every pocket full)` : ""}.`
           : null;
       const spun = foldWheel(get, poi.tier);
       const boost = rollBoosts(get, true, elapsed, ov.category);
@@ -1793,8 +1803,8 @@ export const useGame = create<GameState>((set, get) => ({
           ...spun,
           toast: [
             sparkTag ?? (paid.boosts.length
-              ? `A ${TIER_LABEL[poi.tier]} key from the wick. ${paid.boosts.join(" · ")}.`
-              : `A ${TIER_LABEL[poi.tier]} key from the wick.`),
+              ? `A ${TIER_LABEL[poi.tier]} key from the spark. ${paid.boosts.join(" · ")}.`
+              : `A ${TIER_LABEL[poi.tier]} key from the spark.`),
             sparkTag && paid.boosts.length ? `${paid.boosts.join(" · ")}.` : null,
             questHit.line,
           ]
@@ -1871,7 +1881,7 @@ export const useGame = create<GameState>((set, get) => ({
         void dealCard(set, get, series.id, nextCat, step + 1, prevToken).then((dealt) => {
           const cur = get().openVault;
           if (!cur || cur.poiId !== series.id || cur.pending !== "deal") return;
-          if (!dealt || "need" in dealt) {
+          if (!dealt || "need" in dealt || "lockedMs" in dealt) {
             // Can't reach the lamp for the next card: the run breaks like a walk-away, with a clear message.
             set({ openVault: null, ...seriesPatch(series.kind, coolSeries(get(), series)), toast: `${series.name}: ${DEAL_FAIL}` });
             scheduleSave(get);
@@ -2017,7 +2027,11 @@ export const useGame = create<GameState>((set, get) => ({
     if (!correct) {
       sfx.wrong();
       const boost = rollBoosts(get, false, elapsed, ov.category);
+      // 0.1.107: a wrong answer locks this vault out for the server's time (3 min I-III, 5 min IV-VI); the key stays used.
+      const lockMs = out.lockoutMs ?? 0;
+      const prev = get().vaults[poi.id];
       set({
+        ...(lockMs > 0 ? { vaults: { ...get().vaults, [poi.id]: { ...prev, state: "cooling" as const, coolUntil: Date.now() + lockMs, lockout: true } } } : {}),
         keys,
         ...missStreak(get),
         charmDay: boost.charmDay,
@@ -2027,7 +2041,7 @@ export const useGame = create<GameState>((set, get) => ({
         ...logged,
         openVault: null,
         loot: null,
-        miss: { answer: out.reveal, fact: out.fact },
+        miss: { answer: out.reveal, fact: out.fact, ...(lockMs > 0 ? { lockMs } : {}) },
         toast: null,
         quests: answered(get, false, false),
       });
@@ -2353,12 +2367,12 @@ export const useGame = create<GameState>((set, get) => ({
     if (!spec) return;
     const next = applyBank(get().keys, spec, matchCap);
     if (!next) {
-      set({ toast: "You don't have enough of that color to trade." });
+      set({ toast: "Not enough keys of that color to forge." });
       window.setTimeout(() => set({ toast: null }), 1600);
       return;
     }
     sfx.pickup();
-    set({ keys: next, toast: `Traded 4 ${TIER_LABEL[spec.pay]} for 1 ${TIER_LABEL[spec.get]}.` });
+    set({ keys: next, toast: `Forged ${spec.payN} ${TIER_LABEL[spec.pay]} keys into 1 ${TIER_LABEL[spec.get]}.` });
     pushOp({ kind: "bank", dir: "up", tier });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 2000);
@@ -2368,12 +2382,12 @@ export const useGame = create<GameState>((set, get) => ({
     if (!spec) return;
     const next = applyBank(get().keys, spec, matchCap);
     if (!next) {
-      set({ toast: "The bank won't take that pocket." });
+      set({ toast: "The forge can't split that key right now." });
       window.setTimeout(() => set({ toast: null }), 1600);
       return;
     }
     sfx.pickup();
-    set({ keys: next, toast: `Traded 1 ${TIER_LABEL[spec.pay]} for 3 ${TIER_LABEL[spec.get]}.` });
+    set({ keys: next, toast: `Split 1 ${TIER_LABEL[spec.pay]} key into ${spec.getN} ${TIER_LABEL[spec.get]}.` });
     pushOp({ kind: "bank", dir: "down", tier });
     scheduleSave(get);
     window.setTimeout(() => set({ toast: null }), 2000);
@@ -2936,7 +2950,7 @@ export const useGame = create<GameState>((set, get) => ({
     const city = CITIES[get().cityId];
     const unknown = city.pois.filter((p) => p.kind !== "shop" && p.kind !== "counter" && p.kind !== "board" && p.kind !== "station" && !get().atlas[p.id]);
     if (!unknown.length) {
-      flashToast(set, get, "Every lantern in this ward is named.", 2000);
+      flashToast(set, get, "Every vault in this ward is named.", 2000);
       return;
     }
     const pick = unknown[Math.floor(Math.random() * unknown.length)]!;
@@ -2989,7 +3003,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (walletLive()) {
       void commitWallet({ kind: "dgoal", i }).then((r) => {
         if (!r?.ok && !r?.replay) {
-          set({ toast: r?.reason === "unproven" ? "Answer a few lanterns first, then claim." : "Board's busy. Try again in a moment." });
+          set({ toast: r?.reason === "unproven" ? "Open a few vaults first, then claim." : "Board's busy. Try again in a moment." });
           return;
         }
         set({ goals: mark(), toast: line });

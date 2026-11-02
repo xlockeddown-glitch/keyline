@@ -3626,7 +3626,7 @@ for (const id of Object.keys(CITIES) as CityId[]) {
         tier: "white",
         lore:
           kind === "counter"
-            ? "A street counter. Keys, the morning crate, and the exchange — nothing you can finish from the journal."
+            ? "A street counter. Keys, the morning crate, and the key forge — nothing you can finish from the journal."
             : "A notice board. Contracts, errands, and the day's blitz are posted here. You take them in person.",
       }),
     );
@@ -4051,7 +4051,7 @@ export const KIOSK = {
     id: "smear" as const,
     cost: 720,
     name: "Smear the atlas",
-    blurb: "One unnamed lantern in this ward gets its name.",
+    blurb: "One unnamed vault in this ward gets its name.",
   },
   pass: {
     id: "pass" as const,

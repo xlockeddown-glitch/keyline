@@ -192,7 +192,7 @@ export const useDaily = create<DailyStore>((set, get) => {
       if (seated) {
         if (Date.now() - get().seatedWarnAt > 5000) {
           set({ seatedWarnAt: Date.now() });
-          toast("Lantern Run lamps light on foot. Park the cab.");
+          toast("Lantern Run vaults open on foot. Park the cab.");
         }
         return null;
       }
@@ -201,7 +201,7 @@ export const useDaily = create<DailyStore>((set, get) => {
       if (p.lit === 0) {
         const next: DailyProgress = { ...p, lit: 1, startedAt: now, splits: [], spots: [at] };
         put(next);
-        toast(`Lantern Run · lamp 1 lit · ${lamp.name}. The clock is running.`);
+        toast(`Lantern Run · vault 1 open · ${lamp.name}. The clock is running.`);
         void queue(() => startDailyRun({ data: { city: p.city, lat: at.lat, lng: at.lng } }))
           .then(applyServer(p.city, p.day))
           .catch(serverFail(p.city, p.day));
@@ -227,7 +227,7 @@ export const useDaily = create<DailyStore>((set, get) => {
         set({ show: false, finish: { day: p.day, city: p.city, timeMs: split, splits, reward, refused: !ok } });
         useGame.setState({ fireworks: { kind: "mini", id: Date.now() } });
       } else {
-        toast(`Lantern Run · lamp ${index + 1} of 5 · ${lamp.name}`);
+        toast(`Lantern Run · vault ${index + 1} of 5 · ${lamp.name}`);
       }
       return index;
     },

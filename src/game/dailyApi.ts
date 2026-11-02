@@ -157,7 +157,7 @@ export const startDailyRun = createServerFn({ method: "POST" })
     const had = await rowFor(context.userId, day, data.city);
     const now = Date.now();
     const d = startDecision(route, had ? toRun(had) : null, data, now);
-    if (d.kind === "far") return stateOf(null, day, "far", null, "Stand at lamp 1 to start the clock.");
+    if (d.kind === "far") return stateOf(null, day, "far", null, "Stand at vault 1 to start the clock.");
     if (d.kind === "void") return stateOf(had ? toRun(had) : null, day, "void", null, `Today's ${cityName(data.city)} run was voided.`);
     if (d.kind === "done") return stateOf(d.row, day, "done", await rankOf(day, d.row.city, context.userId));
     if (d.kind === "resume") return stateOf(d.row, day, "open");
@@ -196,7 +196,7 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
     if (!open[0]) {
       const today = await rowFor(context.userId, day, data.city);
       if (today && toRun(today).timeMs != null) return stateOf(toRun(today), day, "done", await rankOf(day, toRun(today).city, context.userId));
-      return stateOf(null, day, "none", null, "Light lamp 1 first.");
+      return stateOf(null, day, "none", null, "Open vault 1 first.");
     }
     const row = toRun(open[0]);
     const route = dailyRoute(row.city, row.day);
@@ -214,7 +214,7 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
         await sql`update daily_runs set strikes = ${strikes}, voided = ${voided} where day = ${row.day} and user_id = ${context.userId} and city = ${row.city}`;
         if (voided) return stateOf(row, row.day, "void", null, `Too many impossible legs. Today's ${cityName(row.city)} run was voided.`);
       }
-      const why = d.reason === "too-fast" ? "Faster than any walker. That lamp didn't count." : d.reason === "far" ? "Not at the lamp yet." : "Lamps light in order.";
+      const why = d.reason === "too-fast" ? "Faster than any walker. That vault didn't count." : d.reason === "far" ? "Not at the vault yet." : "Vaults open in order.";
       return stateOf(row, row.day, "open", null, why);
     }
     const next = d.row;

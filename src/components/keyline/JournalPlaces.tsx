@@ -131,8 +131,8 @@ export function PlacesTab() {
         <span className="cotd-badge">{CAT_LABEL[cotdAt(Date.now())]} +25%</span>
       </li>
       <li className="kicker jr-kicker">{city.name} summary</li>
-      <BarRow title="Lanterns owned" have={tiersOwned} need={TIER_COUNT} testid="sum-lanterns" />
-      <BarRow title="Places lit" have={lit} need={city.pois.length} testid="sum-places" />
+      <BarRow title="Vaults owned" have={tiersOwned} need={TIER_COUNT} testid="sum-lanterns" />
+      <BarRow title="Vaults opened" have={lit} need={city.pois.length} testid="sum-places" />
       <TapRow
         title="House"
         testid="row-house"

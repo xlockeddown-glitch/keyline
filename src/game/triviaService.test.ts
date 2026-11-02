@@ -12,6 +12,7 @@ import {
   RTT_GRACE_MS,
   avoidList,
   deal,
+  dealFor,
   effectiveMs,
   grade,
   gradeOf,
@@ -260,4 +261,42 @@ test("a guest token graded by a signed-in walker grades but credits nothing", as
   assert.ok(g.ok && g.correct && !g.credited);
   const clears = await sql`select * from vault_clears`;
   assert.equal(clears.length, 0);
+});
+
+test("0.1.107 lock-out: a wrong keyed answer writes a ledger row and the server refuses that vault until it runs out", async () => {
+  const { LOCKOUT_SHORT_MS, lockoutKey, lockoutMs, lockClock, lockable } = await import("./lockout.ts");
+  assert.equal(lockoutMs("white"), 3 * 60_000);
+  assert.equal(lockoutMs("green"), 3 * 60_000);
+  assert.equal(lockoutMs("amber"), 5 * 60_000);
+  assert.equal(lockoutMs("violet"), 5 * 60_000);
+  assert.equal(lockClock(252_000), "4:12");
+  assert.equal(lockable("__run__", false), false);
+  assert.equal(lockable("blitz-x", false), false);
+  const sql = await db();
+  const clock = { t: Date.UTC(2026, 10, 2, 12) };
+  const d = depsAt(clock, sql);
+  const r = await dealFor(d, { userId: "ann" }, dealIn());
+  if (!r.ok) return assert.fail("deal");
+  clock.t += 3000;
+  const miss = await grade(d, { userId: "ann" }, { token: r.token, choice: "nope", clientMs: 2900 });
+  assert.ok(miss.ok && !miss.correct);
+  if (!miss.ok) return;
+  assert.equal(miss.lockoutMs, LOCKOUT_SHORT_MS, "blue (II) locks 3 minutes");
+  const row = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = 'ann' and op_key = ${lockoutKey(LAMP.id)}`;
+  assert.equal(Number(row[0]!.detail), clock.t + LOCKOUT_SHORT_MS);
+  // A reload (fresh client, no local state) still can't deal there.
+  clock.t += 60_000;
+  const blocked = await dealFor(d, { userId: "ann" }, dealIn());
+  assert.deepEqual(blocked, { ok: false, reason: "locked-out", leftMs: LOCKOUT_SHORT_MS - 60_000 });
+  clock.t += LOCKOUT_SHORT_MS;
+  const again = await dealFor(d, { userId: "ann" }, dealIn());
+  assert.ok(again.ok, "opens again once the lock-out runs out");
+  // A right answer locks nothing; a guest gets the time but no row.
+  if (!again.ok) return;
+  const hit = await grade(d, { userId: "ann" }, { token: again.token, choice: "Colorado", clientMs: 1000 });
+  assert.ok(hit.ok && hit.lockoutMs === undefined);
+  const g = deal(d, { userId: null }, dealIn());
+  if (!g.ok) return;
+  const gm = await grade(d, { userId: null }, { token: g.token, choice: "nope", clientMs: 1000 });
+  assert.ok(gm.ok && gm.lockoutMs === LOCKOUT_SHORT_MS);
 });
