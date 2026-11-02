@@ -4,7 +4,7 @@ import { CITIES, cityShop } from "@/game/data";
 import { TIERS, itemBlurb, itemName } from "@/game/items";
 import { INGREDIENTS, isPaintId, type IngredientId } from "@/game/ingredients";
 import { sfx } from "@/game/audio";
-import { carOf } from "@/game/cars";
+import { carOf, type CarId } from "@/game/cars";
 import { colorOf, parseCan } from "@/game/carPaint";
 import { useGame } from "@/game/store";
 import { vaultColorNote } from "@/game/vaultNote";
@@ -40,6 +40,18 @@ export function Satchel() {
   };
   const paints = (Object.entries(pantry) as [IngredientId, number][]).filter(([id, n]) => n > 0 && isPaintId(id));
   const cans = [...new Set(carCans)];
+  // 0.1.103: car cans group into one row per car (name, total), tapping lists its colors.
+  const byCar: { car: CarId; total: number; list: { id: string; name: string; hex: string; n: number }[] }[] = [];
+  for (const id of cans) {
+    const c = parseCan(id);
+    const col = c ? colorOf(c.car, c.color) : null;
+    if (!c || !col) continue;
+    const n = carCans.filter((x) => x === id).length;
+    let g = byCar.find((x) => x.car === c.car);
+    if (!g) byCar.push((g = { car: c.car, total: 0, list: [] }));
+    g.total += n;
+    g.list.push({ id, name: col.name, hex: col.hex, n });
+  }
   const glass = quests.cloths.includes("night-glass");
 
   return (
@@ -81,17 +93,24 @@ export function Satchel() {
                 {open === `p:${id}` ? <li className="hq-row-sub jr-note">{INGREDIENTS[id].blurb} Mix it in the paint vat at {shop}: dyed coats and street-lamp colors.</li> : null}
               </Fragment>
             ))}
-            {cans.map((id) => {
-              const c = parseCan(id);
-              const col = c ? colorOf(c.car, c.color) : null;
-              if (!c || !col) return null;
-              return (
-                <Fragment key={id}>
-                  <Row k={`c:${id}`} open={open} onTap={tap} icon={<i className="jr-dot" style={{ background: col.hex }} />} title={`${col.name} · ${carOf(c.car)?.name ?? "car"}`} val={`×${carCans.filter((x) => x === id).length}`} />
-                  {open === `c:${id}` ? <li className="hq-row-sub jr-note">A car paint can. Bring it to a car lot to repaint a car you own.</li> : null}
-                </Fragment>
-              );
-            })}
+            {byCar.map(({ car, list, total }) => (
+              <Fragment key={car}>
+                <Row k={`car:${car}`} open={open} onTap={tap} icon={<i className="jr-dot" style={{ background: list[0]!.hex }} />} title={`${carOf(car)?.name ?? "Car"} paint`} val={`×${total}`} />
+                {open === `car:${car}` ? (
+                  <li className="hq-row-sub jr-note" data-testid={`satchel-cans-${car}`}>
+                    <span className="flex flex-wrap gap-x-3 gap-y-1">
+                      {list.map((c) => (
+                        <span key={c.id} className="inline-flex items-center gap-1">
+                          <i className="jr-dot" style={{ background: c.hex }} />
+                          {c.name} ×{c.n}
+                        </span>
+                      ))}
+                    </span>
+                    <span className="mt-1 block">Car paint cans. Bring them to a car lot to repaint a car you own.</span>
+                  </li>
+                ) : null}
+              </Fragment>
+            ))}
             {!paints.length && !cans.length ? (
               <li className="hq-row-sub jr-note">No paint yet. Vaults sometimes give a can in their color; amber and red vaults and the key cache can give car paint.</li>
             ) : null}
