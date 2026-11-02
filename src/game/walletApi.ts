@@ -85,6 +85,14 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("wear"), slot: z.enum(["print", "cloth", "car", "light"]), id: z.string().min(1).max(40).nullable() }),
   z.object({ kind: z.literal("dyeOn"), job: z.enum(["coat", "vault"]), color: z.enum(PAINT_COLORS).nullable() }),
   z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80), free: z.boolean().optional() }),
+  z.object({
+    kind: z.literal("plant"),
+    city: z.string().min(1).max(40),
+    lat: z.number().finite(),
+    lng: z.number().finite(),
+    name: z.number().int().min(0).max(99),
+    cats: z.array(z.string().min(1).max(20)).length(4),
+  }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   // 0.1.70: the Loop's arrive op was missing here (0.1.58), so signed-in Arrive/Loop never reached the server.
   z.object({ kind: z.literal("loop"), ride: z.boolean() }),
@@ -266,5 +274,22 @@ export const fetchOwnedLamps = createServerFn({ method: "POST" })
       return { lamps: await ownedLamps(sql, context.userId), gifts: context.userId ? await lampGiftsOpen(sql, context.userId) : [] };
     } catch {
       return { lamps: [], gifts: [] as string[] };
+    }
+  });
+
+/** 0.1.109: the Hearth vaults placed in a city, and the signed-in player's own state (locked / ready / placed). */
+export const fetchPlaced = createServerFn({ method: "POST" })
+  .middleware([viewerMiddleware])
+  .validator((d: unknown) => z.object({ city: z.string().min(1).max(40) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { getSql } = await import("@/lib/db");
+    const { placedIn, plantStatus } = await import("./walletApply");
+    try {
+      const sql = await getSql();
+      const placed = await placedIn(sql, data.city);
+      const me = context.userId ? await plantStatus(sql, context.userId) : { unlocked: false, mine: null };
+      return { placed, me };
+    } catch {
+      return { placed: [], me: { unlocked: false, mine: null } };
     }
   });

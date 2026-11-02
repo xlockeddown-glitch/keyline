@@ -53,6 +53,7 @@ import {
   clearOfFreeway,
   pullToStreet,
   bridgeByFoot,
+  nearest as nearestSnap,
   randomOnStreet,
   routeDrive,
   routeOnGraph,
@@ -83,6 +84,9 @@ import { Satchel } from "./Satchel";
 import { WardCounter } from "./WardCounter";
 import { NoticeBoard } from "./NoticeBoard";
 import { Fireworks } from "./Fireworks";
+import { PlantSheet, ghostLine } from "./PlantSheet";
+import { plantNowName, plantNowPlaced, setPlant, usePlant } from "@/game/plantClient";
+import { PLANT_NAMES, plantGap } from "@/game/placedLantern";
 import { Timetable } from "./Timetable";
 import { DailyPop } from "./DailyPop";
 import { Tutorial } from "./Tutorial";
@@ -282,6 +286,35 @@ export function GameMap() {
   const cacheRef = useRef<{ lat: number; lng: number; seed: { lat: number; lng: number } | null; marker: { remove: () => void; setLatLng: (ll: [number, number]) => unknown } } | null>(null);
   const arrowRef = useRef<{ remove: () => void } | null>(null);
   const [boardOpen, setBoardOpen] = useState(false);
+  // 0.1.109: the Hearth ghost follows the walker while the placement sheet is up; green = on a street, 40 m clear.
+  const plant = usePlant();
+  useEffect(() => {
+    if (!plant.placing) return;
+    const L = Lref.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    const html = (name: string, g: ReturnType<typeof ghostLine>) =>
+      `<div class="hearth-ghost"><span class="hg-check ${g.ok ? "ok" : "bad"}">${g.text}</span>${vaultPinHtml({ tier: "red" })}<span class="hg-plate">${name}</span></div>`;
+    const icon = (name: string, g: ReturnType<typeof ghostLine>) => L.divIcon({ className: "", html: html(name, g), iconSize: [260, 96], iconAnchor: [130, 92] });
+    let mark: Marker | null = null;
+    const tick = () => {
+      const at = { lat: pos.current.lat, lng: pos.current.lng };
+      if (!at.lat && !at.lng) return;
+      const g = graphRef.current;
+      const st = useGame.getState();
+      const p = { ...at, gap: plantGap(at, CITIES[st.cityId].pois, plantNowPlaced()), street: Boolean(g && nearestSnap(g, at.lat, at.lng, 25)) };
+      setPlant({ ghost: p });
+      const ic = icon(PLANT_NAMES[plantNowName()] ?? "", ghostLine(p));
+      if (!mark) mark = L.marker([at.lat, at.lng], { icon: ic, keyboard: false, interactive: false, zIndexOffset: 900 }).addTo(map);
+      else mark.setLatLng([at.lat, at.lng]).setIcon(ic);
+    };
+    tick();
+    const t = window.setInterval(tick, 700);
+    return () => {
+      window.clearInterval(t);
+      mark?.remove();
+    };
+  }, [plant.placing, plant.name]);
   const dailyLines = useRef<Polyline[]>([]);
   const dailyPins = useRef<Marker[]>([]);
   const dailyKey = useRef("");
@@ -2655,6 +2688,7 @@ const CACHE_PIN_HTML =
       <WardCounter />
       <NoticeBoard />
       <Fireworks />
+      <PlantSheet />
       <DailyRunPanel
         onWalk={(lat, lng) => {
           void setDestination(lat, lng, true);

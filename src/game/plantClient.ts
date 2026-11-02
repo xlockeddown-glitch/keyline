@@ -1,0 +1,78 @@
+/** 0.1.109: the Hearth vault on the client: the city's placed list, my state (locked / ready / placed), and the ghost. */
+import { useEffect, useSyncExternalStore } from "react";
+import { commitWallet, walletLive } from "./walletClient";
+import { useGame } from "./store";
+import { PLANT_GAP_M, PLANT_NAMES, type PlacedVault } from "./placedLantern";
+
+export type Ghost = { lat: number; lng: number; gap: number; street: boolean };
+export type PlantState = {
+  city: string | null;
+  placed: PlacedVault[];
+  me: { unlocked: boolean; mine: PlacedVault | null };
+  /** The placement sheet and ghost are up. */
+  placing: boolean;
+  ghost: Ghost | null;
+  name: number;
+  cats: string[];
+  busy: boolean;
+  note: string | null;
+};
+
+let state: PlantState = { city: null, placed: [], me: { unlocked: false, mine: null }, placing: false, ghost: null, name: 0, cats: [], busy: false, note: null };
+const subs = new Set<() => void>();
+export function setPlant(p: Partial<PlantState>) {
+  state = { ...state, ...p };
+  subs.forEach((f) => f());
+}
+export const plantNow = () => state;
+
+export async function refreshPlaced(city: string): Promise<void> {
+  try {
+    const { fetchPlaced } = await import("./walletApi");
+    const got = await fetchPlaced({ data: { city } });
+    if (got) setPlant({ city, placed: got.placed as PlacedVault[], me: got.me as PlantState["me"] });
+  } catch {
+    /* offline: keep the last */
+  }
+}
+
+export function usePlant(): PlantState {
+  const cityId = useGame((s) => s.cityId);
+  const v = useSyncExternalStore(
+    (f) => (subs.add(f), () => subs.delete(f)),
+    () => state,
+    () => state,
+  );
+  useEffect(() => {
+    if (state.city !== cityId) void refreshPlaced(cityId);
+  }, [cityId]);
+  return v;
+}
+
+/** The ghost is good to place: on a mapped street and clear of every lamp and vault. */
+export const ghostOk = (g: Ghost | null) => Boolean(g && g.street && g.gap >= PLANT_GAP_M);
+
+export async function placeHearth(): Promise<void> {
+  const s = state;
+  const g = s.ghost;
+  if (!walletLive()) return setPlant({ note: "Sign in to place your Hearth vault." });
+  if (!g || !ghostOk(g) || s.cats.length !== 4) return;
+  setPlant({ busy: true, note: null });
+  const city = useGame.getState().cityId;
+  const r = await commitWallet({ kind: "plant", city, lat: g.lat, lng: g.lng, name: s.name, cats: s.cats });
+  if (r?.view) useGame.getState().adoptWallet(r.view);
+  await refreshPlaced(city);
+  if (r?.ok) return setPlant({ busy: false, placing: false, ghost: null, note: `${PLANT_NAMES[s.name]} is placed, for good.` });
+  const why: Record<string, string> = {
+    close: "Too close to another vault. Walk 40 m on.",
+    dense: "This block has enough vaults. Try another street.",
+    far: "That's outside the city's streets.",
+    locked: "Unlock this city first.",
+    placed: "You've already placed your Hearth vault.",
+    "no-unlock": "Clear The Stack perfectly to unlock it.",
+  };
+  setPlant({ busy: false, note: why[r?.reason ?? ""] ?? "Couldn't place it. Try again in a moment." });
+}
+
+export const plantNowPlaced = () => state.placed;
+export const plantNowName = () => state.name;

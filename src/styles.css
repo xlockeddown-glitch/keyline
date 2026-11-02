@@ -4277,3 +4277,38 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .forge-anvil.is-split{ background:radial-gradient(circle at 50% 40%,#cfe3ff,#5f86b8 70%); box-shadow:0 0 8px #7fb0ff55 }
 .forge-recipe:disabled .forge-anvil{ filter:grayscale(.8) brightness(.7); box-shadow:none }
 .forge-label{ margin-left:auto; font:700 12px Georgia, serif; white-space:nowrap }
+
+/* 0.1.109: Hearth vault placing. Copper #d0785a; plays as red. */
+.plant-sheet{ position:absolute; z-index:1200; right:88px; top:106px; width:min(398px, calc(100vw - 24px)); padding:14px 14px 13px; border-radius:12px;
+  background:color-mix(in srgb, #11151c 96%, transparent); border:1px solid color-mix(in srgb, #d0785a 45%, #2b2f36); color:#e9e4da; box-shadow:0 10px 30px #000a }
+.plant-kicker{ color:#d9a066 !important; letter-spacing:.12em }
+.plant-title{ font-family:var(--font-display, Georgia, serif); font-size:19px; font-weight:700; margin:2px 0 4px }
+.plant-sub{ font-size:12.5px; color:#b9b3a8; margin:0 0 8px }
+.plant-check{ display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:6px; margin:0 0 8px; border:1px solid }
+.plant-check.ok{ color:#7be08f; border-color:#3f9a52; background:#0e2414 }
+.plant-check.bad{ color:#ff8b8b; border-color:#b84343; background:#2a1010 }
+.plant-label{ font-size:12px; color:#cfc8bc; margin:6px 0 5px }
+.plant-chips{ display:flex; flex-wrap:wrap; gap:5px }
+.plant-chip{ font-size:12px; padding:5px 9px; border-radius:8px; border:1px solid #3a3f47; background:#151a21; color:#e9e4da }
+.plant-chip.on{ border-color:#d0785a; background:#5a2d1f; box-shadow:inset 0 0 0 1px #d0785a66 }
+.plant-chip:disabled{ opacity:.45 }
+.plant-note{ font-size:12px; color:#ffcf9a; margin:8px 0 0 }
+.plant-actions{ display:flex; gap:10px; align-items:center; margin-top:12px }
+.plant-actions .btn-primary{ background:#d9b06a; color:#1a1410 }
+.plant-actions .btn:disabled{ opacity:.5; cursor:not-allowed }
+@media (max-width: 640px){
+  .plant-sheet{ left:8px; right:8px; top:auto; bottom:8px; width:auto; max-height:46vh; overflow:auto; padding:11px 12px }
+  .plant-sub, .plant-check{ display:none }
+  .plant-title{ font-size:17px; margin:0 0 6px }
+  .plant-label{ margin:5px 0 4px }
+  .plant-chip{ padding:4px 8px; font-size:11.5px }
+  .plant-actions{ margin-top:9px }
+  .plant-actions .btn-primary{ flex:1 }
+}
+.hearth-ghost{ display:grid; justify-items:center; gap:3px; pointer-events:none }
+.hearth-ghost .vault-pin{ --glow:#d0785a; opacity:.82; filter:sepia(.55) hue-rotate(-18deg) saturate(1.5) }
+.hearth-ghost .vk-vault{ width:54px; height:54px }
+.hearth-ghost .hg-plate{ font-size:10px; padding:1px 6px; border-radius:4px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a88; white-space:nowrap }
+.hearth-ghost .hg-check{ font-size:11px; font-weight:600; padding:2px 7px; border-radius:6px; white-space:nowrap; border:1px solid }
+.hearth-ghost .hg-check.ok{ color:#7be08f; border-color:#3f9a52; background:#0e2414ee }
+.hearth-ghost .hg-check.bad{ color:#ff8b8b; border-color:#b84343; background:#2a1010ee }

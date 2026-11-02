@@ -13,6 +13,43 @@ import { cityDay } from "@/game/vaultStack";
 import { ItemIcon } from "./ItemIcon";
 import { MarketJournalRow, useMarket } from "./NightMarket";
 import { OwnLampsSection, shortCoin } from "./OwnLamps";
+import { setPlant, usePlant } from "@/game/plantClient";
+import { PLANT_NAMES } from "@/game/placedLantern";
+import { TRIVIA_CATS } from "@/game/triviaMeta";
+
+/** 0.1.109: Journal › Places: your one Hearth vault: locked, ready to place, or placed. */
+function HearthRow() {
+  const p = usePlant();
+  const mine = p.me.mine;
+  const label = (c: string) => TRIVIA_CATS.find((t) => t.id === c)?.label ?? c;
+  return (
+    <li className="hq-row jr-detail" data-testid="row-hearth">
+      <div className="hq-row-copy">
+        <p className="kicker">Hearth vault · plays as red</p>
+        <p className="hq-row-title">{mine ? `${PLANT_NAMES[mine.name] ?? "Your vault"} · ${CITIES[mine.city as keyof typeof CITIES]?.name ?? mine.city}` : "Your Hearth vault"}</p>
+        <p className="hq-row-sub">
+          {mine ? `Placed for good · ${mine.cats.map(label).join(", ")}` : p.me.unlocked ? "Ready. Walk to a street spot, 40 m from any vault, and place it." : "Clear The Stack perfectly to unlock."}
+        </p>
+      </div>
+      {!mine && p.me.unlocked ? (
+        <button
+          type="button"
+          className="btn btn-primary shrink-0 px-3 text-xs"
+          data-testid="hearth-place"
+          onClick={() => {
+            sfx.ui();
+            setPlant({ placing: true, note: null });
+            useGame.setState({ hqOpen: false });
+          }}
+        >
+          Place here
+        </button>
+      ) : (
+        <span className="jr-val">{mine ? "Placed" : "Locked"}</span>
+      )}
+    </li>
+  );
+}
 
 const TIER_COUNT = 6;
 
@@ -218,6 +255,7 @@ export function PlacesTab() {
         )
       ) : null}
       <OwnLampsSection compact />
+      <HearthRow />
       <li className="kicker jr-kicker">Places in {city.name}</li>
       <MarketJournalRow />
       {shown.map(([g, ps]) => {

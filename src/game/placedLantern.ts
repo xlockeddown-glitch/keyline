@@ -40,3 +40,66 @@ export function findPerfectStack(rows: readonly { op_key: string; detail: string
   }
   return null;
 }
+
+// ---- 0.1.109 slice 2: placing the Hearth vault. Pure rules; the op is plantOp in walletApply.ts. ----
+
+export const PLANT_KEY = "plant";
+export const PLACED_USER = "~placed";
+export const placedKey = (ownerId: string) => `placed:${ownerId}`;
+export const PLANT_NAMES = [
+  "Porch Light", "Corner Glow", "Night Owl", "Hearthside", "Little Beacon", "Wayfinder", "Evening Star", "Lamplight Lane",
+  "Kind Light", "North Window", "Warm Welcome", "Moth's Delight", "Steady Flame", "Neighbor's Lamp", "Late Shift", "Lantern Rest",
+  "Quiet Corner", "Bright Idea", "Homeward", "First Light", "Good Evening", "Old Faithful", "Night Watch", "Easy Glow",
+] as const;
+export const PLANT_CATS = [
+  "local", "history", "science", "music", "sports", "food", "books", "arts", "political", "celebrity", "games", "nature", "geography", "math",
+] as const;
+export type PlantCat = (typeof PLANT_CATS)[number];
+/** Nearest lamp or other placed vault. */
+export const PLANT_GAP_M = 40;
+/** At most PLANT_DENSE placed vaults within PLANT_DENSE_M. */
+export const PLANT_DENSE = 6;
+export const PLANT_DENSE_M = 300;
+/** How far from the city's spawn a vault can go (the baked street area is ~6 km across). */
+export const PLANT_CITY_M = 9000;
+
+export type PlacedVault = { owner: string; city: string; lat: number; lng: number; name: number; cats: PlantCat[]; at: number };
+type LL = { lat: number; lng: number };
+
+function dist(a: LL, b: LL): number {
+  const r = Math.PI / 180;
+  const x = (b.lng - a.lng) * r * Math.cos(((a.lat + b.lat) / 2) * r);
+  const y = (b.lat - a.lat) * r;
+  return Math.sqrt(x * x + y * y) * 6_371_000;
+}
+
+/** Metres to the nearest lamp or placed vault (Infinity when none). */
+export function plantGap(at: LL, lamps: readonly LL[], placed: readonly LL[]): number {
+  let best = Infinity;
+  for (const p of lamps) best = Math.min(best, dist(at, p));
+  for (const p of placed) best = Math.min(best, dist(at, p));
+  return best;
+}
+
+export type PlantInput = { city: string; lat: number; lng: number; name: number; cats: readonly string[] };
+export type PlantRefusal = "name" | "cats" | "far" | "close" | "dense";
+
+/** The place rules that don't need the database: null when the spot and choices are fine. */
+export function plantRefusal(input: PlantInput, spawn: LL, lamps: readonly LL[], placed: readonly LL[]): PlantRefusal | null {
+  if (!Number.isInteger(input.name) || input.name < 0 || input.name >= PLANT_NAMES.length) return "name";
+  const cats = new Set(input.cats);
+  if (input.cats.length !== 4 || cats.size !== 4 || [...cats].some((c) => !(PLANT_CATS as readonly string[]).includes(c))) return "cats";
+  if (!Number.isFinite(input.lat) || !Number.isFinite(input.lng) || dist(input, spawn) > PLANT_CITY_M) return "far";
+  if (plantGap(input, lamps, placed) < PLANT_GAP_M) return "close";
+  if (placed.filter((p) => dist(input, p) <= PLANT_DENSE_M).length >= PLANT_DENSE) return "dense";
+  return null;
+}
+
+export function parsePlaced(detail: string | null | undefined): PlacedVault | null {
+  try {
+    const d = JSON.parse(detail ?? "") as PlacedVault;
+    return d && typeof d.owner === "string" && Number.isFinite(d.lat) && Number.isFinite(d.lng) ? d : null;
+  } catch {
+    return null;
+  }
+}

@@ -96,3 +96,51 @@ test("findPerfectStack ignores misses, other ladders and junk", () => {
   assert.equal(findPerfectStack([{ op_key: "own:red", detail: prize(STACK_ID) }]), null);
   assert.equal(findPerfectStack([{ op_key: "grade:a", detail: "not json" }]), null);
 });
+
+test("0.1.109 plantRefusal: preset name, exactly 4 distinct fields, near the city, 40 m gap, density cap", async () => {
+  const { plantRefusal, PLANT_NAMES } = await import("./placedLantern.ts");
+  const spawn = { lat: 42.33, lng: -83.05 };
+  const ok = { city: "detroit", lat: 42.331, lng: -83.05, name: 0, cats: ["local", "history", "science", "music"] };
+  assert.equal(plantRefusal(ok, spawn, [], []), null);
+  assert.equal(plantRefusal({ ...ok, name: PLANT_NAMES.length }, spawn, [], []), "name");
+  assert.equal(plantRefusal({ ...ok, name: 1.5 }, spawn, [], []), "name");
+  assert.equal(plantRefusal({ ...ok, cats: ["local", "history", "science"] }, spawn, [], []), "cats");
+  assert.equal(plantRefusal({ ...ok, cats: ["local", "local", "science", "music"] }, spawn, [], []), "cats");
+  assert.equal(plantRefusal({ ...ok, cats: ["local", "history", "science", "cooking"] }, spawn, [], []), "cats");
+  assert.equal(plantRefusal({ ...ok, lat: 42.5 }, spawn, [], []), "far");
+  // 0.0002° lat ≈ 22 m: too close to a lamp, and to a placed vault; 0.0005° ≈ 56 m is fine.
+  assert.equal(plantRefusal(ok, spawn, [{ lat: 42.3312, lng: -83.05 }], []), "close");
+  assert.equal(plantRefusal(ok, spawn, [], [{ lat: 42.3312, lng: -83.05 }]), "close");
+  assert.equal(plantRefusal(ok, spawn, [{ lat: 42.3315, lng: -83.05 }], []), null);
+  const ring = Array.from({ length: 6 }, (_, i) => ({ lat: 42.331 + 0.001 * Math.cos(i), lng: -83.05 + 0.0013 * Math.sin(i) }));
+  assert.equal(plantRefusal(ok, spawn, [], ring), "dense");
+});
+
+test("0.1.109 server: plant needs the unlock and an unlocked city, holds one per player, keeps the 40 m gap, is permanent", async () => {
+  const { applyClientOp, placedIn, plantStatus } = await import("./walletApply.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  for (const who of ["ace", "nope", "two"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
+  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
+  await ladder(sql, "two", [1000, 1000, 1000, 1000]);
+  const s = CITIES.austin.spawn;
+  const at = { lat: s.lat + 0.004, lng: s.lng + 0.004 };
+  const op = { kind: "plant" as const, city: "austin" as const, ...at, name: 0, cats: ["local", "history", "science", "music"] };
+  assert.equal((await applyClientOp(sql, "nope", op)).reason, "no-unlock");
+  assert.equal((await applyClientOp(sql, "ace", { ...op, city: "detroit" as never, lat: CITIES.detroit.spawn.lat, lng: CITIES.detroit.spawn.lng + 0.004 })).reason, "locked");
+  assert.equal((await applyClientOp(sql, "ace", { ...op, cats: ["local", "history", "science"] })).reason, "cats");
+  const lamp = CITIES.austin.pois[0]!;
+  assert.equal((await applyClientOp(sql, "ace", { ...op, lat: lamp.lat + 0.0001, lng: lamp.lng })).reason, "close");
+  assert.deepEqual(await plantStatus(sql, "ace"), { unlocked: true, mine: null });
+  const r = await applyClientOp(sql, "ace", op);
+  assert.equal(r.ok, true, String(r.reason));
+  assert.equal((await applyClientOp(sql, "ace", op)).ok, true, "same request replays");
+  assert.equal((await applyClientOp(sql, "ace", { ...op, lat: at.lat + 0.003 })).reason, "placed", "one per player, can't move");
+  assert.equal((await applyClientOp(sql, "two", { ...op, lat: at.lat + 0.0002 })).reason, "close", "40 m from another placed vault");
+  assert.equal((await applyClientOp(sql, "two", { ...op, lat: at.lat + 0.001 })).ok, true);
+  const list = await placedIn(sql, "austin");
+  assert.equal(list.length, 2);
+  assert.equal((await plantStatus(sql, "ace")).mine?.name, 0);
+  const mirror = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'ace' and op_key = 'plant'`;
+  assert.equal(mirror.length, 1);
+});

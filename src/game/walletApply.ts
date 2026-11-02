@@ -54,7 +54,7 @@ import {
   type WalletState,
 } from "./wallet.ts";
 import { CITIES, SCOUTS, type KioskId } from "./data.ts";
-import { PLANT_OK_KEY, findPerfectStack, perfectStackClear } from "./placedLantern.ts";
+import { PLACED_USER, PLANT_KEY, PLANT_OK_KEY, findPerfectStack, parsePlaced, perfectStackClear, placedKey, plantRefusal, type PlacedVault, type PlantCat } from "./placedLantern.ts";
 import type { ScoutId } from "./types.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
 import { rideRamp } from "./rideGames.ts";
@@ -954,6 +954,53 @@ async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string, free = 
   }
 }
 
+/** 0.1.109: every placed Hearth vault in `city` (all cities when null). */
+export async function placedIn(sql: Sql, city: string | null): Promise<PlacedVault[]> {
+  const rows = city
+    ? await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER} and detail like ${`%"city":${JSON.stringify(city)}%`}`
+    : await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER}`;
+  return rows.map((r) => parsePlaced(r.detail)).filter((p): p is PlacedVault => p !== null && (!city || p.city === city));
+}
+
+/** 0.1.109: the player's Hearth vault state for the Journal: locked, ready, or placed (with the row). */
+export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null }> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER} and op_key = ${placedKey(id)} limit 1`;
+  const mine = parsePlaced(rows[0]?.detail);
+  return { unlocked: mine ? true : await plantUnlocked(sql, userId), mine };
+}
+
+/**
+ * 0.1.109: place the Hearth vault, for good. Needs the perfect-Stack unlock and an unlocked city; preset name,
+ * exactly 4 fields, 40 m clear of every lamp and placed vault, ≤ 6 within 300 m. The global `placed:<owner>` row
+ * is the one-per-player lock (primary key); the `plant` mirror row on the player follows. Never moved or removed.
+ * Street snapping is checked on the client (the baked streets aren't in the server bundle).
+ */
+async function plantOp(sql: Sql, sessionUserId: string, op: { city: CityId; lat: number; lng: number; name: number; cats: string[] }): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  const city = CITIES[op.city];
+  if (!city) return refused(wallet, "unknown");
+  const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER} and op_key = ${placedKey(id)} limit 1`;
+  if (held.length) {
+    const p = parsePlaced(held[0]!.detail);
+    const same = p && p.city === op.city && Math.abs(p.lat - op.lat) < 1e-6 && Math.abs(p.lng - op.lng) < 1e-6 && p.name === op.name;
+    return same ? applied({ ok: true, replay: true, wallet }) : refused(wallet, "placed");
+  }
+  if (!(await plantUnlocked(sql, sessionUserId))) return refused(wallet, "no-unlock");
+  if (!wallet.cities.unlocked.includes(op.city)) return refused(wallet, "locked");
+  const others = await placedIn(sql, op.city);
+  const why = plantRefusal(op, city.spawn, city.pois, others);
+  if (why) return refused(wallet, why);
+  const row: PlacedVault = { owner: id, city: op.city, lat: op.lat, lng: op.lng, name: op.name, cats: op.cats as PlantCat[], at: Date.now() };
+  const claim = await sql<{ op_key: string }>`
+    insert into wallet_ledger (user_id, op_key, detail) values (${PLACED_USER}, ${placedKey(id)}, ${JSON.stringify(row)})
+    on conflict (user_id, op_key) do nothing returning op_key
+  `;
+  if (!claim.length) return refused(wallet, "placed");
+  const r = await mutateWallet(sql, sessionUserId, PLANT_KEY, (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify(row) }));
+  return applied(r);
+}
+
 /**
  * Pay the owner of `poiId` for a visitor's miss (grade nonce `nonce`), once, as `ownpay:<nonce>`.
  * Not for the owner's own plays; at most once per the lamp's cooldown; OWN_DAILY_CAP a Chicago day; clamped at COIN_CAP.
@@ -1054,6 +1101,7 @@ export type ClientOp =
   /** 0.1.106 worn picks on the account: city print on the coat, cloth, car ("cab" = the city cab, null = best owned), market light. */
   | { kind: "wear"; slot: WearSlot; id: string | null }
   | { kind: "own"; poi: string; free?: boolean }
+  | { kind: "plant"; city: CityId; lat: number; lng: number; name: number; cats: string[] }
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
   | { kind: "loop"; ride: boolean }
@@ -1107,6 +1155,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!t || t.s !== `u:${sessionUserId}` || !t.k) return { ...applied({ ok: false, replay: false, reason: "bad-token", wallet }), authoritative: true };
     return refundDealt(sql, sessionUserId, t.n, t.k);
   }
+
+  if (op.kind === "plant") return plantOp(sql, sessionUserId, op);
 
   if (op.kind === "own") return ownLampOp(sql, sessionUserId, op.poi, op.free === true);
 

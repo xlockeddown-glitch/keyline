@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.108";
+export const APP_VERSION = "0.1.109";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1108a";
+export const PUBLISH_STAMP = "k1109a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -210,3 +210,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.106: worn picks follow the account: city print on the coat, cloth, the car you drive (or the cab) and the market light colour. Each pick writes worn:<slot>:<ms> (latest wins; the server checks the print is earned, the cloth/car/light owned); buying a car or light puts it on, a gifted car does not. Sign-in sync returns owned.worn; a slot the account never set takes this device's pick (refused ones stay on the device). Sound, sky and last city stay per device. No migration (ledger rows) (k1106a).
 // 0.1.107: Vault Keys slice 2 (Ryan). Lock-out: a wrong answer at a keyed street or placed vault locks that vault for 3 min (tiers I-III) or 5 min (IV-VI). It shows a red rim, red reader and a striped LOCKED bar, and the miss card and street cue show the countdown. The key is used up as before and nothing is ejected. Signed in, the server writes a `lockout:<poiId>` wallet_ledger row and refuses a new deal there until it runs out, so a reload cannot clear it (no migration). Guests keep the lock in the save. Ladders, Blitz and sparks are unchanged. The counter exchange is now the Key forge (fuse 4 into 1 of the next tier, split 1 into 3 of the tier below), with the same rates. Leftover lantern/lamp/wick wording about keys and vaults on visible screens now says vault, key or spark; event names (Lantern Run, Lantern Shop, Lantern Cottage) and real-place lore are kept. Keys II and IV lose the stray bump on the blade edge (k1107a).
 // 0.1.108: placed lantern slice 1 (no UI): a perfect clear of The Stack (every card "perfect", ≤ 3 s on the server clock) writes a one-time `plantok` ledger row; plantUnlocked() back-fills from past perfect-Stack prize rows (0.1.36+, "Perfect ladder:" boost on a __stack__ grade row) (k1108a).
+// 0.1.109: Hearth vault placing: the server `plant` op (perfect-Stack unlock, one per player, unlocked city, preset name, exactly 4 of the 14 fields, 40 m from any lamp or placed vault, ≤ 6 within 300 m, permanent) writes `~placed`/`placed:<owner>` and a `plant` mirror row; fetchPlaced lists a city. Journal › Places "Your Hearth vault" row (locked / ready / placed), the copper ghost on the map with the green/red check, name chips, 4-field picker and "Place … here for good" (k1109a).
