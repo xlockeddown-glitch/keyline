@@ -118,3 +118,39 @@ export function wearPaint(bench: PaintBench, job: PaintJob, color: PaintColor | 
   if (bench.wornVault === color) return null;
   return { ...bench, wornVault: color };
 }
+
+/** 0.1.105: the paint bench the account holds (server ledger rows); `rows` 0 = no device has synced one yet. */
+export type ServerBench = PaintBench & { rows: number };
+
+export type DyePlan = {
+  /** Paints mixed on this device that the account doesn't have yet: offer each once (the server checks the cans). */
+  backfill: { job: PaintJob; color: PaintColor }[];
+  /** What each job should wear afterwards: the account's choice, or this device's on the account's first sync. */
+  wear: { coat: PaintColor | null; vault: PaintColor | null };
+};
+
+/**
+ * 0.1.105: line a device's paint bench up with the account's. The account's mixes and worn picks win, so a second
+ * device shows the same coat. Mixes only this device has are offered to the account (kept here either way). On the
+ * very first sync (no rows on the account) this device's worn picks become the account's.
+ */
+export function planDyeSync(local: PaintBench, server: ServerBench): DyePlan {
+  const backfill: DyePlan["backfill"] = [
+    ...local.coats.filter((c) => !server.coats.includes(c)).map((color) => ({ job: "coat" as const, color })),
+    ...local.vaults.filter((c) => !server.vaults.includes(c)).map((color) => ({ job: "vault" as const, color })),
+  ];
+  const first = server.rows === 0;
+  return { backfill, wear: { coat: first ? local.wornCoat : server.wornCoat, vault: first ? local.wornVault : server.wornVault } };
+}
+
+/** The device's bench after a sync: every paint either side mixed, wearing the planned picks (when mixed here). */
+export function mergedBench(local: PaintBench, server: PaintBench, wear: DyePlan["wear"]): PaintBench {
+  const coats = [...new Set([...server.coats, ...local.coats])];
+  const vaults = [...new Set([...server.vaults, ...local.vaults])];
+  return {
+    coats,
+    vaults,
+    wornCoat: wear.coat && coats.includes(wear.coat) ? wear.coat : null,
+    wornVault: wear.vault && vaults.includes(wear.vault) ? wear.vault : null,
+  };
+}

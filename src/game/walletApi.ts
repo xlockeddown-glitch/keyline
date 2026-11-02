@@ -3,6 +3,7 @@ import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { viewerMiddleware } from "@/lib/auth/viewer-middleware";
 import { CITY_LIST, KIOSK } from "./data";
+import { PAINT_COLORS } from "./ingredients";
 import type { ClientOp, RideDeal } from "./walletApply";
 import type { LegacyGrant, QuestStatus } from "./questServer";
 import { QUEST_PERIOD_KEY } from "./questPeriods";
@@ -80,6 +81,8 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("shopCollect"), city: City }),
   z.object({ kind: z.literal("skin"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("skinOn"), id: z.string().min(1).max(20) }),
+  z.object({ kind: z.literal("dye"), job: z.enum(["coat", "vault"]), color: z.enum(PAINT_COLORS) }),
+  z.object({ kind: z.literal("dyeOn"), job: z.enum(["coat", "vault"]), color: z.enum(PAINT_COLORS).nullable() }),
   z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80), free: z.boolean().optional() }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   // 0.1.70: the Loop's arrive op was missing here (0.1.58), so signed-in Arrive/Loop never reached the server.
@@ -171,7 +174,7 @@ export type SyncWire = {
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
   /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
-  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null };
+  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number } };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })

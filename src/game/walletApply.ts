@@ -8,6 +8,8 @@ import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { HOME_LAMPS, KEY_MATCHES, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
 import { cityDay } from "./vaultStack.ts";
+import { PAINT_COLORS, type PaintColor } from "./ingredients.ts";
+import { paintCost, type PaintBench, type PaintJob } from "./paint.ts";
 import { CAN_ODDS, canId, colorOf, paintPrice, parseCan, rollCan, type Can } from "./carPaint.ts";
 import { LONG_IDS, applyLegacy, claimQuest, luckyLive, type LegacyGrant, type LegacyIn, type LongId } from "./questServer.ts";
 import { periodOf } from "./questPeriods.ts";
@@ -85,7 +87,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>>; skins?: string[]; skin?: string | null } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>>; skins?: string[]; skin?: string | null; dyes?: AccountDyes } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -388,6 +390,69 @@ export async function skinsOf(sql: Sql, userId: string): Promise<{ skins: string
   return { skins, skin };
 }
 
+/** 0.1.105: the account's paint bench. `rows` = 0 means this account never synced any (a device may backfill). */
+export type AccountDyes = PaintBench & { rows: number };
+
+const isPaintColor = (v: unknown): v is PaintColor => typeof v === "string" && (PAINT_COLORS as readonly string[]).includes(v);
+
+/**
+ * 0.1.105 coat / vault paint (dye:<job>:<color> once per mix, dyeon:<job>:<ms> for the worn one). A mix also puts it
+ * on, like the vat does on a device; the latest row of a job decides what that job wears.
+ */
+export async function dyesOf(sql: Sql, userId: string): Promise<AccountDyes> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string; detail: string | null }>`
+    select op_key, detail from wallet_ledger where user_id = ${id} and (op_key like ${"dye:%"} or op_key like ${"dyeon:%"}) order by created_at asc, op_key asc
+  `;
+  const out: AccountDyes = { coats: [], vaults: [], wornCoat: null, wornVault: null, rows: rows.length };
+  for (const r of rows) {
+    const [kind, job, rest] = r.op_key.split(":");
+    if (job !== "coat" && job !== "vault") continue;
+    const list = job === "coat" ? out.coats : out.vaults;
+    let color: PaintColor | null | undefined;
+    if (kind === "dye" && isPaintColor(rest)) {
+      if (!list.includes(rest)) list.push(rest);
+      color = rest;
+    } else if (kind === "dyeon") {
+      try {
+        const want = (JSON.parse(r.detail ?? "{}") as { color?: unknown }).color;
+        color = want === null ? null : isPaintColor(want) && list.includes(want) ? want : undefined;
+      } catch {
+        /* a row without a colour changes nothing */
+      }
+    }
+    if (color === undefined) continue;
+    if (job === "coat") out.wornCoat = color;
+    else out.wornVault = color;
+  }
+  return out;
+}
+
+/**
+ * 0.1.105: paint cans this account can prove it found, per colour. Green and up (and prism) are recorded one row per
+ * find in paint_finds; white and blue are never recorded, so they are capped by right answers on that tier (a clear
+ * drops at most one can of its colour). Linked sign-ins count together.
+ */
+export async function cansFound(sql: Sql, userId: string): Promise<Record<PaintColor, number>> {
+  const ids = await groupIds(sql, userId);
+  const out = Object.fromEntries(PAINT_COLORS.map((c) => [c, 0])) as Record<PaintColor, number>;
+  for (const uid of ids) {
+    const finds = await sql<{ paint: string; n: number }>`select paint, count(*)::int as n from paint_finds where user_id = ${uid} group by paint`;
+    for (const f of finds) if (isPaintColor(f.paint) && f.paint !== "white" && f.paint !== "blue") out[f.paint] += Number(f.n) || 0;
+    const clears = await sql<{ tier: string; correct: number }>`select tier, correct from vault_clears where user_id = ${uid} and tier in ('white', 'blue')`;
+    for (const c of clears) if (c.tier === "white" || c.tier === "blue") out[c.tier] += Number(c.correct) || 0;
+  }
+  return out;
+}
+
+/** Cans of each colour the account's mixes have used (coat and vault jobs share the colour's cans). */
+function cansSpent(d: PaintBench): Record<PaintColor, number> {
+  const out = Object.fromEntries(PAINT_COLORS.map((c) => [c, 0])) as Record<PaintColor, number>;
+  for (const c of d.coats) out[c] += paintCost(c, "coat");
+  for (const c of d.vaults) out[c] += paintCost(c, "vault");
+  return out;
+}
+
 /** 0.1.59: Lantern Shops this account owns (shop:<city> rows) with each one's clock (latest shopc:<city>:<anchor>). */
 export async function shopsOf(sql: Sql, userId: string): Promise<Partial<Record<CityId, ShopState>>> {
   const { id } = await canonicalWallet(sql, userId);
@@ -475,7 +540,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   giftNotes.push(...(await grantLoveGift(sql, userId)));
   giftNotes.push(...(await grantStockCoin(sql, userId)));
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId), ...(await skinsOf(sql, userId)) };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId) };
   const until = await doubleUntil(sql, userId);
   const out = { ...done, owned, ...(until ? { doubleUntil: until } : {}) };
   return giftNotes.length ? { ...out, giftNotes } : out;
@@ -926,6 +991,9 @@ export type ClientOp =
   /** 0.1.61 map skins: buy one; choose the one to wear (any owned or free skin). */
   | { kind: "skin"; id: string }
   | { kind: "skinOn"; id: string }
+  /** 0.1.105 coat / vault paint on the account: mix one (spends found cans, puts it on), or wear one (null = off). */
+  | { kind: "dye"; job: PaintJob; color: PaintColor }
+  | { kind: "dyeOn"; job: PaintJob; color: PaintColor | null }
   | { kind: "own"; poi: string; free?: boolean }
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
@@ -1173,6 +1241,28 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     if (!skinOwned(def.id, mine.skins)) return refused(wallet, "not-owned");
     if (mine.skin === def.id) return applied({ ok: true, replay: true, wallet });
     const r = await mutateWallet(sql, sessionUserId, `skinon:${Date.now()}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ id: def.id }) }));
+    return applied(r);
+  }
+
+  // 0.1.105: mix a coat / vault paint on the account. Spends cans the server can prove were found.
+  if (op.kind === "dye") {
+    if (!isPaintColor(op.color) || (op.job !== "coat" && op.job !== "vault")) return refused(wallet, "unknown");
+    const mine = await dyesOf(sql, sessionUserId);
+    if ((op.job === "coat" ? mine.coats : mine.vaults).includes(op.color)) return applied({ ok: true, replay: true, wallet });
+    const left = (await cansFound(sql, sessionUserId))[op.color] - cansSpent(mine)[op.color];
+    if (left < paintCost(op.color, op.job)) return refused(wallet, "short-paint");
+    const r = await mutateWallet(sql, sessionUserId, `dye:${op.job}:${op.color}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ cans: paintCost(op.color, op.job) }) }));
+    return applied(r);
+  }
+
+  // 0.1.105: wear a mixed paint (or take it off). Only one this account mixed; the latest row is the choice.
+  if (op.kind === "dyeOn") {
+    if (op.job !== "coat" && op.job !== "vault") return refused(wallet, "unknown");
+    if (op.color !== null && !isPaintColor(op.color)) return refused(wallet, "unknown");
+    const mine = await dyesOf(sql, sessionUserId);
+    if (op.color !== null && !(op.job === "coat" ? mine.coats : mine.vaults).includes(op.color)) return refused(wallet, "not-owned");
+    if ((op.job === "coat" ? mine.wornCoat : mine.wornVault) === op.color) return applied({ ok: true, replay: true, wallet });
+    const r = await mutateWallet(sql, sessionUserId, `dyeon:${op.job}:${Date.now()}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ color: op.color }) }));
     return applied(r);
   }
 

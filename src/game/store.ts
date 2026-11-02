@@ -56,7 +56,7 @@ import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./match
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareDeskNote, fareMs, formatCool, lampCoolMs, matchCap, landOldTrain, settleRide, sparkState, sparkTier, ticketHint } from "./ticket";
-import { cleanPaint, EMPTY_PAINT, mixPaint as mixPaintJob, PAINT_USE, wearPaint as wearPaintJob, type PaintBench, type PaintJob } from "./paint";
+import { cleanPaint, EMPTY_PAINT, mergedBench, mixPaint as mixPaintJob, PAINT_USE, planDyeSync, wearPaint as wearPaintJob, type PaintBench, type PaintJob, type ServerBench } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, isPaintId, type IngredientId, type PaintColor } from "./ingredients";
 import { LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./vaultPay";
@@ -400,11 +400,13 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number } }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
   wearPaint: (job: PaintJob, color: PaintColor | null) => void;
+  /** 0.1.105: line coat / vault paint up with the account (after sign-in, once the wallet is live). */
+  syncDyes: () => Promise<void>;
   buyKiosk: (id: KioskId) => void;
   startContract: () => void;
   toggleHq: (v?: boolean) => void;
@@ -966,6 +968,13 @@ function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boo
   // 0.0.53: the server records a signed-in walker's plate event itself when it grades the card.
   void event;
   return { plates, plateAgg, plateRoll };
+}
+
+/** 0.1.105: the account's paint bench from the last sign-in sync, waiting for syncDyes. */
+let accountDyes: ServerBench | null = null;
+
+function cleanServerBench(v: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }): ServerBench {
+  return { ...cleanPaint(v), rows: Number(v.rows) || 0 };
 }
 
 /** 0.0.98: scouts the server reported as owned on sign-in; a refused buy never rolls these back. */
@@ -2655,6 +2664,8 @@ export const useGame = create<GameState>((set, get) => ({
     window.setTimeout(() => set({ toast: null }), 1800);
   },
   adoptOwned: (o) => {
+    // 0.1.105: applied by syncDyes once the wallet is live (it may need to offer this device's mixes first).
+    accountDyes = o.dyes ? cleanServerBench(o.dyes) : null;
     for (const x of o.scouts) serverOwnedScouts.add(x);
     if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
     if (o.cans) set({ carCans: o.cans.filter((x) => parseCan(x)) });
@@ -2750,6 +2761,8 @@ export const useGame = create<GameState>((set, get) => ({
     }
     sfx.craft();
     set({ paints: res.bench, pantry: res.pantry });
+    // 0.1.105: the account records the mix (and puts it on). A refusal (cans it can't see) leaves it on this device only.
+    pushOp({ kind: "dye", job, color });
     flashToast(set, get, job === "coat" ? `${use.name} on the coat.` : `Street vaults in ${use.name.toLowerCase()}.`, 1800);
     saveNow(get);
   },
@@ -2758,6 +2771,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (!next) return;
     sfx.ui();
     set({ paints: next });
+    pushOp({ kind: "dyeOn", job, color });
     const use = color ? PAINT_USE[color] : null;
     flashToast(
       set,
@@ -2766,6 +2780,29 @@ export const useGame = create<GameState>((set, get) => ({
       1400,
     );
     saveNow(get);
+  },
+  syncDyes: async () => {
+    const server = accountDyes;
+    if (!server || !walletLive()) return;
+    accountDyes = null;
+    const plan = planDyeSync(get().paints, server);
+    const taken: PaintBench = { ...server, coats: [...server.coats], vaults: [...server.vaults] };
+    for (const b of plan.backfill) {
+      const r = await commitWallet({ kind: "dye", job: b.job, color: b.color });
+      if (r?.ok) (b.job === "coat" ? taken.coats : taken.vaults).push(b.color);
+    }
+    // A backfilled mix puts itself on at the account; set the planned picks back (the server replays a no-op).
+    if (plan.backfill.length || server.rows === 0) {
+      for (const job of ["coat", "vault"] as const) {
+        const want = plan.wear[job];
+        if (want === null || (job === "coat" ? taken.coats : taken.vaults).includes(want)) await commitWallet({ kind: "dyeOn", job, color: want });
+      }
+    }
+    const paints = mergedBench(get().paints, taken, plan.wear);
+    if (JSON.stringify(paints) !== JSON.stringify(get().paints)) {
+      set({ paints });
+      saveNow(get);
+    }
   },
   adoptWardrobe: (w) => {
     const next = cleanWardrobe(w);

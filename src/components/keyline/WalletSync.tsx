@@ -93,6 +93,8 @@ export function WalletSync() {
         void import("@/game/ownLampsClient").then((m) => m.refreshOwnedLamps());
         setStreetPlayer(r.playerId);
         setWalletLive(true);
+        // 0.1.105: coat / vault paint follows the account (offers this device's mixes on first sync).
+        void useGame.getState().syncDyes();
         useGame.getState().bindStreet();
       } catch {
         if (live) {
