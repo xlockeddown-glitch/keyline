@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.105";
+export const APP_VERSION = "0.1.106";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1105a";
+export const PUBLISH_STAMP = "k1106a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -207,3 +207,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.103: ladder art (Ryan, Option A, display only): The Climb, The Run and The Stack show as a column of small vaults between brass rails, opened bottom to top, with a PAYS plaque (payout glyph + numeral) on top, on the map pin and the ladder card. Each rung has its number and the cost tier glyph; cleared rungs get a check, the current one a white outline and glow, locked ones a padlock, a perfect clear a glint (static under reduced motion). At low zoom the pin drops numbers and locks and keeps big lit glyphs. Also fixes the perfect-ladder prize line in the reward card, hidden since 0.1.102 renamed the server line to "key". No rule or server change (k1103a).
 // 0.1.104: satchel groups car paint cans into one row per car (car name, total cans); tapping it lists each color and count. No rule or server change (k1104a).
 // 0.1.105: coat and vault paint follow the account. Mixing writes dye:<job>:<color> (the server checks the cans: green+ and prism from paint_finds, white/blue capped by right answers on that tier; coat and vault share a colour's cans), wearing writes dyeon:<job>:<ms> (owned mixes only, latest wins). Sign-in sync returns owned.dyes; the first device to sync offers its existing mixes and worn picks, refused ones stay on that device. No migration (ledger rows) (k1105a).
+// 0.1.106: worn picks follow the account: city print on the coat, cloth, the car you drive (or the cab) and the market light colour. Each pick writes worn:<slot>:<ms> (latest wins; the server checks the print is earned, the cloth/car/light owned); buying a car or light puts it on, a gifted car does not. Sign-in sync returns owned.worn; a slot the account never set takes this device's pick (refused ones stay on the device). Sound, sky and last city stay per device. No migration (ledger rows) (k1106a).

@@ -56,6 +56,7 @@ import { cleanKeys, hasMatch, refundMatch, savedKeys, spendMatch } from "./match
 import { mergeSeen, savedSeen } from "./seenMemory";
 import { applyTriviaBoosts, creditWhite } from "./boosts";
 import { BLUE_POCKET, FARES_CAP, GREEN_POCKET, SPARK_DAY, VAULTS_PER_FARE, WHITE_POCKET, fareDesk, fareDeskNote, fareMs, formatCool, lampCoolMs, matchCap, landOldTrain, settleRide, sparkState, sparkTier, ticketHint } from "./ticket";
+import { WEAR_SLOTS, carPick, planWornSync, type AccountWorn, type WearSlot, type WornPicks } from "./wornSync";
 import { cleanPaint, EMPTY_PAINT, mergedBench, mixPaint as mixPaintJob, PAINT_USE, planDyeSync, wearPaint as wearPaintJob, type PaintBench, type PaintJob, type ServerBench } from "./paint";
 import { cleanWardrobe, cosmetic, payIn, priceLine, wear, type CosmeticId, type CosmeticSlot, type Wardrobe } from "./cosmetics";
 import { addIngredient, cityStaple, ingredientName, paintFoundLine, paintsFromServer, isPaintId, type IngredientId, type PaintColor } from "./ingredients";
@@ -384,6 +385,12 @@ export type GameState = {
   collectShop: (city: CityId) => void;
   setHouseNear: (near: boolean) => void;
   driveCar: (id: CarId | null) => void;
+  /** 0.1.106: wear an earned city print on the coat (null = off). Follows the account. */
+  wearPrint: (id: string | null) => void;
+  /** 0.1.106: show an owned market light colour. Follows the account. */
+  showLight: (id: string) => void;
+  /** 0.1.106: line worn picks up with the account (after sign-in, once the wallet is live). */
+  syncWorn: () => Promise<void>;
   setDealerOpen: (open: boolean) => void;
   setDealerNear: (near: boolean) => void;
   wearScout: (id: ScoutId) => void;
@@ -400,7 +407,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number } }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>> }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -968,6 +975,13 @@ function logPlate(get: () => GameState, ov: OpenVault, now: number, correct: boo
   // 0.0.53: the server records a signed-in walker's plate event itself when it grades the card.
   void event;
   return { plates, plateAgg, plateRoll };
+}
+
+/** 0.1.106: the account's worn picks from the last sign-in sync, waiting for syncWorn. */
+let accountWorn: AccountWorn | null = null;
+
+function wornPicks(s: GameState): WornPicks {
+  return { print: s.printWorn, cloth: s.quests.worn ?? null, car: carPick(s.carOn, s.carCab), light: s.marketLight };
 }
 
 /** 0.1.105: the account's paint bench from the last sign-in sync, waiting for syncDyes. */
@@ -2415,6 +2429,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (!owned) return;
     set({ quests: { ...get().quests, worn: id } });
     scheduleSave(get);
+    pushOp({ kind: "wear", slot: "cloth", id });
   },
   convertGuestStock: () => {
     const s = get();
@@ -2609,6 +2624,45 @@ export const useGame = create<GameState>((set, get) => ({
     if (id && !get().carsOwned.includes(id)) return;
     set({ carOn: id, carCab: id === null });
     scheduleSave(get);
+    pushOp({ kind: "wear", slot: "car", id: id ?? "cab" });
+  },
+  wearPrint: (id) => {
+    if (get().printWorn === id) return;
+    set({ printWorn: id });
+    scheduleSave(get);
+    pushOp({ kind: "wear", slot: "print", id });
+  },
+  showLight: (id) => {
+    if (!get().lightsOwned.includes(id) || get().marketLight === id) return;
+    set({ marketLight: id });
+    scheduleSave(get);
+    pushOp({ kind: "wear", slot: "light", id });
+  },
+  syncWorn: async () => {
+    const account = accountWorn;
+    if (!account || !walletLive()) return;
+    accountWorn = null;
+    const plan = planWornSync(wornPicks(get()), account);
+    // Never undo a device-only pick: a refused backfill just stays on this device.
+    for (const b of plan.backfill) await commitWallet({ kind: "wear", slot: b.slot, id: b.id });
+    const s = get();
+    const patch: Partial<GameState> = {};
+    for (const slot of WEAR_SLOTS as WearSlot[]) {
+      if (!(slot in plan.adopt)) continue;
+      const v = plan.adopt[slot] ?? null;
+      if (slot === "print") patch.printWorn = v;
+      else if (slot === "cloth") {
+        if (v === null || s.quests.cloths.includes(v as ClothId)) patch.quests = { ...s.quests, worn: v as ClothId | null };
+      } else if (slot === "car") {
+        if (v === "cab") Object.assign(patch, { carOn: null, carCab: true });
+        else if (v === null) Object.assign(patch, { carOn: driveOf(s.carsOwned, null, false), carCab: false });
+        else if (isCarId(v) && s.carsOwned.includes(v)) Object.assign(patch, { carOn: v, carCab: false });
+      } else if (v && s.lightsOwned.includes(v)) patch.marketLight = v;
+    }
+    if (Object.keys(patch).length) {
+      set(patch);
+      saveNow(get);
+    }
   },
   setDealerOpen: (open) => set({ dealerOpen: open }),
   setDealerNear: (near) => set({ dealerNear: near, dealerOpen: near ? get().dealerOpen : false }),
@@ -2666,6 +2720,7 @@ export const useGame = create<GameState>((set, get) => ({
   adoptOwned: (o) => {
     // 0.1.105: applied by syncDyes once the wallet is live (it may need to offer this device's mixes first).
     accountDyes = o.dyes ? cleanServerBench(o.dyes) : null;
+    accountWorn = o.worn && typeof o.worn === "object" ? { ...o.worn } : null;
     for (const x of o.scouts) serverOwnedScouts.add(x);
     if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
     if (o.cans) set({ carCans: o.cans.filter((x) => parseCan(x)) });

@@ -76,7 +76,7 @@ export function MarketLightsPanel() {
                 {l.label} <span className="text-fg-subtle">· coin ×{l.mult.toFixed(1)}</span>
               </span>
               {have ? (
-                <button type="button" className="lvl-btn" disabled={shown === l.id} onClick={() => useGame.setState({ marketLight: l.id })}>
+                <button type="button" className="lvl-btn" disabled={shown === l.id} onClick={() => useGame.getState().showLight(l.id)}>
                   {shown === l.id ? "Shown" : "Show"}
                 </button>
               ) : next?.id === l.id ? (

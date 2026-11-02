@@ -87,7 +87,7 @@ export function PrintPanel() {
                 <Bar have={r.meters} need={r.needMeters} label={`${km(Math.min(r.meters, r.needMeters))}/${km(r.needMeters)} km walked`} />
               </div>
               {r.earned ? (
-                <button type="button" className="lvl-btn" onClick={() => useGame.setState({ printWorn: worn === r.id ? null : r.id })}>
+                <button type="button" className="lvl-btn" onClick={() => useGame.getState().wearPrint(worn === r.id ? null : r.id)}>
                   {worn === r.id ? "Take off" : "Wear"}
                 </button>
               ) : null}

@@ -95,6 +95,8 @@ export function WalletSync() {
         setWalletLive(true);
         // 0.1.105: coat / vault paint follows the account (offers this device's mixes on first sync).
         void useGame.getState().syncDyes();
+        // 0.1.106: and the worn print, cloth, car and market light.
+        void useGame.getState().syncWorn();
         useGame.getState().bindStreet();
       } catch {
         if (live) {

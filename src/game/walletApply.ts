@@ -6,6 +6,7 @@ import { hasShield, streakRun } from "./scoutPerks.ts";
 import { marketMult } from "./nightMarket.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
+import { printLook } from "./printsServer.ts";
 import { HOME_LAMPS, KEY_MATCHES, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
 import { cityDay } from "./vaultStack.ts";
 import { PAINT_COLORS, type PaintColor } from "./ingredients.ts";
@@ -87,7 +88,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>>; skins?: string[]; skin?: string | null; dyes?: AccountDyes } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>>; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -390,6 +391,57 @@ export async function skinsOf(sql: Sql, userId: string): Promise<{ skins: string
   return { skins, skin };
 }
 
+/** 0.1.106: what the account wears in each slot. A missing slot means no device has chosen one yet (it may backfill). */
+export type WearSlot = "print" | "cloth" | "car" | "light";
+export type AccountWorn = Partial<Record<WearSlot, string | null>>;
+
+/**
+ * 0.1.106 worn picks (worn:<slot>:<ms>, detail {id}). Latest row wins. Buying a car or a market light puts it on
+ * too (car:<id> / light:<id> rows count as picks), as the shop does on a device; a gifted car does not.
+ */
+export async function wornOf(sql: Sql, userId: string): Promise<AccountWorn> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string; detail: string | null }>`
+    select op_key, detail from wallet_ledger where user_id = ${id} and (op_key like ${"worn:%"} or op_key like ${"car:%"} or op_key like ${"light:%"}) order by created_at asc, op_key asc
+  `;
+  const out: AccountWorn = {};
+  for (const r of rows) {
+    const [kind, a] = r.op_key.split(":");
+    // A gifted car (the thanks car) is owned, not chosen: it never overrides a pick.
+    if (kind === "car" && isCarId(a) && !/"gift":true/.test(r.detail ?? "")) out.car = a;
+    else if (kind === "light" && MARKET_LIGHTS.some((l) => l.id === a)) out.light = a;
+    else if (kind === "worn" && (a === "print" || a === "cloth" || a === "car" || a === "light")) {
+      try {
+        const want = (JSON.parse(r.detail ?? "{}") as { id?: unknown }).id;
+        if (want === null || typeof want === "string") out[a] = want;
+      } catch {
+        /* a row without an id changes nothing */
+      }
+    }
+  }
+  return out;
+}
+
+/** Why the account can't wear `id` in `slot` (null = it can). */
+async function wearRefusal(sql: Sql, userId: string, slot: WearSlot, id: string | null): Promise<string | null> {
+  if (slot === "print") {
+    if (id === null) return null;
+    const row = (await printLook(sql, userId)).find((p) => p.id === id);
+    return !row ? "unknown" : row.earned ? null : "not-owned";
+  }
+  if (slot === "cloth") {
+    if (id === null) return null;
+    return (await ownedOf(sql, userId)).cloths.includes(id) ? null : "not-owned";
+  }
+  if (slot === "car") {
+    if (id === null || id === "cab") return null;
+    if (!isCarId(id)) return "unknown";
+    return (await carsOf(sql, userId)).includes(id) ? null : "not-owned";
+  }
+  if (id === null || !MARKET_LIGHTS.some((l) => l.id === id)) return "unknown";
+  return ((await lightsOf(sql, userId)).ids as string[]).includes(id) ? null : "not-owned";
+}
+
 /** 0.1.105: the account's paint bench. `rows` = 0 means this account never synced any (a device may backfill). */
 export type AccountDyes = PaintBench & { rows: number };
 
@@ -540,7 +592,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   giftNotes.push(...(await grantLoveGift(sql, userId)));
   giftNotes.push(...(await grantStockCoin(sql, userId)));
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId) };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId) };
   const until = await doubleUntil(sql, userId);
   const out = { ...done, owned, ...(until ? { doubleUntil: until } : {}) };
   return giftNotes.length ? { ...out, giftNotes } : out;
@@ -994,6 +1046,8 @@ export type ClientOp =
   /** 0.1.105 coat / vault paint on the account: mix one (spends found cans, puts it on), or wear one (null = off). */
   | { kind: "dye"; job: PaintJob; color: PaintColor }
   | { kind: "dyeOn"; job: PaintJob; color: PaintColor | null }
+  /** 0.1.106 worn picks on the account: city print on the coat, cloth, car ("cab" = the city cab, null = best owned), market light. */
+  | { kind: "wear"; slot: WearSlot; id: string | null }
   | { kind: "own"; poi: string; free?: boolean }
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
@@ -1252,6 +1306,17 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     const left = (await cansFound(sql, sessionUserId))[op.color] - cansSpent(mine)[op.color];
     if (left < paintCost(op.color, op.job)) return refused(wallet, "short-paint");
     const r = await mutateWallet(sql, sessionUserId, `dye:${op.job}:${op.color}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ cans: paintCost(op.color, op.job) }) }));
+    return applied(r);
+  }
+
+  // 0.1.106: wear a print / cloth / car / market light the account owns. Latest row wins.
+  if (op.kind === "wear") {
+    if (op.slot !== "print" && op.slot !== "cloth" && op.slot !== "car" && op.slot !== "light") return refused(wallet, "unknown");
+    const why = await wearRefusal(sql, sessionUserId, op.slot, op.id);
+    if (why) return refused(wallet, why);
+    const now = await wornOf(sql, sessionUserId);
+    if (op.slot in now && now[op.slot] === op.id) return applied({ ok: true, replay: true, wallet });
+    const r = await mutateWallet(sql, sessionUserId, `worn:${op.slot}:${Date.now()}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ id: op.id }) }));
     return applied(r);
   }
 

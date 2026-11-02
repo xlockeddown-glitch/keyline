@@ -82,6 +82,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("skin"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("skinOn"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("dye"), job: z.enum(["coat", "vault"]), color: z.enum(PAINT_COLORS) }),
+  z.object({ kind: z.literal("wear"), slot: z.enum(["print", "cloth", "car", "light"]), id: z.string().min(1).max(40).nullable() }),
   z.object({ kind: z.literal("dyeOn"), job: z.enum(["coat", "vault"]), color: z.enum(PAINT_COLORS).nullable() }),
   z.object({ kind: z.literal("own"), poi: z.string().min(1).max(80), free: z.boolean().optional() }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
@@ -174,7 +175,7 @@ export type SyncWire = {
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
   /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
-  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number } };
+  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; shops?: Record<string, { at: number; anchor: number }>; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>> };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })
