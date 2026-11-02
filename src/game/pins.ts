@@ -69,18 +69,52 @@ export function boardPinHtml(name: string) {
 }
 
 /**
- * 0.1.36 ladder lamps (Ryan): The Climb (white), The Run (blue) and The Stack (green) are one matching set,
- * two brass lanterns hung off the top of a small ladder, so the marker itself says "ladder". Glow follows
- * series.cost; the rung count climbs with the ladder (3 / 4 / 5) so the three still differ in shape.
+ * 0.1.103 ladder art (Ryan, Option A): a ladder is a column of small vaults between brass rails, opened bottom to
+ * top, one per trivia card, with a PAYS plaque on top (payout glyph + numeral, the word inside the plaque so it never
+ * clips). Every rung carries its number and the cost tier's glyph, so colour is never the only cue. States: cleared
+ * (lit + check), current (white outline + glow), locked (dim + padlock), perfect (glint + sparkles; static under
+ * reduced motion). On the map nothing is in progress, so rungs stay lit in the tier colour with rung 1 current; at
+ * low zoom (.map-far) numbers, bolts and locks drop out and the glyphs stay big.
  */
-const HANG = `<i class="lantern-cap"></i><i class="lantern-frame"><i class="lantern-glass"><i class="lantern-flick"></i></i></i>`;
-export function ladderLampHtml(kind: SeriesDef["kind"]) {
-  const rungs = kind === "stack" ? 5 : kind === "run" ? 4 : 3;
-  return `<span class="ladder-lamp rungs-${rungs}"><i class="ladder-rail l"></i><i class="ladder-rail r"></i><i class="ladder-rungs"></i><i class="ladder-top"></i><i class="ladder-hang a">${HANG}</i><i class="ladder-hang b">${HANG}</i></span>`;
+const TIER_NUM: Record<Tier, string> = { white: "I", blue: "II", green: "III", amber: "IV", red: "V", violet: "VI" };
+export type LadderView = { cleared?: number; current?: number | null; perfect?: boolean; map?: boolean };
+
+export function ladderColumnSvg(s: Pick<SeriesDef, "kind" | "cost" | "pay" | "steps">, v: LadderView = {}) {
+  const n = s.steps;
+  const cleared = Math.max(0, Math.min(n, v.cleared ?? 0));
+  const current = v.current === undefined ? (cleared < n ? cleared : null) : v.current;
+  const RH = 24;
+  const top = 26;
+  const H = top + n * RH + 8;
+  let rungs = "";
+  for (let i = 0; i < n; i++) {
+    const y = top + (n - 1 - i) * RH;
+    const st = i < cleared ? "done" : i === current ? "cur" : v.map ? "ready" : "next";
+    rungs += `<g class="lc-rung is-${st}" transform="translate(5 ${y})"><rect class="lc-box" x="0" y="0" width="38" height="${RH - 3}" rx="3"/><rect class="lc-trim" x="1.6" y="1.6" width="34.8" height="${RH - 6.2}" rx="2"/><circle class="lc-dial" cx="12" cy="${(RH - 3) / 2}" r="8"/><g class="lc-glyph" transform="translate(12 ${(RH - 3) / 2}) scale(.95)">${VK_GLYPH[s.cost]}</g>${v.map ? `<g class="lc-glyph lc-far" transform="translate(19 ${(RH - 3) / 2}) scale(1.25)">${VK_GLYPH[s.cost]}</g>` : ""}<text class="lc-num" x="31" y="${(RH - 3) / 2 + 4.6}" text-anchor="middle">${i + 1}</text>${
+      st === "done" ? `<path class="lc-check" d="M19.5 10.5 l2.5 2.5 l5 -5.5"/>` : ""
+    }${st === "next" ? `<g class="lc-lock"><rect x="19.5" y="9" width="7" height="5.5" rx="1"/><path d="M21 9 v-1.8 a2 2 0 0 1 4 0 v1.8"/></g>` : ""}</g>`;
+  }
+  const plaque = `<g class="lc-pays" transform="translate(24 12)"><rect x="-21" y="-10" width="42" height="20" rx="4"/><text class="lc-pays-word" x="-9" y="3.6" text-anchor="middle">PAYS</text><g class="lc-pay-glyph" transform="translate(8 0) scale(.62)" style="fill:var(--pay)">${VK_GLYPH[s.pay]}</g><text class="lc-pay-num" x="16.5" y="3.4" text-anchor="middle" style="fill:var(--pay)">${TIER_NUM[s.pay]}</text></g>`;
+  const glint = v.perfect
+    ? `<g class="lc-perfect"><clipPath id="lc-c${n}"><rect x="0" y="0" width="48" height="${H}" rx="4"/></clipPath><g clip-path="url(#lc-c${n})"><rect class="lc-glint" x="-48" y="0" width="144" height="${H}"/></g>${[[6, 28], [42, 50], [38, H - 18], [8, H - 40]].map(([x, y]) => `<path class="lc-spark" transform="translate(${x} ${y})" d="M0 -5 L1.3 -1.3 L5 0 L1.3 1.3 L0 5 L-1.3 1.3 L-5 0 L-1.3 -1.3z"/>`).join("")}</g>`
+    : "";
+  return `<svg class="ladder-col rungs-${n}${v.perfect ? " is-perfect" : ""}" viewBox="0 0 48 ${H}" width="48" height="${H}" aria-hidden="true" style="--pay:var(--color-vault-${s.pay})">${VK_DEFS}<defs><linearGradient id="lc-g" x1="0" y1="0" x2="1" y2="1"><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".85"/><stop offset=".65" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect class="lc-rail" x="1" y="20" width="4" height="${H - 21}" rx="1.5"/><rect class="lc-rail" x="43" y="20" width="4" height="${H - 21}" rx="1.5"/>${rungs}${plaque}${glint}</svg>`;
 }
 
-export function seriesPinHtml(s: Pick<SeriesDef, "kind" | "cost">) {
-  return `<div class="vault-pin is-ladder is-${s.kind} tier-${s.cost}">${ladderLampHtml(s.kind)}</div>`;
+/** Kept for any caller that still wants the bare ladder art (map pins use seriesPinHtml). */
+export function ladderLampHtml(kind: SeriesDef["kind"]) {
+  return ladderColumnSvg(SERIES_SHAPE[kind], { map: true });
+}
+
+const SERIES_SHAPE: Record<SeriesDef["kind"], Pick<SeriesDef, "kind" | "cost" | "pay" | "steps">> = {
+  climb: { kind: "climb", cost: "white", pay: "blue", steps: 3 },
+  run: { kind: "run", cost: "blue", pay: "green", steps: 3 },
+  stack: { kind: "stack", cost: "green", pay: "amber", steps: 4 },
+};
+
+export function seriesPinHtml(s: Pick<SeriesDef, "kind" | "cost"> & Partial<Pick<SeriesDef, "pay" | "steps">>) {
+  const shape = { ...SERIES_SHAPE[s.kind], ...s } as Pick<SeriesDef, "kind" | "cost" | "pay" | "steps">;
+  return `<div class="vault-pin is-ladder is-${s.kind} tier-${s.cost}">${ladderColumnSvg(shape, { map: true })}</div>`;
 }
 
 /** Tier class on a marker's root element, or null if it has none. */

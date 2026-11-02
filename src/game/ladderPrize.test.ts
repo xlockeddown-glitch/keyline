@@ -46,8 +46,9 @@ test("0.1.36: The Climb is the white ladder", () => {
   for (const k of KINDS) {
     const html = seriesPinHtml(SERIES[k]);
     assert.match(html, /is-ladder/);
-    assert.equal((html.match(/lantern-frame/g) ?? []).length, 2, `${k} has two lanterns`);
-    assert.match(html, /ladder-rail/);
+    // 0.1.103: a column of vaults, one rung per card, between rails.
+    assert.equal((html.match(/class="lc-rung /g) ?? []).length, SERIES[k].steps, `${k} has a rung per card`);
+    assert.match(html, /lc-rail/);
   }
 });
 

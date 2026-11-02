@@ -1358,7 +1358,14 @@ export function GameMap() {
       map.on("zoomend", fitMarketSign);
       map.on("zoom zoomend", sizeHouse); // 0.1.12: the house keeps its real size
       map.on("zoom zoomend", sizeShop);
-      const setWorldScale = () => { const m = mapRef.current; m?.getContainer().style.setProperty("--world-scale", String(worldScale(m.getZoom()))); };
+      const setWorldScale = () => {
+        const m = mapRef.current;
+        if (!m) return;
+        const ws = worldScale(m.getZoom());
+        m.getContainer().style.setProperty("--world-scale", String(ws));
+        // 0.1.103: ladder pins drop their small print when the world is drawn small.
+        m.getContainer().classList.toggle("map-far", ws < 0.9);
+      };
       setWorldScale();
       map.on("zoom zoomend", setWorldScale); // 0.1.68: every world marker scales with the map
       const signTick = window.setInterval(fitMarketSign, 1500);
@@ -1764,7 +1771,7 @@ export function GameMap() {
     if (run && run.readyAt === 0) {
       const el = seriesPinHtml(SERIES.run);
       const marker = L.marker([run.lat, run.lng], {
-        icon: L.divIcon({ className: "", html: worldObj(el, 12, 30), iconSize: [24, 52], iconAnchor: [12, 30] }),
+        icon: L.divIcon({ className: "", html: worldObj(el, 24, 106), iconSize: [48, 108], iconAnchor: [24, 106] }),
         keyboard: false,
         zIndexOffset: 400,
       }).addTo(map);
@@ -1775,7 +1782,7 @@ export function GameMap() {
     if (stack && stack.readyAt === 0) {
       const el = seriesPinHtml(SERIES.stack);
       const marker = L.marker([stack.lat, stack.lng], {
-        icon: L.divIcon({ className: "", html: worldObj(el, 14, 62), iconSize: [28, 64], iconAnchor: [14, 62] }),
+        icon: L.divIcon({ className: "", html: worldObj(el, 24, 130), iconSize: [48, 132], iconAnchor: [24, 130] }),
         keyboard: false,
         zIndexOffset: 400,
       }).addTo(map);
@@ -1786,7 +1793,7 @@ export function GameMap() {
     if (climb && climb.readyAt === 0) {
       const el = seriesPinHtml(SERIES.climb);
       const marker = L.marker([climb.lat, climb.lng], {
-        icon: L.divIcon({ className: "", html: worldObj(el, 17, 54), iconSize: [34, 56], iconAnchor: [17, 54] }),
+        icon: L.divIcon({ className: "", html: worldObj(el, 24, 106), iconSize: [48, 108], iconAnchor: [24, 106] }),
         keyboard: false,
         zIndexOffset: 400,
       }).addTo(map);

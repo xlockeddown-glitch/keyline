@@ -212,8 +212,8 @@ function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
   for (const c of [loot.paint, loot.extraPaint]) if (c) list.push({ key: c.id, title: c.name, node: <i className={`emb-paint paint-found is-${c.id.slice(6)}`} />, amt: "+1" });
   const hot = streakPrize(streak) ? streak : 0;
   const [showBoosts, setShowBoosts] = useState(false);
-  // 0.1.36: a perfect ladder's prize (server boost line "Perfect ladder: <tier> match +<coin>").
-  const prizeM = loot.boosts?.map((b) => /^Perfect ladder: (white|blue|green|amber|red|violet) match \+(\d+)$/.exec(b)).find(Boolean);
+  // 0.1.36: a perfect ladder's prize (server boost line "Perfect ladder: <tier> key +<coin>"; 0.1.102 renamed "match" to "key", old rows still say match).
+  const prizeM = loot.boosts?.map((b) => /^Perfect ladder: (white|blue|green|amber|red|violet) (?:key|match) \+(\d+)$/.exec(b)).find(Boolean);
   const prize = prizeM ? { tier: prizeM[1] as Tier, coin: Number(prizeM[2]) } : null;
   return (
     <div className={`emb-wrap is-${loot.grade}`} aria-label={`${loot.grade}, ${DIFF_LABEL[loot.diff] ?? ""}, +${loot.points} coin`}>

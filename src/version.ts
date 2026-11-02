@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.102";
+export const APP_VERSION = "0.1.103";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1102a";
+export const PUBLISH_STAMP = "k1103a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -204,3 +204,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.100: +369 hard red-tier Local city trivia cards (cities_part_i: Detroit 71, Austin 74, Temple 70, New Orleans 76, Chicago 78), each sourced; lifts those five cities to 30+ red Local (k1100a). Server bundle whitespace-stripped to stay under the deploy size cap; sanitize-server-chunks matches the remoteAddress define whitespace-tolerantly and deploy-guard now fails if it is left unguarded.
 // 0.1.101: +375 hard red-tier Local city trivia cards (cities_part_j: NYC 65, London 70, Tucson 59, Boston 86, Los Angeles 60, Toronto 35), each sourced; lifts those six cities to 30+ red Local (k1101a). Trivia topic cap (maxTopicShare) raised 0.32 → 0.34 so Local can sit at ~33%.
 // 0.1.102: Vault Keys reskin (no rule change): matches show as painted colored keys (public/sprites/keys, scripts/art/keys-process.py; notches = tier 1-6, own head silhouette + numeral per tier) and street lamps as a layered-SVG vault recoloured per tier (tier glyph dial, colour-matched slot, CSS ground shadow). Player copy says key/vault; internal ids, ledger rows and server rules stay "match" (exact tier, spent on deal). Reduced motion stops the slot pulse (k1102a).
+// 0.1.103: ladder art (Ryan, Option A, display only): The Climb, The Run and The Stack show as a column of small vaults between brass rails, opened bottom to top, with a PAYS plaque (payout glyph + numeral) on top, on the map pin and the ladder card. Each rung has its number and the cost tier glyph; cleared rungs get a check, the current one a white outline and glow, locked ones a padlock, a perfect clear a glint (static under reduced motion). At low zoom the pin drops numbers and locks and keeps big lit glyphs. Also fixes the perfect-ladder prize line in the reward card, hidden since 0.1.102 renamed the server line to "key". No rule or server change (k1103a).

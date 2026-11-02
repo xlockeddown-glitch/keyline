@@ -4193,3 +4193,52 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 }
 .vk-ring{ stroke:var(--glow) }
 .vault-pin.cooling .vk-ring{ stroke:#3a414c }
+
+/* 0.1.103 ladder art (Option A): column of vaults, pins.ts ladderColumnSvg. */
+.vault-pin.is-ladder.is-ladder.is-ladder{ width:48px; height:auto; place-items:end center }
+.vault-pin.is-ladder::after{ display:none }
+.ladder-col{ display:block; overflow:visible; filter:drop-shadow(0 0 5px color-mix(in srgb, var(--glow) 55%, transparent)) }
+.lc-rail{ fill:url(#vk-b); stroke:#1a1410; stroke-width:.6 }
+.lc-box{ fill:url(#vk-f); stroke:#1a1410; stroke-width:1 }
+.lc-trim{ fill:none; stroke:url(#vk-b); stroke-width:1 }
+.lc-dial{ fill:url(#vk-d); stroke:var(--glow); stroke-width:1.6 }
+.lc-glyph{ fill:var(--glow); stroke:#1a1410; stroke-width:.8; stroke-linejoin:round }
+.lc-num{ font:800 11px Georgia, serif; fill:#f2d38a; stroke:#1a1410; stroke-width:.5px; paint-order:stroke }
+.lc-check{ fill:none; stroke:#7dffb0; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round }
+.lc-rung.is-done .lc-box{ fill:#2f4a3c }
+.lc-rung.is-cur .lc-box{ stroke:#fff; stroke-width:1.8 }
+.lc-rung.is-cur{ filter:drop-shadow(0 0 4px var(--glow)) }
+.lc-rung.is-next{ opacity:.5 }
+.lc-rung.is-next .lc-dial{ stroke:#3a414c }
+.lc-rung.is-next .lc-glyph{ fill:#6b7480 }
+.lc-lock rect,.lc-lock path{ fill:none; stroke:#aab3c2; stroke-width:1.1 }
+.lc-pays rect{ fill:#1a1410; stroke:url(#vk-b); stroke-width:1.6 }
+.lc-pays-word{ font:800 7px system-ui; letter-spacing:.06em; fill:#f2d38a }
+.lc-pay-glyph{ stroke:#1a1410; stroke-width:1 }
+.lc-pay-num{ font:800 8px Georgia, serif }
+.lc-glint{ fill:url(#lc-g); animation:lc-glint 2.2s ease-in-out infinite }
+.lc-spark{ fill:#fff; animation:lc-spark 1.6s ease-in-out infinite }
+.lc-spark:nth-child(odd){ animation-delay:.8s }
+@keyframes lc-glint{ 0%{ transform:translateX(-60px) } 60%,100%{ transform:translateX(60px) } }
+@keyframes lc-spark{ 0%,100%{ opacity:.25 } 50%{ opacity:1 } }
+.vault-pin.cooling .ladder-col{ filter:grayscale(.75) brightness(.8) }
+.vault-pin.near .ladder-col{ transform:scale(1.08); transform-origin:50% 100% }
+/* Low zoom: simplified pin — no numbers, locks or plaque text; glyphs stay big and lit. */
+.map-far .vault-pin.is-ladder .lc-num,.map-far .vault-pin.is-ladder .lc-lock,.map-far .vault-pin.is-ladder .lc-pays-word,.map-far .vault-pin.is-ladder .lc-trim{ display:none }
+.lc-far{ display:none }
+.map-far .vault-pin.is-ladder .lc-far{ display:inline }
+.map-far .vault-pin.is-ladder .lc-dial,.map-far .vault-pin.is-ladder .lc-glyph:not(.lc-far){ display:none }
+.vault-hero.is-ladder{ transform:none; width:76px }
+.vault-hero.is-ladder .ladder-col{ width:76px; height:auto }
+@media (prefers-reduced-motion: reduce){
+  .lc-glint{ animation:none; opacity:.55 }
+  .lc-spark{ animation:none; opacity:1 }
+  .vault-pin.near .ladder-col{ transform:none }
+}
+.vault-pin.is-ladder.is-ladder.is-ladder.tier-white{ --glow:var(--color-vault-white) }
+.vault-pin.is-ladder.is-ladder.is-ladder.tier-blue{ --glow:var(--color-vault-blue) }
+.vault-pin.is-ladder.is-ladder.is-ladder.tier-green{ --glow:var(--color-vault-green) }
+.vault-pin.is-ladder.is-ladder.is-ladder.tier-amber{ --glow:var(--color-vault-amber) }
+.vault-pin.is-ladder.is-ladder.is-ladder.tier-red{ --glow:var(--color-vault-red) }
+.vault-pin.is-ladder.is-ladder.is-ladder.tier-violet{ --glow:var(--color-vault-violet) }
+.vault-hero.is-ladder.is-ladder.is-ladder{ transform:none; width:76px; height:auto }

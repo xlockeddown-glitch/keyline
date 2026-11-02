@@ -79,3 +79,21 @@ test("no amber fare call-out left on lamps", () => {
   assert.doesNotMatch(css, /\.vault-pin\.is-(fare|desk)\b/);
   assert.match(read("../styles.css"), /\.station-pin\.has-fare\b/);
 });
+
+test("0.1.103 ladder column: one numbered, tier-glyphed rung per card and a PAYS plaque", async () => {
+  const { ladderColumnSvg } = await import("./pins.ts");
+  for (const kind of ["climb", "run", "stack"] as const) {
+    const s = SERIES[kind];
+    const pin = seriesPinHtml(s);
+    assert.equal((pin.match(/class="lc-rung /g) ?? []).length, s.steps, kind);
+    for (let i = 1; i <= s.steps; i++) assert.match(pin, new RegExp(`class="lc-num"[^>]*>${i}<`), `${kind} rung ${i}`);
+    assert.match(pin, /lc-pays-word[^>]*>PAYS</);
+    assert.equal((pin.match(/is-cur/g) ?? []).length, 1, `${kind} map pin: rung 1 current`);
+    assert.doesNotMatch(pin, /lc-lock/, `${kind} map pin is never greyed out`);
+  }
+  const mid = ladderColumnSvg(SERIES.stack, { cleared: 2, current: 2 });
+  assert.equal((mid.match(/is-done/g) ?? []).length, 2);
+  assert.equal((mid.match(/class="lc-lock"/g) ?? []).length, 1);
+  assert.doesNotMatch(mid, /lc-perfect/);
+  assert.match(ladderColumnSvg(SERIES.run, { cleared: 3, perfect: true }), /lc-perfect/);
+});

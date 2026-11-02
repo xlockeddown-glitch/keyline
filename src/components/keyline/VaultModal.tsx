@@ -3,7 +3,7 @@ import { cotdAt, perkFavs, favBonus } from "@/game/carPerks";
 import { BookOpen, Calculator, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
-import { ladderLampHtml } from "@/game/pins";
+import { ladderColumnSvg } from "@/game/pins";
 import { seatedCar, useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
@@ -131,7 +131,16 @@ export function VaultModal() {
           <div className="flex items-start gap-4">
             <div className={`vault-hero vault-pin tier-${poi.tier}${series ? ` is-ladder is-${series.kind}` : ""}`}>
               {series ? (
-                <span dangerouslySetInnerHTML={{ __html: ladderLampHtml(series.kind) }} />
+                <span
+                  data-testid="ladder-hero"
+                  dangerouslySetInnerHTML={{
+                    __html: ladderColumnSvg(series, {
+                      cleared: openVault.run?.step ?? 0,
+                      current: quiz ? (openVault.run?.step ?? 0) : null,
+                      perfect: (openVault.run?.step ?? 0) >= steps && (openVault.run?.grades ?? []).every((g) => g === "perfect"),
+                    }),
+                  }}
+                />
               ) : (
                 <span className="lantern lantern-hero">
                   <i className="lantern-cap" />
