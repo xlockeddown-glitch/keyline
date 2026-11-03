@@ -179,3 +179,11 @@ test("0.1.110 visit: a placed Hearth vault deals server-side as red, only from t
   const unknown = await dealFor(deps, { userId: "vis" } as never, { ...(input as object), poiId: "placed-nope" } as never);
   assert.equal(unknown.ok, false);
 });
+
+test("0.1.110: no category-of-the-day bonus on a Hearth vault", async () => {
+  const { catBoost, cotdAt } = await import("./carPerks.ts");
+  const at = Date.UTC(2026, 10, 2, 18);
+  const cat = cotdAt(at);
+  assert.ok(catBoost(cat, [], at).x > 1);
+  assert.equal(catBoost(cat, [], at, true).x, 1);
+});

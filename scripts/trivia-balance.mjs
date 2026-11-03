@@ -491,6 +491,7 @@ export function formatReport(report) {
     lines.push(
       `Math draw (${d.lamps} lamps): offered ${pct(d.offeredShare)} · random picker gets ${pct(d.randomPickShare)} math · always-Math player ${pct(d.mathFirstShare)}`,
     );
+    if (d.hearth) lines.push(`Hearth vaults with Math picked (${d.hearth} visits): Math shown ${pct(d.hearthMathShare)}`);
   }
   if (!report.flags.length) {
     lines.push("Flags: none");
@@ -525,7 +526,15 @@ export async function measureMathDraw({ perCity = 400, seed = 42 } = {}) {
       if (offer[Math.floor(rnd() * offer.length)] === "math") randomMath += 1;
     }
   }
-  return { lamps, offeredShare: offered / lamps, randomPickShare: randomMath / lamps, mathFirstShare: offered / lamps };
+  // 0.1.110: Hearth vaults (4 fixed fields). Worst case, every owner picked Math: it still shows only on
+  // MATH_OFFER_KEEP of visits, the same seeded rule as lamps.
+  let hearth = 0;
+  let hearthMath = 0;
+  for (let i = 0; i < perCity; i++) {
+    hearth += 1;
+    if (G.keepsMath(`placed-${Math.floor(rnd() * 1e9).toString(36)}#${i}`)) hearthMath += 1;
+  }
+  return { lamps, offeredShare: offered / lamps, randomPickShare: randomMath / lamps, mathFirstShare: offered / lamps, hearth, hearthMathShare: hearthMath / hearth };
 }
 
 export function mathDrawFlags(draw, quotas) {

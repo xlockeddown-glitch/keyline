@@ -74,14 +74,15 @@ export function cotdOf(day: string): TriviaCat {
 export const cotdAt = (ms: number) => cotdOf(chicagoDay(ms));
 
 /** Coin factor and labels for a lamp of category `topic`: 1 + min(0.40, favorites 0.15 each + category of the day 0.25). */
-export function catBoost(topic: TriviaCat | null | undefined, favs: readonly TriviaCat[], at: number): { x: number; labels: string[] } {
+/** 0.1.110: `noCotd` for a Hearth vault (its 4 fields are fixed, so the category of the day never adds there). */
+export function catBoost(topic: TriviaCat | null | undefined, favs: readonly TriviaCat[], at: number, noCotd = false): { x: number; labels: string[] } {
   if (!topic) return { x: 1, labels: [] };
   let add = 0;
   const labels: string[] = [];
   // favs is [coat?, car?]: one match is +15%, both is +25%.
   add += favBonus(favs.filter((f) => f === topic).length);
   if (add) labels.push(`Favorite +${Math.round(add * 100)}%`);
-  if (cotdAt(at) === topic) {
+  if (!noCotd && cotdAt(at) === topic) {
     add += COTD_BONUS;
     labels.push(`Category of the day +${Math.round(COTD_BONUS * 100)}%`);
   }

@@ -4322,3 +4322,10 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .hearth-pin .hf-tr{ right:4px; top:10px } .hearth-pin .hf-br{ right:4px; top:30px }
 .hearth-pin .hp-plate{ font-size:9px; line-height:13px; padding:0 5px; border-radius:3px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a99; white-space:nowrap; max-width:84px; overflow:hidden; text-overflow:ellipsis }
 .field-card.hearth-field{ border-left:4px solid var(--hf) }
+.hearth-hero{ display:grid; place-items:center; width:64px; height:72px; filter:drop-shadow(0 0 10px #ff3b3b88) }
+/* 0.1.110: facets closer to the mock: taller bars that stand off the vault sides. */
+.hearth-pin{ width:76px }
+.hearth-pin > .hf{ width:7px !important; height:21px !important }
+.hearth-pin .hf-tl, .hearth-pin .hf-bl{ left:6px !important } .hearth-pin .hf-tr, .hearth-pin .hf-br{ right:6px !important }
+.hearth-pin .hf-tl, .hearth-pin .hf-tr{ top:6px !important } .hearth-pin .hf-bl, .hearth-pin .hf-br{ top:30px !important }
+.vault-pin.hearth-pin{ width:76px !important; justify-items:center }

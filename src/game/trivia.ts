@@ -2,7 +2,7 @@ import { PLACE } from "@/game/banks/place";
 import { aboutTopic, placeWeights, topicsFor } from "./place";
 import { DOOR_QUIZZES } from "./doorQuizzes";
 import { ALL_CATS } from "./triviaMeta";
-export { ALL_CATS, ASKED_KEEP, DIFF_LABEL, DIFF_MULT, MATH_OFFER_KEEP, TRIVIA_CATS, offerCats } from "./triviaMeta";
+export { ALL_CATS, ASKED_KEEP, DIFF_LABEL, DIFF_MULT, MATH_OFFER_KEEP, TRIVIA_CATS, keepsMath, offerCats } from "./triviaMeta";
 import { q } from "./quiz";
 import {
   allowedRarities,

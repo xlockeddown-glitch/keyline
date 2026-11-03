@@ -1793,8 +1793,8 @@ export function GameMap() {
                 : vaultPinHtml(poi, { cooling, lockout: cooling && v?.lockout === true });
       const hearth = isHearthId(poi.id);
       // 0.1.102 Vault Keys: street vaults are 40 px SVG boxes standing on the CSS ground shadow.
-      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : hearth ? [64, 72] : [40, 44];
-      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : hearth ? [32, 56] : [20, 40];
+      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : hearth ? [76, 72] : [40, 44];
+      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : hearth ? [38, 56] : [20, 40];
       // 0.1.68: one z band so Leaflet's own latitude order puts nearer (southern) pins in front. 0.1.102: vaults get the ground shadow too.
       const marker = L.marker([poi.lat, poi.lng], {
         icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1]), iconSize: size, iconAnchor: anchor }),

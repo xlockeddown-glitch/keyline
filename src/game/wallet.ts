@@ -898,7 +898,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   }
 
   // 0.1.45: favorite categories and the category of the day (+15% / +25%, added, cap +40%), before the market.
-  const cat = catBoost(p.topic, p.favs ?? [], p.dealtAt);
+  const cat = catBoost(p.topic, p.favs ?? [], p.dealtAt, p.poiId.startsWith("placed-"));
   const lampCoin = Math.round(
     rewardPoints(p.poiTier, {
       mult: p.mult,

@@ -146,6 +146,10 @@ export function VaultModal() {
                     }),
                   }}
                 />
+              ) : hearth ? (
+                <span className="hearth-hero" data-testid="hearth-hero">
+                  <ItemIcon item="red" size={56} />
+                </span>
               ) : (
                 <span className="lantern lantern-hero">
                   <i className="lantern-cap" />
@@ -166,7 +170,7 @@ export function VaultModal() {
                   ? "Hearth vault · plays as V · spends one V key"
                   : `${TIER_LABEL[poi.tier]} vault · ${KIND_LABEL[poi.kind]}`}
                 {catMeta ? ` · ${catMeta.label}` : ""}
-                {!series && openVault.category === today ? <span className="cotd-badge ml-1.5">+25% today</span> : null}
+                {!series && !hearth && openVault.category === today ? <span className="cotd-badge ml-1.5">+25% today</span> : null}
               </p>
               <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
               {series || hearth ? null : <OwnerPlate poiId={poi.id} />}
@@ -231,7 +235,7 @@ export function VaultModal() {
                       <span className="min-w-0">
                         <span className="font-display block text-lg leading-none">
                           {c.label}
-                          {c.id === today && !series ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
+                          {c.id === today && !series && !hearth ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
                           {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +{Math.round(favBonus(favs.filter((f) => f === c.id).length) * 100)}%</span> : null}
                         </span>
                         <span className="field-blurb mt-1 block text-xs text-fg-subtle">
