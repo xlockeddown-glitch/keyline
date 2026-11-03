@@ -847,6 +847,14 @@ export async function awardGrade(
     return withV2l({ ...grant, detail });
   });
   if (r.ok && !r.replay && matchLost && !full.series && full.poiId) await payOwner(sql, id, nonce, full.poiId);
+  // 0.1.111: a visitor's right answer at a placed Hearth vault pays its owner a cut.
+  if (r.ok && !r.replay && full.correct && !full.series && full.poiId.startsWith("placed-")) {
+    try {
+      await payHearthOwner(sql, id, nonce, full.poiId, full.city);
+    } catch (e) {
+      console.warn("[hearth] owner cut failed", e instanceof Error ? e.message : e);
+    }
+  }
   // 0.1.99: a perfect Stack (server grades only) unlocks the placed lantern, once.
   if (r.ok && full.correct && perfectStackClear(full.series, full.step, full.steps, [...full.prior, letter])) {
     await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${PLANT_OK_KEY}, ${JSON.stringify({ g: "grade:" + nonce })}) on conflict (user_id, op_key) do nothing`;
@@ -973,12 +981,69 @@ export async function placedViews(sql: Sql, city: string, viewerId: string | nul
   return out;
 }
 
+/**
+ * 0.1.111: the owner's cut. HEARTH_CUT coin per visitor right answer, one paid open per visitor a Chicago day
+ * (`hcut:<day>:<visitor hash>` on the owner: the key is the lock), HEARTH_CUT_CAP a day, 1 in 10 also a V key.
+ * Never the owner's own opens; never a new account (under 3 days or under 25 right answers).
+ */
+export async function payHearthOwner(sql: Sql, visitorId: string, nonce: string, poiId: string, city: string, now = Date.now()): Promise<boolean> {
+  const { placedId } = await import("./hearthVaults.ts");
+  const { HEARTH_CUT, HEARTH_CUT_CAP, HEARTH_NEW_DAYS, HEARTH_NEW_RIGHT, hearthCutKey, hearthMatch } = await import("./placedLantern.ts");
+  const placed = (await placedIn(sql, city)).find((p) => placedId(p.owner) === poiId);
+  if (!placed) return false;
+  const owner = placed.owner;
+  const visitor = (await canonicalWallet(sql, visitorId)).id;
+  if (visitor === owner) return false;
+  const first = await sql<{ t: unknown }>`select min(created_at) as t from wallet_ledger where user_id = ${visitor}`;
+  const born = first[0]?.t ? new Date(String(first[0].t instanceof Date ? first[0].t.toISOString() : first[0].t)).getTime() : now;
+  if (now - born < HEARTH_NEW_DAYS * 86_400_000) return false;
+  const right = await sql<{ n: unknown }>`select count(*) as n from wallet_ledger where user_id = ${visitor} and op_key like ${"grade:%"} and detail not like ${'%"g":"miss"%'}`;
+  if (Number(right[0]?.n ?? 0) < HEARTH_NEW_RIGHT) return false;
+  const day = chicagoDay(new Date(now));
+  const today = await sql<{ n: unknown }>`select count(*) as n from wallet_ledger where user_id = ${owner} and op_key like ${`hcut:${day}:%`}`;
+  if (Number(today[0]?.n ?? 0) * HEARTH_CUT >= HEARTH_CUT_CAP) return false;
+  const match = hearthMatch(nonce);
+  const r = await mutateWallet(sql, owner, hearthCutKey(day, visitor), (w) => {
+    const coins = Math.max(0, Math.min(HEARTH_CUT, COIN_CAP - w.coins));
+    const d = applyDelta(w, { coins, keys: match ? { red: 1 } : {} });
+    return d.ok ? { ...d, detail: JSON.stringify({ c: coins, m: match ? 1 : 0, at: now }) } : d;
+  });
+  return r.ok && !r.replay;
+}
+
+/** 0.1.111: the owner's "Your Hearth" numbers (counts only; no visitor ids leave the server). */
+export async function hearthStats(sql: Sql, ownerId: string, now = Date.now()): Promise<import("./placedLantern.ts").HearthStats> {
+  const { HEARTH_CUT_CAP } = await import("./placedLantern.ts");
+  const rows = await sql<{ op_key: string; detail: string }>`select op_key, detail from wallet_ledger where user_id = ${ownerId} and op_key like ${"hcut:%"}`;
+  const day = chicagoDay(new Date(now));
+  const s = { today: { opens: 0, coin: 0, keys: 0 }, total: { opens: 0, coin: 0, keys: 0 }, cap: HEARTH_CUT_CAP };
+  for (const r of rows) {
+    let d: { c?: number; m?: number } = {};
+    try {
+      d = JSON.parse(r.detail);
+    } catch {
+      /* keep zeros */
+    }
+    const add = (b: { opens: number; coin: number; keys: number }) => {
+      b.opens += 1;
+      b.coin += Number(d.c) || 0;
+      b.keys += d.m ? 1 : 0;
+    };
+    add(s.total);
+    if (r.op_key.startsWith(`hcut:${day}:`)) add(s.today);
+  }
+  return s;
+}
+
 /** 0.1.109: the player's Hearth vault state for the Journal: locked, ready, or placed (with the row). */
-export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null }> {
+export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null; stats?: import("./placedLantern.ts").HearthStats }> {
   const { id } = await canonicalWallet(sql, userId);
   const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER} and op_key = ${placedKey(id)} limit 1`;
   const mine = parsePlaced(rows[0]?.detail);
-  return { unlocked: mine ? true : await plantUnlocked(sql, userId), mine };
+  if (!mine) return { unlocked: await plantUnlocked(sql, userId), mine: null };
+  // 0.1.111: the owner id stays on the server; the client gets the spot, name, fields and counts.
+  const { owner: _owner, ...pub } = mine;
+  return { unlocked: true, mine: { ...pub, owner: "" }, stats: await hearthStats(sql, id) };
 }
 
 /**

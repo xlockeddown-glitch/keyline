@@ -2,14 +2,16 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { commitWallet, walletLive } from "./walletClient";
 import { useGame } from "./store";
-import { PLANT_GAP_M, PLANT_NAMES, type PlacedVault } from "./placedLantern";
+import { PLANT_GAP_M, PLANT_NAMES, type HearthStats, type PlacedVault } from "./placedLantern";
 import { setHearths, type HearthView } from "./hearthVaults";
 
 export type Ghost = { lat: number; lng: number; gap: number; street: boolean };
 export type PlantState = {
   city: string | null;
   placed: HearthView[];
-  me: { unlocked: boolean; mine: PlacedVault | null };
+  me: { unlocked: boolean; mine: PlacedVault | null; stats?: HearthStats };
+  /** 0.1.111: the "Your Hearth" owner panel is up. */
+  ownerOpen?: boolean;
   /** The placement sheet and ghost are up. */
   placing: boolean;
   ghost: Ghost | null;

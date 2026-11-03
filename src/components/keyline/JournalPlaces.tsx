@@ -44,8 +44,21 @@ function HearthRow() {
         >
           Place here
         </button>
+      ) : mine ? (
+        <button
+          type="button"
+          className="btn btn-quiet shrink-0 px-3 text-xs"
+          data-testid="hearth-view"
+          onClick={() => {
+            sfx.ui();
+            setPlant({ ownerOpen: true });
+            useGame.setState({ hqOpen: false });
+          }}
+        >
+          Your Hearth ›
+        </button>
       ) : (
-        <span className="jr-val">{mine ? "Placed" : "Locked"}</span>
+        <span className="jr-val">Locked</span>
       )}
     </li>
   );

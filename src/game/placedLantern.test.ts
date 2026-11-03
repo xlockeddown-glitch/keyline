@@ -195,3 +195,45 @@ test("0.1.110: the Hearth owner line has one period after an initial", async () 
   const src = (await import("node:fs")).readFileSync(new URL("../components/keyline/VaultModal.tsx", import.meta.url), "utf8");
   assert.match(src, /Placed by \{hearth\.by\.replace\(\/\\\.\$\/, ""\)\}\./);
 });
+
+test("0.1.111 owner cut: 50 per visitor right answer, once a visitor a day, 1,000/day cap, no self or new-account cut; stats", async () => {
+  const { applyClientOp, payHearthOwner, hearthStats, plantStatus } = await import("./walletApply.ts");
+  const { placedId } = await import("./hearthVaults.ts");
+  const { HEARTH_CUT, hearthCutKey, hearthMatch } = await import("./placedLantern.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  for (const who of ["ace", "vis", "newb"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
+  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
+  const s = CITIES.austin.spawn;
+  assert.equal((await applyClientOp(sql, "ace", { kind: "plant", city: "austin", lat: s.lat + 0.004, lng: s.lng + 0.004, name: 0, cats: ["local", "history", "science", "music"] })).ok, true);
+  const id = placedId("ace");
+  const coins = async (who: string) => Number((await sql<{ coins: unknown }>`select coins from player_wallets where user_id = ${who}`)[0]?.coins ?? 0);
+  // Age "vis" past 3 days with 25 right answers; "newb" stays new.
+  await sql`update wallet_ledger set created_at = now() - interval '5 days' where user_id = 'vis'`;
+  for (let i = 0; i < 25; i++) await sql`insert into wallet_ledger (user_id, op_key, detail) values ('vis', ${"grade:old" + i}, ${JSON.stringify({ g: "great" })})`;
+  const before = await coins("ace");
+  assert.equal(await payHearthOwner(sql, "ace", "n0", id, "austin"), false, "no cut on the owner's own open");
+  assert.equal(await payHearthOwner(sql, "newb", "n1", id, "austin"), false, "new accounts don't pay a cut");
+  assert.equal(await payHearthOwner(sql, "vis", "n2", id, "austin"), true);
+  assert.equal(await payHearthOwner(sql, "vis", "n3", id, "austin"), false, "one paid open per visitor a day");
+  assert.equal((await coins("ace")) - before, HEARTH_CUT);
+  const rows = await sql<{ op_key: string; detail: string }>`select op_key, detail from wallet_ledger where user_id = 'ace' and op_key like 'hcut:%'`;
+  assert.equal(rows.length, 1);
+  assert.ok(!rows[0]!.op_key.includes("vis") && !rows[0]!.detail.includes("vis"), "the visitor id isn't stored on the owner");
+  // Fill today to the cap with other visitors' rows; the next visitor pays nothing.
+  const day = new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+  for (let i = 0; i < 19; i++) await sql`insert into wallet_ledger (user_id, op_key, detail) values ('ace', ${hearthCutKey(day, "x" + i)}, ${JSON.stringify({ c: 50, m: 0 })})`;
+  await syncPlayer(sql, "vis2", snap(), "vis2phone1");
+  await sql`update wallet_ledger set created_at = now() - interval '5 days' where user_id = 'vis2'`;
+  for (let i = 0; i < 25; i++) await sql`insert into wallet_ledger (user_id, op_key, detail) values ('vis2', ${"grade:o" + i}, ${JSON.stringify({ g: "good" })})`;
+  assert.equal(await payHearthOwner(sql, "vis2", "n4", id, "austin"), false, "1,000 a day cap");
+  const st = await hearthStats(sql, "ace");
+  assert.deepEqual(st.today, { opens: 20, coin: 1000, keys: 0 });
+  assert.equal(st.cap, 1000);
+  const ps = await plantStatus(sql, "ace");
+  assert.equal(ps.mine?.owner, "", "the owner id isn't sent to the client");
+  assert.equal(ps.stats?.today.coin, 1000);
+  // About 1 in 10 nonces pay a V key.
+  const hits = Array.from({ length: 2000 }, (_, i) => hearthMatch("n" + i)).filter(Boolean).length;
+  assert.ok(hits > 150 && hits < 250, String(hits));
+});

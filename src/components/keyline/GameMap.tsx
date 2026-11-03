@@ -86,6 +86,7 @@ import { WardCounter } from "./WardCounter";
 import { NoticeBoard } from "./NoticeBoard";
 import { Fireworks } from "./Fireworks";
 import { PlantSheet, ghostLine } from "./PlantSheet";
+import { HearthOwner } from "./HearthOwner";
 import { plantNowName, plantNowPlaced, setPlant, usePlant } from "@/game/plantClient";
 import { PLANT_NAMES, plantGap } from "@/game/placedLantern";
 import { Timetable } from "./Timetable";
@@ -2701,6 +2702,7 @@ const CACHE_PIN_HTML =
       <NoticeBoard />
       <Fireworks />
       <PlantSheet />
+      <HearthOwner />
       <DailyRunPanel
         onWalk={(lat, lng) => {
           void setDestination(lat, lng, true);

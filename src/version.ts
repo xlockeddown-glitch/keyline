@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.110";
+export const APP_VERSION = "0.1.111";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1110a";
+export const PUBLISH_STAMP = "k1111a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -212,3 +212,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.108: placed lantern slice 1 (no UI): a perfect clear of The Stack (every card "perfect", ≤ 3 s on the server clock) writes a one-time `plantok` ledger row; plantUnlocked() back-fills from past perfect-Stack prize rows (0.1.36+, "Perfect ladder:" boost on a __stack__ grade row) (k1108a).
 // 0.1.109: Hearth vault placing: the server `plant` op (perfect-Stack unlock, one per player, unlocked city, preset name, exactly 4 of the 14 fields, 40 m from any lamp or placed vault, ≤ 6 within 300 m, permanent) writes `~placed`/`placed:<owner>` and a `plant` mirror row; fetchPlaced lists a city. Journal › Places "Your Hearth vault" row (locked / ready / placed), the copper ghost on the map with the green/red check, name chips, 4-field picker and "Place … here for good" (k1109a).
 // 0.1.110: Hearth vaults visible and openable: fetchPlaced lists a city's placed vaults by public id (placed-<hash>, "First L.", no owner id) and they join livePois, drawn as a copper red vault with the owner's 4 fields as position+color facets and a name plate. Tapping deals server-side (the placed row is looked up, never the client's blank): red tier, only the owner's 4 fields (Math on MATH_OFFER_KEEP of visits), spends one V key, red lamp pay, lock-out like any vault; the card reads "Hearth vault · plays as V · spends one V key" and "Placed by …"; the red key is the card hero, no category-of-the-day badge or +25% on Hearth vaults, larger facet bars, and trivia-balance reports the Hearth Math draw (k1110a).
+// 0.1.111: Hearth owner cut and Your Hearth: a visitor's right answer at a placed Hearth vault pays the owner 50 coin (one paid open per visitor a Chicago day, 1,000 a day cap, 1 in 10 also a V key; never the owner's own opens or accounts under 3 days / 25 right answers) as `hcut:<day>:<visitor hash>` ledger rows; the owner id no longer leaves the server in plantStatus; Journal › Places › Your Hearth shows opens, cut vs cap, V keys and lifetime (k1111a).

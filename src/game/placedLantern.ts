@@ -103,3 +103,21 @@ export function parsePlaced(detail: string | null | undefined): PlacedVault | nu
     return null;
   }
 }
+
+// ---- 0.1.111 slice 3: the owner's cut. ----
+export const HEARTH_CUT = 50;
+export const HEARTH_CUT_CAP = 1000;
+/** New accounts don't pay a cut: under HEARTH_NEW_DAYS days old or under HEARTH_NEW_RIGHT right answers. */
+export const HEARTH_NEW_DAYS = 3;
+export const HEARTH_NEW_RIGHT = 25;
+export type HearthStats = { today: { opens: number; coin: number; keys: number }; total: { opens: number; coin: number; keys: number }; cap: number };
+
+function fnv(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+/** One paid open per visitor a day; the visitor is hashed so their id never sits in the owner's rows. */
+export const hearthCutKey = (day: string, visitor: string) => `hcut:${day}:${fnv(`v:${visitor}`).toString(36)}`;
+/** 1 in 10 cuts also pay the owner a V (red) key, rolled from the grade nonce. */
+export const hearthMatch = (nonce: string) => fnv(`hcut:${nonce}`) % 10 === 0;
