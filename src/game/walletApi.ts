@@ -283,10 +283,10 @@ export const fetchPlaced = createServerFn({ method: "POST" })
   .validator((d: unknown) => z.object({ city: z.string().min(1).max(40) }).parse(d))
   .handler(async ({ data, context }) => {
     const { getSql } = await import("@/lib/db");
-    const { placedIn, plantStatus } = await import("./walletApply");
+    const { placedViews, plantStatus } = await import("./walletApply");
     try {
       const sql = await getSql();
-      const placed = await placedIn(sql, data.city);
+      const placed = await placedViews(sql, data.city, context.userId ?? null);
       const me = context.userId ? await plantStatus(sql, context.userId) : { unlocked: false, mine: null };
       return { placed, me };
     } catch {

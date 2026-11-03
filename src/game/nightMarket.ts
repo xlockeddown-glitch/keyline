@@ -12,6 +12,7 @@ import { isFreeway, isWalkableWay, type WayTags } from "./walkable.ts";
 import { MARKET_STREETS } from "./marketStreets.ts";
 import type { CityId, Poi, Tier } from "./types";
 import { CITIES } from "./data.ts";
+import { hearthPois } from "./hearthVaults.ts";
 
 /** 0.1.2: a market cycle is 15 minutes: open 10, dark 5, then it reopens at a new spot. "hour" fields now count cycles. */
 export const MARKET_OPEN_MS = 10 * 60_000;
@@ -740,7 +741,9 @@ export function marketLanternById(city: CityId, id: string, at: number): Poi | n
 /** Every lamp on the map right now: the city's, the street blanks and the open market's lanterns. */
 export function livePois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], at = Date.now()): Poi[] {
   const extra = marketLanterns(marketAt(city.id, at));
-  return extra.length || blanks.length ? [...city.pois, ...blanks, ...extra] : city.pois;
+  // 0.1.110: placed Hearth vaults in this city (client registry; empty on the server).
+  const hearth = hearthPois(city.id);
+  return extra.length || blanks.length || hearth.length ? [...city.pois, ...blanks, ...extra, ...hearth] : city.pois;
 }
 
 /** livePois plus the lanterns of a market that closed in the last few minutes, so a quiz opened just before the

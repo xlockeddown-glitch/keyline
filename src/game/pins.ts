@@ -124,3 +124,18 @@ export function pinTier(html: string): Tier | null {
   const m = /^<div class="[^"]*\btier-(white|blue|green|amber|red|violet)\b/.exec(html);
   return (m?.[1] as Tier | undefined) ?? null;
 }
+
+/**
+ * 0.1.110: a placed Hearth vault: the red (V) vault in copper, the owner's 4 fields as side facets (top-left, top-right,
+ * bottom-left, bottom-right in pick order, so position marks them as well as color) and a name plate.
+ */
+export function hearthPinHtml(name: string, cats: readonly string[], colors: Record<string, string>, o: { cooling?: boolean; lockout?: boolean } = {}) {
+  const pos = ["tl", "tr", "bl", "br"];
+  const facets = cats
+    .slice(0, 4)
+    .map((c, i) => `<i class="hf hf-${pos[i]}" style="--hf:${colors[c] ?? "#ccc"}" title="${c}"></i>`)
+    .join("");
+  const lock = o.lockout ? `<span class="vk-lockbar" aria-label="Locked out">LOCKED</span>` : "";
+  const safe = name.replace(/[<>&"]/g, "");
+  return `<div class="vault-pin tier-red hearth-pin${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}" title="${safe} · Hearth vault">${facets}${vaultSvg("red")}${lock}<span class="hp-plate">${safe}</span></div>`;
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { cotdAt, perkFavs, favBonus } from "@/game/carPerks";
 import { BookOpen, Calculator, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
@@ -6,7 +6,8 @@ import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data
 import { ladderColumnSvg } from "@/game/pins";
 import { seatedCar, useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
-import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
+import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, keepsMath, offerCats } from "@/game/triviaMeta";
+import { FACET_COLOR, FACET_POS, hearthOf } from "@/game/hearthVaults";
 import { placeLine } from "@/game/place";
 import type { TriviaCat } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
@@ -117,7 +118,11 @@ export function VaultModal() {
   const frac = quiz ? Math.min(1, left / total) : 0;
   const catMeta = TRIVIA_CATS.find((c) => c.id === openVault.category);
   const today = cotdAt(Date.now());
-  const offered = offerCats(openVault.poiId, vaultsOpened, 6, series ? undefined : poi, series ? undefined : today);
+  // 0.1.110: a Hearth vault offers its owner's 4 fixed fields (Math on MATH_OFFER_KEEP of visits, like any lamp).
+  const hearth = series ? null : hearthOf(openVault.poiId);
+  const offered = hearth
+    ? hearth.cats.filter((c) => c !== "math" || keepsMath(`${openVault.poiId}#${vaultsOpened}`))
+    : offerCats(openVault.poiId, vaultsOpened, 6, series ? undefined : poi, series ? undefined : today);
   const favs = series ? [] : perkFavs(scout, true, carNow);
   const ground = !series && poi ? placeLine(poi) : null;
   const step = (openVault.run?.step ?? 0) + (quiz ? 1 : 0);
@@ -157,15 +162,22 @@ export function VaultModal() {
                   ? `Spark · earn a ${TIER_LABEL[poi.tier]} key`
                   : series
                   ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
+                  : hearth
+                  ? "Hearth vault · plays as V · spends one V key"
                   : `${TIER_LABEL[poi.tier]} vault · ${KIND_LABEL[poi.kind]}`}
                 {catMeta ? ` · ${catMeta.label}` : ""}
                 {!series && openVault.category === today ? <span className="cotd-badge ml-1.5">+25% today</span> : null}
               </p>
               <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
-              {series ? null : <OwnerPlate poiId={poi.id} />}
+              {series || hearth ? null : <OwnerPlate poiId={poi.id} />}
+              {hearth ? (
+                <p className="mt-1 text-sm text-fg-muted" data-testid="hearth-by">
+                  Placed by {hearth.by}. A right answer pays like any V vault. A wrong one locks it out.
+                </p>
+              ) : null}
               {!quiz ? (
                 <>
-                  <p className="mt-2 text-sm text-pretty text-fg-muted">{poi.lore}</p>
+                  {hearth ? null : <p className="mt-2 text-sm text-pretty text-fg-muted">{poi.lore}</p>}
                   {ground ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{ground}</p> : null}
                   <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-fg-subtle">
                     {openVault.spark ? (
@@ -193,7 +205,9 @@ export function VaultModal() {
             <div className="mt-5">
               <p className="kicker">Choose a field</p>
               <p className="mt-1 text-sm text-fg-muted">
-                {series
+                {hearth
+                  ? "The owner picked these 4. They never rotate."
+                  : series
                   ? "One field for all trivia cards — they get harder as you go."
                   : "Six this vault. They rotate. The trivia cards prefer the ground you're on."}
               </p>
@@ -206,7 +220,8 @@ export function VaultModal() {
                     <button
                       key={c.id}
                       type="button"
-                      className="field-card"
+                      className={`field-card${hearth ? " hearth-field" : ""}`}
+                      style={hearth ? ({ "--hf": FACET_COLOR[c.id] } as CSSProperties) : undefined}
                       title={c.blurb}
                       onClick={() => pickCategory(c.id, performance.now())}
                     >
@@ -219,7 +234,10 @@ export function VaultModal() {
                           {c.id === today && !series ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
                           {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +{Math.round(favBonus(favs.filter((f) => f === c.id).length) * 100)}%</span> : null}
                         </span>
-                        <span className="field-blurb mt-1 block text-xs text-fg-subtle">{c.blurb}</span>
+                        <span className="field-blurb mt-1 block text-xs text-fg-subtle">
+                          {hearth ? `${FACET_POS[hearth.cats.indexOf(c.id as never)] ?? ""} facet · ` : ""}
+                          {c.blurb}
+                        </span>
                       </span>
                     </button>
                   );

@@ -223,6 +223,13 @@ export async function provePerks(sql: Sql, userId: string, input: DealInput): Pr
 }
 
 
+async function hearthLookup(sql: Sql, city: string, id: string): Promise<{ poi: Poi; cats: string[] } | null> {
+  const { placedIn } = await import("./walletApply.ts");
+  const { placedId, hearthPoi } = await import("./hearthVaults.ts");
+  const p = (await placedIn(sql, city)).find((x) => placedId(x.owner) === id);
+  return p ? { poi: hearthPoi({ id, city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: "" }), cats: p.cats } : null;
+}
+
 export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput): Promise<DealResult> {
   let recent: string[] = [];
   let sql: Sql | null = null;
@@ -247,7 +254,17 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
       console.warn("[trivia] lockout read failed", e instanceof Error ? e.message : e);
     }
   }
-  const r = deal(deps, viewer, input, recent, proven);
+  // 0.1.110: a placed Hearth vault is looked up on the server (never trusted from the client): red tier, and only
+  // the owner's 4 fields deal.
+  let dealDeps = deps;
+  if (input.poiId.startsWith("placed-")) {
+    if (!deps.sql) return { ok: false, reason: "unknown-lamp" };
+    const hp = await hearthLookup(sql ?? (await deps.sql()), input.city, input.poiId);
+    if (!hp) return { ok: false, reason: "unknown-lamp" };
+    if (!hp.cats.includes(input.cat)) return { ok: false, reason: "unknown-lamp" }; // not one of the owner's 4 fields
+    dealDeps = { ...deps, namedPoi: (c, id) => (id === hp.poi.id ? hp.poi : deps.namedPoi(c, id)) };
+  }
+  const r = deal(dealDeps, viewer, { ...input, blank: input.poiId.startsWith("placed-") ? undefined : input.blank }, recent, proven);
   if (!r.ok) return r;
   // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
   const spendTier = !input.spark && (input.step ?? 0) === 0 && !input.poiId.startsWith("blitz-");

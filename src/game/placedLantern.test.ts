@@ -28,7 +28,7 @@ const mig = (n: string) => readFileSync(new URL(`../../migrations/${n}`, import.
 async function db() {
   const pg = new PGlite();
   await pg.exec(`create table if not exists player_links (alias_id text primary key, primary_id text not null, how text not null, linked_at timestamptz not null default now())`);
-  for (const m of ["0016_player_wallet.sql", "0003_plate_events.sql", "0014_walk_distance.sql"]) await pg.exec(mig(m));
+  for (const m of ["0016_player_wallet.sql", "0003_plate_events.sql", "0014_walk_distance.sql", "0013_trivia_recent.sql"]) await pg.exec(mig(m));
   return sqlOf(pg);
 }
 const snap = (): LocalSnap => ({ coins: 0, keys: { green: 5 }, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false } });
@@ -143,4 +143,39 @@ test("0.1.109 server: plant needs the unlock and an unlocked city, holds one per
   assert.equal((await plantStatus(sql, "ace")).mine?.name, 0);
   const mirror = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'ace' and op_key = 'plant'`;
   assert.equal(mirror.length, 1);
+});
+
+test("0.1.110 visit: a placed Hearth vault deals server-side as red, only from the owner's 4 fields, and spends a red key", async () => {
+  const { applyClientOp, placedViews } = await import("./walletApply.ts");
+  const { dealFor } = await import("./triviaService.ts");
+  const { placedId } = await import("./hearthVaults.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  await syncPlayer(sql, "ace", snap(), "acephone1");
+  await syncPlayer(sql, "vis", { ...snap(), keys: { red: 2 } }, "visphone1");
+  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
+  const s = CITIES.austin.spawn;
+  const op = { kind: "plant" as const, city: "austin" as const, lat: s.lat + 0.004, lng: s.lng + 0.004, name: 2, cats: ["local", "history", "science", "music"] };
+  assert.equal((await applyClientOp(sql, "ace", op)).ok, true);
+  const views = await placedViews(sql, "austin", "vis");
+  assert.equal(views.length, 1);
+  assert.equal(views[0]!.id, placedId("ace"));
+  assert.ok(!JSON.stringify(views).includes('"ace"'), "the public list never carries the owner id");
+  const card = { id: "c1", q: "Q?", choices: ["a", "b", "c", "d"], answer: "a", diff: 3, rarity: "rare" };
+  let pickedTier = "";
+  const deps = {
+    now: () => Date.now(), secret: "s", rand: () => 0.4,
+    pick: (_c: string, _cat: string, _p: unknown, tier: string) => ((pickedTier = tier), card),
+    card: () => card, namedPoi: () => null, series: () => null, sql: async () => sql,
+  } as never;
+  const input = { city: "austin", cat: "local", poiId: views[0]!.id, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555", blank: { name: "x", kind: "landmark", tier: "white" } } as never;
+  const bad = await dealFor(deps, { userId: "vis" } as never, { ...(input as object), cat: "sports" } as never);
+  assert.equal(bad.ok, false, "a field the owner didn't pick doesn't deal");
+  const r = await dealFor(deps, { userId: "vis" } as never, input);
+  assert.equal(r.ok, true);
+  assert.equal(pickedTier, "red", "plays as red (the client's blank tier is ignored)");
+  const keys = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'vis' and op_key like 'deal:%'`;
+  assert.equal(keys.length, 1, "spent one red key");
+  const unknown = await dealFor(deps, { userId: "vis" } as never, { ...(input as object), poiId: "placed-nope" } as never);
+  assert.equal(unknown.ok, false);
 });

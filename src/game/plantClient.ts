@@ -3,11 +3,12 @@ import { useEffect, useSyncExternalStore } from "react";
 import { commitWallet, walletLive } from "./walletClient";
 import { useGame } from "./store";
 import { PLANT_GAP_M, PLANT_NAMES, type PlacedVault } from "./placedLantern";
+import { setHearths, type HearthView } from "./hearthVaults";
 
 export type Ghost = { lat: number; lng: number; gap: number; street: boolean };
 export type PlantState = {
   city: string | null;
-  placed: PlacedVault[];
+  placed: HearthView[];
   me: { unlocked: boolean; mine: PlacedVault | null };
   /** The placement sheet and ghost are up. */
   placing: boolean;
@@ -30,7 +31,12 @@ export async function refreshPlaced(city: string): Promise<void> {
   try {
     const { fetchPlaced } = await import("./walletApi");
     const got = await fetchPlaced({ data: { city } });
-    if (got) setPlant({ city, placed: got.placed as PlacedVault[], me: got.me as PlantState["me"] });
+    if (got) {
+      setHearths(city, got.placed as HearthView[]);
+      setPlant({ city, placed: got.placed as HearthView[], me: got.me as PlantState["me"] });
+      // Repaint the map pins with the city's Hearth vaults.
+      useGame.setState({ hearthGen: (useGame.getState().hearthGen ?? 0) + 1 });
+    }
   } catch {
     /* offline: keep the last */
   }

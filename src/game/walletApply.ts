@@ -962,6 +962,17 @@ export async function placedIn(sql: Sql, city: string | null): Promise<PlacedVau
   return rows.map((r) => parsePlaced(r.detail)).filter((p): p is PlacedVault => p !== null && (!city || p.city === city));
 }
 
+/** 0.1.110: what anyone sees of a city's Hearth vaults: public id, spot, name, fields, "First L." (no owner id). */
+export async function placedViews(sql: Sql, city: string, viewerId: string | null): Promise<import("./hearthVaults.ts").HearthView[]> {
+  const { placedId } = await import("./hearthVaults.ts");
+  const me = viewerId ? (await canonicalWallet(sql, viewerId)).id : null;
+  const out = [];
+  for (const p of await placedIn(sql, city)) {
+    out.push({ id: placedId(p.owner), city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: await ownerName(sql, p.owner), ...(me === p.owner ? { mine: true } : {}) });
+  }
+  return out;
+}
+
 /** 0.1.109: the player's Hearth vault state for the Journal: locked, ready, or placed (with the row). */
 export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null }> {
   const { id } = await canonicalWallet(sql, userId);

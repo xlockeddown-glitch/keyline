@@ -1,3 +1,4 @@
+import { hearthPois } from "./hearthVaults";
 import { create } from "zustand";
 import { DRIVE_PING_MS, MAGNET_DAY_CAP, bestVaultMs, carCool } from "./carPerks";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
@@ -275,6 +276,8 @@ export type GameState = {
   charmDay: string;
   charmTopics: TriviaCat[];
   blanks: Poi[];
+  /** 0.1.110: bumps when the city's Hearth vaults load (map pins repaint). Not saved. */
+  hearthGen?: number;
   streetSpread: boolean;
   tutorial: number;
   howtoDone: boolean;
@@ -909,7 +912,7 @@ async function dealCard(
   const st = get();
   const city = CITIES[st.cityId];
   const series = seriesOf(poiId);
-  const named = series ? null : (city.pois.find((p) => p.id === poiId) ?? marketLanternById(st.cityId, poiId, Date.now()));
+  const named = series ? null : (city.pois.find((p) => p.id === poiId) ?? marketLanternById(st.cityId, poiId, Date.now()) ?? hearthPois(st.cityId).find((p) => p.id === poiId));
   const blank = series || named ? undefined : st.blanks.find((p) => p.id === poiId);
   const dealBlank =
     blank && lampKind(blank.kind)

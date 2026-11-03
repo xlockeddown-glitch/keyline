@@ -68,7 +68,7 @@ export function offerCats(poiId: string, vaultsOpened: number, n = 6, poi?: Poi,
 /** Share of lamps that keep a Math offer. See offerCats; trivia:quotas checks the result. */
 export const MATH_OFFER_KEEP = 0.43;
 
-function keepsMath(seed: string): boolean {
+export function keepsMath(seed: string): boolean {
   let h = 0x811c9dc5;
   const s = `${seed}#math`;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
