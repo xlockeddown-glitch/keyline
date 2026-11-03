@@ -1,7 +1,7 @@
 /** 0.1.111: "Your Hearth": the owner's numbers for their placed vault (opens, cut vs the daily cap, V keys, lifetime). */
 import { CITIES } from "@/game/data";
 import { FACET_COLOR } from "@/game/hearthVaults";
-import { hearthPinHtml } from "@/game/pins";
+import { vaultSvg } from "@/game/pins";
 import { HEARTH_CUT, PLANT_NAMES } from "@/game/placedLantern";
 import { setPlant, usePlant } from "@/game/plantClient";
 import { TRIVIA_CATS } from "@/game/triviaMeta";
@@ -32,7 +32,21 @@ export function HearthOwner() {
         ×
       </button>
       <div className="ho-head">
-        <span className="ho-art" dangerouslySetInnerHTML={{ __html: hearthPinHtml(name, mine.cats, FACET_COLOR) }} />
+        {/* 0.1.111: hero built on one grid: facet columns either side of the vault, plate centered under it. */}
+        <span className="ho-art" data-testid="ho-art">
+          <span className="ho-bars">
+            {[mine.cats[0], mine.cats[2]].map((c, i) => (
+              <i key={i} style={{ background: FACET_COLOR[c ?? ""] ?? "#ccc" }} title={c} />
+            ))}
+          </span>
+          <span className="ho-vault vault-pin tier-red" dangerouslySetInnerHTML={{ __html: vaultSvg("red") }} />
+          <span className="ho-bars">
+            {[mine.cats[1], mine.cats[3]].map((c, i) => (
+              <i key={i} style={{ background: FACET_COLOR[c ?? ""] ?? "#ccc" }} title={c} />
+            ))}
+          </span>
+          <span className="ho-plate">{name}</span>
+        </span>
         <div className="min-w-0">
           <p className="kicker ho-kicker">
             <span className="ho-wide">Your Hearth vault</span>
