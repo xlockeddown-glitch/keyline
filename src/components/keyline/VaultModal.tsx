@@ -176,7 +176,7 @@ export function VaultModal() {
               {series || hearth ? null : <OwnerPlate poiId={poi.id} />}
               {hearth ? (
                 <p className="mt-1 text-sm text-fg-muted" data-testid="hearth-by">
-                  Placed by {hearth.by}. A right answer pays like any V vault. A wrong one locks it out.
+                  Placed by {hearth.by.replace(/\.$/, "")}. A right answer pays like any V vault. A wrong one locks it out.
                 </p>
               ) : null}
               {!quiz ? (

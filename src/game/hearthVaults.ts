@@ -26,7 +26,7 @@ export function placedId(owner: string): string {
 export const isHearthId = (id: string) => id.startsWith(HEARTH_PREFIX);
 
 export function hearthPoi(v: HearthView): Poi {
-  return { id: v.id, name: PLANT_NAMES[v.name] ?? "Hearth vault", kind: "landmark", tier: "red", lat: v.lat, lng: v.lng, lore: `Placed by ${v.by}.`, noClue: true };
+  return { id: v.id, name: PLANT_NAMES[v.name] ?? "Hearth vault", kind: "landmark", tier: "red", lat: v.lat, lng: v.lng, lore: `Placed by ${v.by.replace(/\.$/, "")}.`, noClue: true };
 }
 
 // One registry per page even if the module loads under two specifiers (dev imports with and without ".ts").

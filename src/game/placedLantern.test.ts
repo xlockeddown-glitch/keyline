@@ -187,3 +187,11 @@ test("0.1.110: no category-of-the-day bonus on a Hearth vault", async () => {
   assert.ok(catBoost(cat, [], at).x > 1);
   assert.equal(catBoost(cat, [], at, true).x, 1);
 });
+
+test("0.1.110: the Hearth owner line has one period after an initial", async () => {
+  const { hearthPoi } = await import("./hearthVaults.ts");
+  const v = { id: "placed-x", city: "detroit", lat: 0, lng: 0, name: 0, cats: [], by: "Ryan G." } as never;
+  assert.equal(hearthPoi(v).lore, "Placed by Ryan G.");
+  const src = (await import("node:fs")).readFileSync(new URL("../components/keyline/VaultModal.tsx", import.meta.url), "utf8");
+  assert.match(src, /Placed by \{hearth\.by\.replace\(\/\\\.\$\/, ""\)\}\./);
+});
