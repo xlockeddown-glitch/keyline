@@ -4,7 +4,8 @@ import { cotdAt, perkFavs, favBonus, CAT_BONUS_CAP, RANDOM_BONUS } from "@/game/
 import { BookOpen, Calculator, Dices, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
-import { ladderColumnSvg } from "@/game/pins";
+import { VK_NUM, ladderColumnSvg } from "@/game/pins";
+import { HEARTH_VERSION_NAME, HEARTH_TIERS, hearthSteps, hearthTierAt, hearthVersion, slotOf } from "@/game/hearthMulti";
 import { seatedCar, useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
@@ -121,8 +122,15 @@ export function VaultModal() {
   const today = cotdAt(Date.now());
   // 0.1.110: a Hearth vault offers its owner's 4 fixed fields (Math on MATH_OFFER_KEEP of visits, like any lamp).
   const hearth = series ? null : hearthOf(openVault.poiId);
+  // 0.1.117: Double/Triple Hearth: which question this is, its tier, and the fields already used this run.
+  const hv = hearth ? hearthVersion(hearth.v) : 1;
+  const multi = Boolean(hearth) && hv > 1;
+  const hStep = multi ? (openVault.hearth?.step ?? 0) : 0;
+  const hUsed = multi ? (openVault.hearth?.used ?? []) : [];
+  const hTier = hearthTierAt(hv, hStep);
+  const hName = HEARTH_VERSION_NAME[hv];
   const offered = hearth
-    ? hearthOffer(hearth.cats, openVault.poiId, vaultsOpened)
+    ? hearthOffer(hearth.cats, openVault.poiId, vaultsOpened, hStep)
     : offerCats(openVault.poiId, vaultsOpened, 6, series ? undefined : poi, series ? undefined : today);
   const favs = series ? [] : perkFavs(scout, true, carNow);
   const ground = !series && poi ? placeLine(poi) : null;
@@ -149,7 +157,7 @@ export function VaultModal() {
                 />
               ) : hearth ? (
                 <span className="hearth-hero" data-testid="hearth-hero">
-                  <ItemIcon item="red" size={56} />
+                  <ItemIcon item={multi ? hTier : "red"} size={56} />
                 </span>
               ) : (
                 // 0.1.112: the vault itself (centered drawing, dial concentric), with its tier quirk.
@@ -162,6 +170,8 @@ export function VaultModal() {
                   ? `Spark · earn a ${TIER_LABEL[poi.tier]} key`
                   : series
                   ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
+                  : multi
+                  ? `Hearth · ${hName} · question ${hStep + 1} of ${hearthSteps(hv)}`
                   : hearth
                   ? "Hearth vault · plays as V · spends one V key"
                   : `${TIER_LABEL[poi.tier]} vault · ${KIND_LABEL[poi.kind]}`}
@@ -170,7 +180,29 @@ export function VaultModal() {
               </p>
               <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
               {series || hearth ? null : <OwnerPlate poiId={poi.id} />}
-              {hearth ? (
+              {multi ? (
+                <>
+                  <div className="hearth-chips" data-testid="hearth-chips" aria-label={`${hName} Hearth tiers`}>
+                    {HEARTH_TIERS[hv].map((t, i) => {
+                      const st = i < hStep ? "done" : i === hStep ? "cur" : "next";
+                      return (
+                        <span key={i} className={`hearth-chip tier-${t} is-${st}`} data-state={st}>
+                          <ItemIcon item={t} size={14} /> {VK_NUM[t]}
+                          {st === "done" ? " ✓" : st === "next" ? " 🔒" : ""}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-sm text-fg-muted" data-testid="hearth-by">
+                    Placed by {hearth!.by.replace(/\.$/, "")} · {hName} Hearth · {HEARTH_TIERS[hv].map((t) => VK_NUM[t]).join(" → ")}
+                  </p>
+                  <p className="hearth-note mt-1 text-sm" data-testid="hearth-note">
+                    {hStep === 0
+                      ? `Right answers unlock the next pick. The prize pays only after question ${hearthSteps(hv)}. A miss ends it.`
+                      : `${hUsed.length} field${hUsed.length > 1 ? "s" : ""} used. ${hStep + 1 >= hearthSteps(hv) ? "Last question — right pays the prize." : `Right opens question ${hStep + 2}.`} A miss ends it and locks the vault.`}
+                  </p>
+                </>
+              ) : hearth ? (
                 <p className="mt-1 text-sm text-fg-muted" data-testid="hearth-by">
                   Placed by {hearth.by.replace(/\.$/, "")}. A right answer pays like any V vault. A wrong one locks it out.
                 </p>
@@ -183,6 +215,10 @@ export function VaultModal() {
                     {openVault.spark ? (
                       <>
                         No key spent. A right answer is a spare <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]}
+                      </>
+                    ) : multi && hStep > 0 ? (
+                      <>
+                        No new key · plays at <ItemIcon item={hTier} size={16} /> {VK_NUM[hTier]}
                       </>
                     ) : (
                       <>
@@ -203,7 +239,7 @@ export function VaultModal() {
             </div>
           ) : !quiz ? (
             <div className="mt-5">
-              <p className="kicker">Choose a field</p>
+              <p className="kicker">{multi ? `Pick a field · ${4 - hUsed.length} left` : "Choose a field"}</p>
               <p className="mt-1 text-sm text-fg-muted">
                 {hearth
                   ? offered.includes("math") || !hearth.cats.includes("math")
@@ -215,6 +251,21 @@ export function VaultModal() {
               </p>
               <div className="field-grid mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {offered.map((id) => {
+                  // 0.1.117: a field used earlier in this run keeps its slot, greyed out (a Math stand-in shares Math's slot).
+                  const usedAt = multi ? hUsed.findIndex((u) => slotOf(hearth!.cats, u) === slotOf(hearth!.cats, id)) : -1;
+                  if (usedAt >= 0) {
+                    const u = TRIVIA_CATS.find((x) => x.id === hUsed[usedAt]);
+                    const UIcon = u ? CAT_ICON[u.id] : null;
+                    return (
+                      <button key={id} type="button" className="field-card hearth-field is-used" style={{ "--hf": FACET_COLOR[hUsed[usedAt]!] } as CSSProperties} disabled aria-disabled data-testid="hearth-used">
+                        <span className="field-stamp">{UIcon ? <UIcon className="size-4" strokeWidth={1.75} /> : null}</span>
+                        <span className="min-w-0">
+                          <span className="font-display block text-lg leading-none">{u?.label ?? hUsed[usedAt]}</span>
+                          <span className="hearth-plays mt-1 block text-xs text-fg-subtle">✓ used on Q{usedAt + 1}</span>
+                        </span>
+                      </button>
+                    );
+                  }
                   const c = TRIVIA_CATS.find((x) => x.id === id);
                   if (!c) return null;
                   const Icon = CAT_ICON[c.id];
@@ -236,6 +287,7 @@ export function VaultModal() {
                           {c.id === today && !series && !hearth ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
                           {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +{Math.round(favBonus(favs.filter((f) => f === c.id).length) * 100)}%</span> : null}
                         </span>
+                        {multi ? <span className="hearth-plays mt-1 block text-xs text-fg-subtle">Plays at {VK_NUM[hTier]}</span> : null}
                         <span className="field-blurb mt-1 block text-xs text-fg-subtle">
                           {hearth ? (hearth.cats.includes(c.id as never) ? `${FACET_POS[hearth.cats.indexOf(c.id as never)] ?? ""} facet · ` : "Stands in for Math today · ") : ""}
                           {c.blurb}

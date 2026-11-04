@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.116";
+export const APP_VERSION = "0.1.117";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1116a";
+export const PUBLISH_STAMP = "k1117a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -218,3 +218,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.114: Hearth vaults always show four fields (Ryan): when the Math 43% rule skips an owner's Math, a field the owner didn't pick (never Math) stands in, picked from the same poiId#opens seed; the server deals any non-Math field at a Hearth vault whose owner picked Math (still red, still the looked-up row); ordinary vaults unchanged (k1114a).
 // 0.1.115: street vaults can no longer be bought (Ryan): the server refuses a paid `own` op ("closed"), the Buy rows and prices are gone from Journal · Places and Help; vaults bought before keep their claim rows, owner name plate ("Owned by …") and payouts; gifted free vaults can still be placed; no refunds, migrations or ledger deletes (k1115a).
 // 0.1.116: Random category (Ryan): every street/series field picker offers Random; the server rolls the field (any field, Math only under the 43% offer rule), seals it in the token and pays +10% coin itself; the Penguin coat (lynx) now favors Random (+15% on top), inside the +40% cap; Hearth vaults keep their 4 fields, no Random (k1116a).
+// 0.1.117: Double and Triple Hearth vaults: the owner picks Single (V), Double (III → IV) or Triple (III → IV → V) when placing (`v` on the placed row; old rows are Single). Each right answer opens the next pick from the fields not used yet (3, then 2); the server chains the steps through its own tokens (`hnext:<nonce>` rows), spends one key of the first tier, pays each question its tier coin (2nd +25%, 3rd +50%) and the tier key only on the last; a miss locks the vault out as today. A graded card's key is no longer refunded on a walk-away (k1117a).

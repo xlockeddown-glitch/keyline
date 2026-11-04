@@ -11,6 +11,7 @@ import type { PaintId } from "./ingredients.ts";
 import type { CityId, Poi, PoiKind, ScoutId, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward, ServerWallet } from "./triviaSchema";
 import { CLIMB_ID, RUN_ID, SCOUTS, STACK_ID } from "./data.ts";
+import { hearthLast, hearthNext, hearthSteps, hearthTierAt, hearthVersion, type HearthVersion } from "./hearthMulti.ts";
 import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
 import { awardGrade, carsOf, noteBlitzCard, ownedOf, spendDealt } from "./walletApply.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
@@ -95,6 +96,11 @@ type TokenBody = {
     cat: string;
     /** 0.1.116: 1 when the player picked Random (cat is the field the server rolled). */
     rn?: 1;
+    /** 0.1.117 Double/Triple Hearth: version, this step, steps in all, fields used before this step. */
+    hv?: number;
+    hs?: number;
+    hn?: number;
+    hu?: string[];
     /** 0.0.96: worn coat at deal time. */
     sc?: string;
     /** 0.1.45: the seated car, only when the server found its car:<id> row. */
@@ -226,14 +232,53 @@ export async function provePerks(sql: Sql, userId: string, input: DealInput): Pr
 }
 
 
-async function hearthLookup(sql: Sql, city: string, id: string): Promise<{ poi: Poi; cats: string[] } | null> {
+async function hearthLookup(sql: Sql, city: string, id: string): Promise<{ poi: Poi; cats: string[]; v: HearthVersion } | null> {
   const { placedIn } = await import("./walletApply.ts");
   const { placedId, hearthPoi } = await import("./hearthVaults.ts");
   const p = (await placedIn(sql, city)).find((x) => placedId(x.owner) === id);
-  return p ? { poi: hearthPoi({ id, city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: "" }), cats: p.cats } : null;
+  return p ? { poi: hearthPoi({ id, city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: "", v: p.v }), cats: p.cats, v: hearthVersion(p.v) } : null;
+}
+
+/** 0.1.117: one step of a Double/Triple Hearth run, decided by the server (never by the client). */
+export type HearthDeal = { v: HearthVersion; step: number; used: string[] };
+
+/** Was the question behind this nonce answered right? Signed in: the server's plate event; a guest: this instance's ring. */
+async function answeredRight(sql: Sql | null, signedIn: boolean, nonce: string): Promise<boolean> {
+  if (signedIn) {
+    if (!sql) return false;
+    const rows = await sql<{ correct: unknown }>`select correct from plate_events where id = ${`t:${nonce}`} limit 1`;
+    return rows[0]?.correct === true || rows[0]?.correct === "t";
+  }
+  return ring.get(nonce)?.correct === true;
+}
+
+/**
+ * 0.1.117: the step a Hearth deal is for. No `hearthPrev`: the first question. With one: the server opens its own
+ * earlier token and checks the vault, version, step and used fields (hearthNext), that the answer was right, and
+ * (signed in) that this is the only next deal off that question (`hnext:<nonce>` on the player).
+ */
+async function hearthStep(deps: TriviaDeps, viewer: Viewer, sql: Sql | null, input: DealInput, v: HearthVersion, cats: readonly string[]): Promise<HearthDeal | null> {
+  if (!input.hearthPrev) return { v, step: 0, used: [] };
+  const prev = openToken(deps.secret, input.hearthPrev);
+  const subject = viewer.userId ? `u:${viewer.userId}` : "g";
+  if (!prev?.x || prev.s !== subject || prev.city !== input.city) return null;
+  const next = hearthNext({ pi: prev.x.pi, hv: prev.x.hv ?? 1, hs: prev.x.hs ?? 0, cat: prev.x.cat, hu: Array.isArray(prev.x.hu) ? prev.x.hu : [] }, input.poiId, v, input.cat, cats);
+  if ("refused" in next) return null;
+  if (!(await answeredRight(sql, viewer.userId != null, prev.n))) return null;
+  if (viewer.userId && sql) {
+    const claimed = await sql<{ op_key: string }>`
+      insert into wallet_ledger (user_id, op_key, detail) values (${viewer.userId}, ${`hnext:${prev.n}`}, ${JSON.stringify({ pi: input.poiId, s: next.step })})
+      on conflict (user_id, op_key) do nothing returning op_key
+    `;
+    if (!claimed.length) return null;
+  }
+  return { v, step: next.step, used: next.used };
 }
 
 export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput): Promise<DealResult> {
+  // 0.1.117: a Hearth's step comes from the server's own chain, never from the client's `step`.
+  if (input.poiId.startsWith("placed-")) input = { ...input, step: undefined };
+  else if (input.hearthPrev) input = { ...input, hearthPrev: undefined };
   let recent: string[] = [];
   let sql: Sql | null = null;
   let proven: Proven = {};
@@ -260,18 +305,26 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
   // 0.1.110: a placed Hearth vault is looked up on the server (never trusted from the client): red tier, and only
   // the owner's 4 fields deal.
   let dealDeps = deps;
+  let hearth: HearthDeal | undefined;
   if (input.poiId.startsWith("placed-")) {
     if (!deps.sql) return { ok: false, reason: "unknown-lamp" };
-    const hp = await hearthLookup(sql ?? (await deps.sql()), input.city, input.poiId);
+    const hsql = sql ?? (await deps.sql());
+    const hp = await hearthLookup(hsql, input.city, input.poiId);
     if (!hp) return { ok: false, reason: "unknown-lamp" };
     const { hearthCatOk } = await import("./hearthVaults.ts");
     if (!hearthCatOk(hp.cats, input.cat)) return { ok: false, reason: "unknown-lamp" }; // not one of the owner's 4 fields (or Math's stand-in)
-    dealDeps = { ...deps, namedPoi: (c, id) => (id === hp.poi.id ? hp.poi : deps.namedPoi(c, id)) };
+    // 0.1.117: Double/Triple: which step, which fields are used, and that step's tier (green → amber → red).
+    const h = await hearthStep(deps, viewer, hsql, input, hp.v, hp.cats);
+    if (!h) return { ok: false, reason: "unknown-lamp" };
+    hearth = h;
+    const stepPoi: Poi = { ...hp.poi, tier: hearthTierAt(h.v, h.step) };
+    dealDeps = { ...deps, namedPoi: (c, id) => (id === stepPoi.id ? stepPoi : deps.namedPoi(c, id)) };
   }
-  const r = deal(dealDeps, viewer, { ...input, blank: input.poiId.startsWith("placed-") ? undefined : input.blank }, recent, proven);
+  const r = deal(dealDeps, viewer, { ...input, blank: input.poiId.startsWith("placed-") ? undefined : input.blank }, recent, proven, hearth);
   if (!r.ok) return r;
   // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
-  const spendTier = !input.spark && (input.step ?? 0) === 0 && !input.poiId.startsWith("blitz-");
+  // 0.1.117: a Hearth run spends its one key (the first question's tier) on the first deal only.
+  const spendTier = !input.spark && (hearth ? hearth.step : (input.step ?? 0)) === 0 && !input.poiId.startsWith("blitz-");
   let wallet: ServerWallet | undefined;
   if (r.ok && sql && viewer.userId && spendTier) {
     try {
@@ -297,7 +350,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
 }
 
 /** Pick, seal and shuffle one card. `recent` is the server's memory for this walker (oldest first), merged before the save's list. */
-export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent: readonly string[] = [], proven: Proven = {}): DealResult {
+export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent: readonly string[] = [], proven: Proven = {}, hearth?: HearthDeal): DealResult {
   const series = deps.series(input.poiId);
   let poi: Poi | null;
   let clearTier: Tier | null;
@@ -315,7 +368,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     clearTier = poi.tier;
   }
   if (input.spark) clearTier = null;
-  const paintRoll = clearTier != null && (!series || (input.step ?? 0) >= series.diffs.length - 1);
+  const paintRoll = clearTier != null && (!series || (input.step ?? 0) >= series.diffs.length - 1) && (!hearth || hearthLast(hearth.v, hearth.step));
   // 0.1.116 Random: the server rolls the field; the client never names it.
   const cat = input.cat === "random" ? randomCat((deps.rand ?? Math.random)(), `${poi.id}#random#${b64u(randomBytes(6))}`) : input.cat;
   const plate = deps.pick(input.city, cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
@@ -361,6 +414,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
       pi: poi.id,
       cat,
       ...(input.cat === "random" ? { rn: 1 as const } : {}),
+      ...(hearth && hearthSteps(hearth.v) > 1 ? { hv: hearth.v, hs: hearth.step, hn: hearthSteps(hearth.v), hu: hearth.used } : {}),
       ...(scout ? { sc: scout } : {}),
       ...(proven.car ? { cr: proven.car } : {}),
       ...(scout && proven.scout === scout ? { fs: 1 as const } : {}),
@@ -532,6 +586,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         step: x?.ss ?? 0,
         steps: x?.sn ?? 1,
         prevNonce: x?.pv ?? "",
+        ...(x?.hn && x.hn > 1 ? { hearth: { v: hearthVersion(x.hv), step: Math.max(0, Math.min(2, x.hs ?? 0)) } } : {}),
         streak: x?.sk ?? 0,
         loot: typeof x?.lt === "number" ? clampLoot(x.lt) : 1,
         lucky: x?.lk === 1,

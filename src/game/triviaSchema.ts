@@ -23,6 +23,8 @@ export const DealIn = z.object({
     .object({ name: z.string().min(1).max(120), kind: z.enum(KINDS), tier: z.enum(TIERS) })
     .optional(),
   step: z.number().int().min(0).max(5).optional(),
+  /** 0.1.117: a Double/Triple Hearth's next question: the previous question's token (the server reads the step from it). */
+  hearthPrev: z.string().min(10).max(2000).optional(),
   spark: z.boolean().optional(),
   windowMs: z.number().int().min(0).max(120000),
   seen: z.array(IdIn).max(SEEN_MAX),

@@ -4323,6 +4323,18 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .hearth-pin .hp-plate{ font-size:9px; line-height:13px; padding:0 5px; border-radius:3px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a99; white-space:nowrap; max-width:84px; overflow:hidden; text-overflow:ellipsis }
 .field-card.hearth-field{ border-left:4px solid var(--hf) }
 .hearth-hero{ display:grid; place-items:center; width:64px; height:72px; filter:drop-shadow(0 0 10px #ff3b3b88) }
+/* 0.1.117 Double/Triple Hearth: tier chips (done / current / locked), the run note, used fields */
+.hearth-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px }
+.hearth-chip{ display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; border:2px solid #1a1410; font:800 12px Georgia,serif; color:#e9edf4; background:#2b3139 }
+.hearth-chip.tier-green{ --tc:#36b866 } .hearth-chip.tier-amber{ --tc:#f0a52a } .hearth-chip.tier-red{ --tc:#e8443a }
+.hearth-chip.is-cur{ background:var(--tc); color:#1a1410; border-color:#fff; box-shadow:0 0 10px #fff8 }
+.hearth-chip.is-done{ background:color-mix(in srgb, var(--tc) 35%, transparent) }
+.hearth-chip.is-next{ opacity:.75 }
+.hearth-note{ color:#f2d38a }
+.field-card .hearth-plays{ display:block !important }
+.field-card.hearth-field.is-used{ opacity:.38; border-style:dashed; cursor:not-allowed }
+.plant-version .plant-chip{ display:inline-flex; align-items:center; gap:6px }
+.plant-version .plant-tiers{ font:800 11px Georgia,serif; opacity:.85 }
 /* 0.1.110: facets closer to the mock: taller bars that stand off the vault sides. */
 .hearth-pin{ width:76px }
 .hearth-pin > .hf{ width:7px !important; height:21px !important }

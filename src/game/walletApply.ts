@@ -673,6 +673,7 @@ export async function awardGrade(
     ...(typeof pay.prizeRoll === "number" ? { prizeRoll: pay.prizeRoll } : {}),
     step: pay.step,
     steps: pay.steps,
+    ...(pay.hearth ? { hearth: pay.hearth } : {}),
     prior,
     streak: pay.streak,
     loot: pay.loot,
@@ -862,7 +863,9 @@ export async function awardGrade(
   }
   // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.
   const odds = full.clearTier === "amber" ? CAN_ODDS.amber : full.clearTier === "red" ? CAN_ODDS.red : 0;
-  if (r.ok && !r.replay && r.wallet.migrated && full.correct && odds && pay.canRoll) {
+  // 0.1.117: a Double/Triple Hearth rolls its can on the last question only (like a ladder's last card).
+  const canStep = !full.hearth || full.hearth.step + 1 >= (full.hearth.v === 3 ? 3 : 2);
+  if (r.ok && !r.replay && r.wallet.migrated && full.correct && odds && pay.canRoll && canStep) {
     const can = await grantCan(sql, userId, `g:${nonce}`, odds, pay.canRoll[0], pay.canRoll[1]);
     if (can) return { ...applied(r), can };
   }
@@ -973,7 +976,7 @@ export async function placedViews(sql: Sql, city: string, viewerId: string | nul
   const me = viewerId ? (await canonicalWallet(sql, viewerId)).id : null;
   const out = [];
   for (const p of await placedIn(sql, city)) {
-    out.push({ id: placedId(p.owner), city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: await ownerName(sql, p.owner), ...(me === p.owner ? { mine: true } : {}) });
+    out.push({ id: placedId(p.owner), city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: await ownerName(sql, p.owner), ...(p.v === 2 || p.v === 3 ? { v: p.v } : {}), ...(me === p.owner ? { mine: true } : {}) });
   }
   return out;
 }
@@ -1049,7 +1052,7 @@ export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked:
  * is the one-per-player lock (primary key); the `plant` mirror row on the player follows. Never moved or removed.
  * Street snapping is checked on the client (the baked streets aren't in the server bundle).
  */
-async function plantOp(sql: Sql, sessionUserId: string, op: { city: CityId; lat: number; lng: number; name: number; cats: string[] }): Promise<ClientResult> {
+async function plantOp(sql: Sql, sessionUserId: string, op: { city: CityId; lat: number; lng: number; name: number; cats: string[]; v?: number }): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
   const city = CITIES[op.city];
   if (!city) return refused(wallet, "unknown");
@@ -1064,7 +1067,9 @@ async function plantOp(sql: Sql, sessionUserId: string, op: { city: CityId; lat:
   const others = await placedIn(sql, op.city);
   const why = plantRefusal(op, city.spawn, city.pois, others);
   if (why) return refused(wallet, why);
-  const row: PlacedVault = { owner: id, city: op.city, lat: op.lat, lng: op.lng, name: op.name, cats: op.cats as PlantCat[], at: Date.now() };
+  // 0.1.117: the version is chosen here, once (Single unless 2 or 3); it never changes.
+  const v = op.v === 2 || op.v === 3 ? op.v : undefined;
+  const row: PlacedVault = { owner: id, city: op.city, lat: op.lat, lng: op.lng, name: op.name, cats: op.cats as PlantCat[], at: Date.now(), ...(v ? { v } : {}) };
   const claim = await sql<{ op_key: string }>`
     insert into wallet_ledger (user_id, op_key, detail) values (${PLACED_USER}, ${placedKey(id)}, ${JSON.stringify(row)})
     on conflict (user_id, op_key) do nothing returning op_key
@@ -1113,6 +1118,9 @@ export async function refundDealt(sql: Sql, userId: string, nonce: string, tier:
   if (!wallet.migrated) return { ...applied({ ok: true, replay: false, wallet }), skipped: true };
   const spent = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${"deal:" + nonce} limit 1`;
   if (!spent.length) return { ...applied({ ok: true, replay: false, wallet }), skipped: true };
+  // 0.1.117: a card that was already answered is not a walk-away (a Double/Triple Hearth's first key stays spent).
+  const graded = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${"grade:" + nonce} limit 1`;
+  if (graded.length) return { ...applied({ ok: true, replay: false, wallet }), skipped: true };
   const r = await mutateWallet(sql, userId, `refund:${nonce}`, (w) => refundMatchOp(w, tier));
   return applied(r);
 }
@@ -1174,7 +1182,7 @@ export type ClientOp =
   /** 0.1.106 worn picks on the account: city print on the coat, cloth, car ("cab" = the city cab, null = best owned), market light. */
   | { kind: "wear"; slot: WearSlot; id: string | null }
   | { kind: "own"; poi: string; free?: boolean }
-  | { kind: "plant"; city: CityId; lat: number; lng: number; name: number; cats: string[] }
+  | { kind: "plant"; city: CityId; lat: number; lng: number; name: number; cats: string[]; v?: 1 | 2 | 3 }
   | { kind: "hurry"; min: number }
   /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
   | { kind: "loop"; ride: boolean }

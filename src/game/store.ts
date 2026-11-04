@@ -1,4 +1,5 @@
-import { hearthPois } from "./hearthVaults";
+import { hearthOf, hearthPois } from "./hearthVaults";
+import { HEARTH_VERSION_NAME, hearthBoost, hearthLast, hearthSteps, hearthTierAt, hearthVersion, slotUsed } from "./hearthMulti";
 import { create } from "zustand";
 import { DRIVE_PING_MS, MAGNET_DAY_CAP, bestVaultMs, carCool } from "./carPerks";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
@@ -152,6 +153,11 @@ type OpenVault = {
   dealtAt?: number;
   /** 0.0.57: the match taken from the pocket when the card was dealt (refunded on a walk-away from a lamp). */
   held?: Tier;
+  /**
+   * 0.1.117 Double/Triple Hearth run: this question's step, the fields already used, and the last question's token
+   * (the server reads the step from it). Single Hearths and other vaults leave this out.
+   */
+  hearth?: { step: number; used: string[]; prev?: string };
 };
 
 type FireworksShow = { kind: "mini" | "grand"; id: number };
@@ -910,6 +916,7 @@ async function dealCard(
   cat: FieldPick,
   step: number,
   prevToken?: string,
+  hearthPrev?: string,
 ): Promise<{ card: DealtCard; token: string; windowMs: number; wallet?: ServerWallet } | { need: true } | { lockedMs: number } | null> {
   foldSavedSeen(set, get);
   const st = get();
@@ -932,6 +939,7 @@ async function dealCard(
     poiId,
     blank: dealBlank,
     step: series ? step : undefined,
+    ...(hearthPrev ? { hearthPrev } : {}),
     spark: spark || undefined,
     windowMs,
     seen: (st.seenIds ?? []).filter((x) => SEEN_ID.test(x)).slice(-SEEN_MAX),
@@ -1607,8 +1615,13 @@ export const useGame = create<GameState>((set, get) => ({
     if (!ov || ov.question || ov.pending) return;
     const series = seriesOf(ov.poiId);
     // 0.0.57: the tier this card costs (none for a spark). Re-checked here and taken atomically when the card lands.
-    const cost: Tier | null = ov.spark ? null : series ? series.cost : (anyPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
-    if (!ov.spark && !cost) return;
+    const lampTier: Tier | null = ov.spark ? null : series ? series.cost : (anyPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
+    if (!ov.spark && !lampTier) return;
+    // 0.1.117: a Double/Triple Hearth spends its one key on the first question; later picks cost nothing and can't reuse a field.
+    const hv = series ? null : hearthOf(ov.poiId);
+    const run = hv && hearthVersion(hv.v) > 1 ? (ov.hearth ?? { step: 0, used: [] }) : undefined;
+    if (run && hv && slotUsed(hv.cats, run.used, cat)) return;
+    const cost: Tier | null = run && run.step > 0 ? null : lampTier;
     if (cost && !hasMatch(get().keys, cost)) {
       flashToast(set, get, `Need a ${TIER_LABEL[cost]} key.`, 2400);
       set({ openVault: null });
@@ -1616,10 +1629,16 @@ export const useGame = create<GameState>((set, get) => ({
     }
     sfx.ui();
     set({ openVault: { ...ov, category: cat, pending: "deal" } });
-    void dealCard(set, get, ov.poiId, cat, 0).then((dealt) => {
+    void dealCard(set, get, ov.poiId, cat, 0, undefined, run?.prev).then((dealt) => {
       const cur = get().openVault;
       if (!cur || cur.poiId !== ov.poiId || cur.pending !== "deal") return;
       if (!dealt) {
+        // 0.1.117: a later Hearth question that won't deal ends the run (the server already counted the last one).
+        if (run && run.step > 0) {
+          set({ openVault: null });
+          flashToast(set, get, `The Hearth run ends here. ${DEAL_FAIL}`, 3200);
+          return;
+        }
         set({ openVault: { ...cur, category: null, pending: undefined } });
         flashToast(set, get, DEAL_FAIL, 3200);
         return;
@@ -1666,6 +1685,7 @@ export const useGame = create<GameState>((set, get) => ({
           spark,
           dealtAt: Date.now(),
           held: cost ?? undefined,
+          ...(run ? { hearth: run } : {}),
         },
         // 0.0.58: a card counts as seen the moment it's dealt (a reload or a second tab mid-card can't re-deal it).
         ...markSeen(get().asked, get().seenIds, dealt.card),
@@ -1713,8 +1733,12 @@ export const useGame = create<GameState>((set, get) => ({
     if (!ov?.question) return;
     const city = CITIES[get().cityId];
     const series = seriesOf(ov.poiId);
-    const poi = series ? seriesPoi(series) : anyPois(city, get().blanks).find((p) => p.id === ov.poiId);
-    if (!poi) return;
+    const poi0 = series ? seriesPoi(series) : anyPois(city, get().blanks).find((p) => p.id === ov.poiId);
+    if (!poi0) return;
+    // 0.1.117: a Double/Triple Hearth question plays at its step's tier (green → amber → red).
+    const hRun = ov.hearth;
+    const hV = hRun ? hearthVersion(hearthOf(ov.poiId)?.v) : 1;
+    const poi = hRun && hV > 1 ? { ...poi0, tier: hearthTierAt(hV, hRun.step) } : poi0;
     // 0.0.90: the day's first graded answer (right or wrong) claims the morning crate.
     if (autoCrateDue(get().lastCrateDay, today())) get().claimCrate(true);
     // 0.0.53: right/wrong and the answer time come from the server's grade (gradeTrivia), not the client.
@@ -2029,7 +2053,46 @@ export const useGame = create<GameState>((set, get) => ({
     }
 
     // 0.0.57: the match left the pocket when the card was dealt (`held`); never take a second one here.
-    const keys = ov.held ? cleanKeys(get().keys) : (spendMatch(get().keys, poi.tier) ?? cleanKeys(get().keys));
+    // 0.1.117: a later Hearth question holds no key (the run spent one on question 1), so nothing is taken here either.
+    const keys = ov.held ? cleanKeys(get().keys) : hRun && hRun.step > 0 ? cleanKeys(get().keys) : (spendMatch(get().keys, poi.tier) ?? cleanKeys(get().keys));
+    // 0.1.117: a right answer before a Double/Triple Hearth's last question pays its tier coin (boosted) and opens the next pick.
+    if (correct && hRun && hV > 1 && !hearthLast(hV, hRun.step) && ov.category) {
+      const g: LootDrop["grade"] = elapsed <= 3000 ? "perfect" : elapsed <= 10000 ? "great" : "good";
+      const m = g === "perfect" ? 1 : g === "great" ? 0.7 : 0.4;
+      const bumped = bumpStreak(get);
+      const coin = Math.round(
+        rewardPoints(poi.tier, { mult: m, bonus: 1 + Math.min(0.4, bumped.streak * 0.05), diffMult: DIFF_MULT[ov.question.diff ?? 2], loot: wornPerk(get().scout).loot ?? 1 }) * hearthBoost(hV, hRun.step),
+      );
+      const boost = rollBoosts(get, true, elapsed, ov.category);
+      const paid = payBoosts(keys, get().points + coin, boost);
+      if (g === "perfect") sfx.perfect();
+      else sfx.correct();
+      const next = hRun.step + 1;
+      set({
+        keys: paid.keys,
+        points: paid.points,
+        ...bumped,
+        charmDay: paid.charmDay,
+        charmTopics: paid.charmTopics,
+        asked,
+        seenIds,
+        ...logged,
+        loot: null,
+        miss: null,
+        openVault: {
+          poiId: ov.poiId,
+          startedAt: now,
+          question: null,
+          category: null,
+          deadline: now,
+          hearth: { step: next, used: [...hRun.used, ov.category], prev: ov.token },
+        },
+        toast: `Right, +${coin} coin. Pick question ${next + 1} of ${hearthSteps(hV)}.`,
+        quests: answered(get, true, g === "perfect"),
+      });
+      scheduleSave(get);
+      return;
+    }
     if (!correct) {
       sfx.wrong();
       const boost = rollBoosts(get, false, elapsed, ov.category);
@@ -2068,12 +2131,14 @@ export const useGame = create<GameState>((set, get) => ({
     const bonus = 1 + Math.min(0.4, streak * 0.05);
     const diff = ov.question.diff ?? 2;
     const tip = clothCoin(get().quests.worn, get().cityId, poi.tier);
-    const lampCoin = rewardPoints(poi.tier, {
-      mult,
-      bonus,
-      diffMult: DIFF_MULT[diff],
-      loot: wornPerk(get().scout).loot ?? 1,
-    });
+    const lampCoin = Math.round(
+      rewardPoints(poi.tier, {
+        mult,
+        bonus,
+        diffMult: DIFF_MULT[diff],
+        loot: wornPerk(get().scout).loot ?? 1,
+      }) * (hRun && hV > 1 ? hearthBoost(hV, hRun.step) : 1),
+    );
     const lampMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
     const lampMult = onMarket(lampMarket, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }) ? MARKET_MULT : 1;
     // 0.1.82: brass, ink, vellum and press stock are cut (nothing spent them); only paint still drops.
@@ -2239,6 +2304,14 @@ export const useGame = create<GameState>((set, get) => ({
       window.setTimeout(() => {
         if (get().toast?.includes(series.name)) set({ toast: null });
       }, 2000);
+      return;
+    }
+    // 0.1.117: walking away mid-way through a Double/Triple Hearth ends the run; its key was spent on question 1.
+    if (ov?.hearth && ov.hearth.step > 0) {
+      const name = HEARTH_VERSION_NAME[hearthVersion(hearthOf(ov.poiId)?.v)];
+      set({ openVault: null });
+      flashToast(set, get, `You left the ${name} Hearth, so the run ends here.`, 2400);
+      scheduleSave(get);
       return;
     }
     // A lamp walked away from before answering costs nothing: the held match goes back in the pocket.

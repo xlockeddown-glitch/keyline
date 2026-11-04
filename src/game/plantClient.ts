@@ -17,11 +17,13 @@ export type PlantState = {
   ghost: Ghost | null;
   name: number;
   cats: string[];
+  /** 0.1.117: the version to place: 1 Single, 2 Double, 3 Triple. */
+  v: 1 | 2 | 3;
   busy: boolean;
   note: string | null;
 };
 
-let state: PlantState = { city: null, placed: [], me: { unlocked: false, mine: null }, placing: false, ghost: null, name: 0, cats: [], busy: false, note: null };
+let state: PlantState = { city: null, placed: [], me: { unlocked: false, mine: null }, placing: false, ghost: null, name: 0, cats: [], v: 1, busy: false, note: null };
 const subs = new Set<() => void>();
 export function setPlant(p: Partial<PlantState>) {
   state = { ...state, ...p };
@@ -67,7 +69,7 @@ export async function placeHearth(): Promise<void> {
   if (!g || !ghostOk(g) || s.cats.length !== 4) return;
   setPlant({ busy: true, note: null });
   const city = useGame.getState().cityId;
-  const r = await commitWallet({ kind: "plant", city, lat: g.lat, lng: g.lng, name: s.name, cats: s.cats });
+  const r = await commitWallet({ kind: "plant", city, lat: g.lat, lng: g.lng, name: s.name, cats: s.cats, ...(s.v > 1 ? { v: s.v } : {}) });
   if (r?.view) useGame.getState().adoptWallet(r.view);
   await refreshPlaced(city);
   if (r?.ok) return setPlant({ busy: false, placing: false, ghost: null, note: `${PLANT_NAMES[s.name]} is placed, for good.` });
@@ -75,6 +77,7 @@ export async function placeHearth(): Promise<void> {
     close: "Too close to another vault. Walk 40 m on.",
     dense: "This block has enough vaults. Try another street.",
     far: "That's outside the city's streets.",
+    version: "Pick Single, Double or Triple.",
     locked: "Unlock this city first.",
     placed: "You've already placed your Hearth vault.",
     "no-unlock": "Clear The Stack perfectly to unlock it.",

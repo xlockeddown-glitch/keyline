@@ -24,6 +24,7 @@ import { payFriend } from "./friendTicket.ts";
 import { betterOutcome, bonusDue, IDLE, RIDE_BONUS_WHITE, rideRamp, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
 import { PRIZE_COIN, PRIZE_TAG, prizeTier } from "./ladderPrize.ts";
+import { hearthBoost, hearthBoostLabel, hearthLast, type HearthVersion } from "./hearthMulti.ts";
 import { FARE_MAX_MS, FARES_CAP, hurriedLoot, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
 /**
@@ -754,6 +755,8 @@ export function clothOp(w: WalletState, id: string, proof?: { meters?: number; v
 }
 
 export type GradePay = {
+  /** 0.1.117 Double/Triple Hearth: the version and step the server sealed (coin boost; the key back only on the last). */
+  hearth?: { v: HearthVersion; step: number };
   /** 0.1.45: favorite categories the server verified at deal time (owned coat, seated owned car). */
   favs?: import("./types").FieldPick[];
   /** 0.1.116: the deal was a Random pick (sealed by the server at deal time). */
@@ -901,13 +904,15 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
 
   // 0.1.45: favorite categories and the category of the day (+15% / +25%, added, cap +40%), before the market.
   const cat = catBoost(p.random ? "random" : p.topic, p.favs ?? [], p.dealtAt, p.poiId.startsWith("placed-"));
+  // 0.1.117: a Double/Triple Hearth's later questions pay more coin (+25% / +50%), on top of the tier pay.
+  const hearthX = p.hearth ? hearthBoost(p.hearth.v, p.hearth.step) : 1;
   const lampCoin = Math.round(
     rewardPoints(p.poiTier, {
       mult: p.mult,
       bonus,
       diffMult: DIFF_MULT[p.diff] ?? 1,
       loot: p.loot,
-    }) * cat.x,
+    }) * cat.x * hearthX,
   );
   const tip = clothCoin(p.cloth, p.city, p.poiTier);
   const baseKeys: Partial<Record<Tier, number>> = {};
@@ -918,7 +923,9 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   pay.coin += owlExtraCoin(p.scout ?? null, lampMult, lampCoin, lightOf(p.light));
   const lit = lampLit(w.cities, p.poiTier);
   // 0.0.90: a single-question lamp answered right is a perfect lamp: match back, same tier (not violet).
-  const back = perfectBack(p.poiTier, sumKeys(w.keys, pay.keys));
+  // 0.1.117: in a Double/Triple Hearth only the last question's right answer pays the tier key (the prize).
+  const prizeStep = !p.hearth || hearthLast(p.hearth.v, p.hearth.step);
+  const back = prizeStep ? perfectBack(p.poiTier, sumKeys(w.keys, pay.keys)) : { match: 0, coin: 0, tier: p.poiTier, up: false };
   const lKeys = { ...pay.keys };
   if (back.match) lKeys[back.tier] = (lKeys[back.tier] ?? 0) + back.match;
   // 0.0.96 Raccoon (Rummager): a server-rolled blue match on top (overflow coin when the blue pocket is full).
@@ -934,7 +941,9 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const fresh = p.freshDistrict && lampMult === 1 ? freshDistrictCoin(lampCoin) : 0;
   // 0.1.47 Panda (Bamboo luck): the lamp coin (after category boosts, before the market) is paid once more.
   const bamboo = p.doubleUp && p.scout && SCOUTS[p.scout]?.perk.doubleUp ? lampCoin : 0;
-  const catTagged = cat.labels.length && p.correct ? { ...boost, labels: [...boost.labels, ...cat.labels] } : boost;
+  const hearthLine = p.hearth ? hearthBoostLabel(p.hearth.v, p.hearth.step) : null;
+  const catLabels = hearthLine ? [...cat.labels, hearthLine] : cat.labels;
+  const catTagged = catLabels.length && p.correct ? { ...boost, labels: [...boost.labels, ...catLabels] } : boost;
   const freshTagged = fresh ? { ...catTagged, labels: [...catTagged.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : catTagged;
   const tagged = bamboo ? { ...freshTagged, labels: [...freshTagged.labels, `${BAMBOO_TAG} +${bamboo}`] } : freshTagged;
   return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo, lKeys, tagged, lit.u);

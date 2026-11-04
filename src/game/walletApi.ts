@@ -92,6 +92,8 @@ const Op = z.discriminatedUnion("kind", [
     lng: z.number().finite(),
     name: z.number().int().min(0).max(99),
     cats: z.array(z.string().min(1).max(20)).length(4),
+    /** 0.1.117: Single (1), Double (2) or Triple (3); absent is Single. */
+    v: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   }),
   z.object({ kind: z.literal("hurry"), min: z.number().int().min(1).max(5) }),
   // 0.1.70: the Loop's arrive op was missing here (0.1.58), so signed-in Arrive/Loop never reached the server.
