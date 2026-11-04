@@ -9,7 +9,6 @@ import { DIFF_LABEL } from "@/game/triviaMeta";
 import { streakPrize } from "@/game/goals";
 import type { LootDrop } from "@/game/types";
 import { ItemIcon, QtyChip } from "./ItemIcon";
-import { TIER_LABEL } from "@/game/data";
 
 export function LootToast() {
   const loot = useGame((s) => s.loot);
@@ -220,9 +219,6 @@ function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
   for (const c of [loot.paint, loot.extraPaint]) if (c) list.push({ key: c.id, title: c.name, node: <i className={`emb-paint paint-found is-${c.id.slice(6)}`} />, amt: "+1" });
   const hot = streakPrize(streak) ? streak : 0;
   const [showBoosts, setShowBoosts] = useState(false);
-  // 0.1.36: a perfect ladder's prize (server boost line "Perfect ladder: <tier> key +<coin>"; 0.1.102 renamed "match" to "key", old rows still say match).
-  const prizeM = loot.boosts?.map((b) => /^Perfect ladder: (white|blue|green|amber|red|violet) (?:key|match) \+(\d+)$/.exec(b)).find(Boolean);
-  const prize = prizeM ? { tier: prizeM[1] as Tier, coin: Number(prizeM[2]) } : null;
   return (
     <div className={`emb-wrap is-${loot.grade}`} aria-label={`${loot.grade}, ${DIFF_LABEL[loot.diff] ?? ""}, +${loot.points} coin`}>
       {loot.grade === "perfect" ? (
@@ -233,11 +229,6 @@ function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
         </span>
       ) : null}
       <p className="emb-rating font-display" data-testid="loot-rating">{RATING[loot.grade]}</p>
-      {prize ? (
-        <p className="emb-prize" data-testid="ladder-prize">
-          <ItemIcon item={prize.tier} size={22} /> Ladder prize: {TIER_LABEL[prize.tier]} key · +{prize.coin} coin
-        </p>
-      ) : null}
       <div className="emb-badges">
         {loot.market ? (
           <span className="emb-badge is-market" data-testid="market-reward" title={`Night market ×${loot.market.mult} · ${loot.market.street}`}>

@@ -113,9 +113,11 @@ test("weekly progress, including the new weekly quests", () => {
   for (let i = 0; i < 24; i++) ev.push(lamp(++t, "green"));
   ev.push(lamp(++t, "white"), lamp(++t, "blue"), lamp(++t, "amber"));
   assert.deepEqual([prog("w-lamps", ev).have, prog("w-lamps", ev).done], [25, true]);
-  assert.equal(prog("w-ladder", ev).have, 4);
+  // 0.1.119: w-ladder is Hearth climber now: one cleared Double or Triple Hearth, lamp colors no longer count.
   ev.push(lamp(++t, "red"));
-  assert.equal(prog("w-ladder", ev).done, true);
+  assert.deepEqual([prog("w-ladder", ev).have, prog("w-ladder", ev).done], [0, false]);
+  assert.equal(prog("w-ladder", [...ev, { k: "hearth", at: ++t }]).done, true);
+  assert.equal(questDef("w-ladder")?.title, "Hearth climber");
   assert.equal(prog("w-cache", [1, 2, 3, 4].map((at) => ({ k: "cache" as const, at }))).done, true);
   assert.equal(prog("w-house", ["d1", "d1", "d2"].map((day, at) => ({ k: "hook" as const, at, day }))).have, 2); // two cities one day = one day
   assert.equal(prog("w-street", Array.from({ length: 12 }, (_, at) => ({ k: "street" as const, at }))).done, true);

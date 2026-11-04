@@ -10,7 +10,7 @@ import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
 import type { PaintId } from "./ingredients.ts";
 import type { CityId, Poi, PoiKind, ScoutId, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward, ServerWallet } from "./triviaSchema";
-import { CLIMB_ID, RUN_ID, SCOUTS, STACK_ID } from "./data.ts";
+import { SCOUTS } from "./data.ts";
 import { hearthLast, hearthNext, hearthSteps, hearthTierAt, hearthVersion, type HearthVersion } from "./hearthMulti.ts";
 import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
 import { awardGrade, carsOf, noteBlitzCard, ownedOf, spendDealt } from "./walletApply.ts";
@@ -23,7 +23,7 @@ export type { DealInput, DealResult, GradeInput, GradeResult, Grade, PublicCard 
  * server until the card is graded.
  *
  * - **Deal**: the server picks the card from its own bank (same picker as before: anti-repeat memory from the
- *   save's seen ids, tier/rarity ladder, place topics and door quizzes, the Run/Stack difficulty steps),
+ *   save's seen ids, tier/rarity ladder, place topics and door quizzes),
  *   shuffles the four choices and returns them with a *public* card id and a signed pending-card token.
  * - **Public id**: `c` + sha256(prompt + sorted choices). The old id is fnv1a(prompt + answer), which a client
  *   holding the four choices could brute-force back to the answer, so the raw id stays on the server. Sorting
@@ -88,9 +88,6 @@ type TokenBody = {
     la: number;
     ln: number;
     pv: string;
-    sy: 0 | 1 | 2 | 3;
-    ss: number;
-    sn: number;
     pt: Tier;
     pi: string;
     cat: string;
@@ -120,8 +117,6 @@ export type TriviaDeps = {
   card: (id: string) => TriviaQ | null;
   /** A named lamp of this city, or null. */
   namedPoi: (city: CityId, poiId: string) => Poi | null;
-  /** The Run / The Stack, by id. */
-  series: (poiId: string) => { poi: Poi; cost: Tier; diffs: readonly TriviaDiff[] } | null;
   /** Signed-in writes; absent (or throwing) leaves the grade intact and credits nothing. */
   sql?: () => Promise<Sql>;
   rand?: () => number;
@@ -294,7 +289,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
     }
   }
   // 0.1.107: a vault locked out after a wrong answer deals nothing until the ledger's unlock time.
-  if (deps.sql && viewer.userId && lockable(input.poiId, deps.series(input.poiId) != null) && (input.step ?? 0) === 0) {
+  if (deps.sql && viewer.userId && lockable(input.poiId)) {
     try {
       const leftMs = await lockoutLeftFor(sql ?? (await deps.sql()), viewer.userId, input.poiId, deps.now());
       if (leftMs > 0) return { ok: false, reason: "locked-out", leftMs };
@@ -324,7 +319,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
   if (!r.ok) return r;
   // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
   // 0.1.117: a Hearth run spends its one key (the first question's tier) on the first deal only.
-  const spendTier = !input.spark && (hearth ? hearth.step : (input.step ?? 0)) === 0 && !input.poiId.startsWith("blitz-");
+  const spendTier = !input.spark && (hearth ? hearth.step : 0) === 0 && !input.poiId.startsWith("blitz-");
   let wallet: ServerWallet | undefined;
   if (r.ok && sql && viewer.userId && spendTier) {
     try {
@@ -351,31 +346,21 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
 
 /** Pick, seal and shuffle one card. `recent` is the server's memory for this walker (oldest first), merged before the save's list. */
 export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent: readonly string[] = [], proven: Proven = {}, hearth?: HearthDeal): DealResult {
-  const series = deps.series(input.poiId);
-  let poi: Poi | null;
-  let clearTier: Tier | null;
-  let want: TriviaDiff | undefined;
-  if (series) {
-    poi = series.poi;
-    clearTier = series.cost;
-    want = series.diffs[Math.min(input.step ?? 0, series.diffs.length - 1)];
-  } else {
-    poi = deps.namedPoi(input.city, input.poiId);
-    if (!poi && input.blank) {
-      poi = { id: input.poiId, name: input.blank.name, kind: input.blank.kind as PoiKind, tier: input.blank.tier, lat: 0, lng: 0, lore: "" };
-    }
-    if (!poi) return { ok: false, reason: "unknown-lamp" };
-    clearTier = poi.tier;
+  let poi: Poi | null = deps.namedPoi(input.city, input.poiId);
+  if (!poi && input.blank) {
+    poi = { id: input.poiId, name: input.blank.name, kind: input.blank.kind as PoiKind, tier: input.blank.tier, lat: 0, lng: 0, lore: "" };
   }
+  if (!poi) return { ok: false, reason: "unknown-lamp" };
+  let clearTier: Tier | null = poi.tier;
   if (input.spark) clearTier = null;
-  const paintRoll = clearTier != null && (!series || (input.step ?? 0) >= series.diffs.length - 1) && (!hearth || hearthLast(hearth.v, hearth.step));
+  const paintRoll = clearTier != null && (!hearth || hearthLast(hearth.v, hearth.step));
   // 0.1.116 Random: the server rolls the field; the client never names it.
   const cat = input.cat === "random" ? randomCat((deps.rand ?? Math.random)(), `${poi.id}#random#${b64u(randomBytes(6))}`) : input.cat;
-  const plate = deps.pick(input.city, cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
+  const plate = deps.pick(input.city, cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]));
   const pub = publicCardId(plate);
   const windowMs = clampWindow(input.windowMs);
   const scout = scoutOf(input.pay?.scout);
-  const named = !series ? deps.namedPoi(input.city, input.poiId) : null;
+  const named = deps.namedPoi(input.city, input.poiId);
   const pay = input.pay;
   let pv = "";
   if (pay?.prevToken) {
@@ -407,9 +392,6 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
       la: named ? named.lat : coord(pay?.lat, 90),
       ln: named ? named.lng : coord(pay?.lng, 180),
       pv,
-      sy: !series ? 0 : input.poiId === STACK_ID ? 2 : input.poiId === CLIMB_ID ? 3 : input.poiId === RUN_ID ? 1 : 1,
-      ss: Math.min(5, Math.max(0, input.step ?? 0)),
-      sn: series?.diffs.length ?? 1,
       pt: poi.tier,
       pi: poi.id,
       cat,
@@ -422,7 +404,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   });
   // 0.0.96 Fox: the server strikes one wrong option on red/violet lamps (never the answer).
   // 0.1.51 Model 3 Autopilot: 1 in 10 lamp questions (rolled from the nonce) lose one wrong option, never on top of the Fox's.
-  const struck = series || input.spark
+  const struck = input.spark
     ? null
     : (strikeOption(scout, plate.rarity, plate.choices, plate.answer, (deps.rand ?? Math.random)()) ?? autopilotStrike(proven.car ?? null, nonce, plate.choices, plate.answer));
   return {
@@ -551,7 +533,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   // 0.1.107: a wrong answer with a key at a street or placed vault locks it (3 min I-III, 5 min IV-VI).
   const lockPoi = t.x?.pi ?? "";
   const lockTier = (t.x?.pt ?? t.k ?? null) as Tier | null;
-  const lockMs = !correct && t.k != null && lockTier && !t.x?.sy && lockable(lockPoi, false) ? lockoutMs(lockTier) : 0;
+  const lockMs = !correct && t.k != null && lockTier && lockable(lockPoi) ? lockoutMs(lockTier) : 0;
   if (lockMs && signedIn && !replay && deps.sql) {
     try {
       await noteLockout(await deps.sql(), viewer.userId!, lockPoi, now + lockMs);
@@ -581,10 +563,6 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         poiId: x?.pi ?? "",
         lat: x?.la ?? 0,
         lng: x?.ln ?? 0,
-        series: x?.sy === 2 ? "stack" : x?.sy === 3 ? "climb" : x?.sy === 1 ? "run" : null,
-        prizeRoll: rand(),
-        step: x?.ss ?? 0,
-        steps: x?.sn ?? 1,
         prevNonce: x?.pv ?? "",
         ...(x?.hn && x.hn > 1 ? { hearth: { v: hearthVersion(x.hv), step: Math.max(0, Math.min(2, x.hs ?? 0)) } } : {}),
         streak: x?.sk ?? 0,

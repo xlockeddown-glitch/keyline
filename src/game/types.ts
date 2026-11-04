@@ -181,12 +181,6 @@ export type MissFlash = {
   lockMs?: number;
 };
 
-export type StreetRun = {
-  lat: number;
-  lng: number;
-  readyAt: number;
-};
-
 export type Screen = "title" | "cities" | "play" | "loop" | "flight";
 
 export type Journey = {

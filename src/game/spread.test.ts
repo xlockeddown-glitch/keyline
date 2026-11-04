@@ -79,7 +79,7 @@ test("district squares and the daily cap", () => {
 function pay(over: Partial<GradePay> = {}): GradePay {
   return {
     correct: true, elapsedMs: 3000, mult: 1, city: "austin", diff: 2, clearTier: "blue", poiTier: "blue", poiId: "ut-tower",
-    lat: 30.28, lng: -97.74, series: null, step: 0, steps: 1, prior: [], streak: 0, loot: 1, lucky: false, cloth: null,
+    lat: 30.28, lng: -97.74, streak: 0, loot: 1, lucky: false, cloth: null,
     charmDay: "", charmTopics: [], topic: null, dealtAt: Date.UTC(2026, 9, 16, 18, 20), luckyHit: false, perfectBlue: false, ...over,
   };
 }

@@ -29,13 +29,12 @@ export function prevTier(tier: Tier): Tier | null {
 
 export function rewardPoints(
   tier: Tier,
-  opts: { mult: number; bonus: number; diffMult?: number; loot?: number; series?: boolean },
+  opts: { mult: number; bonus: number; diffMult?: number; loot?: number },
 ): number {
   const base = TIER_VALUE[tier];
   const diff = opts.diffMult ?? 1;
   const loot = opts.loot ?? 1;
-  const series = opts.series ? 1.15 : 1;
-  return Math.round(base * opts.mult * opts.bonus * diff * loot * series);
+  return Math.round(base * opts.mult * opts.bonus * diff * loot);
 }
 
 /** 4 lower → 1 higher. Tax of one lower match vs the 3× table. */

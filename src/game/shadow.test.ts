@@ -156,7 +156,6 @@ function deps(sql: Sql, roll: () => number): TriviaDeps {
     pick: () => BANK[0]!,
     card: (id) => all.get(id) ?? null,
     namedPoi: (_c, id) => (id === LAMP.id ? LAMP : null),
-    series: (id) => (id === "the-run" ? { poi: { ...LAMP, id: "the-run", tier: "blue" }, cost: "blue", diffs: [1, 2, 3] } : null),
     sql: async () => sql,
     roll,
   };
@@ -185,12 +184,8 @@ test("the server rolls a signed-in clear, a guest stays local, and only the last
 
   const spark = deal(d, { userId: "ann" }, dealIn({ spark: true }));
   assert.ok(spark.ok && spark.ok && openToken("test-secret", spark.token)!.pr === 0);
-  const mid = deal(d, { userId: "ann" }, dealIn({ poiId: "the-run", step: 0 }));
-  const last = deal(d, { userId: "ann" }, dealIn({ poiId: "the-run", step: 2 }));
-  assert.ok(mid.ok && last.ok);
-  if (!mid.ok || !last.ok) return;
-  assert.equal(openToken("test-secret", mid.token)!.pr, 0);
-  assert.equal(openToken("test-secret", last.token)!.pr, 1);
+  // 0.1.119: the ladders are gone; their old pseudo-vault id deals nothing.
+  assert.deepEqual(deal(d, { userId: "ann" }, dealIn({ poiId: "__run__", step: 2 })), { ok: false, reason: "unknown-lamp" });
 
   const lamp = deal(d, { userId: "ann" }, dealIn({ poiId: "green-corner", blank: { name: "Green corner", kind: "landmark", tier: "green" } }));
   assert.ok(lamp.ok);

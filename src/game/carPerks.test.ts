@@ -10,7 +10,7 @@ import { sealPlate } from "./rarity.ts";
 import type { Poi, TriviaCat, TriviaQ } from "./types.ts";
 
 const T0 = Date.UTC(2026, 9, 16, 18);
-const pay = (over: Partial<GradePay> = {}): GradePay => ({ correct: true, elapsedMs: 3000, mult: 1, city: "austin", diff: 2, clearTier: "blue", poiTier: "blue", poiId: "ut-tower", lat: 30.28, lng: -97.74, series: null, step: 0, steps: 1, prior: [], streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic: null, dealtAt: T0, luckyHit: false, perfectBlue: false, ...over });
+const pay = (over: Partial<GradePay> = {}): GradePay => ({ correct: true, elapsedMs: 3000, mult: 1, city: "austin", diff: 2, clearTier: "blue", poiTier: "blue", poiId: "ut-tower", lat: 30.28, lng: -97.74, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic: null, dealtAt: T0, luckyHit: false, perfectBlue: false, ...over });
 const coin = (p: GradePay) => {
   const g = gradeGrant(emptyWallet(), p);
   assert.ok(g.ok);
@@ -56,7 +56,7 @@ test("category of the day: fixed per Chicago date; the boundary is Chicago midni
   assert.equal(cotdAt(Date.UTC(2026, 9, 26, 5, 30)), cotdOf("2026-10-26"), "12:30 AM CDT is the 26th");
 });
 
-test("boost math: favorite +15%, day +25%, added, capped at +40%; lamps only, never on a miss or a series card", () => {
+test("boost math: favorite +15%, day +25%, added, capped at +40%; lamps only, never on a miss", () => {
   const day = cotdAt(T0);
   assert.equal(catBoost(day, [], T0).x, 1.25);
   const fav = other([day]);
@@ -82,8 +82,6 @@ test("boost math: favorite +15%, day +25%, added, capped at +40%; lamps only, ne
   assert.equal(coin(pay({ topic: fav, favs: [fav] })), Math.round(base * 1.15));
   assert.equal(coin(pay({ topic: day, favs: [day] })), Math.round(base * 1.4));
   assert.equal(coin(pay({ topic: day, correct: false })), 0, "a miss pays nothing");
-  const series = (t: TriviaCat | null) => coin(pay({ topic: t, series: "run", step: 2, steps: 3, prior: ["perfect", "perfect"] }));
-  assert.equal(series(day), series(other([day])), "series cards are not boosted");
   // Matches never change.
   const g1 = gradeGrant(emptyWallet(), pay({ topic: day, favs: [day] }));
   const g0 = gradeGrant(emptyWallet(), pay({ topic: other([day]) }));
@@ -143,8 +141,7 @@ test("the server, not the client, decides which car and coat count (a claimed ca
     pick: () => CARD,
     card: (id) => (id === CARD.id || id === publicCardId(CARD) ? CARD : null),
     namedPoi: (_c, id) => (id === LAMP.id ? LAMP : null),
-    series: () => null,
-    sql: async () => sql,
+        sql: async () => sql,
     rand: () => 0.5,
   };
   const input = (car: string, scout: string) =>

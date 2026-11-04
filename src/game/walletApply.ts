@@ -19,7 +19,7 @@ import { PASS_GIFT_KEY, giftPass } from "./cityPass.ts";
 import type { Sql } from "../lib/db.ts";
 import { groupIds } from "./playerLinks.ts";
 import { STOCK_COIN_KEY, stockCoin, stockNote } from "./stockCoin.ts";
-import { mutateWallet, canonicalWallet, priorGrades, type MutateResult } from "./walletSql.ts";
+import { mutateWallet, canonicalWallet, type MutateResult } from "./walletSql.ts";
 import {
   acceptNonces,
   applyDelta,
@@ -54,7 +54,7 @@ import {
   type WalletState,
 } from "./wallet.ts";
 import { CITIES, SCOUTS, type KioskId } from "./data.ts";
-import { PLACED_USER, PLANT_KEY, PLANT_OK_KEY, findPerfectStack, parsePlaced, perfectStackClear, placedKey, plantRefusal, type PlacedVault, type PlantCat } from "./placedLantern.ts";
+import { PLACED_USER, PLANT_KEY, PLANT_OK_KEY, PLANT_RED_NEED, findPerfectStack, parsePlaced, placedKey, plantRefusal, type PlacedVault, type PlantCat } from "./placedLantern.ts";
 import type { ScoutId } from "./types.ts";
 import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
 import { rideRamp } from "./rideGames.ts";
@@ -650,11 +650,10 @@ export async function awardGrade(
   sql: Sql,
   userId: string,
   nonce: string,
-  pay: Omit<GradePay, "prior"> & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null },
+  pay: GradePay & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null },
 ): Promise<Applied & { can?: Can }> {
   const { id } = await canonicalWallet(sql, userId);
   const prevNonce = pay.prevNonce;
-  const prior = pay.series && pay.step > 0 && prevNonce ? await priorGrades(sql, userId, prevNonce, 6) : [];
   const refunded = pay.clearTier
     ? await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${"refund:" + nonce} limit 1`
     : [];
@@ -669,12 +668,7 @@ export async function awardGrade(
     poiId: pay.poiId,
     lat: pay.lat,
     lng: pay.lng,
-    series: pay.series,
-    ...(typeof pay.prizeRoll === "number" ? { prizeRoll: pay.prizeRoll } : {}),
-    step: pay.step,
-    steps: pay.steps,
     ...(pay.hearth ? { hearth: pay.hearth } : {}),
-    prior,
     streak: pay.streak,
     loot: pay.loot,
     lucky: false,
@@ -707,11 +701,11 @@ export async function awardGrade(
     shield,
   );
   const streakTier = full.correct ? streakPrize(run + 1) : null;
-  // 0.1.14: new-district bonus on a single lamp (not a series card): has this 800 m square been lit today here?
-  const district = full.correct && full.clearTier && !full.series ? districtOf(full.city, full.lat, full.lng) : "";
+  // 0.1.14: new-district bonus on a lamp: has this 800 m square been lit today here?
+  const district = full.correct && full.clearTier ? districtOf(full.city, full.lat, full.lng) : "";
   if (district) full.freshDistrict = isFreshDistrict(district, await districtsToday(sql, id, full.city));
   // 0.1.19: a spark (no match held) is capped on the server too: six a day, one per lamp (Chicago day).
-  const spark = full.correct && full.clearTier == null && !full.series && !full.poiId.startsWith("blitz-");
+  const spark = full.correct && full.clearTier == null && !full.poiId.startsWith("blitz-");
   const sparkOk = spark && !sparkTier(full.poiTier)
     ? false
     : spark
@@ -727,9 +721,9 @@ export async function awardGrade(
         full.poiId,
       )
     : true;
-  // 0.1.51 Ioniq 5 Vehicle-to-load: a lit lamp (a right answer that spent a match; a series pays on its last card) while
+  // 0.1.51 Ioniq 5 Vehicle-to-load: a lit lamp (a right answer that spent a match) while
   // seated in the proven car pays +1 white, at most V2L_DAY_CAP a day per player. Each pay is flagged v2 on its grade row.
-  const v2lLamp = full.correct && full.clearTier != null && !full.poiId.startsWith("blitz-") && (!full.series || full.step >= full.steps - 1);
+  const v2lLamp = full.correct && full.clearTier != null && !full.poiId.startsWith("blitz-");
   const v2l = v2lLamp && v2lPays(pay.car ?? null, 0)
     ? v2lPays(
         pay.car ?? null,
@@ -765,6 +759,8 @@ export async function awardGrade(
       g: full.correct ? letter : "miss",
       ...(full.correct ? { t: full.poiTier } : {}),
       ...(questLamp && counts ? { ql: 1 } : {}),
+      // 0.1.119: the last right answer of a Double/Triple Hearth run (the "Hearth climber" weekly quest).
+      ...(full.correct && full.hearth && full.hearth.step + 1 >= (full.hearth.v === 3 ? 3 : 2) ? { hc: 1 } : {}),
       ...(full.correct && full.topic ? { tp: full.topic } : {}),
       pv: prevNonce,
       ...(full.correct && full.poiId ? { pi: full.poiId } : {}),
@@ -848,18 +844,20 @@ export async function awardGrade(
     }
     return withV2l({ ...grant, detail });
   });
-  if (r.ok && !r.replay && matchLost && !full.series && full.poiId) await payOwner(sql, id, nonce, full.poiId);
+  if (r.ok && !r.replay && matchLost && full.poiId) await payOwner(sql, id, nonce, full.poiId);
   // 0.1.111: a visitor's right answer at a placed Hearth vault pays its owner a cut.
-  if (r.ok && !r.replay && full.correct && !full.series && full.poiId.startsWith("placed-")) {
+  if (r.ok && !r.replay && full.correct && full.poiId.startsWith("placed-")) {
     try {
       await payHearthOwner(sql, id, nonce, full.poiId, full.city);
     } catch (e) {
       console.warn("[hearth] owner cut failed", e instanceof Error ? e.message : e);
     }
   }
-  // 0.1.99: a perfect Stack (server grades only) unlocks the placed lantern, once.
-  if (r.ok && full.correct && perfectStackClear(full.series, full.step, full.steps, [...full.prior, letter])) {
-    await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${PLANT_OK_KEY}, ${JSON.stringify({ g: "grade:" + nonce })}) on conflict (user_id, op_key) do nothing`;
+  // 0.1.119: the 10th right red (V) or violet answer unlocks the Hearth vault, once (the ladders are gone).
+  if (r.ok && !r.replay && full.correct && (full.poiTier === "red" || full.poiTier === "violet")) {
+    if ((await redRight(sql, id)) >= PLANT_RED_NEED) {
+      await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${PLANT_OK_KEY}, ${JSON.stringify({ via: "red10", g: "grade:" + nonce })}) on conflict (user_id, op_key) do nothing`;
+    }
   }
   // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.
   const odds = full.clearTier === "amber" ? CAN_ODDS.amber : full.clearTier === "red" ? CAN_ODDS.red : 0;
@@ -1036,18 +1034,21 @@ export async function hearthStats(sql: Sql, ownerId: string, now = Date.now()): 
 }
 
 /** 0.1.109: the player's Hearth vault state for the Journal: locked, ready, or placed (with the row). */
-export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null; stats?: import("./placedLantern.ts").HearthStats }> {
+export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null; stats?: import("./placedLantern.ts").HearthStats; red?: number }> {
   const { id } = await canonicalWallet(sql, userId);
   const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER} and op_key = ${placedKey(id)} limit 1`;
   const mine = parsePlaced(rows[0]?.detail);
-  if (!mine) return { unlocked: await plantUnlocked(sql, userId), mine: null };
+  if (!mine) {
+    const unlocked = await plantUnlocked(sql, userId);
+    return { unlocked, mine: null, ...(unlocked ? {} : { red: Math.min(PLANT_RED_NEED, await redRight(sql, id)) }) };
+  }
   // 0.1.111: the owner id stays on the server; the client gets the spot, name, fields and counts.
   const { owner: _owner, ...pub } = mine;
   return { unlocked: true, mine: { ...pub, owner: "" }, stats: await hearthStats(sql, id) };
 }
 
 /**
- * 0.1.109: place the Hearth vault, for good. Needs the perfect-Stack unlock and an unlocked city; preset name,
+ * 0.1.109: place the Hearth vault, for good. Needs the Hearth unlock (10 right reds, 0.1.119) and an unlocked city; preset name,
  * exactly 4 fields, 40 m clear of every lamp and placed vault, ≤ 6 within 300 m. The global `placed:<owner>` row
  * is the one-per-player lock (primary key); the `plant` mirror row on the player follows. Never moved or removed.
  * Street snapping is checked on the client (the baked streets aren't in the server bundle).
@@ -2066,6 +2067,15 @@ async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: Wall
   return applied(r);
 }
 
+/** 0.1.119: right answers on red (V) or violet vaults, from the server's grade rows (`t` is only on a right answer). */
+export async function redRight(sql: Sql, id: string): Promise<number> {
+  const rows = await sql<{ n: unknown }>`
+    select count(*) as n from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"}
+      and (detail like ${'%"t":"red"%'} or detail like ${'%"t":"violet"%'}) and detail not like ${'%"g":"miss"%'}
+  `;
+  return Number(rows[0]?.n ?? 0);
+}
+
 /**
  * 0.1.99: has this player unlocked the placed lantern? The `plantok` row, or (back-fill) a past perfect Stack in
  * their grade rows since 0.1.36, which writes the row the first time it's found.
@@ -2074,6 +2084,11 @@ export async function plantUnlocked(sql: Sql, userId: string): Promise<boolean> 
   const { id } = await canonicalWallet(sql, userId);
   const have = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${PLANT_OK_KEY} limit 1`;
   if (have.length) return true;
+  // 0.1.119: 10 right red (V) or violet answers unlock it (counted from the server's own grade rows).
+  if ((await redRight(sql, id)) >= PLANT_RED_NEED) {
+    await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${PLANT_OK_KEY}, ${JSON.stringify({ via: "red10" })}) on conflict (user_id, op_key) do nothing`;
+    return true;
+  }
   const rows = await sql<{ op_key: string; detail: string }>`
     select op_key, detail from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and detail like ${'%"pi":"__stack__"%'} and detail like ${"%Perfect ladder:%"}
   `;

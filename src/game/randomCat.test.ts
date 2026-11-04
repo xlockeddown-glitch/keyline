@@ -57,8 +57,7 @@ const LAMP: Poi = { id: "ut-tower", name: "UT Tower", lat: 30.28, lng: -97.74, k
 const deps = (picked: string[], r = 0.42): TriviaDeps => ({
   now: () => 1_000_000, secret: "s", rand: () => r,
   pick: (_c, cat) => (picked.push(cat), CARD), card: () => CARD,
-  namedPoi: (_c, id) => (id === LAMP.id ? LAMP : null), series: () => null,
-});
+  namedPoi: (_c, id) => (id === LAMP.id ? LAMP : null), });
 const input = (over: object) => DealIn.parse({ city: "austin", cat: "local", poiId: LAMP.id, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555", ...over });
 
 test("deal: Random is rolled and sealed by the server; a client can't claim it (or its boost) on a normal pick", () => {
@@ -99,7 +98,7 @@ test("awardGrade: the server pays Random +10%, the Penguin's Random +25%, from t
   const at = Date.UTC(2026, 10, 3, 18);
   // A field that isn't today's category, so only Random / favorites move the coin.
   const topic = ALL_CATS.find((c) => c !== cotdAt(at))!;
-  const pay = (over: Partial<GradePay>) => ({ correct: true, elapsedMs: 2000, mult: 1, city: "austin" as const, diff: 2 as const, clearTier: "amber" as Tier, poiTier: "amber" as Tier, poiId: "ut-tower", lat: 30.28, lng: -97.74, series: null, step: 0, steps: 1, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic, dealtAt: at, luckyHit: false, perfectBlue: false, prevNonce: "", ...over });
+  const pay = (over: Partial<GradePay>) => ({ correct: true, elapsedMs: 2000, mult: 1, city: "austin" as const, diff: 2 as const, clearTier: "amber" as Tier, poiTier: "amber" as Tier, poiId: "ut-tower", lat: 30.28, lng: -97.74, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic, dealtAt: at, luckyHit: false, perfectBlue: false, prevNonce: "", ...over });
   const coin = async (u: string, over: Partial<GradePay>) => {
     await syncPlayer(sql, u, snap(), `${u}-phone1`);
     const before = (await canonicalWallet(sql, u)).wallet.coins;

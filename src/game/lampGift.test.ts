@@ -103,7 +103,7 @@ test("claim: free, one per color, lamp exclusivity (incl. concurrent), stacks wi
   assert.equal(mine.filter((l) => l.free).length, 2);
   // A gifted lamp pays its owner on a visitor's miss, like a bought one.
   const giftedWhite = winner === "a" ? w0! : w2!;
-  const pay = (over: Partial<GradePay>) => ({ correct: false, elapsedMs: 3000, mult: 1, city: "austin" as const, diff: 2 as const, clearTier: "white" as Tier, poiTier: "white" as Tier, poiId: giftedWhite.id, lat: 30.28, lng: -97.74, series: null, step: 0, steps: 1, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic: null, dealtAt: Date.now(), luckyHit: false, perfectBlue: false, prevNonce: "", ...over });
+  const pay = (over: Partial<GradePay>) => ({ correct: false, elapsedMs: 3000, mult: 1, city: "austin" as const, diff: 2 as const, clearTier: "white" as Tier, poiTier: "white" as Tier, poiId: giftedWhite.id, lat: 30.28, lng: -97.74, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic: null, dealtAt: Date.now(), luckyHit: false, perfectBlue: false, prevNonce: "", ...over });
   const before = (await canonicalWallet(sql, "a")).wallet;
   await awardGrade(sql, "nob", "gm1", pay({}));
   const after = (await canonicalWallet(sql, "a")).wallet;

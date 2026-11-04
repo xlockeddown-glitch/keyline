@@ -586,8 +586,6 @@ export const MARKET_DOUBLES = {
   lampCoin: true, // trivia-card coin at a lamp on the street (before boosts and cloth tips)
   lampMatches: true, // bonus matches a lamp's trivia card pays (lucky charm, perfect blue)
   spark: true, // the match a spark earns at a lamp on the street
-  seriesCoin: true, // The Run / The Stack, when its lamp stands on the street
-  seriesMatches: true,
   streetMatch: true, // a match picked up off the market street
   dailyRun: false, // Daily Lantern Run finish (2 white + 1 blue) — server-checked, never doubled
   printShop: false, // print shop / crafting prices
@@ -600,7 +598,6 @@ export const MARKET_DOUBLES = {
 
 export type MarketSpot =
   | { kind: "lamp"; poiId: string; lat: number; lng: number }
-  | { kind: "series"; lat: number; lng: number }
   | { kind: "match"; lat: number; lng: number };
 
 /** Is this reward spot on the market street? Named lamps use the baked list; the rest are measured. */
@@ -618,7 +615,7 @@ export function marketMult(city: CityId, at: number, spot: MarketSpot, streets?:
   return onMarket(marketAt(city, at, streets), spot) ? MARKET_MULT : 1;
 }
 
-/** Double a match bundle (bonus matches from a lamp or a series). */
+/** Double a match bundle (bonus matches from a lamp). */
 export function doubleKeys(keys: Partial<Record<Tier, number>>, mult: number): Partial<Record<Tier, number>> {
   if (mult === 1) return { ...keys };
   const out: Partial<Record<Tier, number>> = {};
@@ -628,7 +625,7 @@ export function doubleKeys(keys: Partial<Record<Tier, number>>, mult: number): P
 
 export const MARKET_TAG = `Night market ×${MARKET_MULT}`;
 
-/** Coin and bonus matches a lamp or series pays, after the market. `extra` is what the market added. */
+/** Coin and bonus matches a lamp pays, after the market. `extra` is what the market added. */
 export function marketPay(coin: number, keys: Partial<Record<Tier, number>>, mult: number) {
   const paidKeys = doubleKeys(keys, mult);
   const base = Object.values(keys).reduce((t: number, n) => t + (n ?? 0), 0);

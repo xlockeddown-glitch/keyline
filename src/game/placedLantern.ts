@@ -1,12 +1,16 @@
 /**
- * 0.1.99 placed lantern, slice 1: the unlock. A perfect clear of The Stack (the green ladder: every card graded
- * "perfect", ≤ 3 s, on the server clock) writes one `plantok` ledger row on the player. Pure rules here; the
- * reads and writes are in walletApply.ts (notePlantUnlock, plantUnlocked).
+ * 0.1.99 placed lantern, slice 1: the unlock, one `plantok` ledger row on the player. 0.1.119: the ladders are gone,
+ * so it is now PLANT_RED_NEED right answers on red (V) or violet vaults; an old perfect Stack clear still counts
+ * (findPerfectStack). Pure rules here; the reads and writes are in walletApply.ts (plantUnlocked, awardGrade).
  */
 import { STACK_ID } from "./data.ts";
-import { PRIZE_TAG } from "./ladderPrize.ts";
+
+/** The boost line the last card of a perfect ladder carried (0.1.36 to 0.1.118); only the back-fill reads it now. */
+export const PRIZE_TAG = "Perfect ladder";
 
 export const PLANT_OK_KEY = "plantok";
+/** 0.1.119 (Ryan): with the ladders gone, a Hearth unlocks at this many right answers on red (V) or violet vaults. */
+export const PLANT_RED_NEED = 10;
 
 type Detail = { g?: string; pi?: string; boosts?: unknown };
 
@@ -17,11 +21,6 @@ function parse(detail: string): Detail | null {
   } catch {
     return null;
   }
-}
-
-/** True when every grade on a finished ladder is perfect (the same test wallet.ts uses for the prize). */
-export function perfectStackClear(series: string | null | undefined, step: number, steps: number, grades: readonly string[]): boolean {
-  return series === "stack" && step + 1 >= steps && grades.length >= steps && grades.every((g) => g === "perfect");
 }
 
 /**

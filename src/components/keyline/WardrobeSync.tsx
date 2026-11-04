@@ -5,7 +5,7 @@ import { fetchWardrobe, syncWardrobe } from "@/game/wardrobeApi";
 import { useGame } from "@/game/store";
 import { visibleLantern } from "@/game/paint";
 
-/** Lantern skins re-case every lamp on the page (street, Run, Stack, vault hero, title lamp) from one root attribute. */
+/** Lantern skins re-case every lamp on the page (street, vault hero, title lamp) from one root attribute. */
 function applyLantern(id: string | null) {
   if (typeof document === "undefined") return;
   if (id) document.documentElement.dataset.lantern = id;

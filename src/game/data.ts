@@ -3765,96 +3765,11 @@ export function interactRadius(): number {
   return REACH_M;
 }
 
-export const RUN_ID = "__run__";
+/**
+ * 0.1.119 (Ryan): The Climb, The Run and The Stack are gone (Double/Triple Hearth vaults took their place). The
+ * Stack's old pseudo-vault id stays only so past perfect-Stack grade rows keep proving a Hearth unlock.
+ */
 export const STACK_ID = "__stack__";
-export const CLIMB_ID = "__climb__";
-export const RUN_STEPS = 3;
-export const RUN_COOL_MS = 10 * 60_000;
-export const RUN_COST: import("./types").Tier = "blue";
-export const RUN_PAY: import("./types").Tier = "green";
-export const RUN_DIFFS: import("./types").TriviaDiff[] = [1, 2, 3];
-
-export type SeriesKind = "climb" | "run" | "stack";
-
-export type SeriesDef = {
-  kind: SeriesKind;
-  id: string;
-  name: string;
-  cost: import("./types").Tier;
-  pay: import("./types").Tier;
-  bonus: import("./types").Tier;
-  steps: number;
-  diffs: import("./types").TriviaDiff[];
-  coolMs: number;
-  lore: string;
-  kicker: string;
-};
-
-export const SERIES: Record<SeriesKind, SeriesDef> = {
-  // 0.1.36: the white ladder, the bottom rung under The Run (cost one tier, pay the next, like Run and Stack).
-  climb: {
-    kind: "climb",
-    id: CLIMB_ID,
-    name: "The Climb",
-    cost: "white",
-    pay: "blue",
-    bonus: "green",
-    steps: 3,
-    diffs: [1, 1, 2],
-    coolMs: 8 * 60_000,
-    lore: "Three trivia cards, one white key. Two easy, then a step up. Clear the vault and a blue key drops. Miss any trivia card and the key is gone — eight minutes dark.",
-    kicker: "three trivia cards, one white",
-  },
-  run: {
-    kind: "run",
-    id: RUN_ID,
-    name: "The Run",
-    cost: "blue",
-    pay: "green",
-    bonus: "amber",
-    steps: 3,
-    diffs: [1, 2, 3],
-    coolMs: RUN_COOL_MS,
-    lore: "Three trivia cards, one blue key. Easy, then harder, then the last. Clear the vault and a green key drops. Miss any trivia card and the key is gone — the street goes dark for ten minutes.",
-    kicker: "three trivia cards, one blue",
-  },
-  stack: {
-    kind: "stack",
-    id: STACK_ID,
-    name: "The Stack",
-    cost: "green",
-    pay: "amber",
-    bonus: "red",
-    steps: 4,
-    diffs: [1, 2, 3, 3],
-    coolMs: 12 * 60_000,
-    lore: "Four trivia cards, one green key. The last two bite. Clear both globes and an amber key drops. Miss any trivia card and the key is gone — twelve minutes dark.",
-    kicker: "four trivia cards, one green",
-  },
-};
-
-export function seriesOf(id: string): SeriesDef | null {
-  if (id === RUN_ID) return SERIES.run;
-  if (id === STACK_ID) return SERIES.stack;
-  if (id === CLIMB_ID) return SERIES.climb;
-  return null;
-}
-
-export function seriesPoi(s: SeriesDef): import("./types").Poi {
-  return {
-    id: s.id,
-    name: s.name,
-    lat: 0,
-    lng: 0,
-    kind: "landmark",
-    tier: s.cost,
-    lore: s.lore,
-  };
-}
-
-export const RUN_POI: import("./types").Poi = seriesPoi(SERIES.run);
-export const STACK_POI: import("./types").Poi = seriesPoi(SERIES.stack);
-export const CLIMB_POI: import("./types").Poi = seriesPoi(SERIES.climb);
 
 /** 0.0.90: +15% (was 92). The Lantern Run's server floor (dailyTopSpeed) follows this. */
 export const WALK_PACE = 92 * 1.15;

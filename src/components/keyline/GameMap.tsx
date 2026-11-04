@@ -11,11 +11,11 @@ import { HouseSheet } from "./HouseSheet";
 import { LanternSheet } from "./LanternSheet";
 import { SkinSheet } from "./SkinSheet";
 import { SHOP_EVERY_MS, SHOP_METERS, SHOP_REACH_M, shopLot, shopMapArt } from "@/game/shop";
-import { CITIES, CLIMB_ID, RUN_ID, SCOUTS, SERIES, STACK_ID, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
+import { CITIES, SCOUTS, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
-import { questPinHtml, boardPinHtml, counterPinHtml, seriesPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
+import { questPinHtml, boardPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
 import { FACET_COLOR, hearthOf, isHearthId } from "@/game/hearthVaults";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { roadTilt, worldScale } from "@/game/grounded";
@@ -46,7 +46,6 @@ import {
   graphCovers,
   nearest,
   onArterial,
-  onStreet,
   pathLength,
   pointAlongPath,
   offFreeway,
@@ -716,9 +715,6 @@ export function GameMap() {
     const city = CITIES[cityId];
     const extras = [
       ...useGame.getState().mapKeys,
-      ...(useGame.getState().run ? [useGame.getState().run!] : []),
-      ...(useGame.getState().stack ? [useGame.getState().stack!] : []),
-      ...(useGame.getState().climb ? [useGame.getState().climb!] : []),
       ...useGame.getState().blanks,
     ];
     const w = wardFrom([city.spawn, ...city.pois, ...extras]);
@@ -1140,30 +1136,6 @@ export function GameMap() {
       useGame.setState({ mapKeys: next });
       snapping.current = false;
     }
-    const run = useGame.getState().run;
-    if (run && run.readyAt === 0) {
-      let p = onStreet(g, run.lat, run.lng);
-      if (w && !inWard(w, p.lat, p.lng)) p = onStreet(g, clampWard(w, p.lat, p.lng).lat, clampWard(w, p.lat, p.lng).lng);
-      if (distM(run.lat, run.lng, p.lat, p.lng) > 1.5) {
-        useGame.setState({ run: { ...run, lat: p.lat, lng: p.lng } });
-      }
-    }
-    const stack = useGame.getState().stack;
-    if (stack && stack.readyAt === 0) {
-      let p = onStreet(g, stack.lat, stack.lng);
-      if (w && !inWard(w, p.lat, p.lng)) p = onStreet(g, clampWard(w, p.lat, p.lng).lat, clampWard(w, p.lat, p.lng).lng);
-      if (distM(stack.lat, stack.lng, p.lat, p.lng) > 1.5) {
-        useGame.setState({ stack: { ...stack, lat: p.lat, lng: p.lng } });
-      }
-    }
-    const climb = useGame.getState().climb;
-    if (climb && climb.readyAt === 0) {
-      let p = onStreet(g, climb.lat, climb.lng);
-      if (w && !inWard(w, p.lat, p.lng)) p = onStreet(g, clampWard(w, p.lat, p.lng).lat, clampWard(w, p.lat, p.lng).lng);
-      if (distM(climb.lat, climb.lng, p.lat, p.lng) > 1.5) {
-        useGame.setState({ climb: { ...climb, lat: p.lat, lng: p.lng } });
-      }
-    }
   }
 
   function placeOnStreet(g: StreetGraph, lat: number, lng: number, openNorth = false) {
@@ -1199,20 +1171,7 @@ export function GameMap() {
       const avoid = [city.spawn, ...city.pois, ...now.blanks];
       const pts = spreadOnGraph(g, avoid, now.mapKeys.length);
       const keys = now.mapKeys.map((k, i) => (pts[i] ? { ...k, lat: pts[i]!.lat, lng: pts[i]!.lng } : k));
-      const extra = spreadOnGraph(g, [...avoid, ...keys], 3, 240);
-      const run =
-        now.run && now.run.readyAt === 0 && extra[0]
-          ? { ...now.run, lat: extra[0].lat, lng: extra[0].lng }
-          : now.run;
-      const stack =
-        now.stack && now.stack.readyAt === 0 && extra[1]
-          ? { ...now.stack, lat: extra[1].lat, lng: extra[1].lng }
-          : now.stack;
-      const climb =
-        now.climb && now.climb.readyAt === 0 && extra[2]
-          ? { ...now.climb, lat: extra[2].lat, lng: extra[2].lng }
-          : now.climb;
-      now.spreadDrops(keys, run, stack, climb);
+      now.spreadDrops(keys);
     }
     const L = Lref.current;
     const m = mapRef.current;
@@ -1406,8 +1365,6 @@ export function GameMap() {
         if (!m) return;
         const ws = worldScale(m.getZoom());
         m.getContainer().style.setProperty("--world-scale", String(ws));
-        // 0.1.103: ladder pins drop their small print when the world is drawn small.
-        m.getContainer().classList.toggle("map-far", ws < 0.9);
       };
       setWorldScale();
       map.on("zoom zoomend", setWorldScale); // 0.1.68: every world marker scales with the map
@@ -1813,39 +1770,6 @@ export function GameMap() {
       });
       vaultMarkers.current.set(poi.id, marker);
     }
-    const run = st.run;
-    if (run && run.readyAt === 0) {
-      const el = seriesPinHtml(SERIES.run);
-      const marker = L.marker([run.lat, run.lng], {
-        icon: L.divIcon({ className: "", html: worldObj(el, 24, 106), iconSize: [48, 108], iconAnchor: [24, 106] }),
-        keyboard: false,
-        zIndexOffset: 400,
-      }).addTo(map);
-      marker.on("click", () => tryOpen(RUN_ID));
-      vaultMarkers.current.set(RUN_ID, marker);
-    }
-    const stack = st.stack;
-    if (stack && stack.readyAt === 0) {
-      const el = seriesPinHtml(SERIES.stack);
-      const marker = L.marker([stack.lat, stack.lng], {
-        icon: L.divIcon({ className: "", html: worldObj(el, 24, 130), iconSize: [48, 132], iconAnchor: [24, 130] }),
-        keyboard: false,
-        zIndexOffset: 400,
-      }).addTo(map);
-      marker.on("click", () => tryOpen(STACK_ID));
-      vaultMarkers.current.set(STACK_ID, marker);
-    }
-    const climb = st.climb;
-    if (climb && climb.readyAt === 0) {
-      const el = seriesPinHtml(SERIES.climb);
-      const marker = L.marker([climb.lat, climb.lng], {
-        icon: L.divIcon({ className: "", html: worldObj(el, 24, 106), iconSize: [48, 108], iconAnchor: [24, 106] }),
-        keyboard: false,
-        zIndexOffset: 400,
-      }).addTo(map);
-      marker.on("click", () => tryOpen(CLIMB_ID));
-      vaultMarkers.current.set(CLIMB_ID, marker);
-    }
     for (const m of keyMarkers.current.values()) m.remove();
     keyMarkers.current.clear();
     for (const k of st.mapKeys) {
@@ -1866,15 +1790,7 @@ export function GameMap() {
 
   function tryOpen(poiId: string) {
     const st = useGame.getState();
-    const run = st.run;
-    const poi =
-      poiId === RUN_ID && run && run.readyAt === 0
-        ? { lat: run.lat, lng: run.lng }
-        : poiId === STACK_ID && st.stack && st.stack.readyAt === 0
-          ? { lat: st.stack.lat, lng: st.stack.lng }
-          : poiId === CLIMB_ID && st.climb && st.climb.readyAt === 0
-          ? { lat: st.climb.lat, lng: st.climb.lng }
-          : anyPois(CITIES[st.cityId], st.blanks).find((p) => p.id === poiId);
+    const poi = anyPois(CITIES[st.cityId], st.blanks).find((p) => p.id === poiId);
     if (!poi) return;
     const d = distM(pos.current.lat, pos.current.lng, poi.lat, poi.lng);
     if (d > reach() || !lampFromRide(ride())) {
@@ -2187,7 +2103,6 @@ export function GameMap() {
       if (t - lastKeyCheck.current > 1000) {
         lastKeyCheck.current = t;
         st.maybeSpawnKey(Date.now());
-        st.maybeSpawnRun(Date.now());
         // 0.0.93: walk onto the day's match cache to open it.
         const c = cacheRef.current;
         if (c?.seed) {
@@ -2281,18 +2196,6 @@ export function GameMap() {
       for (const p of livePois(city, st.blanks)) {
         const d = distM(pos.current.lat, pos.current.lng, p.lat, p.lng);
         if (d < nearestPoi.d) nearestPoi = { id: p.id, d, lat: p.lat, lng: p.lng };
-      }
-      if (st.run && st.run.readyAt === 0) {
-        const d = distM(pos.current.lat, pos.current.lng, st.run.lat, st.run.lng);
-        if (d < nearestPoi.d) nearestPoi = { id: RUN_ID, d, lat: st.run.lat, lng: st.run.lng };
-      }
-      if (st.stack && st.stack.readyAt === 0) {
-        const d = distM(pos.current.lat, pos.current.lng, st.stack.lat, st.stack.lng);
-        if (d < nearestPoi.d) nearestPoi = { id: STACK_ID, d, lat: st.stack.lat, lng: st.stack.lng };
-      }
-      if (st.climb && st.climb.readyAt === 0) {
-        const d = distM(pos.current.lat, pos.current.lng, st.climb.lat, st.climb.lng);
-        if (d < nearestPoi.d) nearestPoi = { id: CLIMB_ID, d, lat: st.climb.lat, lng: st.climb.lng };
       }
       for (const k of st.mapKeys) {
         // 0.1.35: your own car picks matches up from the window as you drive past; the city cab still doesn't.
@@ -2510,9 +2413,9 @@ export function GameMap() {
         mapRef.current?.setView([pos.current.lat, pos.current.lng], mapRef.current.getZoom());
         useGame.getState().setHud({ seated: false });
       }
-      if (s.mapKeys !== p.mapKeys || s.vaults !== p.vaults || s.run !== p.run || s.stack !== p.stack || s.climb !== p.climb || s.fares !== p.fares) {
+      if (s.mapKeys !== p.mapKeys || s.vaults !== p.vaults || s.fares !== p.fares) {
         const g = graphRef.current;
-        if (g && (s.mapKeys !== p.mapKeys || s.run !== p.run || s.stack !== p.stack || s.climb !== p.climb)) snapKeys(g);
+        if (g && s.mapKeys !== p.mapKeys) snapKeys(g);
         const L = Lref.current;
         const map = mapRef.current;
         if (L && map) rebuildPins(L, map);

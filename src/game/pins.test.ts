@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { CITY_LIST, SERIES, TIER_LABEL, seriesPoi, type SeriesDef } from "./data.ts";
+import { CITY_LIST } from "./data.ts";
 import { RARITY_LADDER as TIERS } from "./rarity.ts";
-import { pinTier, seriesPinHtml, stationPinHtml, vaultPinHtml } from "./pins.ts";
+import { pinTier, stationPinHtml, vaultPinHtml } from "./pins.ts";
 import { isFareDesk } from "./ticket.ts";
 
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
@@ -13,21 +13,7 @@ test("street marker tier === required match tier, all six tiers", () => {
   for (const tier of TIERS) {
     assert.equal(pinTier(vaultPinHtml({ tier })), tier, `lamp ${tier}`);
     assert.equal(pinTier(vaultPinHtml({ tier }, { cooling: true })), tier, `cooling ${tier}`);
-    for (const kind of ["run", "stack"] as const) {
-      const s: SeriesDef = { ...SERIES[kind], cost: tier };
-      // store: keys[series.cost] check + VaultModal hero uses seriesPoi(series).tier
-      assert.equal(pinTier(seriesPinHtml(s)), s.cost, `${kind} ${tier}`);
-      assert.equal(seriesPoi(s).tier, s.cost);
-    }
   }
-});
-
-test("The Run / The Stack markers carry their match cost", () => {
-  assert.equal(pinTier(seriesPinHtml(SERIES.run)), SERIES.run.cost);
-  assert.equal(TIER_LABEL[pinTier(seriesPinHtml(SERIES.run))!], "Blue");
-  assert.match(seriesPinHtml(SERIES.run), /is-run/);
-  assert.equal(pinTier(seriesPinHtml(SERIES.stack)), SERIES.stack.cost);
-  assert.match(seriesPinHtml(SERIES.stack), /is-stack/);
 });
 
 test("every city lamp marker matches its poi tier", () => {
@@ -42,8 +28,8 @@ test("every city lamp marker matches its poi tier", () => {
 test("GameMap builds vault markers only through pins.ts (no hard-coded tier)", () => {
   const src = read("../components/keyline/GameMap.tsx");
   assert.doesNotMatch(src, /vault-pin[^"`]*\btier-(white|blue|green|amber|red|violet|yellow|gold)\b/);
-  assert.match(src, /seriesPinHtml\(SERIES\.run\)/);
-  assert.match(src, /seriesPinHtml\(SERIES\.stack\)/);
+  // 0.1.119: the ladders are gone; no ladder pin is drawn.
+  assert.doesNotMatch(src, /seriesPinHtml|SERIES\./);
   assert.match(src, /vaultPinHtml\(poi,/);
 });
 
@@ -80,20 +66,8 @@ test("no amber fare call-out left on lamps", () => {
   assert.match(read("../styles.css"), /\.station-pin\.has-fare\b/);
 });
 
-test("0.1.103 ladder column: one numbered, tier-glyphed rung per card and a PAYS plaque", async () => {
-  const { ladderColumnSvg } = await import("./pins.ts");
-  for (const kind of ["climb", "run", "stack"] as const) {
-    const s = SERIES[kind];
-    const pin = seriesPinHtml(s);
-    assert.equal((pin.match(/class="lc-rung /g) ?? []).length, s.steps, kind);
-    for (let i = 1; i <= s.steps; i++) assert.match(pin, new RegExp(`class="lc-num"[^>]*>${i}<`), `${kind} rung ${i}`);
-    assert.match(pin, /lc-pays-word[^>]*>PAYS</);
-    assert.equal((pin.match(/is-cur/g) ?? []).length, 1, `${kind} map pin: rung 1 current`);
-    assert.doesNotMatch(pin, /lc-lock/, `${kind} map pin is never greyed out`);
-  }
-  const mid = ladderColumnSvg(SERIES.stack, { cleared: 2, current: 2 });
-  assert.equal((mid.match(/is-done/g) ?? []).length, 2);
-  assert.equal((mid.match(/class="lc-lock"/g) ?? []).length, 1);
-  assert.doesNotMatch(mid, /lc-perfect/);
-  assert.match(ladderColumnSvg(SERIES.run, { cleared: 3, perfect: true }), /lc-perfect/);
+test("0.1.119 the ladder art is retired (no ladder pin markup or CSS left)", async () => {
+  const pins = await import("./pins.ts");
+  for (const k of ["ladderColumnSvg", "ladderLampHtml", "seriesPinHtml"]) assert.equal(k in pins, false, k);
+  assert.doesNotMatch(read("../styles.css"), /\.is-ladder\b|\.ladder-col\b/);
 });

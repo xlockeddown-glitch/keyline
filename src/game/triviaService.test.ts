@@ -62,7 +62,6 @@ function depsAt(clock: { t: number }, sql?: Sql, picks: string[] = []): TriviaDe
     },
     card: (id) => all.get(id) ?? null,
     namedPoi: (_city, id) => (id === LAMP.id ? LAMP : null),
-    series: (id) => (id === "the-run" ? { poi: { ...LAMP, id: "the-run", tier: "blue" }, cost: "blue", diffs: [1, 2, 3] } : null),
     sql: sql ? async () => sql : undefined,
     rand: () => 0.42,
   };
@@ -137,16 +136,13 @@ test("anti-repeat: the save's seen public ids (and old raw ids) keep a card from
   assert.deepEqual(avoid, [BANK[0]!.id, BANK[1]!.id, BANK[0]!.q, BANK[1]!.q]);
 });
 
-test("unknown lamps are refused; street blanks deal from the client's description; Run steps pass the difficulty", () => {
+test("unknown lamps are refused; street blanks deal from the client's description; the retired ladders deal nothing", () => {
   const clock = { t: 0 };
   assert.deepEqual(deal(depsAt(clock), { userId: null }, dealIn({ poiId: "nowhere" })), { ok: false, reason: "unknown-lamp" });
   const blank = deal(depsAt(clock), { userId: null }, dealIn({ poiId: "blank-1", blank: { name: "Lamp on 6th", kind: "landmark", tier: "white" } }));
   assert.ok(blank.ok);
   if (blank.ok) assert.equal(openToken("test-secret", blank.token)!.k, "white");
-  let want: unknown;
-  const d = { ...depsAt(clock), pick: (...a: Parameters<TriviaDeps["pick"]>) => ((want = a[5]), BANK[0]!) };
-  deal(d, { userId: null }, dealIn({ poiId: "the-run", step: 2 }));
-  assert.equal(want, 3);
+  for (const id of ["__run__", "__stack__", "__climb__"]) assert.deepEqual(deal(depsAt(clock), { userId: null }, dealIn({ poiId: id, step: 2 })), { ok: false, reason: "unknown-lamp" }, id);
   const spark = deal(depsAt(clock), { userId: null }, dealIn({ spark: true }));
   if (spark.ok) assert.equal(openToken("test-secret", spark.token)!.k, null, "sparks clear nothing on the rolls");
 });
@@ -270,8 +266,8 @@ test("0.1.107 lock-out: a wrong keyed answer writes a ledger row and the server 
   assert.equal(lockoutMs("amber"), 5 * 60_000);
   assert.equal(lockoutMs("violet"), 5 * 60_000);
   assert.equal(lockClock(252_000), "4:12");
-  assert.equal(lockable("__run__", false), false);
-  assert.equal(lockable("blitz-x", false), false);
+  assert.equal(lockable("__run__"), false);
+  assert.equal(lockable("blitz-x"), false);
   const sql = await db();
   const clock = { t: Date.UTC(2026, 10, 2, 12) };
   const d = depsAt(clock, sql);

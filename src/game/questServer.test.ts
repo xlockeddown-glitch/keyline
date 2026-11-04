@@ -12,7 +12,7 @@ import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { LUCKY_OWNED_COIN, V2_FROM, questSet } from "./questBoard.ts";
 import { chicagoDay, currentPeriod, dayKey, monthKey, nextMonthKey, previousPeriod, QUEST_GRACE_MS } from "./questPeriods.ts";
-import { LEGACY_CHARM_CAP, LEGACY_THANKS_COIN, LEGACY_UNBROKEN_COIN, applyLegacy, legacyRefundCoin, claimQuest, luckyLive, questCtx, questStatus } from "./questServer.ts";
+import { LEGACY_CHARM_CAP, LEGACY_THANKS_COIN, LEGACY_UNBROKEN_COIN, applyLegacy, legacyRefundCoin, claimQuest, luckyLive, questCtx, questEvents, questStatus } from "./questServer.ts";
 import type { GradePay, LocalSnap } from "./wallet.ts";
 import { applyClientOp, awardGrade, syncPlayer } from "./walletApply.ts";
 import { canonicalWallet } from "./walletSql.ts";
@@ -80,9 +80,6 @@ function pay(over: Partial<GradePay> = {}): Omit<GradePay, "prior"> & { prevNonc
     poiId: "zilker",
     lat: 30.27,
     lng: -97.77,
-    series: null,
-    step: 0,
-    steps: 1,
     streak: 0,
     loot: 1,
     lucky: false,
@@ -387,4 +384,21 @@ test("0.1.27: next week's Challenge counts perfect answers on the server; sparks
   assert.equal((await claimQuest(sql, u, p.key, "wc-perfect", now)).replay, true);
   // The old id is not in a v2 set.
   assert.equal((await claimQuest(sql, u, p.key, "w-lamps", now)).reason, "not-yours");
+});
+
+test("0.1.119 Hearth climber: only the last right answer of a Double or Triple Hearth marks a hearth event", async () => {
+  const sql = await db();
+  const u = "hc-user";
+  await syncPlayer(sql, u, snap(), "hcphone1");
+  const h = (v: 1 | 2 | 3, step: number) => ({ poiId: "placed-x", hearth: { v, step } }) as Partial<GradePay>;
+  await awardGrade(sql, u, "d0", pay(h(2, 0)));
+  await awardGrade(sql, u, "t1", pay(h(3, 1)));
+  await awardGrade(sql, u, "dmiss", pay({ ...h(2, 1), correct: false }));
+  await awardGrade(sql, u, "s0", pay({ poiId: "placed-y", clearTier: "red", poiTier: "red" }));
+  const count = async () => (await questEvents(sql, u, 0, Date.now() + 60_000)).filter((e) => e.k === "hearth").length;
+  assert.equal(await count(), 0, "first steps, misses and a Single Hearth don't count");
+  await awardGrade(sql, u, "d1", pay({ ...h(2, 1), clearTier: "amber", poiTier: "amber" }));
+  assert.equal(await count(), 1, "a cleared Double");
+  await awardGrade(sql, u, "t2", pay({ ...h(3, 2), clearTier: "red", poiTier: "red" }));
+  assert.equal(await count(), 2, "a cleared Triple");
 });

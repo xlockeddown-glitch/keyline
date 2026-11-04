@@ -18,7 +18,7 @@ export const DealIn = z.object({
   /** 0.1.116: "random" lets the server pick the field (+10% coin; never at a Hearth vault). */
   cat: z.enum([...CATS, "random"]),
   poiId: IdIn,
-  /** Street blanks are made by the client's walk; named lamps and the Run/Stack are looked up on the server. */
+  /** Street blanks are made by the client's walk; named lamps are looked up on the server. */
   blank: z
     .object({ name: z.string().min(1).max(120), kind: z.enum(KINDS), tier: z.enum(TIERS) })
     .optional(),

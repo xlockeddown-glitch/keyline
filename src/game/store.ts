@@ -3,7 +3,7 @@ import { HEARTH_VERSION_NAME, hearthBoost, hearthLast, hearthSteps, hearthTierAt
 import { create } from "zustand";
 import { DRIVE_PING_MS, MAGNET_DAY_CAP, bestVaultMs, carCool } from "./carPerks";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
-import { CITIES, CITY_LIST, KIOSK, SCOUTS, SERIES, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf, seriesPoi, wornPerk, type KioskId, type SeriesDef, type SeriesKind } from "./data";
+import { CITIES, CITY_LIST, KIOSK, SCOUTS, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, wornPerk, type KioskId } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { carOf, driveOf, isCarId, type CarId } from "./cars";
@@ -38,7 +38,6 @@ import type {
   PoiKind,
   Screen,
   ScoutId,
-  StreetRun,
   Tier,
   TriviaCat,
   FieldPick,
@@ -51,7 +50,6 @@ import { PULSE_POINTS, pulseDue } from "./pulse";
 import { PASS_GIFT_LINE, giftPass } from "./cityPass";
 import { GOAL_ALL_TIER, GOAL_COIN, cachePrize, cacheLine, cleanGoals, goalDay, goalDone, noteGoal, payMatch, payMatches, payMatchesOf, cheerFor, streakPrize, streakSub, type Cheer, type GoalDay, type GoalKind } from "./goals";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
-import { PRIZE_COIN, PRIZE_TAG, prizeTier } from "./ladderPrize.ts";
 import { lockClock } from "./lockout.ts";
 import { autoCrateDue, blitzOfferDue } from "./dailyPop";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzDue, blitzMatch, cleanBlitzMatches } from "./dailyBlitz";
@@ -147,7 +145,6 @@ type OpenVault = {
   /** 0.1.116: "random" when the player picked Random (the server picks the field). */
   category: FieldPick | null;
   deadline: number;
-  run?: { step: number; steps: number; grades: LootDrop["grade"][]; spent: boolean };
   spark?: boolean;
   /** Wall clock (Date.now) when this trivia card was dealt — `startedAt` is performance.now(). The night market open then is the one that pays. */
   dealtAt?: number;
@@ -222,10 +219,6 @@ export type GameState = {
   survey: Record<string, true>;
   vaults: Record<string, VaultRuntime>;
   mapKeys: MapKey[];
-  run: StreetRun | null;
-  stack: StreetRun | null;
-  /** 0.1.36: The Climb, the white ladder. */
-  climb: StreetRun | null;
   contract: { ids: string[]; done: string[]; nonces?: string[] } | null;
   streak: number;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
@@ -339,9 +332,8 @@ export type GameState = {
   magnetDay: { day: string; city: string; n: number; full?: boolean };
   maybeSpawnKey: (now: number) => void;
   bindStreet: () => void;
-  maybeSpawnRun: (now: number) => void;
   seedBlanks: (list: Poi[]) => void;
-  spreadDrops: (keys: MapKey[], run: StreetRun | null, stack: StreetRun | null, climb?: StreetRun | null) => void;
+  spreadDrops: (keys: MapKey[]) => void;
   tryOpen: (poiId: string, now: number) => string | null;
   closeShop: () => void;
   closeErrand: () => void;
@@ -588,25 +580,6 @@ function marketKey(cityId: CityId, tier: Tier, now: number): MapKey | null {
   return { id: `k-${cityId}-m${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`, lat: p.lat, lng: p.lng, tier };
 }
 
-function seriesLive(s: GameState, kind: SeriesKind): StreetRun | null {
-  return kind === "run" ? s.run : kind === "climb" ? s.climb : s.stack;
-}
-
-function seriesPatch(kind: SeriesKind, pos: StreetRun): Partial<GameState> {
-  return kind === "run" ? { run: pos } : kind === "climb" ? { climb: pos } : { stack: pos };
-}
-
-function coolSeries(s: GameState, def: SeriesDef): StreetRun {
-  const cur = seriesLive(s, def.kind);
-  return { lat: cur?.lat ?? 0, lng: cur?.lng ?? 0, readyAt: Date.now() + def.coolMs };
-}
-
-function placeRun(cityId: CityId): StreetRun {
-  const c = CITIES[cityId];
-  const p = streetDrop(c.spawn, 280, 2000);
-  return { lat: p.lat, lng: p.lng, readyAt: 0 };
-}
-
 function streetKeyCap(pocket: number): number {
   // 0.0.90: doubled (was 5 / 8). 0.0.94: drops to 10 only at 15+ held (was 5+).
   return pocket >= 15 ? 10 : 16;
@@ -707,9 +680,6 @@ function persistable(s: GameState) {
     survey: s.survey,
     vaults: s.vaults,
     mapKeys: s.mapKeys,
-    run: s.run,
-    stack: s.stack,
-    climb: s.climb,
     contract: s.contract,
     streak: s.streak,
     shieldDay: s.shieldDay,
@@ -885,7 +855,7 @@ const SEEN_ID = /^[A-Za-z0-9_:.~-]{1,80}$/;
 
 /**
  * 0.0.53: ask the server for a trivia card (triviaApi.dealTrivia). It picks from its own bank with this save's
- * seen ids (anti-repeat), the lamp's tier and topics, the Run/Stack step, and returns the prompt and shuffled
+ * seen ids (anti-repeat), the lamp's tier and topics, and returns the prompt and shuffled
  * choices with a signed token — never the answer. Null when the server can't be reached (nothing is spent).
  */
 /** 0.0.58: fold another tab's seen cards (the saved list) into this tab's before a deal. */
@@ -921,24 +891,22 @@ async function dealCard(
   foldSavedSeen(set, get);
   const st = get();
   const city = CITIES[st.cityId];
-  const series = seriesOf(poiId);
-  const named = series ? null : (city.pois.find((p) => p.id === poiId) ?? marketLanternById(st.cityId, poiId, Date.now()) ?? hearthPois(st.cityId).find((p) => p.id === poiId));
-  const blank = series || named ? undefined : st.blanks.find((p) => p.id === poiId);
+  const named = city.pois.find((p) => p.id === poiId) ?? marketLanternById(st.cityId, poiId, Date.now()) ?? hearthPois(st.cityId).find((p) => p.id === poiId);
+  const blank = named ? undefined : st.blanks.find((p) => p.id === poiId);
   const dealBlank =
     blank && lampKind(blank.kind)
       ? { name: blank.name.slice(0, 120), kind: blank.kind, tier: blank.tier }
       : undefined;
-  if (!series && !named && !dealBlank) return null;
+  if (!named && !dealBlank) return null;
   const spark = Boolean(st.openVault?.spark);
   const extra = (st.pressPass > 0 ? 5000 : 0) + bestVaultMs(wornPerk(st.scout).vaultMs, seatedCar(st));
   const windowMs = spark ? 20000 : step > 0 ? 25000 : 25000 + extra;
-  const spot = series ? seriesLive(st, series.kind) : (named ?? blank);
+  const spot = named ?? blank;
   const input: DealInput = {
     city: st.cityId,
     cat,
     poiId,
     blank: dealBlank,
-    step: series ? step : undefined,
     ...(hearthPrev ? { hearthPrev } : {}),
     spark: spark || undefined,
     windowMs,
@@ -1195,9 +1163,6 @@ export const useGame = create<GameState>((set, get) => ({
   survey: saved?.survey ?? {},
   vaults: saved?.vaults ?? {},
   mapKeys: saved?.mapKeys?.length ? saved.mapKeys : seedKeys(savedCity),
-  run: saved?.run ?? placeRun(savedCity),
-  stack: saved?.stack ?? placeRun(savedCity),
-  climb: saved?.climb ?? placeRun(savedCity),
   contract: saved?.contract ?? null,
   streak: saved?.streak ?? 0,
   matchPop: null,
@@ -1319,9 +1284,6 @@ export const useGame = create<GameState>((set, get) => ({
       cityId: id,
       screen: "play",
       mapKeys: same ? prev.mapKeys : seedKeys(id),
-      run: same && prev.run ? prev.run : placeRun(id),
-      stack: same && prev.stack ? prev.stack : placeRun(id),
-      climb: same && prev.climb ? prev.climb : placeRun(id),
       contract: same && prev.contract ? prev.contract : seedContract(id),
       openVault: null,
       hqOpen: false,
@@ -1496,41 +1458,20 @@ export const useGame = create<GameState>((set, get) => ({
     set({ mapKeys });
     scheduleSave(get);
   },
-  maybeSpawnRun: (now) => {
-    const cityId = get().cityId;
-    const patch: Partial<GameState> = {};
-    const notes: string[] = [];
-    for (const def of Object.values(SERIES)) {
-      const live = seriesLive(get(), def.kind);
-      if (live && live.readyAt === 0) continue;
-      if (live && live.readyAt > now) continue;
-      patch[def.kind] = placeRun(cityId);
-      notes.push(live ? `${def.name} is back on the street.` : `${def.name} is up. ${def.kicker[0]!.toUpperCase()}${def.kicker.slice(1)} key.`);
-    }
-    if (!notes.length) return;
-    sfx.ui();
-    set({ ...patch, toast: notes[0]! });
-    scheduleSave(get);
-    window.setTimeout(() => {
-      const t = get().toast;
-      if (t && notes.some((n) => t.startsWith(n.slice(0, 12)))) set({ toast: null });
-    }, 2400);
-  },
   seedBlanks: (list) => {
     if (get().blanks.length) return;
     if (!list.length) return;
     set({ blanks: list });
     scheduleSave(get);
   },
-  spreadDrops: (keys, run, stack, climb) => {
+  spreadDrops: (keys) => {
     if (get().streetSpread) return;
-    set({ mapKeys: keys, run, stack, ...(climb !== undefined ? { climb } : {}), streetSpread: true });
+    set({ mapKeys: keys, streetSpread: true });
     scheduleSave(get);
   },
   tryOpen: (poiId, now) => {
     const city = CITIES[get().cityId];
-    const series = seriesOf(poiId);
-    const poi = series ? seriesPoi(series) : livePois(city, get().blanks).find((p) => p.id === poiId);
+    const poi = livePois(city, get().blanks).find((p) => p.id === poiId);
     if (!poi) return "No vault.";
     // 0.0.57: one lamp at a time. An answer with the server stays; any other open card is walked away from first (its held match comes back).
     if (get().openVault?.poiId === poiId) return null;
@@ -1551,31 +1492,8 @@ export const useGame = create<GameState>((set, get) => ({
       return null;
     }
     // 0.1.41: a train stop is never a lamp (the board opens from the map when you have a ticket).
-    const desk = series ? null : fareDeskNote(poi, get().cityVaults, get().hud.seated);
+    const desk = fareDeskNote(poi, get().cityVaults, get().hud.seated);
     if (desk) return desk;
-    if (series) {
-      const live = seriesLive(get(), series.kind);
-      if (!live || live.readyAt > Date.now()) return `${series.name} is recasting.`;
-      if (!hasMatch(get().keys, series.cost)) return `Need a ${TIER_LABEL[series.cost]} key.`;
-      sfx.open();
-      set({
-        openVault: {
-          poiId: series.id,
-          startedAt: now,
-          question: null,
-          category: null,
-          deadline: now,
-          run: { step: 0, steps: series.steps, grades: [], spent: false },
-        },
-        hqOpen: false,
-        invOpen: false,
-        shopOpen: false,
-        errandOpen: null,
-        loot: null,
-        miss: null,
-      });
-      return null;
-    }
     const v = get().vaults[poiId];
     const clock = Date.now();
     if (v && v.state === "cooling" && v.coolUntil > clock)
@@ -1613,12 +1531,11 @@ export const useGame = create<GameState>((set, get) => ({
   pickCategory: (cat, _now) => {
     const ov = get().openVault;
     if (!ov || ov.question || ov.pending) return;
-    const series = seriesOf(ov.poiId);
     // 0.0.57: the tier this card costs (none for a spark). Re-checked here and taken atomically when the card lands.
-    const lampTier: Tier | null = ov.spark ? null : series ? series.cost : (anyPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
+    const lampTier: Tier | null = ov.spark ? null : (anyPois(CITIES[get().cityId], get().blanks).find((p) => p.id === ov.poiId)?.tier ?? null);
     if (!ov.spark && !lampTier) return;
     // 0.1.117: a Double/Triple Hearth spends its one key on the first question; later picks cost nothing and can't reuse a field.
-    const hv = series ? null : hearthOf(ov.poiId);
+    const hv = hearthOf(ov.poiId);
     const run = hv && hearthVersion(hv.v) > 1 ? (ov.hearth ?? { step: 0, used: [] }) : undefined;
     if (run && hv && slotUsed(hv.cats, run.used, cat)) return;
     const cost: Tier | null = run && run.step > 0 ? null : lampTier;
@@ -1681,7 +1598,6 @@ export const useGame = create<GameState>((set, get) => ({
           token: dealt.token,
           startedAt: shown,
           deadline: shown + dealt.windowMs,
-          run: series ? { step: 0, steps: series.steps, grades: [], spent: true } : undefined,
           spark,
           dealtAt: Date.now(),
           held: cost ?? undefined,
@@ -1732,8 +1648,7 @@ export const useGame = create<GameState>((set, get) => ({
     const ov = get().openVault;
     if (!ov?.question) return;
     const city = CITIES[get().cityId];
-    const series = seriesOf(ov.poiId);
-    const poi0 = series ? seriesPoi(series) : anyPois(city, get().blanks).find((p) => p.id === ov.poiId);
+    const poi0 = anyPois(city, get().blanks).find((p) => p.id === ov.poiId);
     if (!poi0) return;
     // 0.1.117: a Double/Triple Hearth question plays at its step's tier (green → amber → red).
     const hRun = ov.hearth;
@@ -1848,207 +1763,6 @@ export const useGame = create<GameState>((set, get) => ({
         const t = get().toast;
         if (t && (t.includes("wick") || t.includes("spark") || t.includes("Pocket"))) set({ toast: null });
       }, 2200);
-      return;
-    }
-
-    if (series) {
-      const step = ov.run?.step ?? 0;
-      const steps = ov.run?.steps ?? series.steps;
-      if (!correct) {
-        sfx.wrong();
-        const boost = rollBoosts(get, false, elapsed, ov.category);
-        set({
-          ...missStreak(get),
-          charmDay: boost.charmDay,
-          charmTopics: boost.charmTopics,
-          asked,
-          seenIds,
-          ...logged,
-          openVault: null,
-          loot: null,
-          miss: { answer: out.reveal, fact: out.fact },
-          ...seriesPatch(series.kind, coolSeries(get(), series)),
-          toast: `${series.name} breaks on trivia card ${step + 1}.`,
-          quests: answered(get, false, false),
-        });
-        scheduleSave(get);
-        return;
-      }
-      let grade: LootDrop["grade"] = "good";
-      if (elapsed <= 3000) grade = "perfect";
-      else if (elapsed <= 10000) grade = "great";
-      const grades = [...(ov.run?.grades ?? []), grade];
-      if (step + 1 < steps && ov.category) {
-        if (grade === "perfect") sfx.perfect();
-        else sfx.correct();
-        const spun = foldWheel(get, series.cost);
-        const boost = rollBoosts(get, true, elapsed, ov.category);
-        const paid = payBoosts(get().keys, get().points, boost);
-        set({
-          asked,
-          seenIds,
-          ...logged,
-          ...bumpStreak(get),
-          keys: paid.keys,
-          points: paid.points,
-          charmDay: paid.charmDay,
-          charmTopics: paid.charmTopics,
-          ...spun,
-          toast: paid.boosts.length ? paid.boosts.join(" · ") : null,
-          quests: answered(get, true, grade === "perfect"),
-          openVault: {
-            poiId: series.id,
-            category: ov.category,
-            question: null,
-            pending: "deal",
-            startedAt: now,
-            deadline: now,
-            run: { step: step + 1, steps, grades, spent: true },
-          },
-        });
-        const nextCat = ov.category;
-        const prevToken = ov.token;
-        void dealCard(set, get, series.id, nextCat, step + 1, prevToken).then((dealt) => {
-          const cur = get().openVault;
-          if (!cur || cur.poiId !== series.id || cur.pending !== "deal") return;
-          if (!dealt || "need" in dealt || "lockedMs" in dealt) {
-            // Can't reach the lamp for the next card: the run breaks like a walk-away, with a clear message.
-            set({ openVault: null, ...seriesPatch(series.kind, coolSeries(get(), series)), toast: `${series.name}: ${DEAL_FAIL}` });
-            scheduleSave(get);
-            return;
-          }
-          const shown = performance.now();
-          set({
-            ...markSeen(get().asked, get().seenIds, dealt.card),
-            openVault: {
-              ...cur,
-              pending: undefined,
-              question: dealt.card,
-              token: dealt.token,
-              startedAt: shown,
-              deadline: shown + dealt.windowMs,
-              dealtAt: Date.now(),
-            },
-          });
-        });
-        postClear(series.cost);
-        scheduleSave(get);
-        if (paid.boosts.length) {
-          const line = paid.boosts.join(" · ");
-          window.setTimeout(() => {
-            if (get().toast === line) set({ toast: null });
-          }, 2200);
-        }
-        return;
-      }
-      let mult = 0.4;
-      if (grades.every((g) => g === "perfect")) mult = 1;
-      else if (grades.filter((g) => g === "perfect" || g === "great").length >= 2) mult = 0.75;
-      else if (grades.some((g) => g === "great" || g === "perfect")) mult = 0.55;
-      const bumped = bumpStreak(get);
-      const streak = bumped.streak;
-      const bonus = 1 + Math.min(0.4, streak * 0.05);
-      const seriesCoin = rewardPoints(series.pay, {
-        mult,
-        bonus,
-        loot: wornPerk(get().scout).loot ?? 1,
-        series: true,
-      });
-      const baseKeys: Partial<Record<Tier, number>> = { [series.pay]: 1 };
-      // 0.1.36: perfect ladder prize (a guest rolls here; signed in, the server's award replaces these keys).
-      const prize = grades.every((g) => g === "perfect") ? prizeTier(series.kind, Math.random()) : null;
-      if (prize) baseKeys[prize] = (baseKeys[prize] ?? 0) + 1;
-      else if (luckyOn(get()) && Math.random() < 0.15) baseKeys.blue = 1;
-      const spot = seriesLive(get(), series.kind);
-      const seriesMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
-      const sMult = spot && onMarket(seriesMarket, { kind: "series", lat: spot.lat, lng: spot.lng }) ? MARKET_MULT : 1;
-      const sPay = marketPay(seriesCoin, baseKeys, sMult);
-      const prizeCoin = prize ? PRIZE_COIN[series.kind] : 0;
-      const points = sPay.coin + prizeCoin;
-      const extraKeys: Partial<Record<Tier, number>> = sPay.keys;
-      // 0.1.82: brass, ink, vellum and press stock are cut (nothing spent them); only paint still drops.
-      const brass = 0;
-      const ink = 0;
-      const vellum = 0;
-      const schematic = false;
-      const ing: IngredientId | null = null;
-      const paints = paintsFromServer(series.cost, out.paints);
-      let pantry = ing ? addIngredient(get().pantry, ing) : get().pantry;
-      for (const id of paints) pantry = addIngredient(pantry, id);
-      const loot: LootDrop = {
-        points,
-        grade: grades.includes("perfect") ? "perfect" : grades.includes("great") ? "great" : "good",
-        diff: 3,
-        keys: extraKeys,
-        brass,
-        ink,
-        vellum,
-        schematic,
-        ingredient: ing ? { id: ing, name: ingredientName(ing) } : undefined,
-        paint: paints[0] ? { id: paints[0], name: ingredientName(paints[0]) } : undefined,
-        extraPaint: paints[1] ? { id: paints[1], name: ingredientName(paints[1]) } : undefined,
-        market: sMult > 1 && seriesMarket ? { street: seriesMarket.street.name, mult: sMult, coin: sPay.extraCoin, matches: sPay.extraMatches } : undefined,
-      };
-      let nextKeys = { ...get().keys };
-      for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) nextKeys[t] += n;
-      // 0.0.90: every card right (a miss breaks the run) gives back the spent match. Not violet.
-      const sBack = perfectBack(series.cost, nextKeys);
-      if (sBack.match) nextKeys[sBack.tier] = (nextKeys[sBack.tier] ?? 0) + sBack.match;
-      if (sBack.match || sBack.coin) {
-        loot.points += sBack.coin;
-        loot.refund = { tier: sBack.tier, match: sBack.match, coin: sBack.coin, up: sBack.up };
-      }
-      const surveyHit = takeSurvey({
-        atlas: get().atlas,
-        distanceM: get().distanceM,
-        survey: get().survey,
-        keys: nextKeys,
-      });
-      if (surveyHit) nextKeys = surveyHit.keys;
-      const boost = rollBoosts(get, true, elapsed, ov.category);
-      const paid = payBoosts(nextKeys, get().points + loot.points, boost);
-      if (paid.whiteAdded) extraKeys.white = (extraKeys.white ?? 0) + paid.whiteAdded;
-      loot.keys = extraKeys;
-      loot.points = paid.points - get().points;
-      const boostLines = prize ? [...paid.boosts, `${PRIZE_TAG}: ${prize} key +${prizeCoin}`] : paid.boosts;
-      loot.boosts = boostLines.length ? boostLines : undefined;
-      if (loot.grade === "perfect") sfx.perfect();
-      else sfx.correct();
-      const spun = foldWheel(get, series.cost);
-      const clearLine = (prize
-        ? `${series.name} is clear, all perfect. ${TIER_LABEL[series.pay]} key and a prize key.`
-        : `${series.name} is clear. ${TIER_LABEL[series.pay]} key.`) + (sMult > 1 ? ` ${MARKET_TAG}.` : "");
-      const ingLine = ing ? `${ingredientName(ing)} for the press.` : null;
-      const paintLine = paints.length ? paints.map((id) => paintFoundLine(id)).join(" ") : null;
-      const questHit = cleared(get, answered(get, true, grade === "perfect"), { id: series.id, tier: series.cost });
-      set({
-        keys: paid.keys,
-        points: paid.points,
-        brass: get().brass + brass,
-        ink: get().ink + ink,
-        vellum: get().vellum + vellum,
-        schematics: get().schematics + (schematic ? 1 : 0),
-        pantry,
-        survey: surveyHit?.survey ?? get().survey,
-        ...bumped,
-        charmDay: paid.charmDay,
-        charmTopics: paid.charmTopics,
-        vaultsOpened: get().vaultsOpened + 1,
-        ...spun,
-        asked,
-        seenIds,
-        ...logged,
-        openVault: null,
-        loot,
-        miss: null,
-        ...seriesPatch(series.kind, coolSeries(get(), series)),
-        // Boost labels ride on loot.boosts (their own line in the reward pop); not repeated in the toast.
-        toast: [clearLine, paintLine, ingLine, questHit.line].filter(Boolean).join(" "),
-        quests: questHit.quests,
-        tutorial: Math.max(get().tutorial, 2),
-      });
-      postClear(series.cost);
-      scheduleSave(get);
       return;
     }
 
@@ -2289,23 +2003,8 @@ export const useGame = create<GameState>((set, get) => ({
     const ov = get().openVault;
     // 0.0.53: an answer is with the server — the lamp stays until it's graded.
     if (ov?.pending === "grade") return;
-    const series = ov ? seriesOf(ov.poiId) : null;
     // A trivia card that was shown and walked away from counts as seen, so closing is not a reroll.
     if (ov?.question) set(markSeen(get().asked, get().seenIds, ov.question));
-    if (series && ov?.run?.spent) {
-      sfx.wrong();
-      set({
-        openVault: null,
-        ...seriesPatch(series.kind, coolSeries(get(), series)),
-        toast: `You walked away from ${series.name}, so that key is used up.`,
-        ...missStreak(get),
-      });
-      scheduleSave(get);
-      window.setTimeout(() => {
-        if (get().toast?.includes(series.name)) set({ toast: null });
-      }, 2000);
-      return;
-    }
     // 0.1.117: walking away mid-way through a Double/Triple Hearth ends the run; its key was spent on question 1.
     if (ov?.hearth && ov.hearth.step > 0) {
       const name = HEARTH_VERSION_NAME[hearthVersion(hearthOf(ov.poiId)?.v)];
@@ -2315,7 +2014,7 @@ export const useGame = create<GameState>((set, get) => ({
       return;
     }
     // A lamp walked away from before answering costs nothing: the held match goes back in the pocket.
-    if (ov?.held && !series) {
+    if (ov?.held) {
       const token = ov.token;
       set({ openVault: null, keys: refundMatch(get().keys, ov.held) });
       saveNow(get);
@@ -3231,9 +2930,6 @@ export const useGame = create<GameState>((set, get) => ({
     const id = get().cityId;
     set({
       mapKeys: seedKeys(id),
-      run: placeRun(id),
-      stack: placeRun(id),
-      climb: placeRun(id),
       contract: seedContract(id),
       vaults: {},
       blanks: [],
@@ -3349,9 +3045,6 @@ export const useGame = create<GameState>((set, get) => ({
       journey: null,
       cityId: j.to,
       mapKeys: seedKeys(j.to),
-      run: placeRun(j.to),
-      stack: placeRun(j.to),
-      climb: placeRun(j.to),
       contract: seedContract(j.to),
       cityVaults: 0,
       landAtStation: true,

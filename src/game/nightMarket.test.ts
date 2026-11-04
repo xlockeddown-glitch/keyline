@@ -257,7 +257,7 @@ test("doubling: trivia-card coin and bonus matches on the market street pay ×2;
   assert.equal(marketOverflowCoin("white", 2, 1), 0);
 });
 
-test("doubling: on-street test — baked lamps, measured blanks/series/matches, and only during that hour", () => {
+test("doubling: on-street test — baked lamps, measured blanks/matches, and only during that hour", () => {
   for (const city of ALL) {
     const m = marketAt(city, at(H0 + 3))!;
     const s: MarketStreet = m.street;
@@ -266,7 +266,6 @@ test("doubling: on-street test — baked lamps, measured blanks/series/matches, 
     assert.equal(marketMult(city, at(H0 + 3, 5), { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }), 2);
     const on = { lat: s.lines[0]![0]!, lng: s.lines[0]![1]! };
     assert.ok(onMarket(m, { kind: "match", ...on }));
-    assert.ok(onMarket(m, { kind: "series", ...on }));
     // 200 m north of every point of the street is off it.
     const off = { lat: on.lat + 0.01, lng: on.lng };
     if (distToStreet(off.lat, off.lng, s) > MARKET_CURB_M && distM(off.lat, off.lng, m.zone.lat, m.zone.lng) > m.zone.r) assert.ok(!onMarket(m, { kind: "match", ...off }));
@@ -283,7 +282,6 @@ test("doubling scope: Daily Lantern Run, print shop prices, the bank and the loc
   assert.equal(MARKET_DOUBLES.lampMatches, true);
   assert.equal(MARKET_DOUBLES.spark, true);
   assert.equal(MARKET_DOUBLES.streetMatch, true);
-  assert.equal(MARKET_DOUBLES.seriesCoin, true);
   for (const k of ["dailyRun", "printShop", "bank", "ride", "boosts", "materials", "clears"] as const) assert.equal(MARKET_DOUBLES[k], false, k);
   assert.deepEqual(TIER_VALUE, { white: 30, blue: 90, green: 270, amber: 810, red: 2430, violet: 7290 });
   assert.deepEqual(DAILY_REWARD, { white: 2, blue: 1 });
@@ -305,7 +303,7 @@ test("doubling scope: Daily Lantern Run, print shop prices, the bank and the loc
       nickel: { white: 0, blue: 8 },
     },
   );
-  // The store only reaches for the market inside the lamp / spark / series / street-match paths.
+  // The store only reaches for the market inside the lamp / spark / street-match paths.
   const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   for (const fn of ["payDailyRun", "bankUp", "bankDown", "payCosmetic", "printPattern", "buyScout", "buyKiosk", "claimWheel", "claimCrate", "claimPulse"]) {
     const start = src.search(new RegExp(`\\n  ${fn}: \\([\\w, ]*\\) => \\{\\n`));

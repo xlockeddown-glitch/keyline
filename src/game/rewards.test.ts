@@ -32,7 +32,7 @@ test("rewardPoints uses only TIER_VALUE", () => {
   assert.equal(rewardPoints("white", { mult: 1, bonus: 1 }), 30);
   assert.equal(rewardPoints("violet", { mult: 1, bonus: 1 }), 7290);
   assert.equal(rewardPoints("blue", { mult: 0.4, bonus: 1, diffMult: 1 }), Math.round(90 * 0.4));
-  assert.equal(rewardPoints("amber", { mult: 1, bonus: 1.2, diffMult: 1.45, loot: 1.01, series: true }), Math.round(810 * 1 * 1.2 * 1.45 * 1.01 * 1.15));
+  assert.equal(rewardPoints("amber", { mult: 1, bonus: 1.2, diffMult: 1.45, loot: 1.01 }), Math.round(810 * 1 * 1.2 * 1.45 * 1.01));
 });
 
 test("Bank 4-up taxes; 3-down is exact", () => {

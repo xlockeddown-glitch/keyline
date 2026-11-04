@@ -2,14 +2,14 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { commitWallet, walletLive } from "./walletClient";
 import { useGame } from "./store";
-import { PLANT_GAP_M, PLANT_NAMES, type HearthStats, type PlacedVault } from "./placedLantern";
+import { PLANT_GAP_M, PLANT_NAMES, PLANT_RED_NEED, type HearthStats, type PlacedVault } from "./placedLantern";
 import { setHearths, type HearthView } from "./hearthVaults";
 
 export type Ghost = { lat: number; lng: number; gap: number; street: boolean };
 export type PlantState = {
   city: string | null;
   placed: HearthView[];
-  me: { unlocked: boolean; mine: PlacedVault | null; stats?: HearthStats };
+  me: { unlocked: boolean; mine: PlacedVault | null; stats?: HearthStats; /** 0.1.119: right red/violet answers toward the unlock (locked only). */ red?: number };
   /** 0.1.111: the "Your Hearth" owner panel is up. */
   ownerOpen?: boolean;
   /** The placement sheet and ghost are up. */
@@ -80,7 +80,7 @@ export async function placeHearth(): Promise<void> {
     version: "Pick Single, Double or Triple.",
     locked: "Unlock this city first.",
     placed: "You've already placed your Hearth vault.",
-    "no-unlock": "Clear The Stack perfectly to unlock it.",
+    "no-unlock": `Answer ${PLANT_RED_NEED} red (V) vaults right to unlock it.`,
   };
   setPlant({ busy: false, note: why[r?.reason ?? ""] ?? "Couldn't place it. Try again in a moment." });
 }

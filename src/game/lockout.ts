@@ -24,9 +24,9 @@ export function lockoutLeft(detail: string | null | undefined, now: number): num
   return Math.max(0, Math.min(LOCKOUT_LONG_MS, until - now));
 }
 
-/** True for a deal or grade that the lock-out covers: a street or placed vault, not a ladder or Blitz card. */
-export function lockable(poiId: string, series: boolean): boolean {
-  return !series && poiId.length > 0 && !poiId.startsWith("blitz-") && !poiId.startsWith("__");
+/** True for a deal or grade that the lock-out covers: a street or placed vault, not a Blitz card. */
+export function lockable(poiId: string): boolean {
+  return poiId.length > 0 && !poiId.startsWith("blitz-") && !poiId.startsWith("__");
 }
 
 export async function noteLockout(sql: Sql, userId: string, poiId: string, until: number): Promise<void> {

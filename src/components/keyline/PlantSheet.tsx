@@ -36,7 +36,7 @@ export function PlantSheet() {
     <section className="plant-sheet" role="dialog" aria-label="Place your Hearth vault" data-testid="plant-sheet">
       <p className="kicker plant-kicker">Hearth vault · {HEARTH_VERSION_NAME[p.v]} · {HEARTH_TIERS[p.v].map((t) => VK_NUM[t]).join(" → ")}</p>
       <h2 className="plant-title">Place it here, for good</h2>
-      <p className="plant-sub">Unlocked by your perfect Stack. Placed vaults can't be moved or picked up.</p>
+      <p className="plant-sub">Unlocked. Placed vaults can't be moved or picked up.</p>
       <p className={`plant-check ${line.ok ? "ok" : "bad"}`} data-testid="plant-check">{line.text}</p>
       <p className="plant-label">Name</p>
       <div className="plant-chips" data-testid="plant-names">

@@ -1,7 +1,7 @@
 import { applyTriviaBoosts, creditWhite } from "./boosts.ts";
 import { catBoost } from "./carPerks.ts";
 import { chooseStart, cleanUnlocks, freshUnlocks, lampLit, runFinished, unlockCity, type CityUnlocks } from "./cityPass.ts";
-import { CITIES, KIOSK, SCOUTS, SERIES, type KioskId } from "./data.ts";
+import { CITIES, KIOSK, SCOUTS, type KioskId } from "./data.ts";
 import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { payDaily } from "./dailyRun.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
@@ -23,7 +23,6 @@ import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
 import { betterOutcome, bonusDue, IDLE, RIDE_BONUS_WHITE, rideRamp, rideRoundMs, type RideGameId, type RideOutcome } from "./rideGames.ts";
 import { perfectBack, perfectRefund } from "./perfectRefund.ts";
-import { PRIZE_COIN, PRIZE_TAG, prizeTier } from "./ladderPrize.ts";
 import { hearthBoost, hearthBoostLabel, hearthLast, type HearthVersion } from "./hearthMulti.ts";
 import { FARE_MAX_MS, FARES_CAP, hurriedLoot, matchCap, pocketRide, transitLoot } from "./ticket.ts";
 
@@ -773,13 +772,6 @@ export type GradePay = {
   poiId: string;
   lat: number;
   lng: number;
-  series: "climb" | "run" | "stack" | null;
-  /** 0.1.36: server roll in [0,1) for the perfect-ladder prize tier (ladderPrize.ts). */
-  prizeRoll?: number;
-  step: number;
-  steps: number;
-  /** Grades of the earlier cards in this Run/Stack, oldest first, not including this one. */
-  prior: Array<"perfect" | "great" | "good">;
   /** Streak before this answer. */
   streak: number;
   loot: number;
@@ -871,35 +863,6 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     void cap;
     const paid = payMatchesOf(w.keys, tier, mult);
     return withBoost(w, paid.coin + owl, paid.add, boost);
-  }
-
-  if (p.series) {
-    const def = SERIES[p.series];
-    const letter = gradeLetter(p.elapsedMs);
-    const last = p.step + 1 >= p.steps;
-    if (!last) return withBoost(w, 0, {}, boost);
-    const grades = [...p.prior, letter];
-    let mult = 0.4;
-    if (grades.every((g) => g === "perfect")) mult = 1;
-    else if (grades.filter((g) => g === "perfect" || g === "great").length >= 2) mult = 0.75;
-    else if (grades.some((g) => g === "great" || g === "perfect")) mult = 0.55;
-    const seriesCoin = rewardPoints(def.pay, { mult, bonus, loot: p.loot, series: true });
-    const baseKeys: Partial<Record<Tier, number>> = { [def.pay]: 1 };
-    const perfect = grades.every((g) => g === "perfect");
-    // 0.1.36: a perfect ladder rolls a match of any tier (weighted by ladder) instead of the fixed bonus match.
-    const prize = perfect ? prizeTier(p.series, p.prizeRoll ?? 0) : null;
-    if (prize) baseKeys[prize] = (baseKeys[prize] ?? 0) + 1;
-    else if (p.lucky && p.luckyHit) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
-    const sMult = marketMult(p.city, p.dealtAt, { kind: "series", lat: p.lat, lng: p.lng });
-    const pay = marketPay(seriesCoin, baseKeys, sMult);
-    pay.coin += owlExtraCoin(p.scout ?? null, sMult, seriesCoin, lightOf(p.light));
-    // 0.0.90: reaching the last card means every card was right: the spent match comes back (not violet).
-    const back = perfectBack(def.cost, sumKeys(w.keys, pay.keys));
-    const sKeys = { ...pay.keys };
-    if (back.match) sKeys[back.tier] = (sKeys[back.tier] ?? 0) + back.match;
-    const prizeCoin = prize ? PRIZE_COIN[p.series] : 0;
-    const tagged = prize ? { ...boost, labels: [...boost.labels, `${PRIZE_TAG}: ${prize} key +${prizeCoin}`] } : boost;
-    return withBoost(w, pay.coin + back.coin + prizeCoin, sKeys, tagged);
   }
 
   // 0.1.45: favorite categories and the category of the day (+15% / +25%, added, cap +40%), before the market.

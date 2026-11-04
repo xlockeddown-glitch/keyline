@@ -41,6 +41,8 @@ export async function questEvents(sql: Sql, id: string, start: number, end: numb
     if (!d) continue;
     const t = at(row.created_at);
     if (d.g === "miss") out.push({ k: "miss", at: t });
+    // 0.1.119: a cleared Double/Triple Hearth (its last right answer) also counts for Hearth climber.
+    if (d.hc === 1) out.push({ k: "hearth", at: t });
     else if (d.ql === 1 && typeof d.t === "string" && TIERS.includes(d.t as Tier)) {
       out.push({
         k: "lamp",

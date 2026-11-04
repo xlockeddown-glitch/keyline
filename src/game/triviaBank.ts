@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { CITIES, seriesOf, seriesPoi } from "./data";
+import { CITIES } from "./data";
 import { marketLanternById } from "./nightMarket";
 import { DOOR_QUIZZES } from "./doorQuizzes";
 import { sealPlate } from "./rarity";
@@ -57,11 +57,6 @@ function namedPoi(city: CityId, poiId: string): Poi | null {
   return CITIES[city]?.pois.find((p) => p.id === poiId) ?? marketLanternById(city, poiId, Date.now());
 }
 
-function series(poiId: string) {
-  const s = seriesOf(poiId);
-  return s ? { poi: seriesPoi(s), cost: s.cost, diffs: s.diffs } : null;
-}
-
 const RETUNE_MS = 10 * 60 * 1000;
 let retuneAt = 0;
 /** The weekly rarity retune (overrides + quarantine) the picker uses, refreshed from Postgres every 10 minutes. */
@@ -98,7 +93,6 @@ export async function triviaDeps(): Promise<TriviaDeps> {
     pick: pickTrivia,
     card: cardAny,
     namedPoi,
-    series,
     sql: async () => (await import("@/lib/db")).getSql(),
   };
 }

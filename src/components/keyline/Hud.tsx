@@ -10,7 +10,7 @@ import { LevelHudBadge } from "./Levels";
 import { livePois } from "@/game/nightMarket";
 import { dealerOf } from "@/game/cars";
 import { houseOf, lotOf } from "@/game/houses";
-import { CITIES, CLIMB_ID, CLIMB_POI, KIND_LABEL, RUN_ID, RUN_POI, STACK_ID, STACK_POI, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, seriesOf } from "@/game/data";
+import { CITIES, KIND_LABEL, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop } from "@/game/data";
 import { TIERS } from "@/game/items";
 import { formatDist } from "@/game/geo";
 import { formatCool, isFareDesk, SPARK_DAY, ticketHint, VAULTS_PER_FARE } from "@/game/ticket";
@@ -70,25 +70,11 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
   const city = CITIES[cityId];
-  const run = useGame((s) => s.run);
-  const stack = useGame((s) => s.stack);
-  const runLive = Boolean(run && run.readyAt === 0);
-  const stackLive = Boolean(stack && stack.readyAt === 0);
-  const climb = useGame((s) => s.climb);
-  const climbLive = Boolean(climb && climb.readyAt === 0);
-  const seriesNear = seriesOf(hud.nearestId ?? "");
   const blanks = useGame((s) => s.blanks);
-  const nearest =
-    hud.nearestId === RUN_ID && runLive && run
-      ? { ...RUN_POI, lat: run.lat, lng: run.lng }
-      : hud.nearestId === STACK_ID && stackLive && stack
-        ? { ...STACK_POI, lat: stack.lat, lng: stack.lng }
-        : hud.nearestId === CLIMB_ID && climbLive && climb
-          ? { ...CLIMB_POI, lat: climb.lat, lng: climb.lng }
-          : livePois(city, blanks).find((p) => p.id === hud.nearestId);
+  const nearest = livePois(city, blanks).find((p) => p.id === hud.nearestId);
   const reachM = interactRadius();
   const service = Boolean(nearest && (isScoutShop(nearest) || isCounter(nearest) || isBoard(nearest)));
-  const recasting = Boolean(nearest && !seriesNear && !service && (vaults[nearest.id]?.coolUntil ?? 0) > Date.now());
+  const recasting = Boolean(nearest && !service && (vaults[nearest.id]?.coolUntil ?? 0) > Date.now());
   const inReach = Boolean(nearest && hud.nearestDist <= reachM);
   const atShop = Boolean(nearest && isScoutShop(nearest) && inReach && !hud.seated);
   const atCounter = Boolean(nearest && isCounter(nearest) && inReach && !hud.seated);
@@ -103,7 +89,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const sparksLeft = (sparkDay === today ? SPARK_DAY - sparkN : SPARK_DAY);
   const sparkedHere = Boolean(nearest && sparkDay === today && sparkLamps.includes(nearest.id));
   const canSpark = Boolean(
-    inReach && needTier && !haveKey && !recasting && !seriesNear && !service && sparksLeft > 0 && !sparkedHere,
+    inReach && needTier && !haveKey && !recasting && !service && sparksLeft > 0 && !sparkedHere,
   );
   const armed = Boolean(atShop || atCounter || atBoard || (inReach && haveKey && !recasting) || canSpark);
   const fares = useGame((s) => s.fares);
@@ -114,7 +100,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const marketHere = Boolean(
     nearest &&
       !service &&
-      onMarket(market, seriesNear ? { kind: "series", lat: nearest.lat, lng: nearest.lng } : { kind: "lamp", poiId: nearest.id, lat: nearest.lat, lng: nearest.lng }),
+      onMarket(market, { kind: "lamp", poiId: nearest.id, lat: nearest.lat, lng: nearest.lng }),
   );
 
   const atDesk = Boolean(nearest && isFareDesk(nearest) && inReach && !hud.seated);
@@ -138,11 +124,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
     else if (nearest && isScoutShop(nearest)) cue = `${formatDist(hud.nearestDist)} · brass awning, coats`;
     else if (nearest && isCounter(nearest)) cue = `${formatDist(hud.nearestDist)} · street counter`;
     else if (nearest && isBoard(nearest)) cue = `${formatDist(hud.nearestDist)} · notice board`;
-    else if (seriesNear) {
-      if (inReach && !haveKey) cue = `Need a ${TIER_LABEL[seriesNear.cost]} key for ${seriesNear.name}`;
-      else if (armed) cue = `${seriesNear.name} · ${seriesNear.steps} trivia cards · E`;
-      else cue = `${formatDist(hud.nearestDist)} · ${seriesNear.kicker}`;
-    } else if (recasting) {
+    else if (recasting) {
       const left = (vaults[nearest.id]?.coolUntil ?? 0) - Date.now();
       cue = vaults[nearest.id]?.lockout ? `Locked out · ${lockClock(left)} · try another vault` : left > 45 * 60_000 ? `Dark for ${formatCool(left)}` : "Resting. Come back soon to try it again.";
     } else if (inReach && !haveKey) {
@@ -342,9 +324,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
               <>
                 <div className="flex min-w-0 items-center justify-between gap-3">
                   <p className="kicker min-w-0 truncate">
-                    {seriesNear
-                      ? `${seriesNear.name} · ${seriesNear.steps} trivia cards`
-                      : isScoutShop(nearest)
+                    {isScoutShop(nearest)
                         ? "Outfitter"
                         : isCounter(nearest)
                           ? "Counter"

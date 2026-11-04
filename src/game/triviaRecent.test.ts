@@ -53,8 +53,7 @@ function deps(sql?: Sql, fail = false): TriviaDeps {
     },
     card: (id) => all.get(id) ?? null,
     namedPoi: (_c, id) => (id === LAMP.id ? LAMP : null),
-    series: () => null,
-    sql: sql ? async () => (fail ? Promise.reject(new Error("db down")) : sql) : undefined,
+        sql: sql ? async () => (fail ? Promise.reject(new Error("db down")) : sql) : undefined,
   };
 }
 const input = (seen: string[]) => DealIn.parse({ city: "austin", cat: "local", poiId: LAMP.id, windowMs: 25000, seen, saveId: "s-1" });

@@ -10,6 +10,7 @@ import { useGame } from "@/game/store";
 import type { Poi, PoiKind } from "@/game/types";
 import { sfx } from "@/game/audio";
 import { cityDay } from "@/game/vaultStack";
+import { PLANT_RED_NEED } from "@/game/placedLantern";
 import { ItemIcon } from "./ItemIcon";
 import { MarketJournalRow, useMarket } from "./NightMarket";
 import { OwnLampsSection, shortCoin } from "./OwnLamps";
@@ -28,7 +29,7 @@ function HearthRow() {
         <p className="kicker">Hearth vault · plays as red</p>
         <p className="hq-row-title">{mine ? `${PLANT_NAMES[mine.name] ?? "Your vault"} · ${CITIES[mine.city as keyof typeof CITIES]?.name ?? mine.city}` : "Your Hearth vault"}</p>
         <p className="hq-row-sub">
-          {mine ? `Placed for good · ${mine.cats.map(label).join(", ")}` : p.me.unlocked ? "Ready. Walk to a street spot, 40 m from any vault, and place it." : "Clear The Stack perfectly to unlock."}
+          {mine ? `Placed for good · ${mine.cats.map(label).join(", ")}` : p.me.unlocked ? "Ready. Walk to a street spot, 40 m from any vault, and place it." : `Answer ${PLANT_RED_NEED} red (V) vaults right to unlock${typeof p.me.red === "number" ? ` · ${p.me.red}/${PLANT_RED_NEED}` : ""}.`}
         </p>
       </div>
       {!mine && p.me.unlocked ? (

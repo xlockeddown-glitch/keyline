@@ -3,8 +3,8 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { cotdAt, perkFavs, favBonus, CAT_BONUS_CAP, RANDOM_BONUS } from "@/game/carPerks";
 import { BookOpen, Calculator, Dices, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
-import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
-import { VK_NUM, ladderColumnSvg } from "@/game/pins";
+import { CITIES, KIND_LABEL, TIER_LABEL } from "@/game/data";
+import { VK_NUM } from "@/game/pins";
 import { HEARTH_VERSION_NAME, HEARTH_TIERS, hearthSteps, hearthTierAt, hearthVersion, slotOf } from "@/game/hearthMulti";
 import { seatedCar, useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
@@ -109,8 +109,7 @@ export function VaultModal() {
   }, [quiz]);
 
   if (!openVault) return null;
-  const series = seriesOf(openVault.poiId);
-  const poi = series ? seriesPoi(series) : anyPois(CITIES[cityId], blanks).find((p) => p.id === openVault.poiId);
+  const poi = anyPois(CITIES[cityId], blanks).find((p) => p.id === openVault.poiId);
   if (!poi) return null;
 
   const left = quiz ? Math.max(0, openVault.deadline - now) : 0;
@@ -121,7 +120,7 @@ export function VaultModal() {
   const catMeta = openVault.category === "random" ? { label: "Random" } : TRIVIA_CATS.find((c) => c.id === openVault.category);
   const today = cotdAt(Date.now());
   // 0.1.110: a Hearth vault offers its owner's 4 fixed fields (Math on MATH_OFFER_KEEP of visits, like any lamp).
-  const hearth = series ? null : hearthOf(openVault.poiId);
+  const hearth = hearthOf(openVault.poiId);
   // 0.1.117: Double/Triple Hearth: which question this is, its tier, and the fields already used this run.
   const hv = hearth ? hearthVersion(hearth.v) : 1;
   const multi = Boolean(hearth) && hv > 1;
@@ -131,11 +130,9 @@ export function VaultModal() {
   const hName = HEARTH_VERSION_NAME[hv];
   const offered = hearth
     ? hearthOffer(hearth.cats, openVault.poiId, vaultsOpened, hStep)
-    : offerCats(openVault.poiId, vaultsOpened, 6, series ? undefined : poi, series ? undefined : today);
-  const favs = series ? [] : perkFavs(scout, true, carNow);
-  const ground = !series && poi ? placeLine(poi) : null;
-  const step = (openVault.run?.step ?? 0) + (quiz ? 1 : 0);
-  const steps = openVault.run?.steps ?? series?.steps ?? 3;
+    : offerCats(openVault.poiId, vaultsOpened, 6, poi, today);
+  const favs = perkFavs(scout, true, carNow);
+  const ground = poi ? placeLine(poi) : null;
   const wickClass = left < 5000 ? "is-short" : `is-${grade.toLowerCase()}`;
 
   return (
@@ -143,19 +140,8 @@ export function VaultModal() {
       <div className={`plate lamp-card w-full max-w-lg${owned ? " is-owned" : ""}`}>
         <div className="lamp-card-body px-5 pt-5 sm:px-6 sm:pt-6">
           <div className="flex items-start gap-4">
-            <div className={`vault-hero vault-pin tier-${poi.tier}${series ? ` is-ladder is-${series.kind}` : ""}`}>
-              {series ? (
-                <span
-                  data-testid="ladder-hero"
-                  dangerouslySetInnerHTML={{
-                    __html: ladderColumnSvg(series, {
-                      cleared: openVault.run?.step ?? 0,
-                      current: quiz ? (openVault.run?.step ?? 0) : null,
-                      perfect: (openVault.run?.step ?? 0) >= steps && (openVault.run?.grades ?? []).every((g) => g === "perfect"),
-                    }),
-                  }}
-                />
-              ) : hearth ? (
+            <div className={`vault-hero vault-pin tier-${poi.tier}`}>
+              {hearth ? (
                 <span className="hearth-hero" data-testid="hearth-hero">
                   <ItemIcon item={multi ? hTier : "red"} size={56} />
                 </span>
@@ -168,18 +154,16 @@ export function VaultModal() {
               <p className="kicker">
                 {openVault.spark
                   ? `Spark · earn a ${TIER_LABEL[poi.tier]} key`
-                  : series
-                  ? `${series.name} · trivia card ${Math.max(1, step)} of ${steps}`
                   : multi
                   ? `Hearth · ${hName} · question ${hStep + 1} of ${hearthSteps(hv)}`
                   : hearth
                   ? "Hearth vault · plays as V · spends one V key"
                   : `${TIER_LABEL[poi.tier]} vault · ${KIND_LABEL[poi.kind]}`}
                 {catMeta ? ` · ${catMeta.label}` : ""}
-                {!series && !hearth && openVault.category === today ? <span className="cotd-badge ml-1.5">+25% today</span> : null}
+                {!hearth && openVault.category === today ? <span className="cotd-badge ml-1.5">+25% today</span> : null}
               </p>
               <h2 className="font-display mt-1 text-2xl leading-tight text-balance">{poi.name}</h2>
-              {series || hearth ? null : <OwnerPlate poiId={poi.id} />}
+              {hearth ? null : <OwnerPlate poiId={poi.id} />}
               {multi ? (
                 <>
                   <div className="hearth-chips" data-testid="hearth-chips" aria-label={`${hName} Hearth tiers`}>
@@ -223,7 +207,6 @@ export function VaultModal() {
                     ) : (
                       <>
                         Spends one <ItemIcon item={poi.tier} size={16} /> {TIER_LABEL[poi.tier]} key
-                        {series ? ` · pays a ${TIER_LABEL[series.pay].toLowerCase()} if you clear` : ""}
                       </>
                     )}
                   </p>
@@ -245,8 +228,6 @@ export function VaultModal() {
                   ? offered.includes("math") || !hearth.cats.includes("math")
                     ? "The owner picked these 4. They never rotate."
                     : `The owner picked these. Math sits out this visit; ${TRIVIA_CATS.find((t) => t.id === offered[hearth.cats.indexOf("math")])?.label ?? "another field"} stands in.`
-                  : series
-                  ? "One field for all trivia cards — they get harder as you go."
                   : "Six this vault, or Random. They rotate. The trivia cards prefer the ground you're on."}
               </p>
               <div className="field-grid mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -284,7 +265,7 @@ export function VaultModal() {
                       <span className="min-w-0">
                         <span className="font-display block text-lg leading-none">
                           {c.label}
-                          {c.id === today && !series && !hearth ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
+                          {c.id === today && !hearth ? <span className="cotd-badge ml-1.5">Today +25%</span> : null}
                           {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +{Math.round(favBonus(favs.filter((f) => f === c.id).length) * 100)}%</span> : null}
                         </span>
                         {multi ? <span className="hearth-plays mt-1 block text-xs text-fg-subtle">Plays at {VK_NUM[hTier]}</span> : null}
@@ -324,22 +305,11 @@ export function VaultModal() {
                 <i style={{ width: `${frac * 100}%` }} />
               </div>
               <p className="plate-meta">
-                {series ? <span>Trivia card {(openVault.run?.step ?? 0) + 1} of {steps}</span> : null}
                 <span>{DIFF_LABEL[quiz.diff]}</span>
                 <span className={`grade is-${grade.toLowerCase()}`}>{grade}</span>
                 <span className="tabular-nums">{(left / 1000).toFixed(1)}s</span>
                 <span className="text-fg-subtle">×{DIFF_MULT[quiz.diff]}</span>
               </p>
-              {series ? (
-                <div className="mt-2 flex gap-1.5" aria-hidden>
-                  {Array.from({ length: steps }, (_, i) => (
-                    <span
-                      key={i}
-                      className={`h-1.5 flex-1 rounded-full ${i <= (openVault.run?.step ?? 0) ? "bg-accent" : "bg-bg-subtle"}`}
-                    />
-                  ))}
-                </div>
-              ) : null}
 
               <p className="plate-q">{quiz.q}</p>
               <div className="plate-choices">
@@ -370,7 +340,7 @@ export function VaultModal() {
         {/* 0.0.52: the leave/forfeit action sits in a footer that never scrolls, so it is on screen on short phones. */}
         <div className="lamp-card-foot px-5 pt-4 pb-5 sm:px-6 sm:pb-6">
           <button type="button" className="btn btn-ghost w-full" onClick={closeVault} disabled={openVault.pending === "grade"}>
-            {series && openVault.run?.spent ? `Forfeit ${series.name}` : "Leave vault"}
+            Leave vault
           </button>
         </div>
       </div>

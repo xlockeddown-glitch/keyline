@@ -1,4 +1,4 @@
-// 0.1.99 placed lantern slice 1: the server writes `plantok` on a perfect Stack; back-fill reads past prize rows.
+// 0.1.99 placed lantern slice 1. 0.1.119: `plantok` lands on the 10th right red (V) / violet answer; back-fill reads past perfect-Stack prize rows.
 import { welcomeClock, lampGiftClock } from "./lampGift.ts";
 welcomeClock.cutoff = "2999-01-01T00:00:00Z";
 lampGiftClock.cutoff = "2000-01-01T00:00:00Z";
@@ -10,10 +10,11 @@ import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
-import { SERIES, STACK_ID, RUN_ID } from "./data.ts";
+import { STACK_ID } from "./data.ts";
+const RUN_ID = "__run__"; // 0.1.119: the retired Run's old pseudo-vault id, only in old ledger rows now
 import type { GradePay, LocalSnap } from "./wallet.ts";
 import { awardGrade, plantUnlocked, syncPlayer } from "./walletApply.ts";
-import { PLANT_OK_KEY, findPerfectStack, perfectStackClear } from "./placedLantern.ts";
+import { PLANT_OK_KEY, PLANT_RED_NEED, findPerfectStack } from "./placedLantern.ts";
 
 function sqlOf(db: PGlite): Sql {
   const sql = (async (strings: TemplateStringsArray, ...values: unknown[]) => {
@@ -32,47 +33,58 @@ async function db() {
   return sqlOf(pg);
 }
 const snap = (): LocalSnap => ({ coins: 0, keys: { green: 5 }, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false } });
-const card = (over: Partial<GradePay> & { prevNonce?: string }): Omit<GradePay, "prior"> & { prevNonce: string } => ({
-  correct: true, elapsedMs: 2000, mult: 1, city: "austin", diff: 2, clearTier: null, poiTier: "green", poiId: STACK_ID,
-  lat: 30.28, lng: -97.74, series: "stack", step: 0, steps: SERIES.stack.steps, streak: 0, loot: 1, lucky: false,
+const card = (over: Partial<GradePay> & { prevNonce?: string }): GradePay & { prevNonce: string } => ({
+  correct: true, elapsedMs: 2000, mult: 1, city: "austin", diff: 2, clearTier: "red", poiTier: "red", poiId: "red-lamp",
+  lat: 30.28, lng: -97.74, streak: 0, loot: 1, lucky: false,
   cloth: null, charmDay: "", charmTopics: [], topic: null, dealtAt: Date.UTC(2026, 9, 16, 18), luckyHit: false,
-  perfectBlue: false, prizeRoll: 0.5, prevNonce: "", ...over,
+  perfectBlue: false, prevNonce: "", ...over,
 });
-async function ladder(sql: Sql, who: string, ms: number[], series: "stack" | "run" = "stack") {
-  let pv = "";
-  const steps = SERIES[series].steps;
-  for (let i = 0; i < steps; i++) {
-    const n = `${who}-${series}-${i}`;
-    await awardGrade(sql, who, n, card({ series, poiId: series === "stack" ? STACK_ID : RUN_ID, steps, step: i, elapsedMs: ms[i] ?? 2000, prevNonce: pv, clearTier: i === 0 ? SERIES[series].cost : null }));
-    pv = n;
-  }
+/** `n` answers at red (V) vaults (right unless `wrong`), each its own nonce. */
+async function reds(sql: Sql, who: string, n = PLANT_RED_NEED, over: Partial<GradePay> = {}, tag = "r") {
+  for (let i = 0; i < n; i++) await awardGrade(sql, who, `${who}-${tag}-${i}`, card(over));
 }
 const okRow = async (sql: Sql, who: string) => (await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${who} and op_key = ${PLANT_OK_KEY}`)[0]?.detail ?? null;
 
-test("perfectStackClear: only a finished Stack with every card perfect", () => {
-  assert.equal(perfectStackClear("stack", 3, 4, ["perfect", "perfect", "perfect", "perfect"]), true);
-  assert.equal(perfectStackClear("stack", 3, 4, ["perfect", "great", "perfect", "perfect"]), false);
-  assert.equal(perfectStackClear("stack", 2, 4, ["perfect", "perfect", "perfect"]), false, "not the last card");
-  assert.equal(perfectStackClear("stack", 3, 4, ["perfect", "perfect", "perfect"]), false, "chain shorter than the ladder");
-  assert.equal(perfectStackClear("run", 2, 3, ["perfect", "perfect", "perfect"]), false, "The Run doesn't count");
-  assert.equal(perfectStackClear("climb", 2, 3, ["perfect", "perfect", "perfect"]), false);
+test("0.1.119 server: the 10th right red or violet answer writes plantok once; misses, ambers and 9 reds don't", async () => {
+  const sql = await db();
+  for (const who of ["ace", "nine", "miss", "amb", "vio"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
+  await reds(sql, "ace", PLANT_RED_NEED - 1);
+  assert.equal(await okRow(sql, "ace"), null, "9 is not enough");
+  await reds(sql, "ace", 1, {}, "last");
+  const row = await okRow(sql, "ace");
+  assert.ok(row, "the 10th right red unlocks");
+  assert.match(row!, /"via":"red10"/);
+  assert.match(row!, /grade:ace-last-0/);
+  await reds(sql, "ace", 3, {}, "more");
+  assert.equal(await okRow(sql, "ace"), row, "later reds don't rewrite it");
+  await reds(sql, "nine", PLANT_RED_NEED - 1);
+  await reds(sql, "miss", PLANT_RED_NEED, { correct: false });
+  await reds(sql, "amb", PLANT_RED_NEED, { clearTier: "amber", poiTier: "amber" });
+  for (const who of ["nine", "miss", "amb"]) {
+    assert.equal(await okRow(sql, who), null, who);
+    assert.equal(await plantUnlocked(sql, who), false, who);
+  }
+  await reds(sql, "vio", 5, { clearTier: "violet", poiTier: "violet" }, "v");
+  await reds(sql, "vio", 5, {}, "r");
+  assert.ok(await okRow(sql, "vio"), "violet and red count together");
+  assert.equal(await plantUnlocked(sql, "ace"), true);
 });
 
-test("server: a perfect Stack writes plantok once; a non-perfect Stack or a perfect Run doesn't", async () => {
+test("0.1.119 lazy unlock: 10 right reds already in the ledger unlock on the next status read", async () => {
+  const { plantStatus } = await import("./walletApply.ts");
   const sql = await db();
-  for (const who of ["ace", "slow", "runner"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
-  await ladder(sql, "ace", [1000, 1500, 2500, 2900]);
-  const row = await okRow(sql, "ace");
-  assert.ok(row, "perfect Stack unlocks");
-  assert.match(row!, /grade:ace-stack-3/);
-  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
-  assert.equal(await okRow(sql, "ace"), row, "a second perfect Stack doesn't rewrite it");
-  await ladder(sql, "slow", [1000, 4000, 1000, 1000]);
-  assert.equal(await okRow(sql, "slow"), null, "one great card: no unlock");
-  await ladder(sql, "runner", [1000, 1000, 1000], "run");
-  assert.equal(await okRow(sql, "runner"), null, "The Run is not the green ladder");
-  assert.equal(await plantUnlocked(sql, "ace"), true);
-  assert.equal(await plantUnlocked(sql, "slow"), false);
+  await syncPlayer(sql, "old", snap(), "oldphone1");
+  await syncPlayer(sql, "half", snap(), "halfphone1");
+  const row = (g: string, t: string) => JSON.stringify({ coins: 1, keys: {}, boosts: [], g, t, pi: "x" });
+  for (let i = 0; i < 10; i++) await sql`insert into wallet_ledger (user_id, op_key, detail) values ('old', ${"grade:o" + i}, ${row(i % 2 ? "great" : "good", i < 6 ? "red" : "violet")})`;
+  for (let i = 0; i < 10; i++) await sql`insert into wallet_ledger (user_id, op_key, detail) values ('half', ${"grade:h" + i}, ${row(i < 4 ? "great" : "miss", "red")})`;
+  assert.equal(await okRow(sql, "old"), null);
+  assert.equal(await plantUnlocked(sql, "old"), true);
+  assert.match((await okRow(sql, "old"))!, /"via":"red10"/);
+  assert.equal(await plantUnlocked(sql, "half"), false, "misses don't count");
+  const st = await plantStatus(sql, "half");
+  assert.equal(st.unlocked, false);
+  assert.equal(st.red, 4, "the Journal shows progress");
 });
 
 test("back-fill: a pre-release perfect-Stack prize row unlocks; a perfect Run prize or plain Stack cards don't", async () => {
@@ -121,8 +133,8 @@ test("0.1.109 server: plant needs the unlock and an unlocked city, holds one per
   const { CITIES } = await import("./data.ts");
   const sql = await db();
   for (const who of ["ace", "nope", "two"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
-  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
-  await ladder(sql, "two", [1000, 1000, 1000, 1000]);
+  await reds(sql, "ace");
+  await reds(sql, "two");
   const s = CITIES.austin.spawn;
   const at = { lat: s.lat + 0.004, lng: s.lng + 0.004 };
   const op = { kind: "plant" as const, city: "austin" as const, ...at, name: 0, cats: ["local", "history", "science", "music"] };
@@ -153,7 +165,7 @@ test("0.1.110 visit: a placed Hearth vault deals server-side as red, only from t
   const sql = await db();
   await syncPlayer(sql, "ace", snap(), "acephone1");
   await syncPlayer(sql, "vis", { ...snap(), keys: { red: 2 } }, "visphone1");
-  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
+  await reds(sql, "ace");
   const s = CITIES.austin.spawn;
   const op = { kind: "plant" as const, city: "austin" as const, lat: s.lat + 0.004, lng: s.lng + 0.004, name: 2, cats: ["local", "history", "science", "music"] };
   assert.equal((await applyClientOp(sql, "ace", op)).ok, true);
@@ -166,7 +178,7 @@ test("0.1.110 visit: a placed Hearth vault deals server-side as red, only from t
   const deps = {
     now: () => Date.now(), secret: "s", rand: () => 0.4,
     pick: (_c: string, _cat: string, _p: unknown, tier: string) => ((pickedTier = tier), card),
-    card: () => card, namedPoi: () => null, series: () => null, sql: async () => sql,
+    card: () => card, namedPoi: () => null, sql: async () => sql,
   } as never;
   const input = { city: "austin", cat: "local", poiId: views[0]!.id, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555", blank: { name: "x", kind: "landmark", tier: "white" } } as never;
   const bad = await dealFor(deps, { userId: "vis" } as never, { ...(input as object), cat: "sports" } as never);
@@ -204,7 +216,7 @@ test("0.1.111 owner cut: 50 per visitor right answer, once a visitor a day, 1,00
   const { CITIES } = await import("./data.ts");
   const sql = await db();
   for (const who of ["ace", "vis", "newb"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
-  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
+  await reds(sql, "ace");
   const s = CITIES.austin.spawn;
   assert.equal((await applyClientOp(sql, "ace", { kind: "plant", city: "austin", lat: s.lat + 0.004, lng: s.lng + 0.004, name: 0, cats: ["local", "history", "science", "music"] })).ok, true);
   const id = placedId("ace");
@@ -273,8 +285,8 @@ test("0.1.114 server: a Hearth vault with Math deals a stand-in field as red; on
   const sql = await db();
   for (const who of ["ace", "bee"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
   await syncPlayer(sql, "vis", { ...snap(), keys: { red: 3 } }, "visphone1");
-  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
-  await ladder(sql, "bee", [1000, 1000, 1000, 1000]);
+  await reds(sql, "ace");
+  await reds(sql, "bee");
   const s = CITIES.austin.spawn;
   const base = { kind: "plant" as const, city: "austin" as const, name: 0 };
   assert.equal((await applyClientOp(sql, "ace", { ...base, lat: s.lat + 0.004, lng: s.lng + 0.004, cats: ["local", "history", "math", "music"] })).ok, true);
@@ -284,7 +296,7 @@ test("0.1.114 server: a Hearth vault with Math deals a stand-in field as red; on
   const noMath = views.find((v) => !v.cats.includes("math"))!;
   const card = { id: "c1", q: "Q?", choices: ["a", "b", "c", "d"], answer: "a", diff: 3, rarity: "rare" };
   let tier = "";
-  const deps = { now: () => Date.now(), secret: "s", rand: () => 0.4, pick: (_c: string, _cat: string, _p: unknown, t: string) => ((tier = t), card), card: () => card, namedPoi: () => null, series: () => null, sql: async () => sql } as never;
+  const deps = { now: () => Date.now(), secret: "s", rand: () => 0.4, pick: (_c: string, _cat: string, _p: unknown, t: string) => ((tier = t), card), card: () => card, namedPoi: () => null, sql: async () => sql } as never;
   const input = (poiId: string, cat: string) => ({ city: "austin", cat, poiId, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555" }) as never;
   const ok = await dealFor(deps, { userId: "vis" } as never, input(withMath.id, "sports"));
   assert.equal(ok.ok, true);

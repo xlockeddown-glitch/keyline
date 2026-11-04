@@ -13,7 +13,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks, giftPass } from "./cityPass.ts";
 import { rewardPoints } from "./rewards.ts";
-import { CITIES, SERIES } from "./data.ts";
+import { CITIES } from "./data.ts";
 import { surveyProven } from "./survey.ts";
 import { SEED, STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
 import { perfectRefund } from "./perfectRefund.ts";
@@ -101,10 +101,6 @@ function pay(over: Partial<GradePay> = {}): GradePay {
     poiId: "ut-tower",
     lat: 30.28,
     lng: -97.74,
-    series: null,
-    step: 0,
-    steps: 1,
-    prior: [],
     streak: 0,
     loot: 1,
     lucky: false,
@@ -1013,18 +1009,6 @@ test("0.0.90 perfect refund: single lamp gets its key back", () => {
   assert.equal(g.award?.keys.blue, 1);
 });
 
-test("0.0.90 perfect refund: a Run/Stack cleared gets the cost key back on the last card only", () => {
-  const def = SERIES.stack;
-  const mid = gradeGrant(emptyWallet(), pay({ series: "stack", step: 0, steps: def.steps, clearTier: def.cost, poiTier: def.cost }));
-  assert.equal(mid.award?.keys[def.cost] ?? 0, 0);
-  const last = gradeGrant(
-    emptyWallet(),
-    pay({ series: "stack", step: def.steps - 1, steps: def.steps, prior: Array(def.steps - 1).fill("great"), clearTier: def.cost, poiTier: def.cost, elapsedMs: 9000 }),
-  );
-  const expected = (def.pay === def.cost ? 1 : 0) + 1;
-  assert.equal(last.award?.keys[def.cost], expected);
-});
-
 test("0.0.90 perfect refund: a miss refunds nothing", () => {
   const g = gradeGrant(emptyWallet(), pay({ correct: false }));
   assert.deepEqual(g.award?.keys, {});
@@ -1511,7 +1495,7 @@ test("0.1.12: the wallet holds 5,000,000, but a first sync still carries at most
 test("0.1.19: sparks (no key held) are capped on the server — six a day, once per lamp", async () => {
   const sql = await db();
   await syncPlayer(sql, "beth", snap({ coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "detroit", unlocked: ["detroit"] } }), "bethphone");
-  const spark = (poiId: string) => ({ ...pay({ clearTier: null, poiTier: "red", poiId, city: "detroit", series: null }), prevNonce: "" });
+  const spark = (poiId: string) => ({ ...pay({ clearTier: null, poiTier: "red", poiId, city: "detroit" }), prevNonce: "" });
   const first = await awardGrade(sql, "beth", "s0", spark("det-lamp-0"));
   assert.equal(first.wallet.keys.red, 1, "a spark pays the lamp's color");
   const again = await awardGrade(sql, "beth", "s0b", spark("det-lamp-0"));
@@ -1525,7 +1509,7 @@ test("0.1.19: sparks (no key held) are capped on the server — six a day, once 
 test("0.1.19: violet never sparks on the server; red still does", async () => {
   const sql = await db();
   await syncPlayer(sql, "vio", snap({ coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "detroit", unlocked: ["detroit"] } }), "viophone");
-  const spark = (tier: "violet" | "red", poiId: string) => ({ ...pay({ clearTier: null, poiTier: tier, poiId, city: "detroit", series: null }), prevNonce: "" });
+  const spark = (tier: "violet" | "red", poiId: string) => ({ ...pay({ clearTier: null, poiTier: tier, poiId, city: "detroit" }), prevNonce: "" });
   const v = await awardGrade(sql, "vio", "v1", spark("violet", "det-violet"));
   assert.equal(v.wallet.keys.violet ?? 0, 0, "a violet spark pays nothing");
   assert.equal(v.wallet.coins, 0);

@@ -15,7 +15,9 @@ export type QuestEvent =
   | { k: "ride"; at: number; game: string }
   | { k: "cache"; at: number }
   | { k: "street"; at: number }
-  | { k: "hook"; at: number; day: string };
+  | { k: "hook"; at: number; day: string }
+  /** 0.1.119: a Double or Triple Hearth cleared (its last question right). */
+  | { k: "hearth"; at: number };
 
 export type QuestReward = { coins: number; matches: Tier[]; lucky?: boolean };
 /** What a player's account can do; a quest that needs something they don't have is never picked. */
@@ -42,7 +44,6 @@ export type QuestDef = {
 export type QuestRow = { id: string; have: number; need: number; done: boolean; note?: string };
 
 const RANK: Record<Tier, number> = { white: 0, blue: 1, green: 2, amber: 3, red: 4, violet: 5 };
-const LADDER: Tier[] = ["white", "blue", "green", "amber", "red"];
 export const SHELF_TOTAL = 60;
 export const SHELF_EACH = 10;
 export const SHELF_TOPICS = 4;
@@ -68,7 +69,8 @@ export const DAILY_BANK: QuestDef[] = [
 
 export const WEEKLY_BANK: QuestDef[] = [
   { id: "w-lamps", kind: "week", title: "Vault cracker", sub: "Open 25 vaults, green or higher.", need: 25, effort: 2, reward: r(2_000, "green") },
-  { id: "w-ladder", kind: "week", title: "Color ladder", sub: "One right vault in each of white, blue, green, amber and red.", need: 5, effort: 2, reward: r(1_500, "amber") },
+  // 0.1.119 (Ryan): the ladders are gone; "Color ladder" became Hearth climber (same id and reward, so sets don't reshuffle).
+  { id: "w-ladder", kind: "week", title: "Hearth climber", sub: "Clear a Double or Triple Hearth.", need: 1, effort: 2, reward: r(1_500, "amber") },
   { id: "w-streak", kind: "week", title: "Hot hand", sub: "15 right vaults in a row.", need: 15, effort: 2, reward: r(1_000, "blue", "green") },
   { id: "w-cache", kind: "week", title: "Regular", sub: "Open the key cache on 4 days.", need: 4, effort: 1, reward: r(1_000, "green") },
   { id: "w-house", kind: "week", title: "Homebody", sub: "Turn a house key on 3 days.", need: 3, effort: 1, reward: r(1_000, "green"), needs: "house" },
@@ -290,7 +292,7 @@ export function progressOf(def: QuestDef, events: QuestEvent[]): QuestRow {
     case "w-amber":
       return row(atLeast("amber"));
     case "w-ladder":
-      return row(new Set(lamps.map((e) => e.tier).filter((t) => LADDER.includes(t))).size);
+      return row(events.filter((e) => e.k === "hearth").length);
     case "m-tour":
       return row(distinct(lamps.map((e) => e.city)));
     case "m-night":

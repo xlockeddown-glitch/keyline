@@ -38,7 +38,7 @@ const snap: LocalSnap = { coins: 0, keys: {}, cities: { ...freshUnlocks(), start
 function pay(over: Partial<GradePay> & { car?: CarId | null } = {}): Omit<GradePay, "prior"> & { prevNonce: string; car?: CarId | null } {
   return {
     correct: true, elapsedMs: 5000, mult: 1, city: "austin", diff: 2, clearTier: "green", poiTier: "green", poiId: "zilker",
-    lat: 30.27, lng: -97.77, series: null, step: 0, steps: 1, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "",
+    lat: 30.27, lng: -97.77, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "",
     charmTopics: [], topic: "science", dealtAt: Date.now(), luckyHit: false, perfectBlue: false, prevNonce: "", ...over,
   };
 }

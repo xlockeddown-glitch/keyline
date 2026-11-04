@@ -5,7 +5,6 @@ import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
-import { SERIES, STACK_ID } from "./data.ts";
 import type { GradePay, LocalSnap } from "./wallet.ts";
 import { HEARTH_TIERS, hearthBoost, hearthBoostLabel, hearthCost, hearthLast, hearthNext, hearthSteps, hearthTierAt, hearthVersion, slotUsed } from "./hearthMulti.ts";
 import { plantRefusal } from "./placedLantern.ts";
@@ -80,7 +79,7 @@ test("pay: each right answer pays its tier coin, boosted on later questions; onl
   const w = { ...emptyWallet(), migrated: true };
   const p = (over: Partial<GradePay>): GradePay => ({
     correct: true, elapsedMs: 5000, mult: 1, city: "austin", diff: 2, clearTier: "amber", poiTier: "amber", poiId: "placed-a",
-    lat: 0, lng: 0, series: null, step: 0, steps: 1, prior: [], streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "",
+    lat: 0, lng: 0, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "",
     charmTopics: [], topic: null, dealtAt: Date.UTC(2026, 10, 3, 3), luckyHit: false, perfectBlue: false, ...over,
   } as GradePay);
   const plainAmber = gradeGrant(w, p({})).award!;
@@ -105,19 +104,10 @@ test("pay: each right answer pays its tier coin, boosted on later questions; onl
 async function placeTwo(sql: Sql) {
   const { applyClientOp, placedViews, syncPlayer } = await import("./walletApply.ts");
   const { CITIES } = await import("./data.ts");
-  const { awardGrade } = await import("./walletApply.ts");
   for (const who of ["dbl", "tri"]) {
     await syncPlayer(sql, who, snap({ green: 5 }), `${who}phone1`);
-    let pv = "";
-    for (let i = 0; i < 4; i++) {
-      const n = `${who}-stack-${i}`;
-      await awardGrade(sql, who, n, {
-        correct: true, elapsedMs: 1000, mult: 1, city: "austin", diff: 2, clearTier: i === 0 ? "green" : null, poiTier: "green", poiId: STACK_ID,
-        lat: 30.28, lng: -97.74, series: "stack", step: i, steps: SERIES.stack.steps, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "",
-        charmTopics: [], topic: null, dealtAt: Date.UTC(2026, 9, 16, 18), luckyHit: false, perfectBlue: false, prizeRoll: 0.5, prevNonce: pv,
-      });
-      pv = n;
-    }
+    // 0.1.119: the unlock is a plantok row (10 right reds in play; seeded here).
+    await sql`insert into wallet_ledger (user_id, op_key, detail) values (${who}, 'plantok', '{"via":"red10"}')`;
   }
   await syncPlayer(sql, "vis", snap({ green: 3, red: 1 }), "visphone1");
   const s = CITIES.austin.spawn;
@@ -134,7 +124,7 @@ function depsFor(sql: Sql, seen: { tier: string }) {
   return {
     now: () => Date.now(), secret: "s", rand: () => 0.4, nonce: () => `n${++n}-${Math.random().toString(36).slice(2, 8)}`,
     pick: (_c: string, _cat: string, _p: unknown, t: string) => ((seen.tier = t), card),
-    card: () => card, namedPoi: () => null, series: () => null, sql: async () => sql,
+    card: () => card, namedPoi: () => null, sql: async () => sql,
   } as never;
 }
 const dealIn = (poiId: string, cat: string, more: object = {}) => ({ city: "austin", cat, poiId, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555", ...more }) as never;

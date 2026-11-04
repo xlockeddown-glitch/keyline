@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.118";
+export const APP_VERSION = "0.1.119";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1118a";
+export const PUBLISH_STAMP = "k1119a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -220,3 +220,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.116: Random category (Ryan): every street/series field picker offers Random; the server rolls the field (any field, Math only under the 43% offer rule), seals it in the token and pays +10% coin itself; the Penguin coat (lynx) now favors Random (+15% on top), inside the +40% cap; Hearth vaults keep their 4 fields, no Random (k1116a).
 // 0.1.117: Double and Triple Hearth vaults: the owner picks Single (V), Double (III → IV) or Triple (III → IV → V) when placing (`v` on the placed row; old rows are Single). Each right answer opens the next pick from the fields not used yet (3, then 2); the server chains the steps through its own tokens (`hnext:<nonce>` rows), spends one key of the first tier, pays each question its tier coin (2nd +25%, 3rd +50%) and the tier key only on the last; a miss locks the vault out as today. A graded card's key is no longer refunded on a walk-away (k1117a).
 // 0.1.118: math a bit harder on green, amber and violet (Ryan; violet most): generated cards only (green tables 6-12, amber 23-89 × 4-9 and ÷ up to 12, violet fewer bare squares, sums of two squares, four-number brackets, 11-19² minus a product); their wrong options add "one row off" slips and keep at most one ±1-3 neighbour; white/blue/red, the static bank, the tier rules and the Math 43% offer rule unchanged (k1118a).
+// 0.1.119: ladders retired (Ryan). The Climb, The Run and The Stack leave the map, the HUD, the vault card and the server (deal, grade, pay, night market); their pins, art and CSS are gone and old save fields are ignored. The Hearth unlock is now 10 right answers on red (V) or violet vaults (a `plantok` row, written on the 10th and lazily for players already past it); existing unlocks and a past perfect Stack still count. The Journal shows red/10 progress. The weekly "Color ladder" quest becomes "Hearth climber · clear a Double or Triple Hearth" (same id and reward; the last right answer of a Double/Triple marks `hc` on its grade row). No refund for keys spent mid-ladder before the update (k1119a).

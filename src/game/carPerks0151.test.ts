@@ -42,7 +42,7 @@ const snap: LocalSnap = { coins: 0, keys: {}, cities: { ...freshUnlocks(), start
 function pay(over: Partial<GradePay> & { car?: CarId | null } = {}): Omit<GradePay, "prior"> & { prevNonce: string; car?: CarId | null } {
   return {
     correct: true, elapsedMs: 5000, mult: 1, city: "austin", diff: 2, clearTier: "green", poiTier: "green", poiId: "zilker",
-    lat: 30.27, lng: -97.77, series: null, step: 0, steps: 1, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "",
+    lat: 30.27, lng: -97.77, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "",
     charmTopics: [], topic: "science", dealtAt: Date.now(), luckyHit: false, perfectBlue: false, prevNonce: "", ...over,
   };
 }
@@ -80,14 +80,13 @@ test("Autopilot: 1 in 10 from the nonce, the same every time, never the answer, 
   assert.ok(Math.abs(hits / n - 0.1) < 0.02, `${hits / n}`);
 });
 
-test("Autopilot in the deal: only for a proven Model 3, never on a series card, the struck option is a wrong one", () => {
+test("Autopilot in the deal: only for a proven Model 3, the struck option is a wrong one", () => {
   const card = sealPlate({ q: "2 + 2?", choices: ["3", "4", "5", "6"], answer: "4", diff: 2 });
   const lamp: Poi = { id: "ut-tower", name: "UT Tower", lat: 30.28, lng: -97.74, kind: "campus", tier: "blue", lore: "" };
   let k = 0;
   const deps: TriviaDeps = {
     now: () => 1_800_000_000_000, secret: "s", pick: () => card, card: () => card,
     namedPoi: (_c, id) => (id === lamp.id ? lamp : null),
-    series: (id) => (id === "the-run" ? { poi: { ...lamp, id: "the-run" }, cost: "blue", diffs: [1, 2, 3] } : null),
     rand: () => 0.42, nonce: () => `nonce-${k}`,
   };
   const inp = (over = {}) => DealIn.parse({ city: "austin", cat: "math", poiId: lamp.id, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555", ...over });
@@ -100,8 +99,6 @@ test("Autopilot in the deal: only for a proven Model 3, never on a series card, 
     if (st) { hits++; assert.notEqual(st, "4"); }
     const none = deal(deps, { userId: "u" }, inp(), [], {});
     assert.equal(none.ok && none.card.struck, undefined, "no proven car: no Autopilot");
-    const run = deal(deps, { userId: "u" }, inp({ poiId: "the-run" }), [], { car: "model3" });
-    assert.equal(run.ok && run.card.struck, undefined, "series cards: no Autopilot");
   }
   assert.ok(hits > 30 && hits < 95, `${hits}`);
 });

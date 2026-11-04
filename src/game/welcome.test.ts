@@ -32,7 +32,7 @@ async function db() {
 }
 const snap = (city: CityId = "detroit"): LocalSnap => ({ coins: 0, keys: {}, cities: { ...freshUnlocks(), start: city, unlocked: [city], freePick: false } });
 const OFF = "2999-01-01T00:00:00Z";
-const grade = (over: Partial<GradePay> = {}) => ({ correct: true, elapsedMs: 3000, mult: 1, city: "austin" as const, diff: 2 as const, clearTier: "blue" as Tier, poiTier: "blue" as Tier, poiId: "ut-tower", lat: 30.28, lng: -97.74, series: null, step: 0, steps: 1, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic: null, dealtAt: Date.UTC(2026, 9, 16, 18), luckyHit: false, perfectBlue: false, prevNonce: "", ...over });
+const grade = (over: Partial<GradePay> = {}) => ({ correct: true, elapsedMs: 3000, mult: 1, city: "austin" as const, diff: 2 as const, clearTier: "blue" as Tier, poiTier: "blue" as Tier, poiId: "ut-tower", lat: 30.28, lng: -97.74, streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], topic: null, dealtAt: Date.UTC(2026, 9, 16, 18), luckyHit: false, perfectBlue: false, prevNonce: "", ...over });
 const coins = async (sql: Sql, u: string) => (await canonicalWallet(sql, u)).wallet.coins;
 
 /** Make an account whose rows all sit at `at` (gifts off while it is made), then put the cutoffs at `cutoff`. */

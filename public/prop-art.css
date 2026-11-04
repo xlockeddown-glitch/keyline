@@ -15,10 +15,6 @@
   width:20px;
   height:50px
 }
-.vault-pin.is-run{
-  width:24px;
-  height:52px
-}
 .lantern > .lantern-cap,
 .lantern > .lantern-post{
   display:none
