@@ -42,9 +42,16 @@ export function findPerfectStack(rows: readonly { op_key: string; detail: string
 
 // ---- 0.1.109 slice 2: placing the Hearth vault. Pure rules; the op is plantOp in walletApply.ts. ----
 
-export const PLANT_KEY = "plant";
 export const PLACED_USER = "~placed";
-export const placedKey = (ownerId: string) => `placed:${ownerId}`;
+/**
+ * 0.1.122 (Ryan): one Hearth per version per player. A Single, and every Hearth placed before 0.1.122 whatever its
+ * version, sits on `placed:<owner>`; a new Double or Triple gets `placed:<owner>:v2` / `:v3` (`slot` on the row), and a
+ * new Single goes to `:v1` only when an old Double/Triple already holds the bare key. Old rows are never rewritten.
+ */
+export const placedKey = (ownerId: string, slot?: 1 | 2 | 3) => (slot ? `placed:${ownerId}:v${slot}` : `placed:${ownerId}`);
+export const placedKeys = (ownerId: string) => [placedKey(ownerId), placedKey(ownerId, 1), placedKey(ownerId, 2), placedKey(ownerId, 3)];
+/** The player's mirror row for a placement (the bare-key one keeps the old `plant`). */
+export const plantKey = (slot?: 1 | 2 | 3) => (slot ? `plant:v${slot}` : "plant");
 export const PLANT_NAMES = [
   "Porch Light", "Corner Glow", "Night Owl", "Hearthside", "Little Beacon", "Wayfinder", "Evening Star", "Lamplight Lane",
   "Kind Light", "North Window", "Warm Welcome", "Moth's Delight", "Steady Flame", "Neighbor's Lamp", "Late Shift", "Lantern Rest",
@@ -63,7 +70,7 @@ export const PLANT_DENSE_M = 300;
 export const PLANT_CITY_M = 9000;
 
 /** 0.1.117: `v` is the version (1 Single, 2 Double, 3 Triple); a row without it is Single. */
-export type PlacedVault = { owner: string; city: string; lat: number; lng: number; name: number; cats: PlantCat[]; at: number; v?: 1 | 2 | 3 };
+export type PlacedVault = { owner: string; city: string; lat: number; lng: number; name: number; cats: PlantCat[]; at: number; v?: 1 | 2 | 3; /** 0.1.122: the per-version key it sits on (absent: the bare `placed:<owner>`). */ slot?: 1 | 2 | 3 };
 type LL = { lat: number; lng: number };
 
 function dist(a: LL, b: LL): number {

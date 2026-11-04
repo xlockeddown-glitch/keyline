@@ -53,7 +53,7 @@ import {
   type WalletState,
 } from "./wallet.ts";
 import { CITIES, SCOUTS, type KioskId } from "./data.ts";
-import { PLACED_USER, PLANT_KEY, PLANT_OK_KEY, PLANT_RED_NEED, findPerfectStack, parsePlaced, placedKey, plantRefusal, type PlacedVault, type PlantCat } from "./placedLantern.ts";
+import { PLACED_USER, PLANT_OK_KEY, placedKeys, plantKey, PLANT_RED_NEED, findPerfectStack, parsePlaced, placedKey, plantRefusal, type PlacedVault, type PlantCat } from "./placedLantern.ts";
 import type { ScoutId } from "./types.ts";
 import { MARKET_LIGHTS, bestLight, nextLight, type LightId } from "./marketLights.ts";
 import { THANKS_CAR, THANKS_CAR_COIN, THANKS_CAR_KEY, THANKS_GIFT_KEY, thanksClock, THANKS_HOUSE, THANKS_HOUSE_COIN, THANKS_HOUSE_KEY, thanksCity, thanksNote, type ThanksCar, type ThanksHouse } from "./thanksGift.ts";
@@ -1000,11 +1000,11 @@ export async function placedIn(sql: Sql, city: string | null): Promise<PlacedVau
 
 /** 0.1.110: what anyone sees of a city's Hearth vaults: public id, spot, name, fields, "First L." (no owner id). */
 export async function placedViews(sql: Sql, city: string, viewerId: string | null): Promise<import("./hearthVaults.ts").HearthView[]> {
-  const { placedId } = await import("./hearthVaults.ts");
+  const { rowId } = await import("./hearthVaults.ts");
   const me = viewerId ? (await canonicalWallet(sql, viewerId)).id : null;
   const out = [];
   for (const p of await placedIn(sql, city)) {
-    out.push({ id: placedId(p.owner), city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: await ownerName(sql, p.owner), ...(p.v === 2 || p.v === 3 ? { v: p.v } : {}), ...(me === p.owner ? { mine: true } : {}) });
+    out.push({ id: rowId(p), city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: await ownerName(sql, p.owner), ...(p.v === 2 || p.v === 3 ? { v: p.v } : {}), ...(me === p.owner ? { mine: true } : {}) });
   }
   return out;
 }
@@ -1015,9 +1015,9 @@ export async function placedViews(sql: Sql, city: string, viewerId: string | nul
  * Never the owner's own opens; never a new account (under 3 days or under 25 right answers).
  */
 export async function payHearthOwner(sql: Sql, visitorId: string, nonce: string, poiId: string, city: string, now = Date.now()): Promise<boolean> {
-  const { placedId } = await import("./hearthVaults.ts");
+  const { rowId } = await import("./hearthVaults.ts");
   const { HEARTH_CUT, HEARTH_CUT_CAP, HEARTH_NEW_DAYS, HEARTH_NEW_RIGHT, hearthCutKey, hearthMatch } = await import("./placedLantern.ts");
-  const placed = (await placedIn(sql, city)).find((p) => placedId(p.owner) === poiId);
+  const placed = (await placedIn(sql, city)).find((p) => rowId(p) === poiId);
   if (!placed) return false;
   const owner = placed.owner;
   const visitor = (await canonicalWallet(sql, visitorId)).id;
@@ -1031,27 +1031,31 @@ export async function payHearthOwner(sql: Sql, visitorId: string, nonce: string,
   const today = await sql<{ n: unknown }>`select count(*) as n from wallet_ledger where user_id = ${owner} and op_key like ${`hcut:${day}:%`}`;
   if (Number(today[0]?.n ?? 0) * HEARTH_CUT >= HEARTH_CUT_CAP) return false;
   const match = hearthMatch(nonce);
-  const r = await mutateWallet(sql, owner, hearthCutKey(day, visitor), (w) => {
+  // 0.1.122: one paid open per visitor a day per Hearth (a per-version Hearth adds ":v<slot>"); the daily cap stays per owner.
+  const slot = placed.slot;
+  const r = await mutateWallet(sql, owner, hearthCutKey(day, visitor) + (slot ? `:v${slot}` : ""), (w) => {
     const coins = Math.max(0, Math.min(HEARTH_CUT, COIN_CAP - w.coins));
     const d = applyDelta(w, { coins, keys: match ? { red: 1 } : {} });
-    return d.ok ? { ...d, detail: JSON.stringify({ c: coins, m: match ? 1 : 0, at: now }) } : d;
+    return d.ok ? { ...d, detail: JSON.stringify({ c: coins, m: match ? 1 : 0, at: now, ...(slot ? { s: slot } : {}) }) } : d;
   });
   return r.ok && !r.replay;
 }
 
 /** 0.1.111: the owner's "Your Hearth" numbers (counts only; no visitor ids leave the server). */
-export async function hearthStats(sql: Sql, ownerId: string, now = Date.now()): Promise<import("./placedLantern.ts").HearthStats> {
+export async function hearthStats(sql: Sql, ownerId: string, now = Date.now(), only?: { slot?: 1 | 2 | 3 }): Promise<import("./placedLantern.ts").HearthStats> {
   const { HEARTH_CUT_CAP } = await import("./placedLantern.ts");
   const rows = await sql<{ op_key: string; detail: string }>`select op_key, detail from wallet_ledger where user_id = ${ownerId} and op_key like ${"hcut:%"}`;
   const day = chicagoDay(new Date(now));
   const s = { today: { opens: 0, coin: 0, keys: 0 }, total: { opens: 0, coin: 0, keys: 0 }, cap: HEARTH_CUT_CAP };
   for (const r of rows) {
-    let d: { c?: number; m?: number } = {};
+    let d: { c?: number; m?: number; s?: number } = {};
     try {
       d = JSON.parse(r.detail);
     } catch {
       /* keep zeros */
     }
+    // 0.1.122: per Hearth when asked; a row without `s` is the bare-key (pre-0.1.122) Hearth's.
+    if (only && (d.s || undefined) !== only.slot) continue;
     const add = (b: { opens: number; coin: number; keys: number }) => {
       b.opens += 1;
       b.coin += Number(d.c) || 0;
@@ -1063,34 +1067,60 @@ export async function hearthStats(sql: Sql, ownerId: string, now = Date.now()): 
   return s;
 }
 
-/** 0.1.109: the player's Hearth vault state for the Journal: locked, ready, or placed (with the row). */
-export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null; stats?: import("./placedLantern.ts").HearthStats; red?: number }> {
+/** 0.1.122: the player's placed Hearth rows (at most one per version), oldest key first. */
+async function myPlaced(sql: Sql, id: string): Promise<PlacedVault[]> {
+  const keys = placedKeys(id);
+  const rows = await sql<{ op_key: string; detail: string }>`select op_key, detail from wallet_ledger where user_id = ${PLACED_USER} and op_key like ${`placed:${id}%`}`; // filtered to exact keys below
+  const out: PlacedVault[] = [];
+  for (const k of keys) {
+    const p = parsePlaced(rows.find((r) => r.op_key === k)?.detail);
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+export type MyHearth = { v: 1 | 2 | 3; id: string; mine: PlacedVault; stats: import("./placedLantern.ts").HearthStats };
+
+/**
+ * 0.1.109: the player's Hearth vault state for the Journal: locked, ready, or placed. 0.1.122: `hearths` lists one
+ * entry per placed version (each with its own stats); `mine`/`stats` stay as the first, for old clients.
+ */
+export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked: boolean; mine: PlacedVault | null; stats?: import("./placedLantern.ts").HearthStats; red?: number; hearths?: MyHearth[] }> {
   const { id } = await canonicalWallet(sql, userId);
-  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER} and op_key = ${placedKey(id)} limit 1`;
-  const mine = parsePlaced(rows[0]?.detail);
-  if (!mine) {
+  const { rowId } = await import("./hearthVaults.ts");
+  const { hearthVersion } = await import("./hearthMulti.ts");
+  const rows = await myPlaced(sql, id);
+  if (!rows.length) {
     const unlocked = await plantUnlocked(sql, userId);
     return { unlocked, mine: null, ...(unlocked ? {} : { red: Math.min(PLANT_RED_NEED, await redRight(sql, id)) }) };
   }
   // 0.1.111: the owner id stays on the server; the client gets the spot, name, fields and counts.
-  const { owner: _owner, ...pub } = mine;
-  return { unlocked: true, mine: { ...pub, owner: "" }, stats: await hearthStats(sql, id) };
+  const hearths: MyHearth[] = [];
+  for (const p of rows) {
+    const { owner: _owner, ...pub } = p;
+    hearths.push({ v: hearthVersion(p.v), id: rowId(p), mine: { ...pub, owner: "" }, stats: await hearthStats(sql, id, Date.now(), { slot: p.slot }) });
+  }
+  hearths.sort((a, b) => a.v - b.v);
+  return { unlocked: true, mine: hearths[0]!.mine, stats: hearths[0]!.stats, hearths };
 }
 
 /**
- * 0.1.109: place the Hearth vault, for good. Needs the Hearth unlock (10 right reds, 0.1.119) and an unlocked city; preset name,
- * exactly 4 fields, 40 m clear of every lamp and placed vault, ≤ 6 within 300 m. The global `placed:<owner>` row
- * is the one-per-player lock (primary key); the `plant` mirror row on the player follows. Never moved or removed.
- * Street snapping is checked on the client (the baked streets aren't in the server bundle).
+ * 0.1.109: place a Hearth vault, for good. Needs the Hearth unlock (10 right reds, 0.1.119) and an unlocked city; preset name,
+ * exactly 4 fields, 40 m clear of every lamp and placed vault (your own too), ≤ 6 within 300 m. 0.1.122: one per
+ * version (Single, Double, Triple): the version's `placed:` key (placedKey) is the lock (primary key); the player's
+ * mirror row follows. Never moved or removed. Street snapping is checked on the client (the baked streets aren't in the server bundle).
  */
 async function plantOp(sql: Sql, sessionUserId: string, op: { city: CityId; lat: number; lng: number; name: number; cats: string[]; v?: number }): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
   const city = CITIES[op.city];
   if (!city) return refused(wallet, "unknown");
-  const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${PLACED_USER} and op_key = ${placedKey(id)} limit 1`;
-  if (held.length) {
-    const p = parsePlaced(held[0]!.detail);
-    const same = p && p.city === op.city && Math.abs(p.lat - op.lat) < 1e-6 && Math.abs(p.lng - op.lng) < 1e-6 && p.name === op.name;
+  if (op.v !== undefined && op.v !== 1 && op.v !== 2 && op.v !== 3) return refused(wallet, "version");
+  const v: 1 | 2 | 3 = op.v === 2 || op.v === 3 ? op.v : 1;
+  const { hearthVersion } = await import("./hearthMulti.ts");
+  const mine = await myPlaced(sql, id);
+  const held = mine.find((p) => hearthVersion(p.v) === v);
+  if (held) {
+    const same = held.city === op.city && Math.abs(held.lat - op.lat) < 1e-6 && Math.abs(held.lng - op.lng) < 1e-6 && held.name === op.name;
     return same ? applied({ ok: true, replay: true, wallet }) : refused(wallet, "placed");
   }
   if (!(await plantUnlocked(sql, sessionUserId))) return refused(wallet, "no-unlock");
@@ -1098,15 +1128,16 @@ async function plantOp(sql: Sql, sessionUserId: string, op: { city: CityId; lat:
   const others = await placedIn(sql, op.city);
   const why = plantRefusal(op, city.spawn, city.pois, others);
   if (why) return refused(wallet, why);
-  // 0.1.117: the version is chosen here, once (Single unless 2 or 3); it never changes.
-  const v = op.v === 2 || op.v === 3 ? op.v : undefined;
-  const row: PlacedVault = { owner: id, city: op.city, lat: op.lat, lng: op.lng, name: op.name, cats: op.cats as PlantCat[], at: Date.now(), ...(v ? { v } : {}) };
+  // A Single takes the bare key when it's free (as before 0.1.122); everything else its own version key.
+  const bareFree = !mine.some((p) => !p.slot);
+  const slot: 1 | 2 | 3 | undefined = v === 1 && bareFree ? undefined : v;
+  const row: PlacedVault = { owner: id, city: op.city, lat: op.lat, lng: op.lng, name: op.name, cats: op.cats as PlantCat[], at: Date.now(), ...(v > 1 ? { v } : {}), ...(slot ? { slot } : {}) };
   const claim = await sql<{ op_key: string }>`
-    insert into wallet_ledger (user_id, op_key, detail) values (${PLACED_USER}, ${placedKey(id)}, ${JSON.stringify(row)})
+    insert into wallet_ledger (user_id, op_key, detail) values (${PLACED_USER}, ${placedKey(id, slot)}, ${JSON.stringify(row)})
     on conflict (user_id, op_key) do nothing returning op_key
   `;
   if (!claim.length) return refused(wallet, "placed");
-  const r = await mutateWallet(sql, sessionUserId, PLANT_KEY, (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify(row) }));
+  const r = await mutateWallet(sql, sessionUserId, plantKey(slot), (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify(row) }));
   return applied(r);
 }
 

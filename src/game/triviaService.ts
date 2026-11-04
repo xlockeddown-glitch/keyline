@@ -229,8 +229,8 @@ export async function provePerks(sql: Sql, userId: string, input: DealInput): Pr
 
 async function hearthLookup(sql: Sql, city: string, id: string): Promise<{ poi: Poi; cats: string[]; v: HearthVersion } | null> {
   const { placedIn } = await import("./walletApply.ts");
-  const { placedId, hearthPoi } = await import("./hearthVaults.ts");
-  const p = (await placedIn(sql, city)).find((x) => placedId(x.owner) === id);
+  const { rowId, hearthPoi } = await import("./hearthVaults.ts");
+  const p = (await placedIn(sql, city)).find((x) => rowId(x) === id);
   return p ? { poi: hearthPoi({ id, city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: "", v: p.v }), cats: p.cats, v: hearthVersion(p.v) } : null;
 }
 

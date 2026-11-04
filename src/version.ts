@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.121";
+export const APP_VERSION = "0.1.122";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1121a";
+export const PUBLISH_STAMP = "k1122a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -223,3 +223,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.119: ladders retired (Ryan). The Climb, The Run and The Stack leave the map, the HUD, the vault card and the server (deal, grade, pay, night market); their pins, art and CSS are gone and old save fields are ignored. The Hearth unlock is now 10 right answers on red (V) or violet vaults (a `plantok` row, written on the 10th and lazily for players already past it); existing unlocks and a past perfect Stack still count. The Journal shows red/10 progress. The weekly "Color ladder" quest becomes "Hearth climber · clear a Double or Triple Hearth" (same id and reward; the last right answer of a Double/Triple marks `hc` on its grade row). No refund for keys spent mid-ladder before the update (k1119a).
 // 0.1.120: Lantern Shops retired (Ryan): no shop lots on the map, no shop button, sheet, Journal row or Help line. Owners get a one-time buy-back at the next sign-in (gift:shop-retire-0120): 600,000 per shop plus the coin waiting in its till, clamped at the 5M coin cap, with the note "Lantern Shops are retired. Your N shop(s) were bought back for X coins." The server refuses the old shop and shopCollect ops as retired; shop:/shopc: ledger rows stay (k1120a).
 // 0.1.121: cleanup, no behaviour change. Old tabs' ride op is refused as retired (payRide and the ride round scoring go); the Sorter, Where am I and Route puzzle modules, unused ladder grade reader and stale imports are removed. Old saves mid-train still land.
+// 0.1.122: one Hearth of each version (Ryan): a player may place one Single, one Double and one Triple. Old placed rows keep their key and id and hold their own version's slot; new Doubles/Triples sit on placed:<owner>:v2/:v3. Each keeps its own fields, name, stats, owner panel and lockout; the owner cut is once a visitor a day per Hearth (daily cap still per owner). Journal › Places shows a row per version with its tiers; the place sheet marks a placed version Placed.

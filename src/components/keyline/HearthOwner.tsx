@@ -3,7 +3,8 @@ import { CITIES } from "@/game/data";
 import { FACET_COLOR } from "@/game/hearthVaults";
 import { vaultSvgCentered } from "@/game/pins";
 import { HEARTH_CUT, PLANT_NAMES } from "@/game/placedLantern";
-import { setPlant, usePlant } from "@/game/plantClient";
+import { myHearths, placedVersion, setPlant, usePlant } from "@/game/plantClient";
+import { HEARTH_VERSION_NAME } from "@/game/hearthMulti";
 import { TRIVIA_CATS } from "@/game/triviaMeta";
 import { ItemIcon } from "./ItemIcon";
 
@@ -19,9 +20,11 @@ function Bar({ have, need }: { have: number; need: number }) {
 
 export function HearthOwner() {
   const p = usePlant();
-  const mine = p.me.mine;
+  // 0.1.122: the Hearth picked in the Journal (else the first one).
+  const h = (p.ownerV ? placedVersion(p.me, p.ownerV) : null) ?? myHearths(p.me)[0] ?? null;
+  const mine = h?.mine;
   if (!p.ownerOpen || !mine) return null;
-  const s = p.me.stats ?? { today: { opens: 0, coin: 0, keys: 0 }, total: { opens: 0, coin: 0, keys: 0 }, cap: 1000 };
+  const s = h.stats ?? { today: { opens: 0, coin: 0, keys: 0 }, total: { opens: 0, coin: 0, keys: 0 }, cap: 1000 };
   const opensCap = Math.floor(s.cap / HEARTH_CUT);
   const name = PLANT_NAMES[mine.name] ?? "Your vault";
   const city = CITIES[mine.city as keyof typeof CITIES]?.name ?? mine.city;
@@ -49,7 +52,7 @@ export function HearthOwner() {
         </span>
         <div className="min-w-0">
           <p className="kicker ho-kicker">
-            <span className="ho-wide">Your Hearth vault</span>
+            <span className="ho-wide">Your {HEARTH_VERSION_NAME[h.v]} Hearth vault</span>
             <span className="ho-narrow">Your Hearth</span>
           </p>
           <h2 className="ho-title">

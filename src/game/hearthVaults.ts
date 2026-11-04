@@ -20,11 +20,15 @@ export const FACET_POS = ["top-left", "top-right", "bottom-left", "bottom-right"
 export type HearthView = { id: string; city: string; lat: number; lng: number; name: number; cats: PlantCat[]; by: string; mine?: boolean; /** 0.1.117: 1 Single, 2 Double, 3 Triple (absent = Single). */ v?: 1 | 2 | 3 };
 
 /** Stable public id from the owner id (FNV-1a, base 36). */
-export function placedId(owner: string): string {
+export function placedId(owner: string, slot?: 1 | 2 | 3): string {
+  // 0.1.122: a per-version Hearth hashes "<owner>#v<slot>"; the bare-key one keeps its old id (lockouts, cooldowns, stats).
+  const s = slot ? `${owner}#v${slot}` : owner;
   let h = 0x811c9dc5;
-  for (let i = 0; i < owner.length; i++) h = Math.imul(h ^ owner.charCodeAt(i), 0x01000193);
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
   return HEARTH_PREFIX + (h >>> 0).toString(36);
 }
+/** The public id of a placed row. */
+export const rowId = (p: { owner: string; slot?: 1 | 2 | 3 }) => placedId(p.owner, p.slot);
 export const isHearthId = (id: string) => id.startsWith(HEARTH_PREFIX);
 
 export function hearthPoi(v: HearthView): Poi {

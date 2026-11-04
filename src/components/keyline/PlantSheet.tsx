@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { PLANT_CATS, PLANT_GAP_M, PLANT_NAMES } from "@/game/placedLantern";
 import { TRIVIA_CATS } from "@/game/triviaMeta";
-import { ghostOk, placeHearth, setPlant, usePlant } from "@/game/plantClient";
+import { ghostOk, placeHearth, placedVersion, setPlant, usePlant } from "@/game/plantClient";
 import { sfx } from "@/game/audio";
 import { HEARTH_TIERS, HEARTH_VERSIONS, HEARTH_VERSION_NAME, versionLine } from "@/game/hearthMulti";
 import { VK_NUM } from "@/game/pins";
@@ -53,9 +53,13 @@ export function PlantSheet() {
       </div>
       <p className="plant-label">Version (set for good)</p>
       <div className="plant-chips plant-version" data-testid="plant-version" role="radiogroup" aria-label="Hearth version">
-        {HEARTH_VERSIONS.map((v) => (
-          <button key={v} type="button" role="radio" className={`plant-chip${p.v === v ? " on" : ""}`} aria-checked={p.v === v} data-v={v} onClick={() => (sfx.ui(), setPlant({ v }))}>
+        {HEARTH_VERSIONS.map((v) => {
+          // 0.1.122: one of each version; a placed one is shown, disabled.
+          const done = placedVersion(p.me, v) !== null;
+          return (
+          <button key={v} type="button" role="radio" className={`plant-chip${p.v === v && !done ? " on" : ""}`} aria-checked={p.v === v && !done} disabled={done} data-v={v} onClick={() => (sfx.ui(), setPlant({ v }))}>
             {HEARTH_VERSION_NAME[v]}
+            {done ? " · Placed" : null}
             <span className="plant-tiers">
               {HEARTH_TIERS[v].map((t, i) => (
                 <span key={i} className={`hearth-chip tier-${t} is-cur`} style={{ padding: "0 6px", marginLeft: 3, fontSize: 10 }}>
@@ -64,7 +68,8 @@ export function PlantSheet() {
               ))}
             </span>
           </button>
-        ))}
+          );
+        })}
       </div>
       <p className="plant-sub" data-testid="plant-version-line">{versionLine(p.v)}</p>
       <p className="plant-label">Pick 4 fields (they never rotate) · {p.cats.length}/4</p>
@@ -81,7 +86,7 @@ export function PlantSheet() {
       </div>
       {p.note ? <p className="plant-note" role="status">{p.note}</p> : null}
       <div className="plant-actions">
-        <button type="button" className="btn btn-primary" data-testid="plant-go" disabled={!ok || p.cats.length !== 4 || p.busy} onClick={() => (sfx.ui(), void placeHearth())}>
+        <button type="button" className="btn btn-primary" data-testid="plant-go" disabled={!ok || p.cats.length !== 4 || p.busy || placedVersion(p.me, p.v) !== null} onClick={() => (sfx.ui(), void placeHearth())}>
           Place {PLANT_NAMES[p.name]} here for good
         </button>
         <button type="button" className="btn btn-quiet" data-testid="plant-cancel" onClick={() => setPlant({ placing: false, ghost: null, note: null })}>

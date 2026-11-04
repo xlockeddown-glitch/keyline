@@ -3,15 +3,31 @@ import { useEffect, useSyncExternalStore } from "react";
 import { commitWallet, walletLive } from "./walletClient";
 import { useGame } from "./store";
 import { PLANT_GAP_M, PLANT_NAMES, PLANT_RED_NEED, type HearthStats, type PlacedVault } from "./placedLantern";
+import { hearthVersion, type HearthVersion } from "./hearthMulti";
+import { VK_NUM } from "./pins";
 import { setHearths, type HearthView } from "./hearthVaults";
+
+/** 0.1.122: one of my placed Hearths (Single, Double or Triple). */
+export type MyHearth = { v: HearthVersion; id: string; mine: PlacedVault; stats?: HearthStats };
+/** My placed Hearths; an old server's lone `mine` counts as its own version. */
+export function myHearths(me: PlantState["me"]): MyHearth[] {
+  if (me.hearths) return me.hearths;
+  return me.mine ? [{ v: hearthVersion(me.mine.v), id: "", mine: me.mine, stats: me.stats }] : [];
+}
+export const placedVersion = (me: PlantState["me"], v: HearthVersion) => myHearths(me).find((h) => h.v === v) ?? null;
+/** 0.1.122: the unlock line, with the real tier labels. */
+export const unlockLine = (red?: number) =>
+  `Answer ${PLANT_RED_NEED} red (${VK_NUM.red}) or violet (${VK_NUM.violet}) vaults right to unlock${typeof red === "number" ? ` · ${red}/${PLANT_RED_NEED}` : ""}.`;
 
 export type Ghost = { lat: number; lng: number; gap: number; street: boolean };
 export type PlantState = {
   city: string | null;
   placed: HearthView[];
-  me: { unlocked: boolean; mine: PlacedVault | null; stats?: HearthStats; /** 0.1.119: right red/violet answers toward the unlock (locked only). */ red?: number };
+  me: { unlocked: boolean; mine: PlacedVault | null; stats?: HearthStats; /** 0.1.119: right red/violet answers toward the unlock (locked only). */ red?: number; /** 0.1.122: one per placed version. */ hearths?: MyHearth[] };
   /** 0.1.111: the "Your Hearth" owner panel is up. */
   ownerOpen?: boolean;
+  /** 0.1.122: which of my Hearths the owner panel shows. */
+  ownerV?: HearthVersion;
   /** The placement sheet and ghost are up. */
   placing: boolean;
   ghost: Ghost | null;
@@ -79,8 +95,8 @@ export async function placeHearth(): Promise<void> {
     far: "That's outside the city's streets.",
     version: "Pick Single, Double or Triple.",
     locked: "Unlock this city first.",
-    placed: "You've already placed your Hearth vault.",
-    "no-unlock": `Answer ${PLANT_RED_NEED} red (V) vaults right to unlock it.`,
+    placed: "You've already placed a Hearth of that version.",
+    "no-unlock": unlockLine(),
   };
   setPlant({ busy: false, note: why[r?.reason ?? ""] ?? "Couldn't place it. Try again in a moment." });
 }

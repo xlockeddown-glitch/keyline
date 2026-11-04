@@ -305,3 +305,75 @@ test("0.1.114 server: a Hearth vault with Math deals a stand-in field as red; on
   const spent = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'vis' and op_key like 'deal:%'`;
   assert.equal(spent.length, 1, "the stand-in open spent one V key");
 });
+
+test("0.1.122 server: one Hearth of each version; a second of the same version is refused; each has its own id, key and stats", async () => {
+  const { applyClientOp, payHearthOwner, placedViews, plantStatus } = await import("./walletApply.ts");
+  const { placedId } = await import("./hearthVaults.ts");
+  const { placedKey } = await import("./placedLantern.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  for (const who of ["ace", "vis"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
+  await reds(sql, "ace");
+  const s = CITIES.austin.spawn;
+  const op = (v: 1 | 2 | 3, dLat: number) => ({ kind: "plant" as const, city: "austin" as const, lat: s.lat + 0.004 + dLat, lng: s.lng + 0.004, name: v, cats: ["local", "history", "science", "music"], ...(v > 1 ? { v } : {}) });
+  assert.equal((await applyClientOp(sql, "ace", op(1, 0))).ok, true);
+  assert.equal((await applyClientOp(sql, "ace", op(2, 0.0002))).reason, "close", "40 m between your own Hearths too");
+  const d = await applyClientOp(sql, "ace", op(2, 0.001));
+  assert.equal(d.ok, true, String(d.reason));
+  assert.equal((await applyClientOp(sql, "ace", op(2, 0.001))).ok, true, "same Double replays");
+  assert.equal((await applyClientOp(sql, "ace", op(2, 0.002))).reason, "placed", "a second Double is refused");
+  assert.equal((await applyClientOp(sql, "ace", op(1, 0.003))).reason, "placed", "a second Single is refused");
+  assert.equal((await applyClientOp(sql, "ace", op(3, 0.004))).ok, true);
+  assert.equal((await applyClientOp(sql, "ace", op(3, 0.005))).reason, "placed");
+  const keys = (await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = '~placed' order by op_key`).map((r) => r.op_key);
+  assert.deepEqual(keys, [placedKey("ace"), placedKey("ace", 2), placedKey("ace", 3)]);
+  const mirrors = (await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'ace' and op_key like 'plant%' and op_key <> 'plantok' order by op_key`).map((r) => r.op_key);
+  assert.deepEqual(mirrors, ["plant", "plant:v2", "plant:v3"]);
+  const st = await plantStatus(sql, "ace");
+  assert.deepEqual(st.hearths?.map((h) => h.v), [1, 2, 3]);
+  const ids = st.hearths!.map((h) => h.id);
+  assert.equal(ids[0], placedId("ace"), "the Single keeps the old id");
+  assert.equal(new Set(ids).size, 3);
+  const views = await placedViews(sql, "austin", "ace");
+  assert.deepEqual(views.map((v) => v.id).sort(), [...ids].sort());
+  assert.ok(views.every((v) => v.mine));
+  // The owner cut is per Hearth: one visitor pays once at each, and each Hearth's stats count only its own.
+  await sql`update wallet_ledger set created_at = now() - interval '5 days' where user_id = 'vis'`;
+  for (let i = 0; i < 25; i++) await sql`insert into wallet_ledger (user_id, op_key, detail) values ('vis', ${"grade:old" + i}, ${JSON.stringify({ g: "great" })})`;
+  assert.equal(await payHearthOwner(sql, "vis", "c1", ids[1]!, "austin"), true);
+  assert.equal(await payHearthOwner(sql, "vis", "c2", ids[1]!, "austin"), false);
+  assert.equal(await payHearthOwner(sql, "vis", "c3", ids[0]!, "austin"), true);
+  const st2 = await plantStatus(sql, "ace");
+  assert.deepEqual(st2.hearths!.map((h) => h.stats.total.opens), [1, 1, 0]);
+});
+
+test("0.1.122 server: an old pre-0.1.122 row stays valid and holds its own version's slot", async () => {
+  const { applyClientOp, plantStatus, placedViews } = await import("./walletApply.ts");
+  const { placedId } = await import("./hearthVaults.ts");
+  const { placedKey } = await import("./placedLantern.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  for (const who of ["one", "dbl"]) {
+    await syncPlayer(sql, who, snap(), `${who}phone1`);
+    await reds(sql, who);
+  }
+  const s = CITIES.austin.spawn;
+  // As written before 0.1.122: on the bare key, no slot. "one" has a Single (no v), "dbl" a Double.
+  const old = (owner: string, dLat: number, v?: 2) => ({ owner, city: "austin", lat: s.lat + 0.004 + dLat, lng: s.lng + 0.004, name: 2, cats: ["local", "history", "science", "music"], at: 1, ...(v ? { v } : {}) });
+  await sql`insert into wallet_ledger (user_id, op_key, detail) values ('~placed', ${placedKey("one")}, ${JSON.stringify(old("one", 0))})`;
+  await sql`insert into wallet_ledger (user_id, op_key, detail) values ('~placed', ${placedKey("dbl")}, ${JSON.stringify(old("dbl", 0.002, 2))})`;
+  const st = await plantStatus(sql, "one");
+  assert.deepEqual(st.hearths?.map((h) => [h.v, h.id]), [[1, placedId("one")]]);
+  assert.equal(st.mine?.name, 2);
+  const at = (dLat: number) => ({ kind: "plant" as const, city: "austin" as const, lat: s.lat + 0.004 + dLat, lng: s.lng + 0.004, name: 0, cats: ["local", "history", "science", "music"] });
+  assert.equal((await applyClientOp(sql, "one", at(0.006))).reason, "placed", "the old Single holds the Single slot");
+  assert.equal((await applyClientOp(sql, "one", { ...at(0.006), v: 3 })).ok, true);
+  assert.equal((await applyClientOp(sql, "dbl", { ...at(0.008), v: 2 })).reason, "placed", "the old Double holds the Double slot");
+  assert.equal((await applyClientOp(sql, "dbl", at(0.008))).ok, true, "a Single still fits next to an old Double");
+  const dst = await plantStatus(sql, "dbl");
+  assert.deepEqual(dst.hearths?.map((h) => h.v), [1, 2]);
+  assert.equal(dst.hearths!.find((h) => h.v === 2)!.id, placedId("dbl"), "the old Double keeps its id");
+  assert.equal(dst.hearths!.find((h) => h.v === 1)!.id, placedId("dbl", 1));
+  assert.equal((await sql`select 1 from wallet_ledger where user_id = '~placed' and op_key = ${placedKey("dbl", 1)}`).length, 1);
+  assert.equal((await placedViews(sql, "austin", null)).length, 4);
+});

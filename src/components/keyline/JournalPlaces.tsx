@@ -9,36 +9,37 @@ import { useGame } from "@/game/store";
 import type { Poi, PoiKind } from "@/game/types";
 import { sfx } from "@/game/audio";
 import { cityDay } from "@/game/vaultStack";
-import { PLANT_RED_NEED } from "@/game/placedLantern";
 import { ItemIcon } from "./ItemIcon";
 import { MarketJournalRow, useMarket } from "./NightMarket";
 import { OwnLampsSection, shortCoin } from "./OwnLamps";
-import { setPlant, usePlant } from "@/game/plantClient";
+import { placedVersion, setPlant, unlockLine, usePlant } from "@/game/plantClient";
+import { HEARTH_TIERS, HEARTH_VERSIONS, HEARTH_VERSION_NAME, type HearthVersion } from "@/game/hearthMulti";
+import { VK_NUM } from "@/game/pins";
 import { PLANT_NAMES } from "@/game/placedLantern";
 import { TRIVIA_CATS } from "@/game/triviaMeta";
 
-/** 0.1.109: Journal › Places: your one Hearth vault: locked, ready to place, or placed. */
-function HearthRow() {
+/** 0.1.109: Journal › Places: a Hearth vault: locked, ready to place, or placed. 0.1.122: one row per version. */
+function HearthRow({ v }: { v: HearthVersion }) {
   const p = usePlant();
-  const mine = p.me.mine;
+  const mine = placedVersion(p.me, v)?.mine ?? null;
   const label = (c: string) => TRIVIA_CATS.find((t) => t.id === c)?.label ?? c;
   return (
-    <li className="hq-row jr-detail" data-testid="row-hearth">
+    <li className="hq-row jr-detail" data-testid={`row-hearth-${v}`}>
       <div className="hq-row-copy">
-        <p className="kicker">Hearth vault · plays as red</p>
-        <p className="hq-row-title">{mine ? `${PLANT_NAMES[mine.name] ?? "Your vault"} · ${CITIES[mine.city as keyof typeof CITIES]?.name ?? mine.city}` : "Your Hearth vault"}</p>
+        <p className="kicker">Hearth vault · {HEARTH_VERSION_NAME[v]} · {HEARTH_TIERS[v].map((t) => VK_NUM[t]).join(" → ")}</p>
+        <p className="hq-row-title">{mine ? `${PLANT_NAMES[mine.name] ?? "Your vault"} · ${CITIES[mine.city as keyof typeof CITIES]?.name ?? mine.city}` : `Your ${HEARTH_VERSION_NAME[v]} Hearth`}</p>
         <p className="hq-row-sub">
-          {mine ? `Placed for good · ${mine.cats.map(label).join(", ")}` : p.me.unlocked ? "Ready. Walk to a street spot, 40 m from any vault, and place it." : `Answer ${PLANT_RED_NEED} red (V) vaults right to unlock${typeof p.me.red === "number" ? ` · ${p.me.red}/${PLANT_RED_NEED}` : ""}.`}
+          {mine ? `Placed for good · ${mine.cats.map(label).join(", ")}` : p.me.unlocked ? "Ready. Walk to a street spot, 40 m from any vault, and place it." : unlockLine(p.me.red)}
         </p>
       </div>
       {!mine && p.me.unlocked ? (
         <button
           type="button"
           className="btn btn-primary shrink-0 px-3 text-xs"
-          data-testid="hearth-place"
+          data-testid={`hearth-place-${v}`}
           onClick={() => {
             sfx.ui();
-            setPlant({ placing: true, note: null });
+            setPlant({ placing: true, v, note: null });
             useGame.setState({ hqOpen: false });
           }}
         >
@@ -48,10 +49,10 @@ function HearthRow() {
         <button
           type="button"
           className="btn btn-quiet shrink-0 px-3 text-xs"
-          data-testid="hearth-view"
+          data-testid={`hearth-view-${v}`}
           onClick={() => {
             sfx.ui();
-            setPlant({ ownerOpen: true });
+            setPlant({ ownerOpen: true, ownerV: v });
             useGame.setState({ hqOpen: false });
           }}
         >
@@ -231,7 +232,9 @@ export function PlacesTab() {
         </>
       ) : null}
       <OwnLampsSection compact />
-      <HearthRow />
+      {HEARTH_VERSIONS.map((v) => (
+        <HearthRow key={v} v={v} />
+      ))}
       <li className="kicker jr-kicker">Places in {city.name}</li>
       <MarketJournalRow />
       {shown.map(([g, ps]) => {
