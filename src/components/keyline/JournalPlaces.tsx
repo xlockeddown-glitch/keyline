@@ -5,7 +5,6 @@ import { CITIES, KIND_LABEL, TIER_LABEL } from "@/game/data";
 import { KEY_MATCHES, houseArt, houseList } from "@/game/houses";
 import { MARKET_TAG } from "@/game/nightMarket";
 import { useOwnedLamps } from "@/game/ownLampsClient";
-import { SHOP_EVERY_MS, SHOP_NAME, SHOP_PAY, SHOP_PRICE, shopOutput, tillLine } from "@/game/shop";
 import { useGame } from "@/game/store";
 import type { Poi, PoiKind } from "@/game/types";
 import { sfx } from "@/game/audio";
@@ -147,7 +146,6 @@ export function PlacesTab() {
   const cityId = useGame((s) => s.cityId);
   const atlas = useGame((s) => s.atlas);
   const houses = useGame((s) => s.houses);
-  const shops = useGame((s) => s.shops);
   const city = CITIES[cityId];
   const homes = houseList(houses);
   const owned = useOwnedLamps();
@@ -156,10 +154,9 @@ export function PlacesTab() {
   const [more, setMore] = useState(false);
   const claims = useGame((s) => s.homeClaims);
   const turnKey = useGame((s) => s.turnKey);
-  const collectShop = useGame((s) => s.collectShop);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (open !== "shop" && open !== "house") return;
+    if (open !== "house") return;
     setNow(Date.now());
     const t = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(t);
@@ -168,12 +165,10 @@ export function PlacesTab() {
   const tiersOwned = new Set(owned.filter((o) => o.mine && !o.free).map((o) => o.tier)).size;
   const lit = city.pois.filter((p) => atlas[p.id]).length;
   const myHouse = homes.owned.find((h) => h.city === cityId);
-  const myShop = shops[cityId];
   const groups = new Map<string, Poi[]>();
   for (const p of city.pois) groups.set(groupOf(p), [...(groups.get(groupOf(p)) ?? []), p]);
   const list = [...groups.entries()];
   const shown = more ? list : list.slice(0, 2);
-  const hours = SHOP_EVERY_MS / 3_600_000;
 
   return (
     <ul className="jr-list" data-testid="places-tab">
@@ -234,39 +229,6 @@ export function PlacesTab() {
             </li>
           ))}
         </>
-      ) : null}
-      <TapRow
-        title={SHOP_NAME}
-        testid="row-shop"
-        sub={myShop ? `Yours · pays ${shortCoin(SHOP_PAY)} / ${hours} h` : `${shortCoin(SHOP_PRICE)} · pays ${shortCoin(SHOP_PAY)} / ${hours} h`}
-        open={open === "shop"}
-        onTap={() => toggle("shop")}
-      />
-      {open === "shop" ? (
-        myShop ? (
-          <li className="hq-row jr-detail" data-testid="place-shop-till">
-            <div className="hq-row-copy">
-              <p className="hq-row-title">Your {SHOP_NAME} in {city.name}</p>
-              <p className="hq-row-sub tabular-nums">{tillLine(myShop.anchor, now)}</p>
-            </div>
-            <button
-              type="button"
-              className={`btn ${shopOutput(myShop.anchor, now).n ? "btn-primary" : "btn-quiet"} shrink-0 px-3 text-xs`}
-              data-testid="place-shop-collect"
-              disabled={!shopOutput(myShop.anchor, now).n}
-              onClick={() => {
-                sfx.ui();
-                collectShop(cityId);
-              }}
-            >
-              Collect
-            </button>
-          </li>
-        ) : (
-        <li className="hq-row-sub jr-note">
-          {`One per city. Walk to the shop lot on the map to buy it for ${SHOP_PRICE.toLocaleString("en-US")} coin. It pays ${SHOP_PAY.toLocaleString("en-US")} every ${hours} h.`}
-        </li>
-        )
       ) : null}
       <OwnLampsSection compact />
       <HearthRow />

@@ -89,7 +89,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; shops?: Partial<Record<CityId, ShopState>>; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -214,6 +214,39 @@ export async function grantStockCoin(sql: Sql, userId: string): Promise<string[]
     return [clamped ? `${stockNote(coin)} (your coins were near the cap, so this filled them to the top)` : stockNote(coin)];
   } catch (e) {
     console.warn("[wallet] stock trade-in skipped", e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
+/** 0.1.120: Lantern Shops retired. One ledger key per canonical wallet (one-time buy-back). */
+export const SHOP_RETIRE_KEY = "gift:shop-retire-0120";
+export function shopRetireNote(n: number, coin: number): string {
+  return `Lantern Shops are retired. Your ${n} shop${n === 1 ? " was" : "s were"} bought back for ${coin.toLocaleString("en-US")} coins.`;
+}
+
+/**
+ * 0.1.120: buy back every Lantern Shop this account owns: SHOP_PRICE each plus the coin waiting in its till, once,
+ * clamped at the coin cap. Accounts with no shop write nothing. The shop:/shopc: rows stay as they are. Never fails the sync.
+ */
+export async function grantShopRetire(sql: Sql, userId: string): Promise<string[]> {
+  try {
+    const shops = Object.entries(await shopsOf(sql, userId)) as [CityId, ShopState][];
+    if (!shops.length) return [];
+    const now = Date.now();
+    const coin = shops.reduce((sum, [, st]) => sum + SHOP_PRICE + shopOutput(st.anchor, now).coin, 0);
+    let clamped = false;
+    const r = await mutateWallet(sql, userId, SHOP_RETIRE_KEY, (w) => {
+      const next = applyDelta(w, { coins: coin });
+      if (!next.ok) return next;
+      const paid = next.wallet.coins - w.coins;
+      clamped = paid < coin;
+      return { ...next, detail: JSON.stringify({ coin, paid, at: now, shops: shops.map(([c, st]) => ({ city: c, anchor: st.anchor, till: shopOutput(st.anchor, now).coin })) }) };
+    });
+    if (!r.ok || r.replay) return [];
+    const note = shopRetireNote(shops.length, coin);
+    return [clamped ? `${note} (your coins were near the cap, so this filled them to the top)` : note];
+  } catch (e) {
+    console.warn("[wallet] shop buy-back skipped", e instanceof Error ? e.message : e);
     return [];
   }
 }
@@ -592,8 +625,9 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   giftNotes.push(...(await grantWelcomePack(sql, userId, startOfLocal(local))));
   giftNotes.push(...(await grantLoveGift(sql, userId)));
   giftNotes.push(...(await grantStockCoin(sql, userId)));
+  giftNotes.push(...(await grantShopRetire(sql, userId)));
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), shops: await shopsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId) };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId) };
   const until = await doubleUntil(sql, userId);
   const out = { ...done, owned, ...(until ? { doubleUntil: until } : {}) };
   return giftNotes.length ? { ...out, giftNotes } : out;
@@ -1217,8 +1251,6 @@ export type ClientResult = Applied & {
   can?: Can;
   /** 0.1.12: what turning the key paid (0 / null when that part was already taken today). */
   home?: { match: Tier | null; n?: number; coin?: number; day: string };
-  /** 0.1.59: what a shop collect paid and the shop's new clock (server time). */
-  shop?: { n: number; coin: number; at: number; anchor: number; readyAt: number };
   /** 0.1.22: the quest a claim paid (and the month Lucky turned on for, from a Full month). */
   quest?: { id: string; period: string; lucky?: string };
   /** 0.1.22: what the one-time milestone / charm move paid (fresh grants only; a replay is empty). */
@@ -1468,35 +1500,14 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     return applied(r);
   }
 
-  // 0.1.59: buy a Lantern Shop. One per city; the server stamps the time it starts making coin.
+  // 0.1.120: Lantern Shops are retired (bought back once by grantShopRetire). Old tabs still send these ops.
   if (op.kind === "shop") {
-    if (!(op.city in CITIES)) return refused(wallet, "unknown");
-    if ((await shopsOf(sql, sessionUserId))[op.city]) return applied({ ok: true, replay: true, wallet });
-    const at = Date.now();
-    const r = await mutateWallet(sql, sessionUserId, `shop:${op.city}`, (w) =>
-      w.coins < SHOP_PRICE ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -SHOP_PRICE }), detail: JSON.stringify({ city: op.city, at }) },
-    );
-    const s = (await shopsOf(sql, sessionUserId))[op.city];
-    return { ...applied(r), ...(s ? { shop: { n: 0, coin: 0, at: s.at, anchor: s.anchor, readyAt: shopOutput(s.anchor, at).readyAt } } : {}) };
+    return refused(wallet, "retired");
   }
 
-  // 0.1.59: collect the shop's waiting coin. Counted from the server clock; the next anchor is the row key, so a retry replays.
+  // 0.1.120: Lantern Shops are retired (bought back once by grantShopRetire). Old tabs still send these ops.
   if (op.kind === "shopCollect") {
-    if (!(op.city in CITIES)) return refused(wallet, "unknown");
-    const s = (await shopsOf(sql, sessionUserId))[op.city];
-    if (!s) return refused(wallet, "no-shop");
-    const now = Date.now();
-    const out = shopOutput(s.anchor, now);
-    const view = (n: number, coin: number, anchor: number) => ({ n, coin, at: s.at, anchor, readyAt: shopOutput(anchor, now).readyAt });
-    if (out.n < 1) return { ...applied({ ok: true, replay: true, wallet }), shop: view(0, 0, s.anchor) };
-    let paid = 0;
-    const r = await mutateWallet(sql, sessionUserId, `shopc:${op.city}:${out.nextAnchor}`, (w) => {
-      paid = Math.max(0, Math.min(out.coin, COIN_CAP - w.coins));
-      const d = applyDelta(w, { coins: paid });
-      return d.ok ? { ...d, detail: JSON.stringify({ city: op.city, anchor: out.nextAnchor, n: out.n, coin: paid }) } : d;
-    });
-    const fresh = r.ok && !r.replay;
-    return { ...applied(r), shop: view(fresh ? out.n : 0, fresh ? paid : 0, out.nextAnchor) };
+    return refused(wallet, "retired");
   }
 
   // 0.1.12: turn the key. Needs a house here and three correct lamps in this city today. Pays no coin: just the

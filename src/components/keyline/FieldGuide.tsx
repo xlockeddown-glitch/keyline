@@ -16,7 +16,6 @@ import { WELCOME_COIN } from "@/game/lampGift";
 import { HOME_LAMPS } from "@/game/houses";
 import { FLIGHT_MIN_MILES } from "@/game/flight";
 import { LOOP_CRATE_ONE_IN } from "@/game/loop";
-import { SHOP_CAP, SHOP_EVERY_MS, SHOP_NAME, SHOP_PAY, SHOP_PRICE } from "@/game/shop";
 import { TITLE_RUNGS } from "@/game/levels";
 import { PRINT_GOAL_FIRST } from "@/game/cityPrints";
 
@@ -160,12 +159,9 @@ export function FieldGuide() {
             </Topic>
 
             <li className="kicker jr-kicker">Spend &amp; own</li>
-            <Topic id="houses" icon={<span aria-hidden>🏠</span>} title="Houses & Lantern Shop" sub="Daily house key, shop till" open={topic} set={setTopic} testid="help-houses">
+            <Topic id="houses" icon={<span aria-hidden>🏠</span>} title="Houses" sub="Daily house key" open={topic} set={setTopic} testid="help-houses">
               <li>One house per city, from {fmt(HOUSES[0]!.price)}; stepping up costs only the difference.</li>
               <li>Once a day per city, open {HOME_LAMPS} vaults there and turn the key: {KEY_MATCHES} keys plus coin.</li>
-              <li>
-                {SHOP_NAME}: {fmt(SHOP_PRICE)}, one per city; pays {SHOP_PAY.toLocaleString("en-US")} every {SHOP_EVERY_MS / 3_600_000} h, and the till holds {SHOP_CAP}.
-              </li>
               <More>
                 <li>Houses: {HOUSES.map((h) => `${h.name} ${fmt(h.price)} (key ${h.keyCoin.toLocaleString("en-US")})`).join(", ")}.</li>
               </More>

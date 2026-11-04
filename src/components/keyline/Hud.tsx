@@ -1,5 +1,4 @@
 import { lockClock } from "@/game/lockout";
-import { SHOP_NAME } from "@/game/shop";
 import { SkyChip } from "./Sky";
 import { useDoubleMinutes } from "@/game/doubleClient";
 import { useEffect, useRef, useState } from "react";
@@ -56,9 +55,6 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const setDealerOpen = useGame((s) => s.setDealerOpen);
   const houseNear = useGame((s) => s.houseNear);
   const setHouseOpen = useGame((s) => s.setHouseOpen);
-  const lanternNear = useGame((s) => s.lanternNear);
-  const setLanternOpen = useGame((s) => s.setLanternOpen);
-  const myShop = useGame((s) => s.shops[s.cityId]);
   const myHouse = useGame((s) => s.houses[s.cityId]);
   const carOn = useGame((s) => s.carOn);
   const cityId = useGame((s) => s.cityId);
@@ -258,12 +254,6 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
         // 0.1.12: on foot at the house lot → the house sheet.
         <button type="button" className="dealer-btn pointer-events-auto" data-testid="house-btn" onClick={() => setHouseOpen(true)}>
           {myHouse ? <><span className="kicker">Your door</span> {houseOf(myHouse.tier)?.name}</> : <><span className="kicker">House</span> {lotOf(cityId).name}</>}
-        </button>
-      )}
-      {busy || !lanternNear || hud.seated ? null : (
-        // 0.1.59: on foot at the Lantern Shop lot → the shop sheet.
-        <button type="button" className="dealer-btn pointer-events-auto" data-testid="lantern-btn" onClick={() => setLanternOpen(true)}>
-          <span className="kicker">{myShop ? "Your shop" : "Shop for sale"}</span> {SHOP_NAME}
         </button>
       )}
       {busy || !dealerNear || hud.seated ? null : (
