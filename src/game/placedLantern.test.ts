@@ -237,3 +237,58 @@ test("0.1.111 owner cut: 50 per visitor right answer, once a visitor a day, 1,00
   const hits = Array.from({ length: 2000 }, (_, i) => hearthMatch("n" + i)).filter(Boolean).length;
   assert.ok(hits > 150 && hits < 250, String(hits));
 });
+
+test("0.1.114: a Hearth card always offers 4 fields; Math's stand-in is a field the owner didn't pick, never Math", async () => {
+  const { hearthOffer, hearthCatOk } = await import("./hearthVaults.ts");
+  const { keepsMath } = await import("./triviaMeta.ts");
+  const withMath = ["local", "history", "math", "music"];
+  let skipped = 0;
+  for (let n = 0; n < 400; n++) {
+    const o = hearthOffer(withMath, "placed-abc", n);
+    assert.equal(o.length, 4);
+    assert.equal(new Set(o).size, 4);
+    if (keepsMath(`placed-abc#${n}`)) assert.deepEqual(o, withMath);
+    else {
+      skipped++;
+      assert.ok(!o.includes("math"));
+      const sub = o[2]!;
+      assert.ok(!withMath.includes(sub), "the stand-in takes Math's slot and wasn't picked");
+      assert.deepEqual(hearthOffer(withMath, "placed-abc", n), o, "same open, same stand-in");
+    }
+  }
+  assert.ok(skipped > 150 && skipped < 300, String(skipped));
+  assert.deepEqual(hearthOffer(["local", "history", "science", "music"], "placed-abc", 3), ["local", "history", "science", "music"]);
+  // Server rule.
+  assert.equal(hearthCatOk(withMath, "math"), true);
+  assert.equal(hearthCatOk(withMath, "sports"), true, "a stand-in deals when the owner picked Math");
+  assert.equal(hearthCatOk(["local", "history", "science", "music"], "sports"), false, "no stand-ins without Math");
+  assert.equal(hearthCatOk(withMath, "cooking"), false);
+});
+
+test("0.1.114 server: a Hearth vault with Math deals a stand-in field as red; one without Math refuses it", async () => {
+  const { applyClientOp, placedViews } = await import("./walletApply.ts");
+  const { dealFor } = await import("./triviaService.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  for (const who of ["ace", "bee"]) await syncPlayer(sql, who, snap(), `${who}phone1`);
+  await syncPlayer(sql, "vis", { ...snap(), keys: { red: 3 } }, "visphone1");
+  await ladder(sql, "ace", [1000, 1000, 1000, 1000]);
+  await ladder(sql, "bee", [1000, 1000, 1000, 1000]);
+  const s = CITIES.austin.spawn;
+  const base = { kind: "plant" as const, city: "austin" as const, name: 0 };
+  assert.equal((await applyClientOp(sql, "ace", { ...base, lat: s.lat + 0.004, lng: s.lng + 0.004, cats: ["local", "history", "math", "music"] })).ok, true);
+  assert.equal((await applyClientOp(sql, "bee", { ...base, lat: s.lat + 0.008, lng: s.lng + 0.004, cats: ["local", "history", "science", "music"] })).ok, true);
+  const views = await placedViews(sql, "austin", "vis");
+  const withMath = views.find((v) => v.cats.includes("math"))!;
+  const noMath = views.find((v) => !v.cats.includes("math"))!;
+  const card = { id: "c1", q: "Q?", choices: ["a", "b", "c", "d"], answer: "a", diff: 3, rarity: "rare" };
+  let tier = "";
+  const deps = { now: () => Date.now(), secret: "s", rand: () => 0.4, pick: (_c: string, _cat: string, _p: unknown, t: string) => ((tier = t), card), card: () => card, namedPoi: () => null, series: () => null, sql: async () => sql } as never;
+  const input = (poiId: string, cat: string) => ({ city: "austin", cat, poiId, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555" }) as never;
+  const ok = await dealFor(deps, { userId: "vis" } as never, input(withMath.id, "sports"));
+  assert.equal(ok.ok, true);
+  assert.equal(tier, "red");
+  assert.equal((await dealFor(deps, { userId: "vis" } as never, input(noMath.id, "sports"))).ok, false);
+  const spent = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'vis' and op_key like 'deal:%'`;
+  assert.equal(spent.length, 1, "the stand-in open spent one V key");
+});

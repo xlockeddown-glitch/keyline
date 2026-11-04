@@ -261,7 +261,8 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
     if (!deps.sql) return { ok: false, reason: "unknown-lamp" };
     const hp = await hearthLookup(sql ?? (await deps.sql()), input.city, input.poiId);
     if (!hp) return { ok: false, reason: "unknown-lamp" };
-    if (!hp.cats.includes(input.cat)) return { ok: false, reason: "unknown-lamp" }; // not one of the owner's 4 fields
+    const { hearthCatOk } = await import("./hearthVaults.ts");
+    if (!hearthCatOk(hp.cats, input.cat)) return { ok: false, reason: "unknown-lamp" }; // not one of the owner's 4 fields (or Math's stand-in)
     dealDeps = { ...deps, namedPoi: (c, id) => (id === hp.poi.id ? hp.poi : deps.namedPoi(c, id)) };
   }
   const r = deal(dealDeps, viewer, { ...input, blank: input.poiId.startsWith("placed-") ? undefined : input.blank }, recent, proven);

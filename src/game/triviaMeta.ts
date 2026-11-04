@@ -1,5 +1,5 @@
-import { pinCats } from "./place";
-import type { Poi, TriviaCat } from "./types";
+import { pinCats } from "./place.ts";
+import type { Poi, TriviaCat } from "./types.ts";
 
 /**
  * 0.0.53: the client-safe half of trivia.ts — field names, labels, multipliers and the per-lamp field offer.

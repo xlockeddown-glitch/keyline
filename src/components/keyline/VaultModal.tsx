@@ -7,8 +7,8 @@ import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data
 import { ladderColumnSvg } from "@/game/pins";
 import { seatedCar, useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
-import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, keepsMath, offerCats } from "@/game/triviaMeta";
-import { FACET_COLOR, FACET_POS, hearthOf } from "@/game/hearthVaults";
+import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
+import { FACET_COLOR, FACET_POS, hearthOf, hearthOffer } from "@/game/hearthVaults";
 import { placeLine } from "@/game/place";
 import type { TriviaCat } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
@@ -122,7 +122,7 @@ export function VaultModal() {
   // 0.1.110: a Hearth vault offers its owner's 4 fixed fields (Math on MATH_OFFER_KEEP of visits, like any lamp).
   const hearth = series ? null : hearthOf(openVault.poiId);
   const offered = hearth
-    ? hearth.cats.filter((c) => c !== "math" || keepsMath(`${openVault.poiId}#${vaultsOpened}`))
+    ? hearthOffer(hearth.cats, openVault.poiId, vaultsOpened)
     : offerCats(openVault.poiId, vaultsOpened, 6, series ? undefined : poi, series ? undefined : today);
   const favs = series ? [] : perkFavs(scout, true, carNow);
   const ground = !series && poi ? placeLine(poi) : null;
@@ -206,7 +206,9 @@ export function VaultModal() {
               <p className="kicker">Choose a field</p>
               <p className="mt-1 text-sm text-fg-muted">
                 {hearth
-                  ? "The owner picked these 4. They never rotate."
+                  ? offered.includes("math") || !hearth.cats.includes("math")
+                    ? "The owner picked these 4. They never rotate."
+                    : `The owner picked these. Math sits out this visit; ${TRIVIA_CATS.find((t) => t.id === offered[hearth.cats.indexOf("math")])?.label ?? "another field"} stands in.`
                   : series
                   ? "One field for all trivia cards — they get harder as you go."
                   : "Six this vault. They rotate. The trivia cards prefer the ground you're on."}
@@ -235,7 +237,7 @@ export function VaultModal() {
                           {favs.includes(c.id) ? <span className="fav-badge ml-1.5">Favorite +{Math.round(favBonus(favs.filter((f) => f === c.id).length) * 100)}%</span> : null}
                         </span>
                         <span className="field-blurb mt-1 block text-xs text-fg-subtle">
-                          {hearth ? `${FACET_POS[hearth.cats.indexOf(c.id as never)] ?? ""} facet · ` : ""}
+                          {hearth ? (hearth.cats.includes(c.id as never) ? `${FACET_POS[hearth.cats.indexOf(c.id as never)] ?? ""} facet · ` : "Stands in for Math today · ") : ""}
                           {c.blurb}
                         </span>
                       </span>

@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.113";
+export const APP_VERSION = "0.1.114";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1113a";
+export const PUBLISH_STAMP = "k1114a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -215,3 +215,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.111: Hearth owner cut and Your Hearth: a visitor's right answer at a placed Hearth vault pays the owner 50 coin (one paid open per visitor a Chicago day, 1,000 a day cap, 1 in 10 also a V key; never the owner's own opens or accounts under 3 days / 25 right answers) as `hcut:<day>:<visitor hash>` ledger rows; the owner id no longer leaves the server in plantStatus; Journal › Places › Your Hearth shows opens, cut vs cap, V keys and lifetime (k1111a).
 // 0.1.112: +44 easy trivia cards (diff 1) across 12 categories (no local, no math), each answer checked in its cited Wikipedia article (k1112a).
 // 0.1.113: Vault Keys leftovers: vault cards show the vault (the centered drawing, dial concentric) instead of the old lantern; each tier gets a quirk on open: a once-only card animation (off under reduced motion) and its own short open sound through the sfx bus (silent when muted) (k1113a).
+// 0.1.114: Hearth vaults always show four fields (Ryan): when the Math 43% rule skips an owner's Math, a field the owner didn't pick (never Math) stands in, picked from the same poiId#opens seed; the server deals any non-Math field at a Hearth vault whose owner picked Math (still red, still the looked-up row); ordinary vaults unchanged (k1114a).
