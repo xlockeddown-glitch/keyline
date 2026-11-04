@@ -238,6 +238,28 @@ export const sfx = {
     beep(880, 0.08, "triangle", 0.35, 220);
     beep(1320, 0.1, "sine", 0.18, 80);
   },
+  /** 0.1.112: each vault tier opens with its own short sound (see keyline-vk-quirks.md). */
+  vaultOpen: (tier: string) => {
+    const at = (ms: number, f: () => void) => (ms ? setTimeout(f, ms) : f());
+    if (tier === "white") beep(1047, 0.22, "sine", 0.22);
+    else if (tier === "blue") {
+      beep(660, 0.09, "sine", 0.24, 330);
+      at(90, () => beep(880, 0.11, "sine", 0.2, 440));
+    } else if (tier === "green") {
+      beep(330, 0.05, "triangle", 0.3);
+      at(80, () => beep(392, 0.06, "triangle", 0.28));
+    } else if (tier === "amber") {
+      beep(523, 0.3, "triangle", 0.22);
+      at(20, () => beep(784, 0.32, "triangle", 0.16));
+    } else if (tier === "red") {
+      beep(110, 0.12, "sine", 0.42, -20);
+      at(170, () => beep(104, 0.14, "sine", 0.36, -20));
+    } else if (tier === "violet") {
+      beep(784, 0.12, "sine", 0.2);
+      at(80, () => beep(988, 0.12, "sine", 0.2));
+      at(160, () => beep(1319, 0.2, "sine", 0.18));
+    } else sfx.open();
+  },
   open: () => {
     beep(220, 0.16, "square", 0.2, 80);
     beep(440, 0.2, "triangle", 0.22, 200);

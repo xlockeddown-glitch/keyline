@@ -1575,7 +1575,7 @@ export const useGame = create<GameState>((set, get) => ({
       const spark = sparksNow(get);
       if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} key. Sparks are spent today.`;
       if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} key. This vault already sparked.`;
-      sfx.open();
+      sfx.vaultOpen(poi.tier);
       set({
         openVault: { poiId, startedAt: now, question: null, category: null, deadline: now, spark: true },
         hqOpen: false,
@@ -1587,7 +1587,7 @@ export const useGame = create<GameState>((set, get) => ({
       });
       return null;
     }
-    sfx.open();
+    sfx.vaultOpen(poi.tier);
     set({
       openVault: { poiId, startedAt: now, question: null, category: null, deadline: now },
       hqOpen: false,

@@ -1,3 +1,4 @@
+import { vaultSvgCentered } from "@/game/pins";
 import { useEffect, useState, type CSSProperties } from "react";
 import { cotdAt, perkFavs, favBonus } from "@/game/carPerks";
 import { BookOpen, Calculator, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
@@ -151,13 +152,8 @@ export function VaultModal() {
                   <ItemIcon item="red" size={56} />
                 </span>
               ) : (
-                <span className="lantern lantern-hero">
-                  <i className="lantern-cap" />
-                  <i className="lantern-frame">
-                    <i className="lantern-glass" />
-                  </i>
-                  <i className="lantern-post" />
-                </span>
+                // 0.1.112: the vault itself (centered drawing, dial concentric), with its tier quirk.
+                <span className={`vk-hero vk-q-${poi.tier}`} data-testid="vault-hero-art" dangerouslySetInnerHTML={{ __html: vaultSvgCentered(poi.tier) }} />
               )}
             </div>
             <div className="min-w-0">
