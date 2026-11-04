@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { BLITZ_FULL, BLITZ_STEPS, blitzBank, blitzDue, blitzMatch, blitzMatchLine, blitzTakeLine } from "./dailyBlitz.ts";
-import { TIER_VALUE } from "./rewards.ts";
 
 test("Daily Blitz is due until played today", () => {
   assert.equal(blitzDue("", "2026-10-05"), true);

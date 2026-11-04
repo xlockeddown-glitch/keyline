@@ -176,26 +176,6 @@ export async function mutateWallet(
   return { ok: false, replay: false, reason: "busy", wallet };
 }
 
-/** Earlier Run/Stack grades for this walker, oldest first. Stops at a missing link. */
-export async function priorGrades(sql: Sql, userId: string, prevNonce: string, limit: number): Promise<Array<"perfect" | "great" | "good">> {
-  const { id } = await canonicalWallet(sql, userId);
-  const out: Array<"perfect" | "great" | "good"> = [];
-  let n: string | null = prevNonce;
-  for (let i = 0; i < limit && n; i++) {
-    const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${"grade:" + n} limit 1`;
-    if (!rows[0]?.detail) break;
-    try {
-      const d = JSON.parse(rows[0].detail) as { g?: string; pv?: string };
-      if (d.g !== "perfect" && d.g !== "great" && d.g !== "good") break;
-      out.unshift(d.g);
-      n = typeof d.pv === "string" && d.pv ? d.pv : null;
-    } catch {
-      break;
-    }
-  }
-  return out;
-}
-
 /**
  * 0.0.99 Recent rewards: the ledger row also carries what the write actually changed ("_d": coin, matches
  * and 3→1 merges), so the Journal can list the last rewards with no new table. Notes that aren't JSON stay as

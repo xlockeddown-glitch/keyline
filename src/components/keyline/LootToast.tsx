@@ -8,7 +8,7 @@ import type { Tier } from "@/game/types";
 import { DIFF_LABEL } from "@/game/triviaMeta";
 import { streakPrize } from "@/game/goals";
 import type { LootDrop } from "@/game/types";
-import { ItemIcon, QtyChip } from "./ItemIcon";
+import { ItemIcon } from "./ItemIcon";
 
 export function LootToast() {
   const loot = useGame((s) => s.loot);

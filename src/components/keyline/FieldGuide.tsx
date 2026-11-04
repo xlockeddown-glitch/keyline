@@ -20,7 +20,6 @@ import { TITLE_RUNGS } from "@/game/levels";
 import { PRINT_GOAL_FIRST } from "@/game/cityPrints";
 
 const fmt = (n: number) => (n >= 1_000_000 ? `${n / 1_000_000}M` : n >= 1000 ? `${n / 1000}k` : String(n));
-const TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
 
 export function FieldGuide() {
   const open = useGame((s) => s.guideOpen);

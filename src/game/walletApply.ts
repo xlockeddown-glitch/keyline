@@ -39,7 +39,6 @@ import {
   printOp,
   provenBoost,
   refundMatchOp,
-  rideOp,
   scoutOp,
   spendMatchOp,
   startOp,
@@ -56,13 +55,10 @@ import {
 import { CITIES, SCOUTS, type KioskId } from "./data.ts";
 import { PLACED_USER, PLANT_KEY, PLANT_OK_KEY, PLANT_RED_NEED, findPerfectStack, parsePlaced, placedKey, plantRefusal, type PlacedVault, type PlantCat } from "./placedLantern.ts";
 import type { ScoutId } from "./types.ts";
-import { rideSeed, scoreRide, type RideMoves } from "./rideGrade.ts";
-import { rideRamp } from "./rideGames.ts";
 import { MARKET_LIGHTS, bestLight, nextLight, type LightId } from "./marketLights.ts";
 import { THANKS_CAR, THANKS_CAR_COIN, THANKS_CAR_KEY, THANKS_GIFT_KEY, thanksClock, THANKS_HOUSE, THANKS_HOUSE_COIN, THANKS_HOUSE_KEY, thanksCity, thanksNote, type ThanksCar, type ThanksHouse } from "./thanksGift.ts";
 import { COIN_CAP } from "./wallet.ts";
 import { SCOUT_GIFTS, type ScoutGift, MATCH_GIFTS, giftsFor, type MatchGift } from "./matchGift.ts";
-import type { RideGameId } from "./rideGames.ts";
 import { cleanWardrobe, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
@@ -1227,11 +1223,10 @@ export type ClientOp =
       kind: "ride";
       watch?: boolean;
       play?: boolean;
-      deal?: RideGameId;
-      round?: { n: number } & RideMoves;
+      /** 0.1.121: still parsed for old tabs, always refused. */
+      deal?: string;
+      round?: { n: number } & Record<string, unknown>;
     };
-
-export type RideDeal = { seed: number; n: number; ms: number; game: string; ramp?: number; bonus?: boolean };
 
 export type ClientResult = Applied & {
   wardrobe?: Wardrobe;
@@ -1242,7 +1237,6 @@ export type ClientResult = Applied & {
   wheelRoll?: number;
   /** 0.0.93: the matches a cache paid (the rest became coin). */
   cache?: { got: Tier[]; coin: number; already?: boolean };
-  rideDeal?: RideDeal;
   /** 0.1.2: the arrival and charge the server set for a Hurry up. */
   hurry?: { arriveAt: number; cost: number };
   /** 0.1.58: the Loop ride paid a mystery crate. */
@@ -1670,7 +1664,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
-  if (op.kind === "ride") return payRide(sql, sessionUserId, id, wallet, op);
+  // 0.1.121: the timed train and its ride games went in 0.1.95; old tabs still send the ride op.
+  if (op.kind === "ride") return refused(wallet, "retired");
   if (op.kind === "loop") return loopArrive(sql, sessionUserId, id, wallet, op.ride);
   if (op.kind === "fly") return flyArrive(sql, sessionUserId, id, wallet);
   if (op.kind === "hurry") return hurryRide(sql, sessionUserId, id, wallet, op.min);
@@ -1959,24 +1954,6 @@ async function boardTicket(sql: Sql, sessionUserId: string, id: string, wallet: 
   return applied(r);
 }
 
-function rideDealOf(detail: string | undefined): RideDeal | undefined {
-  if (!detail) return;
-  try {
-    const d = JSON.parse(detail) as Partial<RideDeal>;
-    if (typeof d.seed === "number" && typeof d.n === "number" && typeof d.ms === "number" && typeof d.game === "string") {
-      return { seed: d.seed, n: d.n, ms: d.ms, game: d.game, ramp: typeof d.ramp === "number" ? d.ramp : 1, bonus: d.bonus === true };
-    }
-  } catch {
-    /* a heartbeat stores no deal */
-  }
-  return;
-}
-
-function nextRound(w: WalletState, departAt: number) {
-  if (w.meta.rideAt !== departAt || w.meta.rideOpenN < 0) return 0;
-  return w.meta.rideOpenN + 1;
-}
-
 /** 0.1.2: the arrival Hurry up set for this ticket, if any (latest wins; each hurry only ever moves it earlier). */
 async function hurriedArrive(sql: Sql, id: string, at: number): Promise<number | null> {
   const rows = await sql<{ detail: string }>`
@@ -2035,46 +2012,6 @@ async function flyArrive(sql: Sql, sessionUserId: string, id: string, wallet: Wa
   if (now >= cur) return refused(wallet, "arrived");
   const r = await mutateWallet(sql, sessionUserId, `hurry:${ticket.at}:fly`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ arrive: now, full: ticket.ms, cost: 0, fly: true }) }));
   if (r.ok) await mutateWallet(sql, sessionUserId, souvenirKey(ticket.to as CityId), (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ at: now, from: ticket.from }) }));
-  return applied(r);
-}
-
-/** Pay the open ticket from the server clock. A win is scored here from the dealt seed and the submitted moves. */
-async function payRide(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, op: Extract<ClientOp, { kind: "ride" }>): Promise<ClientResult> {
-  const ticket = await latestTicket(sql, id);
-  if (!ticket) return refused(wallet, "no-ticket");
-  const now = Date.now();
-  const hurried = await hurriedArrive(sql, id, ticket.at);
-  const clock = { departAt: ticket.at, arriveAt: hurried ?? ticket.at + ticket.ms, now, fullMs: ticket.ms };
-  const watch = op.watch === true;
-  if (op.deal) {
-    const seed = rideSeed(id, ticket.at);
-    const n = nextRound(wallet, ticket.at);
-    const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:d:${n}`, (w) => rideOp(w, { ...clock, deal: { game: op.deal!, n, seed } }));
-    const rideDeal = r.ok ? rideDealOf(r.detail) : undefined;
-    return { ...applied(r), rideDeal };
-  }
-  if (op.round) {
-    const n = Math.floor(op.round.n);
-    const open = wallet.meta.rideAt === ticket.at && wallet.meta.rideOpenN === n && wallet.meta.rideGame;
-    if (!open) {
-      const wallSec = Math.floor(Math.max(0, Math.min(ticket.ms, now - ticket.at)) / 1000);
-      const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:${wallSec}:p`, (w) => rideOp(w, { ...clock, play: true, watch }));
-      return applied(r);
-    }
-    const moves = op.round;
-    const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:r:${n}`, (w) => {
-      if (w.meta.rideAt !== ticket.at || w.meta.rideOpenN !== n || !w.meta.rideGame) return { ok: false, reason: "busy" };
-      const ramp = rideRamp(n, w.meta.rideBonusN === n);
-      const outcome = scoreRide(w.meta.rideGame, rideSeed(id, ticket.at), n, w.meta.rideMs, ticket.to, moves, ramp);
-      return rideOp(w, { ...clock, play: true, watch, touch: true, outcome });
-    });
-    return applied(r);
-  }
-  const wallSec = Math.floor(Math.max(0, Math.min(ticket.ms, now - ticket.at)) / 1000);
-  const play = op.play === true;
-  const r = await mutateWallet(sql, sessionUserId, `ride:${ticket.at}:${wallSec}${watch ? ":w" : ""}${play ? ":p" : ""}`, (w) =>
-    rideOp(w, { ...clock, watch, play }),
-  );
   return applied(r);
 }
 

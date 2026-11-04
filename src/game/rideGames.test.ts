@@ -1,23 +1,8 @@
+// 0.1.121: ride payout only (old saves' train rides still land via settleRide); game rules went with the games.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  ARRIVAL_BUFFER_MS,
   IDLE,
-  LAMP_HIT_MS,
-  ROUND_MAX_MS,
-  betterOutcome,
-  forfeitRound,
-  journeyOutcome,
-  lampAccuracy,
-  lampInFrame,
-  lampOutcome,
-  lampRoundMs,
-  lampSchedule,
-  lampVerdict,
-  markRound,
-  openRound,
-  pickRideGame,
-  rideGameFor,
   rideReward,
   rideValue,
   type RideOutcome,
@@ -112,47 +97,17 @@ function run(j: Journey, keys: Record<Tier, number>, from: number, to: number, w
   return { j, keys };
 }
 
-test("a won ride pays exactly the win, no matter how many ticks or reloads", () => {
-  let { j, keys } = run(ride(6 * MIN), empty(), 0, 60_000);
-  assert.equal(keys.white, 1, "seat pays idle early");
-  j = markRound(openRound(j, 60_000), won(1));
-  ({ j, keys } = run(j, keys, 61_000, 6 * MIN + 5_000));
-  assert.deepEqual([keys.white, keys.blue], [4, 1]);
-  // Reload: the save comes back and ticks again.
-  const again = run(forfeitRound(JSON.parse(JSON.stringify(j)) as Journey), keys, 6 * MIN, 6 * MIN + 30_000);
-  assert.deepEqual([again.keys.white, again.keys.blue], [4, 1]);
-});
-
-test("a ride pays one outcome: the best round", () => {
-  let j = ride(8.25 * MIN);
-  j = markRound(j, won(1));
-  j = markRound(j, played);
-  j = markRound(j, won(0.2));
-  assert.deepEqual(journeyOutcome(j), won(1));
-  assert.equal(j.game?.rounds, 3);
-  const { keys } = run(j, empty(), 0, 8.25 * MIN);
-  assert.equal(rideValue({ white: keys.white, blue: keys.blue - 1 }), 10, "best win only, plus the ten-minute blue");
-  assert.deepEqual(betterOutcome(won(0.3), played), won(0.3));
-  assert.deepEqual(betterOutcome(IDLE, played), played);
-});
-
-test("tab closed mid-round forfeits the round, idle still pays", () => {
-  let { j, keys } = run(ride(3 * MIN), empty(), 0, 30_000);
-  j = openRound(j, 30_000);
-  const saved = JSON.parse(JSON.stringify(j)) as Journey;
-  const loaded = forfeitRound(saved);
-  assert.equal(loaded.roundAt, undefined);
-  assert.equal(loaded.forfeits, 1);
-  assert.deepEqual(journeyOutcome(loaded), IDLE);
-  ({ keys } = run(loaded, keys, 31_000, 3 * MIN + 2_000, false));
-  assert.equal(keys.white, 1);
-  assert.equal(keys.blue, 0);
-});
-
-test("forfeit keeps an earlier best", () => {
-  const j = openRound(markRound(ride(6 * MIN), played), 90_000);
-  assert.deepEqual(journeyOutcome(forfeitRound(j)), played);
-  assert.equal(forfeitRound(ride(6 * MIN)).forfeits, undefined, "nothing open, nothing forfeited");
+test("0.1.121: an old save's train ride still lands its best round once, however many ticks", () => {
+  const len = 10.5 * MIN;
+  const j: Journey = { ...ride(len), game: { kind: "won", perf: 1, rounds: 2 } };
+  const want = transitLoot(len, len, len, won(1));
+  const a = run(j, empty(), 0, len + 5_000);
+  const b = run(a.j, a.keys, len + 5_000, len + 30_000);
+  assert.equal(a.keys.white, want.white);
+  assert.equal(a.keys.blue, want.blue);
+  assert.deepEqual(b.keys, a.keys, "ticks after landing pay nothing more");
+  const idle = run(ride(len), empty(), 0, len + 5_000);
+  assert.ok(a.keys.white + 3 * a.keys.blue > idle.keys.white + 3 * idle.keys.blue, "a won round beats sitting");
 });
 
 test("0.0.97: rides use the same 30 pocket; everything owed lands (overflow merges later)", () => {
@@ -169,178 +124,3 @@ test("0.0.97: a blue owed is a blue, even into a full pocket (it merges up, neve
   assert.deepEqual(got.add, { white: 4, blue: 1, green: 0 });
 });
 
-test("selector: Lamplighter under two minutes; Where am I? and Match sorter share two to six; Route puzzle from six on", () => {
-  const band = ["where-am-i", "match-sorter"];
-  for (const m of [0.8, 1.9]) {
-    for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.equal(pickRideGame(m * MIN, undefined, seed), "lamplighter", `${m}m`);
-  }
-  for (const m of [6, 10, 14, 20]) {
-    for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.equal(pickRideGame(m * MIN, undefined, seed), "route-puzzle", `${m}m`);
-  }
-  for (const m of [2, 3, 4, 5.9]) {
-    for (const seed of [0, 1, 99, 1_790_000_000_000]) assert.ok(band.includes(pickRideGame(m * MIN, undefined, seed)), `${m}m`);
-  }
-  assert.equal(pickRideGame(2 * MIN - 1, undefined, 5), "lamplighter");
-  assert.ok(band.includes(pickRideGame(6 * MIN - 1, undefined, 5)));
-  // Only built games are dealt: with the sorter held back, the band is all Where am I?.
-  for (const seed of [0, 1, 2, 3, 4]) assert.equal(pickRideGame(4 * MIN, ["lamplighter", "where-am-i"], seed), "where-am-i");
-  assert.equal(pickRideGame(9 * MIN, ["lamplighter", "route-puzzle"]), "route-puzzle");
-  assert.equal(pickRideGame(90_000, ["lamplighter", "route-puzzle"]), "lamplighter");
-  assert.equal(pickRideGame(6 * MIN, ["lamplighter", "where-am-i"]), "lamplighter", "six minutes is long");
-});
-
-test("selector: the 2–6 min band splits about 50/50 across ride seeds, and a seed always gets the same game", () => {
-  let sorter = 0;
-  const n = 4000;
-  const t0 = 1_790_000_000_000; // departure times in ms, like real rides
-  for (let i = 0; i < n; i++) {
-    const seed = t0 + i * 1_337;
-    const g = pickRideGame(4 * MIN, undefined, seed);
-    if (g === "match-sorter") sorter++;
-    assert.equal(pickRideGame(4 * MIN, undefined, seed), g, "deterministic");
-    assert.equal(rideGameFor({ departAt: seed, arriveAt: seed + 4 * MIN }), g, "journey helper agrees");
-  }
-  const share = sorter / n;
-  assert.ok(share > 0.45 && share < 0.55, `sorter share ${share}`);
-  // Consecutive millisecond departures don't alternate in lockstep.
-  const run = Array.from({ length: 64 }, (_, i) => pickRideGame(3 * MIN, undefined, t0 + i));
-  assert.ok(new Set(run).size === 2);
-});
-
-test("rounds fit the ride and end before arrival", () => {
-  assert.equal(lampRoundMs(48_000), 48_000 - ARRIVAL_BUFFER_MS);
-  assert.equal(lampRoundMs(10 * MIN), ROUND_MAX_MS);
-  assert.equal(lampRoundMs(20_000), null);
-  for (const left of [24_000, 40_000, 70_000, 5 * MIN]) {
-    const ms = lampRoundMs(left)!;
-    assert.ok(ms + ARRIVAL_BUFFER_MS <= left);
-  }
-});
-
-test("lamp schedule is seeded and fits the round", () => {
-  const a = lampSchedule(40_000, 7);
-  assert.deepEqual(a, lampSchedule(40_000, 7));
-  assert.notDeepEqual(a, lampSchedule(40_000, 8));
-  assert.ok(a.length >= 25 && a.length <= 45, String(a.length));
-  assert.ok(a.every((l) => l.at > 0 && l.at < 40_000));
-  for (let i = 1; i < a.length; i++) assert.ok(a[i]!.at - a[i - 1]!.at >= 500);
-});
-
-test("tapping lights the lamp in the frame, not a lit one or a far one", () => {
-  const lamps = lampSchedule(30_000, 3);
-  const first = lamps[0]!;
-  assert.equal(lampInFrame(lamps, new Set(), first.at + LAMP_HIT_MS)?.id, first.id);
-  assert.equal(lampInFrame(lamps, new Set(), first.at - LAMP_HIT_MS - 1), null);
-  assert.equal(lampInFrame(lamps, new Set([first.id]), first.at), null);
-});
-
-test("accuracy decides the win; strays count against you", () => {
-  assert.deepEqual(lampOutcome({ lamps: 20, hits: 20, strays: 0 }), { kind: "won", perf: 1, perfect: true }, "a clean sheet is perfect (0.0.41)");
-  const nearly = lampOutcome({ lamps: 20, hits: 19, strays: 0 });
-  assert.ok(nearly.kind === "won" && !nearly.perfect && Math.abs(nearly.perf - 0.875) < 1e-9, "one miss: a win, not perfect");
-  assert.deepEqual(lampOutcome({ lamps: 20, hits: 12, strays: 0 }), won(0));
-  assert.deepEqual(lampOutcome({ lamps: 20, hits: 11, strays: 0 }), played);
-  assert.deepEqual(lampOutcome({ lamps: 20, hits: 20, strays: 20 }), played);
-  assert.deepEqual(lampOutcome({ lamps: 0, hits: 0, strays: 0 }), played);
-  assert.equal(lampAccuracy({ lamps: 18, hits: 18, strays: 2 }), 0.9);
-  assert.match(lampVerdict({ lamps: 20, hits: 20, strays: 0 }), /^20 of 20 lit\./);
-  assert.match(lampVerdict({ lamps: 20, hits: 0, strays: 0 }), /dark/);
-});
-
-// ── 0.0.35: variety across rides ────────────────────────────────────────
-import { RIDE_HISTORY_KEEP, RIDE_MAX_RUN, bandGames, dealForRide, dealRideGame, loadRideHistory, pushRideHistory, seededRng, type RideGameId } from "./rideGames.ts";
-
-function simulate(open: readonly RideGameId[], rides: number, seed: number) {
-  const rnd = seededRng(seed);
-  let history: RideGameId[] = [];
-  const counts = new Map<RideGameId, number>();
-  let longest = 0;
-  let run = 0;
-  let prev: RideGameId | undefined;
-  for (let i = 0; i < rides; i++) {
-    const g = dealRideGame(open, history, rnd);
-    history = pushRideHistory(history, g);
-    counts.set(g, (counts.get(g) ?? 0) + 1);
-    run = g === prev ? run + 1 : 1;
-    prev = g;
-    longest = Math.max(longest, run);
-  }
-  return { counts, longest };
-}
-
-test("2–6 min rides: never three of the same game in a row over 1000 rides, and both land 40–60%", () => {
-  const band = bandGames(4 * MIN);
-  assert.deepEqual([...band].sort(), ["match-sorter", "where-am-i"]);
-  for (const seed of [1, 7, 42, 2026, 1_790_000_000]) {
-    const { counts, longest } = simulate(band, 1000, seed);
-    assert.ok(longest <= RIDE_MAX_RUN, `seed ${seed}: run of ${longest}`);
-    for (const g of band) {
-      const share = (counts.get(g) ?? 0) / 1000;
-      assert.ok(share >= 0.4 && share <= 0.6, `seed ${seed}: ${g} ${share}`);
-    }
-  }
-});
-
-test("the deal works for any number of games in a band", () => {
-  const three: RideGameId[] = ["where-am-i", "match-sorter", "route-puzzle"];
-  const { counts, longest } = simulate(three, 3000, 9);
-  assert.ok(longest <= RIDE_MAX_RUN);
-  for (const g of three) {
-    const share = (counts.get(g) ?? 0) / 3000;
-    assert.ok(share > 0.25 && share < 0.42, `${g} ${share}`);
-  }
-  assert.equal(dealRideGame(["lamplighter"], ["lamplighter", "lamplighter", "lamplighter"]), "lamplighter", "a one-game band has no choice");
-  assert.equal(dealRideGame(["where-am-i", "match-sorter"], ["where-am-i", "where-am-i"], () => 0), "match-sorter", "two in a row forces a change");
-  // A Lamplighter hop in between doesn't reset the run.
-  assert.equal(dealRideGame(["where-am-i", "match-sorter"], ["match-sorter", "lamplighter", "match-sorter"], () => 0), "where-am-i");
-  assert.equal(dealForRide(60_000, ["lamplighter", "lamplighter"]), "lamplighter", "short rides stay Lamplighter");
-});
-
-test("the dealt game is stored on the ride and survives a reload", () => {
-  const departAt = 1_790_000_000_000;
-  for (const rideGame of ["where-am-i", "match-sorter"] as const) {
-    const j: Journey = { from: "austin", to: "tucson", departAt, arriveAt: departAt + 4 * MIN, rideGame };
-    const reloaded = forfeitRound(JSON.parse(JSON.stringify(openRound(j, departAt + 1000))) as Journey);
-    assert.equal(rideGameFor(reloaded), rideGame);
-    assert.equal(rideGameFor(markRound(reloaded, played)), rideGame);
-  }
-  // A ride boarded before 0.0.35 has no stored game: it keeps the old seeded pick, stable on every call.
-  const old: Journey = { from: "austin", to: "tucson", departAt, arriveAt: departAt + 4 * MIN };
-  assert.equal(rideGameFor(old), pickRideGame(4 * MIN, undefined, departAt));
-  assert.equal(rideGameFor(JSON.parse(JSON.stringify(old))), rideGameFor(old));
-});
-
-test("old saves without ride history load clean", () => {
-  assert.deepEqual(loadRideHistory(undefined), []);
-  assert.deepEqual(loadRideHistory(null), []);
-  assert.deepEqual(loadRideHistory("where-am-i"), []);
-  assert.deepEqual(loadRideHistory(["where-am-i", 3, "bogus", "match-sorter"]), ["where-am-i", "match-sorter"]);
-  const long = Array.from({ length: 20 }, (_, i) => (i % 2 ? "where-am-i" : "match-sorter"));
-  assert.equal(loadRideHistory(long).length, RIDE_HISTORY_KEEP);
-  const saved = JSON.parse(JSON.stringify({ version: 2, fares: 1, journey: null })) as { rideHistory?: unknown };
-  const g = dealForRide(4 * MIN, loadRideHistory(saved.rideHistory));
-  assert.ok(["where-am-i", "match-sorter"].includes(g));
-});
-
-// ── 0.0.42: Stop vs tab closed ──────────────────────────────────────────
-import { cutLine } from "./rideGames.ts";
-
-test("pressing Stop and closing the tab read differently on the ride screen", () => {
-  const open = openRound(ride(8 * MIN), 30_000);
-  const stopped = forfeitRound(open, "stopped");
-  assert.equal(stopped.lastCut, "stopped");
-  assert.match(cutLine(stopped) ?? "", /You stopped that round/);
-  assert.doesNotMatch(cutLine(stopped) ?? "", /tab/);
-  // Tab closed: the save loads with the round still open, and the loader forfeits it.
-  const closed = forfeitRound(JSON.parse(JSON.stringify(open)) as Journey);
-  assert.equal(closed.lastCut, "closed");
-  assert.match(cutLine(closed) ?? "", /tab closed/);
-  // Stopped, then reloaded: nothing open, the stop wording stays.
-  assert.equal(forfeitRound(JSON.parse(JSON.stringify(stopped)) as Journey).lastCut, "stopped");
-  // A finished round stands: no line. Nothing cut: no line.
-  assert.equal(cutLine(markRound(stopped, played)), undefined);
-  assert.equal(cutLine(ride(8 * MIN)), undefined);
-  // Saves from before 0.0.42 don't say which: neutral wording.
-  const old = { ...ride(8 * MIN), forfeits: 1 } as Journey;
-  assert.equal(cutLine(old), "That round didn't finish. The seat still pays.");
-});

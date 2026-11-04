@@ -4,7 +4,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { viewerMiddleware } from "@/lib/auth/viewer-middleware";
 import { CITY_LIST, KIOSK } from "./data";
 import { PAINT_COLORS } from "./ingredients";
-import type { ClientOp, RideDeal } from "./walletApply";
+import type { ClientOp } from "./walletApply";
 import type { LegacyGrant, QuestStatus } from "./questServer";
 import { QUEST_PERIOD_KEY } from "./questPeriods";
 import { COSMETIC_IDS, type Wardrobe } from "./cosmetics";
@@ -161,7 +161,6 @@ export type WalletWire = {
   wheelWin?: number;
   wheelRoll?: number;
   cache?: { got: Tier[]; coin: number; already?: boolean };
-  rideDeal?: RideDeal;
   hurry?: { arriveAt: number; cost: number };
   /** 0.1.9: paint can found (cache) or the can a paint op spent. */
   can?: { car: string; color: string };
@@ -229,7 +228,6 @@ export const applyWallet = createServerFn({ method: "POST" })
       wheelWin: r.wheelWin,
       wheelRoll: r.wheelRoll,
       cache: r.cache,
-      rideDeal: r.rideDeal,
       hurry: r.hurry,
       can: r.can,
       home: r.home,

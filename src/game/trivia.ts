@@ -2611,55 +2611,6 @@ function preferDiff(tier?: Tier): TriviaDiff {
 function preferMathDiff(tier?: Tier): TriviaDiff {
 	return MATH_DIFF[tier ?? "white"];
 }
-function binWeights(tier?: Tier): [number, number, number] {
-	if (tier === "white") return [
-		1,
-		1,
-		12
-	];
-	if (tier === "blue") return [
-		2,
-		1,
-		9
-	];
-	if (tier === "green") return [
-		4,
-		3,
-		5
-	];
-	if (tier === "amber") return [
-		4,
-		3,
-		4
-	];
-	if (tier === "red" || tier === "violet") return [
-		5,
-		3,
-		2
-	];
-	return [
-		3,
-		2,
-		6
-	];
-}
-function localWeights(tier?: Tier): [number, number, number] {
-	if (tier === "white" || tier === "blue" || !tier) return [
-		8,
-		5,
-		2
-	];
-	if (tier === "green" || tier === "amber") return [
-		6,
-		5,
-		3
-	];
-	return [
-		5,
-		4,
-		3
-	];
-}
 /** Last-resort card when a pool is empty: reuse the shipped math card rather than a second copy of it. */
 const FALLBACK_Q: TriviaQ = MATH_MORE.find((x) => x.q === "How many degrees in a right angle?") ?? MATH_MORE[0];
 function fresh(list: TriviaQ[], avoid: Set<string>): TriviaQ[] {

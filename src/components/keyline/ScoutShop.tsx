@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 import { SCOUT_LIST, SUPER_LEGENDARY_ID, SUPER_LEGENDARY_LABEL, cityShop } from "@/game/data";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
-import { ItemIcon } from "./ItemIcon";
 import { PrintShop } from "./PrintShop";
 import { useSheetOpen } from "./useSheetOpen";
 
