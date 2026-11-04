@@ -1,7 +1,7 @@
 /** 0.1.111: "Your Hearth": the owner's numbers for their placed vault (opens, cut vs the daily cap, V keys, lifetime). */
 import { CITIES } from "@/game/data";
 import { FACET_COLOR } from "@/game/hearthVaults";
-import { vaultSvg } from "@/game/pins";
+import { vaultSvgCentered } from "@/game/pins";
 import { HEARTH_CUT, PLANT_NAMES } from "@/game/placedLantern";
 import { setPlant, usePlant } from "@/game/plantClient";
 import { TRIVIA_CATS } from "@/game/triviaMeta";
@@ -39,7 +39,7 @@ export function HearthOwner() {
               <i key={i} style={{ background: FACET_COLOR[c ?? ""] ?? "#ccc" }} title={c} />
             ))}
           </span>
-          <span className="ho-vault vault-pin tier-red" dangerouslySetInnerHTML={{ __html: vaultSvg("red") }} />
+          <span className="ho-vault vault-pin tier-red" dangerouslySetInnerHTML={{ __html: vaultSvgCentered("red") }} />
           <span className="ho-bars">
             {[mine.cats[1], mine.cats[3]].map((c, i) => (
               <i key={i} style={{ background: FACET_COLOR[c ?? ""] ?? "#ccc" }} title={c} />

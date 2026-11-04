@@ -139,3 +139,14 @@ export function hearthPinHtml(name: string, cats: readonly string[], colors: Rec
   const safe = name.replace(/[<>&"]/g, "");
   return `<div class="vault-pin tier-red hearth-pin${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}" title="${safe} · Hearth vault">${facets}${vaultSvg("red")}${lock}<span class="hp-plate">${safe}</span></div>`;
 }
+
+/**
+ * 0.1.111: the same red vault for the "Your Hearth" hero, drawn concentric. The map art (vaultSvg) puts the dial at
+ * (30, 30) and the hub at (30, 29) while the front face is x 9–56, y 7–57 (center 32.5, 32), and the 60-wide viewBox
+ * centers on x 30 because of the 3D side panel at x 4–9. Here the dial, bolts, hub and lock sit on the face center
+ * and the viewBox (0 2 65 60) is centered on it too, so CSS centering of the box centers the face. The ring is a touch smaller (r 16.8) and the lock
+ * 1.5 lower so the ring clears the lock. Map pins unchanged.
+ */
+export function vaultSvgCentered(tier: Tier) {
+  return `<svg class="vk-vault" viewBox="0 2 65 60" aria-hidden="true">${VK_DEFS}<path d="M9 9 l-5 4 v40 l5 2z" fill="url(#vk-s)" stroke="#1a1410" stroke-width="1"/><rect x="9" y="7" width="47" height="50" rx="4" fill="url(#vk-f)" stroke="#1a1410" stroke-width="1.2"/><rect x="11.5" y="9.5" width="42" height="45" rx="3" fill="none" stroke="url(#vk-b)" stroke-width="1.6"/><rect x="14" y="4" width="37" height="4" rx="1.5" fill="url(#vk-b)" stroke="#1a1410" stroke-width=".7"/><g transform="translate(2.5 2)"><circle class="vk-ring" cx="30" cy="30" r="16.8" fill="url(#vk-d)" stroke-width="1.8"/><g class="vk-bolts" fill="#8d97a3" stroke="#1a1410" stroke-width=".5">${VK_BOLTS}</g></g><g transform="translate(2.5 3)"><circle cx="30" cy="29" r="9.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="2"/><g class="vk-glyph" transform="translate(30 29)" stroke="#1a1410" stroke-width=".8" stroke-linejoin="round">${VK_GLYPH[tier]}</g><text class="vk-num" x="30" y="31.4" text-anchor="middle">${VK_NUM[tier]}</text></g><g transform="translate(2.5 1.5)"><rect x="23" y="46" width="14" height="7" rx="1.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="1"/><rect class="vk-slot" x="27.5" y="48" width="7.5" height="3" rx=".6"/><g class="vk-glyph" transform="translate(25.3 49.5) scale(.22)">${VK_GLYPH[tier]}</g></g></svg>`;
+}
