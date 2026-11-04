@@ -1,11 +1,9 @@
 /**
- * 0.1.42: player-owned lanterns, release 1. A player buys one existing lamp POI per color (one owner per lamp).
- * Pure rules here; the ledger reads and writes are in walletApply.ts (ownLampOp, payOwner).
+ * 0.1.42: player-owned lanterns (one owner per lamp). 0.1.115: no longer for sale; owners from before keep their
+ * lamps and their pay, and gifted lanterns can still be placed. Ledger reads/writes: walletApply.ts (ownLampOp, payOwner).
  */
 import { TIER_VALUE } from "./rewards.ts";
 import type { Tier } from "./types.ts";
-
-export const OWN_PRICE: Record<Tier, number> = { white: 100_000, blue: 250_000, green: 500_000, amber: 1_000_000, red: 2_000_000, violet: 4_000_000 };
 
 /** Paid misses per owned lamp per Chicago day. */
 export const OWN_DAILY_CAP = 20;

@@ -60,6 +60,18 @@ test("0.1.44 help page: houses, owned lanterns, train stops and the new-player h
   // 0.1.74: Help topics are rows; the id rides on the Topic as testid="…".
   for (const id of ["help-houses", "help-own-lamps", "help-trains", "help-welcome"]) assert.ok(f.includes(`data-testid="${id}"`) || f.includes(`testid="${id}"`), id);
   assert.match(f, /KEY_MATCHES/);
-  assert.match(f, /OWN_PRICE/);
+  assert.match(f, /no longer for sale/);
+  assert.doesNotMatch(f, /OWN_PRICE/);
   assert.doesNotMatch(f, /colour/);
+});
+
+test("0.1.115 street vaults: no buy option or price anywhere in the vault UI; existing owners still show as 'Owned by'", () => {
+  const own = read("../components/keyline/OwnLamps.tsx");
+  const client = read("./ownLampsClient.ts");
+  for (const [n, f] of [["OwnLamps", own], ["ownLampsClient", client], ["VaultModal", read("../components/keyline/VaultModal.tsx")], ["JournalPlaces", read("../components/keyline/JournalPlaces.tsx")]] as const) {
+    assert.doesNotMatch(f, />\s*Buy\b|"Buy"|OWN_PRICE|buyLamp/, n);
+  }
+  assert.match(own, /export function OwnerPlate/);
+  assert.match(own, /Owned by \$\{o\.name\}/);
+  assert.match(read("../components/keyline/VaultModal.tsx"), /<OwnerPlate poiId=\{poi\.id\} \/>/);
 });

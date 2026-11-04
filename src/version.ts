@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.114";
+export const APP_VERSION = "0.1.115";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1114a";
+export const PUBLISH_STAMP = "k1115a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -216,3 +216,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.112: +44 easy trivia cards (diff 1) across 12 categories (no local, no math), each answer checked in its cited Wikipedia article (k1112a).
 // 0.1.113: Vault Keys leftovers: vault cards show the vault (the centered drawing, dial concentric) instead of the old lantern; each tier gets a quirk on open: a once-only card animation (off under reduced motion) and its own short open sound through the sfx bus (silent when muted) (k1113a).
 // 0.1.114: Hearth vaults always show four fields (Ryan): when the Math 43% rule skips an owner's Math, a field the owner didn't pick (never Math) stands in, picked from the same poiId#opens seed; the server deals any non-Math field at a Hearth vault whose owner picked Math (still red, still the looked-up row); ordinary vaults unchanged (k1114a).
+// 0.1.115: street vaults can no longer be bought (Ryan): the server refuses a paid `own` op ("closed"), the Buy rows and prices are gone from Journal · Places and Help; vaults bought before keep their claim rows, owner name plate ("Owned by …") and payouts; gifted free vaults can still be placed; no refunds, migrations or ledger deletes (k1115a).

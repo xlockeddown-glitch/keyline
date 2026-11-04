@@ -72,7 +72,7 @@ import { MAGNET_DAY_CAP, MAGNET_GAP_MS, roadTripPays, v2lPays } from "./carPerks
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
-import { OWN_CLAIM_USER, OWN_DAILY_CAP, OWN_PRICE, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
+import { OWN_CLAIM_USER, OWN_DAILY_CAP, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
 import { standingName } from "./standingName.ts";
 import { LOVE_COIN, LOVE_EMAIL, LOVE_X_ID, LOVE_X_NAME, LOVE_GIFT_KEY, LOVE_NOTE, DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
 
@@ -912,23 +912,22 @@ async function ownerName(sql: Sql, userId: string): Promise<string> {
 }
 
 /**
- * Buy a lamp: `own:<tier>` on the buyer (one per color, spends OWN_PRICE) plus a global `ownpoi:<poi>` claim row.
- * The claim insert is the lock (primary key): it is taken first, and released if the purchase does not land, so two
- * buyers can't both get one lamp and one buyer can't get two lamps of a color.
+ * Place a gifted lantern: `ownfree:<tier>` on the player plus a global `ownpoi:<poi>` claim row. The claim insert is
+ * the lock (primary key): taken first, released if the placement doesn't land, so two players can't get one lamp.
+ * 0.1.115 (Ryan): street vaults can no longer be bought (`own:<tier>` is closed: "closed"); existing owners keep
+ * their claim rows and payOwner still pays them.
  */
 async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string, free = false): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  if (!free) return refused(wallet, "closed");
   const hit = ownableLamp(poiId);
   if (!hit) return refused(wallet, "unknown");
   const tier = hit.poi.tier;
-  // 0.1.43: a gifted lantern is its own key (ownfree:<tier>), free, and needs the gift row; it doesn't use up own:<tier>.
-  const key = `${free ? "ownfree" : "own"}:${tier}`;
-  const price = free ? 0 : OWN_PRICE[tier];
-  if (free) {
-    const keys = giftKeysFor(tier);
-    const gift = keys.length ? await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"gift:lamp-%"}` : [];
-    if (!gift.some((g) => keys.includes(g.op_key))) return refused(wallet, "no-gift");
-  }
+  // 0.1.43: a gifted lantern is its own key (ownfree:<tier>), free, and needs the gift row.
+  const key = `ownfree:${tier}`;
+  const keys = giftKeysFor(tier);
+  const gift = keys.length ? await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"gift:lamp-%"}` : [];
+  if (!gift.some((g) => keys.includes(g.op_key))) return refused(wallet, "no-gift");
   const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${key} limit 1`;
   const heldPoi = (d: string | undefined) => {
     try {
@@ -938,19 +937,16 @@ async function ownLampOp(sql: Sql, sessionUserId: string, poiId: string, free = 
     }
   };
   if (held.length) return heldPoi(held[0]!.detail) === poiId ? applied({ ok: true, replay: true, wallet }) : refused(wallet, "owned");
-  if (wallet.coins < price) return refused(wallet, "short-coins");
   const name = await ownerName(sql, sessionUserId);
   const claim = await sql<{ op_key: string }>`
-    insert into wallet_ledger (user_id, op_key, detail) values (${OWN_CLAIM_USER}, ${"ownpoi:" + poiId}, ${JSON.stringify({ owner: id, tier, city: hit.city, name, ...(free ? { free: 1 } : {}) })})
+    insert into wallet_ledger (user_id, op_key, detail) values (${OWN_CLAIM_USER}, ${"ownpoi:" + poiId}, ${JSON.stringify({ owner: id, tier, city: hit.city, name, free: 1 })})
     on conflict (user_id, op_key) do nothing returning op_key
   `;
   if (!claim.length) return refused(wallet, "taken");
   const release = () => sql`delete from wallet_ledger where user_id = ${OWN_CLAIM_USER} and op_key = ${"ownpoi:" + poiId} and detail like ${`%"owner":${JSON.stringify(id)}%`}`;
   try {
-    const r = await mutateWallet(sql, sessionUserId, key, (w) =>
-      w.coins < price ? { ok: false, reason: "short-coins" } : { ...applyDelta(w, { coins: -price }), detail: JSON.stringify({ poi: poiId, city: hit.city, name }) },
-    );
-    // A same-color buy that raced this one won with another lamp: give this lamp back.
+    const r = await mutateWallet(sql, sessionUserId, key, (w) => ({ ...applyDelta(w, {}), detail: JSON.stringify({ poi: poiId, city: hit.city, name }) }));
+    // A same-color placement that raced this one won with another lamp: give this lamp back.
     if (!r.ok || (r.replay && heldPoi(r.detail) !== poiId)) {
       await release();
       return r.ok ? refused(r.wallet, "owned") : { ...applied(r), authoritative: true };

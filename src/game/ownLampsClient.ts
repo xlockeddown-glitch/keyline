@@ -1,9 +1,8 @@
-/** 0.1.42: owned lanterns on the client: the public list (owner names on lamp cards) and the buy call. */
+/** 0.1.42: owned lanterns on the client: the public list (owner names on lamp cards). 0.1.115: no buying; gift placement only. */
 import { useEffect, useSyncExternalStore } from "react";
 import type { Tier } from "./types";
 import { commitWallet, walletLive } from "./walletClient";
 import { useGame } from "./store";
-import { OWN_PRICE } from "./ownLamps";
 import { TIER_LABEL } from "./data";
 
 export type OwnedLampView = { poi: string; tier: Tier; city: string; name: string; mine: boolean; free?: boolean };
@@ -53,20 +52,18 @@ export function useLampGifts(): Tier[] {
   );
 }
 
-/** Buy `poi` (a lamp of `tier`), or place a gift lantern there (`free`). Returns the line to show. */
-export async function buyLamp(poi: string, tier: Tier, free = false): Promise<string> {
-  if (!walletLive()) return "Sign in to own a vault.";
-  if (!free && useGame.getState().points < OWN_PRICE[tier]) return "Need more coins.";
-  const r = await commitWallet({ kind: "own", poi, ...(free ? { free: true } : {}) });
-  if (!r) return "Couldn't buy it. Try again in a moment.";
+/** Place a gifted lantern on `poi` (0.1.115: buying is closed). Returns the line to show. */
+export async function placeGiftLamp(poi: string, tier: Tier): Promise<string> {
+  if (!walletLive()) return "Sign in to place your vault.";
+  const r = await commitWallet({ kind: "own", poi, free: true });
+  if (!r) return "Couldn't place it. Try again in a moment.";
   if (r.view) useGame.getState().adoptWallet(r.view);
   await refreshOwnedLamps();
   if (r.ok) return `This ${TIER_LABEL[tier]} vault is yours.`;
   if (r.reason === "taken") return "Someone else owns that vault now. Pick another.";
   if (r.reason === "no-gift") return "That free vault isn't yours to place.";
-  if (r.reason === "owned") return `You already own a ${TIER_LABEL[tier]} lantern.`;
-  if (r.reason === "short-coins") return "Need more coins.";
-  return "Couldn't buy it. Try again in a moment.";
+  if (r.reason === "owned") return `You already placed your free ${TIER_LABEL[tier]} vault.`;
+  return "Couldn't place it. Try again in a moment.";
 }
 
 export function useOwnedPoi(poiId: string | undefined): boolean {

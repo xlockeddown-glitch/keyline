@@ -11,7 +11,7 @@ import { useGame } from "@/game/store";
 import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 import { HOUSES, KEY_MATCHES } from "@/game/houses";
-import { OWN_DAILY_CAP, OWN_PRICE } from "@/game/ownLamps";
+import { OWN_DAILY_CAP } from "@/game/ownLamps";
 import { WELCOME_COIN } from "@/game/lampGift";
 import { HOME_LAMPS } from "@/game/houses";
 import { FLIGHT_MIN_MILES } from "@/game/flight";
@@ -170,13 +170,10 @@ export function FieldGuide() {
                 <li>Houses: {HOUSES.map((h) => `${h.name} ${fmt(h.price)} (key ${h.keyCoin.toLocaleString("en-US")})`).join(", ")}.</li>
               </More>
             </Topic>
-            <Topic id="own" icon={<ItemIcon item="amber" size={26} />} title="Owned vaults" sub="Earn when visitors miss" open={topic} set={setTopic} testid="help-own-lamps">
-              <li>Buy one vault of each color in Journal · Places; visitors see your name.</li>
+            <Topic id="own" icon={<ItemIcon item="amber" size={26} />} title="Owned vaults" sub="Owners earn when visitors miss" open={topic} set={setTopic} testid="help-own-lamps">
+              <li>Street vaults are no longer for sale. Vaults bought before stay with their owners, and visitors see the owner&apos;s name.</li>
               <li>A visitor&apos;s miss pays you half its coin, plus a 50% chance of a key.</li>
               <li>Up to {OWN_DAILY_CAP} paid misses per vault a day; your own plays pay nothing.</li>
-              <More>
-                <li>Prices: {TIERS.map((t) => `${TIER_LABEL[t]} ${fmt(OWN_PRICE[t])}`).join(", ")}. Free gift vaults don&apos;t count toward the one per color.</li>
-              </More>
             </Topic>
             <Topic id="boost" icon={<span aria-hidden>✨</span>} title="Boosts" sub="Coat, car and category of the day" open={topic} set={setTopic} testid="help-categories">
               <li>A right answer in your coat&apos;s or car&apos;s favorite category pays +{Math.round(FAV_BONUS * 100)}% (both: +{Math.round(FAV_BOTH * 100)}%).</li>

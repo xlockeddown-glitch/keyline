@@ -9,7 +9,7 @@ import { canonicalWallet } from "./walletSql.ts";
 import { applyClientOp, awardGrade, grantLampGift, lampGiftsOpen, ownedLamps, syncPlayer } from "./walletApply.ts";
 import { thanksClock } from "./thanksGift.ts";
 import { LAMP_GIFT_CUTOFF, lampGiftClock, lampGiftNote, welcomeClock } from "./lampGift.ts";
-import { OWN_PRICE, ownPayFor } from "./ownLamps.ts";
+import { OWN_CLAIM_USER, ownPayFor } from "./ownLamps.ts";
 import { CITIES } from "./data.ts";
 import type { Tier } from "./types.ts";
 
@@ -64,7 +64,7 @@ test("eligibility: an account from before the cutoff gets both, once; a newer on
   assert.deepEqual(await grantLampGift(sql, "new"), []);
 });
 
-test("claim: free, one per color, lamp exclusivity (incl. concurrent), stacks with a bought lantern, pays like a bought one", async () => {
+test("claim: free, one per color, lamp exclusivity (incl. concurrent), stacks with a lantern bought before 0.1.115, pays like a bought one", async () => {
   const sql = await db();
   await veteran(sql, "a");
   await veteran(sql, "b");
@@ -92,10 +92,12 @@ test("claim: free, one per color, lamp exclusivity (incl. concurrent), stacks wi
   // The loser still has the gift and places it elsewhere; then blue too.
   assert.equal((await applyClientOp(sql, loser, { kind: "own", poi: w2!.id, free: true })).ok, true);
   assert.equal((await applyClientOp(sql, "a", { kind: "own", poi: b0.id, free: true })).ok, true);
-  // Gifted + bought of the same color: both allowed (own:white and ownfree:white are independent).
-  await sql`update player_wallets set coins = ${OWN_PRICE.white} where user_id = ${aid}`;
-  assert.equal((await applyClientOp(sql, "a", { kind: "own", poi: w3!.id })).ok, true);
-  assert.equal((await canonicalWallet(sql, "a")).wallet.coins, 0);
+  // 0.1.115: buying is closed, even with the coins. A white bought before (seeded rows, as the old buy wrote them)
+  // still stacks with the gifted one (own:white and ownfree:white are independent).
+  await sql`update player_wallets set coins = 100000 where user_id = ${aid}`;
+  assert.equal((await applyClientOp(sql, "a", { kind: "own", poi: w3!.id })).reason, "closed");
+  assert.equal((await canonicalWallet(sql, "a")).wallet.coins, 100000);
+  await sql`insert into wallet_ledger (user_id, op_key, detail) values (${OWN_CLAIM_USER}, ${"ownpoi:" + w3!.id}, ${JSON.stringify({ owner: aid, tier: "white", city: "austin", name: "a" })}), (${aid}, 'own:white', ${JSON.stringify({ poi: w3!.id, city: "austin", name: "a" })})`;
   const mine = (await ownedLamps(sql, "a")).filter((l) => l.mine);
   assert.equal(mine.filter((l) => l.tier === "white").length, 2);
   assert.equal(mine.filter((l) => l.free).length, 2);
