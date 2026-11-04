@@ -22,6 +22,9 @@ export type CityId = "austin" | "temple" | "nyc" | "sf" | "london" | "chicago" |
 
 export type TriviaCat = "sports" | "local" | "political" | "food" | "arts" | "math" | "science" | "history" | "nature" | "games" | "celebrity" | "music" | "books" | "geography";
 
+/** 0.1.116: what a picker offers — a field, or Random (the server deals from any field, +10% coin). */
+export type FieldPick = TriviaCat | "random";
+
 export type TriviaDiff = 1 | 2 | 3;
 
 /** Draft plate (POI door quizzes). `q()` / `sealPlate` fill id, diff, rarity. */

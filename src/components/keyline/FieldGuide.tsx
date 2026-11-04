@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { bakedSnapshot } from "@/game/streets";
 import { CARS } from "@/game/cars";
 import { STREET_DAY_CAP } from "@/game/streetSpots";
-import { MAGNET_DAY_CAP, MAGNET_GAP_MS, V2L_DAY_CAP, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, SCOUT_FAV } from "@/game/carPerks";
+import { MAGNET_DAY_CAP, MAGNET_GAP_MS, V2L_DAY_CAP, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, RANDOM_BONUS, SCOUT_FAV } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { SCOUT_LIST, TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -177,6 +177,7 @@ export function FieldGuide() {
             </Topic>
             <Topic id="boost" icon={<span aria-hidden>✨</span>} title="Boosts" sub="Coat, car and category of the day" open={topic} set={setTopic} testid="help-categories">
               <li>A right answer in your coat&apos;s or car&apos;s favorite category pays +{Math.round(FAV_BONUS * 100)}% (both: +{Math.round(FAV_BOTH * 100)}%).</li>
+              <li>Random (on street vaults, not Hearth vaults) deals from any field and pays +{Math.round(RANDOM_BONUS * 100)}%.</li>
               <li>The category of the day pays +{Math.round(COTD_BONUS * 100)}% and is always offered.</li>
               <li>Boosts add up to at most +{Math.round(CAT_BONUS_CAP * 100)}%, on vault coin only.</li>
               <More testid="help-coat-favs">

@@ -6,7 +6,7 @@
 import type { CarId } from "./cars.ts";
 import { distM } from "./geo.ts";
 import { chicagoDay } from "./questPeriods.ts";
-import type { ScoutId, TriviaCat } from "./types.ts";
+import type { FieldPick, ScoutId, TriviaCat } from "./types.ts";
 
 /** 0.1.46 Roadster 2.0 Magnet: radius, spacing and a per-city daily cap inside the street cap of 80. */
 export const MAGNET_M = 35;
@@ -36,7 +36,7 @@ export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_P
 export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", ioniq5: "arts", mustang: "sports",
   belair57: "geography",
   model3: "math", roadster: "science", roadster2: "games" };
-export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
+export const SCOUT_FAV: Record<ScoutId, FieldPick> = {
   raccoon: "food",
   cat: "arts",
   turtle: "history",
@@ -45,13 +45,14 @@ export const SCOUT_FAV: Record<ScoutId, TriviaCat> = {
   sloth: "political",
   giraffe: "geography",
   fox: "math",
-  lynx: "music",
+  // 0.1.116 (Ryan): the Penguin favors Random (+15% on top of Random's own +10%).
+  lynx: "random",
   panda: "music",
 };
 
-export const CAT_LABEL: Record<TriviaCat, string> = {
+export const CAT_LABEL: Record<FieldPick, string> = {
   sports: "Sports", local: "Local", political: "Political", food: "Food", arts: "Arts", math: "Math", science: "Science",
-  history: "History", nature: "Nature", games: "Video games", celebrity: "Celebrity", music: "Music", books: "Books", geography: "Geography",
+  history: "History", nature: "Nature", games: "Video games", celebrity: "Celebrity", music: "Music", books: "Books", geography: "Geography", random: "Random",
 };
 
 export const FAV_BONUS = 0.15;
@@ -61,6 +62,8 @@ export const FAV_BOTH = 0.25;
 export const favBonus = (n: number) => (n >= 2 ? FAV_BOTH : n === 1 ? FAV_BONUS : 0);
 export const COTD_BONUS = 0.25;
 export const CAT_BONUS_CAP = 0.4;
+/** 0.1.116: a Random pick pays +10% coin, server-applied from the sealed deal (inside the +40% cap). */
+export const RANDOM_BONUS = 0.1;
 
 const CATS: readonly TriviaCat[] = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music", "books", "geography"];
 
@@ -75,13 +78,19 @@ export const cotdAt = (ms: number) => cotdOf(chicagoDay(ms));
 
 /** Coin factor and labels for a lamp of category `topic`: 1 + min(0.40, favorites 0.15 each + category of the day 0.25). */
 /** 0.1.110: `noCotd` for a Hearth vault (its 4 fields are fixed, so the category of the day never adds there). */
-export function catBoost(topic: TriviaCat | null | undefined, favs: readonly TriviaCat[], at: number, noCotd = false): { x: number; labels: string[] } {
+/** 0.1.116: `topic` "random" is a Random pick: +10%, plus favorites that favor Random; never the category of the day. */
+export function catBoost(topic: FieldPick | null | undefined, favs: readonly FieldPick[], at: number, noCotd = false): { x: number; labels: string[] } {
   if (!topic) return { x: 1, labels: [] };
   let add = 0;
   const labels: string[] = [];
+  if (topic === "random") {
+    add += RANDOM_BONUS;
+    labels.push(`Random +${Math.round(RANDOM_BONUS * 100)}%`);
+  }
   // favs is [coat?, car?]: one match is +15%, both is +25%.
-  add += favBonus(favs.filter((f) => f === topic).length);
-  if (add) labels.push(`Favorite +${Math.round(add * 100)}%`);
+  const fav = favBonus(favs.filter((f) => f === topic).length);
+  add += fav;
+  if (fav) labels.push(`Favorite +${Math.round(fav * 100)}%`);
   if (!noCotd && cotdAt(at) === topic) {
     add += COTD_BONUS;
     labels.push(`Category of the day +${Math.round(COTD_BONUS * 100)}%`);
@@ -142,7 +151,7 @@ export function roadTripPays(car: CarId | null, paidHereToday: boolean): boolean
 }
 
 /** Favorite categories that count on a lamp: the worn coat's (when proven) and the seated car's. */
-export function perkFavs(scout: ScoutId | null, scoutProven: boolean, car: CarId | null): TriviaCat[] {
+export function perkFavs(scout: ScoutId | null, scoutProven: boolean, car: CarId | null): FieldPick[] {
   return [...(scout && scoutProven ? [SCOUT_FAV[scout]] : []), ...(car ? [CAR_FAV[car]] : [])];
 }
 

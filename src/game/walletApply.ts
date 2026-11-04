@@ -681,6 +681,7 @@ export async function awardGrade(
     charmDay: pay.charmDay,
     charmTopics: pay.charmTopics,
     favs: pay.favs,
+    random: pay.random === true,
     topic: pay.topic,
     dealtAt: pay.dealtAt,
     luckyHit: false,

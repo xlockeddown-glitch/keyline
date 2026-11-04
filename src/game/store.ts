@@ -40,6 +40,7 @@ import type {
   StreetRun,
   Tier,
   TriviaCat,
+  FieldPick,
   VaultRuntime,
 } from "./types";
 import { crateLine, crateLoot, nextCrateStreak } from "./crate";
@@ -142,7 +143,8 @@ type OpenVault = {
   token?: string;
   /** A server round trip is under way: dealing the card, or grading the answer. */
   pending?: "deal" | "grade";
-  category: TriviaCat | null;
+  /** 0.1.116: "random" when the player picked Random (the server picks the field). */
+  category: FieldPick | null;
   deadline: number;
   run?: { step: number; steps: number; grades: LootDrop["grade"][]; spent: boolean };
   spark?: boolean;
@@ -337,7 +339,7 @@ export type GameState = {
   tryOpen: (poiId: string, now: number) => string | null;
   closeShop: () => void;
   closeErrand: () => void;
-  pickCategory: (cat: TriviaCat, now: number) => void;
+  pickCategory: (cat: FieldPick, now: number) => void;
   answer: (choice: string, now: number) => void;
   /** Apply a server-graded answer to the open card (rewards, streak, seen memory). Internal to the lamp flow. */
   settleAnswer: (out: Graded, now: number) => void;
@@ -496,12 +498,13 @@ function rollBoosts(
   get: () => GameState,
   correct: boolean,
   elapsedMs: number,
-  topic: TriviaCat | null | undefined,
+  topic: FieldPick | null | undefined,
 ) {
   return applyTriviaBoosts({
     correct,
     elapsedMs,
-    topic: topic ?? null,
+    // A Random pick's field is the server's; the device's estimate leaves charm topics out.
+    topic: topic && topic !== "random" ? topic : null,
     streakAfter: correct ? get().streak + 1 : 0,
     charmDay: typeof get().charmDay === "string" ? get().charmDay : "",
     charmTopics: Array.isArray(get().charmTopics) ? get().charmTopics : [],
@@ -904,7 +907,7 @@ async function dealCard(
   set: (p: Partial<GameState>) => void,
   get: () => GameState,
   poiId: string,
-  cat: TriviaCat,
+  cat: FieldPick,
   step: number,
   prevToken?: string,
 ): Promise<{ card: DealtCard; token: string; windowMs: number; wallet?: ServerWallet } | { need: true } | { lockedMs: number } | null> {

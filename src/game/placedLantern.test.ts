@@ -171,6 +171,7 @@ test("0.1.110 visit: a placed Hearth vault deals server-side as red, only from t
   const input = { city: "austin", cat: "local", poiId: views[0]!.id, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555", blank: { name: "x", kind: "landmark", tier: "white" } } as never;
   const bad = await dealFor(deps, { userId: "vis" } as never, { ...(input as object), cat: "sports" } as never);
   assert.equal(bad.ok, false, "a field the owner didn't pick doesn't deal");
+  assert.equal((await dealFor(deps, { userId: "vis" } as never, { ...(input as object), cat: "random" } as never)).ok, false, "0.1.116: no Random at a Hearth vault");
   const r = await dealFor(deps, { userId: "vis" } as never, input);
   assert.equal(r.ok, true);
   assert.equal(pickedTier, "red", "plays as red (the client's blank tier is ignored)");

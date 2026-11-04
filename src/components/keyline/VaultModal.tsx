@@ -1,7 +1,7 @@
 import { vaultSvgCentered } from "@/game/pins";
 import { useEffect, useState, type CSSProperties } from "react";
-import { cotdAt, perkFavs, favBonus } from "@/game/carPerks";
-import { BookOpen, Calculator, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
+import { cotdAt, perkFavs, favBonus, CAT_BONUS_CAP, RANDOM_BONUS } from "@/game/carPerks";
+import { BookOpen, Calculator, Dices, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
 import { CITIES, KIND_LABEL, TIER_LABEL, seriesOf, seriesPoi } from "@/game/data";
 import { ladderColumnSvg } from "@/game/pins";
@@ -117,7 +117,7 @@ export function VaultModal() {
   const elapsed = quiz ? now - openVault.startedAt : 0;
   const grade = elapsed <= 3000 ? "Perfect" : elapsed <= 10000 ? "Great" : "Good";
   const frac = quiz ? Math.min(1, left / total) : 0;
-  const catMeta = TRIVIA_CATS.find((c) => c.id === openVault.category);
+  const catMeta = openVault.category === "random" ? { label: "Random" } : TRIVIA_CATS.find((c) => c.id === openVault.category);
   const today = cotdAt(Date.now());
   // 0.1.110: a Hearth vault offers its owner's 4 fixed fields (Math on MATH_OFFER_KEEP of visits, like any lamp).
   const hearth = series ? null : hearthOf(openVault.poiId);
@@ -211,7 +211,7 @@ export function VaultModal() {
                     : `The owner picked these. Math sits out this visit; ${TRIVIA_CATS.find((t) => t.id === offered[hearth.cats.indexOf("math")])?.label ?? "another field"} stands in.`
                   : series
                   ? "One field for all trivia cards — they get harder as you go."
-                  : "Six this vault. They rotate. The trivia cards prefer the ground you're on."}
+                  : "Six this vault, or Random. They rotate. The trivia cards prefer the ground you're on."}
               </p>
               <div className="field-grid mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {offered.map((id) => {
@@ -244,6 +244,26 @@ export function VaultModal() {
                     </button>
                   );
                 })}
+                {/* 0.1.116: Random deals from any field (+10% coin, server-paid). Never at a Hearth vault: its 4 fields are fixed. */}
+                {hearth ? null : (
+                  <button type="button" className="field-card field-random" style={{ gridColumn: "1 / -1" }} data-testid="field-random" title="Any field. The card office picks." onClick={() => pickCategory("random", performance.now())}>
+                    <span className="field-stamp">
+                      <Dices className="size-4" strokeWidth={1.75} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="font-display block text-lg leading-none">
+                        Random
+                        <span className="cotd-badge ml-1.5">+{Math.round(RANDOM_BONUS * 100)}%</span>
+                        {favs.includes("random") ? (
+                          <span className="fav-badge ml-1.5" data-testid="fav-random">
+                            Favorite +{Math.round(Math.min(CAT_BONUS_CAP - RANDOM_BONUS, favBonus(favs.filter((f) => f === "random").length)) * 100)}%
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="field-blurb mt-1 block text-xs text-fg-subtle">Any field. The card office picks.</span>
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           ) : (

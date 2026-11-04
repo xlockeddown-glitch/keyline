@@ -76,3 +76,16 @@ export function keepsMath(seed: string): boolean {
   h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296 < MATH_OFFER_KEEP;
 }
+
+/**
+ * 0.1.116 Random: the field a Random pick deals from, from a server roll `r` in [0,1). Every field is equally likely,
+ * except Math, which (like any lamp's offer) stays only MATH_OFFER_KEEP of the time per `seed`; otherwise the same
+ * roll lands on another field. So Random never deals Math more often than the normal offer does.
+ */
+export function randomCat(r: number, seed: string): TriviaCat {
+  const n = ALL_CATS.length;
+  const c = ALL_CATS[Math.min(n - 1, Math.floor(r * n))]!;
+  if (c !== "math" || keepsMath(seed)) return c;
+  const rest = ALL_CATS.filter((x) => x !== "math");
+  return rest[Math.min(rest.length - 1, Math.floor(((r * n) % 1) * rest.length))]!;
+}

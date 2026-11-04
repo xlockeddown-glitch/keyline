@@ -110,9 +110,10 @@ test("favorites count only for a proven coat and a seated, owned car", () => {
   assert.deepEqual(perkFavs("fox", true, "mustang"), [SCOUT_FAV.fox, CAR_FAV.mustang]);
   assert.equal(SCOUT_FAV.corgi, "celebrity");
   assert.equal(SCOUT_FAV.fox, "math");
-  assert.equal(SCOUT_FAV.panda, "music", "0.1.47: the Panda favors Music (like the Penguin)");
+  assert.equal(SCOUT_FAV.panda, "music", "0.1.47: the Panda favors Music");
+  assert.equal(SCOUT_FAV.lynx, "random", "0.1.116: the Penguin favors Random");
   assert.deepEqual(perkFavs("fox", false, null), []);
-  assert.equal(new Set(Object.values(SCOUT_FAV)).size, 9, "nine different coat favorites");
+  assert.equal(new Set(Object.values(SCOUT_FAV)).size, 10, "ten different coat favorites");
   assert.equal(SCOUT_FAV.sloth, "political");
   assert.equal(SCOUT_FAV.owl, "books");
 });

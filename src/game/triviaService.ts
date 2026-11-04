@@ -5,6 +5,7 @@ import { doubleUpHit, rummageHit, scoutOf, shellBackHit, strikeOption } from "./
 import type { Sql } from "../lib/db.ts";
 import { lockable, lockoutLeftFor, lockoutMs, noteLockout } from "./lockout.ts";
 import { loadRecent, noteDealt } from "./triviaRecent.ts";
+import { randomCat } from "./triviaMeta.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
 import type { PaintId } from "./ingredients.ts";
 import type { CityId, Poi, PoiKind, ScoutId, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
@@ -92,6 +93,8 @@ type TokenBody = {
     pt: Tier;
     pi: string;
     cat: string;
+    /** 0.1.116: 1 when the player picked Random (cat is the field the server rolled). */
+    rn?: 1;
     /** 0.0.96: worn coat at deal time. */
     sc?: string;
     /** 0.1.45: the seated car, only when the server found its car:<id> row. */
@@ -313,7 +316,9 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   }
   if (input.spark) clearTier = null;
   const paintRoll = clearTier != null && (!series || (input.step ?? 0) >= series.diffs.length - 1);
-  const plate = deps.pick(input.city, input.cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
+  // 0.1.116 Random: the server rolls the field; the client never names it.
+  const cat = input.cat === "random" ? randomCat((deps.rand ?? Math.random)(), `${poi.id}#random#${b64u(randomBytes(6))}`) : input.cat;
+  const plate = deps.pick(input.city, cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]), want);
   const pub = publicCardId(plate);
   const windowMs = clampWindow(input.windowMs);
   const scout = scoutOf(input.pay?.scout);
@@ -354,7 +359,8 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
       sn: series?.diffs.length ?? 1,
       pt: poi.tier,
       pi: poi.id,
-      cat: input.cat,
+      cat,
+      ...(input.cat === "random" ? { rn: 1 as const } : {}),
       ...(scout ? { sc: scout } : {}),
       ...(proven.car ? { cr: proven.car } : {}),
       ...(scout && proven.scout === scout ? { fs: 1 as const } : {}),
@@ -541,6 +547,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         doubleUp: doubleUpHit(scoutOf(x?.sc), rand()),
         // 0.1.45: Roadster Regen (1 in 5, from the nonce) only when no stronger coat refund (Turtle 1 in 3) is worn.
         shellBack: shellBackHit(scoutOf(x?.sc), rand()) || (!SCOUTS[scoutOf(x?.sc) ?? "raccoon"]?.perk.shellBack && regenHit(isCarId(x?.cr) ? x.cr : null, t.n)),
+        random: x?.rn === 1,
         favs: perkFavs(scoutOf(x?.sc), x?.fs === 1, isCarId(x?.cr) ? x.cr : null),
         car: isCarId(x?.cr) ? x.cr : null,
         canRoll: [rand(), rand()],

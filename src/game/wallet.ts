@@ -755,7 +755,9 @@ export function clothOp(w: WalletState, id: string, proof?: { meters?: number; v
 
 export type GradePay = {
   /** 0.1.45: favorite categories the server verified at deal time (owned coat, seated owned car). */
-  favs?: import("./types").TriviaCat[];
+  favs?: import("./types").FieldPick[];
+  /** 0.1.116: the deal was a Random pick (sealed by the server at deal time). */
+  random?: boolean;
   correct: boolean;
   elapsedMs: number;
   /** Grade multiplier already decided by the server clock (1 / 0.7 / 0.4). */
@@ -898,7 +900,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   }
 
   // 0.1.45: favorite categories and the category of the day (+15% / +25%, added, cap +40%), before the market.
-  const cat = catBoost(p.topic, p.favs ?? [], p.dealtAt, p.poiId.startsWith("placed-"));
+  const cat = catBoost(p.random ? "random" : p.topic, p.favs ?? [], p.dealtAt, p.poiId.startsWith("placed-"));
   const lampCoin = Math.round(
     rewardPoints(p.poiTier, {
       mult: p.mult,
