@@ -159,18 +159,29 @@ export function mathTier(s: Shape): Tier | "trim" {
 }
 
 /** Near misses for a whole-number answer: the slips people actually make. */
-export function nearMisses(ans: number, s: Shape | null, rnd: () => number): number[] {
+/**
+ * 0.1.118 `hard` (generated green, amber and violet cards; red stays as it was): a ×/÷/% card also gets the "one row off" slips (answer ± an
+ * operand), and at most one of the three wrong options is a ±1/±2/±3 neighbour, so "pick the middle of the
+ * cluster" or "match the last digit" no longer gives the answer away.
+ */
+export function nearMisses(ans: number, s: Shape | null, rnd: () => number, hard = false): number[] {
   const c = new Set<number>();
   const add = (x: number) => { if (whole(x) && x >= 0 && x !== ans) c.add(x); };
   [1, -1, 2, -2, 3, -3, 10, -10].forEach((d) => add(ans + d));
   const nums = s?.nums ?? [];
   for (const x of nums) if (x > 1 && x <= 12) { add(ans + x); add(ans - x); }
+  if (hard && (s?.pct || s?.ops.some((o) => o === "×" || o === "÷"))) for (const x of nums) if (x > 12 && x <= 99) { add(ans + x); add(ans - x); }
+  if (hard) { add(ans + 20); add(ans - 20); }
   const str = String(ans);
   if (str.length >= 2) add(Number(str.slice(0, -2) + str.at(-1) + str.at(-2)));
   const pool = [...c];
   for (let k = pool.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [pool[k], pool[j]] = [pool[j]!, pool[k]!]; }
   // Random near misses (not always ±1 around it, so the answer isn't simply the middle one).
-  return pool.filter((x) => Math.abs(x - ans) <= 12 || String(x).length === str.length).slice(0, 3);
+  const near = pool.filter((x) => Math.abs(x - ans) <= 12 || String(x).length === str.length);
+  if (!hard) return near.slice(0, 3);
+  const tiny = near.filter((x) => Math.abs(x - ans) <= 3);
+  const rest = near.filter((x) => Math.abs(x - ans) > 3);
+  return [...rest.slice(0, 2), ...tiny.slice(0, 1), ...rest.slice(2)].slice(0, 3);
 }
 
 /** Seeded PRNG (mulberry32), so the generated cards are the same on every server and build. */
@@ -202,7 +213,8 @@ export function genPrompt(tier: Tier, r: () => number): string {
     }
     case "green": {
       if (r() < 0.6) {
-        const a = int(r, 3, 12), b = int(r, 3, 12);
+        // 0.1.118: no ×3 / ×10 freebies; the tables people actually slip on (6-12).
+        const a = pick([4, 6, 7, 8, 9, 11, 12]), b = pick([6, 7, 8, 9, 11, 12]);
         return r() < 0.7 ? `What is ${a} × ${b}?` : `What is ${a * b} ÷ ${a}?`;
       }
       const a = int(r, 30, 90), b = int(r, 21, 60), c = int(r, 21, 49);
@@ -210,10 +222,11 @@ export function genPrompt(tier: Tier, r: () => number): string {
     }
     case "amber": {
       const k = r();
-      if (k < 0.4) return `What is ${int(r, 13, 49)} × ${int(r, 3, 9)}?`;
-      if (k < 0.7) { const a = int(r, 12, 19), b = int(r, 3, 8); return `What is ${a} × ${b} − ${int(r, 11, Math.min(60, a * b - 1))}?`; }
-      const d = int(r, 3, 9);
-      return `What is ${d * int(r, 13, 25)} ÷ ${d}?`;
+      // 0.1.118: bigger two-digit factors (23-89 × 4-9), 13-29 × 4-9 in the chain, division by up to 12 with 13-49 answers.
+      if (k < 0.4) return `What is ${int(r, 23, 89)} × ${int(r, 4, 9)}?`;
+      if (k < 0.7) { const a = int(r, 13, 29), b = int(r, 4, 9); return `What is ${a} × ${b} − ${int(r, 17, Math.min(89, a * b - 1))}?`; }
+      const d = int(r, 4, 12);
+      return `What is ${d * int(r, 13, 49)} ÷ ${d}?`;
     }
     case "red": {
       const k = r();
@@ -224,9 +237,12 @@ export function genPrompt(tier: Tier, r: () => number): string {
     }
     default: {
       const k = r();
-      if (k < 0.35) return `What is ${int(r, 16, 25)}²?`;
-      if (k < 0.7) return `What is (${int(r, 6, 20)} + ${int(r, 3, 15)}) × ${int(r, 3, 9)}?`;
-      return `What is ${int(r, 4, 12)}² − ${int(r, 2, 9)} × ${int(r, 3, 9)}?`;
+      // 0.1.118 (biggest bump): fewer bare squares (35% → 25%), a new sum of two squares, a four-number bracket card
+      // with bigger numbers (× up to 12), and 11-19 squared in the square-minus-product card.
+      if (k < 0.25) return `What is ${int(r, 16, 25)}²?`;
+      if (k < 0.45) return `What is ${int(r, 11, 19)}² + ${int(r, 6, 15)}²?`;
+      if (k < 0.8) return `What is (${int(r, 19, 45)} + ${int(r, 8, 29)}) × ${int(r, 6, 12)} − ${int(r, 21, 60)}?`;
+      return `What is ${int(r, 11, 19)}² − ${int(r, 4, 12)} × ${int(r, 6, 12)}?`;
     }
   }
 }
@@ -243,7 +259,7 @@ export function generateFor(tier: Tier, n: number, seed = 990): TriviaQ[] {
     if (!s || mathTier(s) !== tier) continue;
     seen.add(q);
     const answer = String(s.value);
-    const miss = nearMisses(s.value, s, r);
+    const miss = nearMisses(s.value, s, r, tier === "green" || tier === "amber" || tier === "violet");
     if (miss.length < 3) continue;
     const choices = [answer, ...miss.map(String)].sort((a, b) => Number(a) - Number(b)) as TriviaQ["choices"];
     out.push({ q, choices, answer, diff: MATH_DIFF[tier], id: `gm${tier[0]}${out.length.toString(36)}-${s.value}`, rarity: tier });
