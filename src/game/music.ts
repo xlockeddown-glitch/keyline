@@ -80,6 +80,7 @@ export const CITY_CHARACTER: Record<CityId, string> = {
   seattle: "Rainy ambient pad, minor and slow, no drums, a drip of a lead.",
   denver: "Thin mountain air: bright major pentatonic, open voicings, light hats.",
   nashville: "Twangy major pentatonic, a triangle-wave pick and a two-beat shuffle.",
+  philly: "Placeholder (0.1.128): a brisk Dorian walk borrowed from New York until the Philly soul bed lands.",
 };
 
 /** 0.1.62: no vinyl crackle on city beds; 0.1.78 took it off the scout beds and out of the engine. It was a constant looping noise bed (the hiss heard in previews). */
@@ -99,12 +100,15 @@ export const CITY_BEDS: Record<CityId, Bed> = {
   seattle: { bpm: 54, root: 49, scale: AEOLIAN, chords: [[0, 3, 7, 10], [8, 12, 15, 19], [5, 8, 12, 15], [3, 7, 10, 14]], swing: 0, cutoff: 1500, kit: "none", hats: 0, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "none", lead: lead("sine", [10], "all", 24, 0.35, 0.04), level: 1.58 },
   denver: { bpm: 86, root: 55, scale: MAJ_PENTA, chords: [[0, 7, 16], [5, 12, 21], [9, 16, 24], [7, 14, 23]], swing: 0.1, cutoff: 3400, kit: "soft", hats: 4, melody: true, pad: true, padVoice: "pad", padBars: 1, bassLine: "roots", lead: lead("triangle", [2, 6, 12], "odd", 12, 0.18, 0.06), level: 1.11 },
   nashville: { bpm: 96, root: 55, scale: MAJ_PENTA, chords: [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]], swing: 0.22, cutoff: 3000, kit: "bounce", hats: 4, melody: true, pad: false, padVoice: "rhodes", bassLine: "pulse", lead: lead("triangle", [0, 3, 6, 10, 12], "odd", 12, 0.14, 0.07), level: 1.04 },
+  // 0.1.128 placeholder: New York's bed, a step brighter, until a Philly soul bed lands.
+  philly: { bpm: 100, root: 52, scale: DORIAN, chords: [[0, 3, 7, 10], [5, 9, 12, 15], [0, 3, 7, 10], [7, 10, 14, 17]], swing: 0.08, cutoff: 3200, kit: "soft", hats: 2, melody: true, pad: false, padVoice: "rhodes", bassLine: "walk", lead: lead("triangle", [2, 6, 14], "odd", 12, 0.16, 0.07), level: 1.11 },
 };
 
 export const CITY_BED_NAME: Record<CityId, string> = {
   austin: "Sixth Street sway", temple: "Porch light", nyc: "Crosstown", sf: "Fog line", london: "Drizzle", chicago: "Lakeshore shuffle",
   detroit: "Motor pulse", tucson: "Saguaro dusk", toronto: "Streetcar", la: "Sunset cruise", boston: "Red brick", nola: "Second line",
   seattle: "Rain on the sound", denver: "Thin air", nashville: "Honky step",
+  philly: "Broad Street",
 };
 
 /** Seconds per sixteenth. */

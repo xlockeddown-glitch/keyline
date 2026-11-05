@@ -580,6 +580,43 @@ const SEATTLE_NEEDLE: CityPrint = {
   ],
 };
 
+/** 0.1.128: Philadelphia (placeholder first print; slice 3 draws the full set) — the cracked Liberty Bell on Old City brick. */
+const PHILLY_BELL: CityPrint = {
+  id: "print-philly-bell",
+  city: "philly",
+  name: "Cracked Bell",
+  blurb: "The Liberty Bell, crack and all, on a field of Old City red brick.",
+  goal: PRINT_GOAL_FIRST,
+  scale: 2,
+  swatch: "#a8552f",
+  palette: {
+    ".": { L: 40, C: 34, h: 35 }, // brick
+    m: { L: 30, C: 20, h: 30 }, // mortar
+    b: { L: 58, C: 30, h: 75 }, // bell bronze
+    d: { L: 36, C: 18, h: 70 }, // bell shade
+    k: { L: 12, C: 4, h: 60 }, // crack
+    y: { L: 30, C: 8, h: 60 }, // yoke
+  },
+  tile: [
+    "mmmmmmmmmmmmmmmm",
+    "....m.......m...",
+    "....yyyyyyyy....",
+    "mmmmmmmbbmmmmmmm",
+    "......bbbb......",
+    ".....bbbbbb.....",
+    "mmmmmbbkbbbmmmmm",
+    ".....bbkbbbd....",
+    "....bbbbkbbd....",
+    "mmmmbbbbkbbdmmmm",
+    "...bbbbbbkbbd...",
+    "...bbbbbbkbbd...",
+    "mmbbbbbbbbkbbdmm",
+    "..dddddddddddd..",
+    "........m.......",
+    "mmmmmmmmmmmmmmmm",
+  ],
+};
+
 /** Every city's prints, in earn order. */
 export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>> = {
   austin: [AUSTIN_BLUEBONNET],
@@ -597,6 +634,7 @@ export const CITY_PRINTS: Readonly<Partial<Record<CityId, readonly CityPrint[]>>
   nashville: [NASHVILLE_GUITAR],
   nola: [NOLA_IRON_LACE],
   seattle: [SEATTLE_NEEDLE],
+  philly: [PHILLY_BELL],
 };
 
 /**

@@ -37,6 +37,7 @@ const CITY_IDS = [
   "seattle",
   "denver",
   "nashville",
+  "philly",
 ] as const;
 
 const KindSchema = z.enum(["cards", "speed", "accuracy", "distance"]);

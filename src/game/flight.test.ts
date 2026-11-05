@@ -34,10 +34,10 @@ async function db() {
 }
 const snap: LocalSnap = { coins: 0, keys: {}, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"], freePick: false } };
 
-test("far routes fly: over 1,000 miles, symmetric, 67 city pairs", () => {
+test("far routes fly: over 1,000 miles, symmetric, 76 city pairs (Philadelphia added 9)", () => {
   assert.equal(FLIGHT_MIN_MILES, 1000);
   const r = flightRoutes();
-  assert.equal(r.length, 134);
+  assert.equal(r.length, 152);
   for (const x of r) {
     assert.ok(x.miles > 1000);
     assert.ok(canFly(x.to, x.from));

@@ -1891,7 +1891,8 @@ const CITY: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 	},
 	seattle: {},
 	denver: {},
-	nashville: {}
+	nashville: {},
+	philly: {}
 };
 stampCityRecord(CITY);
 const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
@@ -2596,7 +2597,8 @@ const REGION: Record<CityId, Partial<Record<TriviaCat, TriviaQ[]>>> = {
 	},
 	seattle: {},
 	denver: {},
-	nashville: {}
+	nashville: {},
+	philly: {}
 };
 stampCityRecord(REGION);
 function draw(list: TriviaQ[]): TriviaQ | null {
@@ -2810,6 +2812,19 @@ const HOME: Record<CityId, string[]> = {
 		"cumberland",
 		"honky-tonk",
 		"lower broad"
+	],
+	philly: [
+		"philadelphia",
+		"philly",
+		"pennsylvania",
+		"william penn",
+		"liberty bell",
+		"independence hall",
+		"schuylkill",
+		"cheesesteak",
+		"phillies",
+		"sixers",
+		"flyers"
 	]
 };
 function aboutPlace(item: TriviaQ, cityId: CityId): boolean {

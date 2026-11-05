@@ -4,9 +4,9 @@ import { CITIES } from "./data.ts";
 import { fareDesk, fareMs, FARE_MAX_MS, formatEta, isFareDesk, lampCoolMs, landOldTrain, settleRide, sparkState, transitLoot } from "./ticket.ts";
 import type { Journey, Tier } from "./types.ts";
 
-test("seven night marks, and a violet lamp sleeps six hours", () => {
+test("eight night marks, and a violet lamp sleeps six hours", () => {
   const ids = Object.values(CITIES).flatMap((c) => c.pois.filter((p) => p.tier === "violet").map((p) => p.id));
-  assert.deepEqual(ids.sort(), ["big-ben", "cn-tower", "den-capitol", "esb", "nash-ryman", "sea-needle", "tx-capitol"]);
+  assert.deepEqual(ids.sort(), ["big-ben", "cn-tower", "den-capitol", "esb", "nash-ryman", "phl-indhall", "sea-needle", "tx-capitol"]);
   assert.equal(lampCoolMs("violet"), 6 * 60 * 60_000);
   assert.equal(lampCoolMs("red"), 400_000);
 });

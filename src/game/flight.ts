@@ -43,6 +43,7 @@ export const SOUVENIRS: Record<CityId, string> = {
   seattle: "Ferry ticket stub",
   denver: "Mile-high marker pin",
   nashville: "Guitar-pick keychain",
+  philly: "Liberty Bell magnet",
 };
 
 export function souvenirKey(to: CityId): string {

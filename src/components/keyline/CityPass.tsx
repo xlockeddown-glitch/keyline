@@ -21,7 +21,7 @@ export function PassProgressRow({ compact = false }: { compact?: boolean }) {
       <div className="hq-row-copy">
         <p className={compact ? "kicker" : "hq-row-title"}>
           City passes <span className="tabular-nums text-fg-muted">×{p.passes}</span>
-          <span className="tabular-nums text-fg-muted"> · {cities.unlocked.length}/15 cities</span>
+          <span className="tabular-nums text-fg-muted"> · {cities.unlocked.length}/{Object.keys(CITIES).length} cities</span>
         </p>
         <p className="hq-row-sub">{next} Any one of these pays a pass:</p>
         <ul className="hq-row-sub mt-1 grid gap-0.5 tabular-nums">

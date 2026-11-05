@@ -13,7 +13,7 @@ export function CitySelect() {
   const setScreen = useGame((s) => s.setScreen);
   const atlas = useGame((s) => s.atlas);
   const cities = useGame((s) => s.cities);
-  // 0.0.56: a new player (no start city yet) picks any of the 15 to start; after that, locked cities show what they need.
+  // 0.0.56: a new player (no start city yet) picks any of the 16 to start; after that, locked cities show what they need.
   const picking = !cities.start;
   const { requestEnter, showPrompt, waiting, continueAsGuest } = useEnterGate();
 
@@ -36,7 +36,7 @@ export function CitySelect() {
           <ArrowLeft className="size-4" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="kicker">Fifteen cities</p>
+          <p className="kicker">Sixteen cities</p>
           <h1 className="font-display text-3xl leading-none">{picking ? "Pick your first city" : "Pick a city"}</h1>
         </div>
         <AudioDock />

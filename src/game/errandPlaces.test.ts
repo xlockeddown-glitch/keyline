@@ -20,6 +20,7 @@ const WANT: Record<string, number> = {
   la: 3,
   nyc: 3,
   sf: 3,
+  philly: 2,
 };
 
 test("counters and notice boards are spread across the city, with more in the big ones", () => {

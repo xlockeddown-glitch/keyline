@@ -2980,6 +2980,53 @@ const nashville: City = {
   ],
 };
 
+// 0.1.128 (k1128a): Philadelphia, the 16th city. Coordinates are OSM (Overpass, ODbL) centers of the named place, checked
+// Nov 4 2026; lore is checked against the Wikipedia articles listed in docs/trivia-sources-philly-0.1.128.md.
+const philly: City = {
+  id: "philly",
+  name: "Philadelphia",
+  region: "Pennsylvania",
+  blurb: "The cradle of the republic. Red brick in Old City, a bronze Penn on City Hall, cheesesteaks down in South Philly.",
+  // Market Street at 5th, at the Liberty Bell Center's north door.
+  spawn: { lat: 39.95085, lng: -75.15005 },
+  // First walk starts at 6th and Chestnut, so Independence Hall is the first lamp.
+  start: { lat: 39.94935, lng: -75.15098 },
+  pois: [
+    poi({ id: "phl-indhall", name: "Independence Hall", lat: 39.94889, lng: -75.15002, kind: "civic", tier: "violet", lore: "The old Pennsylvania State House, finished in 1753. The Declaration of Independence was adopted here in 1776 and the Constitution signed here in 1787." }),
+    poi({ id: "phl-bell", name: "Liberty Bell Center", lat: 39.94986, lng: -75.15025, kind: "landmark", tier: "red", lore: "The cracked State House bell, cast in Whitechapel and recast in Philadelphia. Abolitionists named it the Liberty Bell in the 1830s." }),
+    poi({ id: "phl-cityhall", name: "Philadelphia City Hall", lat: 39.9524, lng: -75.16358, kind: "civic", tier: "red", lore: "The largest municipal building in the country, finished in 1901, with Alexander Milne Calder's bronze William Penn on top of the tower." }),
+    poi({ id: "phl-artmuseum", name: "Philadelphia Museum of Art", lat: 39.96512, lng: -75.17985, kind: "museum", tier: "amber", lore: "A Greek temple on Fairmount at the top of the Parkway, finished in 1928. Its east steps are the Rocky Steps." }),
+    poi({ id: "phl-reading", name: "Reading Terminal Market", lat: 39.95318, lng: -75.15906, kind: "food", tier: "amber", lore: "A market hall under the old Reading Railroad train shed at 12th and Arch, open since 1893." }),
+    poi({ id: "phl-esp", name: "Eastern State Penitentiary", lat: 39.96834, lng: -75.17267, kind: "museum", tier: "amber", lore: "An 1829 prison of cell blocks spoked around a hub, built for solitary confinement. Al Capone did time here. Ruins and tours now." }),
+    poi({ id: "phl-elfreth", name: "Elfreth's Alley", lat: 39.95271, lng: -75.14241, kind: "landmark", tier: "amber", lore: "A narrow lane of 18th-century row houses off 2nd Street, one of the oldest continuously lived-in streets in the country." }),
+    poi({ id: "phl-boathouse", name: "Boathouse Row", lat: 39.96943, lng: -75.18745, kind: "landmark", tier: "amber", lore: "Rowing club boathouses along the Schuylkill below the art museum, outlined in lights at night." }),
+    poi({ id: "phl-barnes", name: "Barnes Foundation", lat: 39.96063, lng: -75.17271, kind: "museum", tier: "green", lore: "Albert Barnes's collection of Renoir, Cézanne and Matisse, hung his way, moved to the Parkway in 2012." }),
+    poi({ id: "phl-ncc", name: "National Constitution Center", lat: 39.95363, lng: -75.14916, kind: "museum", tier: "green", lore: "A museum of the Constitution on Independence Mall, opened in 2003. Signers' Hall has a bronze statue of each delegate." }),
+    poi({ id: "phl-mar", name: "Museum of the American Revolution", lat: 39.94837, lng: -75.14584, kind: "museum", tier: "green", lore: "Opened in 2017 at 3rd and Chestnut. It keeps George Washington's war tent." }),
+    poi({ id: "phl-christchurch", name: "Christ Church", lat: 39.95073, lng: -75.14388, kind: "landmark", tier: "green", lore: "The Anglican church on 2nd Street where Washington, Franklin and Betsy Ross had pews. Its steeple was once the tallest thing in the colonies." }),
+    poi({ id: "phl-betsyross", name: "Betsy Ross House", lat: 39.95228, lng: -75.14464, kind: "museum", tier: "green", lore: "An 18th-century row house on Arch Street, said to be where the upholsterer Betsy Ross lived and worked." }),
+    poi({ id: "phl-waterworks", name: "Fairmount Water Works", lat: 39.96634, lng: -75.18356, kind: "landmark", tier: "green", lore: "Classical mill houses on the Schuylkill below the art museum, the city's waterworks from 1815 until 1909." }),
+    poi({ id: "phl-franklin", name: "The Franklin Institute", lat: 39.95824, lng: -75.17312, kind: "museum", tier: "green", lore: "A science museum on Logan Square, named for Benjamin Franklin, with a giant walk-through heart." }),
+    poi({ id: "phl-rittenhouse", name: "Rittenhouse Square", lat: 39.94891, lng: -75.17014, kind: "park", tier: "blue", lore: "One of William Penn's five original squares, named for the astronomer David Rittenhouse in 1825." }),
+    poi({ id: "phl-love", name: "LOVE Park", lat: 39.9542, lng: -75.1657, kind: "park", tier: "blue", lore: "John F. Kennedy Plaza by City Hall, nicknamed for Robert Indiana's LOVE sculpture." }),
+    poi({ id: "phl-logan", name: "Logan Square", lat: 39.95794, lng: -75.17059, kind: "park", tier: "blue", lore: "Penn's northwest square, now a circle on the Parkway around the Swann Memorial Fountain." }),
+    poi({ id: "phl-academy", name: "Academy of Music", lat: 39.94802, lng: -75.1652, kind: "theatre", tier: "blue", lore: "An 1857 opera house on Broad Street, the oldest grand opera house in the country still used for opera." }),
+    poi({ id: "phl-kimmel", name: "Kimmel Center", lat: 39.9467, lng: -75.16574, kind: "theatre", tier: "blue", lore: "A glass-vaulted arts center on Broad and Spruce, opened in 2001, home hall of the Philadelphia Orchestra." }),
+    poi({ id: "phl-masonic", name: "Masonic Temple", lat: 39.95357, lng: -75.16228, kind: "landmark", tier: "blue", lore: "The Grand Lodge of Pennsylvania's 1873 Norman-style temple across Broad Street from City Hall." }),
+    poi({ id: "phl-carpenters", name: "Carpenters' Hall", lat: 39.94814, lng: -75.14721, kind: "civic", tier: "blue", lore: "The Carpenters' Company guild hall, where the First Continental Congress met in 1774." }),
+    poi({ id: "phl-washsq", name: "Washington Square", lat: 39.94686, lng: -75.15264, kind: "park", tier: "white", lore: "Penn's southeast square, with the Tomb of the Unknown Soldier of the American Revolution." }),
+    poi({ id: "phl-magic", name: "Philadelphia's Magic Gardens", lat: 39.94283, lng: -75.15932, kind: "museum", tier: "white", lore: "Isaiah Zagar's mosaic of tile, mirror and bottles that covers a lot on South Street." }),
+    poi({ id: "phl-pennslanding", name: "Penn's Landing", lat: 39.94583, lng: -75.14111, kind: "park", tier: "white", lore: "The Delaware riverfront where William Penn landed in 1682." }),
+    poi({ id: "phl-franklinsq", name: "Franklin Square", lat: 39.95566, lng: -75.15044, kind: "park", tier: "white", lore: "Penn's northeast square, with a fountain and a carousel by the Ben Franklin Bridge ramps." }),
+    poi({ id: "phl-pats", name: "Pat's King of Steaks", lat: 39.93317, lng: -75.15924, kind: "food", tier: "white", lore: "The corner at 9th and Passyunk where Pat Olivieri sold the first steak sandwiches in 1930." }),
+    poi({ id: "phl-italianmkt", name: "Italian Market", lat: 39.939, lng: -75.1578, kind: "food", tier: "white", lore: "Outdoor stalls and awnings along 9th Street, one of the oldest open-air markets in the country." }),
+    poi({ id: "phl-southst", name: "South Street", lat: 39.94176, lng: -75.15069, kind: "landmark", tier: "white", lore: "The old southern edge of the city. Bars, shoe stores and murals from the river to Broad." }),
+    poi({ id: "phl-mutter", name: "Mütter Museum", lat: 39.95328, lng: -75.17655, kind: "museum", tier: "blue", lore: "The College of Physicians' museum of medical oddities on 22nd Street." }),
+    poi({ id: "phl-30th", name: "30th Street Station", lat: 39.95572, lng: -75.1822, kind: "station", tier: "blue", lore: "The 1933 Pennsylvania Railroad station across the Schuylkill. Amtrak's Northeast Corridor and SEPTA trains stop under the coffered hall." }),
+    poi({ id: "phl-library", name: "Parkway Central Library", lat: 39.9595, lng: -75.171, kind: "library", tier: "green", lore: "The Free Library's main building on Logan Square, opened in 1927, a Beaux-Arts twin to the city buildings across Logan Square.", printShop: true }),
+  ],
+};
+
 function withMarks(city: City, extra: Poi[]): City {
   return { ...city, pois: [...city.pois, ...extra] };
 }
@@ -3342,6 +3389,7 @@ export const CITIES: Record<CityId, City> = {
   seattle: withMarks(seattle, SEATTLE_MARKS),
   denver: withMarks(denver, DENVER_MARKS),
   nashville: withMarks(nashville, NASHVILLE_MARKS),
+  philly: philly,
 };
 
 const SCOUT_SHOPS: Record<CityId, Poi> = {
@@ -3480,6 +3528,15 @@ const SCOUT_SHOPS: Record<CityId, Poi> = {
     tier: "white",
     lore: "Second Avenue and Broadway. Western wool and pearl snaps on the rail, a lantern by the stair. Scouts hire here.",
   }),
+  philly: poi({
+    id: "shop-philly",
+    name: "Old City Outfitter",
+    lat: 39.95104,
+    lng: -75.14555,
+    kind: "shop",
+    tier: "white",
+    lore: "Third and Market. Wool coats and tricorn felt on the rail, a lantern in the bay window. Scouts hire here.",
+  }),
 };
 
 for (const id of Object.keys(SCOUT_SHOPS) as CityId[]) {
@@ -3504,6 +3561,7 @@ const COUNTER_NAME: Record<CityId, [string, string]> = {
   seattle: ["Pike Newsstand", "Occidental Board"],
   denver: ["16th Street Counter", "Civic Center Board"],
   nashville: ["Broadway Counter", "Printers Alley Board"],
+  philly: ["Chestnut Street Counter", "Independence Mall Board"],
 };
 
 function lampPois(city: City) {
@@ -3703,6 +3761,7 @@ export const CITY_LIST: City[] = [
   CITIES.seattle,
   CITIES.denver,
   CITIES.nashville,
+  CITIES.philly,
 ];
 
 export const TIER_POINTS = TIER_VALUE;

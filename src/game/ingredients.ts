@@ -17,6 +17,7 @@ export type IngredientId =
   | "cedar"
   | "silver"
   | "string"
+  | "bellbronze"
   | "granite"
   | "limestone"
   | "creekstone"
@@ -92,6 +93,7 @@ export const INGREDIENTS: Record<IngredientId, Ingredient> = {
   cedar: { id: "cedar", name: "Cedar", cityId: "seattle", blurb: "Seattle press stock. Green vaults and up." },
   silver: { id: "silver", name: "Silver", cityId: "denver", blurb: "Denver press stock. Green vaults and up." },
   string: { id: "string", name: "Fiddle string", cityId: "nashville", blurb: "Nashville press stock. Green vaults and up." },
+  bellbronze: { id: "bellbronze", name: "Bell bronze", cityId: "philly", blurb: "Philadelphia press stock. Green vaults and up." },
   granite: { id: "granite", name: "Pink granite", cityId: "austin", blurb: "Capitol ward. Amber vaults and up." },
   limestone: { id: "limestone", name: "Limestone", cityId: "austin", blurb: "Barton Springs. Amber vaults and up." },
   creekstone: { id: "creekstone", name: "Creek stone", cityId: "temple", blurb: "Miller Springs. Amber vaults and up." },
@@ -124,6 +126,7 @@ const CITY_STAPLE: Record<CityId, IngredientId> = {
   seattle: "cedar",
   denver: "silver",
   nashville: "string",
+  philly: "bellbronze",
 };
 
 /** Named wards. Only amber, red, and violet vaults drop these. */

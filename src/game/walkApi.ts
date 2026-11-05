@@ -22,6 +22,7 @@ const CITY_IDS = [
   "seattle",
   "denver",
   "nashville",
+  "philly",
 ] as const;
 
 const CitySchema = z.enum(CITY_IDS);

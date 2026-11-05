@@ -74,6 +74,7 @@ export const DEALERS: Record<CityId, Dealer> = {
   seattle: { city: "seattle", name: "Ferrari and Maserati of Seattle", lat: 47.613157, lng: -122.317074 },
   denver: { city: "denver", name: "Worldwide Autosport", lat: 39.731943, lng: -104.99931 },
   nashville: { city: "nashville", name: "Rivian Nashville", lat: 36.151863, lng: -86.781321 },
+  philly: { city: "philly", name: "Carvana", lat: 39.96681, lng: -75.13639 },
 };
 
 /** Close enough, on foot, to walk into the showroom. */

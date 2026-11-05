@@ -45,6 +45,7 @@ const RULES: Record<string, Rules> = {
   la: { budget: 1_600_000, driveRatio: 4.6 }, // Little Tokyo/JANM: 1st St one-way pair; Hollywood/Highland mall.
   london: { budget: 1_070_000, driveRatio: 7.8 }, // Tower Bridge→Tate etc.: one-ways, the Tower, bus-only lanes.
   nashville: { budget: 310_000, driveRatio: 3.3, snap: { "stadium:nash-nissan": 125 } }, // Capitol Hill drive loop; Nissan lots are area=yes/private.
+  philly: { budget: 430_000, driveRatio: 4.5, water: "Delaware: the Camden side (the Ben Franklin Bridge walkway is the only foot crossing)" }, // Old City one-ways; the Schuylkill at 30th Street.
   nola: { budget: 230_000, driveRatio: 3.3, water: "Mississippi: Algiers (Crescent City Connection is a freeway, no walk; the ferry isn't a way)" }, // Jackson Sq pedestrian mall.
   nyc: {
     budget: 850_000, driveRatio: 4.5, // NYPL→Bryant Park: next door, the car loops the 42nd/40th one-ways.

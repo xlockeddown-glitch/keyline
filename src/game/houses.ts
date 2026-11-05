@@ -76,6 +76,8 @@ export const HOUSE_LOTS: Record<CityId, HouseLot> = {
   seattle: { city: "seattle", name: "3rd Avenue", lat: 47.6096, lng: -122.3377 },
   denver: { city: "denver", name: "17th Street", lat: 39.7491, lng: -104.9946 },
   nashville: { city: "nashville", name: "4th Avenue North", lat: 36.1622, lng: -86.7779 },
+  // 0.1.128: a fixed lot on 6th Street between Chestnut and Market, ~75 m from the start (the nearest estate agent was 550 m off).
+  philly: { city: "philly", name: "North 6th Street", lat: 39.95, lng: -75.1514 },
 };
 
 export function lotOf(city: CityId): HouseLot {

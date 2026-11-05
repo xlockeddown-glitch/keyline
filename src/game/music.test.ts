@@ -7,8 +7,8 @@ import { CITIES } from "./data.ts";
 
 const ids = Object.keys(CITIES).sort();
 
-test("all 15 cities have a valid, quiet bed with a name and a character line", () => {
-  assert.equal(ids.length, 15);
+test("all 16 cities have a valid, quiet bed with a name and a character line", () => {
+  assert.equal(ids.length, 16);
   assert.deepEqual(Object.keys(CITY_BEDS).sort(), ids);
   assert.deepEqual(Object.keys(CITY_CHARACTER).sort(), ids);
   assert.deepEqual(Object.keys(CITY_BED_NAME).sort(), ids);
@@ -25,7 +25,7 @@ test("all 15 cities have a valid, quiet bed with a name and a character line", (
     for (let n = 0; n < b.chords.length * 16; n++) for (const e of stepEvents(b, n)) assert.ok(e.vol <= (e.kind === "chord" ? 0.36 : 0.3), `${id} step ${n} ${e.kind}`);
     shapes.add(JSON.stringify([b.bpm, b.scale, b.chords, b.kit]));
   }
-  assert.equal(shapes.size, 15, "each city sounds different");
+  assert.equal(shapes.size, 16, "each city sounds different");
 });
 
 test("sparse: no more than a few voices per step, so phones stay cool", () => {

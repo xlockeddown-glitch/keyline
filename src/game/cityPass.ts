@@ -6,7 +6,7 @@ import type { CityId, Tier } from "./types.ts";
  * 0.0.56 city unlocks. Guests keep them in the save. A signed-in walker's copy lives on the server
  * after the first sync (0.0.78); friend tickets and dealt cards still have no city gate.
  *
- *  - A new player picks a starting city out of all 15. The second city is free, picked any time at the train
+ *  - A new player picks a starting city out of all 16. The second city is free, picked any time at the train
  *    station (Timetable). City 3 onward costs one city pass each.
  *  - A pass comes from any ONE of three routes, each counted on its own, earned in an unlocked city:
  *    (a) lamp points: a lamp lit (trivia right) at amber pays 1, red 4, violet 10; every 10 points is a pass and the

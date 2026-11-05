@@ -3003,7 +3003,7 @@ function flyNow(set: (p: Partial<GameState>) => void, get: () => GameState) {
   scheduleSave(get);
 }
 
-/** 0.1.58: end the open ride with the Loop's tunnel (finishLoop lands). 0.1.124: the instant Arrive is gone. */
+/** 0.1.58: end the open ride with the Loop's tunnel (finishLoop lands). 0.1.128: the instant Arrive is gone. */
 function rideLoop(set: (p: Partial<GameState>) => void, get: () => GameState) {
   const j = get().journey;
   if (!j) return;

@@ -48,7 +48,7 @@ test("pass math: amber 1, red 4, violet 10; every 10 points is a pass and the re
   assert.equal(u.lampPts, 3, "3 + 10 = 13 → one pass, 3 carried");
 });
 
-test("a new player picks any of the 15 cities to start; nothing else is open", () => {
+test("a new player picks any of the 16 cities to start; nothing else is open", () => {
   const fresh = freshUnlocks();
   for (const id of Object.keys(CITIES) as (keyof typeof CITIES)[]) assert.equal(unlockCost(fresh, id), "start");
   const u = started("chicago");

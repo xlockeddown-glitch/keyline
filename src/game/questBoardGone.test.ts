@@ -18,6 +18,9 @@ test("no city has a Quest Board; the errand notice boards stay", () => {
 test("old saves: a stamped Quest Board still counts toward its city's surveys; 'All of' needs one place fewer", () => {
   for (const c of CITY_LIST) {
     const id = `board-${c.id}-quest`;
+    const all0 = SURVEY_GOALS.find((g) => g.id === `ward-${c.id}-all`)!;
+    // 0.1.128: Philadelphia arrived after the board left, so it never had one to retire.
+    if (c.id === "philly") { assert.equal(RETIRED_POIS[id], undefined); assert.equal(all0.need, c.pois.length); continue; }
     assert.deepEqual(RETIRED_POIS[id], { cityId: c.id, kind: "board", name: "Quest Board" });
     const all = SURVEY_GOALS.find((g) => g.id === `ward-${c.id}-all`)!;
     assert.equal(all.need, c.pois.length);

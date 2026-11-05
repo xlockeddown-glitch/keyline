@@ -6,7 +6,7 @@ import type { CityId } from "./types";
 
 export const CITY_TZ: Record<CityId, string> = {
   austin: "America/Chicago", temple: "America/Chicago", chicago: "America/Chicago", nola: "America/Chicago", nashville: "America/Chicago",
-  nyc: "America/New_York", boston: "America/New_York", detroit: "America/Detroit", toronto: "America/Toronto",
+  nyc: "America/New_York", boston: "America/New_York", philly: "America/New_York", detroit: "America/Detroit", toronto: "America/Toronto",
   sf: "America/Los_Angeles", la: "America/Los_Angeles", seattle: "America/Los_Angeles",
   denver: "America/Denver", tucson: "America/Phoenix", london: "Europe/London",
 };

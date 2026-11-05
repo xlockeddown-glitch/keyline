@@ -64,7 +64,7 @@ const packStreet = (s: MarketStreet): PackedStreet => ({ n: s.name, h: s.hw, l: 
 const unpackStreet = (s: PackedStreet): MarketStreet => ({ name: s.n, hw: s.h, lines: s.l, lamps: s.p, lenM: s.m });
 
 if (only.size && existsSync(prevFile)) {
-  const m = readFileSync(prevFile, "utf8").match(/const PACKED[^=]*= (\{[\s\S]*\});/);
+  const m = readFileSync(prevFile, "utf8").match(/const PACKED[^=]*= (\{[\s\S]*?\});\n/);
   if (m) {
     for (const [k, v] of Object.entries(JSON.parse(m[1]!) as Record<string, PackedStreet[]>)) {
       if (!(k in out)) out[k] = v.map(unpackStreet);

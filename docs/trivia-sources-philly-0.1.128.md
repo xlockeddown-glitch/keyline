@@ -1,0 +1,41 @@
+# Philadelphia sources (Keyline 0.1.128)
+
+Checked Nov 4, 2026. Place coordinates are OSM centers (Overpass, ODbL); the Franklin Institute is the OSM museum way at 39.95824, -75.17312 (its Wikipedia page carries no coordinate). Lore lines and the Local cards in src/game/banks/cities_part_k.ts come from these Wikipedia articles:
+
+- https://en.wikipedia.org/wiki/30th_Street_Station
+- https://en.wikipedia.org/wiki/Academy_of_Music_(Philadelphia)
+- https://en.wikipedia.org/wiki/Barnes_Foundation
+- https://en.wikipedia.org/wiki/Benjamin_Franklin_Bridge
+- https://en.wikipedia.org/wiki/Boathouse_Row
+- https://en.wikipedia.org/wiki/Carpenters%27_Hall
+- https://en.wikipedia.org/wiki/Christ_Church,_Philadelphia
+- https://en.wikipedia.org/wiki/Eastern_State_Penitentiary
+- https://en.wikipedia.org/wiki/Elfreth%27s_Alley
+- https://en.wikipedia.org/wiki/Fairmount_Water_Works
+- https://en.wikipedia.org/wiki/Independence_Hall
+- https://en.wikipedia.org/wiki/Italian_Market,_Philadelphia
+- https://en.wikipedia.org/wiki/Liberty_Bell
+- https://en.wikipedia.org/wiki/Love_Park
+- https://en.wikipedia.org/wiki/M%C3%BCtter_Museum
+- https://en.wikipedia.org/wiki/Mummers_Parade
+- https://en.wikipedia.org/wiki/Museum_of_the_American_Revolution
+- https://en.wikipedia.org/wiki/National_Constitution_Center
+- https://en.wikipedia.org/wiki/Pat%27s_King_of_Steaks
+- https://en.wikipedia.org/wiki/Philadelphia%27s_Magic_Gardens
+- https://en.wikipedia.org/wiki/Philadelphia_City_Hall
+- https://en.wikipedia.org/wiki/Philadelphia_Museum_of_Art
+- https://en.wikipedia.org/wiki/Reading_Terminal_Market
+- https://en.wikipedia.org/wiki/Rittenhouse_Square
+- https://en.wikipedia.org/wiki/Rocky_Steps
+- https://en.wikipedia.org/wiki/Swann_Memorial_Fountain
+- https://en.wikipedia.org/wiki/The_Franklin_Institute
+- https://en.wikipedia.org/wiki/Betsy_Ross_House
+- https://en.wikipedia.org/wiki/Fairmount_Water_Works
+- https://en.wikipedia.org/wiki/Franklin_Square_(Philadelphia)
+- https://en.wikipedia.org/wiki/Free_Library_of_Philadelphia
+- https://en.wikipedia.org/wiki/Kimmel_Center_for_the_Performing_Arts
+- https://en.wikipedia.org/wiki/Masonic_Temple_(Philadelphia)
+- https://en.wikipedia.org/wiki/Penn%27s_Landing
+- https://en.wikipedia.org/wiki/Rittenhouse_Square
+- https://en.wikipedia.org/wiki/South_Street_(Philadelphia)
+- https://en.wikipedia.org/wiki/Washington_Square_(Philadelphia)

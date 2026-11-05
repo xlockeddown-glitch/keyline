@@ -16,6 +16,7 @@ const CITY_NAME: Record<CityId, string> = {
   seattle: "Seattle",
   denver: "Denver",
   nashville: "Nashville",
+  philly: "Philadelphia",
 };
 
 export type ClothId = "road-dust" | "red-book" | "night-glass" | `scarf-${CityId}`;
