@@ -231,10 +231,6 @@ export type GameState = {
   goals: GoalDay;
   /** 0.0.93: UTC day the match cache was last opened (once per player per day). */
   cacheDay: string;
-  /** 0.0.93: the Quest Board panel. */
-  questOpen: boolean;
-  /** 0.0.93: first-play arrow to the Quest Board stays until the board is opened once. */
-  questVisited: boolean;
   distanceM: number;
   lastCrateDay: string;
   crateStreak: number;
@@ -420,10 +416,6 @@ export type GameState = {
   claimWheel: () => void;
   noteGoalKind: (kind: GoalKind, amount?: number) => void;
   claimGoal: (i: number) => void;
-  openQuest: (open: boolean) => void;
-  /** 0.0.93: the journal shortcut: GameMap walks to the Quest Board when this ticks. */
-  questWalk: number;
-  walkToQuest: () => void;
   claimCache: () => void;
   /** 0.0.92: the slice to land on. Signed in, the server claims first; null means the claim failed (wheel closed). */
   spinWheel: () => Promise<number | null>;
@@ -688,7 +680,6 @@ function persistable(s: GameState) {
     lastBlitzOfferDay: s.lastBlitzOfferDay,
     goals: s.goals,
     cacheDay: s.cacheDay,
-    questVisited: s.questVisited,
     passGift: s.passGift,
     blitzTake: s.blitzTake,
     blitzMatches: s.blitzMatches,
@@ -1180,9 +1171,6 @@ export const useGame = create<GameState>((set, get) => ({
   lastBlitzOfferDay: typeof saved?.lastBlitzOfferDay === "string" ? saved.lastBlitzOfferDay : "",
   goals: cleanGoals(saved?.goals, goalDay()),
   cacheDay: typeof saved?.cacheDay === "string" ? saved.cacheDay : "",
-  questOpen: false,
-  questWalk: 0,
-  questVisited: saved?.questVisited === true,
   sparkDay: saved?.sparkDay ?? "",
   sparkN: saved?.sparkN ?? 0,
   sparkLamps: saved?.sparkLamps ?? [],
@@ -2706,11 +2694,6 @@ export const useGame = create<GameState>((set, get) => ({
   noteGoalKind: (kind, amount = 1) => {
     const g = noteGoal(get().goals, kind, amount, goalDay());
     if (g !== get().goals) set({ goals: g });
-  },
-  walkToQuest: () => set({ questWalk: get().questWalk + 1, hqOpen: false, invOpen: false, guideOpen: false }),
-  openQuest: (open) => {
-    set({ questOpen: open, ...(open ? { questVisited: true, goals: { ...noteGoal(get().goals, "right", 0, goalDay()), seen: true } } : {}) });
-    if (open) scheduleSave(get);
   },
   claimGoal: (i) => {
     const g = noteGoal(get().goals, "right", 0, goalDay());

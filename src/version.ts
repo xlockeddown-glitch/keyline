@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.125";
+export const APP_VERSION = "0.1.127";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1125a";
+export const PUBLISH_STAMP = "k1127a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -226,3 +226,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.122: one Hearth of each version (Ryan): a player may place one Single, one Double and one Triple. Old placed rows keep their key and id and hold their own version's slot; new Doubles/Triples sit on placed:<owner>:v2/:v3. Each keeps its own fields, name, stats, owner panel and lockout; the owner cut is once a visitor a day per Hearth (daily cap still per owner). Journal › Places shows a row per version with its tiers; the place sheet marks a placed version Placed.
 // 0.1.123: Austin's house lot moves from West 3rd Street (678 m west of spawn, off a phone's first screen) to East 8th Street, ~165 m north like every other city. Ownership is per city, so Austin owners keep their house.
 // 0.1.125: the instant Arrive option between cities is gone (Ryan): the Timetable offers the Loop for every open city (its Skip still lands at once, with the poster and crate roll) and Fly on far routes; the server refuses the old Arrive op (loop without ride) as "retired" and keeps the ticket open for the Loop; help and station copy updated (k1125a).
+// 0.1.127: the Quest Board left the map (Ryan): no per-city Quest Board place, "!" pin or first-play arrow, no "Walk to the Quest Board" button; today's goals and Collect stay in the Journal's Goals tab (and on every notice board). The tutorial's last card says "Open the Journal to see today's goals." The board ids are retired (a visit already stamped still counts), so each city's "All of" goal needs one place fewer (k1127a).

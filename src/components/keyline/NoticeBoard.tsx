@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
-import { useEffect } from "react";
-import { CITIES, cityBoard, isQuestBoard } from "@/game/data";
+import { CITIES, cityBoard } from "@/game/data";
 import { DailyGoals } from "./DailyGoals";
 import { BLITZ_FULL, blitzDue, blitzTakeLine } from "@/game/dailyBlitz";
 import { sfx } from "@/game/audio";
@@ -28,10 +27,6 @@ export function NoticeBoard() {
   const today = new Date().toISOString().slice(0, 10);
   const blitzReady = blitzDue(lastBlitzDay, today);
 
-  const openQuest = useGame((s) => s.openQuest);
-  useEffect(() => {
-    if (open && isQuestBoard(place)) openQuest(true);
-  }, [open, place, openQuest]);
   useSheetOpen(open);
   if (!open || !place) return null;
 
@@ -40,7 +35,7 @@ export function NoticeBoard() {
       <div className="panel errand-lit sheet-bottom flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl sm:rounded-xl">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <p className="kicker">{isQuestBoard(place) ? "Quests" : "Notice"} · {city.name}</p>
+            <p className="kicker">Notice · {city.name}</p>
             <h2 className="font-display text-2xl">{place.name}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">{place.lore}</p>
           </div>

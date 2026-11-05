@@ -248,12 +248,8 @@ export function goalsClaimable(g: GoalDay): boolean {
   return g.paid.every(Boolean) && !g.all;
 }
 
-/** The Quest Board glows with "!" on a new day, until today's goals are looked at, and while something is ready. */
 /** 0.1.22: the daily goals' day is the Chicago calendar day (was the UTC date), the same clock as quests. */
 export function goalDay(ms = Date.now()): string {
   return chicagoDay(ms);
 }
 
-export function questAlert(g: GoalDay, day = goalDay()): boolean {
-  return g.day !== day || !g.seen || goalsClaimable(g);
-}

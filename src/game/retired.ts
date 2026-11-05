@@ -20,6 +20,10 @@ export const RETIRED_POIS: Record<string, RetiredPoi> = {
   // 0.0.32: Tucson has no Sosa Avenue; the real mark is the Sosa–Carrillo–Frémont House on Granada.
   "sosa-ave": { cityId: "tucson", kind: "landmark", name: "Sosa Avenue", replacedBy: "sosa-carrillo" },
 };
+// 0.1.127 (Ryan): the per-city Quest Board left the map (goals live in the Journal). A visit already stamped still counts.
+for (const c of ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville"] as const) {
+  RETIRED_POIS[`board-${c}-quest`] = { cityId: c, kind: "board", name: "Quest Board" };
+}
 
 /** The live id a saved id now means: its replacement, itself, or null if the mark is gone. */
 export function livePoiId(id: string): string | null {

@@ -9,11 +9,11 @@ import { factoryColor } from "@/game/carPaint";
 import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
 import { SkinSheet } from "./SkinSheet";
-import { CITIES, SCOUTS, cabSpeed, interactRadius, isBoard, isQuestBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
-import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed, questAlert } from "@/game/goals";
+import { CITIES, SCOUTS, cabSpeed, interactRadius, isBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
+import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
-import { questPinHtml, boardPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
+import { boardPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
 import { FACET_COLOR, hearthOf, isHearthId } from "@/game/hearthVaults";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { roadTilt, worldScale } from "@/game/grounded";
@@ -283,7 +283,6 @@ export function GameMap() {
   const scoutName = useGame((s) => SCOUTS[s.scout]?.name ?? "The walker");
   const [streets, setStreets] = useState<"loading" | "ready" | "error">("loading");
   const cacheRef = useRef<{ lat: number; lng: number; seed: { lat: number; lng: number } | null; marker: { remove: () => void; setLatLng: (ll: [number, number]) => unknown } } | null>(null);
-  const arrowRef = useRef<{ remove: () => void } | null>(null);
   const [boardOpen, setBoardOpen] = useState(false);
   // 0.1.110: repaint pins when the city's Hearth vaults arrive.
   const hearthGen = useGame((s) => s.hearthGen ?? 0);
@@ -1667,9 +1666,7 @@ export function GameMap() {
         : counter
           ? counterPinHtml(poi.name)
           : board
-            ? isQuestBoard(poi)
-              ? questPinHtml(poi.name, questAlert(st.goals))
-              : boardPinHtml(poi.name)
+            ? boardPinHtml(poi.name)
             : desk
               ? stationPinHtml({ cooling, fare: lit })
               : isHearthId(poi.id)
@@ -2408,7 +2405,7 @@ const CACHE_PIN_HTML =
   '<path class="cache-flame" d="M23 -4c2.6 2.6 3 5 0 7.4c-3-2.4-2.6-4.8 0-7.4z" fill="#ffcf4a"/></g>' +
   "</svg></div>";
 
-// 0.0.93: the day's match cache, the Quest Board's "!" and the first-play arrow to it.
+// 0.0.93: the day's match cache. 0.1.127: the Quest Board, its "!" and first-play arrow are gone.
   useEffect(() => {
     if (streets !== "ready") return;
     const L = Lref.current;
@@ -2427,31 +2424,9 @@ const CACHE_PIN_HTML =
       }).addTo(map);
       cacheRef.current = { lat: at.lat, lng: at.lng, seed: at.lat === seed.lat && at.lng === seed.lng ? seed : null, marker };
     }
-    const qb = city.pois.find((p) => isQuestBoard(p));
-    if (qb && !useGame.getState().questVisited) {
-      arrowRef.current = L.marker([qb.lat, qb.lng], {
-        icon: L.divIcon({ className: "", html: '<div class="quest-arrow" data-testid="quest-arrow">Quest Board<b>▼</b></div>', iconSize: [120, 44], iconAnchor: [60, 112] }),
-        interactive: false,
-        keyboard: false,
-        zIndexOffset: 900,
-      }).addTo(map);
-    }
-    const paint = (on: boolean) => document.querySelectorAll("[data-quest]").forEach((el) => el.classList.toggle("is-alert", on));
-    paint(questAlert(useGame.getState().goals));
-    const unsub = useGame.subscribe((s, p) => {
-      if (s.goals !== p.goals) paint(questAlert(s.goals));
-      if (s.questWalk !== p.questWalk && qb) void setDestination(qb.lat, qb.lng, true);
-      if (s.questVisited && arrowRef.current) {
-        arrowRef.current.remove();
-        arrowRef.current = null;
-      }
-    });
     return () => {
-      unsub();
       cacheRef.current?.marker.remove();
       cacheRef.current = null;
-      arrowRef.current?.remove();
-      arrowRef.current = null;
     };
   }, [streets, cityId]);
 

@@ -31,7 +31,7 @@ function elapsed(p: DailyProgress | null) {
 
 const REWARD_LINE = (Object.entries(DAILY_REWARD) as [Tier, number][]).map(([t, n]) => `${n} ${TIER_LABEL[t].toLowerCase()}`).join(" + ");
 
-/** HUD line under the city plate: the live clock, only while a run is under way (0.1.98: idle/finished moved to the Quest Board). */
+/** HUD line under the city plate: the live clock, only while a run is under way (0.1.98: idle/finished moved to the Journal Goals row). */
 export function DailyHudLine() {
   const cityId = useGame((s) => s.cityId);
   const prog = useDaily((s) => activeProgress(s.runs, cityId));
@@ -53,7 +53,7 @@ export function DailyHudLine() {
   );
 }
 
-/** 0.1.98: Quest Board / Journal Goals row (was the top-right Daily kit button): today's state; opens the run panel. */
+/** 0.1.98: Journal Goals / notice board row (was the top-right Daily kit button): today's state; opens the run panel. */
 export function DailyRunRow() {
   const setPanel = useDaily((s) => s.setPanel);
   const cityId = useGame((s) => s.cityId);
