@@ -60,7 +60,8 @@ export type HouseLot = { city: CityId; name: string; lat: number; lng: number };
 // street names reverse-geocoded from OSM Nominatim. Chicago, Boston and Seattle sit on the
 // nearest normal street to spawn (their north points landed on pedestrian-only ways).
 export const HOUSE_LOTS: Record<CityId, HouseLot> = {
-  austin: { city: "austin", name: "West 3rd Street", lat: 30.2668, lng: -97.7487 },
+  // 0.1.123: Austin's estate-agent lot sat 678 m west of spawn, off a phone's first screen; now ~165 m north like the rest.
+  austin: { city: "austin", name: "East 8th Street", lat: 30.2696, lng: -97.7418 },
   temple: { city: "temple", name: "South 7th Street", lat: 31.0972, lng: -97.3452 },
   nyc: { city: "nyc", name: "West 47th Street", lat: 40.7595, lng: -73.9855 },
   sf: { city: "sf", name: "Gold Street", lat: 37.7967, lng: -122.4028 },

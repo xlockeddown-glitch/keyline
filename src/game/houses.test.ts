@@ -37,3 +37,14 @@ test("houseList: owned houses first with their tier, every other city's lot for 
   assert.ok(two.forSale.some((r) => r.city === "austin"));
   assert.ok(!two.forSale.some((r) => r.city === "detroit"));
 });
+
+test("0.1.123: every city's house lot is within 200 m of where you start, so it's on the first screen", async () => {
+  const { CITIES } = await import("./data.ts");
+  for (const [id, lot] of Object.entries(HOUSE_LOTS)) {
+    const c = CITIES[id as keyof typeof CITIES] as { spawn: { lat: number; lng: number }; start?: { lat: number; lng: number } };
+    const s = c.start ?? c.spawn;
+    const r = Math.PI / 180;
+    const m = Math.hypot((lot.lng - s.lng) * r * Math.cos(s.lat * r), (lot.lat - s.lat) * r) * 6_371_000;
+    assert.ok(m <= 200, `${id}: house lot is ${Math.round(m)} m from the start`);
+  }
+});
