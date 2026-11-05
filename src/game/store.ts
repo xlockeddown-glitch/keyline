@@ -435,7 +435,7 @@ export type GameState = {
   resetCity: () => void;
   clearFireworks: () => void;
   /** 0.1.58: `skip` arrives at once, `loop` plays the tunnel ride. 0.1.95: the timed train is gone. */
-  boardFare: (to: CityId, how?: "skip" | "loop" | "fly") => string | null;
+  boardFare: (to: CityId, how?: "loop" | "fly") => string | null;
   /** 0.1.70: end the flight cutscene: arrive and pin the souvenir. */
   finishFlight: () => void;
   /** 0.1.58: end the Loop cutscene (done or skipped): arrive, file the poster, open any crate. */
@@ -2878,7 +2878,7 @@ export const useGame = create<GameState>((set, get) => ({
     scheduleSave(get);
   },
   clearFireworks: () => set({ fireworks: null }),
-  boardFare: (to, how = "skip") => {
+  boardFare: (to, how = "loop") => {
     if (get().hud.seated) return "Park at the curb. The door is on foot.";
     if (to === get().cityId) return "You're already in this ward.";
     if (!CITIES[to]) return "No ward by that name.";
@@ -2907,7 +2907,7 @@ export const useGame = create<GameState>((set, get) => ({
       });
       scheduleSave(get);
       if (how === "fly") flyNow(set, get);
-      else arriveNow(set, get, how === "loop");
+      else rideLoop(set, get);
     };
     if (walletLive()) {
       if (boarding) return "You're already on a train.";
@@ -3020,20 +3020,15 @@ function flyNow(set: (p: Partial<GameState>) => void, get: () => GameState) {
   scheduleSave(get);
 }
 
-/** 0.1.58: end the open ride now. A Loop ride shows the tunnel first; a skip lands at once. */
-function arriveNow(set: (p: Partial<GameState>) => void, get: () => GameState, ride: boolean) {
+/** 0.1.58: end the open ride with the Loop's tunnel (finishLoop lands). 0.1.124: the instant Arrive is gone. */
+function rideLoop(set: (p: Partial<GameState>) => void, get: () => GameState) {
   const j = get().journey;
   if (!j) return;
   const now = Date.now();
   set({ journey: { ...j, arriveAt: now, fullMs: j.fullMs ?? j.arriveAt - j.departAt } });
-  if (walletLive()) void commitWallet({ kind: "loop", ride });
-  if (ride) {
-    set({ loop: { from: j.from, to: j.to, crate: loopCrate(j.departAt) }, screen: "loop" });
-    scheduleSave(get);
-    return;
-  }
-  get().tickJourney();
-  sfx.cityArrive();
+  if (walletLive()) void commitWallet({ kind: "loop", ride: true });
+  set({ loop: { from: j.from, to: j.to, crate: loopCrate(j.departAt) }, screen: "loop" });
+  scheduleSave(get);
 }
 
 export function cityOf() {

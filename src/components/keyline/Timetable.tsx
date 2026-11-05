@@ -8,7 +8,8 @@ import { unlockCost } from "@/game/cityPass";
 import { LockNote, PassHelpCard, PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 
-export type Ride = "skip" | "loop" | "fly";
+/** 0.1.125: the instant Arrive option is gone (Ryan); travel is the Loop, or Fly on far routes. */
+export type Ride = "loop" | "fly";
 type Props = { onClose: () => void; onPunch: (id: CityId, how: Ride) => void };
 
 export function Timetable({ onClose, onPunch }: Props) {
@@ -35,7 +36,7 @@ export function Timetable({ onClose, onPunch }: Props) {
               {seated
                 ? "Park first. The window doesn’t take a ticket."
                 : fares
-                  ? `${fares} ticket${fares === 1 ? "" : "s"} in the pocket. Arrive now, ride the Loop for a tunnel poster, or fly far trips for a souvenir.`
+                  ? `${fares} ticket${fares === 1 ? "" : "s"} in the pocket. Ride the Loop for a tunnel poster, or fly far trips for a souvenir.`
                   : "Need a train ticket. Open 3 vaults in this city."}
             </p>
           </div>
@@ -83,9 +84,6 @@ export function Timetable({ onClose, onPunch }: Props) {
                     <span className="mt-1 block kicker">{c.region}</span>
                   </span>
                   <span className="flex shrink-0 gap-2">
-                    <button type="button" className="btn btn-quiet px-3 text-xs" disabled={off} data-testid={`skip-${c.id}`} onClick={() => punch(c.id, "skip")}>
-                      Arrive
-                    </button>
                     <button type="button" className="btn btn-primary px-3 text-xs" disabled={off} data-testid={`loop-${c.id}`} onClick={() => punch(c.id, "loop")}>
                       Loop
                     </button>

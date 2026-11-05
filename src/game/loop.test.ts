@@ -35,11 +35,12 @@ test("Loop cutscene runs 6 to 8 s and its whoosh stays a short pack effect", () 
   assert.ok(recipeLength(PACK.loopWhoosh) < 1.2);
 });
 
-test("Travel sheet offers Arrive and Loop, no train (0.1.95); the server closes an early ticket", () => {
+test("Travel sheet offers the Loop, no train (0.1.95) and no Arrive (0.1.125); the server closes an early ticket", () => {
   const sheet = readFileSync(new URL("../components/keyline/Timetable.tsx", import.meta.url), "utf8");
-  for (const how of ["skip", "loop"]) assert.match(sheet, new RegExp(`punch\\(c\\.id, "${how}"\\)`));
+  for (const how of ["loop"]) assert.match(sheet, new RegExp(`punch\\(c\\.id, "${how}"\\)`));
   assert.doesNotMatch(sheet, /"train"|take the train/);
   const server = readFileSync(new URL("./walletApply.ts", import.meta.url), "utf8");
+  assert.match(server, /if \(op\.kind === "loop" && !op\.ride\) return refused\(wallet, "retired"\);/);
   assert.match(server, /if \(op\.kind === "loop"\) return loopArrive\(/);
   assert.match(server, /now < \(\(await hurriedArrive\(sql, id, prev\.at\)\) \?\? prev\.at \+ prev\.ms\)/);
   const cut = readFileSync(new URL("../components/keyline/LoopScreen.tsx", import.meta.url), "utf8");

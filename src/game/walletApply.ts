@@ -1246,7 +1246,7 @@ export type ClientOp =
   | { kind: "own"; poi: string; free?: boolean }
   | { kind: "plant"; city: CityId; lat: number; lng: number; name: number; cats: string[]; v?: 1 | 2 | 3 }
   | { kind: "hurry"; min: number }
-  /** 0.1.58: arrive now (skip the ride); `ride` = took the Loop (crate roll + route poster). */
+  /** 0.1.58: the Loop (crate roll + route poster). 0.1.125: `ride: false` (the instant Arrive) is refused "retired". */
   | { kind: "loop"; ride: boolean }
   /** 0.1.70: arrive by air (far routes only): closes the ticket and files the destination souvenir. */
   | { kind: "fly" }
@@ -1697,7 +1697,9 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   if (op.kind === "board") return boardTicket(sql, sessionUserId, id, wallet, op.from, op.to);
   // 0.1.121: the timed train and its ride games went in 0.1.95; old tabs still send the ride op.
   if (op.kind === "ride") return refused(wallet, "retired");
-  if (op.kind === "loop") return loopArrive(sql, sessionUserId, id, wallet, op.ride);
+  // 0.1.125: the instant Arrive (loop op without the ride) is retired; old tabs still send it. The Loop ride stays.
+  if (op.kind === "loop" && !op.ride) return refused(wallet, "retired");
+  if (op.kind === "loop") return loopArrive(sql, sessionUserId, id, wallet);
   if (op.kind === "fly") return flyArrive(sql, sessionUserId, id, wallet);
   if (op.kind === "hurry") return hurryRide(sql, sessionUserId, id, wallet, op.min);
 
@@ -2014,20 +2016,20 @@ async function hurryRide(sql: Sql, sessionUserId: string, id: string, wallet: Wa
   return { ...applied(r), hurry: r.ok ? { arriveAt: target, cost } : undefined };
 }
 
-/** 0.1.58: arrive now. Closes the open ticket at no charge; a Loop ride also rolls its crate and files the route poster. */
-async function loopArrive(sql: Sql, sessionUserId: string, id: string, wallet: WalletState, ride: boolean): Promise<ClientResult> {
+/** 0.1.58: the Loop ride. Closes the open ticket at no charge, rolls its crate and files the route poster. */
+async function loopArrive(sql: Sql, sessionUserId: string, id: string, wallet: WalletState): Promise<ClientResult> {
   const ticket = await latestTicket(sql, id);
   const now = Date.now();
   if (!ticket) return refused(wallet, "no-ticket");
   const cur = (await hurriedArrive(sql, id, ticket.at)) ?? ticket.at + ticket.ms;
   if (now >= cur) return refused(wallet, "arrived");
-  const crate = ride && loopCrate(ticket.at);
+  const crate = loopCrate(ticket.at);
   const r = await mutateWallet(sql, sessionUserId, `hurry:${ticket.at}:loop`, (w) =>
     crate
       ? { ...applyDelta(w, { keys: loopCrateLoot() }), detail: JSON.stringify({ arrive: now, full: ticket.ms, cost: 0, crate }) }
       : { ok: true, wallet: w, detail: JSON.stringify({ arrive: now, full: ticket.ms, cost: 0 }) },
   );
-  if (r.ok && ride) {
+  if (r.ok) {
     await mutateWallet(sql, sessionUserId, posterKey(ticket.from, ticket.to), (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ at: now }) }));
   }
   return { ...applied(r), loop: r.ok ? { crate } : undefined };

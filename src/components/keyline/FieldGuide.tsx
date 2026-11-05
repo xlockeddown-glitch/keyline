@@ -128,7 +128,7 @@ export function FieldGuide() {
             <Topic id="travel" icon={<span aria-hidden>🚆</span>} title="Travel & fly" sub="Train stops, the Loop, flights" open={topic} set={setTopic} testid="help-trains">
               <li>Tap a train stop on foot to open the station board. In a car, park first.</li>
               <li>Tickets come from opening vaults. Each trip uses one.</li>
-              <li>Arrive is instant; the Loop drops a crate about 1 in {LOOP_CRATE_ONE_IN} rides.</li>
+              <li>Ride the Loop to any open city (Skip lands at once); it drops a crate about 1 in {LOOP_CRATE_ONE_IN} rides.</li>
               <li>Trips over {FLIGHT_MIN_MILES.toLocaleString("en-US")} miles can fly, with a souvenir from the city you land in.</li>
             </Topic>
             <Topic id="pass" icon={<span aria-hidden>🎟️</span>} title="City passes" sub="1 pass unlocks a new city" open={topic} set={setTopic} testid="help-pass">
