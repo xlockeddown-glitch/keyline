@@ -580,42 +580,41 @@ const SEATTLE_NEEDLE: CityPrint = {
   ],
 };
 
-/** 0.1.130: Philadelphia — the Liberty Bell, crack and yoke, on Independence Mall brick. */
+/** 0.1.130: Philadelphia — Liberty Bell (redraw: clear silhouette, plain field, like Seattle/Nashville prints). */
 const PHILLY_BELL: CityPrint = {
   id: "print-philly-bell",
   city: "philly",
   name: "Liberty Bell",
-  blurb: "The cracked State House bell under its yoke, bronze on Old City brick, the crack running clear down the lip.",
+  blurb: "The cracked State House bell under its oak yoke: flared lip, rounded shoulder, the crack climbing from the lip.",
   goal: PRINT_GOAL_FIRST,
   scale: 2,
-  swatch: "#b87333",
+  swatch: "#c48a3a",
   palette: {
-    ".": { L: 38, C: 28, h: 32 }, // Old City brick
-    m: { L: 28, C: 14, h: 30 }, // mortar
-    B: { L: 62, C: 36, h: 72 }, // bell bronze
-    b: { L: 44, C: 28, h: 68 }, // bell shade
-    y: { L: 34, C: 12, h: 55 }, // dark oak yoke
-    Y: { L: 48, C: 18, h: 60 }, // yoke highlight
-    k: { L: 12, C: 4, h: 40 }, // crack
-    s: { L: 78, C: 8, h: 80 }, // highlight on lip
+    ".": { L: 78, C: 8, h: 70 }, // plain cream field (like other city prints' open ground)
+    y: { L: 36, C: 22, h: 55 }, // oak yoke
+    Y: { L: 48, C: 28, h: 60 }, // yoke highlight
+    B: { L: 64, C: 40, h: 72 }, // bell bronze
+    b: { L: 42, C: 30, h: 65 }, // bell shade / lip rim
+    k: { L: 14, C: 4, h: 40 }, // crack
   },
+  // Classic Liberty Bell: wooden yoke, crown, rounded shoulder, flared lip, crack up from lip (left-center).
   tile: [
-    "mmmmmmmmmmmmmmmm",
-    "....m.yyyyyy.m..",
-    "....YYYYYYYYY...",
-    "mmmm.yBBBBBBy.mm",
-    ".....BBBsBBB....",
-    "....BBBBBBBBB...",
-    "mmm.BBBkBBBBB.mm",
-    "....BBBkBBBBb...",
-    "...BBBBkBBBBb...",
-    "mm.BBBBBkBBBb.mm",
+    "................",
+    "....yyyyyyyy....",
+    "...YYYYYYYYYY...",
+    "......BBBB......",
+    ".....BBBBBB.....",
+    "....BBBBBBBB....",
+    "....BBBBkBBB....",
+    "...BBBBBkBBBb...",
+    "...BBBBBkBBBb...",
     "..BBBBBBkBBBb...",
-    "..BBBBBBkBBBb...",
-    "mmBBBBBBkBBBb.mm",
-    "...bbbbbbbbbb...",
-    "........m.......",
-    "mmmmmmmmmmmmmmmm",
+    "..BBBBBBkBBBBb..",
+    ".BBBBBBBkBBBBb..",
+    ".BBBBBBBkBBBBBb.",
+    "bBBBBBBkBBBBBBb.",
+    ".bbbbbbbbbbbbbb.",
+    "................",
   ],
 };
 
