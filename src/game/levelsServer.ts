@@ -220,12 +220,20 @@ export async function sendLevelGift(
     return { ok: true, wallet: { ...w, meta }, detail: JSON.stringify({ to: target, item, tier }) };
   });
   if (!sent.ok) return { ok: false, reason: sent.reason };
+  // The spend key is the nonce alone. A replay must pay the same player the same item; pointing it
+  // at someone else (or swapping match/boost) would mint another reward off the one token.
   if (sent.replay) {
+    let storedTo = "";
+    let storedItem: "match" | "boost" | "" = "";
     try {
-      tier = (JSON.parse(sent.detail ?? "{}") as { tier?: Tier }).tier ?? tier;
+      const d = JSON.parse(sent.detail ?? "{}") as { to?: unknown; item?: unknown; tier?: Tier };
+      if (typeof d.to === "string") storedTo = d.to;
+      if (d.item === "match" || d.item === "boost") storedItem = d.item;
+      if (d.tier) tier = d.tier;
     } catch {
-      /* keep */
+      /* empty binding refuses the replay */
     }
+    if (storedTo !== target || storedItem !== item) return { ok: false, reason: "spent" };
   }
   const nameRow = await sql<{ name: string | null }>`select name from "user" where id = ${from} limit 1`;
   const fromName = standingName(nameRow[0]?.name ?? null);

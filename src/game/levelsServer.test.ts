@@ -106,11 +106,28 @@ test("boost token: 15 minutes, one at a time; gifts move a token to a friend's m
   assert.equal((await sendLevelGift(sql, "a", "b", "match", "nonce0002")).ok, false, "token spent");
   const b = (await canonicalWallet(sql, "b")).wallet;
   assert.equal(b.keys.blue, 1, "level 6 sender gifts a blue");
+  await syncPlayer(sql, "c", snap(), "cphone1");
+  assert.equal((await sendLevelGift(sql, "a", "c", "match", "nonce0001")).ok, false, "same nonce cannot pay a second player");
+  assert.equal((await canonicalWallet(sql, "c")).wallet.keys.blue, 0, "the second player was not minted a match");
+  assert.equal((await canonicalWallet(sql, "b")).wallet.keys.blue, 1, "the first gift stays one match");
   const look = await levelLook(sql, "b", cat);
   assert.equal(look.giftsIn.length, 1);
   assert.equal(look.giftsIn[0]!.item, "match");
   assert.equal((await levelLook(sql, "b", cat)).giftsIn.length, 0, "note shows once");
   assert.ok(rewardFor(4).boost);
+});
+
+test("a gift nonce cannot be replayed as the other item", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "a", snap(), "aphone1");
+  await syncPlayer(sql, "b", snap(), "bphone1");
+  await sql.query(`insert into "user" (id, name) values ('a', 'Alice Smith')`);
+  await sql.query(`update player_wallets set meta = meta || '{"boosts":1,"gifts":0,"lvl":6,"lvlInit":true}'::jsonb where user_id = 'a'`);
+  assert.equal((await sendLevelGift(sql, "a", "b", "boost", "nonce0009")).ok, true);
+  assert.equal((await sendLevelGift(sql, "a", "b", "match", "nonce0009")).ok, false, "same nonce cannot mint a match after a boost");
+  const b = (await canonicalWallet(sql, "b")).wallet;
+  assert.equal(b.meta.boosts, 1);
+  assert.equal(b.keys.blue, 0);
 });
 
 test("level reward matches go through the 0.0.97 pocket rule (full pocket → merge credits)", async () => {

@@ -220,6 +220,9 @@ test("mailer: Resend when key + from are set (key only in the header), dev log o
   assert.equal(mailerFromEnv({ NODE_ENV: "production", RESEND_API_KEY: "k" }), null, "a key without a from address is not enough");
   assert.match(resetPasswordEmail("a@b.co", "<b>", "https://x.example/?a=1&b=2").html, /&lt;b&gt;.*a=1&amp;b=2/s);
   assert.doesNotMatch(resetPasswordEmail("a@b.co", "Ann\r\nBcc: x@evil.example", "https://x.example/r").text, /\r|\nBcc/);
+  const longName = resetPasswordEmail("a@b.co", `  Ann\tBob ${"Z".repeat(200)}`, "https://x.example/r");
+  assert.match(longName.text, /^Hi Ann Bob /);
+  assert.ok(!longName.text.includes("Z".repeat(80)), "display names in mail are collapsed and capped");
   assert.throws(() => resetPasswordEmail("a@b.co\r\nBcc: x@evil.example", "Ann", "https://x.example/r"), /malformed address/);
 });
 
