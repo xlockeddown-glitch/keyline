@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.130";
+export const APP_VERSION = "0.1.131";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1130a";
+export const PUBLISH_STAMP = "k1131a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -230,3 +230,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.128: Philadelphia, the 16th city (slice 1): 32 OSM-checked places (Independence Hall violet; Liberty Bell and City Hall red), 30th Street Station, Old City Outfitter, a car lot and house lot, its own Daily Lantern Run, baked walk/drive streets, freeways and night market streets, 47 sourced Local cards (cities_part_k.ts); placeholder music bed (Broad Street) and first print (Cracked Bell); 15 → 16 city copy.
 // 0.1.129: Philadelphia slice 2 — +130 Local cards (cities_part_l.ts; Pennsylvania Hospital claim corrected; Deshler–Morris Germantown White House kept after Wikipedia check) so Philly's red Local pool clears 30 for Hearth lanterns.
 // 0.1.130: Philadelphia slice 3 — real Liberty Bell city print (replaces the Cracked Bell placeholder), Philly soul music bed (Sound of Philadelphia), house lot kept on North 6th by the start.
+// 0.1.131: weekly trivia 2026-11-06 — evergreen top-up for thin topics + Nov midterms/Swift/Zelda/Booker/Asturias current events (k1131a).
