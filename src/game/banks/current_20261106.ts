@@ -66,7 +66,7 @@ export const CUR_POLITICAL_20261106: TriviaQ[] = [
 	q("As of Nov 2026 reporting, Gina Hinojosa was the first Democrat elected Texas governor since…", ["2002", "2014", "1990", "1982"], "1990", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
 	q("In the Nov 2026 midterms, who won a U.S. Senate seat in Texas?", ["Ted Cruz of note", "Ken Paxton of note", "Beto O'Rourke of note", "James Talarico"], "James Talarico", 1),
-	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
+	// https://www.cbsnews.com/live-updates/midterm-election-results-2026-democrats-house-senate-trump/
 	q("In Nov 2026, James Talarico defeated which Texas attorney general for the U.S. Senate?", ["Greg Abbott", "Dan Patrick", "Ken Paxton", "John Cornyn"], "Ken Paxton", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
 	q("In Nov 2026, Annie Andrews was elected U.S. senator from…", ["North Carolina", "Georgia", "South Carolina", "Virginia"], "South Carolina", 1),
@@ -88,7 +88,7 @@ export const CUR_POLITICAL_20261106: TriviaQ[] = [
 	q("In the Nov 2026 midterms, which party won control of the U.S. House?", ["Republicans", "the Greens", "Independents", "Democrats"], "Democrats", 1),
 	// https://www.cbsnews.com/live-updates/midterm-election-results-2026-democrats-house-senate-trump/
 	q("Besides the House, which other chamber of Congress did Democrats win in the Nov 2026 midterms?", ["the Cabinet", "the Supreme Court", "the Senate", "state legislatures alone"], "the Senate", 1),
-	// https://www.reuters.com/graphics/US-ELECTIONS/GRAPHICS-BLOG/akpelkldzvr/
+	// https://www.cbsnews.com/live-updates/midterm-election-results-2026-democrats-house-senate-trump/
 	q("As of early Nov 2026 reporting, Democrats were projected to hold about how many U.S. Senate seats?", ["48", "51", "54", "60"], "54", 2),
 	// https://www.reuters.com/graphics/US-ELECTIONS/GRAPHICS-BLOG/akpelkldzvr/
 	q("As of early Nov 2026 reporting, Democrats were projected to hold about how many U.S. House seats?", ["218", "230", "250", "280"], "250", 2),

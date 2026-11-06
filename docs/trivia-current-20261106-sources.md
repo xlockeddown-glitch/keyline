@@ -25,7 +25,6 @@ Every card in `src/game/banks/current_20261106.ts`, grouped by source page (open
 - [political] In the Nov 2026 midterms, who was elected Texas governor? → **Gina Hinojosa**
 - [political] In Nov 2026, Gina Hinojosa defeated which three-term Texas governor? → **Greg Abbott**
 - [political] In the Nov 2026 midterms, who won a U.S. Senate seat in Texas? → **James Talarico**
-- [political] In Nov 2026, James Talarico defeated which Texas attorney general for the U.S. Senate? → **Ken Paxton**
 - [political] In Nov 2026, Annie Andrews was elected U.S. senator from… → **South Carolina**
 - [political] In Nov 2026, Annie Andrews defeated which South Carolina Republican for the U.S. Senate? → **Darline Graham**
 - [political] As of Nov 2026 reporting, Annie Andrews was the first Democrat elected to South Carolina's U.S. Senate seat since… → **1998**
@@ -54,7 +53,9 @@ Every card in `src/game/banks/current_20261106.ts`, grouped by source page (open
 
 ## https://www.cbsnews.com/live-updates/midterm-election-results-2026-democrats-house-senate-trump/
 - [political] In the Nov 2026 midterms, which party won control of the U.S. House? → **Democrats**
+- [political] As of early Nov 2026 reporting, Democrats were projected to hold about how many U.S. Senate seats? → **54**
 - [political] Besides the House, which other chamber of Congress did Democrats win in the Nov 2026 midterms? → **the Senate**
+- [political] In Nov 2026, James Talarico defeated which Texas attorney general for the U.S. Senate? → **Ken Paxton**
 - [political] In Nov 2026 midterm coverage, Democrats were reported to have flipped more than how many House seats? → **40**
 - [political] In Nov 2026, Nithya Raman was elected mayor of… → **Los Angeles**
 - [political] In Nov 2026, Nithya Raman defeated which incumbent Los Angeles mayor? → **Karen Bass**
@@ -106,7 +107,6 @@ Every card in `src/game/banks/current_20261106.ts`, grouped by source page (open
 - [political] Deb Haaland, elected New Mexico governor in Nov 2026, previously served as U.S. secretary of the… → **Interior**
 
 ## https://www.reuters.com/graphics/US-ELECTIONS/GRAPHICS-BLOG/akpelkldzvr/
-- [political] As of early Nov 2026 reporting, Democrats were projected to hold about how many U.S. Senate seats? → **54**
 - [political] As of early Nov 2026 reporting, Democrats were projected to hold about how many U.S. House seats? → **250**
 
 ## https://www.usatoday.com/story/news/politics/elections/2026/11/03/keisha-lance-bottoms-byron-donalds-historic-election-day/92599430007/
