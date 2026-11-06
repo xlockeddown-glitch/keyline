@@ -1636,14 +1636,16 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "legacy") {
+    // 0.1.132: the op stays ok so an old tab finishes its one-time move and stops retrying.
+    // Unverified coin, charm refunds, and Lucky are not granted; proven milestones still are.
     const meters = Math.max(wallet.meta.walkM, await walkedMeters(sql, id));
     const visited = await visitedPlaces(sql, id);
     for (const poi of wallet.meta.visits) if (isPlace(poi)) visited.add(poi);
     const input: LegacyIn = {
       claimed: op.claimed.filter((x): x is LongId => (LONG_IDS as string[]).includes(x)),
       circuits: op.circuits.filter((c): c is CityId => c in CITIES),
-      unfinished: op.unfinished === true,
-      charms: op.charms.slice(0, 8),
+      unfinished: false,
+      charms: [],
     };
     const r = await applyLegacy(sql, sessionUserId, input, { meters, visited });
     return { ...applied({ ok: true, replay: false, wallet: r.wallet }), authoritative: true, legacy: r.grants };

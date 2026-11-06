@@ -272,9 +272,13 @@ function addCloth(w: WalletState, cloth: string): OpResult {
 
 /**
  * The move off milestones and charms, once per account (each part has its own legacy:* op key).
- * Earned rewards stay; a milestone the device had not claimed pays here only if the server can prove it;
- * unfinished progress gets 1,000 coin once; retired charms refund their print cost in coin, at most 3 per account;
- * a device's Lucky bit stays Lucky for good.
+ * A milestone the device had not claimed pays here only when the server can already prove it.
+ *
+ * 0.1.132: the device-trusted part of this move is closed. `unfinished` (1,000 coin), a retired-charm
+ * refund, and `charms` containing "lucky" used to pay with no server proof. They are ignored. The call
+ * still returns the wallet so an old client can drop its local note; a retry does not error, does not
+ * write a new `legacy:thanks` / `legacy:lucky` / `legacy:charm:*` row, and does not reverse one that
+ * is already there. Coin, Lucky, and cloths already on the account stay.
  */
 export async function applyLegacy(sql: Sql, userId: string, input: LegacyIn, proof: LegacyProof): Promise<{ grants: LegacyGrant[]; wallet: WalletState }> {
   const { id } = await canonicalWallet(sql, userId);
@@ -304,18 +308,6 @@ export async function applyLegacy(sql: Sql, userId: string, input: LegacyIn, pro
     const cloth = `scarf-${city}` as const;
     await run(cloth, (w) => (w.cities.unlocked.includes(city) ? addCloth(w, cloth) : { ok: false, reason: "locked" }), { kind: "cloth", id: cloth, cloth });
   }
-  if (input.unfinished) {
-    await run("thanks", (w) => applyDelta(w, { coins: LEGACY_THANKS_COIN }), { kind: "thanks", coins: LEGACY_THANKS_COIN });
-  }
-  const charms = [...new Set(input.charms)];
-  if (charms.includes("lucky")) await run("lucky", (w) => applyDelta(w, { meta: { lucky: true } }), { kind: "lucky" });
-  for (const c of charms) {
-    if (!(c in LEGACY_CHARM_COST)) continue;
-    const charm = c as LegacyCharm;
-    const done = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"legacy:charm:%"}`;
-    if ((Number(done[0]?.n) || 0) >= LEGACY_CHARM_CAP) break;
-    const coins = legacyRefundCoin(charm);
-    await run(`charm:${charm}`, (w) => applyDelta(w, { coins }), { kind: "refund", charm, coins });
-  }
+  // Closed window: `input.unfinished` and `input.charms` are not granted. No new ledger row.
   return { grants, wallet: last ?? (await canonicalWallet(sql, userId)).wallet };
 }

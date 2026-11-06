@@ -221,21 +221,23 @@ test("all four monthly quests turn Lucky on for next month, or pay 25,000 coin t
   assert.equal(Object.values(live.award?.keys ?? {}).reduce((a, b) => a + (b ?? 0), 0), Object.values(plain.award?.keys ?? {}).reduce((a, b) => a + (b ?? 0), 0));
 });
 
-test("legacy: verified done-but-unclaimed milestones pay once, unfinished progress pays 1,000 once", async () => {
+test("legacy: verified done-but-unclaimed milestones pay once; unfinished progress pays nothing", async () => {
   const sql = await db();
   await syncPlayer(sql, "gi", snap(), "giphone01");
-  const { id } = await canonicalWallet(sql, "gi");
+  const { id, wallet: start } = await canonicalWallet(sql, "gi");
   const t0 = Date.now() - 86_400_000;
   // 100 perfect answers in a row, one of them on a violet lamp (tx-capitol), one on a red (ut-tower).
   for (let i = 0; i < 100; i++) await gradeAt(sql, id, `p${i}`, t0 + i, { g: "perfect", pi: i === 0 ? "tx-capitol" : i === 1 ? "ut-tower" : "zilker" });
-  const input = { claimed: ["walk" as const], circuits: ["austin" as const, "nyc" as const], unfinished: true, charms: [] };
+  const input = { claimed: ["walk" as const], circuits: ["austin" as const, "nyc" as const], unfinished: true, charms: ["lucky"] };
   const first = await applyLegacy(sql, "gi", input, { meters: 20_000, visited: new Set() });
   const kinds = first.grants.map((g) => g.kind + ("id" in g ? `:${g.id}` : "")).sort();
   // walk was already claimed on the device: no second Road dust; the red book isn't proven; nyc has no red.
-  assert.deepEqual(kinds, ["cloth:scarf-austin", "coin:unbroken", "pattern:violet", "thanks", "title:hundred"]);
+  // 0.1.132: unfinished no longer pays 1,000, and a Lucky bit in the same call does not stick.
+  assert.deepEqual(kinds, ["cloth:scarf-austin", "coin:unbroken", "pattern:violet", "title:hundred"]);
   assert.equal(first.wallet.meta.title, "Clean hundred");
+  assert.equal(first.wallet.meta.lucky, false);
   assert.equal(first.wallet.meta.schematic, 0);
-  assert.equal(first.wallet.coins >= LEGACY_THANKS_COIN + LEGACY_UNBROKEN_COIN, true);
+  assert.equal(first.wallet.coins - start.coins, LEGACY_UNBROKEN_COIN);
   assert.equal(first.wallet.meta.patterns, 1);
   assert.ok(first.wallet.meta.cloths.includes("scarf-austin"));
   const coins = first.wallet.coins;
@@ -243,36 +245,62 @@ test("legacy: verified done-but-unclaimed milestones pay once, unfinished progre
   // Only the walk (now unclaimed in this call, proven by 20 km) is new; nothing pays twice.
   assert.deepEqual(second.grants.map((g) => g.kind), ["cloth"]);
   assert.equal(second.wallet.coins, coins);
-  assert.equal(first.wallet.coins >= LEGACY_THANKS_COIN, true);
+  assert.equal(second.wallet.meta.lucky, false);
+  const closed = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key in (${"legacy:thanks"}, ${"legacy:lucky"})`;
+  assert.deepEqual(closed, []);
   // Unproven milestones pay nothing.
   await syncPlayer(sql, "ha", snap(), "haphone01");
   const none = await applyLegacy(sql, "ha", { claimed: [], circuits: ["austin"], unfinished: false, charms: [] }, { meters: 500, visited: new Set() });
   assert.deepEqual(none.grants, []);
 });
 
-test("legacy: retired charms refund their print cost in coin, at most 3 per account; a Lucky bit stays Lucky", async () => {
+test("legacy: a forged charm list, Lucky bit, or unfinished flag pays nothing; grants already on the account stay", async () => {
   const sql = await db();
   await syncPlayer(sql, "jo", snap(), "jophone01");
   const before = (await canonicalWallet(sql, "jo")).wallet.coins;
-  const r = await applyLegacy(sql, "jo", { claimed: [], circuits: [], unfinished: false, charms: ["scholar", "sprinter", "lantern", "lucky", "bogus"] }, { meters: 0, visited: new Set() });
-  assert.deepEqual(r.grants.map((g) => (g.kind === "refund" ? g.charm : g.kind)).sort(), ["lantern", "lucky", "scholar", "sprinter"]);
-  assert.equal(r.wallet.meta.lucky, true);
-  // 0.1.86: coin at the trade-in rates (200 per brass/ink/vellum, 500 per schematic, 100 for the press stock); no stock.
-  assert.deepEqual([legacyRefundCoin("scholar"), legacyRefundCoin("sprinter"), legacyRefundCoin("lantern")], [3_000, 3_400, 3_800]);
-  assert.equal(r.wallet.coins - before, 3_000 + 3_400 + 3_800);
+  const forged = { claimed: [] as [], circuits: [] as [], unfinished: true, charms: ["scholar", "sprinter", "lantern", "lucky", "bogus"] };
+  const r = await applyLegacy(sql, "jo", forged, { meters: 0, visited: new Set() });
+  assert.deepEqual(r.grants, []);
+  assert.equal(r.wallet.meta.lucky, false);
+  // The old trade-in rates are still the amounts that must not move.
+  assert.deepEqual([legacyRefundCoin("scholar"), legacyRefundCoin("sprinter"), legacyRefundCoin("lantern"), LEGACY_THANKS_COIN], [3_000, 3_400, 3_800, 1_000]);
+  assert.equal(r.wallet.coins - before, 0);
   assert.equal(r.wallet.meta.brass, 0);
   assert.equal(r.wallet.meta.schematic, 0);
-  const again = await applyLegacy(sql, "jo", { claimed: [], circuits: [], unfinished: false, charms: ["scholar", "lantern"] }, { meters: 0, visited: new Set() });
+  const jo = (await canonicalWallet(sql, "jo")).id;
+  const freshRows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${jo} and op_key like ${"legacy:%"}`;
+  assert.deepEqual(freshRows, []);
+  // A retry, including through the signed-in op, still pays nothing and still succeeds.
+  const again = await applyLegacy(sql, "jo", { claimed: [], circuits: [], unfinished: true, charms: ["scholar", "lantern"] }, { meters: 0, visited: new Set() });
   assert.deepEqual(again.grants, []);
-  // The cap counts every refund row on the account, so a second device can't stack more.
+  assert.equal(again.wallet.coins, before);
+  const op = await applyClientOp(sql, "jo", { kind: "legacy", claimed: [], circuits: [], unfinished: true, charms: ["scholar", "sprinter", "lantern", "lucky"] });
+  assert.equal(op.ok, true);
+  assert.deepEqual(op.legacy, []);
+  assert.equal(op.wallet.coins, before);
+  assert.equal(op.wallet.meta.lucky, false);
+  // A later sync is the normal revise: it does not mint the closed grants either.
+  const synced = await syncPlayer(sql, "jo", snap(), "jophone01");
+  assert.equal(synced.wallet.migrated, true);
+  assert.equal(synced.wallet.coins, before);
+  assert.equal(synced.wallet.meta.lucky, false);
+
+  // Coin, Lucky, and a charm refund already written stay. The closed window does not add the other two refunds.
   await syncPlayer(sql, "ki", snap(), "kiphone01");
-  const ki = (await canonicalWallet(sql, "ki")).id;
-  await sql`insert into wallet_ledger (user_id, op_key) values (${ki}, ${"legacy:charm:x1"}), (${ki}, ${"legacy:charm:x2"})`;
-  const capped = await applyLegacy(sql, "ki", { claimed: [], circuits: [], unfinished: false, charms: ["scholar", "sprinter", "lantern"] }, { meters: 0, visited: new Set() });
-  assert.equal(capped.grants.length, LEGACY_CHARM_CAP - 2);
-  // Through the client op (signed in): the same one-time grants, nothing new.
-  const op = await applyClientOp(sql, "jo", { kind: "legacy", claimed: [], circuits: [], unfinished: true, charms: ["scholar"] });
-  assert.deepEqual(op.legacy?.map((g) => g.kind), ["thanks"]);
+  const held = await canonicalWallet(sql, "ki");
+  const kept = held.wallet.coins + LEGACY_THANKS_COIN + legacyRefundCoin("scholar");
+  await sql.query(`update player_wallets set coins = $2, meta = meta || '{"lucky":true}'::jsonb where user_id = $1`, [held.id, kept]);
+  await sql`insert into wallet_ledger (user_id, op_key) values (${held.id}, ${"legacy:thanks"}), (${held.id}, ${"legacy:lucky"}), (${held.id}, ${"legacy:charm:scholar"})`;
+  const capped = await applyClientOp(sql, "ki", { kind: "legacy", claimed: [], circuits: [], unfinished: true, charms: ["scholar", "sprinter", "lantern", "lucky"] });
+  assert.equal(capped.ok, true);
+  assert.deepEqual(capped.legacy, []);
+  assert.equal(capped.wallet.coins, kept);
+  assert.equal(capped.wallet.meta.lucky, true);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${held.id} and op_key like ${"legacy:%"} order by op_key`;
+  assert.deepEqual(rows.map((row) => row.op_key), ["legacy:charm:scholar", "legacy:lucky", "legacy:thanks"]);
+  const charmRows = rows.filter((row) => row.op_key.startsWith("legacy:charm:"));
+  assert.equal(charmRows.length, 1);
+  assert.ok(charmRows.length <= LEGACY_CHARM_CAP);
 });
 
 test("claims are limited to the player's own set for the period", async () => {
