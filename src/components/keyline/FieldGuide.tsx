@@ -107,6 +107,7 @@ export function FieldGuide() {
               <li>Carry 30 keys of each color; past 30, every 3 more make 1 of the next color.</li>
               <li>A perfect score gives your key back.</li>
               <li>5 right in a row pays a white key, 10 a blue.</li>
+              <li>A longer answer streak, counted on the server, keeps car perks while it holds: turbo at 20, a blue trail at 30, one night-market light rung at 40, pixel speed at 50, triple vault coin at 75, one violet key at 100, and the Streak Lord title at 250. The title stays after a miss. Sign in — this device cannot grant them.</li>
               <More>
                 <li className="badge-help-row"><span className="emb-badge is-market">🏮 ×2</span><span>Night market: everything on its street pays ×N.</span></li>
                 <li className="badge-help-row"><span className="emb-badge is-streak">🔥 5</span><span>Answer streak: right answers in a row.</span></li>

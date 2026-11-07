@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as StreakShotRouteImport } from './routes/streak-shot'
 import { Route as TTokenRouteImport } from './routes/t/$token'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -30,6 +31,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StreakShotRoute = StreakShotRouteImport.update({
+  id: '/streak-shot',
+  path: '/streak-shot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/streak-shot': typeof StreakShotRoute
   '/t/$token': typeof TTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/streak-shot': typeof StreakShotRoute
   '/t/$token': typeof TTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -60,19 +68,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/streak-shot': typeof StreakShotRoute
   '/t/$token': typeof TTokenRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/reset-password' | '/t/$token' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/reset-password'
+    | '/streak-shot'
+    | '/t/$token'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/reset-password' | '/t/$token' | '/api/auth/$'
+  to:
+    | '/'
+    | '/login'
+    | '/reset-password'
+    | '/streak-shot'
+    | '/t/$token'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/reset-password'
+    | '/streak-shot'
     | '/t/$token'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
@@ -81,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  StreakShotRoute: typeof StreakShotRoute
   TTokenRoute: typeof TTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -108,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/streak-shot': {
+      id: '/streak-shot'
+      path: '/streak-shot'
+      fullPath: '/streak-shot'
+      preLoaderRoute: typeof StreakShotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/t/$token': {
       id: '/t/$token'
       path: '/t/$token'
@@ -129,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  StreakShotRoute: StreakShotRoute,
   TTokenRoute: TTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

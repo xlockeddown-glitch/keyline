@@ -22,6 +22,7 @@ import { AudioDock } from "./AudioDock";
 import { DailyHudLine } from "./DailyRun";
 import { MarketHudLine, useMarket } from "./NightMarket";
 import { MARKET_TAG, onMarket } from "@/game/nightMarket";
+import { StreakPlate } from "./StreakPlate";
 
 type Props = {
   onVector: (x: number, y: number) => void;
@@ -63,6 +64,8 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const toggleInv = useGame((s) => s.toggleInv);
   const toggleGuide = useGame((s) => s.toggleGuide);
   const streak = useGame((s) => s.streak);
+  const serverStreak = useGame((s) => s.serverStreak);
+  const streakLord = useGame((s) => s.streakLord);
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
   const city = CITIES[cityId];
@@ -159,10 +162,11 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           <p className="font-display flex items-center gap-2 text-3xl leading-none tabular-nums">
             <ItemIcon item="coin" size={28} />
             {points.toLocaleString()}
-            {streak > 1 ? (
-              <span className="align-middle text-sm font-sans text-fg-muted">×{streak}</span>
+            {(serverStreak != null ? serverStreak : streak) > 1 ? (
+              <span className="align-middle text-sm font-sans text-fg-muted">×{serverStreak != null ? serverStreak : streak}</span>
             ) : null}
           </p>
+          <StreakPlate run={serverStreak != null ? serverStreak : streak} auth={serverStreak != null} lord={streakLord} />
             </div>
           </div>
           <DoubleNote />

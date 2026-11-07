@@ -71,8 +71,20 @@ export async function levelStats(sql: Sql, id: string, catOf?: (plateId: string)
       perfects: Number(l?.perfects) || 0,
       violet: correctByTier.violet ?? 0,
       cityCorrect,
+      streakLord: await streakLordOf(sql, id),
     },
   };
+}
+
+async function streakLordOf(sql: Sql, id: string): Promise<boolean> {
+  const rows = await sql<{ meta: unknown }>`select meta from player_wallets where user_id = ${id} limit 1`;
+  const raw = rows[0]?.meta;
+  try {
+    const m = (typeof raw === "string" ? JSON.parse(raw) : raw) as { streakLord?: unknown } | null;
+    return m?.streakLord === true;
+  } catch {
+    return false;
+  }
 }
 
 export type GiftIn = { from: string; item: "match" | "boost"; tier?: Tier; at: number };

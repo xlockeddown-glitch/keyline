@@ -172,6 +172,9 @@ export type WalletWire = {
 export type SyncWire = {
   /** 0.1.44: a new player's double-coin hour ends here (ms); absent when none. */
   doubleUntil?: number;
+  /** 0.1.133: answer streak the server counted, and whether Streak Lord is unlocked. */
+  streakRun?: number;
+  streakLord?: boolean;
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
@@ -205,6 +208,8 @@ export const syncWallet = createServerFn({ method: "POST" })
       ...(r.giftNotes?.length ? { giftNotes: r.giftNotes } : {}),
       ...(r.owned ? { owned: r.owned } : {}),
       ...(r.doubleUntil ? { doubleUntil: r.doubleUntil } : {}),
+      streakRun: r.view.streakRun ?? r.streakRun ?? 0,
+      streakLord: r.view.streakLord === true || r.streakLord === true,
     };
   });
 
