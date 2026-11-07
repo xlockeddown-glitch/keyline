@@ -10,6 +10,7 @@ import { MARKET_MULT, marketAt, marketMult, marketPay } from "./nightMarket.ts";
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { BAMBOO_TAG, owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
 import { lightOf, type LightId } from "./marketLights.ts";
+import { TRIPLE_AT, MARKET_AT, streakMarketCoin } from "./streakMile.ts";
 import { FRESH_DISTRICT_TAG, freshDistrictCoin } from "./district.ts";
 import { cleanCredit, payMatch, payMatchesOf } from "./goals.ts";
 import type { ScoutId } from "./types";
@@ -130,6 +131,17 @@ export type WalletMeta = {
   boostUntil: number;
   /** Server time of the newest friend gift already shown. */
   giftSeen: number;
+  /**
+   * 0.1.133: the server's current answer-streak run (same walk as the 5/10 key).
+   * Stamped on each grade. A reload reads it; the client cannot set it.
+   */
+  streakRun: number;
+  /** Oldest grade key of that run, or "" when the run is 0. */
+  streakAnchor: string;
+  /** Shield used when the run was last stamped (Tabby). Sync recounts with the worn coat when it has one. */
+  streakShield: boolean;
+  /** Permanent Streak Lord unlock. Stays set after the run breaks. */
+  streakLord: boolean;
 };
 
 export type WalletState = {
@@ -219,6 +231,10 @@ const emptyMeta = (): WalletMeta => ({
   gifts: 0,
   boostUntil: 0,
   giftSeen: 0,
+  streakRun: 0,
+  streakAnchor: "",
+  streakShield: false,
+  streakLord: false,
 });
 
 export function emptyWallet(): WalletState {
@@ -298,6 +314,10 @@ export function cleanMeta(raw: unknown): WalletMeta {
     gifts: num(m.gifts, 99),
     boostUntil: num(m.boostUntil, Number.MAX_SAFE_INTEGER),
     giftSeen: num(m.giftSeen, Number.MAX_SAFE_INTEGER),
+    streakRun: num(m.streakRun, 10_000),
+    streakAnchor: typeof m.streakAnchor === "string" ? m.streakAnchor.slice(0, 200) : "",
+    streakShield: m.streakShield === true,
+    streakLord: m.streakLord === true,
   };
 }
 
@@ -352,7 +372,14 @@ export function clampWallet(w: Omit<WalletState, "meta"> & { meta: unknown }): W
 }
 
 export function viewOf(w: WalletState) {
-  return { coins: w.coins, keys: { ...w.keys }, cities: w.cities, credit: { ...w.meta.credit } };
+  return {
+    coins: w.coins,
+    keys: { ...w.keys },
+    cities: w.cities,
+    credit: { ...w.meta.credit },
+    streakRun: w.meta.streakRun,
+    streakLord: w.meta.streakLord,
+  };
 }
 
 /**
@@ -646,8 +673,13 @@ export type GradePay = {
   poiId: string;
   lat: number;
   lng: number;
-  /** Streak before this answer. */
+  /** Streak before this answer. The +40% lamp bonus still reads this. Milestone perks do not. */
   streak: number;
+  /**
+   * 0.1.133: answer-streak length after this grade, counted by the server from its own grade rows.
+   * awardGrade sets it. A client-supplied value is ignored there. Absent means no streak perk.
+   */
+  serverRun?: number;
   loot: number;
   lucky: boolean;
   cloth: ClothId | null;
@@ -751,13 +783,21 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
       loot: p.loot,
     }) * cat.x * hearthX,
   );
+  // 0.1.133: triple the vault-answer coin only. Cloth tips, perfect-key overflow, district, bamboo,
+  // rummage, sparks and the market's match count are left on the old formula.
+  const triple = (p.serverRun ?? 0) >= TRIPLE_AT ? 3 : 1;
   const tip = clothCoin(p.cloth, p.city, p.poiTier);
   const baseKeys: Partial<Record<Tier, number>> = {};
   if (p.lucky && p.luckyHit) baseKeys[p.poiTier] = 1;
   if (gradeLetter(p.elapsedMs) === "perfect" && p.perfectBlue) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
   const lampMult = marketMult(p.city, p.dealtAt, spot);
-  const pay = marketPay(lampCoin, baseKeys, lampMult);
+  const pay = marketPay(lampCoin * triple, baseKeys, lampMult);
   pay.coin += owlExtraCoin(p.scout ?? null, lampMult, lampCoin, lightOf(p.light));
+  const marketBump =
+    (p.serverRun ?? 0) >= MARKET_AT && lampMult > 1
+      ? streakMarketCoin(lampCoin, lightOf(p.light).mult, p.scout ? SCOUTS[p.scout].perk.market : undefined)
+      : 0;
+  pay.coin += marketBump;
   const lit = lampLit(w.cities, p.poiTier);
   // 0.0.90: a single-question lamp answered right is a perfect lamp: match back, same tier (not violet).
   // 0.1.117: in a Double/Triple Hearth only the last question's right answer pays the tier key (the prize).
@@ -783,7 +823,9 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const catTagged = catLabels.length && p.correct ? { ...boost, labels: [...boost.labels, ...catLabels] } : boost;
   const freshTagged = fresh ? { ...catTagged, labels: [...catTagged.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : catTagged;
   const tagged = bamboo ? { ...freshTagged, labels: [...freshTagged.labels, `${BAMBOO_TAG} +${bamboo}`] } : freshTagged;
-  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo, lKeys, tagged, lit.u);
+  const tripled = triple === 3 ? { ...tagged, labels: [...tagged.labels, "Streak ×3 vault coin"] } : tagged;
+  const bumped = marketBump ? { ...tripled, labels: [...tripled.labels, `Night market streak +${marketBump}`] } : tripled;
+  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo, lKeys, bumped, lit.u);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */

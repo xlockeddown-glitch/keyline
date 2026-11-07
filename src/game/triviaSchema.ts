@@ -65,7 +65,15 @@ export type GradeInput = z.infer<typeof GradeIn>;
 /** What the browser gets for a dealt card — the prompt and shuffled choices, never the answer. */
 export type PublicCard = { id: string; q: string; choices: string[]; diff: TriviaDiff; rarity: Tier; /** 0.0.96 Fox: a wrong option the server crossed out. */ struck?: string };
 /** Signed-in wallet after a migrated deal spend or grade. Absent for guests and before the first sync. */
-export type ServerWallet = { coins: number; keys: Record<Tier, number>; cities: CityUnlocks };
+export type ServerWallet = {
+  coins: number;
+  keys: Record<Tier, number>;
+  cities: CityUnlocks;
+  credit?: Partial<Record<Tier, number>>;
+  /** 0.1.133: server answer streak after this sync or grade. Absent on older replies. */
+  streakRun?: number;
+  streakLord?: boolean;
+};
 export type ServerAward = { coins: number; keys: Partial<Record<Tier, number>>; boosts: string[] };
 export type DealResult =
   | { ok: true; token: string; card: PublicCard; windowMs: number; wallet?: ServerWallet }

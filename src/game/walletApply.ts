@@ -2,7 +2,8 @@ import { isSkinId, skinOf, skinOwned } from "./skins.ts";
 import { SHOP_PRICE, shopAnchor, shopOutput, type ShopState } from "./shop.ts";
 import { loopCrate, loopCrateLoot, posterKey } from "./loop.ts";
 import { canFly, souvenirKey } from "./flight.ts";
-import { hasShield, streakRun } from "./scoutPerks.ts";
+import { hasShield, scoutOf } from "./scoutPerks.ts";
+import { LORD_AT, STREAK_LOOKBACK, VIOLET_AT, crossed, mileCrossLabels, streakWalk } from "./streakMile.ts";
 import { marketMult } from "./nightMarket.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
@@ -73,7 +74,15 @@ import { standingName } from "./standingName.ts";
 import { LOVE_COIN, LOVE_EMAIL, LOVE_X_ID, LOVE_X_NAME, LOVE_GIFT_KEY, LOVE_NOTE, DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
 
 /** What the browser is allowed to see. */
-export type WalletView = { coins: number; keys: Record<Tier, number>; cities: WalletState["cities"]; credit?: Partial<Record<Tier, number>> };
+export type WalletView = {
+  coins: number;
+  keys: Record<Tier, number>;
+  cities: WalletState["cities"];
+  credit?: Partial<Record<Tier, number>>;
+  /** 0.1.133: server answer-streak run and the permanent title flag. Never taken from the device. */
+  streakRun?: number;
+  streakLord?: boolean;
+};
 
 export type Applied = MutateResult & { view: WalletView; authoritative: boolean };
 
@@ -85,7 +94,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -625,8 +634,46 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const pt = await paintOf(sql, userId);
   const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId) };
   const until = await doubleUntil(sql, userId);
-  const out = { ...done, owned, ...(until ? { doubleUntil: until } : {}) };
+  const streak = await rememberStreak(sql, userId);
+  const fresh = (await canonicalWallet(sql, userId)).wallet;
+  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord };
   return giftNotes.length ? { ...out, giftNotes } : out;
+}
+
+/**
+ * Recount the answer streak from grade rows and store it on the wallet. Does not mint keys or coin.
+ * The worn coat (worn_scouts) decides the Tabby shield when that row exists; otherwise the last grade's shield is kept.
+ */
+export async function rememberStreak(sql: Sql, userId: string): Promise<{ run: number; anchor: string; lord: boolean }> {
+  const { id, wallet } = await canonicalWallet(sql, userId);
+  let shield = wallet.meta.streakShield;
+  for (const uid of [userId, id]) {
+    try {
+      const rows = await sql.query<{ scout?: string }>(`select scout from worn_scouts where user_id = $1 limit 1`, [uid]);
+      if (rows[0]?.scout) {
+        shield = hasShield(scoutOf(rows[0].scout));
+        break;
+      }
+    } catch {
+      break;
+    }
+  }
+  const recent = await sql<{ op_key: string; detail: string; created_at: unknown }>`
+    select op_key, detail, created_at from wallet_ledger
+    where user_id = ${id} and op_key like ${"grade:%"}
+    order by created_at desc limit ${STREAK_LOOKBACK}
+  `;
+  const walked = streakWalk(
+    recent.map((row) => ({ miss: String(row.detail).includes('"g":"miss"'), day: chicagoDay(row.created_at), key: row.op_key })),
+    shield,
+  );
+  if (wallet.meta.streakRun !== walked.run || wallet.meta.streakAnchor !== walked.anchor || wallet.meta.streakShield !== shield) {
+    await sql.query(`update player_wallets set meta = meta || $2::jsonb where user_id = $1`, [
+      id,
+      JSON.stringify({ streakRun: walked.run, streakAnchor: walked.anchor, streakShield: shield }),
+    ]);
+  }
+  return { run: walked.run, anchor: walked.anchor, lord: wallet.meta.streakLord };
 }
 
 function startOfLocal(local: LocalSnap): CityId | null {
@@ -670,6 +717,16 @@ async function syncCore(sql: Sql, userId: string, local: LocalSnap, deviceId: st
  * Grade award. Before the first sync the ledger remembers the token but the coins stay
  * in the local save (the sync maxes them in). After that, the balance moves here.
  */
+function mergeAward(base: AwardView | undefined, extra: AwardView | undefined): AwardView | undefined {
+  if (!extra || (!extra.coins && !Object.keys(extra.keys).length && !extra.boosts.length)) return base;
+  if (!base) return extra;
+  const keys = { ...base.keys };
+  for (const [t, n] of Object.entries(extra.keys) as [Tier, number][]) if (n) keys[t] = (keys[t] ?? 0) + n;
+  const boosts = [...base.boosts];
+  for (const b of extra.boosts) if (b && !boosts.includes(b)) boosts.push(b);
+  return { coins: base.coins + extra.coins, keys, boosts };
+}
+
 function chicagoDay(at: unknown): string {
   const d = at instanceof Date ? at : new Date(String(at));
   if (Number.isNaN(d.getTime())) return "";
@@ -719,18 +776,20 @@ export async function awardGrade(
   };
   // 0.0.93: answer streak from the server's own grade rows (newest first): right answers since the last miss.
   // 0.0.96 Tabby (Nine lives): the first miss of each day (Chicago) does not break the run.
+  // 0.1.133: the same walk, long enough for the 250 title. Milestones read `after`, never the client's streak.
   const shield = hasShield(full.scout ?? null);
-  const recent = full.correct
-    ? await sql<{ detail: string; created_at: unknown }>`
-        select detail, created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
-        order by created_at desc limit ${shield ? 40 : 9}
-      `
-    : [];
-  const run = streakRun(
-    recent.map((row) => ({ miss: String(row.detail).includes('"g":"miss"'), day: chicagoDay(row.created_at) })),
-    shield,
-  );
-  const streakTier = full.correct ? streakPrize(run + 1) : null;
+  const recent = await sql<{ op_key: string; detail: string; created_at: unknown }>`
+    select op_key, detail, created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
+    order by created_at desc limit ${STREAK_LOOKBACK}
+  `;
+  const history = recent.map((row) => ({ miss: String(row.detail).includes('"g":"miss"'), day: chicagoDay(row.created_at), key: row.op_key }));
+  const before = streakWalk(history, shield).run;
+  const nowRow = { miss: !full.correct, day: chicagoDay(new Date()), key: `grade:${nonce}` };
+  const afterWalk = streakWalk([nowRow, ...history], shield);
+  const after = afterWalk.run;
+  const anchor = after > 0 ? afterWalk.anchor : "";
+  full.serverRun = after;
+  const streakTier = full.correct ? streakPrize(after) : null;
   // 0.1.14: new-district bonus on a lamp: has this 800 m square been lit today here?
   const district = full.correct && full.clearTier ? districtOf(full.city, full.lat, full.lng) : "";
   if (district) full.freshDistrict = isFreshDistrict(district, await districtsToday(sql, id, full.city));
@@ -805,22 +864,47 @@ export async function awardGrade(
     });
   // 0.1.42: did this write burn a match on a miss (an owned lamp's owner is paid for those)?
   let matchLost = false;
+  const mileNotes = mileCrossLabels(before, after);
+  const withMile = (res: OpResult & { detail?: string }): OpResult & { detail?: string } => {
+    if (!res.ok) return res;
+    const award = res.award ?? { coins: 0, keys: {}, boosts: [] };
+    const boosts = [...award.boosts];
+    for (const b of mileNotes) if (!boosts.includes(b)) boosts.push(b);
+    let detail = res.detail;
+    if (detail && mileNotes.length) {
+      try {
+        const o = JSON.parse(detail) as { boosts?: string[] };
+        const b = Array.isArray(o.boosts) ? [...o.boosts] : [];
+        for (const n of mileNotes) if (!b.includes(n)) b.push(n);
+        o.boosts = b;
+        detail = JSON.stringify(o);
+      } catch {
+        /* a non-JSON note keeps its text; the live award still carries the line */
+      }
+    }
+    return {
+      ...res,
+      award: { ...award, boosts },
+      detail,
+      wallet: { ...res.wallet, meta: { ...res.wallet.meta, streakRun: after, streakAnchor: anchor, streakShield: shield } },
+    };
+  };
   const withV2l = (res: OpResult & { detail?: string }): OpResult & { detail?: string } => {
     const flag = v2l ? "v2" : rt ? "rt" : null;
-    if (!flag || !res.ok || !res.wallet.migrated) return res;
+    if (!flag || !res.ok || !res.wallet.migrated) return withMile(res);
     const p = payMatch(res.wallet.keys, "white");
     const k = p.tier ? { [p.tier]: 1 } : {};
     const extra = applyDelta(res.wallet, { coins: p.coin, keys: k });
-    if (!extra.ok) return res;
+    if (!extra.ok) return withMile(res);
     const award = res.award ?? { coins: 0, keys: {}, boosts: [] };
     const keys = { ...award.keys };
     for (const [t, n] of Object.entries(k) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
     const v2Award = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, flag === "v2" ? "Vehicle-to-load: +1 white" : "Road trip: +1 white"] };
     if (flag === "v2") v2Paid = true;
     else rtPaid = true;
-    return { ok: true, wallet: extra.wallet, award: v2Award, detail: detailOf(v2Award) };
+    return withMile({ ok: true, wallet: extra.wallet, award: v2Award, detail: detailOf(v2Award) });
   };
-  const r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
+  let r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
     matchLost = false;
     v2Paid = false;
     rtPaid = false;
@@ -834,13 +918,13 @@ export async function awardGrade(
       const spent = spendMatchOp(base, full.clearTier);
       if (!spent.ok) {
         const award = { coins: 0, keys: {}, boosts: [] };
-        return { ok: true, wallet: w, award, detail: detailOf(award, false) };
+        return withMile({ ok: true, wallet: w, award, detail: detailOf(award, false) });
       }
       base = spent.wallet;
     }
     if (!sparkOk) {
       const award = { coins: 0, keys: {}, boosts: [sparkTier(full.poiTier) ? "Sparks are spent today" : "Violet needs a violet key"] };
-      return { ok: true, wallet: base, award, detail: detailOf(award) };
+      return withMile({ ok: true, wallet: base, award, detail: detailOf(award) });
     }
     const grant = gradeGrant(base, full);
     if (!grant.ok) return grant;
@@ -854,10 +938,10 @@ export async function awardGrade(
       if (back.ok) {
         matchLost = false;
         const award = { coins: p.coin, keys: k, boosts: p.up ? ["Shell: key back ↑"] : ["Shell: key back"] };
-        return { ok: true, wallet: back.wallet, award, detail: detailOf(award) };
+        return withMile({ ok: true, wallet: back.wallet, award, detail: detailOf(award) });
       }
     }
-    if (!base.migrated || !full.correct) return { ok: true, wallet: base, award: grant.award, detail };
+    if (!base.migrated || !full.correct) return withMile({ ok: true, wallet: base, award: grant.award, detail });
     if (streakTier && grant.ok) {
       // 0.0.98: a level boost (15 min, spent from a token) doubles the streak pay.
       const doubled = grant.wallet.meta.boostUntil > Date.now();
@@ -867,13 +951,31 @@ export async function awardGrade(
         const award = grant.award ?? { coins: 0, keys: {}, boosts: [] };
         const keys = { ...award.keys };
         for (const [t, n] of Object.entries(p.add) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
-        const label = `${run + 1} in a row${doubled ? " ×2" : ""}`;
+        const label = `${after} in a row${doubled ? " ×2" : ""}`;
         const streakAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, label] };
         return withV2l({ ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) });
       }
     }
     return withV2l({ ...grant, detail });
   });
+  if (r.ok && crossed(before, after, VIOLET_AT) && anchor) {
+    const mile = await mutateWallet(sql, userId, `smile:${VIOLET_AT}:${anchor}`, (w) => {
+      const p = payMatch(w.keys, "violet");
+      const k = p.tier ? { [p.tier]: 1 } : {};
+      const applied = applyDelta(w, { coins: p.coin, keys: k });
+      if (!applied.ok) return applied;
+      const award = { coins: p.coin, keys: k, boosts: ["Streak 100 · Violet key"] };
+      return { ...applied, award };
+    });
+    if (mile.ok) r = { ...r, wallet: mile.wallet, award: mergeAward(r.award, mile.award) };
+  }
+  if (r.ok && crossed(before, after, LORD_AT) && !r.wallet.meta.streakLord) {
+    const lord = await mutateWallet(sql, userId, "title:streak-lord", (w) => {
+      if (w.meta.streakLord) return { ok: true, wallet: w, award: { coins: 0, keys: {}, boosts: [] } };
+      return { ok: true, wallet: { ...w, meta: { ...w.meta, streakLord: true } }, award: { coins: 0, keys: {}, boosts: ["Streak Lord"] } };
+    });
+    if (lord.ok) r = { ...r, wallet: lord.wallet, award: mergeAward(r.award, lord.award) };
+  }
   if (r.ok && !r.replay && matchLost && full.poiId) await payOwner(sql, id, nonce, full.poiId);
   // 0.1.111: a visitor's right answer at a placed Hearth vault pays its owner a cut.
   if (r.ok && !r.replay && full.correct && full.poiId.startsWith("placed-")) {

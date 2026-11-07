@@ -4234,3 +4234,128 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 @keyframes vkq-flicker{ 0%{ opacity:1 } 20%{ opacity:.7 } 30%{ opacity:1 } 55%{ opacity:.78 } 65%{ opacity:1 } }
 @keyframes vkq-beat{ 0%,100%{ transform:scale(1) } 30%{ transform:scale(1.06) } 55%{ transform:scale(.98) } }
 @keyframes vkq-turn{ 0%{ transform:rotate(0) } 100%{ transform:rotate(90deg) } }
+
+/* 0.1.133 answer-streak car marks. On the pawn, not the cab sprite, so paint and the chosen car stay. Driving only. */
+.streak-line{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:4px 8px;
+  width:100%;
+  margin:0;
+  padding:0;
+  border:0;
+  background:none;
+  color:inherit;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.streak-chips{ font-size:12px; font-weight:650; color:var(--color-accent, #e4c27a); }
+.streak-next{ font-size:12px; color:var(--color-fg-muted, #9aa); }
+.streak-miles{
+  list-style:none;
+  margin:6px 0 0;
+  padding:0;
+  display:grid;
+  gap:4px;
+}
+.streak-miles li{
+  display:grid;
+  grid-template-columns:2.4rem minmax(0, 1fr) auto;
+  gap:6px;
+  align-items:start;
+  font-size:12px;
+  line-height:1.25;
+}
+.streak-miles b{ font-weight:700; }
+.streak-blurb{ display:block; color:var(--color-fg-muted, #9aa); }
+.streak-miles li.is-on b{ color:var(--color-accent, #e4c27a); }
+.pawn.is-driving.is-streak-trail::after,
+.pawn.is-driving.is-streak-pixel::before{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  z-index:0;
+}
+.pawn.is-driving.is-streak-trail::after{
+  top:40px;
+  left:-36px;
+  width:40px;
+  height:6px;
+  border-radius:6px;
+  background:linear-gradient(90deg, transparent, rgb(110 190 255 / .4) 35%, rgb(70 160 255 / .95));
+  box-shadow:0 0 8px rgb(80 160 255 / .55);
+  animation:streak-trail .5s linear infinite;
+}
+.pawn.is-driving.is-streak-trail:has(.cab-sprite[data-face="left"])::after{
+  left:auto;
+  right:-34px;
+  transform:scaleX(-1);
+}
+.pawn.is-driving.is-streak-trail:has(.cab-sprite[data-face="up"])::after,
+.pawn.is-driving.is-streak-trail:has(.cab-sprite[data-face="down"])::after{
+  left:24px;
+  top:auto;
+  bottom:52px;
+  width:7px;
+  height:28px;
+  background:linear-gradient(180deg, transparent, rgb(120 186 255 / .3), rgb(90 168 255 / .9));
+}
+.pawn.is-driving.is-streak-trail:has(.cab-sprite[data-face="down"])::after{ top:auto; bottom:-28px; transform:scaleY(-1); }
+.pawn.is-driving.is-streak-pixel::before{
+  top:14px;
+  left:-30px;
+  width:28px;
+  height:16px;
+  background:
+    linear-gradient(#f4fbff, #f4fbff) 0 0 / 8px 3px no-repeat,
+    linear-gradient(#b9e4ff, #b9e4ff) 8px 6px / 16px 3px no-repeat,
+    linear-gradient(#f4fbff, #f4fbff) 2px 12px / 11px 3px no-repeat;
+  image-rendering:pixelated;
+  opacity:.95;
+  animation:streak-pixel .32s steps(2) infinite;
+}
+.pawn.is-driving.is-streak-pixel:has(.cab-sprite[data-face="left"])::before{ left:auto; right:-22px; transform:scaleX(-1); }
+@keyframes streak-trail{ from{ opacity:.35 } 50%{ opacity:1 } to{ opacity:.35 } }
+@keyframes streak-pixel{ from{ margin-left:0 } to{ margin-left:-4px } }
+@media (prefers-reduced-motion: reduce){
+  .pawn.is-driving.is-streak-trail::after,
+  .pawn.is-driving.is-streak-pixel::before{ animation:none; opacity:.7; }
+}
+.seed-live-banner{
+  position:fixed;
+  z-index:8000;
+  top:0;
+  left:0;
+  right:0;
+  margin:0;
+  padding:7px 12px;
+  background:#2a2116;
+  color:#f3e2c2;
+  border-bottom:2px solid #e4c27a;
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  pointer-events:none;
+}
+.shot-banner{
+  margin:0 0 12px;
+  padding:8px 10px;
+  border:1px solid #e4c27a;
+  border-radius:10px;
+  background:#2a2116;
+  color:#f3e2c2;
+  font-size:13px;
+  font-weight:700;
+}
+.shot-cars{ display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; align-items:end; }
+.shot-cars figure{ margin:0; }
+.shot-cars figcaption{ margin-top:4px; font-size:12px; color:var(--color-fg-muted, #9aa); }
+.shot-car{ height:132px; display:flex; align-items:center; padding-left:56px; }
+.shot-car .pawn{ transform:scale(2.5); transform-origin:left center; }
+.shot-note{ font-size:12px; color:var(--color-fg-muted, #9aa); margin:8px 0 0; }
+@media (max-width: 640px){
+  .shot-car{ height:112px; padding-left:44px; }
+  .shot-car .pawn{ transform:scale(2); }
+}

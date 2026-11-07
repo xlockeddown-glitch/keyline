@@ -137,6 +137,8 @@ export type TitleStats = {
   /** Right answers on night-market lamps (recorded from 0.0.98; not backfillable). */
   marketLamps: number;
   bestStreak: number;
+  /** 0.1.133: Streak Lord was unlocked on a live run. Kept after that run resets. */
+  streakLord?: boolean;
   perfects: number;
   violet: number;
   cityCorrect: Partial<Record<CityId, number>>;
@@ -145,6 +147,7 @@ export type TitleStats = {
 export const BONUS_TITLES = [
   { id: "night-owl", name: "Night Owl", need: 500, what: "night-market vaults" },
   { id: "hot-streak", name: "Hot Streak", need: 25, what: "right in a row" },
+  { id: "streak-lord", name: "Streak Lord", need: 250, what: "right in a row, kept after a reset" },
   { id: "globetrotter", name: "Globetrotter", need: 100, what: "right in every city" },
   { id: "perfectionist", name: "Perfectionist", need: 1000, what: "perfects" },
   { id: "violet-hunter", name: "Violet Hunter", need: 100, what: "violet vaults" },
@@ -166,6 +169,7 @@ export function titleRows(s: TitleStats, cities: readonly CityId[]): TitleRow[] 
   const bonus: Record<string, number> = {
     "night-owl": s.marketLamps,
     "hot-streak": s.bestStreak,
+    "streak-lord": s.streakLord ? Math.max(s.bestStreak, 250) : s.bestStreak,
     globetrotter: weakest,
     perfectionist: s.perfects,
     "violet-hunter": s.violet,

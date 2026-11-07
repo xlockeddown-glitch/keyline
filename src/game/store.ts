@@ -216,6 +216,10 @@ export type GameState = {
   mapKeys: MapKey[];
   contract: { ids: string[]; done: string[]; nonces?: string[] } | null;
   streak: number;
+  /** 0.1.133: signed-in answer streak from the server. Not written into the save. Null until this session syncs. */
+  serverStreak: number | null;
+  /** Permanent Streak Lord flag from the server. Not written into the save. */
+  streakLord: boolean;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
   matchPop: MatchPop | null;
   /** 0.0.96 Tabby (Nine lives): Chicago day the first miss was forgiven. */
@@ -1039,6 +1043,7 @@ function applyServerGrade(
   );
   const loot = st.loot;
   st.adoptWallet(wallet);
+  if (typeof wallet.streakRun === "number") useGame.setState({ serverStreak: wallet.streakRun, streakLord: wallet.streakLord === true });
   if (award && loot && useGame.getState().loot) {
     const amber = (award.keys.amber ?? 0) + (contractDone ? 1 : 0);
     const keys = { ...award.keys };
@@ -1143,6 +1148,8 @@ export const useGame = create<GameState>((set, get) => ({
   mapKeys: saved?.mapKeys?.length ? saved.mapKeys : seedKeys(savedCity),
   contract: saved?.contract ?? null,
   streak: saved?.streak ?? 0,
+  serverStreak: null,
+  streakLord: false,
   matchPop: null,
   shieldDay: saved?.shieldDay ?? "",
   bestStreak: saved?.bestStreak ?? 0,

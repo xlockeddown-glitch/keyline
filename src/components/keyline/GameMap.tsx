@@ -13,6 +13,7 @@ import { CITIES, SCOUTS, cabSpeed, interactRadius, isBoard, isCounter, isScoutSh
 import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
+import { driveAccel, drivePace, perksAt } from "@/game/streakMile";
 import { boardPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
 import { FACET_COLOR, hearthOf, isHearthId } from "@/game/hearthVaults";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
@@ -1940,7 +1941,11 @@ export function GameMap() {
       throttle = Math.max(-1, Math.min(1, throttle));
       const driveG = driveRef.current;
       const arterial = seated && onArterial(driveG, pos.current.lat, pos.current.lng);
-      const max = seated ? cabSpeed(arterial) * ownPace() : walkSpeed(useGame.getState().scout);
+      // 0.1.133: turbo and the faster ramp only while this signed-in streak says so, and only while driving.
+      const mileKnown = useGame.getState().serverStreak != null;
+      const mileRun = useGame.getState().serverStreak ?? 0;
+      const drivingNow = seated && (Math.abs(throttle) > 0.05 || auto);
+      const max = seated ? cabSpeed(arterial) * ownPace() * drivePace(mileRun, seated, drivingNow && mileKnown) : walkSpeed(useGame.getState().scout);
       const rail = seated ? driveG : graphRef.current;
       const foot = graphRef.current;
       const turn = seated ? TURN_CAB : TURN;
@@ -1972,7 +1977,7 @@ export function GameMap() {
         }
       } else {
         const want = throttle * max;
-        pos.current.speed += (want - pos.current.speed) * Math.min(1, dt * 4.2);
+        pos.current.speed += (want - pos.current.speed) * Math.min(1, dt * driveAccel(mileRun, seated, drivingNow && mileKnown));
         if (want === 0 && Math.abs(pos.current.speed) < 0.01) pos.current.speed = 0; // battery: settle instead of decaying forever
         const speedFactor = Math.min(1, Math.abs(pos.current.speed) / 40);
         const reverse = pos.current.speed >= 0 ? 1 : -1;
@@ -2213,6 +2218,12 @@ export function GameMap() {
       pawn?.classList.toggle("has-driver", driver);
       if (driver && el) el.style.backgroundPosition = driverCell(face).position;
       pawn?.classList.toggle("is-seated", seated);
+      // Trail and pixel marks sit on the pawn. The cab sprite, data-car and data-paint are untouched.
+      const fx = perksAt(mileKnown ? mileRun : 0);
+      const drivingFx = Boolean(mileKnown && seated && moving);
+      pawn?.classList.toggle("is-driving", drivingFx);
+      pawn?.classList.toggle("is-streak-trail", drivingFx && fx.trail);
+      pawn?.classList.toggle("is-streak-pixel", drivingFx && fx.pixel);
       // Battery: only touch Leaflet when the scout actually moved (or follow was just switched back on).
       const movedPx = pos.current.lat !== drawn.current.lat || pos.current.lng !== drawn.current.lng;
       if (movedPx) playerMarker.current?.setLatLng([pos.current.lat, pos.current.lng]);

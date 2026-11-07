@@ -3,6 +3,7 @@
 import { SCOUTS } from "./data.ts";
 import { TIER_VALUE } from "./rewards.ts";
 import { MARKET_LIGHTS, marketCoinX, type MarketLight } from "./marketLights.ts";
+import { streakWalk } from "./streakMile.ts";
 import type { ScoutId, Tier } from "./types";
 
 export function scoutOf(id: unknown): ScoutId | null {
@@ -53,23 +54,8 @@ export function strikeOption(id: ScoutId | null, rarity: Tier, choices: readonly
 }
 
 /** Tabby: answer streak run from the server's grade rows (newest first). The first miss of each day is forgiven. */
-export function streakRun(rows: ReadonlyArray<{ miss: boolean; day: string }>, shield: boolean): number {
-  let run = 0;
-  const missDays = new Map<string, number>();
-  if (shield) for (const r of rows) if (r.miss) missDays.set(r.day, (missDays.get(r.day) ?? 0) + 1);
-  const seen = new Map<string, number>();
-  for (const r of rows) {
-    if (r.miss) {
-      if (!shield) break;
-      // Rows are newest first: the day's first miss is the last one we meet for that day.
-      const k = (seen.get(r.day) ?? 0) + 1;
-      seen.set(r.day, k);
-      if (k < (missDays.get(r.day) ?? 0)) break;
-      continue;
-    }
-    run++;
-  }
-  return run;
+export function streakRun(rows: ReadonlyArray<{ miss: boolean; day: string; key?: string }>, shield: boolean): number {
+  return streakWalk(rows, shield).run;
 }
 
 export function hasShield(id: ScoutId | null): boolean {

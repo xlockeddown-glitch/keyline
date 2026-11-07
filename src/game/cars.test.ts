@@ -41,7 +41,7 @@ test("0.1.8: a car never touches what pays — only the seated drive speed reads
   const wallet = readFileSync(new URL("./wallet.ts", import.meta.url), "utf8");
   assert.ok(!/carPace|carOn/.test(wallet), "no pay path reads the car");
   const map = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
-  assert.match(map, /cabSpeed\(arterial\) \* ownPace\(\)/);
+  assert.match(map, /cabSpeed\(arterial\) \* ownPace\(\) \* drivePace\(/);
   assert.ok(!/walkSpeed\([^)]*\) \* carPace/.test(map), "walking is untouched");
   assert.match(store, /buyCar:/);
 });

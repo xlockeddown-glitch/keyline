@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { setCityBed } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { LevelSync } from "./Levels";
@@ -32,7 +32,18 @@ export function KeylineApp() {
       <DyeSync />
       <LevelSync />
       <PrintSync />
+      <DevSeed />
       {view}
     </>
   );
+}
+
+/** Local screenshot handle. The import sits behind the dev flag so a production build drops it. It never writes a wallet. */
+function DevSeed() {
+  const [Comp, setComp] = useState<ComponentType | null>(null);
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    void import("./StreakSeedBridge").then((m) => setComp(() => m.StreakSeedBridge));
+  }, []);
+  return Comp ? <Comp /> : null;
 }
