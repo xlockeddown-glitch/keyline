@@ -7,6 +7,7 @@ import { matchCap } from "@/game/ticket";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { VK_NUM } from "@/game/pins";
+import { PUBLISH_STAMP } from "@/version";
 import { ItemIcon } from "./ItemIcon";
 import { useSheetOpen } from "./useSheetOpen";
 
@@ -51,6 +52,9 @@ export function WardCounter() {
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <div className="grid gap-3">
+            <figure className="print-front counter-front">
+              <img src={`/sprites/street-counter-v2.png?v=${PUBLISH_STAMP}`} alt="" />
+            </figure>
             <button type="button" className="hq-row w-full text-left disabled:opacity-70" disabled={claimed} onClick={() => claimCrate()}>
               <ItemIcon item="crate" size={40} />
               <div className="hq-row-copy">

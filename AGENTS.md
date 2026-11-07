@@ -8,6 +8,16 @@ Prompts are often short and casual — read intent generously and ship a
 **Depth lives in `.grok/references/*.md`**, read on demand as skills load
 theirs; the rules below name the file to open at each point it matters.
 
+## Art, UI chrome, and assets
+
+Before any change to how Keyline looks — sprites, map pins, facades, UI chrome,
+motion, or generated art — read [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md)
+in full and follow it. That file is the art contract. [`docs/visual-direction.md`](docs/visual-direction.md)
+is the older hybrid note and does not override it. The direction in
+`docs/ART_DIRECTION.md` is **proposed**. Ryan has not approved it. Tasks that
+do not change appearance (logic, trivia, wallet, tests) are not bound by the
+palette, pixel, or silhouette rules in that guide.
+
 ---
 
 ## Skills (in `.grok/skills/` — consult BEFORE building)

@@ -2,6 +2,7 @@ import { cityShop, SCOUTS } from "@/game/data";
 import { CATALOGUE, owing, payable, priceLine, type Cosmetic, type CosmeticSlot } from "@/game/cosmetics";
 import { vaultPinHtml } from "@/game/pins";
 import { useGame } from "@/game/store";
+import { PUBLISH_STAMP } from "@/version";
 import { ItemIcon } from "./ItemIcon";
 import { PaintVat } from "./PaintVat";
 
@@ -150,7 +151,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
   return (
     <div className="grid gap-3" data-testid="print-shop">
       <figure className="print-front">
-        <img src="/sprites/print-shop.png" alt="" />
+        <img src={`/sprites/print-shop.png?v=${PUBLISH_STAMP}`} alt="" />
       </figure>
       {counter ? (
         <div className="hq-row items-center">

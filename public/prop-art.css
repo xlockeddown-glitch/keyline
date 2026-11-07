@@ -105,10 +105,12 @@
   display:none
 }
 
+/* Art contract: docs/ART_DIRECTION.md. 0.1.134 redraws this pin only. */
 .counter-pin{
   width:46px;
   height:58px;
-  background:url("/sprites/street-counter-v2.png?v=k127a") center bottom / contain no-repeat;
+  background:url("/sprites/street-counter-v2.png?v=k1134a") center bottom / contain no-repeat;
+  image-rendering:pixelated;
   filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
 }
 .counter-pin .service-sign,
@@ -126,7 +128,16 @@
 }
 .print-front img{
   height:148px;
-  width:auto
+  width:auto;
+  max-width:100%;
+  image-rendering:pixelated
+}
+/* Same night plate as the print shop, shorter, so the counter sheet shows the map drawing. */
+.counter-front{
+  height:132px
+}
+.counter-front img{
+  height:124px
 }
 
 .title-night.is-blade{

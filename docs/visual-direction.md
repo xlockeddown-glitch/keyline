@@ -1,5 +1,9 @@
 # Visual direction — HYBRID
 
+> Newer art work uses [`ART_DIRECTION.md`](ART_DIRECTION.md). That guide is proposed and not yet approved. This note still holds on one point: the map tiles stay.
+
+
+
 Keep the real map. Dress the lamps and the shop fronts.
 
 Keyline walks OSM tiles. That is the city. Do not replace the basemap with a painted one. The work is the objects that sit on it: lanterns, awnings, the desk, the title folio lamp. One language of brass, soot glass, and warm wick — not a new world.
