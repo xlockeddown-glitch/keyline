@@ -4323,6 +4323,22 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
   .pawn.is-driving.is-streak-trail::after,
   .pawn.is-driving.is-streak-pixel::before{ animation:none; opacity:.7; }
 }
+.seed-live-banner{
+  position:fixed;
+  z-index:8000;
+  top:0;
+  left:0;
+  right:0;
+  margin:0;
+  padding:7px 12px;
+  background:#2a2116;
+  color:#f3e2c2;
+  border-bottom:2px solid #e4c27a;
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  pointer-events:none;
+}
 .shot-banner{
   margin:0 0 12px;
   padding:8px 10px;

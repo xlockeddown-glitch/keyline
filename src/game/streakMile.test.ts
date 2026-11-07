@@ -327,6 +327,29 @@ test("Tabby shield survives a reload recount, and a miss without the shield clea
   assert.equal((await rememberStreak(sql, "rac")).run, 0);
 });
 
+test("two answers crossing 100 at once pay exactly one violet key", async () => {
+  const sql = await db();
+  await syncPlayer(sql, "race", snap(), "racephone1");
+  await seedGrades(sql, "race", 99, "z", 400);
+  const [a, b] = await Promise.all([
+    awardGrade(sql, "race", "raceA", { ...pay(), prevNonce: "" }),
+    awardGrade(sql, "race", "raceB", { ...pay(), prevNonce: "" }),
+  ]);
+  assert.equal(a.ok && b.ok, true);
+  const wallet = (await canonicalWallet(sql, "race")).wallet;
+  assert.equal(wallet.keys.violet, 1, "exactly one violet");
+  const smiles = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${(await canonicalWallet(sql, "race")).id} and op_key like ${"smile:100:%"}`;
+  assert.equal(smiles.length, 1);
+  const grades = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${(await canonicalWallet(sql, "race")).id} and op_key like ${"grade:race%"}`;
+  assert.equal(grades.length, 2, "both answers landed");
+  const again = await Promise.all([
+    awardGrade(sql, "race", "raceA", { ...pay(), prevNonce: "" }),
+    awardGrade(sql, "race", "raceB", { ...pay(), prevNonce: "" }),
+  ]);
+  assert.equal(again[0].replay && again[1].replay, true);
+  assert.equal((await canonicalWallet(sql, "race")).wallet.keys.violet, 1);
+});
+
 test("Streak Lord equips from the existing picker and stays after the run is reset", async () => {
   const sql = await db();
   await syncPlayer(sql, "lord", snap(), "lordphone1");
