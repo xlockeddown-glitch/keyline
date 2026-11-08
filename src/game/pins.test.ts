@@ -68,7 +68,7 @@ test("no amber fare call-out left on lamps", () => {
 
 test("0.1.134 the street counter and the print shop keep their own drawings", () => {
   const props = read("../../public/prop-art.css");
-  assert.match(props, /street-counter-v2\.png\?v=k1134a/);
+  assert.match(props, /street-counter-v2\.png\?v=k1135a/);
   assert.match(props, /\.counter-front\{[^}]*height:132px/);
   assert.match(props, /image-rendering:\s*pixelated/);
   assert.match(read("../components/keyline/WardCounter.tsx"), /street-counter-v2\.png\?v=\$\{PUBLISH_STAMP\}/);

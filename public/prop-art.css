@@ -105,11 +105,11 @@
   display:none
 }
 
-/* Art contract: docs/ART_DIRECTION.md. 0.1.134 redraws this pin only. */
+/* Art contract: docs/ART_DIRECTION.md. 0.1.135: the sign shows three vault keys, not matches. */
 .counter-pin{
   width:46px;
   height:58px;
-  background:url("/sprites/street-counter-v2.png?v=k1134a") center bottom / contain no-repeat;
+  background:url("/sprites/street-counter-v2.png?v=k1135a") center bottom / contain no-repeat;
   image-rendering:pixelated;
   filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
 }

@@ -1,6 +1,6 @@
 # Keyline art direction
 
-**Status: proposed. Ryan has not approved this.** Use it for new and changed art so later passes match. Do not treat it as a license to restyle the whole game. A slice changes the surfaces it names.
+**Status: direction approved with 0.1.134.** Use it for new and changed art so later passes match. A slice changes the surfaces it names. 0.1.135: the counter sign carries three vault keys, not matches.
 
 The older note [`visual-direction.md`](visual-direction.md) still holds on one point: the basemap stays real OSM tiles. This file is the contract for everything drawn on top.
 
@@ -71,7 +71,7 @@ Materials used by the existing props and signs, and by the 0.1.134 drawings (`sc
 | Lantern glass | `#ffd68c` family, hot core near `#ffecC4` | Street lamps and the 0.1.134 window lamp |
 | Magenta | chroma key only | Scout sheets and `keyline-chroma` in `src/routes/__root.tsx`. Never a paint colour. `outfitter-front.png` still has a magenta fringe; that is a leak, not a style. Do not copy it. |
 
-Tier colours on a prop are the vault list above, in ladder order. A jar of matches is those six, not a rainbow of saturated candy colours.
+Tier colours on a prop are the vault list above, in ladder order. Key stock uses those six, not a rainbow of saturated candy colours. A counter sign shows vault keys (bow, shaft, teeth), the same silhouettes as `public/sprites/keys/`.
 
 ## Light
 
@@ -87,7 +87,7 @@ At map size the player has about 46×58 CSS pixels for the counter (`public/prop
 
 | Place | Cue that must survive | Do not reuse |
 | --- | --- | --- |
-| Street counter | Low stall, deep green enamel, three match heads | A building, a blank sign, a red/cream awning |
+| Street counter | Low stall, deep green enamel, three vault keys (white circle, blue square, amber hex) | A building, a blank sign, matchsticks, a red/cream awning |
 | Print shop | Tall press, the word PRESS, oxblood awning, platen and hanging lantern | The outfitter's candy-stripe awning and blank plate |
 | Outfitter (unchanged) | Suit in the window, red/cream awning | — |
 | Vault | Dial, glyph, numeral | A shop front |
@@ -116,7 +116,7 @@ Cars, houses and scout sheets do not get `image-rendering: pixelated`.
 - A kicker is uppercase, tracked `.16em`, `.6875rem`. On `.errand-lit` it is brass.
 - Buttons stay `.btn` with `min-height: 44px`. The sheet close control is `size-11` (44px). Do not shrink them to make room for art.
 - An art change does not rename buttons, move their hit targets, or change `onClick` handlers, prices, item ids, or save fields.
-- Words painted into a sprite (the PRESS plate) are short, dark ink `#1a1410` on brass, and must be readable at the figure's CSS height. Do not paint a sentence. Map pins do not carry words; the three match heads are the counter's mark.
+- Words painted into a sprite (the PRESS plate) are short, dark ink `#1a1410` on brass, and must be readable at the figure's CSS height. Do not paint a sentence. Map pins do not carry words. The counter's mark is three vault keys, bow and teeth included, not match heads.
 
 ## Motion
 
@@ -165,7 +165,7 @@ For a visual slice, capture the running game, not a standalone render of the PNG
 Changed:
 
 - `public/sprites/print-shop.png` — press, PRESS plate, oxblood awning, lantern, platen.
-- `public/sprites/street-counter-v2.png` — green enamel, three matches, jar in tier order, brass lamp, wood stall.
+- `public/sprites/street-counter-v2.png` — green enamel, three vault keys (the real white, blue and amber sprites), jar in tier order, brass lamp, wood stall. 0.1.135 replaced the matchsticks on the sign.
 - `.counter-pin` and `.print-front` / `.counter-front` in `public/prop-art.css` — pixelated scaling, counter sheet uses the pin drawing.
 - No change to costs, ids, `payCosmetic`, `claimCrate`, `buyKiosk`, `bankUp`, or `bankDown`.
 

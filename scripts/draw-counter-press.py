@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""0.1.134 counter and print-shop props.
+"""Counter and print-shop props.
 
 Painted on a chunky grid in the night-brass palette from src/styles.css, then
 nearest-neighbour scaled. The print shop is a tall press (oxblood awning, PRESS
-plate, lantern and platen). The street counter is a low stall under the deep
-green enamel sign the map used before the painted pin. Neither copies the
-outfitter's red-and-cream awning.
+plate, lantern and platen). The street counter is a low stall under a deep
+green enamel sign. The sign carries the real white, blue and amber vault keys
+(public/sprites/keys), bow and teeth included, not matchsticks.
 
-Docs: docs/ART_DIRECTION.md. Proposed, not yet approved.
+Docs: docs/ART_DIRECTION.md.
 """
 from __future__ import annotations
 
@@ -197,19 +197,22 @@ def print_shop() -> Image.Image:
     return scale(im, 4)
 
 
+def fit_key(name: str, height: int) -> Image.Image:
+    """The shipped vault key, nearest-scaled so the bow, shaft and teeth stay the real silhouette."""
+    src = Image.open(ROOT / "public/sprites/keys" / f"{name}.png").convert("RGBA")
+    box = src.getbbox()
+    src = src.crop(box) if box else src
+    width = max(1, round(src.width * height / src.height))
+    return src.resize((width, height), Image.Resampling.NEAREST)
+
+
 def street_counter() -> Image.Image:
-    """Low stall under a green enamel match sign. Reads at the 46×58 map box."""
+    """Low stall under a green enamel sign. Three vault keys are the read at the 46×58 map box."""
     w, h = 40, 52
     im = new(w, h)
-    # Enamel sign: the old .counter-pin plate. Three match heads are the whole read at pin size.
+    # Enamel sign: the old .counter-pin plate. The keys are pasted after the scale, from the real sprites.
     rect(im, 3, 0, 34, 18, CREAM)
     shade_rect(im, 5, 2, 30, 14, ENAMEL, (52, 82, 64))
-    # Three matches. Heads use vault white / blue / amber, sticks are cream.
-    for i, head in enumerate((WHITE, BLUE, AMBER)):
-        x = 10 + i * 8
-        rect(im, x, 8, 2, 7, CREAM)
-        rect(im, x - 1, 4, 4, 4, head)
-        rect(im, x, 4, 2, 2, mix(head, (255, 255, 255), 0.5))
     # Posts and brass rail. The sign sits on the stall, not on a second building.
     rect(im, 7, 18, 2, 6, BRASS)
     rect(im, 31, 18, 2, 6, BRASS_LO)
@@ -236,7 +239,18 @@ def street_counter() -> Image.Image:
     rect(im, 5, 45, 3, 5, WOOD_LO)
     rect(im, 32, 45, 3, 5, WOOD)
     outline(im)
-    return scale(im, 4)
+    scaled = scale(im, 4)
+    # White circle, blue square, amber hex — the same bows as public/sprites/keys. Steel shaft, teeth on the blade.
+    keys = [fit_key(name, 48) for name in ("white", "blue", "amber")]
+    gap = 4
+    total = sum(key.width for key in keys) + gap * (len(keys) - 1)
+    # Green field is logical x 5–35, y 2–16, times the ×4 scale.
+    x = 20 + (120 - total) // 2
+    y = 10
+    for key in keys:
+        scaled.alpha_composite(key, (x, y))
+        x += key.width + gap
+    return scaled
 
 
 def main() -> None:
