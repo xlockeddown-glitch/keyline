@@ -2523,7 +2523,7 @@ export const useGame = create<GameState>((set, get) => ({
     else paints.wornVault = null;
     set({ wardrobe: next ?? get().wardrobe, paints });
     const name = id ? cosmetic(id)?.name : null;
-    flashToast(set, get, name ? `Wearing the ${name}.` : slot === "coat" ? "Back in the field coat." : "Lamps back to brass.", 1400);
+    flashToast(set, get, name ? `Wearing the ${name}.` : slot === "coat" ? "Back in the field coat." : "Vaults back to brass.", 1400);
     saveNow(get);
   },
   mixPaint: (color, job) => {
@@ -2558,7 +2558,7 @@ export const useGame = create<GameState>((set, get) => ({
     flashToast(
       set,
       get,
-      !use ? (job === "coat" ? "Back in the field coat." : "Lamps back to brass.") : job === "coat" ? `${use.name} on the coat.` : `Street vaults in ${use.name.toLowerCase()}.`,
+      !use ? (job === "coat" ? "Back in the field coat." : "Vaults back to brass.") : job === "coat" ? `${use.name} on the coat.` : `Street vaults in ${use.name.toLowerCase()}.`,
       1400,
     );
     saveNow(get);

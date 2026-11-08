@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.135";
+export const APP_VERSION = "0.1.136";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1135a";
+export const PUBLISH_STAMP = "k1136a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -235,3 +235,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.133: answer-streak milestones on the server's existing run (right grades since the last miss; Tabby's first miss of the day still doesn't break it). While the run holds: turbo at 20 (+12% seated drive speed), a blue trail at 30, one night-market light rung at 40 (+0.1 vault coin on an open market, cap ×3, matches stay ×2), pixel speed and a faster acceleration ramp at 50, triple vault-answer coin at 75 (not sparks, tips, gifts, refunds, or tills). One violet key at 100, once per run (smile:100:<run start>; a full pocket pays coin). Streak Lord at 250 is a permanent Journal title and stays after a miss. A reload reads the server run. Old runs are not paid backward. Car paint and the chosen car are unchanged. Reduced motion holds the trail and pixel marks still (k1133a).
 // 0.1.134: counter and print-shop art, plus a proposed art guide (docs/ART_DIRECTION.md, not approved yet). The street counter pin and the counter sheet use one new drawing (green enamel, three vault-coloured matches, wood stall, brass lamp). The print shop facade is a press (PRESS plate, oxblood awning, lantern, platen) instead of a second copy of the outfitter. Same buttons, prices, ids and purchase/collect/print behaviour. Pixel props on these two only (k1134a).
 // 0.1.135: the counter sign's three marks are vault keys, not matches (Ryan). White, blue and amber use the real key sprites — circle, square and hex bows, steel shaft, teeth — on the same stall. Press, prices and behaviour unchanged (k1135a).
+// 0.1.136: print-shop vault skins. The four metal skins (Copper Lamp 10 white, Wrought Iron 8 white + 2 blue, Verdigris 6 white + 4 blue, Nickel Plate 8 blue) and vault paint, including prism, recolour the street-vault case (face, side, trim, bar, bolts, dial plate). The glyph, numeral and slot stay on the tier colour. Stock steel and brass is the default; Back to brass restores it. Same ids, prices, instalments and wardrobe save. Hearth pins stay copper. No new motion (k1136a).

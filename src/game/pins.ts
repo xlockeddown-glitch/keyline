@@ -27,8 +27,19 @@ const VK_BOLTS = Array.from({ length: 8 }, (_, k) => {
   return `<circle cx="${(30 + Math.cos(a) * 14.5).toFixed(1)}" cy="${(30 + Math.sin(a) * 14.5).toFixed(1)}" r="1.5"/>`;
 }).join("");
 
+/**
+ * Case parts a print-shop skin may recolour (wardrobe.css). The glyph, numeral and slot are not in
+ * this string as skinnable classes: they stay on the tier colour. Defaults are the steel-and-brass gradients.
+ */
+const VK_CASE = `<path class="vk-side" d="M9 9 l-5 4 v40 l5 2z" fill="url(#vk-s)" stroke="#1a1410" stroke-width="1"/><rect class="vk-face" x="9" y="7" width="47" height="50" rx="4" fill="url(#vk-f)" stroke="#1a1410" stroke-width="1.2"/><rect class="vk-trim" x="11.5" y="9.5" width="42" height="45" rx="3" fill="none" stroke="url(#vk-b)" stroke-width="1.6"/><rect class="vk-bar" x="14" y="4" width="37" height="4" rx="1.5" fill="url(#vk-b)" stroke="#1a1410" stroke-width=".7"/>`;
+const VK_DIAL = `<g class="vk-bolts" fill="#8d97a3" stroke="#1a1410" stroke-width=".5">${VK_BOLTS}</g>`;
+const VK_HUB = (tier: Tier) =>
+  `<circle class="vk-hub" cx="30" cy="29" r="9.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="2"/><g class="vk-glyph" transform="translate(30 29)" stroke="#1a1410" stroke-width=".8" stroke-linejoin="round">${VK_GLYPH[tier]}</g><text class="vk-num" x="30" y="31.4" text-anchor="middle">${VK_NUM[tier]}</text>`;
+const VK_SLOT = (tier: Tier) =>
+  `<rect class="vk-plate" x="23" y="46" width="14" height="7" rx="1.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="1"/><rect class="vk-slot" x="27.5" y="48" width="7.5" height="3" rx=".6"/><g class="vk-glyph" transform="translate(25.3 49.5) scale(.22)">${VK_GLYPH[tier]}</g>`;
+
 export function vaultSvg(tier: Tier) {
-  return `<svg class="vk-vault" viewBox="0 0 60 60" aria-hidden="true">${VK_DEFS}<path d="M9 9 l-5 4 v40 l5 2z" fill="url(#vk-s)" stroke="#1a1410" stroke-width="1"/><rect x="9" y="7" width="47" height="50" rx="4" fill="url(#vk-f)" stroke="#1a1410" stroke-width="1.2"/><rect x="11.5" y="9.5" width="42" height="45" rx="3" fill="none" stroke="url(#vk-b)" stroke-width="1.6"/><rect x="14" y="4" width="37" height="4" rx="1.5" fill="url(#vk-b)" stroke="#1a1410" stroke-width=".7"/><circle class="vk-ring" cx="30" cy="30" r="18" fill="url(#vk-d)" stroke-width="1.8"/><g class="vk-bolts" fill="#8d97a3" stroke="#1a1410" stroke-width=".5">${VK_BOLTS}</g><circle cx="30" cy="29" r="9.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="2"/><g class="vk-glyph" transform="translate(30 29)" stroke="#1a1410" stroke-width=".8" stroke-linejoin="round">${VK_GLYPH[tier]}</g><text class="vk-num" x="30" y="31.4" text-anchor="middle">${VK_NUM[tier]}</text><rect x="23" y="46" width="14" height="7" rx="1.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="1"/><rect class="vk-slot" x="27.5" y="48" width="7.5" height="3" rx=".6"/><g class="vk-glyph" transform="translate(25.3 49.5) scale(.22)">${VK_GLYPH[tier]}</g></svg>`;
+  return `<svg class="vk-vault" viewBox="0 0 60 60" aria-hidden="true">${VK_DEFS}${VK_CASE}<circle class="vk-ring" cx="30" cy="30" r="18" fill="url(#vk-d)" stroke-width="1.8"/>${VK_DIAL}${VK_HUB(tier)}${VK_SLOT(tier)}</svg>`;
 }
 
 export function vaultPinHtml(poi: Pick<Poi, "tier">, o: { cooling?: boolean; lockout?: boolean } = {}) {
@@ -92,5 +103,5 @@ export function hearthPinHtml(name: string, cats: readonly string[], colors: Rec
  * 1.5 lower so the ring clears the lock. Map pins unchanged.
  */
 export function vaultSvgCentered(tier: Tier) {
-  return `<svg class="vk-vault" viewBox="0 2 65 60" aria-hidden="true">${VK_DEFS}<path d="M9 9 l-5 4 v40 l5 2z" fill="url(#vk-s)" stroke="#1a1410" stroke-width="1"/><rect x="9" y="7" width="47" height="50" rx="4" fill="url(#vk-f)" stroke="#1a1410" stroke-width="1.2"/><rect x="11.5" y="9.5" width="42" height="45" rx="3" fill="none" stroke="url(#vk-b)" stroke-width="1.6"/><rect x="14" y="4" width="37" height="4" rx="1.5" fill="url(#vk-b)" stroke="#1a1410" stroke-width=".7"/><g transform="translate(2.5 2)"><circle class="vk-ring" cx="30" cy="30" r="16.8" fill="url(#vk-d)" stroke-width="1.8"/><g class="vk-bolts" fill="#8d97a3" stroke="#1a1410" stroke-width=".5">${VK_BOLTS}</g></g><g transform="translate(2.5 3)"><circle cx="30" cy="29" r="9.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="2"/><g class="vk-glyph" transform="translate(30 29)" stroke="#1a1410" stroke-width=".8" stroke-linejoin="round">${VK_GLYPH[tier]}</g><text class="vk-num" x="30" y="31.4" text-anchor="middle">${VK_NUM[tier]}</text></g><g transform="translate(2.5 1.5)"><rect x="23" y="46" width="14" height="7" rx="1.5" fill="#120d0c" stroke="url(#vk-b)" stroke-width="1"/><rect class="vk-slot" x="27.5" y="48" width="7.5" height="3" rx=".6"/><g class="vk-glyph" transform="translate(25.3 49.5) scale(.22)">${VK_GLYPH[tier]}</g></g></svg>`;
+  return `<svg class="vk-vault" viewBox="0 2 65 60" aria-hidden="true">${VK_DEFS}${VK_CASE}<g transform="translate(2.5 2)"><circle class="vk-ring" cx="30" cy="30" r="16.8" fill="url(#vk-d)" stroke-width="1.8"/>${VK_DIAL}</g><g transform="translate(2.5 3)">${VK_HUB(tier)}</g><g transform="translate(2.5 1.5)">${VK_SLOT(tier)}</g></svg>`;
 }

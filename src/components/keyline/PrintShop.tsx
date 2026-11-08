@@ -9,9 +9,9 @@ import { PaintVat } from "./PaintVat";
 // 0.0.99: warm amber glass so the metal reads; the wrapper's data-lantern re-cases this lamp exactly like the street ones.
 const LAMP = vaultPinHtml({ tier: "amber" });
 
-function LampSwatch({ skin }: { skin: string }) {
+function LampSwatch({ skin, label }: { skin: string; label: string }) {
   return (
-    <div className="skin-swatch" data-lantern={skin} aria-hidden>
+    <div className="skin-swatch" data-lantern={skin} data-testid={`vault-skin-${skin}`} title={label} aria-hidden>
       <div dangerouslySetInnerHTML={{ __html: LAMP }} />
     </div>
   );
@@ -72,13 +72,13 @@ export function PrintShop({ counter }: { counter: boolean }) {
         <p className="kicker mt-2">{title}</p>
         <p className="text-sm text-pretty text-fg-muted">{lede}</p>
         <div className="hq-row" data-item={slot === "coat" ? "stock-coat" : "stock-lantern"}>
-          {slot === "coat" ? <CoatSwatch coat={null} /> : <LampSwatch skin="brass" />}
+          {slot === "coat" ? <CoatSwatch coat={null} /> : <LampSwatch skin="brass" label="Stock steel and brass" />}
           <div className="hq-row-copy">
             <p className="hq-row-title">
-              {slot === "coat" ? `${SCOUTS[scout].name}'s own coat` : "Brass"}
+              {slot === "coat" ? `${SCOUTS[scout].name}'s own coat` : "Steel and brass"}
               {stockWorn ? <span className="ml-2 kicker">Wearing</span> : null}
             </p>
-            <p className="hq-row-sub">{slot === "coat" ? "The coat every walker starts in." : "The city's own lamps: brass caps and posts."}</p>
+            <p className="hq-row-sub">{slot === "coat" ? "The coat every walker starts in." : "Steel case, brass trim. What every vault starts as."}</p>
             {stockWorn || !counter ? null : (
               <div className="hq-row-actions">
                 <button type="button" className="btn btn-ghost px-3 text-xs" onClick={() => wearCosmetic(slot, null)}>
@@ -99,7 +99,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
           const done = total - left.white - left.blue;
           return (
             <div key={c.id} className="hq-row" data-item={c.id}>
-              {slot === "coat" ? <CoatSwatch coat={c.id} /> : <LampSwatch skin={c.id} />}
+              {slot === "coat" ? <CoatSwatch coat={c.id} /> : <LampSwatch skin={c.id} label={`Preview · ${c.name}`} />}
               <div className="hq-row-copy">
                 <p className="hq-row-title">
                   <span className="coat-chip" style={{ background: c.swatch }} aria-hidden />
@@ -172,7 +172,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
         </div>
       ) : null}
       {section("coat", "Coats", "A new coat for your character. It only changes how you look.")}
-      {section("lantern", "Lantern skins", "Gives every street lamp a new metal frame. The glass keeps its color, so you can still tell which key a lamp needs.")}
+      {section("lantern", "Vault skins", "A new metal case for every street vault. The dial, the numeral and the slot keep their color, so you can still tell which key it takes. The drawing on each row is the preview.")}
       <PaintVat counter={counter} />
       {counter ? <NightPress /> : null}
     </div>

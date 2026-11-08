@@ -2,9 +2,9 @@
  * 0.0.45 print shop: cosmetic coats and lantern skins, paid for in white and blue matches.
  *
  * Purely visual. A coat repaints the walker's own coat (scripted palette variants of each character's
- * walk / idle / side-idle sheets, public/sprites/coats); a lantern skin re-cases every street lamp in
- * another metal (cap, frame rim and post — the glass, wick, bloom and rank pips keep their tier colour,
- * so a skin never hides what a lamp costs). No perk, no coin, no pace.
+ * walk / idle / side-idle sheets, public/sprites/coats); a lantern skin re-cases every street vault in
+ * another metal (face, side, trim, bar and bolts — the dial glyph, numeral and key slot keep their tier
+ * colour, so a skin never hides which key a vault takes). No perk, no coin, no pace.
  *
  * Prices are matches only, never coin, and are paid in instalments: the print shop keeps what has been
  * paid against each item, so a pocket that tops out at a few matches can still save up for a dear one,
@@ -36,7 +36,7 @@ export const LANTERN_SKINS: Record<LanternSkinId, Cosmetic> = {
     id: "copper",
     slot: "lantern",
     name: "Copper Lamp",
-    blurb: "Every street lamp re-cased in warm copper. The glass keeps its color.",
+    blurb: "Warm copper on every street vault. The dial, numeral and slot keep the key's color.",
     price: { white: 10, blue: 0 },
     swatch: "#c8754e",
   },
@@ -44,7 +44,7 @@ export const LANTERN_SKINS: Record<LanternSkinId, Cosmetic> = {
     id: "iron",
     slot: "lantern",
     name: "Wrought Iron",
-    blurb: "Blackened iron caps and posts, the old gas-lamp look.",
+    blurb: "Blackened iron case and bolts. The dial keeps its color.",
     price: { white: 8, blue: 2 },
     swatch: "#55585e",
   },
@@ -52,7 +52,7 @@ export const LANTERN_SKINS: Record<LanternSkinId, Cosmetic> = {
     id: "verdigris",
     slot: "lantern",
     name: "Verdigris",
-    blurb: "Brass left out in a hundred rains: soft green patina on every cap.",
+    blurb: "Soft green patina on the case. The dial keeps its color.",
     price: { white: 6, blue: 4 },
     swatch: "#5f9e88",
   },
@@ -60,7 +60,7 @@ export const LANTERN_SKINS: Record<LanternSkinId, Cosmetic> = {
     id: "nickel",
     slot: "lantern",
     name: "Nickel Plate",
-    blurb: "Bright plated caps and posts that catch the lamplight.",
+    blurb: "Bright plated case and bolts. The dial keeps its color.",
     price: { white: 0, blue: 8 },
     swatch: "#c4c9cf",
   },

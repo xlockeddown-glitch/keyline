@@ -7,48 +7,59 @@
 [data-lantern="copper"]{
   --skin-cap-hi:#f2b898; --skin-cap-mid:#c8754e; --skin-cap-lo:#7a3f26; --skin-cap-shadow:#4a2616;
   --skin-rim:#9a5a3a; --skin-post-dk:#3a2218; --skin-post-lt:#7a4630; --skin-foot:#5a3220;
+  --vk-face:#c8754e; --vk-side:#4a2616; --vk-trim:#e8b898; --vk-bar:#f2b898; --vk-bolt:#f2c8a8; --vk-dial:#8a4a32;
 }
 [data-lantern="iron"]{
   --skin-cap-hi:#8e9196; --skin-cap-mid:#55585e; --skin-cap-lo:#2a2c30; --skin-cap-shadow:#141517;
   --skin-rim:#4f5257; --skin-post-dk:#1c1e21; --skin-post-lt:#43474c; --skin-foot:#2e3135;
+  --vk-face:#55585e; --vk-side:#1c1e21; --vk-trim:#8e9196; --vk-bar:#6a6e74; --vk-bolt:#c5c8cc; --vk-dial:#3a3d42;
 }
 [data-lantern="verdigris"]{
   --skin-cap-hi:#b0d8c6; --skin-cap-mid:#5f9e88; --skin-cap-lo:#2f5e4f; --skin-cap-shadow:#1f3a31;
   --skin-rim:#4f7f6e; --skin-post-dk:#1f3a31; --skin-post-lt:#447866; --skin-foot:#2c5246;
+  --vk-face:#3f7360; --vk-side:#1a332b; --vk-trim:#9dcebb; --vk-bar:#5f9e88; --vk-bolt:#d5ebe3; --vk-dial:#2a5648;
 }
 [data-lantern="nickel"]{
   --skin-cap-hi:#f4f6f8; --skin-cap-mid:#c4c9cf; --skin-cap-lo:#7d848c; --skin-cap-shadow:#4a4f55;
   --skin-rim:#9aa1a8; --skin-post-dk:#3a3e43; --skin-post-lt:#80868e; --skin-foot:#5a6066;
+  --vk-face:#b7bec6; --vk-side:#4a5158; --vk-trim:#f4f6f8; --vk-bar:#d5dae0; --vk-bolt:#f7f8f9; --vk-dial:#7d868f;
 }
 
 [data-lantern="paint-white"]{
   --skin-cap-hi:#f4efe4; --skin-cap-mid:#e4dcc8; --skin-cap-lo:#b7ad96; --skin-cap-shadow:#7a7160;
   --skin-rim:#a89c86; --skin-post-dk:#645c4e; --skin-post-lt:#b7ad96; --skin-foot:#7a7160;
+  --vk-face:#e4dcc8; --vk-side:#6a6254; --vk-trim:#f4efe4; --vk-bar:#d6d1c7; --vk-bolt:#f4efe4; --vk-dial:#b7ad96;
 }
 [data-lantern="paint-blue"]{
   --skin-cap-hi:#d5e8f6; --skin-cap-mid:#3a6d98; --skin-cap-lo:#1e4464; --skin-cap-shadow:#122c42;
   --skin-rim:#2c5c86; --skin-post-dk:#163044; --skin-post-lt:#4a7eac; --skin-foot:#1e4464;
+  --vk-face:#3a6d98; --vk-side:#122c42; --vk-trim:#9ec4e2; --vk-bar:#2c5c86; --vk-bolt:#d5e8f6; --vk-dial:#1e4464;
 }
 [data-lantern="paint-green"]{
   --skin-cap-hi:#d7efc8; --skin-cap-mid:#2a6842; --skin-cap-lo:#173c28; --skin-cap-shadow:#0e2616;
   --skin-rim:#245636; --skin-post-dk:#12301e; --skin-post-lt:#3a7a50; --skin-foot:#173c28;
+  --vk-face:#2a6842; --vk-side:#0e2616; --vk-trim:#b7d9a4; --vk-bar:#245636; --vk-bolt:#d7efc8; --vk-dial:#173c28;
 }
 [data-lantern="paint-amber"]{
   --skin-cap-hi:#fff6d4; --skin-cap-mid:#f0b429; --skin-cap-lo:#8a4e10; --skin-cap-shadow:#4a2808;
   --skin-rim:#d4a24a; --skin-post-dk:#5a3410; --skin-post-lt:#f2c56a; --skin-foot:#7a4510;
+  --vk-face:#c4922e; --vk-side:#4a2808; --vk-trim:#fff6d4; --vk-bar:#e39a1a; --vk-bolt:#ffe08a; --vk-dial:#8a4e10;
 }
 [data-lantern="paint-red"]{
   --skin-cap-hi:#ffd8cc; --skin-cap-mid:#a82824; --skin-cap-lo:#3c0e0c; --skin-cap-shadow:#200808;
   --skin-rim:#e0c17a; --skin-post-dk:#2e0c0a; --skin-post-lt:#c44a40; --skin-foot:#4a1210;
+  --vk-face:#8e241c; --vk-side:#2a0a08; --vk-trim:#e0c17a; --vk-bar:#c6a15a; --vk-bolt:#f3e2b0; --vk-dial:#5c1412;
 }
 [data-lantern="paint-violet"]{
   --skin-cap-hi:#f6ecff; --skin-cap-mid:#6a3498; --skin-cap-lo:#1a1028; --skin-cap-shadow:#0e0818;
   --skin-rim:#e4c98a; --skin-post-dk:#140c22; --skin-post-lt:#9a62c4; --skin-foot:#241438;
+  --vk-face:#5a2c86; --vk-side:#140c22; --vk-trim:#e4c98a; --vk-bar:#9a62c4; --vk-bolt:#f6e7b8; --vk-dial:#2a1848;
 }
 
 [data-lantern="paint-prism"]{
   --skin-cap-hi:#f4fbff; --skin-cap-mid:#3ec8e0; --skin-cap-lo:#241848; --skin-cap-shadow:#100818;
   --skin-rim:#e4c98a; --skin-post-dk:#16102a; --skin-post-lt:#6a8ae0; --skin-foot:#1a1430;
+  --vk-face:#3a6dff; --vk-side:#1a1030; --vk-trim:#e4c98a; --vk-bar:#ff5a92; --vk-bolt:#7ee7ff; --vk-dial:#c15cff;
 }
 
 [data-lantern] .lantern-cap,
@@ -106,6 +117,31 @@
 [data-lantern="paint-prism"] .lantern-frame,
 [data-lantern="paint-prism"] .stack-globe{
   box-shadow:0 0 0 1px #e4c98a, 0 0 12px rgba(90,160,255,.45)
+}
+
+/* 0.1.136: the same skins recolour the vault case (face, side, trim, bar, bolts, dial plate).
+   Glyph, numeral and slot are not listed here — styles.css keeps them on the tier colour.
+   Stock brass sets no --vk-* so the steel/brass gradients in the SVG stay. A shop preview
+   names its own skin on .skin-swatch, which wins over the worn skin on <html> by inheritance.
+   Hearth pins keep the copper case. No animation. */
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-face,
+.skin-swatch[data-lantern] .vk-face{ fill:var(--vk-face, url(#vk-f)) }
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-side,
+.skin-swatch[data-lantern] .vk-side{ fill:var(--vk-side, url(#vk-s)) }
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-trim,
+.skin-swatch[data-lantern] .vk-trim{ stroke:var(--vk-trim, url(#vk-b)) }
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-bar,
+.skin-swatch[data-lantern] .vk-bar{ fill:var(--vk-bar, url(#vk-b)) }
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-bolts,
+.skin-swatch[data-lantern] .vk-bolts{ fill:var(--vk-bolt, #8d97a3) }
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-ring,
+.skin-swatch[data-lantern] .vk-ring{ fill:var(--vk-dial, url(#vk-d)) }
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-hub,
+[data-lantern] .vault-pin:not(.hearth-pin):not(.hearth-ghost):not(.ho-vault) .vk-plate,
+.skin-swatch[data-lantern] .vk-hub,
+.skin-swatch[data-lantern] .vk-plate{ stroke:var(--vk-trim, url(#vk-b)) }
+.skin-swatch[data-lantern="brass"]{
+  --vk-face:initial; --vk-side:initial; --vk-trim:initial; --vk-bar:initial; --vk-bolt:initial; --vk-dial:initial;
 }
 
 .skin-swatch{

@@ -170,3 +170,27 @@ test("art wiring: the coat palette, the generated coat CSS and the lantern-skin 
   assert.ok(root.indexOf("/lantern-art.css") < root.indexOf("/wardrobe.css"), "skins load after the lantern art");
   assert.ok(root.includes("/coats.css"));
 });
+
+test("0.1.136 vault skins recolour the case and leave the tier dial", () => {
+  const skins = read("../../public/wardrobe.css");
+  const pins = read("./pins.ts");
+  const metals = [...Object.keys(LANTERN_SKINS), "paint-white", "paint-blue", "paint-green", "paint-amber", "paint-red", "paint-violet", "paint-prism"];
+  for (const id of metals) {
+    assert.match(skins, new RegExp(`\\[data-lantern="${id}"\\]\\{[^}]*--vk-face:`), id);
+    assert.match(skins, new RegExp(`\\[data-lantern="${id}"\\]\\{[^}]*--vk-trim:`), id);
+    assert.match(skins, new RegExp(`\\[data-lantern="${id}"\\]\\{[^}]*--vk-bar:`), id);
+  }
+  assert.match(skins, /\.vk-face\{[^}]*fill:var\(--vk-face/);
+  assert.match(skins, /\.skin-swatch\[data-lantern="brass"\]/);
+  assert.doesNotMatch(skins, /\.vk-glyph|\.vk-num|\.vk-slot/);
+  assert.doesNotMatch(skins, /@keyframes[^}]*vk-|animation:[^;]*vk-/);
+  for (const cls of ["vk-face", "vk-side", "vk-trim", "vk-bar", "vk-bolts", "vk-ring", "vk-hub", "vk-plate", "vk-glyph", "vk-num", "vk-slot"]) {
+    assert.match(pins, new RegExp(`class="${cls}"`), cls);
+  }
+  for (const fn of ["export function vaultSvg", "export function vaultSvgCentered"]) {
+    const body = pins.slice(pins.indexOf(fn), pins.indexOf(fn) + 400);
+    assert.match(body, /VK_CASE/, fn);
+    assert.match(body, /VK_HUB/, fn);
+    assert.match(body, /VK_SLOT/, fn);
+  }
+});

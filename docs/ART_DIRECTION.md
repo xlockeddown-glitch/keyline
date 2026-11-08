@@ -23,7 +23,7 @@ Keyline is mixed media. Do not force one treatment onto every layer.
 | Layer | Treatment now | Examples | Proposed |
 | --- | --- | --- | --- |
 | City | Real OSM tiles, darkened by the app. Never paint over the basemap. | Leaflet `atlas-tiles` in `GameMap.tsx` | Unchanged. |
-| Vaults | Layered SVG. Tier colour lives on the glass, glyph and numeral. Brass trim is shared. | `vaultSvg` in `src/game/pins.ts` | Unchanged. Do not replace with a bitmap. |
+| Vaults | Layered SVG. Tier colour lives on the glyph, numeral and slot. Brass trim is the stock case. | `vaultSvg` in `src/game/pins.ts` | A print-shop skin recolours the case only (face, side, trim, bar, bolts). Do not replace with a bitmap. Do not recolour the glyph, numeral or slot. |
 | Service signs | Enamel plate, cream border `#ece4d6`, post. Station `#1c2b3a` + train. Board `#4b1c22` + `!`. Counter **was** `#1c2e24` in `src/styles.css`, then a painted PNG covered it. | `.station-pin`, `.board-pin`, `.counter-pin` | Painted props may replace the plate, but they keep that place's enamel colour so the pin still matches its sign. |
 | Small props | Chunky pixel PNG, transparent ground. | `print-shop.png`, `street-counter-v2.png`, `outfitter-front.png`, `public/sprites/key.png` | Pixel grid, nearest-neighbour scale, `image-rendering: pixelated`, one dark outline. Checked at the CSS box, not at source size. |
 | Scouts | Painted chibi sheets, 192px cells. A coat is a mask recolour, not a new body. | `public/sprites/scouts/*-v2.png`, `src/game/coatLayer.ts` | Stay smooth. Do not pixelate. Do not redraw a scout inside a prop slice. |
@@ -173,3 +173,7 @@ Left on purpose:
 
 - `outfitter-front.png` and its candy-stripe awning, including the magenta fringe.
 - Notice board, vaults, scouts, cars, houses, journal, prices.
+
+## 0.1.136 vault skins
+
+The four print-shop metal skins (and vault paint, including prism) recolour the vault SVG case. Stock is the steel-and-brass drawing with no skin attribute. The glyph, numeral and slot stay on the tier colour. Hearth pins stay copper. No new prices, ids or motion.
