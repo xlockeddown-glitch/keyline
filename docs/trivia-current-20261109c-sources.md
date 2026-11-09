@@ -1,0 +1,193 @@
+# Trivia current-events sources — batch 20261109c
+
+Each card's prompt, answer and source page(s). Wikipedia article text was fetched (API extract) and the answer string confirmed in it; non-token-match cards were read by hand.
+
+- [political] Who won Chile's Dec 2025 presidential runoff? — **José Antonio Kast** — https://en.wikipedia.org/wiki/2025_Chilean_presidential_election
+- [political] Which Communist Party candidate lost Chile's Dec 2025 presidential runoff? — **Jeannette Jara** — https://en.wikipedia.org/wiki/2025_Chilean_presidential_election
+- [political] Who won Bolivia's Oct 2025 presidential runoff? — **Rodrigo Paz** — https://en.wikipedia.org/wiki/2025_Bolivian_general_election
+- [political] Who was re-elected president of Ecuador in April 2025? — **Daniel Noboa** — https://en.wikipedia.org/wiki/2025_Ecuadorian_general_election
+- [political] Who won Romania's May 2025 presidential runoff? — **Nicușor Dan** — https://en.wikipedia.org/wiki/2025_Romanian_presidential_election
+- [political] Romania re-ran its presidential vote in 2025 after annulling the 2024 win of which candidate? — **Călin Georgescu** — https://en.wikipedia.org/wiki/2025_Romanian_presidential_election
+- [political] Which ex-prime minister's ANO party won Czechia's Oct 2025 election? — **Andrej Babiš** — https://en.wikipedia.org/wiki/2025_Czech_parliamentary_election
+- [political] Whose Labour Party won the most seats in Norway's Sept 2025 election? — **Jonas Gahr Støre** — https://en.wikipedia.org/wiki/2025_Norwegian_parliamentary_election
+- [political] Who won Ireland's Oct 2025 presidential election in a landslide? — **Catherine Connolly** — https://en.wikipedia.org/wiki/2025_Irish_presidential_election
+- [political] Which party tied PVV for the most seats in the Oct 2025 Dutch election? — **D66** — https://en.wikipedia.org/wiki/2025_Dutch_general_election
+- [political] Who was declared winner of Honduras's Nov 2025 presidential election? — **Nasry Asfura** — https://en.wikipedia.org/wiki/2025_Honduran_general_election
+- [political] Which Japanese prime minister announced his resignation in Sept 2025? — **Shigeru Ishiba** — https://en.wikipedia.org/wiki/2025_Liberal_Democratic_Party_(Japan)_presidential_election
+- [political] Whose Social Democrats led Sweden's opposition to a narrow win in Sept 2026? — **Magdalena Andersson** — https://en.wikipedia.org/wiki/2026_Swedish_general_election
+- [political] Which party won majorities in both houses of the US Congress in Nov 2026? — **Democratic Party** — https://en.wikipedia.org/wiki/2026_United_States_elections
+- [political] Which party's 2026 Danish vote share was its lowest since 1903, though it won the most seats? — **Social Democrats** — https://en.wikipedia.org/wiki/2026_Danish_general_election
+- [political] Who became Slovenia's prime minister for a fourth time in 2026? — **Janez Janša** — https://en.wikipedia.org/wiki/2026_Slovenian_parliamentary_election
+- [political] Youth protests in Sept 2025 forced out which Nepali prime minister? — **K. P. Sharma Oli** — https://en.wikipedia.org/wiki/2026_Nepalese_general_election
+- [political] Which party won a landslide in Nepal's March 2026 election? — **Rastriya Swatantra Party** — https://en.wikipedia.org/wiki/2026_Nepalese_general_election
+- [political] Who was re-elected Thailand's prime minister in March 2026? — **Anutin Charnvirakul** — https://en.wikipedia.org/wiki/2026_Thai_general_election
+- [political] Who was declared winner of Uganda's Jan 2026 presidential election? — **Yoweri Museveni** — https://en.wikipedia.org/wiki/2026_Ugandan_general_election
+- [political] Whose Civil Contract party won Armenia's June 2026 election? — **Nikol Pashinyan** — https://en.wikipedia.org/wiki/2026_Armenian_parliamentary_election
+- [political] Which Bulgarian president resigned in Jan 2026 to lead a party into parliament? — **Rumen Radev** — https://en.wikipedia.org/wiki/2026_Bulgarian_parliamentary_election
+- [political] Which party lost all 79 of its seats in Quebec's Oct 2026 election? — **Coalition Avenir Québec** — https://en.wikipedia.org/wiki/2026_Quebec_general_election
+- [political] Which party won the most seats in Quebec's Oct 2026 election? — **Parti Québécois** — https://en.wikipedia.org/wiki/2026_Quebec_general_election
+- [political] Who was re-elected Malawi's president in Sept 2025, returning to office? — **Peter Mutharika** — https://en.wikipedia.org/wiki/2025_Malawian_general_election
+- [political] Which long-serving president was declared winner of Cameroon's Oct 2025 election? — **Paul Biya** — https://en.wikipedia.org/wiki/2025_Cameroonian_presidential_election
+- [political] Who was re-elected president of Ivory Coast in Oct 2025? — **Alassane Ouattara** — https://en.wikipedia.org/wiki/2025_Ivorian_presidential_election
+- [political] Who was Tanzania's president seeking a second term in Oct 2025? — **Samia Suluhu Hassan** — https://en.wikipedia.org/wiki/2025_Tanzanian_general_election
+- [science] 3I/ATLAS, discovered in July 2025, was the third known object of what kind? — **interstellar** — https://en.wikipedia.org/wiki/3I/ATLAS
+- [science] Which interstellar object was the first ever confirmed, before 2025's 3I/ATLAS? — **ʻOumuamua** — https://en.wikipedia.org/wiki/3I/ATLAS
+- [science] The Vera C. Rubin Observatory, which released first images in 2025, is in which country? — **Chile** — https://en.wikipedia.org/wiki/Vera_C._Rubin_Observatory
+- [science] Which company's Blue Ghost lander touched down on the Moon in March 2025? — **Firefly Aerospace** — https://en.wikipedia.org/wiki/Blue_Ghost_Mission_1
+- [nature] A magnitude 7.7 earthquake struck near which city in Myanmar in March 2025? — **Mandalay** — https://en.wikipedia.org/wiki/2025_Myanmar_earthquake
+- [nature] A magnitude 8.8 quake struck off which Russian peninsula in July 2025? — **Kamchatka** — https://en.wikipedia.org/wiki/2025_Kamchatka_earthquake
+- [nature] Hurricane Melissa made a catastrophic landfall on which island in Oct 2025? — **Jamaica** — https://en.wikipedia.org/wiki/Hurricane_Melissa
+- [nature] Hurricane Melissa (2025) tied which storm as the strongest Atlantic hurricane by wind speed? — **Hurricane Allen** — https://en.wikipedia.org/wiki/Hurricane_Melissa
+- [nature] The Eaton Fire of Jan 2025 burned through which Los Angeles-area community? — **Altadena** — https://en.wikipedia.org/wiki/January_2025_Southern_California_wildfires
+- [nature] Which winds drove the Los Angeles wildfires of Jan 2025? — **Santa Ana winds** — https://en.wikipedia.org/wiki/January_2025_Southern_California_wildfires
+- [science] Olo, a color announced in 2025, can only be seen by stimulating which cone cells alone? — **M cones** — https://en.wikipedia.org/wiki/Olo_(color)
+- [science] China's Tianwen-2, launched in May 2025, is a sample-return mission to what? — **an asteroid** — https://en.wikipedia.org/wiki/Tianwen-2
+- [science] Tianwen-2 reached which near-Earth asteroid in July 2026? — **Kamoʻoalewa** — https://en.wikipedia.org/wiki/Tianwen-2
+- [science] Which European country's north saw a total solar eclipse on Aug 12, 2026? — **Spain** — https://en.wikipedia.org/wiki/2026_total_solar_eclipse
+- [science] Which island nation saw totality in the Aug 2026 solar eclipse? — **Iceland** — https://en.wikipedia.org/wiki/2026_total_solar_eclipse
+- [science] Fram2, launched in 2025, was the first human spaceflight into what kind of orbit? — **polar orbit** — https://en.wikipedia.org/wiki/Fram2
+- [science] Which entrepreneur funded and flew on the 2025 Fram2 mission? — **Chun Wang** — https://en.wikipedia.org/wiki/Fram2
+- [science] Shubhanshu Shukla became the first Indian to visit which station in 2025? — **International Space Station** — https://en.wikipedia.org/wiki/Shubhanshu_Shukla
+- [science] Before Shubhanshu Shukla in 2025, who was the only Indian to go to space? — **Rakesh Sharma** — https://en.wikipedia.org/wiki/Shubhanshu_Shukla
+- [science] Which NASA astronaut's medical issue ended Crew-11 early in Jan 2026? — **Michael Fincke** — https://en.wikipedia.org/wiki/Crew-11
+- [science] NASA's SPHEREx telescope, launched in March 2025, surveys the sky in which light? — **near-infrared** — https://en.wikipedia.org/wiki/SPHEREx
+- [science] In which city is the AI company DeepSeek, which released its R1 model in Jan 2025, based? — **Hangzhou** — https://en.wikipedia.org/wiki/DeepSeek
+- [science] Who founded the AI company DeepSeek? — **Liang Wenfeng** — https://en.wikipedia.org/wiki/DeepSeek
+- [science] NASA's Lunar Trailblazer, launched in Feb 2025, was meant to map what on the Moon? — **water** — https://en.wikipedia.org/wiki/Lunar_Trailblazer
+- [celebrity] Which 2025 Netflix film follows the K-pop girl group Huntrix? — **KPop Demon Hunters** — https://en.wikipedia.org/wiki/KPop_Demon_Hunters
+- [celebrity] Who played twin brothers in Ryan Coogler's 2025 film 'Sinners'? — **Michael B. Jordan** — https://en.wikipedia.org/wiki/Sinners_(2025_film)
+- [arts] In which US region is the 2025 film 'Sinners' set? — **Mississippi Delta** — https://en.wikipedia.org/wiki/Sinners_(2025_film)
+- [books] 'One Battle After Another' (2025) was inspired by which Thomas Pynchon novel? — **Vineland** — https://en.wikipedia.org/wiki/One_Battle_After_Another
+- [celebrity] Who played William Shakespeare in the 2025 film 'Hamnet'? — **Paul Mescal** — https://en.wikipedia.org/wiki/Hamnet_(film)
+- [celebrity] Who played Steve in 2025's 'A Minecraft Movie'? — **Jack Black** — https://en.wikipedia.org/wiki/Minecraft_Movie
+- [celebrity] Which young actress made her debut as Lilo in the 2025 'Lilo & Stitch' remake? — **Maia Kealoha** — https://en.wikipedia.org/wiki/Lilo_&_Stitch_(2025_film)
+- [celebrity] Which singer voices Gazelle in 'Zootopia 2' (2025)? — **Shakira** — https://en.wikipedia.org/wiki/Zootopia_2
+- [celebrity] What is the name of the pit viper villain in 'Zootopia 2' (2025)? — **Gary De'Snake** — https://en.wikipedia.org/wiki/Zootopia_2
+- [arts] What is the third Avatar film, released in Dec 2025, called? — **Fire and Ash** — https://en.wikipedia.org/wiki/Avatar:_Fire_and_Ash
+- [arts] Who directed 'Wicked: For Good' (2025)? — **Jon M. Chu** — https://en.wikipedia.org/wiki/Wicked:_For_Good
+- [history] The Twelve-Day War of June 2025 was fought between Israel and which country? — **Iran** — https://en.wikipedia.org/wiki/Twelve-Day_War
+- [history] What was India's May 2025 military operation against Pakistan codenamed? — **Operation Sindoor** — https://en.wikipedia.org/wiki/Operation_Sindoor
+- [history] From which Indian city did Air India Flight 171 take off before crashing in June 2025? — **Ahmedabad** — https://en.wikipedia.org/wiki/Air_India_Flight_171
+- [history] Which aircraft model was Air India Flight 171, lost in June 2025? — **Boeing 787** — https://en.wikipedia.org/wiki/Air_India_Flight_171
+- [history] Over which river did an airliner and Army helicopter collide in Jan 2025? — **Potomac River** — https://en.wikipedia.org/wiki/2025_Potomac_River_mid-air_collision
+- [nature] Which Texas river rose 26 feet in 45 minutes during the July 2025 floods? — **Guadalupe River** — https://en.wikipedia.org/wiki/July_2025_Central_Texas_floods
+- [history] Which two countries lost power in the April 2025 Iberian blackout? — **Spain and Portugal** — https://en.wikipedia.org/wiki/2025_Iberian_Peninsula_blackout
+- [history] On which holiday did Pope Francis die in April 2025? — **Easter Monday** — https://en.wikipedia.org/wiki/Death_and_funeral_of_Pope_Francis
+- [history] On which ballot did the May 2025 conclave elect Pope Leo XIV? — **fourth** — https://en.wikipedia.org/wiki/2025_papal_conclave
+- [history] Which two countries fought a border conflict starting in July 2025? — **Cambodia and Thailand** — https://en.wikipedia.org/wiki/2025_Cambodia–Thailand_border_conflict
+- [political] Which Madagascar president was overthrown in an Oct 2025 coup? — **Andry Rajoelina** — https://en.wikipedia.org/wiki/2025_Madagascar_coup_d'état
+- [political] Which colonel was sworn in as Madagascar's interim president in Oct 2025? — **Michael Randrianirina** — https://en.wikipedia.org/wiki/2025_Madagascar_coup_d'état
+- [political] When did the record-long US government shutdown that began Oct 1, 2025 end? — **November 12, 2025** — https://en.wikipedia.org/wiki/2025_United_States_federal_government_shutdown
+- [political] Nepal's Sept 2025 Gen Z protests began alongside a ban on what? — **social media** — https://en.wikipedia.org/wiki/2025_Nepalese_Gen_Z_protests
+- [music] Who headlined the Super Bowl LIX halftime show in Feb 2025? — **Kendrick Lamar** — https://en.wikipedia.org/wiki/Super_Bowl_LIX_halftime_show
+- [music] Who headlined the Super Bowl LX halftime show in Feb 2026? — **Bad Bunny** — https://en.wikipedia.org/wiki/Super_Bowl_LX_halftime_show
+- [music] Which singer guested at Bad Bunny's Super Bowl LX halftime show in Feb 2026? — **Lady Gaga** — https://en.wikipedia.org/wiki/Super_Bowl_LX_halftime_show
+- [music] In which city did Oasis open their 2025 reunion tour? — **Cardiff** — https://en.wikipedia.org/wiki/Oasis_Live_'25_Tour
+- [music] Which band played its final concert at Villa Park in July 2025? — **Black Sabbath** — https://en.wikipedia.org/wiki/Back_to_the_Beginning
+- [music] In which country did Taylor Swift record 'The Life of a Showgirl'? — **Sweden** — https://en.wikipedia.org/wiki/The_Life_of_a_Showgirl
+- [music] Which Sam Fender album won the 2025 Mercury Prize? — **People Watching** — https://en.wikipedia.org/wiki/Sam_Fender
+- [sports] Who became the first Asian world snooker champion in May 2025? — **Zhao Xintong** — https://en.wikipedia.org/wiki/2025_World_Snooker_Championship
+- [sports] Whom did Zhao Xintong beat in the May 2025 World Snooker final? — **Mark Williams** — https://en.wikipedia.org/wiki/2025_World_Snooker_Championship
+- [sports] Who beat Shaun Murphy 18–17 in the May 2026 World Snooker final? — **Wu Yize** — https://en.wikipedia.org/wiki/2026_World_Snooker_Championship
+- [sports] Who became the youngest darts world champion in Jan 2025? — **Luke Littler** — https://en.wikipedia.org/wiki/2025_PDC_World_Darts_Championship
+- [sports] Which Dutch player lost the Jan 2026 PDC world darts final to Luke Littler? — **Gian van Veen** — https://en.wikipedia.org/wiki/2026_PDC_World_Darts_Championship
+- [sports] Which horse won the Grand National in April 2025? — **Nick Rockett** — https://en.wikipedia.org/wiki/2025_Grand_National
+- [sports] Which horse won the Grand National for a second time in April 2026? — **I Am Maximus** — https://en.wikipedia.org/wiki/2026_Grand_National
+- [sports] Which horse won the Melbourne Cup in Nov 2025? — **Half Yours** — https://en.wikipedia.org/wiki/2025_Melbourne_Cup
+- [sports] Which horse won the Melbourne Cup on Nov 3, 2026? — **Point Of Law** — https://en.wikipedia.org/wiki/2026_Melbourne_Cup
+- [sports] Who won the 2025 MotoGP title, his first since 2019? — **Marc Márquez** — https://en.wikipedia.org/wiki/2025_MotoGP_World_Championship
+- [sports] Who won his second straight Daytona 500 in Feb 2025? — **William Byron** — https://en.wikipedia.org/wiki/2025_Daytona_500
+- [sports] Who won the Daytona 500 in Feb 2026? — **Tyler Reddick** — https://en.wikipedia.org/wiki/2026_Daytona_500
+- [sports] Who won the 2025 NASCAR Cup Series championship? — **Kyle Larson** — https://en.wikipedia.org/wiki/2025_NASCAR_Cup_Series
+- [sports] Which team won its first IPL title in June 2025? — **Royal Challengers Bengaluru** — https://en.wikipedia.org/wiki/2025_Indian_Premier_League
+- [sports] Which team won the Six Nations in March 2025? — **France** — https://en.wikipedia.org/wiki/2025_Six_Nations_Championship
+- [sports] Whose last-kick penalty beat England 48–46 to win France the 2026 Six Nations? — **Thomas Ramos** — https://en.wikipedia.org/wiki/2026_Six_Nations_Championship
+- [sports] By what score did the Lions win their 2025 test series in Australia? — **2–1** — https://en.wikipedia.org/wiki/2025_British_&_Irish_Lions_tour_to_Australia
+- [sports] Which city hosted the World Athletics Championships in Sept 2025? — **Tokyo** — https://en.wikipedia.org/wiki/2025_World_Athletics_Championships
+- [sports] Which country won the CONCACAF Gold Cup in July 2025? — **Mexico** — https://en.wikipedia.org/wiki/2025_CONCACAF_Gold_Cup
+- [sports] Which team swept the Phoenix Mercury in the Oct 2025 WNBA Finals? — **Las Vegas Aces** — https://en.wikipedia.org/wiki/2025_WNBA_Finals
+- [sports] Which team lost a seven-game World Series to the Dodgers in Nov 2025? — **Toronto Blue Jays** — https://en.wikipedia.org/wiki/2025_World_Series
+- [games] Nintendo's Switch 2 console was released in June of which year? — **2025** — https://en.wikipedia.org/wiki/Nintendo_Switch_2
+- [games] What can the Switch 2's Joy-Con 2 controllers also act as, new for 2025? — **a computer mouse** — https://en.wikipedia.org/wiki/Nintendo_Switch_2
+- [games] How many racers can compete in a race in 2025's 'Mario Kart World'? — **24** — https://en.wikipedia.org/wiki/Mario_Kart_World
+- [games] Which teenage character joins Donkey Kong in 2025's 'Donkey Kong Bananza'? — **Pauline** — https://en.wikipedia.org/wiki/Donkey_Kong_Bananza
+- [games] Who is the playable heroine of 2025's 'Hollow Knight: Silksong'? — **Hornet** — https://en.wikipedia.org/wiki/Hollow_Knight:_Silksong
+- [games] What is the free battle royale mode of 2025's 'Battlefield 6' called? — **RedSec** — https://en.wikipedia.org/wiki/Battlefield_6
+- [games] In which city is 2025's 'Pokémon Legends: Z-A' set entirely? — **Lumiose City** — https://en.wikipedia.org/wiki/Pokémon_Legends:_Z-A
+- [games] 'Ghost of Yōtei' (2025) is a sequel to which game? — **Ghost of Tsushima** — https://en.wikipedia.org/wiki/Ghost_of_Yōtei
+- [games] What is the name of the heroine of 2025's 'Ghost of Yōtei'? — **Atsu** — https://en.wikipedia.org/wiki/Ghost_of_Yōtei
+- [games] Who directed 2025's 'Death Stranding 2: On the Beach'? — **Hideo Kojima** — https://en.wikipedia.org/wiki/Death_Stranding_2:_On_the_Beach
+- [games] Which studio made 2025's roguelike spin-off 'Elden Ring Nightreign'? — **FromSoftware** — https://en.wikipedia.org/wiki/Elden_Ring_Nightreign
+- [games] Which studio made the 2025 co-op-only game 'Split Fiction'? — **Hazelight Studios** — https://en.wikipedia.org/wiki/Split_Fiction
+- [games] Which Czech studio made 2025's 'Kingdom Come: Deliverance II'? — **Warhorse Studios** — https://en.wikipedia.org/wiki/Kingdom_Come:_Deliverance_II
+- [games] Which FBI analyst is a new playable character in 2026's 'Resident Evil Requiem'? — **Grace Ashcroft** — https://en.wikipedia.org/wiki/Resident_Evil_Requiem
+- [games] Which studio made the James Bond game '007 First Light' (2026)? — **IO Interactive** — https://en.wikipedia.org/wiki/007_First_Light
+- [games] Which studio made 'Marvel's Wolverine' (2026)? — **Insomniac Games** — https://en.wikipedia.org/wiki/Marvel's_Wolverine
+- [games] Who are the two lead criminals in 'Grand Theft Auto VI'? — **Jason and Lucia** — https://en.wikipedia.org/wiki/Grand_Theft_Auto_VI
+- [games] Which French studio made 2025's 'Clair Obscur: Expedition 33'? — **Sandfall Interactive** — https://en.wikipedia.org/wiki/Clair_Obscur:_Expedition_33
+- [games] In 'Clair Obscur: Expedition 33,' who erases people each year in the Gommage? — **the Paintress** — https://en.wikipedia.org/wiki/Clair_Obscur:_Expedition_33
+- [games] The 2025 puzzle game 'Blue Prince' is set in a mansion with how many rooms in its blueprint? — **45** — https://en.wikipedia.org/wiki/Blue_Prince
+- [games] Who is the heroine of 2025's 'Hades II'? — **Melinoë** — https://en.wikipedia.org/wiki/Hades_II
+- [games] Who directed 2025's 'Kirby Air Riders,' the first Kirby game he directed in years? — **Masahiro Sakurai** — https://en.wikipedia.org/wiki/Kirby_Air_Riders
+- [games] Which studio made 2025's 'Metroid Prime 4: Beyond'? — **Retro Studios** — https://en.wikipedia.org/wiki/Metroid_Prime_4:_Beyond
+- [games] Which rival bounty hunter confronts Samus in 'Metroid Prime 4: Beyond' (2025)? — **Sylux** — https://en.wikipedia.org/wiki/Metroid_Prime_4:_Beyond
+- [games] Which studio made the 2025 superhero workplace comedy game 'Dispatch'? — **AdHoc Studio** — https://en.wikipedia.org/wiki/Dispatch_(video_game)
+- [games] Which actor voices Robert Robertson in the 2025 game 'Dispatch'? — **Aaron Paul** — https://en.wikipedia.org/wiki/Dispatch_(video_game)
+- [games] What do players do in the 2025 co-op hit 'Peak'? — **climb a mountain** — https://en.wikipedia.org/wiki/Peak_(video_game)
+- [games] Which Swedish studio made the 2025 co-op horror game 'R.E.P.O.'? — **Semiwork** — https://en.wikipedia.org/wiki/R.E.P.O.
+- [games] On which date in 2026 did 'Pokémon Champions' launch on Switch? — **April 8** — https://en.wikipedia.org/wiki/Pokémon_Champions
+- [sports] Which three NOCs made their Winter Olympic debut at Milano Cortina 2026? — **Benin, Guinea-Bissau and UAE** — https://en.wikipedia.org/wiki/2026_Winter_Olympics_medal_table
+- [sports] Which stadium hosted most of the Feb 2026 Winter Olympics opening ceremony? — **San Siro** — https://en.wikipedia.org/wiki/2026_Winter_Olympics_opening_ceremony
+- [sports] How many host countries did the 2026 men's World Cup have? — **three** — https://en.wikipedia.org/wiki/2026_FIFA_World_Cup
+- [sports] Who won the Golden Boot at the 2026 men's World Cup with 10 goals? — **Kylian Mbappé** — https://en.wikipedia.org/wiki/2026_FIFA_World_Cup
+- [sports] In which city was the May 2026 Champions League final played? — **Budapest** — https://en.wikipedia.org/wiki/2025–26_UEFA_Champions_League
+- [sports] How did PSG beat Arsenal in the May 2026 Champions League final? — **on penalties** — https://en.wikipedia.org/wiki/2025–26_UEFA_Champions_League
+- [sports] Which horse won the Preakness Stakes in May 2026? — **Napoleon Solo** — https://en.wikipedia.org/wiki/2026_Preakness_Stakes
+- [sports] Where was the May 2026 Preakness Stakes run, a first for the race? — **Laurel Park** — https://en.wikipedia.org/wiki/2026_Preakness_Stakes
+- [sports] Who won the Tour de France Femmes in Aug 2026, her second title? — **Demi Vollering** — https://en.wikipedia.org/wiki/2026_Tour_de_France_Femmes
+- [sports] Which climb hosted stage 7 of the Aug 2026 Tour de France Femmes? — **Mont Ventoux** — https://en.wikipedia.org/wiki/2026_Tour_de_France_Femmes
+- [sports] Which city hosted the World Aquatics Championships in July 2025? — **Singapore** — https://en.wikipedia.org/wiki/2025_World_Aquatics_Championships
+- [sports] Which Japanese prefecture hosted the Sept 2026 Asian Games? — **Aichi** — https://en.wikipedia.org/wiki/2026_Asian_Games
+- [sports] Which pole vaulter won the inaugural World Ultimate Championship title in 2026? — **Armand Duplantis** — https://en.wikipedia.org/wiki/Armand_Duplantis
+- [sports] Which Kenyan won the 1500 m at the Sept 2025 World Championships? — **Faith Kipyegon** — https://en.wikipedia.org/wiki/Faith_Kipyegon
+- [sports] Which Barcelona winger won the Kopa Trophy in 2024, 2025 and 2026? — **Lamine Yamal** — https://en.wikipedia.org/wiki/Lamine_Yamal
+- [arts] At which venue were the Tony Awards held in June 2026? — **Radio City Music Hall** — https://en.wikipedia.org/wiki/79th_Tony_Awards
+- [music] In which city were the Brit Awards held in Feb 2026, the first time outside London? — **Manchester** — https://en.wikipedia.org/wiki/Brit_Awards_2026
+- [music] Who hosted the Brit Awards for the sixth time in Feb 2026? — **Jack Whitehall** — https://en.wikipedia.org/wiki/Brit_Awards_2026
+- [arts] What was the theme of the 2025 Met Gala exhibition? — **Superfine: Tailoring Black Style** — https://en.wikipedia.org/wiki/2025_Met_Gala
+- [music] Which 1970s rocker played Glastonbury's Sunday Legends slot in June 2025? — **Rod Stewart** — https://en.wikipedia.org/wiki/Glastonbury_Festival_2025
+- [music] Which young American singer headlined Glastonbury in June 2025? — **Olivia Rodrigo** — https://en.wikipedia.org/wiki/Glastonbury_Festival_2025
+- [music] Who hosted the MTV Video Music Awards in Sept 2025? — **LL Cool J** — https://en.wikipedia.org/wiki/2025_MTV_Video_Music_Awards
+- [music] Who hosted the Grammys in Feb 2026 for a sixth straight time? — **Trevor Noah** — https://en.wikipedia.org/wiki/68th_Annual_Grammy_Awards
+- [celebrity] Who hosted the Oscars in March 2026 for the second straight year? — **Conan O'Brien** — https://en.wikipedia.org/wiki/98th_Academy_Awards
+- [music] Which singer headlined Coachella in April 2026 along with Justin Bieber and Karol G? — **Sabrina Carpenter** — https://en.wikipedia.org/wiki/Coachella_2026
+- [books] Which novel by Yáng Shuāng-zǐ won the International Booker in May 2026? — **Taiwan Travelogue** — https://en.wikipedia.org/wiki/International_Booker_Prize
+- [celebrity] Who became the first solo female host of the Golden Globes in Jan 2025? — **Nikki Glaser** — https://en.wikipedia.org/wiki/82nd_Golden_Globe_Awards
+- [arts] Which film won Best Film at the Feb 2025 BAFTAs? — **Conclave** — https://en.wikipedia.org/wiki/78th_British_Academy_Film_Awards
+- [music] Which Kendrick Lamar song swept all five of its Grammy nominations in Feb 2025? — **Not Like Us** — https://en.wikipedia.org/wiki/67th_Annual_Grammy_Awards
+- [arts] Which musical won Best Musical at the June 2025 Tony Awards? — **Maybe Happy Ending** — https://en.wikipedia.org/wiki/78th_Tony_Awards
+- [celebrity] Who hosted the Tony Awards in June 2025? — **Cynthia Erivo** — https://en.wikipedia.org/wiki/78th_Tony_Awards
+- [celebrity] Which 'Glee' alum won a 2025 Tony for 'Maybe Happy Ending'? — **Darren Criss** — https://en.wikipedia.org/wiki/78th_Tony_Awards
+- [celebrity] Which Pussycat Dolls singer won Best Actress in a Musical at the 2025 Tonys? — **Nicole Scherzinger** — https://en.wikipedia.org/wiki/78th_Tony_Awards
+- [celebrity] Which 'Succession' actress won Best Actress in a Play at the June 2025 Tonys? — **Sarah Snook** — https://en.wikipedia.org/wiki/78th_Tony_Awards
+- [music] In which Swiss city was Eurovision 2025 held? — **Basel** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2025
+- [music] Which singer won Eurovision 2024 for Switzerland, bringing the 2025 contest to Basel? — **Nemo** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2025
+- [music] In which city was Eurovision 2026 held? — **Vienna** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2026
+- [music] How many countries took part in Eurovision 2026, the fewest since 2003? — **35** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2026
+- [books] Banu Mushtaq's 'Heart Lamp,' winner of the 2025 International Booker, was translated from which language? — **Kannada** — https://en.wikipedia.org/wiki/Banu_Mushtaq
+- [books] Which Yael van der Wouden novel won the 2025 Women's Prize for Fiction? — **The Safekeep** — https://en.wikipedia.org/wiki/The_Safekeep
+- [sports] Which team won the NBA Cup in Dec 2024, its season's in-season tournament? — **Milwaukee Bucks** — https://en.wikipedia.org/wiki/2025_NBA_season
+- [sports] Which team did the Thunder beat in seven games in the June 2025 NBA Finals? — **Indiana Pacers** — https://en.wikipedia.org/wiki/2025_NBA_season
+- [sports] In which city did the Athletics start playing in 2025 after leaving Oakland? — **West Sacramento** — https://en.wikipedia.org/wiki/2025_Major_League_Baseball_season
+- [sports] How was the July 2025 MLB All-Star Game decided after a 6–6 tie? — **a home run swing-off** — https://en.wikipedia.org/wiki/2025_Major_League_Baseball_season
+- [sports] What did Utah's NHL team name itself at the end of its first season in 2025? — **Utah Mammoth** — https://en.wikipedia.org/wiki/2024–25_NHL_season
+- [celebrity] Which teen actor won a 2025 Emmy for the Netflix series 'Adolescence'? — **Owen Cooper** — https://en.wikipedia.org/wiki/Owen_Cooper
+- [celebrity] How was every episode of 2025's 'Adolescence' filmed? — **in one continuous take** — https://en.wikipedia.org/wiki/Adolescence_(TV_series)
+- [celebrity] Who co-created and stars in the 2025 Netflix series 'Adolescence'? — **Stephen Graham** — https://en.wikipedia.org/wiki/Adolescence_(TV_series)
+- [celebrity] In which city is the 2025 medical drama 'The Pitt' set? — **Pittsburgh** — https://en.wikipedia.org/wiki/The_Pitt
+- [celebrity] Which 'ER' star leads the 2025 medical drama 'The Pitt'? — **Noah Wyle** — https://en.wikipedia.org/wiki/The_Pitt
+- [celebrity] What is the sinister company in 'Severance'? — **Lumon Industries** — https://en.wikipedia.org/wiki/Severance_(TV_series)
+- [celebrity] Who created 'Squid Game,' whose final season came out in June 2025? — **Hwang Dong-hyuk** — https://en.wikipedia.org/wiki/Squid_Game_season_3
+- [celebrity] On which date did the 'Stranger Things' series finale debut? — **Dec 31, 2025** — https://en.wikipedia.org/wiki/Stranger_Things_season_5
+- [celebrity] In which country is the third season of 'The White Lotus' (2025) set? — **Thailand** — https://en.wikipedia.org/wiki/The_White_Lotus_season_3
+- [celebrity] Which BLACKPINK member acted in 'The White Lotus' season 3 (2025)? — **Lalisa Manobal** — https://en.wikipedia.org/wiki/The_White_Lotus_season_3
