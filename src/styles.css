@@ -3555,24 +3555,49 @@ h3 {
 .title-night.is-street .title-audio, .title-night.is-street .title-account { position: absolute; z-index: 6; }
 .ts-scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
   background: linear-gradient(180deg, #000a24 0, #010c29 20dvh, #0b0f1c 70dvh, #0a0b10 100%); }
-.ts-frame { position: absolute; left: 50%; top: 0; height: max(66dvh, 56.25vw); aspect-ratio: 16 / 9; transform: translateX(-50%); }
-@media (max-aspect-ratio: 3/4) { .ts-frame { top: 21dvh; } .ts-frame::before { content: ""; position: absolute; z-index: 1; inset: -1px 0 auto; height: 14%; background: linear-gradient(180deg, #010c29, transparent); } }
-.ts-frame::after { content: ""; position: absolute; inset: auto 0 -1px; height: 30%; background: linear-gradient(180deg, transparent, #0a0b10); }
+.ts-frame { position: absolute; left: 50%; top: 12vh; height: max(66dvh, 56.25vw); aspect-ratio: 16 / 9; transform: translateX(-50%); }
+@media (max-aspect-ratio: 3/4) {
+  .ts-frame { top: 15dvh; height: calc(100dvh - 15dvh); }
+  .ts-frame::before { content: ""; position: absolute; z-index: 1; inset: -1px 0 auto; height: 14%; background: linear-gradient(180deg, #010c29, transparent); }
+}
+@media (max-width: 640px) {
+  .ts-car { width: 100px; margin-right: 0.35rem; }
+  .ts-scout { height: 68px; }
+  .ts-cast { gap: 0.2rem; bottom: max(0.15rem, env(safe-area-inset-bottom, 0px)); }
+}
+.ts-frame::after { content: ""; position: absolute; inset: auto 0 -1px; height: 16%; background: linear-gradient(180deg, transparent, #0a0b10); }
 .ts-back { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.ts-vault { position: absolute; left: 50.6%; top: 45.5%; width: 17%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(255 196 92 / 0.55), rgb(255 160 60 / 0.18) 55%, transparent); mix-blend-mode: screen; animation: ts-vault 4.5s ease-in-out infinite; }
-.ts-lamp { position: absolute; width: 7.5%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(255 214 140 / 0.7), rgb(255 170 70 / 0.22) 50%, transparent); mix-blend-mode: screen; animation: ts-flicker 3.1s steps(1) infinite; }
-.ts-lamp.is-far { width: 3.6%; }
+.ts-vault { position: absolute; left: 50%; top: 48%; width: 13%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 236 196 / 0.42), rgb(201 163 94 / 0.16) 40%, transparent 70%); mix-blend-mode: screen; animation: ts-vault 4.5s ease-in-out infinite; }
+/* Glows sit on the painted lantern glass. Each skyline hangs its lamps in a slightly different place. */
+.ts-lamp { position: absolute; left: 12%; top: 35.5%; width: 6.2%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(closest-side, #ffecc4 0%, rgb(255 214 140 / 0.5) 26%, rgb(255 170 70 / 0.14) 52%, transparent 72%); mix-blend-mode: screen; animation: ts-flicker 3.1s steps(1) infinite; }
+.ts-lamp.is-right { left: 87.5%; top: 36%; animation-delay: -1.3s; }
+.ts-lamp.is-far { left: 31%; top: 52%; width: 3.2%; animation-delay: -0.6s; }
+.ts-lamp.is-far.is-right { left: 69.5%; top: 52%; animation-delay: -2.1s; }
+.ts-scene[data-skyline="chicago"] .ts-lamp { left: 16.5%; top: 26.5%; }
+.ts-scene[data-skyline="chicago"] .ts-lamp.is-right { left: 84%; top: 26.5%; }
+.ts-scene[data-skyline="chicago"] .ts-lamp.is-far { left: 35.5%; top: 52.5%; }
+.ts-scene[data-skyline="chicago"] .ts-lamp.is-far.is-right { left: 67%; top: 52.5%; }
+.ts-scene[data-skyline="nyc"] .ts-lamp { left: 17%; top: 24%; }
+.ts-scene[data-skyline="nyc"] .ts-lamp.is-right { left: 84%; top: 24%; }
+.ts-scene[data-skyline="nyc"] .ts-lamp.is-far { left: 34.5%; top: 52%; }
+.ts-scene[data-skyline="nyc"] .ts-lamp.is-far.is-right { left: 68%; top: 52%; }
+.ts-scene[data-skyline="sf"] .ts-lamp { left: 12%; top: 28.7%; }
+.ts-scene[data-skyline="sf"] .ts-lamp.is-right { left: 88%; top: 28.8%; }
+.ts-scene[data-skyline="sf"] .ts-lamp.is-far { left: 33%; top: 56%; }
+.ts-scene[data-skyline="sf"] .ts-lamp.is-far.is-right { left: 67%; top: 56%; }
 .ts-headlights { position: absolute; top: 57%; left: -30%; width: 26%; height: 9%; border-radius: 50%;
   background: radial-gradient(closest-side, rgb(255 246 214 / 0.55), rgb(255 230 170 / 0.12) 60%, transparent); mix-blend-mode: screen; opacity: 0; animation: ts-pass 13s linear infinite 3s; }
 .ts-flies i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #ffe9a6; box-shadow: 0 0 6px 2px rgb(255 220 120 / 0.6); opacity: 0; animation: ts-fly 7s ease-in-out infinite; }
 .ts-scene.is-wet .ts-back { filter: saturate(0.85) brightness(0.9); }
 .ts-scene .sky-layer { z-index: 1; }
-.ts-cast { position: absolute; z-index: 2; left: 50%; bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem)); transform: translateX(-50%);
-  display: flex; align-items: flex-end; gap: clamp(0.1rem, 1vw, 0.9rem); filter: drop-shadow(0 6px 6px rgb(0 0 0 / 0.55)); }
-.ts-car { width: clamp(118px, 30vw, 300px); height: auto; margin-right: clamp(0.2rem, 2vw, 2.5rem); }
-.ts-scout { height: clamp(62px, 10dvh, 130px); width: auto; }
+.ts-cast { position: absolute; z-index: 2; left: 50%; bottom: max(0.85rem, calc(env(safe-area-inset-bottom, 0px) + 0.45rem)); transform: translateX(-50%);
+  display: flex; align-items: flex-end; gap: clamp(0.15rem, 1vw, 0.9rem); filter: drop-shadow(0 8px 5px rgb(0 0 0 / 0.45)); }
+.ts-cast::after { content: ""; position: absolute; z-index: -1; left: 6%; right: 6%; bottom: 0; height: 22%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.55), transparent 72%); pointer-events: none; }
+.ts-car { width: clamp(124px, 28vw, 280px); height: auto; margin-right: clamp(0.25rem, 2vw, 2rem); }
+.ts-scout { height: clamp(74px, 12dvh, 142px); width: auto; }
 .ts-scout.is-penguin { transform: translateY(-2px); }
 .ts-marquee { position: relative; display: flex; gap: 0.12em; margin: 0 0 0; padding: 0.32em 0.6em 0.26em; font-family: var(--font-display, serif);
   font-size: clamp(2.3rem, 11vw, 4.6rem); font-weight: 800; line-height: 1; letter-spacing: 0.04em; color: #fff4d0;
@@ -3593,7 +3618,8 @@ h3 {
 .is-street .city-blade { box-shadow: 0 2px 0 #042615, 0 0 22px rgb(255 190 90 / 0.25), 0 10px 22px rgb(0 0 0 / 0.55); }
 .is-street .book-links { padding: 0.2rem 0.8rem; border-radius: 999px; background: rgb(8 10 18 / 0.62); backdrop-filter: blur(3px); }
 .is-street .blade-stage .title-more { color: #e3e8ef; }
-.is-street .book-ver, .is-street .book-coin, .is-street .blade-note { color: #cdd5df; text-shadow: 0 1px 3px #000; }
+.is-street .book-ver, .is-street .book-coin, .is-street .blade-note { color: #cdd5df; text-shadow: 0 1px 2px #000; }
+.is-street .book-ver, .is-street .book-coin { background: rgb(8 10 18 / 0.72); border-radius: 999px; padding: 0.05rem 0.45rem; }
 @keyframes ts-flicker { 0%, 100% { opacity: 1; } 37% { opacity: 0.82; } 41% { opacity: 1; } 68% { opacity: 0.9; } 71% { opacity: 1; } }
 @keyframes ts-vault { 0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.96); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); } }
 @keyframes ts-pass { 0% { left: -30%; opacity: 0; } 4% { opacity: 1; } 30% { opacity: 1; } 34% { left: 104%; opacity: 0; } 100% { left: 104%; opacity: 0; } }
