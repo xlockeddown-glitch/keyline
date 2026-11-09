@@ -2,7 +2,7 @@ import { q } from "../quiz";
 import type { TriviaQ } from "../types";
 
 /**
- * Nov 9, 2026 bulk add, sub-batch 3 (0.1.138): evergreen geography (lakes, peaks, islands, rivers, volcanoes, parks), political, celebrity voice roles, science.
+ * Nov 9, 2026 bulk add, sub-batch 3 (0.1.139): evergreen geography (lakes, peaks, islands, rivers, volcanoes, parks), political, celebrity voice roles, science.
  * No math, no local. Every card has a Wikipedia source comment; fact-level dup-checked vs whole deck.
  */
 

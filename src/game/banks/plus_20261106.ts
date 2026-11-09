@@ -116,7 +116,7 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/Pierogi
 		q("What is the Polish dumpling often filled with potato or cheese?", ["varenyky", "pelmeni", "pierogi", "knish"], "pierogi", 2),
 		// https://en.wikipedia.org/wiki/Jerk_(cooking)
-		q("Which Caribbean seasoning paste flavors Jamaica's grilled chicken?", ["jerk seasoning", "recado of note", "adobo of note", "sofrito of note"], "jerk seasoning", 2),
+		q("Which Caribbean seasoning paste flavors Jamaica's grilled chicken?", ["jerk seasoning", "recado rojo", "adobo seasoning", "sofrito"], "jerk seasoning", 2),
 		// https://en.wikipedia.org/wiki/Kasha
 		q("What is the Russian buckwheat porridge called?", ["grits", "polenta", "kasha", "congee"], "kasha", 3),
 	],
@@ -130,13 +130,13 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/Migrant_Mother
 		q("Who photographed 'Migrant Mother' in 1936?", ["Ansel Adams", "Walker Evans", "Margaret Bourke-White", "Dorothea Lange"], "Dorothea Lange", 2),
 		// https://en.wikipedia.org/wiki/Barcelona_chair
-		q("Which Bauhaus figure designed the Barcelona Chair with Lilly Reich?", ["Marcel Breuer of note", "Ludwig Mies van der Rohe", "Le Corbusier of note", "Walter Gropius of note"], "Ludwig Mies van der Rohe", 3),
+		q("Which Bauhaus figure designed the Barcelona Chair with Lilly Reich?", ["Marcel Breuer", "Ludwig Mies van der Rohe", "Ludwig Hilberseimer", "Walter Gropius"], "Ludwig Mies van der Rohe", 3),
 		// https://en.wikipedia.org/wiki/Spiral_Jetty
 		q("Who created the earthwork 'Spiral Jetty'?", ["Robert Smithson", "Michael Heizer", "Nancy Holt", "Walter De Maria"], "Robert Smithson", 3),
 		// https://en.wikipedia.org/wiki/Edgar_Degas
 		q("Which Impressionist painted ballet dancers repeatedly?", ["Camille Pissarro", "Pierre-Auguste Renoir", "Edgar Degas", "Claude Monet"], "Edgar Degas", 1),
 		// https://en.wikipedia.org/wiki/Seagram_Building
-		q("Who designed the Seagram Building with Philip Johnson?", ["Walter Gropius of note", "Louis Kahn of note", "Ludwig Mies van der Rohe", "Le Corbusier of note"], "Ludwig Mies van der Rohe", 3),
+		q("Who designed the Seagram Building with Philip Johnson?", ["Walter Gropius", "Skidmore, Owings & Merrill", "Ludwig Mies van der Rohe", "Le Corbusier"], "Ludwig Mies van der Rohe", 3),
 		// https://en.wikipedia.org/wiki/Man_at_the_Crossroads
 		q("Which Mexican muralist painted 'Man at the Crossroads'?", ["Rufino Tamayo", "Diego Rivera", "David Alfaro Siqueiros", "José Clemente Orozco"], "Diego Rivera", 3),
 		// https://en.wikipedia.org/wiki/Millau_Viaduct
@@ -220,7 +220,7 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/Butterfly
 		q("Which insect undergoes complete metamorphosis from caterpillar?", ["butterfly", "dragonfly", "silverfish", "grasshopper"], "butterfly", 1),
 		// https://en.wikipedia.org/wiki/Carbon_dioxide
-		q("What is the primary gas bubbles in a typical soda?", ["helium of note", "nitrogen of note", "carbon dioxide", "oxygen of note"], "carbon dioxide", 1),
+		q("Which gas makes the bubbles in a typical soda?", ["helium", "nitrous oxide", "carbon dioxide", "carbon monoxide"], "carbon dioxide", 1),
 		// https://en.wikipedia.org/wiki/Great_Barrier_Reef
 		q("What is the world's largest coral reef system?", ["Great Barrier Reef", "Red Sea Reef", "Belize Barrier Reef", "Florida Reef"], "Great Barrier Reef", 1),
 		// https://en.wikipedia.org/wiki/Lion
@@ -238,7 +238,7 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/Coffee
 		q("Which tree produces coffee beans?", ["coffee plant", "cacao tree", "tea bush", "cola tree"], "coffee plant", 1),
 		// https://en.wikipedia.org/wiki/Eastern_gorilla
-		q("What is the largest living primate?", ["chimpanzee of note", "orangutan of note", "eastern gorilla", "bonobo of note"], "eastern gorilla", 2),
+		q("What is the largest living primate?", ["chimpanzee", "Bornean orangutan", "eastern gorilla", "bonobo"], "eastern gorilla", 2),
 		// https://en.wikipedia.org/wiki/Crepuscular_animal
 		q("What do you call animals active mainly at dawn and dusk?", ["diurnal", "nocturnal", "crepuscular", "cathemeral"], "crepuscular", 3),
 		// https://en.wikipedia.org/wiki/Mangrove
@@ -248,9 +248,9 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/Chess
 		q("In chess, which piece starts on a1 for white?", ["knight", "rook", "bishop", "queen"], "rook", 1),
 		// https://en.wikipedia.org/wiki/Monopoly_(game)
-		q("How many houses are in a standard Monopoly set color groups count?", ["18", "22", "16", "28"], "22", 3),
+		q("How many houses come in a standard Monopoly set?", ["28", "32", "36", "40"], "32", 3),
 		// https://en.wikipedia.org/wiki/Nintendo_Entertainment_System
-		q("Which Nintendo console launched with Super Mario Bros. in 1985 in Japan as Famicom abroad?", ["N64", "GameCube", "NES", "SNES"], "NES", 2),
+		q("Nintendo's Famicom was sold in North America under which name?", ["Nintendo 64", "GameCube", "NES", "Super NES"], "NES", 2),
 		// https://en.wikipedia.org/wiki/Tetris
 		q("Which puzzle game asks you to clear lines of blocks?", ["Dr. Mario", "Columns", "Tetris", "Puyo Puyo"], "Tetris", 1),
 		// https://en.wikipedia.org/wiki/Dice
@@ -274,7 +274,7 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/Street_Fighter
 		q("Which fighting game franchise features Ryu and Chun-Li?", ["Mortal Kombat", "Tekken", "Street Fighter", "Soulcalibur"], "Street Fighter", 1),
 		// https://en.wikipedia.org/wiki/Monopoly_(game)
-		q("In Monopoly, what color are Boardwalk and Park Place?", ["red of note", "green of note", "dark blue", "yellow of note"], "dark blue", 2),
+		q("In Monopoly, what color are Boardwalk and Park Place?", ["red", "green", "dark blue", "yellow"], "dark blue", 2),
 		// https://en.wikipedia.org/wiki/Role-playing_video_game
 		q("What does RPG stand for in gaming?", ["role-playing game", "real physics grid", "rapid pixel graphic", "random player gather"], "role-playing game", 1),
 	],
@@ -284,7 +284,7 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/Mission:_Impossible_(film_series)
 		q("Who is the star of the 'Mission: Impossible' film series?", ["Tom Hanks", "Brad Pitt", "Matt Damon", "Tom Cruise"], "Tom Cruise", 1),
 		// https://en.wikipedia.org/wiki/The_Tonight_Show_Starring_Jimmy_Fallon
-		q("Who hosts the long-running show 'The Tonight Show' as of the mid-2010s onward with Jimmy?", ["Jimmy Kimmel", "Seth Meyers", "Stephen Colbert", "Jimmy Fallon"], "Jimmy Fallon", 2),
+		q("Who took over 'The Tonight Show' from Jay Leno in 2014?", ["Jimmy Kimmel", "Seth Meyers", "Stephen Colbert", "Jimmy Fallon"], "Jimmy Fallon", 2),
 		// https://en.wikipedia.org/wiki/I_Love_Lucy
 		q("Who created and starred in 'I Love Lucy'?", ["Mary Tyler Moore", "Lucille Ball", "Betty White", "Carol Burnett"], "Lucille Ball", 1),
 		// https://en.wikipedia.org/wiki/Erin_Brockovich_(film)
@@ -294,7 +294,7 @@ export const PLUS_20261106: Record<PlusCat, TriviaQ[]> = {
 		// https://en.wikipedia.org/wiki/La_La_Land
 		q("Who starred as the title role in 'La La Land' opposite Stone?", ["Ryan Reynolds", "Jake Gyllenhaal", "Chris Evans", "Ryan Gosling"], "Ryan Gosling", 1),
 		// https://en.wikipedia.org/wiki/Fleabag
-		q("Who created the TV series 'Fleabag'?", ["Sharon Horgan of note", "Julia Davis of note", "Phoebe Waller-Bridge", "Michaela Coel of note"], "Phoebe Waller-Bridge", 2),
+		q("Who created the TV series 'Fleabag'?", ["Sharon Horgan", "Daisy May Cooper", "Phoebe Waller-Bridge", "Michaela Coel"], "Phoebe Waller-Bridge", 2),
 		// https://en.wikipedia.org/wiki/Bridgerton
 		q("Who starred as Queen Charlotte in 'Bridgerton' spinoff fame?", ["Nicola Coughlan", "Phoebe Dynevor", "Golda Rosheuvel", "Adjoa Andoh"], "Golda Rosheuvel", 3),
 		// https://en.wikipedia.org/wiki/Tony_Soprano

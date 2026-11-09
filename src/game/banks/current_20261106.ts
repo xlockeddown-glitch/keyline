@@ -9,14 +9,14 @@ import type { TriviaQ } from "../types";
 
 export const CUR_SPORTS_20261106: TriviaQ[] = [
 	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
-	q("In Oct 2026, Lionel Messi received which Spanish honor for sports?", ["Ballon d'Or of note", "Laureus Award of note", "Princess of Asturias Award", "Order of Isabella of note"], "Princess of Asturias Award", 2),
+	q("In Oct 2026, Lionel Messi received which Spanish honor for sports?", ["Ballon d'Or", "Laureus World Sports Award", "Princess of Asturias Award", "Golden Foot Award"], "Princess of Asturias Award", 2),
 	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
 	q("Lionel Messi's 2026 Princess of Asturias Award for Sports was presented in which Spanish city?", ["Seville", "Madrid", "Barcelona", "Oviedo"], "Oviedo", 3),
 ];
 
 export const CUR_POLITICAL_20261106: TriviaQ[] = [
 	// https://www.cbsnews.com/news/2026-midterm-elections-governors-races-bottoms-donalds-crowley-moore-ford/
-	q("In the Nov 2026 midterms, who was elected Georgia's governor?", ["Stacey Abrams of note", "Rick Jackson of note", "Brian Kemp of note", "Keisha Lance Bottoms"], "Keisha Lance Bottoms", 1),
+	q("In the Nov 2026 midterms, who was elected Georgia's governor?", ["Stacey Abrams", "Rick Jackson", "Raphael Warnock", "Keisha Lance Bottoms"], "Keisha Lance Bottoms", 1),
 	// https://www.cbsnews.com/news/2026-midterm-elections-governors-races-bottoms-donalds-crowley-moore-ford/
 	q("In Nov 2026, Keisha Lance Bottoms became the first Black woman elected…", ["U.S. vice president", "Speaker of the House", "U.S. senator", "U.S. governor"], "U.S. governor", 1),
 	// https://www.cbsnews.com/news/2026-midterm-elections-governors-races-bottoms-donalds-crowley-moore-ford/
@@ -51,13 +51,13 @@ export const CUR_POLITICAL_20261106: TriviaQ[] = [
 	q("David Crowley, elected Wisconsin governor in Nov 2026, is a…", ["Libertarian", "Democrat", "Independent", "Republican"], "Democrat", 2),
 	// https://www.cbsnews.com/news/2026-midterm-elections-governors-races-bottoms-donalds-crowley-moore-ford/
 	q("In Nov 2026 coverage, Wes Moore reflected that before the midterms he had been the only…", ["Black U.S. governor", "woman governor", "Asian American governor", "Latino U.S. governor"], "Black U.S. governor", 2),	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
-	q("In the Nov 2026 midterms, who was elected Ohio's governor?", ["Mike DeWine of note", "Jim Jordan of note", "Vivek Ramaswamy of note", "Amy Acton"], "Amy Acton", 1),
+	q("In the Nov 2026 midterms, who was elected Ohio's governor?", ["Mike DeWine", "Jim Jordan", "Vivek Ramaswamy", "Amy Acton"], "Amy Acton", 1),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
 	q("In Nov 2026, Amy Acton defeated which Republican for Ohio governor?", ["J.D. Vance", "Mike DeWine", "Vivek Ramaswamy", "Jim Jordan"], "Vivek Ramaswamy", 1),
 	// https://www.glamour.com/story/how-women-made-history-during-the-2026-midterm-elections
 	q("In Nov 2026, Amy Acton became the first woman elected governor of…", ["Indiana", "Ohio", "Michigan", "Pennsylvania"], "Ohio", 1),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
-	q("In the Nov 2026 midterms, who was elected Texas governor?", ["Greg Abbott of note", "Ken Paxton of note", "Beto O'Rourke of note", "Gina Hinojosa"], "Gina Hinojosa", 1),
+	q("In the Nov 2026 midterms, who was elected Texas governor?", ["Greg Abbott", "Ken Paxton", "Beto O'Rourke", "Gina Hinojosa"], "Gina Hinojosa", 1),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
 	q("In Nov 2026, Gina Hinojosa defeated which three-term Texas governor?", ["Rick Perry", "Greg Abbott", "George W. Bush", "Dan Patrick"], "Greg Abbott", 1),
 	// https://www.glamour.com/story/how-women-made-history-during-the-2026-midterm-elections
@@ -65,7 +65,7 @@ export const CUR_POLITICAL_20261106: TriviaQ[] = [
 	// https://www.glamour.com/story/how-women-made-history-during-the-2026-midterm-elections
 	q("As of Nov 2026 reporting, Gina Hinojosa was the first Democrat elected Texas governor since…", ["2002", "2014", "1990", "1982"], "1990", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
-	q("In the Nov 2026 midterms, who won a U.S. Senate seat in Texas?", ["Ted Cruz of note", "Ken Paxton of note", "Beto O'Rourke of note", "James Talarico"], "James Talarico", 1),
+	q("In the Nov 2026 midterms, who won a U.S. Senate seat in Texas?", ["Ted Cruz", "Ken Paxton", "Beto O'Rourke", "James Talarico"], "James Talarico", 1),
 	// https://www.cbsnews.com/live-updates/midterm-election-results-2026-democrats-house-senate-trump/
 	q("In Nov 2026, James Talarico defeated which Texas attorney general for the U.S. Senate?", ["Greg Abbott", "Dan Patrick", "Ken Paxton", "John Cornyn"], "Ken Paxton", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
@@ -73,7 +73,7 @@ export const CUR_POLITICAL_20261106: TriviaQ[] = [
 	// https://www.glamour.com/story/how-women-made-history-during-the-2026-midterm-elections
 	q("Annie Andrews's Nov 2026 win made her South Carolina's first woman…", ["governor", "U.S. senator", "attorney general", "House Speaker"], "U.S. senator", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
-	q("In Nov 2026, Annie Andrews defeated which South Carolina Republican for the U.S. Senate?", ["Tim Scott", "Lindsey Graham of note", "Darline Graham", "Nancy Mace"], "Darline Graham", 2),
+	q("In Nov 2026, Annie Andrews defeated which South Carolina Republican for the U.S. Senate?", ["Tim Scott", "Ralph Norman", "Darline Graham", "Nancy Mace"], "Darline Graham", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
 	q("As of Nov 2026 reporting, Annie Andrews was the first Democrat elected to South Carolina's U.S. Senate seat since…", ["2004", "2010", "1998", "1986"], "1998", 3),
 	// https://www.glamour.com/story/how-women-made-history-during-the-2026-midterm-elections
@@ -97,11 +97,11 @@ export const CUR_POLITICAL_20261106: TriviaQ[] = [
 	// https://www.cbsnews.com/live-updates/midterm-election-results-2026-democrats-house-senate-trump/
 	q("In Nov 2026, Nithya Raman was elected mayor of…", ["San Francisco", "San Diego", "Los Angeles", "Sacramento"], "Los Angeles", 2),
 	// https://www.cbsnews.com/live-updates/midterm-election-results-2026-democrats-house-senate-trump/
-	q("In Nov 2026, Nithya Raman defeated which incumbent Los Angeles mayor?", ["Eric Garcetti of note", "Antonio Villaraigosa of note", "Karen Bass", "Rick Caruso of note"], "Karen Bass", 2),
+	q("In Nov 2026, Nithya Raman defeated which incumbent Los Angeles mayor?", ["Eric Garcetti", "Antonio Villaraigosa", "Karen Bass", "Rick Caruso"], "Karen Bass", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
 	q("In Nov 2026, Troy Jackson defeated longtime GOP Sen. Susan Collins in…", ["New Hampshire", "Vermont", "Maine", "Rhode Island"], "Maine", 2),
 	// https://fortune.com/2026/11/04/women-democrats-blue-wave-midterms-gina-hinojosa-keisha-lance-bottoms-amy-acton/
-	q("In the Nov 2026 midterms, which longtime Maine Republican senator lost her seat?", ["Olympia Snowe of note", "Susan Collins", "Lisa Murkowski of note", "Kelly Ayotte of note"], "Susan Collins", 2),
+	q("In the Nov 2026 midterms, which longtime Maine Republican senator lost her seat?", ["Olympia Snowe", "Susan Collins", "Lisa Murkowski", "Kelly Ayotte"], "Susan Collins", 2),
 	// https://www.glamour.com/story/how-women-made-history-during-the-2026-midterm-elections
 	q("In Nov 2026, Melat Kiros won a U.S. House seat representing…", ["Utah", "Colorado", "Nevada", "Arizona"], "Colorado", 3),
 	// https://www.glamour.com/story/how-women-made-history-during-the-2026-midterm-elections
@@ -133,9 +133,9 @@ export const CUR_POLITICAL_20261106: TriviaQ[] = [
 
 export const CUR_ARTS_20261106: TriviaQ[] = [
 	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
-	q("Julian Barnes received a 2026 Princess of Asturias Award for…", ["Arts of note", "Literature", "Sports of note", "Concord of note"], "Literature", 3),
+	q("Julian Barnes received a 2026 Princess of Asturias Award for…", ["Arts", "Literature", "Sports", "Concord"], "Literature", 3),
 	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
-	q("Patti Smith won the 2026 Princess of Asturias Award for Arts; she is best known as a…", ["ballerina of note", "architect of note", "singer-songwriter", "painter of note"], "singer-songwriter", 2),	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
+	q("Patti Smith won the 2026 Princess of Asturias Award for Arts; she is best known as a…", ["ballerina", "architect", "singer-songwriter", "film director"], "singer-songwriter", 2),	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
 	q("Patti Smith received the 2026 Princess of Asturias Award for…", ["Literature", "Arts", "Sports", "Concord"], "Arts", 2),
 
 ];
@@ -148,7 +148,7 @@ export const CUR_SCIENCE_20261106: TriviaQ[] = [
 	// https://science.nasa.gov/blogs/swift/2026/11/02/nasas-swift-observatory-to-re-enter-atmosphere/
 	q("In Nov 2026, Swift burned up nearly how many years after launch?", ["32", "42", "12", "22"], "22", 2),
 	// https://science.nasa.gov/blogs/swift/2026/11/02/nasas-swift-observatory-to-re-enter-atmosphere/
-	q("NASA's Swift reentry in Nov 2026 occurred over which Indonesian region?", ["Java of note", "North Sumatra", "Sulawesi of note", "Bali of note"], "North Sumatra", 3),
+	q("NASA's Swift reentry in Nov 2026 occurred over which Indonesian region?", ["West Java", "North Sumatra", "South Sulawesi", "East Kalimantan"], "North Sumatra", 3),
 	// https://science.nasa.gov/blogs/swift/2026/11/02/nasas-swift-observatory-to-re-enter-atmosphere/
 	q("The full name of the Swift mission that reentered in Nov 2026 is the Neil Gehrels Swift…", ["Array", "Telescope", "Observatory", "Probe"], "Observatory", 2),
 	// https://science.nasa.gov/blogs/swift/2026/11/02/nasas-swift-observatory-to-re-enter-atmosphere/
@@ -190,7 +190,7 @@ export const CUR_CELEBRITY_20261106: TriviaQ[] = [
 	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
 	q("In Oct 2026, which footballer received the Princess of Asturias Award for Sports?", ["Kylian Mbappé", "Cristiano Ronaldo", "Lionel Messi", "Harry Kane"], "Lionel Messi", 1),
 	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
-	q("Timothy Garton Ash received a 2026 Princess of Asturias Award for…", ["Arts of note", "Sports of note", "Social Sciences", "Literature of note"], "Social Sciences", 3),	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
+	q("Timothy Garton Ash received a 2026 Princess of Asturias Award for…", ["Arts", "Communication and Humanities", "Social Sciences", "Literature"], "Social Sciences", 3),	// https://blackbook.co.in/current-affairs/october-2026/awards-honours
 	q("Princess Leonor presented Lionel Messi's 2026 Princess of Asturias Award in which country?", ["Portugal", "Argentina", "Spain", "Italy"], "Spain", 1),
 
 ];

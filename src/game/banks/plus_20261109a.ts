@@ -2,7 +2,7 @@ import { q } from "../quiz";
 import type { TriviaQ } from "../types";
 
 /**
- * Nov 9, 2026 bulk add, sub-batch 1 of 4 (0.1.138): evergreen cards for thin topics (books, games, geography).
+ * Nov 9, 2026 bulk add, sub-batch 1 of 4 (0.1.139): evergreen cards for thin topics (books, games, geography).
  * No math (over mathCap). No local/city cards (local is the largest topic at 33.6%).
  * Fact-level dup-checked vs whole deck (scripts/trivia-dupcheck.mjs) incl. plus_20261106 and current_20261106.
  * Sources: Wikipedia article above each card; answer string confirmed in the fetched article text (checked Nov 9 2026).

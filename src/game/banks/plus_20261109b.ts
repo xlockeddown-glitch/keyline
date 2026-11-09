@@ -2,7 +2,7 @@ import { q } from "../quiz";
 import type { TriviaQ } from "../types";
 
 /**
- * Nov 9, 2026 bulk add, sub-batch 2 (0.1.138): evergreen long-tail (Wikidata-curated novels, albums, games, paintings, directors) plus music/food.
+ * Nov 9, 2026 bulk add, sub-batch 2 (0.1.139): evergreen long-tail (Wikidata-curated novels, albums, games, paintings, directors) plus music/food.
  * No math, no local. Every card has a Wikipedia source comment; fact-level dup-checked vs whole deck.
  */
 

@@ -2,7 +2,7 @@ import { q } from "../quiz";
 import type { TriviaQ } from "../types";
 
 /**
- * Nov 9, 2026 bulk add, sub-batch 3 (0.1.138): time-anchored 2025-2026 events (elections, world events, sports, games, TV, awards, space).
+ * Nov 9, 2026 bulk add, sub-batch 3 (0.1.139): time-anchored 2025-2026 events (elections, world events, sports, games, TV, awards, space).
  * Every prompt is time-anchored. No math. Sources in docs/trivia-current-20261109c-sources.md.
  * Fact-level dup-checked vs whole deck incl. weekly_ and current_ banks.
  */

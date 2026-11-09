@@ -2,7 +2,7 @@ import { q } from "../quiz";
 import type { TriviaQ } from "../types";
 
 /**
- * Nov 9, 2026 bulk add, sub-batch 1 (0.1.138): time-anchored 2026 events (Winter Olympics, majors, awards).
+ * Nov 9, 2026 bulk add, sub-batch 1 (0.1.139): time-anchored 2026 events (Winter Olympics, majors, awards).
  * Every prompt is time-anchored. No math. Sources in docs/trivia-current-20261109a-sources.md.
  * Fact-level dup-checked vs whole deck incl. current_20261021/1031/1106.
  */
