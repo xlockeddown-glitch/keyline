@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.139";
+export const APP_VERSION = "0.1.141";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1139a";
+export const PUBLISH_STAMP = "k1141a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -239,3 +239,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.137: print shop prices. Copper stays 10 white. Iron 12 white + 6 blue, Verdigris 8 white + 12 blue, Nickel 20 blue, Oilskin 20 white, Bottle-Green 12 white + 10 blue, Oxblood 8 white + 16 blue, Plum 24 blue. An instalment already started finishes at the old price. White dye is 12 cans for a coat and 16 for vaults; blue dye is 8 and 10. A wardrobe sync can change what is worn and cannot add an owned id or raise what has been paid. Owned items stay owned (k1137a).
 // 0.1.138: coin sinks slice 1. The counter stops selling Tinder tin, Blue wick, Amber reprint and Night oil; an old buy of those ids is refused with no charge and no change to keys already held. A patron lamp hangs on your own night market for one 15-minute cycle at 2,000 / 5,000 / 12,000 coin (brass, copper, night glass). It does not change pay. One ledger row per cycle (k1138a).
 // 0.1.139: bulk trivia add (Nov 9 2026, ~1000 cards in sub-batches): plus_20261109a.. evergreen + current_20261109a.. time-anchored 2026 events. Wikipedia-sourced, fact-level dup-checked. No math, no local. Cleanup: 19 Nov 6 cards lose filler 'of note' wrong answers; 3 garbled plus_20261106 prompts (Monopoly houses, Famicom/NES, Tonight Show) rewritten (k1139a).
+// 0.1.141: bulk trivia add, batch 2 (Nov 9 2026, ~950 cards): plus_20261109d..f easy evergreen (food, nature, history, science, arts, geography, music, books, games, political) + 32 math in plus_20261109e; current_20261109e..f time-anchored 2025–26; 122 city cards for thin decks (weekly_20261109e..f via cities.ts). 0.1.140 is held by the title-house-art branch (k1141a).
