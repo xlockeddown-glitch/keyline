@@ -56,8 +56,8 @@ test("each colour takes its own number, and a short can doesn't mix", () => {
   assert.deepEqual(
     (Object.keys(PAINT_USE) as (keyof typeof PAINT_USE)[]).map((c) => [c, PAINT_USE[c].coat, PAINT_USE[c].vault]),
     [
-      ["white", 3, 4],
-      ["blue", 4, 5],
+      ["white", 12, 16],
+      ["blue", 8, 10],
       ["green", 5, 6],
       ["amber", 6, 8],
       ["red", 8, 10],

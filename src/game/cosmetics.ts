@@ -16,7 +16,9 @@ export type CoatId = "oilskin" | "bottle" | "oxblood" | "plum";
 export type LanternSkinId = "copper" | "iron" | "verdigris" | "nickel";
 export type CosmeticId = CoatId | LanternSkinId;
 export type CosmeticSlot = "coat" | "lantern";
-export type Price = { white: number; blue: number };
+export type Price = { white: number; blue: number; legacy?: boolean };
+/** Set on a stored instalment. Missing means it was started before 0.1.137 and finishes at `LEGACY_PRICE`. */
+type StoredPrice = Price;
 
 export type Cosmetic = {
   id: CosmeticId;
@@ -45,7 +47,7 @@ export const LANTERN_SKINS: Record<LanternSkinId, Cosmetic> = {
     slot: "lantern",
     name: "Wrought Iron",
     blurb: "Blackened iron case and bolts. The dial keeps its color.",
-    price: { white: 8, blue: 2 },
+    price: { white: 12, blue: 6 },
     swatch: "#55585e",
   },
   verdigris: {
@@ -53,7 +55,7 @@ export const LANTERN_SKINS: Record<LanternSkinId, Cosmetic> = {
     slot: "lantern",
     name: "Verdigris",
     blurb: "Soft green patina on the case. The dial keeps its color.",
-    price: { white: 6, blue: 4 },
+    price: { white: 8, blue: 12 },
     swatch: "#5f9e88",
   },
   nickel: {
@@ -61,7 +63,7 @@ export const LANTERN_SKINS: Record<LanternSkinId, Cosmetic> = {
     slot: "lantern",
     name: "Nickel Plate",
     blurb: "Bright plated case and bolts. The dial keeps its color.",
-    price: { white: 0, blue: 8 },
+    price: { white: 0, blue: 20 },
     swatch: "#c4c9cf",
   },
 };
@@ -72,7 +74,7 @@ export const COATS: Record<CoatId, Cosmetic> = {
     slot: "coat",
     name: "Oilskin Slicker",
     blurb: "Waxed mustard rain gear. Same cut, same pockets, brighter on a gray street.",
-    price: { white: 15, blue: 0 },
+    price: { white: 20, blue: 0 },
     swatch: "#a8862a",
   },
   bottle: {
@@ -80,7 +82,7 @@ export const COATS: Record<CoatId, Cosmetic> = {
     slot: "coat",
     name: "Bottle-Green Duster",
     blurb: "Deep bottle green, dyed through.",
-    price: { white: 10, blue: 4 },
+    price: { white: 12, blue: 10 },
     swatch: "#2f5f45",
   },
   oxblood: {
@@ -88,7 +90,7 @@ export const COATS: Record<CoatId, Cosmetic> = {
     slot: "coat",
     name: "Oxblood Greatcoat",
     blurb: "Dark red wool, the color of an old ledger binding.",
-    price: { white: 8, blue: 6 },
+    price: { white: 8, blue: 16 },
     swatch: "#6e2f28",
   },
   plum: {
@@ -96,7 +98,7 @@ export const COATS: Record<CoatId, Cosmetic> = {
     slot: "coat",
     name: "Plum Frock Coat",
     blurb: "Plum dye, the dearest vat in the shop.",
-    price: { white: 4, blue: 10 },
+    price: { white: 0, blue: 24 },
     swatch: "#5a3150",
   },
 };
@@ -125,6 +127,33 @@ export function priceCoin(p: Price): number {
   return p.white * VALUE.white + p.blue * VALUE.blue;
 }
 
+/**
+ * 0.1.137: prices before this retune. An instalment already stored (no `legacy: false`)
+ * finishes here. A purchase started after the retune is marked `legacy: false` and uses
+ * the catalogue price. Copper did not change.
+ */
+const LEGACY_PRICE: Partial<Record<CosmeticId, Price>> = {
+  iron: { white: 8, blue: 2 },
+  verdigris: { white: 6, blue: 4 },
+  nickel: { white: 0, blue: 8 },
+  oilskin: { white: 15, blue: 0 },
+  bottle: { white: 10, blue: 4 },
+  oxblood: { white: 8, blue: 6 },
+  plum: { white: 4, blue: 10 },
+};
+
+function onOldPrice(id: CosmeticId, paid: StoredPrice | undefined): boolean {
+  if (!paid || paid.legacy === false || !LEGACY_PRICE[id]) return false;
+  return paid.white + paid.blue > 0;
+}
+
+/** The price this wardrobe actually owes for `id` (old, if an instalment was already started). */
+export function quotePrice(w: Pick<Wardrobe, "paid">, id: CosmeticId): Price {
+  const c = cosmetic(id);
+  if (!c) return { white: 0, blue: 0 };
+  return onOldPrice(id, w.paid[id]) ? LEGACY_PRICE[id]! : c.price;
+}
+
 export type Wardrobe = {
   owned: CosmeticId[];
   /** Matches already paid toward items not yet owned. */
@@ -141,8 +170,9 @@ export const EMPTY_WARDROBE: Wardrobe = { owned: [], paid: {}, coat: null, lante
 export function owing(w: Wardrobe, id: CosmeticId): Price {
   const c = cosmetic(id);
   if (!c || w.owned.includes(id)) return { white: 0, blue: 0 };
+  const price = quotePrice(w, id);
   const p = w.paid[id] ?? { white: 0, blue: 0 };
-  return { white: Math.max(0, c.price.white - p.white), blue: Math.max(0, c.price.blue - p.blue) };
+  return { white: Math.max(0, price.white - p.white), blue: Math.max(0, price.blue - p.blue) };
 }
 
 /** What one "Pay in" takes from this pocket right now: as much of what is owed as the pocket holds. */
@@ -162,10 +192,16 @@ export function payIn(w: Wardrobe, keys: Record<Tier, number>, id: CosmeticId, n
   if (!c || w.owned.includes(id)) return null;
   const took = payable(w, keys, id);
   if (took.white + took.blue <= 0) return null;
-  const before = w.paid[id] ?? { white: 0, blue: 0 };
-  const after = { white: before.white + took.white, blue: before.blue + took.blue };
+  const before: StoredPrice = w.paid[id] ?? { white: 0, blue: 0 };
+  const legacy = onOldPrice(id, before);
+  const price = legacy ? LEGACY_PRICE[id]! : c.price;
+  const after: StoredPrice = {
+    white: before.white + took.white,
+    blue: before.blue + took.blue,
+    ...(LEGACY_PRICE[id] ? { legacy } : {}),
+  };
   const nextKeys = { ...keys, white: keys.white - took.white, blue: keys.blue - took.blue };
-  const done = after.white >= c.price.white && after.blue >= c.price.blue;
+  const done = after.white >= price.white && after.blue >= price.blue;
   const paid = { ...w.paid };
   if (done) delete paid[id];
   else paid[id] = after;
@@ -207,7 +243,14 @@ export function cleanWardrobe(raw: unknown): Wardrobe {
     for (const [id, p] of Object.entries(r.paid as Record<string, unknown>)) {
       const c = cosmetic(id);
       if (!c || owned.includes(c.id) || !p || typeof p !== "object") continue;
-      const v = { white: count((p as Price).white, c.price.white), blue: count((p as Price).blue, c.price.blue) };
+      const raw = p as StoredPrice;
+      const legacy = raw.legacy !== false && Boolean(LEGACY_PRICE[c.id]);
+      const cap = legacy ? LEGACY_PRICE[c.id]! : c.price;
+      const v: StoredPrice = {
+        white: count(raw.white, cap.white),
+        blue: count(raw.blue, cap.blue),
+        ...(LEGACY_PRICE[c.id] ? { legacy } : {}),
+      };
       if (v.white + v.blue > 0) paid[c.id] = v;
     }
   }
@@ -231,12 +274,39 @@ export function mergeWardrobe(a: Wardrobe, b: Wardrobe): Wardrobe {
     const pa = A.paid[id];
     const pb = B.paid[id];
     if (!pa && !pb) continue;
-    paid[id] = { white: Math.max(pa?.white ?? 0, pb?.white ?? 0), blue: Math.max(pa?.blue ?? 0, pb?.blue ?? 0) };
+    const legacy = [pa, pb].some((row) => row && (row as StoredPrice).legacy !== false);
+    paid[id] = {
+      white: Math.max(pa?.white ?? 0, pb?.white ?? 0),
+      blue: Math.max(pa?.blue ?? 0, pb?.blue ?? 0),
+      ...(LEGACY_PRICE[id] ? { legacy } : {}),
+    };
   }
   // Newer equip wins; a tie is broken on the pair itself, so merge(a, b) and merge(b, a) agree.
   const look = (w: Wardrobe) => `${w.coat ?? ""}|${w.lantern ?? ""}`;
   const pick = A.at > B.at ? A : B.at > A.at ? B : look(A) >= look(B) ? A : B;
   return cleanWardrobe({ owned, paid, coat: pick.coat, lantern: pick.lantern, at: Math.max(A.at, B.at) });
+}
+
+/**
+ * 0.1.137 wardrobe sync. `recorded` is the row the print op wrote. The device may change
+ * what is worn. It cannot add an owned id or raise a paid count. Ids already recorded stay owned.
+ * Wearing something the account does not own is ignored. Taking a slot off (null) is allowed.
+ */
+export function applyWardrobeSync(recorded: Wardrobe, posted: Wardrobe): Wardrobe {
+  const server = cleanWardrobe(recorded);
+  // Wear is checked against the recorded ownership, not the post's own list. A second
+  // device may omit owned ids and still put on something the account already bought.
+  const coat = posted.coat === null || (isCoat(posted.coat) && server.owned.includes(posted.coat)) ? posted.coat : server.coat;
+  const lantern =
+    posted.lantern === null || (isLanternSkin(posted.lantern) && server.owned.includes(posted.lantern)) ? posted.lantern : server.lantern;
+  const wore = coat !== server.coat || lantern !== server.lantern;
+  return cleanWardrobe({
+    owned: server.owned,
+    paid: server.paid,
+    coat,
+    lantern,
+    at: wore ? Math.max(server.at + 1, posted.at || 0) : server.at,
+  });
 }
 
 export function sameWardrobe(a: Wardrobe, b: Wardrobe): boolean {

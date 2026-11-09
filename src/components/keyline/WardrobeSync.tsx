@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user";
-import { mergeWardrobe, sameWardrobe, type Wardrobe } from "@/game/cosmetics";
+import { applyWardrobeSync, mergeWardrobe, sameWardrobe, type Wardrobe } from "@/game/cosmetics";
 import { fetchWardrobe, syncWardrobe } from "@/game/wardrobeApi";
 import { useGame } from "@/game/store";
 import { visibleLantern } from "@/game/paint";
@@ -48,9 +48,10 @@ export function WardrobeSync() {
         if (!live) return;
         // Anything bought or worn while the request was in flight merges back in rather than being overwritten.
         const merged = mergeWardrobe(server, useGame.getState().wardrobe);
-        synced.current = server;
+        synced.current = merged;
         useGame.getState().adoptWardrobe(merged);
-        if (!sameWardrobe(merged, server)) schedule();
+        // A post the server refused (extra owned ids, a higher instalment) must not be sent again.
+        if (!sameWardrobe(applyWardrobeSync(server, merged), server)) schedule();
       } catch {
         /* offline or signed out mid-flight: the local save still has it; the next change retries */
       }

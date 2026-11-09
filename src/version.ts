@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.136";
+export const APP_VERSION = "0.1.137";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1136a";
+export const PUBLISH_STAMP = "k1137a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -236,3 +236,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.134: counter and print-shop art, plus a proposed art guide (docs/ART_DIRECTION.md, not approved yet). The street counter pin and the counter sheet use one new drawing (green enamel, three vault-coloured matches, wood stall, brass lamp). The print shop facade is a press (PRESS plate, oxblood awning, lantern, platen) instead of a second copy of the outfitter. Same buttons, prices, ids and purchase/collect/print behaviour. Pixel props on these two only (k1134a).
 // 0.1.135: the counter sign's three marks are vault keys, not matches (Ryan). White, blue and amber use the real key sprites — circle, square and hex bows, steel shaft, teeth — on the same stall. Press, prices and behaviour unchanged (k1135a).
 // 0.1.136: print-shop vault skins. The four metal skins (Copper Lamp 10 white, Wrought Iron 8 white + 2 blue, Verdigris 6 white + 4 blue, Nickel Plate 8 blue) and vault paint, including prism, recolour the street-vault case (face, side, trim, bar, bolts, dial plate). The glyph, numeral and slot stay on the tier colour. Stock steel and brass is the default; Back to brass restores it. Same ids, prices, instalments and wardrobe save. Hearth pins stay copper. No new motion (k1136a).
+// 0.1.137: print shop prices. Copper stays 10 white. Iron 12 white + 6 blue, Verdigris 8 white + 12 blue, Nickel 20 blue, Oilskin 20 white, Bottle-Green 12 white + 10 blue, Oxblood 8 white + 16 blue, Plum 24 blue. An instalment already started finishes at the old price. White dye is 12 cans for a coat and 16 for vaults; blue dye is 8 and 10. A wardrobe sync can change what is worn and cannot add an owned id or raise what has been paid. Owned items stay owned (k1137a).

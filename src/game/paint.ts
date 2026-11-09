@@ -20,8 +20,8 @@ export type PaintUse = {
 };
 
 export const PAINT_USE: Record<PaintColor, PaintUse> = {
-  white: { name: "White paint", coat: 3, vault: 4, swatch: "#efe6d0" },
-  blue: { name: "Blue paint", coat: 4, vault: 5, swatch: "#3d6f9a" },
+  white: { name: "White paint", coat: 12, vault: 16, swatch: "#efe6d0" },
+  blue: { name: "Blue paint", coat: 8, vault: 10, swatch: "#3d6f9a" },
   green: { name: "Green paint", coat: 5, vault: 6, swatch: "#2f6b45" },
   amber: { name: "Amber paint", coat: 6, vault: 8, swatch: "#e39a1a" },
   red: { name: "Red paint", coat: 8, vault: 10, swatch: "#b42324" },

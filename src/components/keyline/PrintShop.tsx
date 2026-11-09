@@ -1,5 +1,5 @@
 import { cityShop, SCOUTS } from "@/game/data";
-import { CATALOGUE, owing, payable, priceLine, type Cosmetic, type CosmeticSlot } from "@/game/cosmetics";
+import { CATALOGUE, owing, payable, priceLine, quotePrice, type Cosmetic, type CosmeticSlot } from "@/game/cosmetics";
 import { vaultPinHtml } from "@/game/pins";
 import { useGame } from "@/game/store";
 import { PUBLISH_STAMP } from "@/version";
@@ -95,7 +95,8 @@ export function PrintShop({ counter }: { counter: boolean }) {
           const paid = wardrobe.paid[c.id] ?? { white: 0, blue: 0 };
           const left = owing(wardrobe, c.id);
           const take = payable(wardrobe, keys, c.id);
-          const total = c.price.white + c.price.blue;
+          const bill = quotePrice(wardrobe, c.id);
+          const total = bill.white + bill.blue;
           const done = total - left.white - left.blue;
           return (
             <div key={c.id} className="hq-row" data-item={c.id}>
@@ -109,7 +110,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
                 <p className="hq-row-sub">{c.blurb}</p>
                 {owned ? null : (
                   <div className="mt-2 grid gap-1.5">
-                    <Price c={c} paidW={paid.white} paidB={paid.blue} />
+                    <Price c={{ ...c, price: bill }} paidW={paid.white} paidB={paid.blue} />
                     {done > 0 ? (
                       <div className="paid-bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={`${done} of ${total} keys paid`}>
                         <i style={{ width: `${(done / total) * 100}%` }} />

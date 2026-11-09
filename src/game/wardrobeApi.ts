@@ -3,16 +3,15 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { WARDROBE_UPSERT } from "./wardrobeSql";
-import { COSMETIC_IDS, EMPTY_WARDROBE, cleanWardrobe, mergeWardrobe, type Wardrobe } from "./cosmetics";
+import { COSMETIC_IDS, EMPTY_WARDROBE, applyWardrobeSync, cleanWardrobe, type Wardrobe } from "./cosmetics";
 
 /**
  * Server copy of a signed-in walker's print-shop wardrobe (0.0.45). Guests keep theirs in the local save only.
- * Every read and write is scoped to the verified session user. A sync merges the device's copy into the
- * stored one (ownership only grows, instalments keep the larger payment, the newer equip wins) and returns
- * the result, so a second device or a cleared browser gets everything back on sign-in.
+ * Every read and write is scoped to the verified session user.
  *
- * Matches live in the local save (as every match always has), so the server can't re-check a payment;
- * what it guarantees is that a bought item is never lost and that nobody else's row is touched.
+ * 0.1.137: a sync may change what is worn. Ownership and instalments come only from the row the
+ * print op recorded — a post cannot add an owned id or raise a paid count. Owned items stay owned
+ * (the upsert still unions, and this handler never sends an id the record does not already have).
  */
 const Id = z.enum(COSMETIC_IDS as [string, ...string[]]);
 const Count = z.number().int().min(0).max(99);
@@ -47,15 +46,16 @@ export const syncWardrobe = createServerFn({ method: "POST" })
   .validator((u: unknown) => WardrobeSchema.parse(u))
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<Wardrobe> => {
-    const merged = mergeWardrobe(await load(context.userId), cleanWardrobe(data));
+    const recorded = await load(context.userId);
+    const next = applyWardrobeSync(recorded, cleanWardrobe(data));
     const sql = await getSql();
     await sql.query(WARDROBE_UPSERT, [
       context.userId,
-      JSON.stringify(merged.owned),
-      JSON.stringify(merged.paid),
-      merged.coat,
-      merged.lantern,
-      merged.at,
+      JSON.stringify(next.owned),
+      JSON.stringify(next.paid),
+      next.coat,
+      next.lantern,
+      next.at,
     ]);
     return load(context.userId);
   });

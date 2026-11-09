@@ -6,6 +6,7 @@ import {
   COATS,
   EMPTY_WARDROBE,
   LANTERN_SKINS,
+  applyWardrobeSync,
   cleanWardrobe,
   mergeWardrobe,
   owing,
@@ -48,8 +49,12 @@ test("pricing: the first item is a couple of daily crates away; the whole catalo
   const twoCrates = crateLoot(1).white * 2;
   assert.ok(twoCrates >= cheapest.price.white && cheapest.price.blue === 0, `${twoCrates} white from two crates`);
   const total = CATALOGUE.reduce((n, c) => n + priceCoin(c.price), 0);
-  assert.equal(total, 4890);
-  assert.ok(total >= 4000 && total <= 6000);
+  const white = CATALOGUE.reduce((n, c) => n + c.price.white, 0);
+  const blue = CATALOGUE.reduce((n, c) => n + c.price.blue, 0);
+  // 0.1.137: 70 white + 88 blue on the locked ladder (30 / 90).
+  assert.equal(white, 70);
+  assert.equal(blue, 88);
+  assert.equal(total, 10_020);
 });
 
 test("payIn: pays what the pocket holds toward the item, keeps the instalment, finishes into owned + worn", () => {
@@ -106,7 +111,7 @@ test("cleanWardrobe: unknown ids dropped, paid capped at the price, worn items m
     at: 12.7,
   });
   assert.deepEqual(w.owned, ["copper"]);
-  assert.deepEqual(w.paid, { nickel: { white: 0, blue: 3 } });
+  assert.deepEqual(w.paid, { nickel: { white: 0, blue: 3, legacy: true } });
   assert.equal(w.coat, null);
   assert.equal(w.lantern, "copper");
   assert.equal(w.at, 12);
@@ -119,7 +124,7 @@ test("mergeWardrobe: ownership unions, instalments keep the larger payment, newe
   const server = W({ owned: ["oilskin"], paid: { plum: { white: 1, blue: 5 }, iron: { white: 3, blue: 0 } }, coat: "oilskin", at: 100 });
   const m = mergeWardrobe(device, server);
   assert.deepEqual(m.owned.sort(), ["copper", "oilskin"]);
-  assert.deepEqual(m.paid, { iron: { white: 3, blue: 0 }, plum: { white: 4, blue: 5 } });
+  assert.deepEqual(m.paid, { iron: { white: 3, blue: 0, legacy: true }, plum: { white: 4, blue: 5, legacy: true } });
   assert.equal(m.lantern, "copper");
   assert.equal(m.coat, null, "device changed its look last and wears no coat");
   assert.equal(m.at, 200);
@@ -133,6 +138,70 @@ test("mergeWardrobe: ownership unions, instalments keep the larger payment, newe
   const b = W({ owned: ["plum", "bottle"], coat: "bottle", at: 5 });
   assert.deepEqual(mergeWardrobe(a, b), mergeWardrobe(b, a));
   assert.deepEqual(mergeWardrobe(m, m), m, "idempotent");
+});
+
+test("0.1.137: an instalment already started finishes at the old price; a new one pays the new price", () => {
+  const plum = W({ paid: { plum: { white: 4, blue: 2 } } });
+  assert.deepEqual(owing(plum, "plum"), { white: 0, blue: 8 }, "old plum was 4 white + 10 blue");
+  const finish = payIn(plum, pocket(30, 30), "plum", 4)!;
+  assert.deepEqual(finish.took, { white: 0, blue: 8 });
+  assert.equal(finish.done, true);
+  assert.ok(finish.wardrobe.owned.includes("plum"));
+  assert.equal(finish.wardrobe.paid.plum, undefined);
+
+  const iron = W({ paid: { iron: { white: 8, blue: 0 } } });
+  assert.deepEqual(owing(iron, "iron"), { white: 0, blue: 2 }, "old iron was 8 white + 2 blue");
+  const ironDone = payIn(iron, pocket(20, 20), "iron", 5)!;
+  assert.deepEqual(ironDone.took, { white: 0, blue: 2 });
+  assert.equal(ironDone.done, true);
+
+  const fresh = payIn(W(), pocket(30, 30), "plum", 6)!;
+  assert.deepEqual(fresh.took, { white: 0, blue: 24 });
+  assert.equal(fresh.done, true);
+  const started = payIn(W(), pocket(0, 5), "plum", 7)!;
+  assert.equal(started.done, false);
+  assert.deepEqual(owing(started.wardrobe, "plum"), { white: 0, blue: 19 });
+  assert.equal(started.wardrobe.paid.plum?.legacy, false);
+});
+
+test("0.1.137: owned items stay owned and are not charged again", () => {
+  const w = W({ owned: ["oilskin", "copper"], coat: "oilskin", lantern: "copper", at: 3 });
+  assert.equal(payIn(w, pocket(40, 40), "oilskin", 8), null);
+  assert.equal(payIn(w, pocket(40, 40), "copper", 8), null);
+  assert.deepEqual(owing(w, "oilskin"), { white: 0, blue: 0 });
+  assert.deepEqual(owing(w, "copper"), { white: 0, blue: 0 });
+  const kept = applyWardrobeSync(w, W({ owned: [], coat: null, lantern: null, at: 1 }));
+  assert.deepEqual([...kept.owned].sort(), ["copper", "oilskin"]);
+});
+
+test("0.1.137: a wardrobe sync can change what is worn and cannot grant items or raise an instalment", () => {
+  const recorded = W({
+    owned: ["oilskin", "copper"],
+    paid: { plum: { white: 1, blue: 0, legacy: true } },
+    coat: "oilskin",
+    lantern: null,
+    at: 10,
+  });
+  const posted = W({
+    owned: ["oilskin", "copper", "nickel", "plum"],
+    paid: { plum: { white: 4, blue: 10 }, iron: { white: 12, blue: 6 } },
+    coat: "plum",
+    lantern: "nickel",
+    at: 40,
+  });
+  const next = applyWardrobeSync(recorded, posted);
+  assert.deepEqual([...next.owned].sort(), ["copper", "oilskin"]);
+  assert.deepEqual(next.paid, { plum: { white: 1, blue: 0, legacy: true } });
+  assert.equal(next.coat, "oilskin", "plum is not owned, so the coat stays");
+  assert.equal(next.lantern, null, "nickel is not owned");
+  const worn = applyWardrobeSync(recorded, W({ owned: [], coat: null, lantern: "copper", at: 4 }));
+  assert.equal(worn.coat, null);
+  assert.equal(worn.lantern, "copper");
+  assert.ok(worn.at >= 11);
+  assert.deepEqual([...worn.owned].sort(), ["copper", "oilskin"]);
+  const src = read("./wardrobeApi.ts");
+  assert.match(src, /applyWardrobeSync\(recorded,/);
+  assert.doesNotMatch(src, /mergeWardrobe/);
 });
 
 test("art wiring: the coat palette, the generated coat CSS and the lantern-skin CSS cover the whole catalogue", () => {

@@ -289,18 +289,18 @@ test("doubling scope: Daily Lantern Run, print shop prices, the bank and the loc
   assert.deepEqual(payDaily(keys, 0).added, { white: 2, blue: 1 });
   assert.deepEqual(bankUpSpec("white"), { pay: "white", payN: 4, get: "blue", getN: 1 });
   assert.deepEqual(bankDownSpec("blue"), { pay: "blue", payN: 1, get: "white", getN: 3 });
-  // Print shop prices stay the 0.0.45 catalogue.
+  // The market does not retune the print shop. These are the 0.1.137 prices.
   assert.deepEqual(
     Object.fromEntries([...Object.entries(COATS), ...Object.entries(LANTERN_SKINS)].map(([id, c]) => [id, c.price])),
     {
-      oilskin: { white: 15, blue: 0 },
-      bottle: { white: 10, blue: 4 },
-      oxblood: { white: 8, blue: 6 },
-      plum: { white: 4, blue: 10 },
+      oilskin: { white: 20, blue: 0 },
+      bottle: { white: 12, blue: 10 },
+      oxblood: { white: 8, blue: 16 },
+      plum: { white: 0, blue: 24 },
       copper: { white: 10, blue: 0 },
-      iron: { white: 8, blue: 2 },
-      verdigris: { white: 6, blue: 4 },
-      nickel: { white: 0, blue: 8 },
+      iron: { white: 12, blue: 6 },
+      verdigris: { white: 8, blue: 12 },
+      nickel: { white: 0, blue: 20 },
     },
   );
   // The store only reaches for the market inside the lamp / spark / street-match paths.

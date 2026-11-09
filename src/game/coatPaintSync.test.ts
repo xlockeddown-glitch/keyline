@@ -49,8 +49,11 @@ test("server: a mix needs cans the account can prove; replays never spend twice;
   assert.equal((await applyClientOp(sql, "dy", { kind: "dye", job: "vault", color: "red" })).ok, true);
   // White and blue are never logged as finds: capped by right answers on that tier.
   assert.equal((await applyClientOp(sql, "dy", { kind: "dye", job: "coat", color: "white" })).reason, "short-paint");
-  await sql`insert into vault_clears (user_id, display_name, tier, correct) values ('dy', 'Dy', 'white', 3)`;
-  assert.equal((await cansFound(sql, "dy")).white, 3);
+  await sql`insert into vault_clears (user_id, display_name, tier, correct) values ('dy', 'Dy', 'white', 11)`;
+  assert.equal((await cansFound(sql, "dy")).white, 11);
+  assert.equal((await applyClientOp(sql, "dy", { kind: "dye", job: "coat", color: "white" })).reason, "short-paint", "white coat dye is 12 cans");
+  await sql`update vault_clears set correct = 12 where user_id = 'dy' and tier = 'white'`;
+  assert.equal((await cansFound(sql, "dy")).white, 12);
   assert.equal((await applyClientOp(sql, "dy", { kind: "dye", job: "coat", color: "white" })).ok, true);
   assert.equal((await applyClientOp(sql, "dy", { kind: "dye", job: "coat", color: "plaid" as "red" })).reason, "unknown");
   const d = await dyesOf(sql, "dy");
