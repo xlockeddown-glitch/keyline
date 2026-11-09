@@ -2,7 +2,8 @@ import { q } from "../quiz";
 import type { TriviaQ } from "../types";
 
 /**
- * 
+ * Monday Nov 9, 2026 trivia batch 2, sub-batch d: easy evergreen food, nature, history, science and arts cards
+ * to lift the deck's easy share and thin topics. Every card was checked against the Wikipedia page above it.
  */
 
 type PlusCat = "sports" | "political" | "food" | "arts" | "science" | "history" | "nature" | "games" | "celebrity" | "music" | "books" | "geography";
