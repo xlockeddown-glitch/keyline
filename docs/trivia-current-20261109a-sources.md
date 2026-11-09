@@ -1,0 +1,53 @@
+# Trivia current-events sources — batch 20261109a
+
+Each card's prompt, answer and source page(s). Wikipedia article text was fetched (API extract) and the answer string confirmed in it; non-token-match cards were read by hand.
+
+- [sports] Which two places co-hosted the Feb 2026 Winter Olympics? — **Milan and Cortina d'Ampezzo** — https://en.wikipedia.org/wiki/2026_Winter_Olympics
+- [sports] Which sport made its Winter Olympic debut at Milano Cortina in Feb 2026? — **ski mountaineering** — https://en.wikipedia.org/wiki/2026_Winter_Olympics
+- [sports] Which country topped the medal table at the Feb 2026 Winter Olympics? — **Norway** — https://en.wikipedia.org/wiki/2026_Winter_Olympics
+- [sports] Who was IOC president during the Feb 2026 Winter Olympics? — **Kirsty Coventry** — https://en.wikipedia.org/wiki/2026_Winter_Olympics
+- [sports] How many gold medals did Norway win at the Feb 2026 Winter Olympics, a record? — **18** — https://en.wikipedia.org/wiki/2026_Winter_Olympics
+- [sports] Which team did Spain beat in the July 2026 men's World Cup final? — **Argentina** — https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_final
+- [sports] How many teams took part in the 2026 men's FIFA World Cup? — **48** — https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_final
+- [sports] Who won the men's singles title at Wimbledon in July 2026? — **Jannik Sinner** — https://en.wikipedia.org/wiki/2026_Wimbledon_Championships
+- [sports] For the first time in Wimbledon history, July 2026 matches had… — **video reviews** — https://en.wikipedia.org/wiki/2026_Wimbledon_Championships
+- [sports] In June 2026, who beat Flavio Cobolli in the French Open final for his first major title? — **Alexander Zverev** — https://en.wikipedia.org/wiki/2026_French_Open
+- [sports] Who won the women's singles title at the June 2026 French Open? — **Mirra Andreeva** — https://en.wikipedia.org/wiki/2026_French_Open
+- [sports] Who won the men's singles at the Australian Open in Feb 2026? — **Carlos Alcaraz** — https://en.wikipedia.org/wiki/2026_Australian_Open
+- [sports] Who won the women's singles at the Australian Open in Feb 2026? — **Elena Rybakina** — https://en.wikipedia.org/wiki/2026_Australian_Open
+- [sports] At the Jan 2026 Australian Open, Venus Williams became the oldest player in the women's draw at what age? — **45** — https://en.wikipedia.org/wiki/2026_Australian_Open
+- [sports] Who won the Masters in April 2026 for his second straight green jacket? — **Rory McIlroy** — https://en.wikipedia.org/wiki/2026_Masters_Tournament
+- [sports] Who won the May 2026 Indianapolis 500 in the closest finish in race history? — **Felix Rosenqvist** — https://en.wikipedia.org/wiki/2026_Indianapolis_500
+- [sports] Felix Rosenqvist won the May 2026 Indy 500 driving for which team? — **Meyer Shank Racing** — https://en.wikipedia.org/wiki/2026_Indianapolis_500
+- [sports] Which horse won the Kentucky Derby in May 2026? — **Golden Tempo** — https://en.wikipedia.org/wiki/2026_Kentucky_Derby
+- [sports] Golden Tempo's May 2026 Kentucky Derby win made Cherie DeVaux the first woman to win it as a… — **trainer** — https://en.wikipedia.org/wiki/2026_Kentucky_Derby
+- [sports] In which city did the July 2026 Tour de France begin? — **Barcelona** — https://en.wikipedia.org/wiki/2026_Tour_de_France
+- [sports] Who won the July 2026 Tour de France, his fifth title? — **Tadej Pogačar** — https://en.wikipedia.org/wiki/2026_Tour_de_France
+- [sports] Who finished second overall at the July 2026 Tour de France? — **Remco Evenepoel** — https://en.wikipedia.org/wiki/2026_Tour_de_France
+- [music] Which country won the Eurovision Song Contest in May 2026? — **Bulgaria** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2026
+- [music] What was the title of the winning song at Eurovision 2026? — **Bangaranga** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2026
+- [music] Which singer performed Eurovision 2026's winning song for Bulgaria? — **Dara** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2026
+- [music] At the Feb 2026 Grammys, whose album became the first Spanish-language Album of the Year? — **Bad Bunny** — https://en.wikipedia.org/wiki/68th_Annual_Grammy_Awards
+- [music] Which Kendrick Lamar song won Record of the Year at the Feb 2026 Grammys? — **Luther** — https://en.wikipedia.org/wiki/68th_Annual_Grammy_Awards
+- [music] Which Billie Eilish song won Song of the Year at the Feb 2026 Grammys? — **Wildflower** — https://en.wikipedia.org/wiki/68th_Annual_Grammy_Awards
+- [music] In Feb 2026, which director became the 22nd EGOT winner by winning a Grammy? — **Steven Spielberg** — https://en.wikipedia.org/wiki/68th_Annual_Grammy_Awards
+- [music] Who became the most-awarded hip-hop artist in Grammy history in Feb 2026? — **Kendrick Lamar** — https://en.wikipedia.org/wiki/68th_Annual_Grammy_Awards
+- [celebrity] Which film set a record with 16 nominations for the March 2026 Oscars? — **Sinners** — https://en.wikipedia.org/wiki/98th_Academy_Awards
+- [celebrity] In March 2026, who became the first woman to win the Oscar for Best Cinematography? — **Autumn Durald Arkapaw** — https://en.wikipedia.org/wiki/98th_Academy_Awards
+- [celebrity] Which new Oscar category was handed out for the first time in March 2026? — **Best Casting** — https://en.wikipedia.org/wiki/98th_Academy_Awards
+- [celebrity] Which animated film won two Oscars in March 2026? — **KPop Demon Hunters** — https://en.wikipedia.org/wiki/98th_Academy_Awards
+- [celebrity] Which film won Best Motion Picture – Drama at the Jan 2026 Golden Globes? — **Hamnet** — https://en.wikipedia.org/wiki/83rd_Golden_Globe_Awards
+- [celebrity] Who hosted the Golden Globes in Jan 2026 for the second year in a row? — **Nikki Glaser** — https://en.wikipedia.org/wiki/83rd_Golden_Globe_Awards
+- [celebrity] Which show won the first-ever Golden Globe for podcasts in Jan 2026? — **Good Hang with Amy Poehler** — https://en.wikipedia.org/wiki/83rd_Golden_Globe_Awards
+- [celebrity] Which series won Best TV Comedy at the Jan 2026 Golden Globes? — **The Studio** — https://en.wikipedia.org/wiki/83rd_Golden_Globe_Awards
+- [celebrity] Who hosted the BAFTA Film Awards for the first time in Feb 2026? — **Alan Cumming** — https://en.wikipedia.org/wiki/79th_British_Academy_Film_Awards
+- [celebrity] Which film tied a BAFTA record in Feb 2026 by losing all 11 of its nominations? — **Marty Supreme** — https://en.wikipedia.org/wiki/79th_British_Academy_Film_Awards
+- [sports] Which club did Paris Saint-Germain beat in the May 2026 Champions League final? — **Arsenal** — https://en.wikipedia.org/wiki/2026_UEFA_Champions_League_final
+- [sports] Which English club won the Europa League final in May 2026? — **Aston Villa** — https://en.wikipedia.org/wiki/2026_UEFA_Champions_League_final
+- [sports] Which club were crowned 2025–26 Premier League champions? — **Arsenal** — https://en.wikipedia.org/wiki/2025–26_Premier_League
+- [sports] Which club was the first relegated from the Premier League in April 2026? — **Wolverhampton Wanderers** — https://en.wikipedia.org/wiki/2025–26_Premier_League
+- [sports] Which London club won the Conference League final in May 2026? — **Crystal Palace** — https://en.wikipedia.org/wiki/2025–26_Premier_League
+- [sports] Who won the PGA Championship in May 2026 for his first major title? — **Aaron Rai** — https://en.wikipedia.org/wiki/2026_PGA_Championship
+- [sports] The May 2026 PGA Championship was played at which club near Philadelphia? — **Aronimink** — https://en.wikipedia.org/wiki/2026_PGA_Championship
+- [sports] Who won the Open Championship at Royal Birkdale in July 2026? — **Ryan Fox** — https://en.wikipedia.org/wiki/2026_Open_Championship
+- [sports] Ryan Fox, who won the July 2026 Open Championship, is from which country? — **New Zealand** — https://en.wikipedia.org/wiki/2026_Open_Championship
