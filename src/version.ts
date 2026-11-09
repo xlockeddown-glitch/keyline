@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.145";
+export const APP_VERSION = "0.1.146";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1145a";
+export const PUBLISH_STAMP = "k1146a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -243,3 +243,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.143: vault-tier trivia round (Nov 9 2026): plus_20261109g, 205 diff-3 long-tail cards aimed at amber/red/violet (≈28 amber, 91 red, 86 violet). 0.1.142 is held by the art PR (k1143a).
 // 0.1.144: free-model pipeline trivia batch (Nov 9 2026, job trivia-free-20261109h): plus_20261109h, 139 easy/medium cards in thin topics (games, celebrity, music, political, geography, books); free-model generated + 3-model free cross-check + reviewer Wikipedia source check (k1144a).
 // 0.1.145: house paintings. The four doors are night paintings: the sheet keeps the night field, the map marker is the same door with the field cut away. The map no longer dims them. Title screen unchanged. Same names, prices, lots, and buttons (k1145a).
+// 0.1.146: warm title street. Lit storefronts spill amber and gold onto the avenue, and the hero vault is brass instead of steel. The KEYLINE sign, city blade, skyline, brass lanterns, and the car and scouts stay. Houses unchanged (k1146a).

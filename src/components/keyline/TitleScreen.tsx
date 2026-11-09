@@ -15,8 +15,8 @@ import { SkyLayer, useSky } from "./Sky";
 /** 0.1.10: cities with their own painted skyline on the title street; the rest get the generic one. */
 const SKYLINES: Partial<Record<CityId, string>> = { chicago: "chicago", nyc: "nyc", sf: "sf" };
 
-/** 0.1.10 title: a painted night street (skyline of the last-played city), a glowing vault down the road, lit lanterns,
- * the cast by the signpost and your car at the curb. Motion is CSS only and stops under prefers-reduced-motion. */
+/** 0.1.146 title: a warm night avenue. Lit storefronts, a brass vault, the last city's skyline.
+ * Lamp and vault glows are CSS and stop under prefers-reduced-motion. The cast stands on the road. */
 function TitleStreet({ cityId, known }: { cityId: CityId; known: boolean }) {
   const sky = useSky();
   const carOn = useGame((s) => s.carOn);
@@ -29,10 +29,10 @@ function TitleStreet({ cityId, known }: { cityId: CityId; known: boolean }) {
       <div className="ts-frame">
         <img className="ts-back" src={`/title/street-${skyline}.webp`} alt="" decoding="async" fetchPriority="high" />
         <i className="ts-vault" />
-        <i className="ts-lamp" style={{ left: "20%", top: "23%" }} />
-        <i className="ts-lamp" style={{ left: "90.6%", top: "19.5%", animationDelay: "-1.3s" }} />
-        <i className="ts-lamp is-far" style={{ left: "35.2%", top: "42.5%", animationDelay: "-0.6s" }} />
-        <i className="ts-lamp is-far" style={{ left: "66.2%", top: "42%", animationDelay: "-2.1s" }} />
+        <i className="ts-lamp" />
+        <i className="ts-lamp is-right" />
+        <i className="ts-lamp is-far" />
+        <i className="ts-lamp is-far is-right" />
         <i className="ts-headlights" />
         {sky.weather === "clear" ? (
           <div className="ts-flies">
