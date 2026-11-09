@@ -31,8 +31,6 @@ export const PLUS_20261109G: Partial<Record<PlusCat, TriviaQ[]>> = {
 		q("Which Austrian won all three 1956 Olympic alpine skiing golds?", ["Karl Schranz", "Franz Klammer", "Toni Sailer", "Hermann Maier"], "Toni Sailer", 3),
 	],
 	political: [
-		// https://en.wikipedia.org/wiki/Peace_of_Westphalia
-		q("Which treaty of 1648 ended the Thirty Years' War alongside the Peace of Osnabrück?", ["Treaty of Pyrenees", "Peace of Münster", "Peace of Prague", "Treaty of Lübeck"], "Peace of Münster", 3),
 		// https://en.wikipedia.org/wiki/Treaty_of_Zaragoza
 		q("Which 1529 treaty set the Spanish–Portuguese line in Asia?", ["Treaty of Tordesillas", "Treaty of Cambrai", "Treaty of Zaragoza", "Treaty of Lisbon"], "Treaty of Zaragoza", 3),
 		// https://en.wikipedia.org/wiki/Treaty_of_Nanking
@@ -190,7 +188,7 @@ export const PLUS_20261109G: Partial<Record<PlusCat, TriviaQ[]>> = {
 	],
 	history: [
 		// https://en.wikipedia.org/wiki/Peace_of_Münster
-		q("Which 1648 treaties, signed in Osnabrück and Münster, ended the Eighty Years' War between Spain and the Dutch Republic?", ["Treaty of the Pyrenees", "Peace of Münster", "Twelve Years' Truce", "Treaty of Nijmegen"], "Peace of Münster", 3),
+		q("Which 1648 treaty, part of the Westphalia settlement, ended Spain's Eighty Years' War with the Dutch Republic?", ["Treaty of the Pyrenees", "Peace of Münster", "Twelve Years' Truce", "Treaty of Nijmegen"], "Peace of Münster", 3),
 		// https://en.wikipedia.org/wiki/Battle_of_the_Golden_Spurs
 		q("Which 1302 battle saw Flemish militia defeat French knights at Kortrijk?", ["Battle of Courtrai Gate", "Battle of Bouvines", "Battle of the Golden Spurs", "Battle of Crécy"], "Battle of the Golden Spurs", 3),
 		// https://en.wikipedia.org/wiki/Battle_of_Adwa
