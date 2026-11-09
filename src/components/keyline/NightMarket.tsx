@@ -4,6 +4,7 @@ import { useGame } from "@/game/store";
 import { MARKET_TAG, clock, marketAt, marketLeft, nextMarket, type NightMarket } from "@/game/nightMarket";
 import type { CityId } from "@/game/types";
 import { MARKET_COIN_CAP, MARKET_LIGHTS, bestLight, nextLight } from "@/game/marketLights";
+import { PATRON_BULBS, patronLive } from "@/game/patron";
 
 /** The market open in this city right now; re-reads every 5 s (same beat as the map sign) so the clock and the hour flip stay live. */
 export function useMarket(cityId: CityId): { market: NightMarket | null; now: number } {
@@ -47,12 +48,43 @@ export function MarketHudLine({ onWalk }: { onWalk: () => void }) {
     );
   }
   return (
-    <button type="button" className="market-hud pointer-events-auto mt-1" onClick={onWalk} aria-label={`Night market on ${market.street.name}, ${marketLeft(market, now)}. Walk there.`} data-testid="market-hud">
-      <span className="market-dot" aria-hidden />
-      <span className="kicker mr-1.5">Night market</span>
-      <span className="text-fg">{market.zone.plaza ?? market.street.name}</span>
-      <span className="tabular-nums text-fg-subtle"> · {marketLeft(market, now)} · ×{x}</span>
-    </button>
+    <span className="market-stack pointer-events-auto mt-1">
+      <button type="button" className="market-hud" onClick={onWalk} aria-label={`Night market on ${market.street.name}, ${marketLeft(market, now)}. Walk there.`} data-testid="market-hud">
+        <span className="market-dot" aria-hidden />
+        <span className="kicker mr-1.5">Night market</span>
+        <span className="text-fg">{market.zone.plaza ?? market.street.name}</span>
+        <span className="tabular-nums text-fg-subtle"> · {marketLeft(market, now)} · ×{x}</span>
+      </button>
+      <PatronRow now={now} />
+    </span>
+  );
+}
+
+/** 0.1.138: a bulb on your own market lights. Coin only. The × on the line does not move. */
+function PatronRow({ now }: { now: number }) {
+  const patron = useGame((s) => s.patron);
+  const coins = useGame((s) => s.points);
+  const live = patronLive(patron, now);
+  return (
+    <span className="patron-row" data-testid="patron-row" data-patron={live ? patron?.bulb : undefined}>
+      {PATRON_BULBS.map((b) => {
+        const on = live && patron?.bulb === b.id;
+        return (
+          <button
+            key={b.id}
+            type="button"
+            className={`btn btn-quiet patron-btn${on ? " is-on" : ""}`}
+            aria-pressed={on}
+            disabled={on}
+            onClick={() => useGame.getState().buyPatron(b.id)}
+          >
+            <i className="patron-swatch" style={{ background: b.swatch }} aria-hidden />
+            {on ? `${b.label} up` : `${b.label} · ${b.price.toLocaleString("en-US")}`}
+            {!on && coins < b.price ? <span className="sr-only"> Need more coins.</span> : null}
+          </button>
+        );
+      })}
+    </span>
   );
 }
 

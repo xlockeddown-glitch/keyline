@@ -96,6 +96,7 @@ import { DailyBlitz } from "./DailyBlitz";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
 import { MARKET_TAG, closestOnStreet, inZone, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
+import { patronLive } from "@/game/patron";
 import { visibleCoat } from "@/game/paint";
 
 /** 0.0.99: a worn city print shows over any coat or paint. */
@@ -1019,6 +1020,9 @@ export function GameMap() {
     const m = marketAt(useGame.getState().cityId, Date.now());
     box.classList.toggle("is-in-market", Boolean(m && inZone(m.zone, pos.current.lat, pos.current.lng)));
     box.dataset.marketLight = useGame.getState().marketLight;
+    const hold = useGame.getState().patron;
+    if (patronLive(hold, Date.now())) box.dataset.patron = hold!.bulb;
+    else delete box.dataset.patron;
   }
 
   function walkToMarket() {

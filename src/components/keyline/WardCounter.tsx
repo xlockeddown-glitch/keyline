@@ -18,8 +18,8 @@ export function WardCounter() {
   const cityId = useGame((s) => s.cityId);
   const errandId = useGame((s) => s.errandId);
   const place = CITIES[cityId].pois.find((p) => p.id === errandId && p.kind === "counter") ?? cityCounter(cityId);
-  const points = useGame((s) => s.points);
   const keys = useGame((s) => s.keys);
+  const points = useGame((s) => s.points);
   const fares = useGame((s) => s.fares);
   const pressPass = useGame((s) => s.pressPass);
   const buyKiosk = useGame((s) => s.buyKiosk);
@@ -76,19 +76,7 @@ export function WardCounter() {
             <p className="kicker mt-2">Desk tray</p>
             {(Object.values(KIOSK) as (typeof KIOSK)[keyof typeof KIOSK][]).map((item) => {
               const extra =
-                item.id === "pass" && pressPass > 0
-                  ? `${pressPass} waiting`
-                  : item.id === "fare"
-                    ? `${fares} in the pocket`
-                    : item.id === "tinder"
-                      ? `${keys.white} white`
-                      : item.id === "wick"
-                        ? `${keys.blue} blue`
-                        : item.id === "amber" && keys.amber > 0
-                          ? `${keys.amber} amber`
-                          : item.id === "oil" && keys.violet > 0
-                            ? `${keys.violet} violet`
-                            : null;
+                item.id === "pass" && pressPass > 0 ? `${pressPass} waiting` : item.id === "fare" ? `${fares} in the pocket` : null;
               return (
                 <div key={item.id} className="hq-row">
                   <ItemIcon item="coin" size={36} />

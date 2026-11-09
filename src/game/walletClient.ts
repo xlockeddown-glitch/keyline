@@ -62,6 +62,7 @@ export async function commitWallet(op: ClientOp): Promise<WalletWire | null> {
     const st = useGame.getState();
     if (r.view) st.adoptWallet(r.view);
     if (r.wardrobe) st.adoptWardrobe(r.wardrobe);
+    if (r.patron) useGame.setState({ patron: r.patron });
     return r;
   } catch {
     return null;

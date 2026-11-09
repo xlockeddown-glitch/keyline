@@ -3,7 +3,7 @@ import { HEARTH_VERSION_NAME, hearthBoost, hearthLast, hearthSteps, hearthTierAt
 import { create } from "zustand";
 import { DRIVE_PING_MS, MAGNET_DAY_CAP, bestVaultMs, carCool } from "./carPerks";
 import { cleanCredit, creditHint, settlePocket } from "./goals";
-import { CITIES, CITY_LIST, KIOSK, SCOUTS, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, wornPerk, type KioskId } from "./data";
+import { CITIES, CITY_LIST, KIOSK, SCOUTS, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, kioskRetired, wornPerk, type KioskId } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
 import { carOf, driveOf, isCarId, type CarId } from "./cars";
@@ -11,6 +11,7 @@ import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
 import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
+import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
@@ -188,6 +189,8 @@ export type GameState = {
   /** 0.1.00: market lights owned (server-reported) and the colour shown on the market string lights. */
   lightsOwned: string[];
   marketLight: string;
+  /** 0.1.138: cosmetic market bulb for the open cycle. Null when the cycle has ended. */
+  patron: PatronHold | null;
   /** 0.1.8: cars owned (server-reported) and the one you drive (null = the city cab). Showroom open at the dealer. */
   carsOwned: CarId[];
   carOn: CarId | null;
@@ -402,7 +405,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>> }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>>; patron?: PatronHold | null }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -410,6 +413,8 @@ export type GameState = {
   /** 0.1.105: line coat / vault paint up with the account (after sign-in, once the wallet is live). */
   syncDyes: () => Promise<void>;
   buyKiosk: (id: KioskId) => void;
+  /** 0.1.138: hang a patron bulb for this market cycle. One bulb, no reward. */
+  buyPatron: (bulb: PatronBulb) => void;
   startContract: () => void;
   toggleHq: (v?: boolean) => void;
   toggleGuide: (v?: boolean) => void;
@@ -652,6 +657,7 @@ function persistable(s: GameState) {
     printsSeen: s.printsSeen,
     lightsOwned: s.lightsOwned,
     marketLight: s.marketLight,
+    patron: s.patron,
     carsOwned: s.carsOwned,
     carOn: s.carOn,
     carCab: s.carCab,
@@ -1124,6 +1130,7 @@ export const useGame = create<GameState>((set, get) => ({
   recent: Array.isArray(saved?.recent) ? saved.recent.slice(0, RECENT_MAX) : [],
   lightsOwned: Array.isArray(saved?.lightsOwned) ? saved.lightsOwned.filter((x: unknown) => typeof x === "string") : ["amber"],
   marketLight: typeof saved?.marketLight === "string" ? saved.marketLight : "amber",
+  patron: cleanPatron((saved as { patron?: unknown } | null)?.patron, Date.now()),
   carsOwned: Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [],
   carOn: driveOf(Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [], isCarId(saved?.carOn) ? saved.carOn : null, saved?.carCab === true),
   carCab: saved?.carCab === true,
@@ -2451,6 +2458,7 @@ export const useGame = create<GameState>((set, get) => ({
     accountWorn = o.worn && typeof o.worn === "object" ? { ...o.worn } : null;
     for (const x of o.scouts) serverOwnedScouts.add(x);
     if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
+    if ("patron" in o) set({ patron: o.patron ?? null });
     if (o.cans) set({ carCans: o.cans.filter((x) => parseCan(x)) });
     if (o.houses) set({ houses: cleanHouses(o.houses) });
     if (o.homeClaims) set({ homeClaims: o.homeClaims.filter((x) => typeof x === "string") });
@@ -2606,26 +2614,44 @@ export const useGame = create<GameState>((set, get) => ({
     adopting = false;
     saveNow(get);
   },
-  buyKiosk: (id) => {
-    const item = KIOSK[id];
-    if (get().points < item.cost) {
-      flashToast(set, get, "Short on coin.", 1600);
+  buyPatron: (bulb) => {
+    const spec = patronBulb(bulb);
+    if (!spec) return;
+    const now = Date.now();
+    if (!patronOpen(now)) {
+      flashToast(set, get, "The market is dark. The lamp comes back with the next one.", 1800);
       return;
     }
-    if (id === "tinder" || id === "wick") {
-      const tier: Tier = id === "wick" ? "blue" : "white";
-      const add = id === "tinder" ? 2 : 1;
-      const have = get().keys[tier] ?? 0;
-      void have;
-      const n = add; // 0.0.97: overflow becomes merge credits (pocket hook).
-      sfx.craft();
-      set({
-        points: get().points - item.cost,
-        keys: { ...get().keys, [tier]: have + n },
-      });
-      flashToast(set, get, n === 1 ? `${TIER_LABEL[tier]} key from the desk.` : `Two white keys from the desk.`, 2200);
-      pushOp({ kind: "kiosk", id });
-      scheduleSave(get);
+    const cycle = patronCycle(now);
+    const cur = get().patron;
+    if (cur && cur.cycle === cycle && patronLive(cur, now)) {
+      flashToast(set, get, cur.bulb === bulb ? "That bulb is already up this cycle." : "This cycle already has a bulb.", 1600);
+      return;
+    }
+    if (get().points < spec.price) {
+      flashToast(set, get, "Need more coins.", 1400);
+      return;
+    }
+    const before = get().patron;
+    set({ points: get().points - spec.price, patron: { bulb, cycle, until: patronUntil(cycle) } });
+    pushOp({ kind: "patron", bulb }, () => {
+      // A refused second bulb already wrote the stored hold. Keep that one.
+      const held = useGame.getState().patron;
+      if (held && held.cycle === cycle && held.bulb !== bulb) return;
+      set({ patron: before });
+    });
+    flashToast(set, get, `${spec.label} up. Pay stays the same.`, 2000);
+    saveNow(get);
+  },
+  buyKiosk: (id) => {
+    if (kioskRetired(id)) {
+      flashToast(set, get, "The desk no longer sells keys. The ones you already hold stay in your pocket.", 2000);
+      return;
+    }
+    const item = KIOSK[id as keyof typeof KIOSK];
+    if (!item) return;
+    if (get().points < item.cost) {
+      flashToast(set, get, "Short on coin.", 1600);
       return;
     }
     if (id === "fare") {
@@ -2645,18 +2671,6 @@ export const useGame = create<GameState>((set, get) => ({
       set({ points: get().points - item.cost, pressPass: get().pressPass + 1 });
       pushOp({ kind: "kiosk", id }, () => set({ pressPass: Math.max(0, useGame.getState().pressPass - 1) }));
       flashToast(set, get, "Press pass. The next door holds five extra seconds.", 2200);
-      scheduleSave(get);
-      return;
-    }
-    if (id === "amber" || id === "oil") {
-      const tier: Tier = id === "oil" ? "violet" : "amber";
-      sfx.craft();
-      set({
-        points: get().points - item.cost,
-        keys: { ...get().keys, [tier]: get().keys[tier] + 1 },
-      });
-      flashToast(set, get, `${TIER_LABEL[tier]} key from the desk.`, 2200);
-      pushOp({ kind: "kiosk", id });
       scheduleSave(get);
       return;
     }

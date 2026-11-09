@@ -1,7 +1,7 @@
 import { applyTriviaBoosts, creditWhite } from "./boosts.ts";
 import { catBoost } from "./carPerks.ts";
 import { chooseStart, cleanUnlocks, freshUnlocks, lampLit, runFinished, unlockCity, type CityUnlocks } from "./cityPass.ts";
-import { CITIES, KIOSK, SCOUTS, type KioskId } from "./data.ts";
+import { CITIES, KIOSK, SCOUTS, kioskRetired, type KioskId } from "./data.ts";
 import { payIn, type CosmeticId, type Wardrobe } from "./cosmetics.ts";
 import { payDaily } from "./dailyRun.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
@@ -497,19 +497,11 @@ export function scoutOp(w: WalletState, id: string): OpResult {
 }
 
 export function kioskOp(w: WalletState, id: KioskId): OpResult {
-  const item = KIOSK[id];
+  // 0.1.138: key rows are gone. Refuse without charging and without minting or removing a key.
+  if (kioskRetired(id)) return { ok: false, reason: "retired" };
+  const item = KIOSK[id as keyof typeof KIOSK];
   if (!item) return { ok: false, reason: "unknown" };
   if (w.coins < item.cost) return { ok: false, reason: "short-coins" };
-  if (id === "tinder" || id === "wick") {
-    const tier: Tier = id === "wick" ? "blue" : "white";
-    const add = id === "tinder" ? 2 : 1;
-    // 0.0.97: no "pocket full" refusal; overflow becomes merge credits.
-    return applyDelta(w, { coins: -item.cost, keys: { [tier]: add } });
-  }
-  if (id === "amber" || id === "oil") {
-    const tier: Tier = id === "oil" ? "violet" : "amber";
-    return applyDelta(w, { coins: -item.cost, keys: { [tier]: 1 } });
-  }
   // Train ticket, press pass, atlas smear: coin only. The device keeps the non-wallet effect.
   return applyDelta(w, { coins: -item.cost });
 }

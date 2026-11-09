@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { viewerMiddleware } from "@/lib/auth/viewer-middleware";
-import { CITY_LIST, KIOSK } from "./data";
+import { CITY_LIST, KIOSK, KIOSK_RETIRED } from "./data";
 import { PAINT_COLORS } from "./ingredients";
 import type { ClientOp } from "./walletApply";
 import type { LegacyGrant, QuestStatus } from "./questServer";
@@ -18,7 +18,7 @@ import type { CityId, Tier } from "./types";
  */
 const TIERS = ["white", "blue", "green", "amber", "red", "violet"] as const;
 const CITIES = CITY_LIST.map((c) => c.id) as [CityId, ...CityId[]];
-const KIOSKS = Object.keys(KIOSK) as [keyof typeof KIOSK, ...(keyof typeof KIOSK)[]];
+const KIOSKS = [...Object.keys(KIOSK), ...Object.keys(KIOSK_RETIRED)] as [string, ...string[]];
 const COSMETICS = COSMETIC_IDS as [string, ...string[]];
 const City = z.enum(CITIES);
 const Tier = z.enum(TIERS);
@@ -73,6 +73,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("bank"), dir: z.enum(["up", "down"]), tier: Tier }),
   z.object({ kind: z.literal("scout"), id: z.string().min(1).max(40) }),
   z.object({ kind: z.literal("light"), id: z.string().min(1).max(20) }),
+  z.object({ kind: z.literal("patron"), bulb: z.enum(["brass", "copper", "night"]) }),
   z.object({ kind: z.literal("car"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("paint"), car: z.string().min(1).max(20), color: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("house"), city: City, tier: z.string().min(1).max(20) }),
@@ -167,6 +168,8 @@ export type WalletWire = {
   home?: { match: Tier | null; n?: number; coin?: number; day: string };
   quest?: { id: string; period: string; lucky?: string };
   legacy?: LegacyGrant[];
+  /** 0.1.138: the patron bulb this cycle, when the op bought or replayed one. */
+  patron?: { bulb: "brass" | "copper" | "night"; cycle: number; until: number };
 };
 
 export type SyncWire = {
@@ -186,7 +189,7 @@ export type SyncWire = {
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
   /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
-  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>> };
+  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>>; patron?: { bulb: "brass" | "copper" | "night"; cycle: number; until: number } | null };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })
@@ -238,6 +241,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       home: r.home,
       quest: r.quest,
       legacy: r.legacy,
+      patron: r.patron,
     };
   });
 

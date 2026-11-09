@@ -3977,19 +3977,19 @@ export function wornPerk(id: import("./types").ScoutId) {
 
 export const SCOUT_LIST = Object.values(SCOUTS);
 
+/**
+ * 0.1.138: the desk no longer sells keys. Tinder tin, Blue wick, Amber reprint and Night oil
+ * stay as ids so an old client’s op is refused without a charge and without taking a key
+ * already in the pocket. There is no partial kiosk payment to finish or refund.
+ */
+export const KIOSK_RETIRED = {
+  tinder: { id: "tinder" as const, cost: 160, name: "Tinder tin", blurb: "The desk no longer sells keys." },
+  wick: { id: "wick" as const, cost: 420, name: "Blue wick", blurb: "The desk no longer sells keys." },
+  amber: { id: "amber" as const, cost: 5400, name: "Amber reprint", blurb: "The desk no longer sells keys." },
+  oil: { id: "oil" as const, cost: 24000, name: "Night oil", blurb: "The desk no longer sells keys." },
+};
+
 export const KIOSK = {
-  tinder: {
-    id: "tinder" as const,
-    cost: 160,
-    name: "Tinder tin",
-    blurb: "Two white keys. The desk sells light when the street is dry.",
-  },
-  wick: {
-    id: "wick" as const,
-    cost: 420,
-    name: "Blue wick",
-    blurb: "One blue key. For civic vaults when you can't wait on a drop.",
-  },
   fare: {
     id: "fare" as const,
     cost: 1800,
@@ -4008,18 +4008,10 @@ export const KIOSK = {
     name: "Press pass",
     blurb: "The next door holds five extra seconds.",
   },
-  amber: {
-    id: "amber" as const,
-    cost: 5400,
-    name: "Amber reprint",
-    blurb: "One amber key from the desk. Not a street find.",
-  },
-  oil: {
-    id: "oil" as const,
-    cost: 24000,
-    name: "Night oil",
-    blurb: "One violet key. The rarest vault — a long night of coin.",
-  },
 };
 
-export type KioskId = keyof typeof KIOSK;
+export type KioskId = keyof typeof KIOSK | keyof typeof KIOSK_RETIRED;
+
+export function kioskRetired(id: string): boolean {
+  return id in KIOSK_RETIRED;
+}

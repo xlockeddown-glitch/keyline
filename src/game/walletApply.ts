@@ -5,6 +5,7 @@ import { canFly, souvenirKey } from "./flight.ts";
 import { hasShield, scoutOf } from "./scoutPerks.ts";
 import { LORD_AT, STREAK_LOOKBACK, VIOLET_AT, crossed, mileCrossLabels, streakWalk } from "./streakMile.ts";
 import { marketMult } from "./nightMarket.ts";
+import { cleanPatron, patronBulb, patronCycle, patronKey, patronOpen, patronUntil, type PatronBulb, type PatronHold } from "./patron.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { printLook } from "./printsServer.ts";
@@ -94,7 +95,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -632,7 +633,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   giftNotes.push(...(await grantStockCoin(sql, userId)));
   giftNotes.push(...(await grantShopRetire(sql, userId)));
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId) };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId), patron: await patronNow(sql, userId, Date.now()) };
   const until = await doubleUntil(sql, userId);
   const streak = await rememberStreak(sql, userId);
   const fresh = (await canonicalWallet(sql, userId)).wallet;
@@ -1330,6 +1331,8 @@ export type ClientOp =
   | { kind: "cache"; city: CityId }
   | { kind: "dgoal"; i: number }
   | { kind: "light"; id: string }
+  /** 0.1.138: one cosmetic market bulb per 15-minute cycle. Server clock, one ledger key. */
+  | { kind: "patron"; bulb: "brass" | "copper" | "night" }
   | { kind: "car"; id: string }
   | { kind: "paint"; car: string; color: string }
   | { kind: "house"; city: CityId; tier: string }
@@ -1382,6 +1385,7 @@ export type ClientResult = Applied & {
   quest?: { id: string; period: string; lucky?: string };
   /** 0.1.22: what the one-time milestone / charm move paid (fresh grants only; a replay is empty). */
   legacy?: LegacyGrant[];
+  patron?: PatronHold;
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -1521,6 +1525,9 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
 
   // 0.0.93: daily goals. i = 0..2 pays GOAL_COIN once each; i = 3 (all three paid) pays a green match. The server
   // can't see the goals themselves, so it asks for proof of play: graded right answers today.
+  // 0.1.138: one patron bulb per market cycle. The server clock picks the cycle. A replay does not charge again.
+  if (op.kind === "patron") return grantPatron(sql, sessionUserId, op.bulb, Date.now());
+
   // 0.1.00: market lights are bought in ladder order with coin; the server owns the list.
   if (op.kind === "light") {
     const owned = await lightsOf(sql, sessionUserId);
@@ -1860,6 +1867,45 @@ function opKey(op: ClientOp, w: WalletState): string {
     default:
       return `op:${op.kind}`;
   }
+}
+
+export async function grantPatron(sql: Sql, sessionUserId: string, bulbId: string, at: number): Promise<ClientResult> {
+  const { wallet } = await canonicalWallet(sql, sessionUserId);
+  const bulb = patronBulb(bulbId);
+  if (!bulb) return refused(wallet, "unknown");
+  if (!patronOpen(at)) return refused(wallet, "closed");
+  const cycle = patronCycle(at);
+  const hold = (id: PatronBulb): PatronHold => ({ bulb: id, cycle, until: patronUntil(cycle) });
+  const r = await mutateWallet(sql, sessionUserId, patronKey(cycle), (w) => {
+    if (w.coins < bulb.price) return { ok: false, reason: "short-coins" };
+    return { ...applyDelta(w, { coins: -bulb.price }), detail: JSON.stringify({ bulb: bulb.id, cycle }) };
+  });
+  if (r.ok && r.replay) {
+    let stored: PatronBulb = bulb.id;
+    try {
+      const parsed = JSON.parse(r.detail ?? "{}") as { bulb?: string };
+      if (parsed.bulb && patronBulb(parsed.bulb)) stored = parsed.bulb as PatronBulb;
+    } catch {
+      /* the row is still this cycle's bulb */
+    }
+    if (stored !== bulb.id) return { ...refused(r.wallet, "held"), patron: hold(stored) };
+    return { ...applied(r), patron: hold(stored) };
+  }
+  if (!r.ok) return applied(r);
+  return { ...applied(r), patron: hold(bulb.id) };
+}
+
+async function patronNow(sql: Sql, userId: string, at: number): Promise<PatronHold | null> {
+  if (!patronOpen(at)) return null;
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${patronKey(patronCycle(at))} limit 1`;
+  let bulb = "";
+  try {
+    bulb = String((JSON.parse(rows[0]?.detail ?? "{}") as { bulb?: string }).bulb ?? "");
+  } catch {
+    return null;
+  }
+  return cleanPatron({ bulb, cycle: patronCycle(at), until: patronUntil(patronCycle(at)) }, at);
 }
 
 function refused(wallet: WalletState, reason: string): ClientResult {
