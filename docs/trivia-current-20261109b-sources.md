@@ -1,0 +1,132 @@
+# Trivia current-events sources — batch 20261109b
+
+Each card's prompt, answer and source page(s). Wikipedia article text was fetched (API extract) and the answer string confirmed in it; non-token-match cards were read by hand.
+
+- [political] Which party ended Viktor Orbán's 16-year rule in Hungary's 2026 election? — **Tisza Party** — https://en.wikipedia.org/wiki/2026_Hungarian_parliamentary_election
+- [political] Who led the Tisza Party to a landslide win in Hungary's 2026 election? — **Péter Magyar** — https://en.wikipedia.org/wiki/2026_Hungarian_parliamentary_election
+- [political] Who narrowly won Colombia's June 2026 presidential runoff? — **Abelardo de la Espriella** — https://en.wikipedia.org/wiki/2026_Colombian_presidential_election
+- [political] Which party won a fifth straight Scottish Parliament election in May 2026? — **Scottish National Party** — https://en.wikipedia.org/wiki/2026_Scottish_Parliament_election
+- [political] Which party became the largest in the Welsh Senedd for the first time in 2026? — **Plaid Cymru** — https://en.wikipedia.org/wiki/2026_Welsh_Senedd_election
+- [political] The Welsh Senedd grew to how many members at its 2026 election? — **96** — https://en.wikipedia.org/wiki/2026_Welsh_Senedd_election
+- [political] Which Welsh first minister lost her own seat in the 2026 Senedd election? — **Eluned Morgan** — https://en.wikipedia.org/wiki/2026_Welsh_Senedd_election
+- [political] Who won Peru's June 2026 presidential runoff? — **Keiko Fujimori** — https://en.wikipedia.org/wiki/2026_Peruvian_general_election
+- [political] Peru's Congress went back to two chambers in 2026, restoring which body? — **the Senate** — https://en.wikipedia.org/wiki/2026_Peruvian_general_election
+- [political] Laura Fernández, elected in 2026, became the second woman to lead which country? — **Costa Rica** — https://en.wikipedia.org/wiki/2026_Costa_Rican_general_election
+- [political] Who won Portugal's presidential runoff in Feb 2026? — **António José Seguro** — https://en.wikipedia.org/wiki/2026_Portuguese_presidential_election
+- [political] Which party won a record 316 seats in Japan's 2026 general election? — **Liberal Democratic Party** — https://en.wikipedia.org/wiki/2026_Japanese_general_election
+- [political] Who was Japan's prime minister when her party won a record landslide in 2026? — **Sanae Takaichi** — https://en.wikipedia.org/wiki/2026_Japanese_general_election
+- [political] Which party won a landslide in Bangladesh's 2026 general election? — **Bangladesh Nationalist Party** — https://en.wikipedia.org/wiki/2026_Bangladeshi_general_election
+- [political] Who led the BNP to victory in Bangladesh's 2026 election? — **Tarique Rahman** — https://en.wikipedia.org/wiki/2026_Bangladeshi_general_election
+- [sports] Which driver clinched the 2026 Formula One world title at the Mexico City Grand Prix? — **Kimi Antonelli** — https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship
+- [sports] In 2026, Kimi Antonelli became the first champion from which country since Alberto Ascari in 1953? — **Italy** — https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship
+- [sports] Which team won the 2026 F1 constructors' title, its ninth? — **Mercedes** — https://en.wikipedia.org/wiki/2026_Formula_One_World_Championship
+- [sports] Which school won the NCAA men's basketball title in April 2026? — **Michigan** — https://en.wikipedia.org/wiki/2026_NCAA_Division_I_men's_basketball_tournament
+- [sports] Who coached Michigan to the NCAA men's basketball title in April 2026? — **Dusty May** — https://en.wikipedia.org/wiki/2026_NCAA_Division_I_men's_basketball_tournament
+- [sports] Which school won the NCAA women's basketball title in April 2026? — **UCLA** — https://en.wikipedia.org/wiki/2026_NCAA_Division_I_women's_basketball_tournament
+- [sports] Which team did UCLA beat in the April 2026 NCAA women's basketball final? — **South Carolina** — https://en.wikipedia.org/wiki/2026_NCAA_Division_I_women's_basketball_tournament
+- [sports] Which team won its first WNBA title in Oct 2026? — **Golden State Valkyries** — https://en.wikipedia.org/wiki/2026_WNBA_Finals
+- [sports] Who was named MVP of the WNBA Finals in Oct 2026? — **Gabby Williams** — https://en.wikipedia.org/wiki/2026_WNBA_Finals
+- [sports] The Oct 2026 WNBA Finals were the first in league history to reach… — **a Game 7** — https://en.wikipedia.org/wiki/2026_WNBA_Finals
+- [sports] Which city hosted the April 2026 NFL draft, a record for attendance? — **Pittsburgh** — https://en.wikipedia.org/wiki/2026_NFL_draft
+- [sports] Which team's ballpark hosted the July 2026 MLB All-Star Game? — **Philadelphia Phillies** — https://en.wikipedia.org/wiki/2026_MLB_All-Star_Game
+- [sports] Who was named MVP of the July 2026 MLB All-Star Game? — **Cody Bellinger** — https://en.wikipedia.org/wiki/2026_MLB_All-Star_Game
+- [arts] Which Romanian director won his second Palme d'Or at Cannes in May 2026? — **Cristian Mungiu** — https://en.wikipedia.org/wiki/2026_Cannes_Film_Festival
+- [arts] Which film won the Palme d'Or at the May 2026 Cannes Film Festival? — **Fjord** — https://en.wikipedia.org/wiki/2026_Cannes_Film_Festival
+- [games] Which game won Game of the Year at The Game Awards in Dec 2025? — **Clair Obscur: Expedition 33** — https://en.wikipedia.org/wiki/The_Game_Awards_2025
+- [games] How many awards did 'Clair Obscur: Expedition 33' win at The Game Awards in Dec 2025, a record? — **nine** — https://en.wikipedia.org/wiki/The_Game_Awards_2025
+- [science] What did the Artemis II crew name their Orion spacecraft in April 2026? — **Integrity** — https://en.wikipedia.org/wiki/Artemis_II
+- [science] Which Canadian astronaut flew around the Moon on Artemis II in April 2026? — **Jeremy Hansen** — https://en.wikipedia.org/wiki/Artemis_II
+- [science] On Artemis II in April 2026, which astronaut became the oldest person to fly around the Moon? — **Reid Wiseman** — https://en.wikipedia.org/wiki/Artemis_II
+- [science] In April 2026, Artemis II broke which mission's record for the farthest humans from Earth? — **Apollo 13** — https://en.wikipedia.org/wiki/Artemis_II
+- [science] Artemis II, flown in April 2026, was the first crewed flight of which rocket? — **Space Launch System** — https://en.wikipedia.org/wiki/Artemis_II
+- [science] Which air-launched rocket flew its final mission in July 2026? — **Pegasus XL** — https://en.wikipedia.org/wiki/2026_in_spaceflight
+- [science] Which two agencies launched the SMILE space-weather mission in May 2026? — **ESA and CAS** — https://en.wikipedia.org/wiki/2026_in_spaceflight
+- [science] NASA's small Pandora telescope, launched in Jan 2026, studies… — **exoplanet atmospheres** — https://en.wikipedia.org/wiki/2026_in_spaceflight
+- [science] In March 2026, astronomers reported super-Earth GJ 887 d orbiting what kind of star? — **a red dwarf** — https://en.wikipedia.org/wiki/2026_in_science
+- [nature] What was the first named Atlantic storm of 2026, forming on June 17? — **Arthur** — https://en.wikipedia.org/wiki/2026_Atlantic_hurricane_season
+- [history] In 2026, archaeologists found a hidden sacred lake at which Egyptian temple complex? — **Karnak** — https://en.wikipedia.org/wiki/2026_in_archaeology
+- [history] In 2026, a Roman basilica was unearthed beneath a square in which Italian city? — **Fano** — https://en.wikipedia.org/wiki/2026_in_archaeology
+- [history] A 5,000-year-old skull showing ancient skull surgery was reported in 2026 from which country? — **Turkey** — https://en.wikipedia.org/wiki/2026_in_archaeology
+- [celebrity] What was Pope Leo XIV's name before he was elected in 2025? — **Robert Francis Prevost** — https://en.wikipedia.org/wiki/Pope_Leo_XIV
+- [celebrity] In which US city was Pope Leo XIV, elected in May 2025, born? — **Chicago** — https://en.wikipedia.org/wiki/Pope_Leo_XIV
+- [celebrity] Besides the US, Pope Leo XIV (elected 2025) is a citizen of which country? — **Peru** — https://en.wikipedia.org/wiki/Pope_Leo_XIV
+- [sports] Which team won Super Bowl LIX in Feb 2025? — **Philadelphia Eagles** — https://en.wikipedia.org/wiki/Super_Bowl_LIX
+- [sports] Who was named MVP of Super Bowl LIX in Feb 2025? — **Jalen Hurts** — https://en.wikipedia.org/wiki/Super_Bowl_LIX
+- [sports] Which team won the NBA championship in June 2025? — **Oklahoma City Thunder** — https://en.wikipedia.org/wiki/2025_NBA_Finals
+- [sports] Who was named MVP of the June 2025 NBA Finals? — **Shai Gilgeous-Alexander** — https://en.wikipedia.org/wiki/2025_NBA_Finals
+- [sports] Which team won the Stanley Cup in June 2025? — **Florida Panthers** — https://en.wikipedia.org/wiki/2025_Stanley_Cup_Final
+- [sports] Which team won the World Series in Nov 2025? — **Los Angeles Dodgers** — https://en.wikipedia.org/wiki/2025_World_Series
+- [sports] In April 2025, Rory McIlroy completed the career Grand Slam by winning which tournament? — **the Masters** — https://en.wikipedia.org/wiki/2025_Masters_Tournament
+- [sports] Which player beat Carlos Alcaraz in the July 2025 Wimbledon men's final? — **Jannik Sinner** — https://en.wikipedia.org/wiki/2025_Wimbledon_Championships
+- [sports] Who won the women's singles title at Wimbledon in July 2025? — **Iga Świątek** — https://en.wikipedia.org/wiki/2025_Wimbledon_Championships
+- [sports] Who won the women's singles title at the 2025 French Open? — **Coco Gauff** — https://en.wikipedia.org/wiki/2025_French_Open
+- [sports] Who won the women's singles title at the 2025 Australian Open? — **Madison Keys** — https://en.wikipedia.org/wiki/2025_Australian_Open
+- [sports] Which horse won the Kentucky Derby in May 2025? — **Sovereignty** — https://en.wikipedia.org/wiki/2025_Kentucky_Derby
+- [sports] Who won the Indianapolis 500 in May 2025? — **Álex Palou** — https://en.wikipedia.org/wiki/2025_Indianapolis_500
+- [sports] Which club won the first 32-team FIFA Club World Cup in July 2025? — **Chelsea** — https://en.wikipedia.org/wiki/2025_FIFA_Club_World_Cup
+- [sports] Which club did PSG beat 5–0 in the May 2025 Champions League final? — **Inter Milan** — https://en.wikipedia.org/wiki/2025_UEFA_Champions_League_final
+- [music] Which country won the Eurovision Song Contest in May 2025? — **Austria** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2025
+- [music] What was the title of the song that won Eurovision 2025? — **Wasted Love** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_2025
+- [music] Which album won Album of the Year at the Feb 2025 Grammys? — **Cowboy Carter** — https://en.wikipedia.org/wiki/67th_Annual_Grammy_Awards
+- [celebrity] Which film won Best Picture at the March 2025 Oscars? — **Anora** — https://en.wikipedia.org/wiki/97th_Academy_Awards
+- [celebrity] Who won Best Actor at the March 2025 Oscars for 'The Brutalist'? — **Adrien Brody** — https://en.wikipedia.org/wiki/97th_Academy_Awards
+- [celebrity] Who won four Oscars in one night in March 2025, for 'Anora'? — **Sean Baker** — https://en.wikipedia.org/wiki/97th_Academy_Awards
+- [political] Whose Liberal Party won Canada's federal election in April 2025? — **Mark Carney** — https://en.wikipedia.org/wiki/2025_Canadian_federal_election
+- [political] Who became German chancellor after the Feb 2025 federal election? — **Friedrich Merz** — https://en.wikipedia.org/wiki/2025_German_federal_election
+- [political] Whose Labor Party won Australia's federal election in May 2025? — **Anthony Albanese** — https://en.wikipedia.org/wiki/2025_Australian_federal_election
+- [political] Who won South Korea's snap presidential election in June 2025? — **Lee Jae-myung** — https://en.wikipedia.org/wiki/2025_South_Korean_presidential_election
+- [political] Who won Poland's presidential election in 2025? — **Karol Nawrocki** — https://en.wikipedia.org/wiki/2025_Polish_presidential_election
+- [political] Who won New York City's mayoral election in Nov 2025? — **Zohran Mamdani** — https://en.wikipedia.org/wiki/2025_New_York_City_mayoral_election
+- [arts] Which Paris museum was robbed of French crown jewels in Oct 2025? — **the Louvre** — https://en.wikipedia.org/wiki/2025_Louvre_robbery
+- [sports] In which French city did the 2025 Tour de France start? — **Lille** — https://en.wikipedia.org/wiki/2025_Tour_de_France
+- [sports] Which British rider won the 2025 Giro d'Italia? — **Simon Yates** — https://en.wikipedia.org/wiki/2025_Giro_d'Italia
+- [sports] The 2025 Giro d'Italia started in which country? — **Albania** — https://en.wikipedia.org/wiki/2025_Giro_d'Italia
+- [sports] Who won the 2025 Vuelta a España, his first Vuelta title? — **Jonas Vingegaard** — https://en.wikipedia.org/wiki/2025_Vuelta_a_España
+- [sports] The 2025 Vuelta a España started in which Italian city? — **Turin** — https://en.wikipedia.org/wiki/2025_Vuelta_a_España
+- [sports] Who won his first Formula One drivers' title in 2025? — **Lando Norris** — https://en.wikipedia.org/wiki/2025_Formula_One_World_Championship
+- [sports] Who beat Jannik Sinner in the men's final of the Sept 2025 US Open? — **Carlos Alcaraz** — https://en.wikipedia.org/wiki/2025_US_Open_(tennis)
+- [sports] Who defended her women's singles title at the Sept 2025 US Open? — **Aryna Sabalenka** — https://en.wikipedia.org/wiki/2025_US_Open_(tennis)
+- [sports] Who won the June 2025 U.S. Open at Oakmont, his first major? — **J. J. Spaun** — https://en.wikipedia.org/wiki/2025_U.S._Open_(golf)
+- [sports] Who won the July 2025 Open Championship at Royal Portrush? — **Scottie Scheffler** — https://en.wikipedia.org/wiki/2025_Open_Championship
+- [sports] The 2025 PGA Championship was played at which club in Charlotte? — **Quail Hollow** — https://en.wikipedia.org/wiki/2025_PGA_Championship
+- [sports] Who won the June 2026 U.S. Open at Shinnecock Hills, his second U.S. Open? — **Wyndham Clark** — https://en.wikipedia.org/wiki/2026_U.S._Open_(golf)
+- [sports] Which team won UEFA Women's Euro 2025 in a penalty shootout? — **England** — https://en.wikipedia.org/wiki/UEFA_Women's_Euro_2025
+- [sports] Which country hosted UEFA Women's Euro 2025? — **Switzerland** — https://en.wikipedia.org/wiki/UEFA_Women's_Euro_2025
+- [sports] Which team did England beat in the Sept 2025 Women's Rugby World Cup final? — **Canada** — https://en.wikipedia.org/wiki/2025_Women's_Rugby_World_Cup
+- [sports] Which team won cricket's ICC Champions Trophy in March 2025? — **India** — https://en.wikipedia.org/wiki/2025_ICC_Champions_Trophy
+- [sports] Which team won cricket's World Test Championship final at Lord's in June 2025? — **South Africa** — https://en.wikipedia.org/wiki/2025_ICC_World_Test_Championship_final
+- [sports] Which European country played its first men's T20 World Cup in 2026? — **Italy** — https://en.wikipedia.org/wiki/2026_ICC_Men's_T20_World_Cup
+- [sports] Which Australian state pulled out of hosting the 2026 Commonwealth Games? — **Victoria** — https://en.wikipedia.org/wiki/2026_Commonwealth_Games
+- [sports] Which team did the Knicks beat in the June 2026 NBA Finals? — **San Antonio Spurs** — https://en.wikipedia.org/wiki/2026_NBA_Finals
+- [sports] Who set the Boston Marathon course record in April 2026? — **John Korir** — https://en.wikipedia.org/wiki/2026_Boston_Marathon
+- [sports] Which country hosted the 2025 Africa Cup of Nations? — **Morocco** — https://en.wikipedia.org/wiki/2025_Africa_Cup_of_Nations
+- [sports] Which team walked off the pitch for 17 minutes in the Jan 2026 AFCON final? — **Senegal** — https://en.wikipedia.org/wiki/2025_Africa_Cup_of_Nations
+- [sports] Who was the first pick in the June 2025 NBA draft? — **Cooper Flagg** — https://en.wikipedia.org/wiki/2025_NBA_draft
+- [sports] Which team drafted Cooper Flagg first overall in June 2025? — **Dallas Mavericks** — https://en.wikipedia.org/wiki/2025_NBA_draft
+- [sports] Who was the first pick in the June 2026 NBA draft? — **AJ Dybantsa** — https://en.wikipedia.org/wiki/2026_NBA_draft
+- [sports] Who won the May 2026 Giro d'Italia to complete all three Grand Tours? — **Jonas Vingegaard** — https://en.wikipedia.org/wiki/2026_Giro_d'Italia
+- [sports] In which country did the 2026 Giro d'Italia start? — **Bulgaria** — https://en.wikipedia.org/wiki/2026_Giro_d'Italia
+- [books] László Krasznahorkai, 2025 Nobel laureate, debuted with which novel? — **Satantango** — https://en.wikipedia.org/wiki/2025_Nobel_Prize_in_Literature
+- [political] Which Venezuelan opposition leader won the 2025 Nobel Peace Prize? — **María Corina Machado** — https://en.wikipedia.org/wiki/2025_Nobel_Peace_Prize
+- [science] Omar Yaghi shared the 2025 Nobel Prize in Chemistry for work on which materials? — **metal-organic frameworks** — https://en.wikipedia.org/wiki/Omar_M._Yaghi
+- [science] John Clarke's 2025 Nobel Prize in Physics involved which effect? — **Josephson effect** — https://en.wikipedia.org/wiki/John_Clarke_(physicist)
+- [political] Economist Joel Mokyr won a 2025 Nobel for explaining growth through what? — **technological progress** — https://en.wikipedia.org/wiki/Joel_Mokyr
+- [political] Which South African jurist was named the 2026 Nobel Peace Prize laureate? — **Navi Pillay** — https://en.wikipedia.org/wiki/2026_Nobel_Peace_Prize
+- [books] Which David Szalay novel won the 2025 Booker Prize? — **Flesh** — https://en.wikipedia.org/wiki/David_Szalay
+- [books] Laurent Mauvignier won the 2025 Prix Goncourt for which novel? — **La Maison vide** — https://en.wikipedia.org/wiki/Laurent_Mauvignier
+- [books] Which Percival Everett novel, a retelling of Huckleberry Finn, won the 2025 Pulitzer for Fiction? — **James** — https://en.wikipedia.org/wiki/James_(novel)
+- [celebrity] Which show won Outstanding Comedy Series at the Sept 2025 Emmys? — **The Studio** — https://en.wikipedia.org/wiki/77th_Primetime_Emmy_Awards
+- [celebrity] Who hosted the Sept 2025 Primetime Emmy Awards? — **Nate Bargatze** — https://en.wikipedia.org/wiki/77th_Primetime_Emmy_Awards
+- [celebrity] Which show led the Sept 2026 Emmys with 25 nominations? — **The Pitt** — https://en.wikipedia.org/wiki/78th_Primetime_Emmy_Awards
+- [arts] Which director won the Golden Lion at Venice in Sept 2025? — **Jim Jarmusch** — https://en.wikipedia.org/wiki/82nd_Venice_International_Film_Festival
+- [arts] Jim Jarmusch's 2025 Golden Lion winner was titled… — **Father Mother Sister Brother** — https://en.wikipedia.org/wiki/82nd_Venice_International_Film_Festival
+- [arts] Which film won the Golden Lion at Venice in Sept 2026? — **Woman Unknown** — https://en.wikipedia.org/wiki/83rd_Venice_International_Film_Festival
+- [arts] Who was jury president at the Sept 2026 Venice Film Festival? — **Maggie Gyllenhaal** — https://en.wikipedia.org/wiki/83rd_Venice_International_Film_Festival
+- [arts] Which Iranian director won the Palme d'Or at Cannes in May 2025? — **Jafar Panahi** — https://en.wikipedia.org/wiki/2025_Cannes_Film_Festival
+- [arts] Jafar Panahi's 2025 Palme d'Or winner was titled… — **It Was Just an Accident** — https://en.wikipedia.org/wiki/2025_Cannes_Film_Festival
+- [arts] Who was jury president at Cannes in May 2025? — **Juliette Binoche** — https://en.wikipedia.org/wiki/2025_Cannes_Film_Festival
+- [arts] Which film won the Golden Bear at the Feb 2025 Berlinale? — **Dreams (Sex Love)** — https://en.wikipedia.org/wiki/75th_Berlin_International_Film_Festival
+- [arts] Which İlker Çatak film won the Golden Bear in Feb 2026? — **Yellow Letters** — https://en.wikipedia.org/wiki/76th_Berlin_International_Film_Festival
+- [arts] Who was jury president at the Feb 2026 Berlinale? — **Wim Wenders** — https://en.wikipedia.org/wiki/76th_Berlin_International_Film_Festival
+- [arts] Which South Korean filmmaker was jury president at Cannes in May 2026? — **Park Chan-wook** — https://en.wikipedia.org/wiki/2026_Cannes_Film_Festival
+- [celebrity] Which actress won a Silver Bear at the Feb 2026 Berlinale for 'Rose'? — **Sandra Hüller** — https://en.wikipedia.org/wiki/76th_Berlin_International_Film_Festival

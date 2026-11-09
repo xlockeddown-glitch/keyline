@@ -9,7 +9,7 @@ import type { TriviaQ } from "../types";
 
 export const CUR_SPORTS_20261109A: TriviaQ[] = [
 	// https://en.wikipedia.org/wiki/2026_Winter_Olympics
-	q("Which two places co-hosted the Feb 2026 Winter Olympics?", ["Rome and Bormio in Lombardy", "Turin and Sestriere in Piedmont", "Milan and Cortina d'Ampezzo", "Milan and Bolzano in South Tyrol"], "Milan and Cortina d'Ampezzo", 2),
+	q("Which two places co-hosted the Feb 2026 Winter Olympics?", ["Trento and Madonna di Campiglio", "Turin and Sestriere in Piedmont", "Milan and Cortina d'Ampezzo", "Bolzano and Merano in South Tyrol"], "Milan and Cortina d'Ampezzo", 2),
 	// https://en.wikipedia.org/wiki/2026_Winter_Olympics
 	q("Which sport made its Winter Olympic debut at Milano Cortina in Feb 2026?", ["snowshoe racing", "freeride skiing", "ski mountaineering", "bandy"], "ski mountaineering", 2),
 	// https://en.wikipedia.org/wiki/2026_Winter_Olympics
