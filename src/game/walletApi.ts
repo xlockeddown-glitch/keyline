@@ -74,6 +74,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("scout"), id: z.string().min(1).max(40) }),
   z.object({ kind: z.literal("light"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("patron"), bulb: z.enum(["brass", "copper", "night"]) }),
+  z.object({ kind: z.literal("hpolish"), id: z.string().regex(/^placed-[a-z0-9]+$/).max(40) }),
   z.object({ kind: z.literal("car"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("paint"), car: z.string().min(1).max(20), color: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("house"), city: City, tier: z.string().min(1).max(20) }),

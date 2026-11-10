@@ -17,7 +17,7 @@ export const FACET_COLOR: Record<string, string> = {
 export const FACET_POS = ["top-left", "top-right", "bottom-left", "bottom-right"] as const;
 
 /** What anyone sees of a placed vault (no owner id). */
-export type HearthView = { id: string; city: string; lat: number; lng: number; name: number; cats: PlantCat[]; by: string; mine?: boolean; /** 0.1.117: 1 Single, 2 Double, 3 Triple (absent = Single). */ v?: 1 | 2 | 3 };
+export type HearthView = { id: string; city: string; lat: number; lng: number; name: number; cats: PlantCat[]; by: string; mine?: boolean; /** 0.1.117: 1 Single, 2 Double, 3 Triple (absent = Single). */ v?: 1 | 2 | 3; /** 0.1.149: glow ends at this ms, when this hearth is polished. */ polish?: number };
 
 /** Stable public id from the owner id (FNV-1a, base 36). */
 export function placedId(owner: string, slot?: 1 | 2 | 3): string {

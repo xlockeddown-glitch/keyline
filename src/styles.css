@@ -4212,6 +4212,12 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .hearth-pin .hf-tl, .hearth-pin .hf-bl{ left:6px !important } .hearth-pin .hf-tr, .hearth-pin .hf-br{ right:6px !important }
 .hearth-pin .hf-tl, .hearth-pin .hf-tr{ top:6px !important } .hearth-pin .hf-bl, .hearth-pin .hf-br{ top:30px !important }
 .vault-pin.hearth-pin{ width:76px !important; justify-items:center }
+/* 0.1.149 hearth polish: brighter brass trim on the hearth you paid for. Static — no new motion. */
+.hearth-pin.is-polished:not(.cooling) .vk-vault { filter: sepia(.28) hue-rotate(-6deg) saturate(1.25) drop-shadow(0 0 8px #e0c788ee) drop-shadow(0 0 2px #ffd68c); }
+.hearth-pin.is-polished .hp-plate { color: #f3e6c4; border-color: #e0c788; box-shadow: 0 0 8px #e0c788aa; }
+.ho-art.is-polished .ho-vault { filter: sepia(.28) hue-rotate(-6deg) saturate(1.25) drop-shadow(0 0 12px #e0c788ee) drop-shadow(0 0 2px #ffd68c); }
+.ho-art.is-polished .ho-plate { color: #f3e6c4; border-color: #e0c788; box-shadow: 0 0 8px #e0c788aa; }
+.ho-polish { width: 100%; margin-top: 14px; }
 
 /* 0.1.111: "Your Hearth" owner panel, sized to the mock (≈720 px on a 1440 desktop). */
 .hearth-owner{ position:absolute; z-index:1200; left:50%; top:140px; transform:translateX(-50%); width:min(720px, calc(100vw - 20px)); max-height:calc(100dvh - 160px); overflow:auto;

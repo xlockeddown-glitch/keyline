@@ -6,6 +6,7 @@ import { hasShield, scoutOf } from "./scoutPerks.ts";
 import { LORD_AT, STREAK_LOOKBACK, VIOLET_AT, crossed, mileCrossLabels, streakWalk } from "./streakMile.ts";
 import { marketMult } from "./nightMarket.ts";
 import { cleanPatron, patronBulb, patronCycle, patronKey, patronOpen, patronUntil, type PatronBulb, type PatronHold } from "./patron.ts";
+import { HEARTH_POLISH_PRICE, cleanPolish, hearthWeek, polishKey, polishUntil, type PolishHold } from "./hearthPolish.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { printLook } from "./printsServer.ts";
@@ -1107,7 +1108,8 @@ export async function placedViews(sql: Sql, city: string, viewerId: string | nul
   const me = viewerId ? (await canonicalWallet(sql, viewerId)).id : null;
   const out = [];
   for (const p of await placedIn(sql, city)) {
-    out.push({ id: rowId(p), city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: await ownerName(sql, p.owner), ...(p.v === 2 || p.v === 3 ? { v: p.v } : {}), ...(me === p.owner ? { mine: true } : {}) });
+    const polish = await polishGlow(sql, p.owner, rowId(p), Date.now());
+    out.push({ id: rowId(p), city: p.city, lat: p.lat, lng: p.lng, name: p.name, cats: p.cats, by: await ownerName(sql, p.owner), ...(p.v === 2 || p.v === 3 ? { v: p.v } : {}), ...(me === p.owner ? { mine: true } : {}), ...(polish ? { polish } : {}) });
   }
   return out;
 }
@@ -1182,7 +1184,7 @@ async function myPlaced(sql: Sql, id: string): Promise<PlacedVault[]> {
   return out;
 }
 
-export type MyHearth = { v: 1 | 2 | 3; id: string; mine: PlacedVault; stats: import("./placedLantern.ts").HearthStats };
+export type MyHearth = { v: 1 | 2 | 3; id: string; mine: PlacedVault; stats: import("./placedLantern.ts").HearthStats; polish?: number };
 
 /**
  * 0.1.109: the player's Hearth vault state for the Journal: locked, ready, or placed. 0.1.122: `hearths` lists one
@@ -1201,7 +1203,8 @@ export async function plantStatus(sql: Sql, userId: string): Promise<{ unlocked:
   const hearths: MyHearth[] = [];
   for (const p of rows) {
     const { owner: _owner, ...pub } = p;
-    hearths.push({ v: hearthVersion(p.v), id: rowId(p), mine: { ...pub, owner: "" }, stats: await hearthStats(sql, id, Date.now(), { slot: p.slot }) });
+    const polish = await polishGlow(sql, id, rowId(p), Date.now());
+    hearths.push({ v: hearthVersion(p.v), id: rowId(p), mine: { ...pub, owner: "" }, stats: await hearthStats(sql, id, Date.now(), { slot: p.slot }), ...(polish ? { polish } : {}) });
   }
   hearths.sort((a, b) => a.v - b.v);
   return { unlocked: true, mine: hearths[0]!.mine, stats: hearths[0]!.stats, hearths };
@@ -1350,6 +1353,8 @@ export type ClientOp =
   | { kind: "wear"; slot: WearSlot; id: string | null }
   | { kind: "own"; poi: string; free?: boolean }
   | { kind: "plant"; city: CityId; lat: number; lng: number; name: number; cats: string[]; v?: 1 | 2 | 3 }
+  /** 0.1.149: brighter trim on one of your Hearths. One charge per seven-day window. */
+  | { kind: "hpolish"; id: string }
   | { kind: "hurry"; min: number }
   /** 0.1.58: the Loop (crate roll + route poster). 0.1.125: `ride: false` (the instant Arrive) is refused "retired". */
   | { kind: "loop"; ride: boolean }
@@ -1386,6 +1391,8 @@ export type ClientResult = Applied & {
   /** 0.1.22: what the one-time milestone / charm move paid (fresh grants only; a replay is empty). */
   legacy?: LegacyGrant[];
   patron?: PatronHold;
+  /** 0.1.149: the hearth trim this charge is holding. */
+  polish?: PolishHold;
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -1402,6 +1409,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "plant") return plantOp(sql, sessionUserId, op);
+  if (op.kind === "hpolish") return grantHearthPolish(sql, sessionUserId, op.id, Date.now());
 
   if (op.kind === "own") return ownLampOp(sql, sessionUserId, op.poi, op.free === true);
 
@@ -1906,6 +1914,52 @@ async function patronNow(sql: Sql, userId: string, at: number): Promise<PatronHo
     return null;
   }
   return cleanPatron({ bulb, cycle: patronCycle(at), until: patronUntil(patronCycle(at)) }, at);
+}
+
+/** The glow still running on this hearth, if the owner has paid for one. */
+async function polishGlow(sql: Sql, ownerId: string, publicId: string, at: number): Promise<number | undefined> {
+  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${ownerId} and op_key like ${`hpolish:${publicId}:%`}`;
+  let until = 0;
+  for (const row of rows) {
+    let parsed: unknown = null;
+    try {
+      parsed = JSON.parse(row.detail ?? "null");
+    } catch {
+      parsed = null;
+    }
+    const hold = cleanPolish(parsed, publicId, at);
+    if (hold && hold.until > until) until = hold.until;
+  }
+  return until || undefined;
+}
+
+/**
+ * 0.1.149: brighter trim on a Hearth you placed. 8,000 coin, one ledger row per hearth per
+ * seven-day bucket (`hpolish:<id>:<week>`). A replay or a glow that is still running does not charge.
+ * Keys, the owner cut, and every payout stay as they are.
+ */
+export async function grantHearthPolish(sql: Sql, sessionUserId: string, publicId: string, at: number): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  const { rowId } = await import("./hearthVaults.ts");
+  const mine = (await myPlaced(sql, id)).find((p) => rowId(p) === publicId);
+  if (!mine) return refused(wallet, "unknown");
+  const glowing = await polishGlow(sql, id, publicId, at);
+  if (glowing) return { ...applied({ ok: true, replay: true, wallet }), polish: { id: publicId, week: hearthWeek(at), until: glowing } };
+  const week = hearthWeek(at);
+  const until = polishUntil(at);
+  const r = await mutateWallet(sql, sessionUserId, polishKey(publicId, week), (w) => {
+    if (w.coins < HEARTH_POLISH_PRICE) return { ok: false, reason: "short-coins" };
+    return { ...applyDelta(w, { coins: -HEARTH_POLISH_PRICE }), detail: JSON.stringify({ id: publicId, week, until }) };
+  });
+  if (!r.ok) return applied(r);
+  let storedUntil = until;
+  try {
+    const parsed = JSON.parse(r.detail ?? "{}") as { until?: number };
+    if (typeof parsed.until === "number") storedUntil = parsed.until;
+  } catch {
+    /* the row is still this charge */
+  }
+  return { ...applied(r), polish: { id: publicId, week, until: storedUntil } };
 }
 
 function refused(wallet: WalletState, reason: string): ClientResult {

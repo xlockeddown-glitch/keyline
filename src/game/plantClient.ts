@@ -8,7 +8,7 @@ import { VK_NUM } from "./pins";
 import { setHearths, type HearthView } from "./hearthVaults";
 
 /** 0.1.122: one of my placed Hearths (Single, Double or Triple). */
-export type MyHearth = { v: HearthVersion; id: string; mine: PlacedVault; stats?: HearthStats };
+export type MyHearth = { v: HearthVersion; id: string; mine: PlacedVault; stats?: HearthStats; polish?: number };
 /** My placed Hearths; an old server's lone `mine` counts as its own version. */
 export function myHearths(me: PlantState["me"]): MyHearth[] {
   if (me.hearths) return me.hearths;
@@ -101,5 +101,48 @@ export async function placeHearth(): Promise<void> {
   setPlant({ busy: false, note: why[r?.reason ?? ""] ?? "Couldn't place it. Try again in a moment." });
 }
 
+/** 0.1.149: pay 8,000 coin for seven days of brighter trim. The server is the charge. */
+export async function polishHearth(id: string): Promise<void> {
+  const { HEARTH_POLISH_PRICE, polishLive } = await import("./hearthPolish");
+  const h = myHearths(state.me).find((x) => x.id === id);
+  const toast = (msg: string) => useGame.setState({ toast: msg });
+  if (!h) return;
+  if (!walletLive()) return toast("Sign in to polish a Hearth.");
+  if (polishLive(h.polish, Date.now())) return toast("This Hearth is already polished.");
+  if (useGame.getState().points < HEARTH_POLISH_PRICE) return toast("Need 8,000 coin.");
+  if (state.busy) return;
+  setPlant({ busy: true });
+  const city = useGame.getState().cityId;
+  const r = await commitWallet({ kind: "hpolish", id });
+  if (r?.view) useGame.getState().adoptWallet(r.view);
+  await refreshPlaced(city);
+  if (r?.ok) {
+    setPlant({ busy: false });
+    toast("Polished. Brighter trim for seven days. The cut stays 50 coin.");
+    return;
+  }
+  setPlant({ busy: false });
+  toast(r?.reason === "short-coins" ? "Need 8,000 coin." : "Couldn't polish it.");
+}
+
 export const plantNowPlaced = () => state.placed;
 export const plantNowName = () => state.name;
+
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  (window as unknown as { __keylinePlant?: unknown }).__keylinePlant = {
+    setPlant,
+    setHearths,
+    polishHearth,
+    plantNow,
+    /** Dev/QA: put seeded Hearths on the map and open the owner panel. */
+    show(list: HearthView[], me: PlantState["me"], open: boolean) {
+      const city = useGame.getState().cityId;
+      setHearths(city, list);
+      setPlant({ city, placed: list, me, ownerOpen: open, ownerV: 1, placing: false });
+      useGame.setState({ hearthGen: (useGame.getState().hearthGen ?? 0) + 1 });
+    },
+    coins(n: number) {
+      useGame.setState({ points: n });
+    },
+  };
+}

@@ -1675,7 +1675,7 @@ export function GameMap() {
             : desk
               ? stationPinHtml({ cooling, fare: lit })
               : isHearthId(poi.id)
-                ? hearthPinHtml(poi.name, hearthOf(poi.id)?.cats ?? [], FACET_COLOR, { cooling, lockout: cooling && v?.lockout === true })
+                ? hearthPinHtml(poi.name, hearthOf(poi.id)?.cats ?? [], FACET_COLOR, { cooling, lockout: cooling && v?.lockout === true, polished: (hearthOf(poi.id)?.polish ?? 0) > now })
                 : vaultPinHtml(poi, { cooling, lockout: cooling && v?.lockout === true });
       const hearth = isHearthId(poi.id);
       // 0.1.102 Vault Keys: street vaults are 40 px SVG boxes standing on the CSS ground shadow.

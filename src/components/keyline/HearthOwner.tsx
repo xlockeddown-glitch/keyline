@@ -3,7 +3,9 @@ import { CITIES } from "@/game/data";
 import { FACET_COLOR } from "@/game/hearthVaults";
 import { vaultSvgCentered } from "@/game/pins";
 import { HEARTH_CUT, PLANT_NAMES } from "@/game/placedLantern";
-import { myHearths, placedVersion, setPlant, usePlant } from "@/game/plantClient";
+import { HEARTH_POLISH_PRICE, polishLive } from "@/game/hearthPolish";
+import { myHearths, placedVersion, polishHearth, setPlant, usePlant } from "@/game/plantClient";
+import { useGame } from "@/game/store";
 import { HEARTH_VERSION_NAME } from "@/game/hearthMulti";
 import { TRIVIA_CATS } from "@/game/triviaMeta";
 import { ItemIcon } from "./ItemIcon";
@@ -20,6 +22,7 @@ function Bar({ have, need }: { have: number; need: number }) {
 
 export function HearthOwner() {
   const p = usePlant();
+  const coins = useGame((s) => s.points);
   // 0.1.122: the Hearth picked in the Journal (else the first one).
   const h = (p.ownerV ? placedVersion(p.me, p.ownerV) : null) ?? myHearths(p.me)[0] ?? null;
   const mine = h?.mine;
@@ -29,6 +32,8 @@ export function HearthOwner() {
   const name = PLANT_NAMES[mine.name] ?? "Your vault";
   const city = CITIES[mine.city as keyof typeof CITIES]?.name ?? mine.city;
   const label = (c: string) => TRIVIA_CATS.find((t) => t.id === c)?.label ?? c;
+  const polished = polishLive(h.polish, Date.now());
+  const short = !polished && coins < HEARTH_POLISH_PRICE;
   return (
     <section className="hearth-owner" role="dialog" aria-label="Your Hearth" data-testid="hearth-owner">
       <button type="button" className="ho-x" aria-label="Close" onClick={() => setPlant({ ownerOpen: false })}>
@@ -36,7 +41,7 @@ export function HearthOwner() {
       </button>
       <div className="ho-head">
         {/* 0.1.111: hero built on one grid: facet columns either side of the vault, plate centered under it. */}
-        <span className="ho-art" data-testid="ho-art">
+        <span className={`ho-art${polished ? " is-polished" : ""}`} data-testid="ho-art" data-polished={polished ? "1" : undefined}>
           <span className="ho-bars">
             {[mine.cats[0], mine.cats[2]].map((c, i) => (
               <i key={i} style={{ background: FACET_COLOR[c ?? ""] ?? "#ccc" }} title={c} />
@@ -109,6 +114,20 @@ export function HearthOwner() {
       </div>
       <p className="ho-foot ho-wide">
         Your own opens pay normal V pay but no cut. New accounts (under 3 days or 25 right answers) don't pay a cut. One paid open per visitor a day.
+      </p>
+      <button
+        type="button"
+        className="btn btn-quiet ho-polish"
+        data-testid="hearth-polish"
+        data-short={short ? "1" : undefined}
+        aria-pressed={polished}
+        disabled={polished || p.busy}
+        onClick={() => void polishHearth(h.id)}
+      >
+        {polished ? "Polished" : "Polish · 8,000"}
+      </button>
+      <p className="ho-foot" data-testid="hearth-polish-note">
+        {polished ? "Brighter trim for seven days. The cut stays 50 coin." : short ? "Need 8,000 coin." : "A brighter trim for seven days. The cut stays 50 coin."}
       </p>
     </section>
   );
