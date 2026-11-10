@@ -4188,7 +4188,11 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .hearth-pin{ --glow:#d0785a; width:64px; height:72px; position:relative; place-items:center; grid-template-rows:56px 16px }
 .hearth-pin .vk-vault{ width:44px; height:44px; filter:sepia(.55) hue-rotate(-18deg) saturate(1.5) drop-shadow(0 0 6px #d0785a99) }
 .hearth-pin.cooling .vk-vault{ filter:sepia(.55) hue-rotate(-18deg) grayscale(.7) brightness(.8) }
-.hearth-pin > .hf{ display:block !important; position:absolute; width:6px; height:18px; border-radius:2px; background:var(--hf); box-shadow:0 0 4px var(--hf), inset 0 0 0 1px #0006; z-index:300 }
+.hearth-pin > .hf{ display:block !important; position:absolute; width:6px; height:18px; border-radius:2px; z-index:300;
+  background:
+    linear-gradient(135deg, rgb(255 248 230 / .75), rgb(255 248 230 / 0) 42%),
+    linear-gradient(150deg, color-mix(in srgb, var(--hf, #ccc) 72%, #f2d38a), var(--hf, #ccc) 46%, color-mix(in srgb, var(--hf, #ccc) 35%, #1a1410));
+  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .8), inset -1px -1px 0 #1a1410, 0 0 0 1px #6e5320; }
 .hearth-pin .hf-tl{ left:4px; top:10px } .hearth-pin .hf-bl{ left:4px; top:30px }
 .hearth-pin .hf-tr{ right:4px; top:10px } .hearth-pin .hf-br{ right:4px; top:30px }
 .hearth-pin .hp-plate{ font-size:9px; line-height:13px; padding:0 5px; border-radius:3px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a99; white-space:nowrap; max-width:84px; overflow:hidden; text-overflow:ellipsis }
@@ -4212,11 +4216,41 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .hearth-pin .hf-tl, .hearth-pin .hf-bl{ left:6px !important } .hearth-pin .hf-tr, .hearth-pin .hf-br{ right:6px !important }
 .hearth-pin .hf-tl, .hearth-pin .hf-tr{ top:6px !important } .hearth-pin .hf-bl, .hearth-pin .hf-br{ top:30px !important }
 .vault-pin.hearth-pin{ width:76px !important; justify-items:center }
-/* 0.1.149 hearth polish: brighter brass trim on the hearth you paid for. Static — no new motion. */
-.hearth-pin.is-polished:not(.cooling) .vk-vault { filter: sepia(.28) hue-rotate(-6deg) saturate(1.25) drop-shadow(0 0 8px #e0c788ee) drop-shadow(0 0 2px #ffd68c); }
-.hearth-pin.is-polished .hp-plate { color: #f3e6c4; border-color: #e0c788; box-shadow: 0 0 8px #e0c788aa; }
-.ho-art.is-polished .ho-vault { filter: sepia(.28) hue-rotate(-6deg) saturate(1.25) drop-shadow(0 0 12px #e0c788ee) drop-shadow(0 0 2px #ffd68c); }
-.ho-art.is-polished .ho-plate { color: #f3e6c4; border-color: #e0c788; box-shadow: 0 0 8px #e0c788aa; }
+/* 0.1.149 hearth polish: a brass bevel and a short lantern halo. Static — no new motion. */
+.hearth-pin.is-polished::before,
+.ho-art.is-polished .ho-vault::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgb(255 244 214 / .95), rgb(255 244 214 / 0) 38%),
+    linear-gradient(145deg, #f4e2b0 0%, #e0c788 30%, #8a6a38 68%, #3a2a12 100%);
+  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .85), inset -1px -1px 0 #3a2a12, 0 0 10px 2px rgb(255 214 140 / .55);
+}
+.hearth-pin.is-polished::before { left: 50%; top: 1px; width: 50px; height: 50px; transform: translateX(-50%); }
+.ho-art.is-polished .ho-vault::before { inset: -7px; border-radius: 12px; }
+.hearth-pin .vk-vault, .ho-vault .vk-vault { position: relative; z-index: 1; }
+.hearth-pin.is-polished:not(.cooling) .vk-vault {
+  filter: sepia(.4) hue-rotate(-12deg) saturate(1.35) drop-shadow(0 0 1px #fff6df) drop-shadow(0 0 6px #e0c788dd) drop-shadow(0 0 14px #ffd68c73);
+}
+.hearth-pin.is-polished > .hf {
+  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .95), inset -1px -1px 0 #3a2a12, 0 0 0 1px #e0c788, 0 0 5px rgb(255 214 140 / .7);
+}
+.hearth-pin.is-polished .hp-plate,
+.ho-art.is-polished .ho-plate {
+  color: #f3e6c4;
+  border-color: #e0c788;
+  background: linear-gradient(145deg, #4a3820, #2a1a12 55%, #1a1410);
+  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .45), 0 0 8px #e0c788aa;
+}
+.ho-art.is-polished .ho-vault {
+  filter: sepia(.4) hue-rotate(-12deg) saturate(1.35) drop-shadow(0 0 1px #fff6df) drop-shadow(0 0 8px #e0c788ee) drop-shadow(0 0 16px #ffd68c66);
+}
+.ho-art.is-polished .ho-bars i {
+  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .95), inset -1px -1px 0 #3a2a12, 0 0 0 1px #e0c788, 0 0 5px rgb(255 214 140 / .7);
+}
 .ho-polish { width: 100%; margin-top: 14px; }
 
 /* 0.1.111: "Your Hearth" owner panel, sized to the mock (≈720 px on a 1440 desktop). */
@@ -4226,7 +4260,11 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .ho-head{ display:flex; gap:26px; align-items:center; margin-bottom:12px }
 .ho-art{ flex:none; display:grid; grid-template-columns:auto auto auto; grid-template-rows:auto auto; column-gap:6px; row-gap:6px; align-items:center; justify-items:center }
 .ho-bars{ display:grid; gap:8px }
-.ho-bars i{ display:block; width:9px; height:38px; border-radius:3px; box-shadow:inset 0 0 0 1px #0006 }
+.ho-bars i{ display:block; width:9px; height:38px; border-radius:3px;
+  background:
+    linear-gradient(135deg, rgb(255 248 230 / .75), rgb(255 248 230 / 0) 42%),
+    linear-gradient(150deg, color-mix(in srgb, var(--hf, #ccc) 72%, #f2d38a), var(--hf, #ccc) 46%, color-mix(in srgb, var(--hf, #ccc) 35%, #1a1410));
+  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .8), inset -1px -1px 0 #1a1410, 0 0 0 1px #6e5320; }
 .ho-vault{ display:grid; place-items:center; width:86px; height:86px; filter:sepia(.55) hue-rotate(-18deg) saturate(1.5) drop-shadow(0 0 10px #d0785a88) }
 .ho-vault .vk-vault{ width:86px; height:86px }
 .ho-plate{ grid-column:2; font-size:10px; line-height:15px; padding:0 8px; border-radius:3px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a99; white-space:nowrap }

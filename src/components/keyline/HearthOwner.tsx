@@ -44,13 +44,13 @@ export function HearthOwner() {
         <span className={`ho-art${polished ? " is-polished" : ""}`} data-testid="ho-art" data-polished={polished ? "1" : undefined}>
           <span className="ho-bars">
             {[mine.cats[0], mine.cats[2]].map((c, i) => (
-              <i key={i} style={{ background: FACET_COLOR[c ?? ""] ?? "#ccc" }} title={c} />
+              <i key={i} style={{ "--hf": FACET_COLOR[c ?? ""] ?? "#ccc" } as React.CSSProperties} title={c} />
             ))}
           </span>
           <span className="ho-vault vault-pin tier-red" dangerouslySetInnerHTML={{ __html: vaultSvgCentered("red") }} />
           <span className="ho-bars">
             {[mine.cats[1], mine.cats[3]].map((c, i) => (
-              <i key={i} style={{ background: FACET_COLOR[c ?? ""] ?? "#ccc" }} title={c} />
+              <i key={i} style={{ "--hf": FACET_COLOR[c ?? ""] ?? "#ccc" } as React.CSSProperties} title={c} />
             ))}
           </span>
           <span className="ho-plate">{name}</span>
