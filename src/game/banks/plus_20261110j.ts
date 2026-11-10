@@ -67,8 +67,6 @@ export const PLUS_20261110J: Partial<Record<PlusCat, TriviaQ[]>> = {
 		q("Which company originally published Mouse Trap?", ["Ideal", "Hasbro", "Mattel", "Milton Bradley"], "Ideal", 2),
 		// https://en.wikipedia.org/wiki/Crossword
 		q("Which newspaper popularized the modern form of crosswords in the 1910s?", ["The Washington Post", "The Chicago Tribune", "The Times", "New York World"], "New York World", 2),
-		// https://en.wikipedia.org/wiki/Hungry_Hungry_Hippos
-		q("Who invented the idea for Hungry Hungry Hippos?", ["John H. Kroll", "Ellen Kullman", "Fred Kroll", "Ralph H. Baer"], "Fred Kroll", 2),
 		// https://en.wikipedia.org/wiki/Snakes_and_ladders
 		q("What moral concept do the ladders represent in the historic version of the game?", ["Virtues", "Vices", "Sins", "Rewards"], "Virtues", 2),
 		// https://en.wikipedia.org/wiki/Candy_Land
@@ -87,16 +85,12 @@ export const PLUS_20261110J: Partial<Record<PlusCat, TriviaQ[]>> = {
 		q("How many squares are on the board for international draughts?", ["144", "81", "100", "64"], "100", 1),
 		// https://en.wikipedia.org/wiki/Snakes_and_ladders
 		q("In which ancient country did the game Snakes and ladders originate?", ["India", "China", "Greece", "Egypt"], "India", 1),
-		// https://en.wikipedia.org/wiki/Hungry_Hungry_Hippos
-		q("Which company produces the game Hungry Hungry Hippos?", ["Parker Brothers", "Hasbro", "Ravensburger", "Mattel"], "Hasbro", 1),
 		// https://en.wikipedia.org/wiki/Crossword
 		q("What is a person who constructs or solves crosswords called?", ["puzzler", "lexicographer", "cruciverbalist", "crosswordist"], "cruciverbalist", 2),
 		// https://en.wikipedia.org/wiki/Draughts
 		q("What is the North American English name for draughts?", ["Backgammon", "Chess", "Checkers", "Go"], "Checkers", 1),
 		// https://en.wikipedia.org/wiki/Snakes_and_ladders
 		q("What is the alternate name for Snakes and Ladders sold by Milton Bradley?", ["Snakes and Chutes", "Moksha Patam", "Chutes and Ladders", "Ladders and Slides"], "Chutes and Ladders", 1),
-		// https://en.wikipedia.org/wiki/Hungry_Hungry_Hippos
-		q("In what year was Hungry Hungry Hippos introduced?", ["1978", "1980", "1972", "1975"], "1978", 1),
 		// https://en.wikipedia.org/wiki/Candy_Land
 		q("Which company published Candy Land in 1949?", ["Mattel", "Milton Bradley", "Parker Brothers", "Hasbro"], "Milton Bradley", 1),
 		// https://en.wikipedia.org/wiki/Mancala
@@ -152,7 +146,7 @@ export const PLUS_20261110J: Partial<Record<PlusCat, TriviaQ[]>> = {
 		// https://en.wikipedia.org/wiki/Diana,_Princess_of_Wales
 		q("What verdict was returned at Diana's inquest?", ["Accidental death", "Suicide", "Natural causes", "Unlawful killing"], "Unlawful killing", 2),
 		// https://en.wikipedia.org/wiki/Anthony_Bourdain
-		q("Which culinary institute did Anthony Bourdain graduate from in 1978?", ["Johnson & Wales University", "Institute of Culinary Education", "Le Cordon Bleu", "Culinary Institute of America"], "Culinary Institute of America", 2),
+		q("Which school did Anthony Bourdain graduate from in 1978?", ["Johnson & Wales University", "Institute of Culinary Education", "Le Cordon Bleu", "Culinary Institute of America"], "Culinary Institute of America", 2),
 		// https://en.wikipedia.org/wiki/Clint_Eastwood
 		q("Which city did Clint Eastwood serve as mayor?", ["Carmel-by-the-Sea", "Santa Monica", "Los Angeles", "San Francisco"], "Carmel-by-the-Sea", 2),
 		// https://en.wikipedia.org/wiki/Clint_Eastwood
