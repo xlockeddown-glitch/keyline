@@ -22,7 +22,7 @@ export const PLUS_20261110K: Partial<Record<PlusCat, TriviaQ[]>> = {
 		// https://en.wikipedia.org/wiki/Olympic_Games
 		q("Since which year have the Summer and Winter Games been held in different years?", ["1992", "1996", "1998", "1994"], "1994", 2),
 		// https://en.wikipedia.org/wiki/Super_Bowl
-		q("As of 2026, which two franchises are the only ones to be undefeated in multiple Super Bowls?", ["Steelers and Patriots", "Ravens and Buccaneers", "Cowboys and 49ers", "Dolphins and Raiders"], "Ravens and Buccaneers", 2),
+		q("As of 2026, which two teams have multiple Super Bowl titles and zero Super Bowl losses?", ["Steelers and Patriots", "Ravens and Buccaneers", "Cowboys and 49ers", "Dolphins and Raiders"], "Ravens and Buccaneers", 2),
 		// https://en.wikipedia.org/wiki/Wimbledon_Championships
 		q("What color must competitors wear at Wimbledon?", ["blue", "white", "black", "red"], "white", 1),
 		// https://en.wikipedia.org/wiki/Tennis
@@ -268,7 +268,7 @@ export const PLUS_20261110K: Partial<Record<PlusCat, TriviaQ[]>> = {
 		// https://en.wikipedia.org/wiki/Ancient_Egypt
 		q("Which empire did Egypt sign the earliest known peace treaty with?", ["Assyrian Empire", "Persian Empire", "Hittite Empire", "Roman Empire"], "Hittite Empire", 2),
 		// https://en.wikipedia.org/wiki/Ancient_Egypt
-		q("When did the Roman conquest end the Ptolemaic Kingdom?", ["30 BC", "332 BC", "642 AD", "3150 BC"], "30 BC", 2),
+		q("Which event ended Egypt's Ptolemaic Kingdom?", ["Roman conquest", "Arab conquest", "Alexander's conquest", "Persian conquest"], "Roman conquest", 2),
 		// https://en.wikipedia.org/wiki/Titanic
 		q("Which company operated the RMS Titanic?", ["White Star Line", "Cunard Line", "Royal Mail Line", "P&O Line"], "White Star Line", 1),
 		// https://en.wikipedia.org/wiki/French_Revolution
@@ -500,7 +500,7 @@ export const PLUS_20261110K: Partial<Record<PlusCat, TriviaQ[]>> = {
 		// https://en.wikipedia.org/wiki/Dracula
 		q("In which year was the novel Dracula published?", ["1859", "1901", "1897", "1888"], "1897", 1),
 		// https://en.wikipedia.org/wiki/To_Kill_a_Mockingbird
-		q("Which director made the 1962 film adaptation of To Kill a Mockingbird?", ["Stanley Kubrick", "Martin Scorsese", "Francis Ford Coppola", "Robert Mulligan"], "Robert Mulligan", 2),
+		q("Who directed the film adaptation of To Kill a Mockingbird?", ["Stanley Kubrick", "Martin Scorsese", "Francis Ford Coppola", "Robert Mulligan"], "Robert Mulligan", 2),
 		// https://en.wikipedia.org/wiki/The_Great_Gatsby
 		q("Who was the editor that persuaded Fitzgerald to revise The Great Gatsby?", ["Ginevra King", "Francis Cugat", "Nick Carraway", "Maxwell Perkins"], "Maxwell Perkins", 2),
 		// https://en.wikipedia.org/wiki/Pride_and_Prejudice
