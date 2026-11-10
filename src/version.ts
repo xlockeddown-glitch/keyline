@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.149";
+export const APP_VERSION = "0.1.150";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1149a";
+export const PUBLISH_STAMP = "k1150a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -246,3 +246,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.147: free-model comparison trivia batch (Nov 9 2026, job trivia-free-20261109i): plus_20261109i, 120 easy/medium cards sealing white/green/blue only (games, celebrity, music, political, books, geography); 4 free generators + 3 free checkers + full reviewer Wikipedia check. 0.1.145-0.1.146 are held by the art work (k1147a).
 // 0.1.148: warm title street. Lit storefronts spill amber and gold onto the avenue, and the hero vault is brass instead of steel. The KEYLINE sign, city blade, skyline, brass lanterns, and the car and scouts stay. Houses and trivia banks unchanged (k1148a).
 // 0.1.149: hearth polish. 8,000 coin once per hearth per seven-day window, one ledger row (`hpolish:<id>:<week>`). The pin and Your Hearth keep a beveled brass trim and a short lantern halo for seven days from the charge. The dial sits on the face of every vault. The owner cut stays 50 coin, the daily cap stays 1,000, and the questions stay the owner's fields. A refresh does not charge again (k1149a).
+// 0.1.150: free-model head-to-head trivia batch (plus_20261110j, 167 easy/medium cards, white/green/blue only). 0.1.149/k1149a is the hearth-polish ship (k1150a).
