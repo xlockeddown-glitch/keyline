@@ -102,7 +102,7 @@ export const PLUS_20261110K: Partial<Record<PlusCat, TriviaQ[]>> = {
 		// https://en.wikipedia.org/wiki/Alejandro_Davidovich_Fokina
 		q("In October 2026, at which tournament did Davidovich Fokina win his first Masters 1000 title?", ["Paris Masters", "Madrid Open", "Shanghai Masters", "Rome Masters"], "Shanghai Masters", 1),
 		// https://en.wikipedia.org/wiki/Gabby_Williams
-		q("What award did Gabby Williams win after the 2026 WNBA Finals?", ["WNBA Most Valuable Player", "WNBA Defensive Player of the Year", "WNBA All-Star Game MVP", "WNBA Finals MVP"], "WNBA Finals MVP", 1),
+		q("What honor was Gabby Williams named after Golden State won the 2026 championship?", ["WNBA Most Valuable Player", "WNBA Defensive Player of the Year", "WNBA All-Star Game MVP", "WNBA Finals MVP"], "WNBA Finals MVP", 1),
 		// https://en.wikipedia.org/wiki/Maja_Chwalińska
 		q("What was Maja Chwalińska's best Grand Slam result in 2026?", ["Wimbledon finalist", "US Open finalist", "French Open finalist", "Australian Open finalist"], "French Open finalist", 1),
 		// https://en.wikipedia.org/wiki/2026_Wuhan_Open
@@ -268,7 +268,7 @@ export const PLUS_20261110K: Partial<Record<PlusCat, TriviaQ[]>> = {
 		// https://en.wikipedia.org/wiki/Ancient_Egypt
 		q("Which empire did Egypt sign the earliest known peace treaty with?", ["Assyrian Empire", "Persian Empire", "Hittite Empire", "Roman Empire"], "Hittite Empire", 2),
 		// https://en.wikipedia.org/wiki/Ancient_Egypt
-		q("In what year did the Roman conquest end the Ptolemaic Kingdom?", ["30 BC", "332 BC", "642 AD", "3150 BC"], "30 BC", 2),
+		q("When did the Roman conquest end the Ptolemaic Kingdom?", ["30 BC", "332 BC", "642 AD", "3150 BC"], "30 BC", 2),
 		// https://en.wikipedia.org/wiki/Titanic
 		q("Which company operated the RMS Titanic?", ["White Star Line", "Cunard Line", "Royal Mail Line", "P&O Line"], "White Star Line", 1),
 		// https://en.wikipedia.org/wiki/French_Revolution

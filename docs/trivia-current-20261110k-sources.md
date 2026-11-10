@@ -52,7 +52,7 @@ Each card's prompt, answer and source page. Wikipedia pages were freshly fetched
 - [sports] Which venue hosted the 2026 Skate Canada International in Kelowna? — **Prospera Place** — https://en.wikipedia.org/wiki/2026_Skate_Canada_International
 - [sports] In October 2026, at which tournament did Davidovich Fokina win his first Masters 1000 title? — **Shanghai Masters** — https://en.wikipedia.org/wiki/Alejandro_Davidovich_Fokina
 - [political] Which party expanded its total Senate seats to 20 after the October 2026 election? — **Civic Democratic Party** — https://en.wikipedia.org/wiki/2026_Czech_Senate_election
-- [sports] What award did Gabby Williams win after the 2026 WNBA Finals? — **WNBA Finals MVP** — https://en.wikipedia.org/wiki/Gabby_Williams
+- [sports] What honor was Gabby Williams named after Golden State won the 2026 championship? — **WNBA Finals MVP** — https://en.wikipedia.org/wiki/Gabby_Williams
 - [sports] What was Maja Chwalińska's best Grand Slam result in 2026? — **French Open finalist** — https://en.wikipedia.org/wiki/Maja_Chwalińska
 - [sports] What was the surface of the 2026 Wuhan Open tennis tournament? — **Hard** — https://en.wikipedia.org/wiki/2026_Wuhan_Open
 - [geography] On what date in October 2026 did the New Yalu River Bridge open to vehicle traffic? — **15 October 2026** — https://en.wikipedia.org/wiki/New_Yalu_River_Bridge
