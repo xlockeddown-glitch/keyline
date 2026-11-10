@@ -1,0 +1,64 @@
+# Trivia current-events sources — batch 20261110k (trial run 1)
+
+Each card's prompt, answer and source page. Wikipedia pages were freshly fetched (API extracts + wikitext parse) on 10 Nov 2026 (America/Chicago) and the fact was confirmed in the page text, including infoboxes.
+
+- [sports] Where was the 2026 Breeders' Cup held? — **Keeneland** — https://en.wikipedia.org/wiki/2026_Breeders'_Cup
+- [sports] How many races were in the 2026 Breeders' Cup? — **14** — https://en.wikipedia.org/wiki/2026_Breeders'_Cup
+- [sports] Who won the 2026 Breeders' Cup Juvenile Fillies Turf? — **Sun Goddess** — https://en.wikipedia.org/wiki/2026_Breeders'_Cup
+- [sports] Who won the 2026 Breeders' Cup Juvenile Turf Sprint? — **Libertango** — https://en.wikipedia.org/wiki/2026_Breeders'_Cup
+- [sports] In which city did Daiki Hashimoto win the World Championship all-around title in 2026? — **Rotterdam** — https://en.wikipedia.org/wiki/Daiki_Hashimoto
+- [sports] In which city did the 2026 Summer Youth Olympics open on 31 October 2026? — **Dakar** — https://en.wikipedia.org/wiki/2026_Summer_Youth_Olympics
+- [sports] Which country hosted the 2026 Summer Youth Olympics? — **Senegal** — https://en.wikipedia.org/wiki/2026_Summer_Youth_Olympics
+- [sports] Who opened the 2026 Summer Youth Olympics in Dakar? — **Bassirou Diomaye Faye** — https://en.wikipedia.org/wiki/2026_Summer_Youth_Olympics
+- [arts] On what date in 2026 was Luis Antonio Tagle appointed Dean of the College of Cardinals? — **October 9, 2026** — https://en.wikipedia.org/wiki/Luis_Antonio_Tagle
+- [sports] Who is the head coach of the Golden State Valkyries as of 2026? — **Natalie Nakase** — https://en.wikipedia.org/wiki/Golden_State_Valkyries
+- [political] Who received the Sakharov Prize in October 2026? — **International Criminal Court** — https://en.wikipedia.org/wiki/Sakharov_Prize
+- [music] Which venue hosted the Mercury Prize awards in 2026? — **Utilita Arena Newcastle** — https://en.wikipedia.org/wiki/Mercury_Prize
+- [sports] Who won the men's singles at the 2026 Skate Canada International? — **Kévin Aymoz** — https://en.wikipedia.org/wiki/2026_Skate_Canada_International
+- [sports] What was Davidovich Fokina's career-high ATP singles ranking as of October 2026? — **No. 13** — https://en.wikipedia.org/wiki/Alejandro_Davidovich_Fokina
+- [science] The October 2026 CGPM vote to abolish future leap seconds took effect on which date? — **May 20, 2027** — https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+- [political] Which party won the most contested seats in the October 2026 Czech Senate election? — **Mayors and Independents** — https://en.wikipedia.org/wiki/2026_Czech_Senate_election
+- [political] What was the voter turnout in the first round of the October 2026 Czech Senate election? — **43.31%** — https://en.wikipedia.org/wiki/2026_Czech_Senate_election
+- [sports] Which country's team did Gabby Williams captain at the 2026 FIBA Women's World Cup? — **France** — https://en.wikipedia.org/wiki/Gabby_Williams
+- [sports] How many WNBA championships did the Golden State Valkyries win in 2026? — **One** — https://en.wikipedia.org/wiki/Gabby_Williams
+- [sports] Which WTA 1000 event did Maja Chwalińska win in 2026? — **Wuhan Open** — https://en.wikipedia.org/wiki/Maja_Chwalińska
+- [sports] What was Maja Chwalińska's career-high singles ranking in October 2026? — **No. 11** — https://en.wikipedia.org/wiki/Maja_Chwalińska
+- [sports] Which team did Per Strand Hagenes ride for in 2026? — **Visma–Lease a Bike** — https://en.wikipedia.org/wiki/Per_Strand_Hagenes
+- [sports] Who won the singles title at the 2026 Wuhan Open? — **Maja Chwalińska** — https://en.wikipedia.org/wiki/2026_Wuhan_Open
+- [sports] Which team did Paul Seixas ride for in the 2026 Il Lombardia? — **Decathlon CMA CGM** — https://en.wikipedia.org/wiki/2026_Il_Lombardia
+- [sports] What was the total distance of the 2026 Il Lombardia race? — **239 km** — https://en.wikipedia.org/wiki/2026_Il_Lombardia
+- [sports] Who finished second in the 2026 Il Lombardia? — **Enric Mas** — https://en.wikipedia.org/wiki/2026_Il_Lombardia
+- [sports] In October 2026, which classic race did Paul Seixas win? — **Giro di Lombardia** — https://en.wikipedia.org/wiki/Paul_Seixas
+- [sports] In October 2026, which major race did Sovereignty win? — **Breeders' Cup Classic** — https://en.wikipedia.org/wiki/Sovereignty_(horse)
+- [music] In 2026, what is the title of Raye's second studio album? — **This Music May Contain Hope** — https://en.wikipedia.org/wiki/Raye
+- [sports] What role did the 2026 World Artistic Gymnastics Championships serve for the 2028 Los Angeles Olympics? — **qualification event** — https://en.wikipedia.org/wiki/2026_World_Artistic_Gymnastics_Championships
+- [political] Who became premier-designate after the 2026 British Columbia election? — **Lorne Doerkson** — https://en.wikipedia.org/wiki/2026_British_Columbia_general_election
+- [political] What was the voter turnout percentage in the 2026 British Columbia election? — **52.0%** — https://en.wikipedia.org/wiki/2026_British_Columbia_general_election
+- [sports] In which city were the 2026 UCI Track Cycling World Championships held? — **Shanghai** — https://en.wikipedia.org/wiki/2026_UCI_Track_Cycling_World_Championships
+- [sports] How many nations participated in the 2026 UCI Track Cycling World Championships? — **45** — https://en.wikipedia.org/wiki/2026_UCI_Track_Cycling_World_Championships
+- [sports] How many events were contested at the 2026 UCI Track Cycling World Championships? — **22** — https://en.wikipedia.org/wiki/2026_UCI_Track_Cycling_World_Championships
+- [sports] As of October 2026, on what type of court was the Shanghai Masters played? — **Hard** — https://en.wikipedia.org/wiki/2026_Rolex_Shanghai_Masters
+- [political] Which electoral list won an absolute majority in the 2026 Serbian election? — **Student List** — https://en.wikipedia.org/wiki/2026_Serbian_parliamentary_election
+- [political] What percentage of the vote did the Student List receive in the 2026 Serbian parliamentary election? — **53.69%** — https://en.wikipedia.org/wiki/2026_Serbian_parliamentary_election
+- [sports] In October 2026, which rider won the Paris–Tours classic? — **Per Strand Hagenes** — https://en.wikipedia.org/wiki/2026_Paris–Tours
+- [sports] In October 2026, who finished second in the Paris–Tours race? — **Jasper Stuyven** — https://en.wikipedia.org/wiki/2026_Paris–Tours
+- [sports] In the 2026 WNBA playoffs, which team did the Golden State Valkyries defeat in the semifinals? — **Las Vegas Aces** — https://en.wikipedia.org/wiki/2026_WNBA_Finals
+- [sports] How many sports were featured at the 2026 Summer Youth Olympics? — **25** — https://en.wikipedia.org/wiki/2026_Summer_Youth_Olympics
+- [arts] Who was the predecessor of Luis Antonio Tagle as Dean of the College of Cardinals in 2026? — **Giovanni Battista Re** — https://en.wikipedia.org/wiki/Luis_Antonio_Tagle
+- [political] On what date did Ülle Madise assume office as President of Estonia in 2026? — **12 October 2026** — https://en.wikipedia.org/wiki/Ülle_Madise
+- [political] Who was the Prime Minister of Estonia when Ülle Madise became President in 2026? — **Kristen Michal** — https://en.wikipedia.org/wiki/Ülle_Madise
+- [music] Who won the 2026 Mercury Prize for the album This Music May Contain Hope? — **Raye** — https://en.wikipedia.org/wiki/Mercury_Prize
+- [sports] Who won the women's singles at the 2026 Skate Canada International? — **Mao Shimada** — https://en.wikipedia.org/wiki/2026_Skate_Canada_International
+- [sports] Which venue hosted the 2026 Skate Canada International in Kelowna? — **Prospera Place** — https://en.wikipedia.org/wiki/2026_Skate_Canada_International
+- [sports] In October 2026, at which tournament did Davidovich Fokina win his first Masters 1000 title? — **Shanghai Masters** — https://en.wikipedia.org/wiki/Alejandro_Davidovich_Fokina
+- [political] Which party expanded its total Senate seats to 20 after the October 2026 election? — **Civic Democratic Party** — https://en.wikipedia.org/wiki/2026_Czech_Senate_election
+- [sports] What award did Gabby Williams win after the 2026 WNBA Finals? — **WNBA Finals MVP** — https://en.wikipedia.org/wiki/Gabby_Williams
+- [sports] What was Maja Chwalińska's best Grand Slam result in 2026? — **French Open finalist** — https://en.wikipedia.org/wiki/Maja_Chwalińska
+- [sports] What was the surface of the 2026 Wuhan Open tennis tournament? — **Hard** — https://en.wikipedia.org/wiki/2026_Wuhan_Open
+- [geography] On what date in October 2026 did the New Yalu River Bridge open to vehicle traffic? — **15 October 2026** — https://en.wikipedia.org/wiki/New_Yalu_River_Bridge
+- [sports] In 2026, Paul Seixas claimed victory in which stage race? — **Tour of the Basque Country** — https://en.wikipedia.org/wiki/Paul_Seixas
+- [sports] As of October 2026, how many World Championship gold medals has Lavreysen earned? — **23** — https://en.wikipedia.org/wiki/Harrie_Lavreysen
+- [geography] In October 2026, when did passenger operations begin at Western Sydney Airport? — **25 October 2026** — https://en.wikipedia.org/wiki/Western_Sydney_Airport
+- [sports] In which venue were the 2026 World Artistic Gymnastics Championships held? — **Rotterdam Ahoy** — https://en.wikipedia.org/wiki/2026_World_Artistic_Gymnastics_Championships
+- [political] On what date were Serbia's 2026 parliamentary elections held? — **25 October 2026** — https://en.wikipedia.org/wiki/2026_Serbian_parliamentary_election
+- [political] What was the voter turnout in Serbia's 2026 parliamentary election? — **68.89%** — https://en.wikipedia.org/wiki/2026_Serbian_parliamentary_election
