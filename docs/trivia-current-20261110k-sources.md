@@ -16,7 +16,7 @@ Each card's prompt, answer and source page. Wikipedia pages were freshly fetched
 - [music] Which venue hosted the Mercury Prize awards in 2026? — **Utilita Arena Newcastle** — https://en.wikipedia.org/wiki/Mercury_Prize
 - [sports] Who won the men's singles at the 2026 Skate Canada International? — **Kévin Aymoz** — https://en.wikipedia.org/wiki/2026_Skate_Canada_International
 - [sports] What was Davidovich Fokina's career-high ATP singles ranking as of October 2026? — **No. 13** — https://en.wikipedia.org/wiki/Alejandro_Davidovich_Fokina
-- [science] The October 2026 CGPM vote to abolish future leap seconds took effect on which date? — **May 20, 2027** — https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+- [science] The October 2026 CGPM vote to abolish future leap seconds takes effect on which date? — **May 20, 2027** — https://en.wikipedia.org/wiki/Coordinated_Universal_Time
 - [political] Which party won the most contested seats in the October 2026 Czech Senate election? — **Mayors and Independents** — https://en.wikipedia.org/wiki/2026_Czech_Senate_election
 - [political] What was the voter turnout in the first round of the October 2026 Czech Senate election? — **43.31%** — https://en.wikipedia.org/wiki/2026_Czech_Senate_election
 - [sports] Which country's team did Gabby Williams captain at the 2026 FIBA Women's World Cup? — **France** — https://en.wikipedia.org/wiki/Gabby_Williams

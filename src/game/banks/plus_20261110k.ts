@@ -250,7 +250,7 @@ export const PLUS_20261110K: Partial<Record<PlusCat, TriviaQ[]>> = {
 		// https://en.wikipedia.org/wiki/DNA
 		q("What sugar is found in DNA nucleotides?", ["Deoxyribose", "Ribose", "Glucose", "Fructose"], "Deoxyribose", 2),
 		// https://en.wikipedia.org/wiki/Coordinated_Universal_Time
-		q("The October 2026 CGPM vote to abolish future leap seconds took effect on which date?", ["January 1, 2027", "December 31, 2026", "May 20, 2027", "July 4, 2027"], "May 20, 2027", 1),
+		q("The October 2026 CGPM vote to abolish future leap seconds takes effect on which date?", ["January 1, 2027", "December 31, 2026", "May 20, 2027", "July 4, 2027"], "May 20, 2027", 1),
 	],
 	history: [
 		// https://en.wikipedia.org/wiki/Apollo_11
