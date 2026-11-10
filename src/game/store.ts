@@ -415,6 +415,8 @@ export type GameState = {
   buyKiosk: (id: KioskId) => void;
   /** 0.1.138: hang a patron bulb for this market cycle. One bulb, no reward. */
   buyPatron: (bulb: PatronBulb) => void;
+  /** Write the coin pocket and the save. The server replaces it when a charge is confirmed. */
+  keepPoints: (n: number) => void;
   startContract: () => void;
   toggleHq: (v?: boolean) => void;
   toggleGuide: (v?: boolean) => void;
@@ -2613,6 +2615,10 @@ export const useGame = create<GameState>((set, get) => ({
     set({ points, keys, cities, credit });
     adopting = false;
     saveNow(get);
+  },
+  keepPoints: (n) => {
+    set({ points: Math.max(0, Math.floor(n)) });
+    scheduleSave(get);
   },
   buyPatron: (bulb) => {
     const spec = patronBulb(bulb);

@@ -111,6 +111,12 @@ test("hearth polish is a look only: the charge does not touch pay", () => {
   const fn = src.slice(src.indexOf("export async function grantHearthPolish"), src.indexOf("function refused"));
   assert.doesNotMatch(fn, /HEARTH_CUT|hearthBoost|marketCoinX|keys:/);
   assert.match(src, /op.kind === "hpolish"/);
+  const client = readFileSync(new URL("./plantClient.ts", import.meta.url), "utf8");
+  const tap = client.slice(client.indexOf("export async function polishHearth"), client.indexOf("export const plantNowPlaced"));
+  assert.match(tap, /keepPoints\(before - HEARTH_POLISH_PRICE\)/);
+  assert.match(tap, /showPolish\(id, polishUntil\(now\)\)/);
+  assert.match(tap, /keepPoints\(before\)/);
+  assert.match(tap, /showPolish\(id, prevPolish\)/);
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   const block = css.slice(css.indexOf("0.1.149 hearth polish"), css.indexOf("/* 0.1.111", css.indexOf("0.1.149 hearth polish")));
   assert.match(block, /is-polished/);

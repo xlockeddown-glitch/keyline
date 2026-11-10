@@ -101,28 +101,51 @@ export async function placeHearth(): Promise<void> {
   setPlant({ busy: false, note: why[r?.reason ?? ""] ?? "Couldn't place it. Try again in a moment." });
 }
 
-/** 0.1.149: pay 8,000 coin for seven days of brighter trim. The server is the charge. */
+/** Mark one hearth polished and repaint its pin. The coin pocket is updated by the caller. */
+function showPolish(id: string, until: number | undefined) {
+  const me = state.me;
+  const hearths = myHearths(me).map((h) => (h.id === id ? { ...h, polish: until } : h));
+  const placed = state.placed.map((v) => (v.id === id ? { ...v, polish: until } : v));
+  const city = useGame.getState().cityId;
+  setHearths(city, placed);
+  setPlant({ me: { ...me, hearths }, placed });
+  useGame.setState({ hearthGen: (useGame.getState().hearthGen ?? 0) + 1 });
+}
+
+/**
+ * 0.1.149: the tap spends 8,000 and lights the trim together. A signed-in pocket then
+ * confirms with the server; if that charge is refused, both the coins and the trim come back.
+ * A guest keeps the local pocket, the same way the rest of an unsigned save spends coin.
+ */
 export async function polishHearth(id: string): Promise<void> {
-  const { HEARTH_POLISH_PRICE, polishLive } = await import("./hearthPolish");
+  const { HEARTH_POLISH_PRICE, polishLive, polishUntil } = await import("./hearthPolish");
   const h = myHearths(state.me).find((x) => x.id === id);
   const toast = (msg: string) => useGame.setState({ toast: msg });
   if (!h) return;
-  if (!walletLive()) return toast("Sign in to polish a Hearth.");
-  if (polishLive(h.polish, Date.now())) return toast("This Hearth is already polished.");
-  if (useGame.getState().points < HEARTH_POLISH_PRICE) return toast("Need 8,000 coin.");
+  const now = Date.now();
+  if (polishLive(h.polish, now)) return toast("This Hearth is already polished.");
+  const before = useGame.getState().points;
+  if (before < HEARTH_POLISH_PRICE) return toast("Need 8,000 coin.");
   if (state.busy) return;
+  const prevPolish = h.polish;
+  useGame.getState().keepPoints(before - HEARTH_POLISH_PRICE);
+  showPolish(id, polishUntil(now));
+  const paid = "Polished. Brighter trim for seven days. The cut stays 50 coin.";
+  if (!walletLive()) return toast(paid);
   setPlant({ busy: true });
   const city = useGame.getState().cityId;
   const r = await commitWallet({ kind: "hpolish", id });
-  if (r?.view) useGame.getState().adoptWallet(r.view);
-  await refreshPlaced(city);
-  if (r?.ok) {
+  if (!r?.ok) {
+    useGame.getState().keepPoints(before);
+    showPolish(id, prevPolish);
+    if (r?.view) useGame.getState().adoptWallet(r.view);
     setPlant({ busy: false });
-    toast("Polished. Brighter trim for seven days. The cut stays 50 coin.");
+    toast(r?.reason === "short-coins" ? "Need 8,000 coin." : "Couldn't polish it.");
     return;
   }
+  await refreshPlaced(city);
   setPlant({ busy: false });
-  toast(r?.reason === "short-coins" ? "Need 8,000 coin." : "Couldn't polish it.");
+  toast(paid);
 }
 
 export const plantNowPlaced = () => state.placed;
