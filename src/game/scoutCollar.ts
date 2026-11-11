@@ -5,6 +5,7 @@
  * and does not charge. The coat mask covers the whole coat, so the scarf is a CSS band
  * in that vat color. It does not recolor the coat and does not change pay.
  */
+import { SCOUTS } from "./data.ts";
 import { VAULT_PAINTS, type VaultPaint } from "./ingredients.ts";
 import type { ScoutId } from "./types.ts";
 
@@ -125,6 +126,12 @@ export function undoCollarBuy(book: CollarBook, scout: ScoutId, color: CollarCol
   const next = withoutCollar(book, scout, color);
   if (prevWorn && next.owned.includes(collarPair(scout, prevWorn))) return withCollarWorn(next, scout, prevWorn);
   return next;
+}
+
+/** True when the pocket can pay the hire and the scarf together. */
+export function collarHireBudget(points: number, scout: string): boolean {
+  const hire = isCollarScout(scout) ? SCOUTS[scout].coins : Number.POSITIVE_INFINITY;
+  return points >= hire + COLLAR_PRICE;
 }
 
 /** Pairs this device shows that the account has not charged for yet. */

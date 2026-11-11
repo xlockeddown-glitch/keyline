@@ -12,7 +12,7 @@ import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
-import { cleanCollarBook, collarOffers, collarPair, isCollarColor, isCollarScout, settleCollars, type CollarBook } from "./scoutCollar";
+import { cleanCollarBook, collarHireBudget, collarOffers, collarPair, isCollarColor, isCollarScout, settleCollars, type CollarBook } from "./scoutCollar";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
@@ -2624,7 +2624,7 @@ export const useGame = create<GameState>((set, get) => ({
         if (!isCollarScout(scout) || !isCollarColor(color)) continue;
         let r = await commitWallet({ kind: "collar", scout, color });
         // A guest hire is on this device only. Record it, then the collar, once each.
-        if (!r?.ok && r?.reason === "unowned") {
+        if (!r?.ok && r?.reason === "unowned" && collarHireBudget(get().points, scout)) {
           const hired = await commitWallet({ kind: "scout", id: scout });
           if (hired?.ok) r = await commitWallet({ kind: "collar", scout, color });
         }

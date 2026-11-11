@@ -11,7 +11,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { SCOUTS } from "./data.ts";
-import { COLLAR_COLORS, COLLAR_PRICE, COLLAR_SCOUTS, collarKey, parseCollarRows, settleCollars, undoCollarBuy } from "./scoutCollar.ts";
+import { COLLAR_COLORS, COLLAR_PRICE, COLLAR_SCOUTS, collarHireBudget, collarKey, parseCollarRows, settleCollars, undoCollarBuy } from "./scoutCollar.ts";
 import type { LocalSnap } from "./wallet.ts";
 
 function sqlOf(db: PGlite): Sql {
@@ -127,8 +127,11 @@ test("a failed buy puts the old scarf back, and sign-in does not charge a spend 
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   const fn = store.slice(store.indexOf("syncCollars: async"), store.indexOf("adoptWardrobe: (w)"));
   assert.match(fn, /spendStuck/);
-  assert.match(fn, /kind: "scout"/);
+  assert.match(fn, /collarHireBudget/);
   assert.doesNotMatch(fn, /keepPoints/);
+  assert.equal(collarHireBudget(SCOUTS.cat.coins + COLLAR_PRICE, "cat"), true);
+  assert.equal(collarHireBudget(SCOUTS.cat.coins + COLLAR_PRICE - 1, "cat"), false);
+  assert.equal(collarHireBudget(COLLAR_PRICE, "raccoon"), true);
 });
 
 test("the collar does not touch payouts", () => {
