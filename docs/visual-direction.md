@@ -1,6 +1,6 @@
 # Visual direction — HYBRID
 
-> Newer art work uses [`ART_DIRECTION.md`](ART_DIRECTION.md). That guide is proposed and not yet approved. This note still holds on one point: the map tiles stay.
+> Newer art work uses [`ART_DIRECTION.md`](ART_DIRECTION.md). The four slice rules there are approved. This note still holds on one point: the map tiles stay.
 
 
 

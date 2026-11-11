@@ -4,6 +4,15 @@
 
 The older note [`visual-direction.md`](visual-direction.md) still holds on one point: the basemap stays real OSM tiles. This file is the contract for everything drawn on top.
 
+## How a slice is made
+
+Ryan approved these four rules. They bind every art slice.
+
+1. Any art slice gets one mock image that Ryan approves before any code is written.
+2. No code-drawn CSS or SVG pieces laid over flat painted sprites. Scout collars and the house dresser failed this way, and both were dropped. Generate a dressed picture variant, or skip the slice. Pieces drawn entirely in code, like the airliner scene, are fine.
+3. The builder inspects its own 4x close-ups on every variant and fixes anything floating, blown out or misplaced before reporting.
+4. One rework round at most. If it still fails, drop the slice and tell Ryan.
+
 0.1.134 demonstrates the proposed rules on two surfaces only: the street counter and the print shop. The outfitter pin, notice board, vaults, scouts, cars and houses were left as they are.
 
 ## What the words mean in this repo
@@ -148,7 +157,7 @@ Cars, houses and scout sheets do not get `image-rendering: pixelated`.
 - Don't pixelate a car, a house, or a scout to "match" a stall.
 - Don't replace a vault SVG with a PNG in a prop slice.
 - Don't use magenta, pure `#ffff00`, or a saturated rainbow.
-- Don't claim this document is approved. Say proposed until Ryan says otherwise.
+- Don't treat the palette and silhouette notes as a new approval beyond what this file already says. The four slice rules above are approved.
 
 ## Screenshot review
 

@@ -46,7 +46,7 @@ Trivia cards live on the server (0.0.53): a lamp asks `dealTrivia` for one card 
 
 A Friday morning job grows the pool: accuracy pass on existing cards, then 5–25 new city-tagged cards from quota gaps, then publish from the live app only.
 
-Visual direction: [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md) (proposed, not yet approved) and the older hybrid note [`docs/visual-direction.md`](docs/visual-direction.md). Keep the map tiles.
+Visual direction: [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md). The four slice rules at the top of that file are approved. The older hybrid note is [`docs/visual-direction.md`](docs/visual-direction.md). Keep the map tiles.
 
 Scout idle/walk sheets: `npm run qa:sprites` fails on magenta, leftover opaque corners, 1px dropout holes, wrong frame size, or two scouts sharing one sheet.
 

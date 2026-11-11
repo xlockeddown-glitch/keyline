@@ -1,8 +1,8 @@
 ---
-description: Before any Keyline visual, sprite, map-pin, facade, UI-chrome, or generated-art change, read docs/ART_DIRECTION.md and follow it. The direction is proposed and not yet approved.
+description: Before any Keyline visual, sprite, map-pin, facade, UI-chrome, or generated-art change, read docs/ART_DIRECTION.md and follow it, including the approved slice rules.
 alwaysApply: true
 ---
 
-If this task changes how Keyline looks (sprites, map pins, facades, UI chrome, motion, or generated art), read `docs/ART_DIRECTION.md` in full before editing and follow it. `docs/visual-direction.md` does not override that guide. The direction is proposed; do not treat it as approved by Ryan.
+If this task changes how Keyline looks (sprites, map pins, facades, UI chrome, motion, or generated art), read `docs/ART_DIRECTION.md` in full before editing and follow it. `docs/visual-direction.md` does not override that guide. The four rules under "How a slice is made" are approved: one mock before code, no CSS or SVG overlay on a painted sprite, inspect your own 4x close-ups, and one rework round at most. The palette and silhouette notes stay as that file marks them.
 
 Tasks that do not change appearance — logic, trivia, wallet, tests, copy that is not on a painted surface — are not bound by the palette, pixel, or silhouette rules in that guide.
