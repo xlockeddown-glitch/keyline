@@ -3641,52 +3641,76 @@ h3 {
 .dress-set {
   position: absolute; inset: 0; pointer-events: none;
   --lamp-x: 38.2%; --lamp-y: 48%; --lamp-w: 7.6%; --lamp-h: 15.2%;
-  --win-x: 55.8%; --win-y: 50.6%; --win-w: 9.4%; --win-h: 17.2%;
-  --rail-x: 25.6%; --rail-y: 81.6%; --rail-w: 10.6%; --rail-h: 10.2%; --rail-tilt: 0deg;
-  --plate-x: 30.2%; --plate-y: 70.2%; --plate-w: 5.2%; --plate-h: 3%;
+  --win-x: 54.4%; --win-y: 51.4%; --win-w: 10.6%; --win-h: 15.6%;
+  --plate-x: 41.4%; --plate-y: 63.6%; --plate-w: 9.4%; --plate-h: 4.8%;
+  --ax: 30%; --at: 79.5%; --af: 88%;
+  --bx: 33.2%; --bt: 81.9%; --bf: 88.2%;
+  --cx: 36.8%; --ct: 84.2%; --cf: 92.4%;
+  --rx1: 29.4%; --ry1: 79.5%; --rail-len: 8.2%; --rail-angle: 25.5deg;
 }
 /* The sheet painting and the map cutout are framed differently, so each tier anchors its own door. */
 .dress-set[data-tier="row"] {
   --lamp-x: 40%; --lamp-y: 46.5%; --lamp-w: 5.2%; --lamp-h: 9%;
-  --win-x: 55.2%; --win-y: 56%; --win-w: 8%; --win-h: 10%;
-  --rail-x: 33%; --rail-y: 71%; --rail-w: 14%; --rail-h: 16%; --rail-tilt: -16deg;
-  --plate-x: 42.2%; --plate-y: 63.5%; --plate-w: 4.6%; --plate-h: 2.4%;
+  --win-x: 53%; --win-y: 57.8%; --win-w: 6.8%; --win-h: 9.4%;
+  --plate-x: 47.2%; --plate-y: 64.2%; --plate-w: 5.2%; --plate-h: 3.1%;
+  --ax: 37.5%; --at: 86.3%; --af: 94%;
+  --bx: 39.6%; --bt: 83.4%; --bf: 91.4%;
+  --cx: 41.8%; --ct: 80.9%; --cf: 89%;
+  --rx1: 37%; --ry1: 86.3%; --rail-len: 6.3%; --rail-angle: -40deg;
 }
 .dress-set[data-tier="town"] {
   --lamp-x: 52.5%; --lamp-y: 57%; --lamp-w: 5.4%; --lamp-h: 8%;
-  --win-x: 43.2%; --win-y: 57.5%; --win-w: 8%; --win-h: 10.5%;
-  --rail-x: 52%; --rail-y: 75%; --rail-w: 10%; --rail-h: 12%; --rail-tilt: 6deg;
-  --plate-x: 55.2%; --plate-y: 67.5%; --plate-w: 4.2%; --plate-h: 2.2%;
+  --win-x: 42.2%; --win-y: 65.4%; --win-w: 6.8%; --win-h: 7.2%;
+  --plate-x: 56%; --plate-y: 70.8%; --plate-w: 4.6%; --plate-h: 2.8%;
+  --ax: 45.5%; --at: 78%; --af: 84%;
+  --bx: 48%; --bt: 80.2%; --bf: 86%;
+  --cx: 50.5%; --ct: 82.4%; --cf: 88%;
+  --rx1: 44.9%; --ry1: 78%; --rail-len: 6.8%; --rail-angle: 33deg;
 }
 .dress-set[data-tier="villa"] {
   --lamp-x: 48.6%; --lamp-y: 54.5%; --lamp-w: 3.6%; --lamp-h: 8.5%;
-  --win-x: 64.2%; --win-y: 53.5%; --win-w: 7.4%; --win-h: 7.6%;
-  --rail-x: 46.5%; --rail-y: 63.5%; --rail-w: 9%; --rail-h: 7%; --rail-tilt: 2deg;
-  --plate-x: 49.6%; --plate-y: 60.8%; --plate-w: 3.4%; --plate-h: 1.8%;
+  --win-x: 61.6%; --win-y: 52.2%; --win-w: 6.4%; --win-h: 6.4%;
+  --plate-x: 54%; --plate-y: 57.4%; --plate-w: 6%; --plate-h: 2.8%;
+  --ax: 46.2%; --at: 61.4%; --af: 65%;
+  --bx: 47.5%; --bt: 61.8%; --bf: 65.5%;
+  --cx: 48.8%; --ct: 62.2%; --cf: 66%;
+  --rx1: 45.6%; --ry1: 61.4%; --rail-len: 3.5%; --rail-angle: 13deg;
 }
 .house-face .dress-set[data-tier="cottage"] {
   --lamp-x: 32%; --lamp-y: 46%; --lamp-w: 9%; --lamp-h: 16%;
   --win-x: 49%; --win-y: 47%; --win-w: 18%; --win-h: 20%;
-  --rail-x: 20%; --rail-y: 78%; --rail-w: 22%; --rail-h: 14%; --rail-tilt: 14deg;
   --plate-x: 19%; --plate-y: 62%; --plate-w: 8%; --plate-h: 4%;
+  --ax: 22%; --at: 82%; --af: 89%;
+  --bx: 27%; --bt: 83.5%; --bf: 90%;
+  --cx: 32%; --ct: 86%; --cf: 94%;
+  --rx1: 21%; --ry1: 82%; --rail-len: 12%; --rail-angle: 22deg;
 }
 .house-face .dress-set[data-tier="row"] {
   --lamp-x: 41%; --lamp-y: 52%; --lamp-w: 8%; --lamp-h: 10%;
   --win-x: 52%; --win-y: 58%; --win-w: 14%; --win-h: 14%;
-  --rail-x: 48%; --rail-y: 74%; --rail-w: 14%; --rail-h: 14%; --rail-tilt: 20deg;
   --plate-x: 40%; --plate-y: 64%; --plate-w: 7%; --plate-h: 3%;
+  --ax: 24%; --at: 86%; --af: 94%;
+  --bx: 29%; --bt: 80%; --bf: 88%;
+  --cx: 34%; --ct: 74%; --cf: 82%;
+  --rx1: 23%; --ry1: 86%; --rail-len: 14%; --rail-angle: -40deg;
 }
 .house-face .dress-set[data-tier="town"] {
   --lamp-x: 58%; --lamp-y: 58%; --lamp-w: 8%; --lamp-h: 9%;
   --win-x: 36%; --win-y: 56%; --win-w: 14%; --win-h: 14%;
-  --rail-x: 58%; --rail-y: 78%; --rail-w: 14%; --rail-h: 12%; --rail-tilt: 16deg;
   --plate-x: 59%; --plate-y: 68%; --plate-w: 6%; --plate-h: 2.6%;
+  --ax: 44%; --at: 80%; --af: 86%;
+  --bx: 49%; --bt: 83%; --bf: 90%;
+  --cx: 54%; --ct: 86%; --cf: 94%;
+  --rx1: 43%; --ry1: 80%; --rail-len: 14%; --rail-angle: 20deg;
 }
 .house-face .dress-set[data-tier="villa"] {
   --lamp-x: 52%; --lamp-y: 48%; --lamp-w: 5%; --lamp-h: 16%;
   --win-x: 64%; --win-y: 46%; --win-w: 12%; --win-h: 18%;
-  --rail-x: 42%; --rail-y: 64%; --rail-w: 16%; --rail-h: 14%; --rail-tilt: 6deg;
   --plate-x: 46%; --plate-y: 58%; --plate-w: 6%; --plate-h: 5%;
+  --ax: 44%; --at: 52%; --af: 64%;
+  --bx: 48%; --bt: 54%; --bf: 65%;
+  --cx: 52%; --ct: 56%; --cf: 66%;
+  --rx1: 43%; --ry1: 52%; --rail-len: 12%; --rail-angle: 8deg;
 }
 .dress { display: none; position: absolute; }
 .dress-set[data-dress~="lamp"] .dress-lamp,
@@ -3721,61 +3745,72 @@ h3 {
   clip-path: polygon(0 0, 100% 0, 84% 70%, 68% 100%, 50% 48%, 32% 100%, 16% 70%);
 }
 .lamp-post { display: none; }
-/* Iron balusters and a brass handrail along the steps. */
-.dress-rail { left: var(--rail-x); top: var(--rail-y); width: var(--rail-w); height: var(--rail-h); }
-.rail-bar {
-  position: absolute; left: 2%; top: 2%; width: 86%; height: 13%; border-radius: 4px;
-  background: linear-gradient(180deg, #f6e7c4, #c9a35e 38%, #6e5320);
-  box-shadow: 0 1px 0 #1a1410, inset 0 1px 0 #fff4d8;
-  transform: rotate(var(--rail-tilt)); transform-origin: left center;
-}
-.rail-post {
-  position: absolute; top: 16%; width: 5%;
+/* Iron posts on the treads, a brass handrail between them. Coordinates are percentages of the painting. */
+.dress-rail { left: 0; top: 0; width: 100%; height: 100%; }
+.dress-rail .post {
+  position: absolute; width: 3px; margin-left: -1.5px; border-radius: 1px;
   background: linear-gradient(90deg, #6a6156, #1a1410 58%, #3a342c);
-  border-radius: 1px; box-shadow: 1px 0 0 rgb(0 0 0 / 0.35);
 }
-.rail-post::after {
-  content: ""; position: absolute; left: -50%; bottom: -3%; width: 200%; height: 10%;
-  background: rgb(0 0 0 / 0.4); border-radius: 50%;
+.dress-rail .post::after {
+  content: ""; position: absolute; left: 50%; bottom: 0; width: 10px; height: 3px;
+  transform: translate(-50%, 50%); border-radius: 50%; background: rgb(0 0 0 / 0.45);
 }
-.dress-rail .rail-post:nth-child(2) { left: 4%; top: 12%; height: 86%; }
-.dress-rail .rail-post:nth-child(3) { left: 46%; top: 12%; height: 86%; }
-.dress-rail .rail-post:nth-child(4) { left: 86%; top: 12%; height: 86%; }
-.dress-rail .rail-post:nth-child(4)::before {
-  content: ""; position: absolute; left: -30%; top: -18%; width: 170%; height: 18%;
-  background: linear-gradient(180deg, #e0c788, #6e5320); border-radius: 1px;
+.dress-rail .post-a { left: var(--ax); top: var(--at); height: calc(var(--af) - var(--at)); }
+.dress-rail .post-b { left: var(--bx); top: var(--bt); height: calc(var(--bf) - var(--bt)); }
+.dress-rail .post-c { left: var(--cx); top: var(--ct); height: calc(var(--cf) - var(--ct)); }
+.dress-rail .rail-brass {
+  position: absolute; left: var(--rx1); top: var(--ry1); width: var(--rail-len); height: 4px;
+  margin-top: -2px; border-radius: 999px; transform-origin: left center; transform: rotate(var(--rail-angle));
+  background: linear-gradient(180deg, #f6e7c4, #c9a35e 46%, #6e5320);
+  box-shadow: 0 2px 1px rgb(0 0 0 / 0.45);
 }
-/* Cream cloth gathered inside the window, warm light still in the middle. */
+/* Soft cream cloth inside the glass. The warm room stays visible in the middle. */
 .dress-window { left: var(--win-x); top: var(--win-y); width: var(--win-w); height: var(--win-h); }
 .dress-window::before {
-  content: ""; position: absolute; left: 8%; right: 8%; top: 1%; height: 4.5%;
-  background: linear-gradient(180deg, #f6e7c4, #8a6a38 58%, #4a3818);
-  border-radius: 4px; box-shadow: 0 1px 0 #2a2218;
+  content: ""; position: absolute; left: 1%; right: 1%; top: 0; height: 7%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 0 50%, #f6e7c4 0 3px, transparent 3.5px),
+    radial-gradient(circle at 100% 50%, #f6e7c4 0 3px, transparent 3.5px),
+    linear-gradient(180deg, #f6e7c4, #c9a35e 42%, #6e5320);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
 }
 .dress-window .cloth {
-  position: absolute; top: 5.5%; width: 42%; height: 88%;
-  background:
-    linear-gradient(90deg, rgb(90 62 36 / 0.28), transparent 14% 86%, rgb(50 32 16 / 0.32)),
-    repeating-linear-gradient(90deg, rgb(247 241 230 / 0.94) 0 4px, rgb(196 164 122 / 0.9) 4px 6px, rgb(252 246 236 / 0.92) 6px 11px, rgb(154 116 74 / 0.92) 11px 13px);
-  box-shadow: inset 0 8px 8px rgb(255 198 120 / 0.28);
-  -webkit-mask-image: linear-gradient(#000 0 82%, transparent 100%);
-  mask-image: linear-gradient(#000 0 82%, transparent 100%);
+  position: absolute; top: 6%; width: 38%; height: 90%;
+  background: linear-gradient(90deg,
+    rgb(176 128 76 / 0.9) 0%,
+    rgb(248 232 206 / 0.74) 30%,
+    rgb(168 120 72 / 0.86) 62%,
+    rgb(236 214 180 / 0.66) 100%);
+  -webkit-mask-image: linear-gradient(#000 0 76%, transparent 100%);
+  mask-image: linear-gradient(#000 0 76%, transparent 100%);
 }
-.dress-window .cloth:first-child { left: 2%; clip-path: polygon(0 0, 78% 0, 100% 100%, 0 100%); }
-.dress-window .cloth:last-child { right: 2%; clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%); }
-/* Beveled brass plate on the door. No lettering. */
+.dress-window .cloth:first-child { left: 2%; }
+.dress-window .cloth:last-child { right: 2%; }
+/* Beveled brass plate on the brick beside the door. No lettering. */
 .dress-plate {
   left: var(--plate-x); top: var(--plate-y); width: var(--plate-w); height: var(--plate-h);
-  border-radius: 1px;
-  background: linear-gradient(158deg, #f6e7c4 0%, #e0c788 32%, #c9a35e 70%, #8a6a38);
-  box-shadow: inset 0 1px 0 #fff4d8, inset 0 -1px 0 #3a2c14, inset 1px 0 0 #f0d7a0, inset -1px 0 0 #6e5320, 0 1px 1px rgb(0 0 0 / 0.55);
+  border-radius: 2px;
+  background: linear-gradient(155deg, #fff6df 0%, #f0d7a4 16%, #e0c788 42%, #c9a35e 70%, #8a6a38 100%);
+  box-shadow:
+    inset 0 1.5px 0 #fff8e6,
+    inset 0 -2px 0 #5c4318,
+    inset 2px 0 0 #f3e2b8,
+    inset -2px 0 0 #6e5320,
+    0 2px 2px rgb(0 0 0 / 0.55),
+    0 1px 0 rgb(0 0 0 / 0.4);
+}
+.dress-plate::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 11% 50%, #fff4d8 0 1.4px, #6e5320 1.5px 2.6px, transparent 3px),
+    radial-gradient(circle at 89% 50%, #fff4d8 0 1.4px, #6e5320 1.5px 2.6px, transparent 3px);
 }
 .dress-plate::after {
-  content: ""; position: absolute; inset: 16% 10%;
+  content: ""; position: absolute; left: 20%; right: 20%; top: 38%; height: 28%;
   background:
-    radial-gradient(circle at 7% 50%, #5c4318 0 0.7px, transparent 1.2px),
-    radial-gradient(circle at 93% 50%, #5c4318 0 0.7px, transparent 1.2px),
-    linear-gradient(#2a2218, #2a2218) center / 56% 1px no-repeat;
+    linear-gradient(#3a2c14, #3a2c14) center top / 100% 1px no-repeat,
+    linear-gradient(#fff1d0, #fff1d0) center 2px / 100% 1px no-repeat;
 }
 .dresser { display: grid; gap: 10px; margin-top: 14px; }
 .dresser-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid var(--color-border); }

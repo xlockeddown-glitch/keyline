@@ -31,5 +31,5 @@ export const DRESS_TOTAL = DRESS.reduce((sum, d) => sum + d.price, 0);
 /** The four furnishings, shown only when their id is in data-dress. Positions follow data-tier. */
 export function dressMarkup(items: readonly string[] | undefined, tier: string): string {
   const dress = (items ?? []).filter(isDress).join(" ");
-  return `<span class="dress-set" data-tier="${tier}" data-dress="${dress}"><i class="dress dress-lamp"><i class="lamp-glow"></i><i class="lamp-cap"></i><i class="lamp-glass"></i><i class="lamp-post"></i></i><i class="dress dress-rail"><i class="rail-bar"></i><i class="rail-post"></i><i class="rail-post"></i><i class="rail-post"></i></i><i class="dress dress-window"><i class="cloth"></i><i class="cloth"></i></i><i class="dress dress-plate"></i></span>`;
+  return `<span class="dress-set" data-tier="${tier}" data-dress="${dress}"><i class="dress dress-lamp"><i class="lamp-glow"></i><i class="lamp-cap"></i><i class="lamp-glass"></i><i class="lamp-post"></i></i><i class="dress dress-rail"><i class="rail-brass"></i><i class="post post-a"></i><i class="post post-b"></i><i class="post post-c"></i></i><i class="dress dress-window"><i class="cloth"></i><i class="cloth"></i></i><i class="dress dress-plate"></i></span>`;
 }

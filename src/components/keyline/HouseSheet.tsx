@@ -161,10 +161,10 @@ function DressSet({ items, tier }: { items: readonly string[]; tier: string }) {
         <i className="lamp-post" />
       </i>
       <i className="dress dress-rail">
-        <i className="rail-bar" />
-        <i className="rail-post" />
-        <i className="rail-post" />
-        <i className="rail-post" />
+        <i className="rail-brass" />
+        <i className="post post-a" />
+        <i className="post post-b" />
+        <i className="post post-c" />
       </i>
       <i className="dress dress-window">
         <i className="cloth" />
