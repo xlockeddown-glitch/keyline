@@ -112,3 +112,20 @@ export function withCollarWorn(book: CollarBook, scout: ScoutId, color: CollarCo
   if (!book.owned.includes(collarPair(scout, color))) return book;
   return { owned: book.owned, worn: { ...book.worn, [scout]: color } };
 }
+
+/** Drop one pair. Other paid colors on that scout stay. */
+export function withoutCollar(book: CollarBook, scout: ScoutId, color: CollarColor): CollarBook {
+  const worn = { ...book.worn };
+  if (worn[scout] === color) delete worn[scout];
+  return cleanCollarBook({ owned: book.owned.filter((pair) => pair !== collarPair(scout, color)), worn });
+}
+
+/**
+ * The account's collars plus any this device already paid for. A sign-in must not
+ * drop a guest scarf: the first sync already kept the lower coin count.
+ */
+export function mergeCollarBooks(local: CollarBook, server: CollarBook): CollarBook {
+  const owned = [...server.owned];
+  for (const pair of local.owned) if (!owned.includes(pair)) owned.push(pair);
+  return cleanCollarBook({ owned, worn: { ...local.worn, ...server.worn } });
+}

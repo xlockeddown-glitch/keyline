@@ -12,7 +12,7 @@ import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
-import { cleanCollarBook, type CollarBook } from "./scoutCollar";
+import { cleanCollarBook, mergeCollarBooks, type CollarBook } from "./scoutCollar";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
@@ -2470,7 +2470,8 @@ export const useGame = create<GameState>((set, get) => ({
     if ("patron" in o) set({ patron: o.patron ?? null });
     let collarChanged = false;
     if (o.collars) {
-      const next = cleanCollarBook(o.collars);
+      // Union. Replacing with the server book dropped a scarf a guest had already paid for.
+      const next = mergeCollarBooks(get().collars, cleanCollarBook(o.collars));
       if (JSON.stringify(next) !== JSON.stringify(get().collars)) {
         set({ collars: next });
         collarChanged = true;
