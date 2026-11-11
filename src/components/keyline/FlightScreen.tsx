@@ -6,7 +6,7 @@ import { useGame } from "@/game/store";
 import { dealTrivia, gradeTrivia } from "@/game/triviaApi";
 import { SEEN_MAX, type PublicCard } from "@/game/triviaSchema";
 
-/** 0.1.75: painted SVG art in public/sprites/flight (airliner, airport skyline, runway, wing, clouds, farmland). */
+/** 0.1.154: Gemini takeoff in public/sprites/flight. The painted scene stays still, the pavement strip scrolls, and three poses swap (gear down, nose up, gear up). The window seat keeps its own wing and clouds. */
 const ART = "/sprites/flight/";
 const SEEN_ID = /^[A-Za-z0-9_:.~-]{1,80}$/;
 type Phase = "takeoff" | "window" | "landing";
@@ -14,8 +14,8 @@ type Reveal = { correct: boolean; answer: string };
 
 /**
  * 0.1.70 Airports: a far trip by air. Takeoff on a runway, a window seat with clouds and a Geography
- * card (dealt and graded on the server, like every card), then landing. Static SVG art layers moved by CSS
- * transforms only; nothing per-frame in JS.
+ * card (dealt and graded on the server, like every card), then landing. Art moves by CSS transforms only;
+ * nothing per-frame in JS. Landing uses the same scene, strip, and poses as takeoff.
  */
 export function FlightScreen() {
   const flight = useGame((s) => s.flight);
@@ -124,15 +124,16 @@ export function FlightScreen() {
         </div>
       ) : (
         <div className="flight-runway" aria-hidden="true">
-          <i className="flight-sun" />
-          <img className="fl-cloud r1" src={`${ART}cloud-c.svg`} alt="" draggable={false} />
-          <img className="fl-cloud r2" src={`${ART}cloud-b.svg`} alt="" draggable={false} />
-          <i className="fl-far" />
-          <div className="fl-ground-clip">
-            <i className="fl-ground" />
+          <img className="fl-scene" src={`${ART}scene.webp`} alt="" draggable={false} decoding="async" />
+          <div className="fl-strip-clip">
+            <i className="fl-strip" />
           </div>
           <i className="fl-shadow" />
-          <img className="flight-plane" src={`${ART}plane.svg`} alt="" draggable={false} />
+          <div className="fl-craft">
+            <img className="flight-plane is-down" src={`${ART}plane-down.webp`} alt="" draggable={false} decoding="async" />
+            <img className="flight-plane is-nose" src={`${ART}plane-nose.webp`} alt="" draggable={false} decoding="async" />
+            <img className="flight-plane is-up" src={`${ART}plane-up.webp`} alt="" draggable={false} decoding="async" />
+          </div>
         </div>
       )}
       <p className="flight-route">

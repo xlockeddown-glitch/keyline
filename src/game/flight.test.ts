@@ -87,6 +87,14 @@ test("wiring: the wire accepts loop and fly, the sheet offers Fly on far routes,
   assert.match(cut, /data-testid="flight-skip"/);
   assert.match(cut, /cat: "geography"/);
   assert.doesNotMatch(cut, /requestAnimationFrame/);
+  assert.match(cut, /plane-down\.webp/);
+  assert.match(cut, /plane-nose\.webp/);
+  assert.match(cut, /plane-up\.webp/);
+  assert.match(cut, /scene\.webp/);
+  assert.doesNotMatch(cut, /plane\.svg/);
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(css, /\/sprites\/flight\/runway\.webp/);
+  assert.match(css, /is-reduced \* \{ animation: none/);
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   assert.match(store, /if \(how === "fly" && !canFly\(from, to\)\) return/);
   const pkg = readFileSync(new URL("../../package.json", import.meta.url), "utf8");

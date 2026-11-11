@@ -3963,62 +3963,87 @@ h3 {
 .ladder-pick { background: var(--color-bg-elevated); color: var(--color-fg); }
 .ladder-pick option { background: var(--color-bg-elevated); color: var(--color-fg); }
 .jr-row.is-me .jr-title { color: var(--color-accent); }
-/* 0.1.70 Airports: flight cutscene. 0.1.75 art: painted SVG layers in /sprites/flight (airliner, airport skyline, perspective runway, over-wing window view). Transforms and opacity only. */
+/* 0.1.70 Airports: flight cutscene. 0.1.154: Gemini scene stays still, the pavement strip scrolls and fades into the field, and the airliner swaps gear-down / nose-up / gear-up. Durations match TAKEOFF_MS (2.6s) and LANDING_MS (2.2s). Transforms and opacity only. The window seat below is unchanged. */
 .flight-screen {
   position: fixed;
   inset: 0;
   z-index: 900;
   overflow: hidden;
-  background: linear-gradient(#2f5a96 0%, #5f8cc6 30%, #a9c4e2 55%, #f1d3ad 66%, #f7e2c4 70%);
+  background: #2a4f86;
   animation: loop-in 500ms ease-out both;
 }
 .flight-screen.is-landing { animation: flight-dusk 2.2s ease-in both; }
 @keyframes flight-dusk { to { filter: brightness(0.86) saturate(1.08); } }
-.flight-runway { position: absolute; inset: 0; --horizon: 64%; }
-.flight-sun { position: absolute; left: 70%; top: calc(var(--horizon) - 15vh); width: 26vh; height: 26vh; border-radius: 50%; transform: translate(-50%, 0); background: radial-gradient(circle, #fffaf0 0 9%, #ffe7b8cc 16%, #ffd59a55 34%, transparent 66%); }
+.flight-runway { position: absolute; inset: 0; --ground: 81%; }
+.fl-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center center; }
+.fl-strip-clip { position: absolute; left: 0; right: 0; top: 58%; bottom: 0; overflow: hidden; }
+.fl-strip {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 300%;
+  background: url("/sprites/flight/runway.webp") 0 100% / auto 100% repeat-x;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 75px);
+  mask-image: linear-gradient(to bottom, transparent, #000 75px);
+}
+.flight-screen.is-takeoff .fl-strip { animation: fl-roll 2.6s linear both; }
+.flight-screen.is-landing .fl-strip { animation: fl-roll 2.2s linear both reverse; }
+@keyframes fl-roll { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-42vw, 0, 0); } }
 .fl-cloud { position: absolute; height: auto; pointer-events: none; }
-.flight-runway .fl-cloud.r1 { left: 4%; top: 20%; width: min(70vw, 420px); opacity: .8; animation: fl-drift 40s linear infinite alternate; }
-.flight-runway .fl-cloud.r2 { right: -6%; top: 36%; width: min(40vw, 240px); opacity: .65; animation: fl-drift 30s linear -8s infinite alternate-reverse; }
-@keyframes fl-drift { to { translate: -12vw 0; } }
-.fl-far { position: absolute; left: -5%; width: 110%; bottom: calc(100% - var(--horizon)); height: clamp(84px, 17vh, 150px); background: url("/sprites/flight/far.svg") 50% 100% / auto 100% repeat-x; }
-.fl-ground-clip { position: absolute; left: 0; right: 0; top: var(--horizon); bottom: 0; overflow: hidden; }
-.fl-ground { position: absolute; top: 0; bottom: 0; left: 0; width: 400%; background: url("/sprites/flight/ground.svg") 0 0 / auto 100% repeat-x; }
-.flight-screen.is-takeoff .fl-ground { animation: fl-roll 2.6s cubic-bezier(.55, 0, .9, .6) both; }
-.flight-screen.is-landing .fl-ground { animation: fl-roll 2.2s cubic-bezier(.1, .5, .3, 1) both reverse; }
-@keyframes fl-roll { from { transform: translateX(0); } to { transform: translateX(-60%); } }
-.flight-screen.is-takeoff .fl-far { animation: fl-par 2.6s cubic-bezier(.55, 0, .9, .6) both; }
-@keyframes fl-par { to { transform: translateX(-4%); } }
-/* The plane sits on the runway: the runway's wheel line is 72% down the ground band. */
-.flight-plane {
-  position: absolute; left: 50%; width: min(86vw, 520px); height: auto;
-  top: calc(var(--horizon) + (100% - var(--horizon)) * .72); transform-origin: 55% 92%;
-  translate: -50% -94%;
-  filter: drop-shadow(0 1px 1px #0003);
+/* Wheel line is 81% down the phone, matching the approved mock (band from 58%, wheels 55% into that band). The plane is 78vw, 304px on a 390-wide phone. */
+/* The gear-down picture is in flow so the box has a height. Tailwind's img max-width would otherwise collapse it inside a sized parent. */
+.fl-craft {
+  position: absolute; left: 50%; top: var(--ground);
+  width: min(78vw, 440px);
+  translate: -50% -99%;
+  transform-origin: 50% 99%;
 }
-.fl-shadow { position: absolute; left: 50%; width: min(60vw, 360px); height: 14px; top: calc(var(--horizon) + (100% - var(--horizon)) * .72 - 7px); translate: -46% 0; border-radius: 50%; background: radial-gradient(closest-side, #000d, #0005 55%, transparent); }
-.flight-screen.is-takeoff .flight-plane { animation: fl-up 2.6s both; }
-.flight-screen.is-takeoff .fl-shadow { animation: fl-shadow-up 2.6s both; }
+.flight-plane { display: block; width: 100%; height: auto; max-width: none; }
+.flight-plane.is-nose, .flight-plane.is-up { position: absolute; left: 0; bottom: 0; width: 100%; opacity: 0; }
+.fl-shadow {
+  position: absolute; left: 50%; top: calc(var(--ground) - 5px);
+  width: min(32vw, 180px); height: 11px;
+  translate: -50% 0; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(12, 10, 8, .4), rgba(12, 10, 8, .14) 58%, transparent 74%);
+}
+.flight-screen.is-takeoff .fl-craft { animation: fl-up 2.6s linear both; }
+.flight-screen.is-takeoff .flight-plane.is-down { animation: fl-pose-down 2.6s linear both; }
+.flight-screen.is-takeoff .flight-plane.is-nose { animation: fl-pose-nose 2.6s linear both; }
+.flight-screen.is-takeoff .flight-plane.is-up { animation: fl-pose-up 2.6s linear both; }
+.flight-screen.is-takeoff .fl-shadow { animation: fl-shadow-up 2.6s linear both; }
 @keyframes fl-up {
-  0% { transform: translateX(-70vw) rotate(0deg); animation-timing-function: cubic-bezier(.3, 0, .6, 1); }
-  52% { transform: translateX(0) rotate(0deg); animation-timing-function: ease-in-out; }
-  66% { transform: translateX(6vw) rotate(-7deg); animation-timing-function: cubic-bezier(.4, 0, 1, 1); }
-  100% { transform: translate(70vw, -52vh) rotate(-13deg) scale(.62); }
+  0% { transform: translate3d(-6vw, 0, 0); }
+  38% { transform: translate3d(0, 0, 0); }
+  52% { transform: translate3d(1vw, 0, 0); }
+  66% { transform: translate3d(2vw, -26px, 0) scale(0.97); }
+  100% { transform: translate3d(0, -42vh, 0) scale(0.70); }
 }
+@keyframes fl-pose-down { 0%, 36% { opacity: 1; } 44%, 100% { opacity: 0; } }
+@keyframes fl-pose-nose { 0%, 36% { opacity: 0; } 44%, 66% { opacity: 1; } 76%, 100% { opacity: 0; } }
+@keyframes fl-pose-up { 0%, 66% { opacity: 0; } 76%, 100% { opacity: 1; } }
 @keyframes fl-shadow-up {
-  0% { transform: translateX(-70vw); opacity: 1; animation-timing-function: cubic-bezier(.3, 0, .6, 1); }
-  52% { transform: translateX(0); opacity: 1; }
-  66% { transform: translateX(6vw) scaleX(.9); opacity: .8; }
-  100% { transform: translateX(40vw) scaleX(.4); opacity: 0; }
+  0% { transform: translate3d(-6vw, 0, 0); opacity: .9; }
+  38% { transform: translate3d(0, 0, 0); opacity: .9; }
+  52% { transform: translate3d(1vw, 0, 0); opacity: .85; }
+  66% { transform: translate3d(2vw, 0, 0) scaleX(.8); opacity: .28; }
+  80%, 100% { opacity: 0; }
 }
-.flight-screen.is-landing .flight-plane { animation: fl-down 2.2s both; }
-.flight-screen.is-landing .fl-shadow { animation: fl-shadow-down 2.2s both; }
+.flight-screen.is-landing .fl-craft { animation: fl-down 2.2s linear both; }
+.flight-screen.is-landing .flight-plane.is-down { animation: fl-land-down 2.2s linear both; }
+.flight-screen.is-landing .flight-plane.is-nose { animation: fl-land-nose 2.2s linear both; }
+.flight-screen.is-landing .flight-plane.is-up { animation: fl-land-up 2.2s linear both; }
+.flight-screen.is-landing .fl-shadow { animation: fl-shadow-down 2.2s linear both; }
 @keyframes fl-down {
-  0% { transform: translate(-80vw, -46vh) rotate(4deg) scale(.6); animation-timing-function: cubic-bezier(.2, .5, .5, 1); }
-  60% { transform: translate(-8vw, -1vh) rotate(-4deg) scale(.97); animation-timing-function: ease-out; }
-  72% { transform: translate(-3vw, 0) rotate(-3deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+  0% { transform: translate3d(0, -42vh, 0) scale(0.70); }
+  34% { transform: translate3d(1vw, -26px, 0) scale(0.97); }
+  52% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(4vw, 0, 0) scale(1); }
 }
-@keyframes fl-shadow-down { 0%, 30% { opacity: 0; transform: translateX(-40vw) scaleX(.4); } 72%, 100% { opacity: 1; transform: none; } }
+@keyframes fl-land-up { 0%, 26% { opacity: 1; } 36%, 100% { opacity: 0; } }
+@keyframes fl-land-nose { 0%, 26% { opacity: 0; } 36%, 50% { opacity: 1; } 60%, 100% { opacity: 0; } }
+@keyframes fl-land-down { 0%, 50% { opacity: 0; } 60%, 100% { opacity: 1; } }
+@keyframes fl-shadow-down {
+  0%, 40% { opacity: 0; }
+  52% { opacity: .7; transform: translate3d(0, 0, 0); }
+  100% { opacity: .9; transform: translate3d(4vw, 0, 0); }
+}
 .flight-cabin {
   position: absolute; inset: 0; display: grid; place-items: center;
   background:
