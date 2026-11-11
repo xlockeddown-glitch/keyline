@@ -3638,6 +3638,8 @@ h3 {
 .house-art { display: block; width: 100%; height: auto; border-radius: 10px; }
 .house-figure, .house-face { position: relative; display: block; }
 .house-face { line-height: 0; }
+/* The map cutout is z-index 2 so it sits above its shadow. The furnishings have to paint above that sprite. */
+.house-face .dress-set { z-index: 3; }
 .dress-set {
   position: absolute; inset: 0; pointer-events: none;
   --lamp-x: 38.2%; --lamp-y: 48%; --lamp-w: 7.6%; --lamp-h: 15.2%;
