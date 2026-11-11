@@ -7,6 +7,7 @@ import { LORD_AT, STREAK_LOOKBACK, VIOLET_AT, crossed, mileCrossLabels, streakWa
 import { marketMult } from "./nightMarket.ts";
 import { cleanPatron, patronBulb, patronCycle, patronKey, patronOpen, patronUntil, type PatronBulb, type PatronHold } from "./patron.ts";
 import { HEARTH_POLISH_PRICE, cleanPolish, hearthWeek, polishKey, polishUntil, type PolishHold } from "./hearthPolish.ts";
+import { PRESS_PULL_PRICE, pressKey, pressOffer, pullBaseOwned, type PressPull } from "./pressPull.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { printLook } from "./printsServer.ts";
@@ -1355,6 +1356,8 @@ export type ClientOp =
   | { kind: "plant"; city: CityId; lat: number; lng: number; name: number; cats: string[]; v?: 1 | 2 | 3 }
   /** 0.1.149: brighter trim on one of your Hearths. One charge per seven-day window. */
   | { kind: "hpolish"; id: string }
+  /** 0.1.153: buy this Monday's press pull. The server picks the recolor from the clock. */
+  | { kind: "pull" }
   | { kind: "hurry"; min: number }
   /** 0.1.58: the Loop (crate roll + route poster). 0.1.125: `ride: false` (the instant Arrive) is refused "retired". */
   | { kind: "loop"; ride: boolean }
@@ -1393,6 +1396,8 @@ export type ClientResult = Applied & {
   patron?: PatronHold;
   /** 0.1.149: the hearth trim this charge is holding. */
   polish?: PolishHold;
+  /** 0.1.153: the recolor this week's pull granted. */
+  pull?: PressPull;
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -1410,6 +1415,7 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
 
   if (op.kind === "plant") return plantOp(sql, sessionUserId, op);
   if (op.kind === "hpolish") return grantHearthPolish(sql, sessionUserId, op.id, Date.now());
+  if (op.kind === "pull") return grantPressPull(sql, sessionUserId, Date.now());
 
   if (op.kind === "own") return ownLampOp(sql, sessionUserId, op.poi, op.free === true);
 
@@ -1960,6 +1966,31 @@ export async function grantHearthPolish(sql: Sql, sessionUserId: string, publicI
     /* the row is still this charge */
   }
   return { ...applied(r), polish: { id: publicId, week, until: storedUntil } };
+}
+
+/**
+ * 0.1.153: this Monday's press pull. 25,000 coin, one ledger row `pull:<week>`.
+ * Needs a coat or a vault skin you already own. Grants that dye and puts it on.
+ * A replay does not charge. Already owning the dye does not charge. No key and no payout moves.
+ */
+export async function grantPressPull(sql: Sql, sessionUserId: string, at: number): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  const offer = pressOffer(at);
+  const wardrobe = await loadWardrobe(sql, id);
+  if (!pullBaseOwned(wardrobe.owned, offer.job)) return refused(wallet, "unowned");
+  const dyes = await dyesOf(sql, sessionUserId);
+  const ownedDye = (offer.job === "coat" ? dyes.coats : dyes.vaults).includes(offer.color);
+  if (ownedDye) return { ...applied({ ok: true, replay: true, wallet }), pull: offer };
+  const r = await mutateWallet(sql, sessionUserId, pressKey(offer.week), (w) => {
+    if (w.coins < PRESS_PULL_PRICE) return { ok: false, reason: "short-coins" };
+    return { ...applyDelta(w, { coins: -PRESS_PULL_PRICE }), detail: JSON.stringify(offer) };
+  });
+  if (!r.ok) return applied(r);
+  const again = await dyesOf(sql, sessionUserId);
+  if (!(offer.job === "coat" ? again.coats : again.vaults).includes(offer.color)) {
+    await mutateWallet(sql, sessionUserId, `dye:${offer.job}:${offer.color}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ pull: offer.week }) }));
+  }
+  return { ...applied(r), pull: offer };
 }
 
 function refused(wallet: WalletState, reason: string): ClientResult {

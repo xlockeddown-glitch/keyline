@@ -5,6 +5,9 @@ import { useGame } from "@/game/store";
 import { PUBLISH_STAMP } from "@/version";
 import { ItemIcon } from "./ItemIcon";
 import { PaintVat } from "./PaintVat";
+import { PRESS_PULL_PRICE, pressOffer, pullBaseOwned } from "@/game/pressPull";
+import { buyPressPull } from "@/game/pressClient";
+import { PAINT_USE } from "@/game/paint";
 
 // 0.0.99: warm amber glass so the metal reads; the wrapper's data-lantern re-cases this lamp exactly like the street ones.
 const LAMP = vaultPinHtml({ tier: "amber" });
@@ -154,6 +157,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
       <figure className="print-front">
         <img src={`/sprites/print-shop.png?v=${PUBLISH_STAMP}`} alt="" />
       </figure>
+      <WeeklyPull />
       {counter ? (
         <div className="hq-row items-center">
           <div className="hq-row-copy">
@@ -177,6 +181,54 @@ export function PrintShop({ counter }: { counter: boolean }) {
       <PaintVat counter={counter} />
       {counter ? <NightPress /> : null}
     </div>
+  );
+}
+
+/** 0.1.153: one recolor a week. Same offer for everyone. Coin only, and only if you own the coat or the vault skin. */
+function WeeklyPull() {
+  const points = useGame((s) => s.points);
+  const wardrobe = useGame((s) => s.wardrobe);
+  const paints = useGame((s) => s.paints);
+  const offer = pressOffer(Date.now());
+  const base = pullBaseOwned(wardrobe.owned, offer.job);
+  const have = (offer.job === "coat" ? paints.coats : paints.vaults).includes(offer.color);
+  const short = base && !have && points < PRESS_PULL_PRICE;
+  const name = PAINT_USE[offer.color].name.replace(/ paint$/, "");
+  const title = offer.job === "coat" ? `${name} coat` : `${name} vault`;
+  return (
+    <section className="grid gap-2" data-testid="press-pull">
+      <p className="kicker mt-2">This week&apos;s pull</p>
+      <div className="hq-row items-center">
+        {offer.job === "coat" ? <CoatSwatch coat={`dye-${offer.color}`} /> : <LampSwatch skin={`paint-${offer.color}`} label={title} />}
+        <div className="hq-row-copy">
+          <p className="hq-row-title">
+            {title}
+            {have ? <span className="ml-2 kicker">Yours</span> : null}
+          </p>
+          <p className="hq-row-sub" data-testid="press-pull-note">
+            {!base
+              ? offer.job === "coat"
+                ? "Own a coat first. The pull dyes one you already have."
+                : "Own a vault skin first. The pull paints a case you already have."
+              : have
+                ? "Yours for good. It does not change pay."
+                : short
+                  ? "Need 25,000 coin."
+                  : "One look until Monday. Miss the week and this one is gone."}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-quiet shrink-0"
+          data-testid="press-pull-buy"
+          data-short={short ? "1" : undefined}
+          disabled={have}
+          onClick={() => void buyPressPull()}
+        >
+          {have ? "Yours" : "Buy · 25,000"}
+        </button>
+      </div>
+    </section>
   );
 }
 
