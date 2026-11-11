@@ -4,6 +4,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { viewerMiddleware } from "@/lib/auth/viewer-middleware";
 import { CITY_LIST, KIOSK, KIOSK_RETIRED } from "./data";
 import { PAINT_COLORS } from "./ingredients";
+import { DRESS_IDS } from "./houseDress";
 import type { ClientOp } from "./walletApply";
 import type { LegacyGrant, QuestStatus } from "./questServer";
 import { QUEST_PERIOD_KEY } from "./questPeriods";
@@ -79,6 +80,7 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("car"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("paint"), car: z.string().min(1).max(20), color: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("house"), city: City, tier: z.string().min(1).max(20) }),
+  z.object({ kind: z.literal("decor"), city: City, item: z.enum(DRESS_IDS) }),
   z.object({ kind: z.literal("home"), city: City }),
   z.object({ kind: z.literal("shop"), city: City }),
   z.object({ kind: z.literal("shopCollect"), city: City }),

@@ -3636,6 +3636,149 @@ h3 {
 .house-pin.is-home .house-pic { border-color: #9fe0a8; box-shadow: 0 0 12px rgb(255 200 110 / 0.6), 0 2px 6px rgb(0 0 0 / 0.5); }
 .house-chip { font-size: 11px; font-weight: 600; color: #f3e6c4; white-space: nowrap; padding: 1px 6px; border-radius: 999px; background: rgb(15 18 26 / 0.82); border: 1px solid rgb(232 199 122 / 0.5); }
 .house-art { display: block; width: 100%; height: auto; border-radius: 10px; }
+.house-figure, .house-face { position: relative; display: block; }
+.house-face { line-height: 0; }
+.dress-set {
+  position: absolute; inset: 0; pointer-events: none;
+  --lamp-x: 38.2%; --lamp-y: 48%; --lamp-w: 7.6%; --lamp-h: 15.2%;
+  --win-x: 55.8%; --win-y: 50.6%; --win-w: 9.4%; --win-h: 17.2%;
+  --rail-x: 25.6%; --rail-y: 81.6%; --rail-w: 10.6%; --rail-h: 10.2%; --rail-tilt: 0deg;
+  --plate-x: 30.2%; --plate-y: 70.2%; --plate-w: 5.2%; --plate-h: 3%;
+}
+/* The sheet painting and the map cutout are framed differently, so each tier anchors its own door. */
+.dress-set[data-tier="row"] {
+  --lamp-x: 40%; --lamp-y: 46.5%; --lamp-w: 5.2%; --lamp-h: 9%;
+  --win-x: 55.2%; --win-y: 56%; --win-w: 8%; --win-h: 10%;
+  --rail-x: 33%; --rail-y: 71%; --rail-w: 14%; --rail-h: 16%; --rail-tilt: -16deg;
+  --plate-x: 42.2%; --plate-y: 63.5%; --plate-w: 4.6%; --plate-h: 2.4%;
+}
+.dress-set[data-tier="town"] {
+  --lamp-x: 52.5%; --lamp-y: 57%; --lamp-w: 5.4%; --lamp-h: 8%;
+  --win-x: 43.2%; --win-y: 57.5%; --win-w: 8%; --win-h: 10.5%;
+  --rail-x: 52%; --rail-y: 75%; --rail-w: 10%; --rail-h: 12%; --rail-tilt: 6deg;
+  --plate-x: 55.2%; --plate-y: 67.5%; --plate-w: 4.2%; --plate-h: 2.2%;
+}
+.dress-set[data-tier="villa"] {
+  --lamp-x: 48.6%; --lamp-y: 54.5%; --lamp-w: 3.6%; --lamp-h: 8.5%;
+  --win-x: 64.2%; --win-y: 53.5%; --win-w: 7.4%; --win-h: 7.6%;
+  --rail-x: 46.5%; --rail-y: 63.5%; --rail-w: 9%; --rail-h: 7%; --rail-tilt: 2deg;
+  --plate-x: 49.6%; --plate-y: 60.8%; --plate-w: 3.4%; --plate-h: 1.8%;
+}
+.house-face .dress-set[data-tier="cottage"] {
+  --lamp-x: 32%; --lamp-y: 46%; --lamp-w: 9%; --lamp-h: 16%;
+  --win-x: 49%; --win-y: 47%; --win-w: 18%; --win-h: 20%;
+  --rail-x: 20%; --rail-y: 78%; --rail-w: 22%; --rail-h: 14%; --rail-tilt: 14deg;
+  --plate-x: 19%; --plate-y: 62%; --plate-w: 8%; --plate-h: 4%;
+}
+.house-face .dress-set[data-tier="row"] {
+  --lamp-x: 41%; --lamp-y: 52%; --lamp-w: 8%; --lamp-h: 10%;
+  --win-x: 52%; --win-y: 58%; --win-w: 14%; --win-h: 14%;
+  --rail-x: 48%; --rail-y: 74%; --rail-w: 14%; --rail-h: 14%; --rail-tilt: 20deg;
+  --plate-x: 40%; --plate-y: 64%; --plate-w: 7%; --plate-h: 3%;
+}
+.house-face .dress-set[data-tier="town"] {
+  --lamp-x: 58%; --lamp-y: 58%; --lamp-w: 8%; --lamp-h: 9%;
+  --win-x: 36%; --win-y: 56%; --win-w: 14%; --win-h: 14%;
+  --rail-x: 58%; --rail-y: 78%; --rail-w: 14%; --rail-h: 12%; --rail-tilt: 16deg;
+  --plate-x: 59%; --plate-y: 68%; --plate-w: 6%; --plate-h: 2.6%;
+}
+.house-face .dress-set[data-tier="villa"] {
+  --lamp-x: 52%; --lamp-y: 48%; --lamp-w: 5%; --lamp-h: 16%;
+  --win-x: 64%; --win-y: 46%; --win-w: 12%; --win-h: 18%;
+  --rail-x: 42%; --rail-y: 64%; --rail-w: 16%; --rail-h: 14%; --rail-tilt: 6deg;
+  --plate-x: 46%; --plate-y: 58%; --plate-w: 6%; --plate-h: 5%;
+}
+.dress { display: none; position: absolute; }
+.dress-set[data-dress~="lamp"] .dress-lamp,
+.dress-set[data-dress~="rail"] .dress-rail,
+.dress-set[data-dress~="window"] .dress-window,
+.dress-set[data-dress~="plate"] .dress-plate { display: block; }
+/* Brass porch lamp over the painted lantern: hood, warm glass, a short post. */
+.dress-lamp { left: var(--lamp-x); top: var(--lamp-y); width: var(--lamp-w); height: var(--lamp-h); }
+.lamp-glow {
+  position: absolute; left: -30%; top: 8%; width: 160%; height: 90%; border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 206 120 / 0.55), rgb(255 160 60 / 0.18) 55%, transparent 72%);
+  mix-blend-mode: screen;
+}
+.lamp-cap {
+  position: absolute; left: 18%; top: 2%; width: 64%; height: 26%;
+  background: linear-gradient(180deg, #f6e7c4, #c9a35e 36%, #6e5320);
+  clip-path: polygon(50% 0, 88% 34%, 100% 100%, 0 100%, 12% 34%);
+}
+.lamp-glass {
+  position: absolute; left: 22%; top: 26%; width: 56%; height: 46%;
+  border-radius: 3%;
+  background:
+    linear-gradient(100deg, transparent 30%, rgb(255 250 230 / 0.9) 46%, transparent 60%),
+    linear-gradient(#6e5320, #6e5320) 16% 0 / 7% 100% no-repeat,
+    linear-gradient(#6e5320, #6e5320) 77% 0 / 7% 100% no-repeat,
+    radial-gradient(ellipse at 50% 46%, #fff3cc, #e8a040 58%, #8a5418 90%);
+  box-shadow: inset 0 0 0 1px #5c4318, 0 0 12px rgb(255 180 60 / 0.9);
+}
+.lamp-glass::after {
+  content: ""; position: absolute; left: -6%; bottom: -18%; width: 112%; height: 24%;
+  background: linear-gradient(180deg, #e0c788, #6e5320);
+  clip-path: polygon(0 0, 100% 0, 84% 70%, 68% 100%, 50% 48%, 32% 100%, 16% 70%);
+}
+.lamp-post { display: none; }
+/* Iron balusters and a brass handrail along the steps. */
+.dress-rail { left: var(--rail-x); top: var(--rail-y); width: var(--rail-w); height: var(--rail-h); }
+.rail-bar {
+  position: absolute; left: 2%; top: 2%; width: 86%; height: 13%; border-radius: 4px;
+  background: linear-gradient(180deg, #f6e7c4, #c9a35e 38%, #6e5320);
+  box-shadow: 0 1px 0 #1a1410, inset 0 1px 0 #fff4d8;
+  transform: rotate(var(--rail-tilt)); transform-origin: left center;
+}
+.rail-post {
+  position: absolute; top: 16%; width: 5%;
+  background: linear-gradient(90deg, #6a6156, #1a1410 58%, #3a342c);
+  border-radius: 1px; box-shadow: 1px 0 0 rgb(0 0 0 / 0.35);
+}
+.rail-post::after {
+  content: ""; position: absolute; left: -50%; bottom: -3%; width: 200%; height: 10%;
+  background: rgb(0 0 0 / 0.4); border-radius: 50%;
+}
+.dress-rail .rail-post:nth-child(2) { left: 4%; top: 12%; height: 86%; }
+.dress-rail .rail-post:nth-child(3) { left: 46%; top: 12%; height: 86%; }
+.dress-rail .rail-post:nth-child(4) { left: 86%; top: 12%; height: 86%; }
+.dress-rail .rail-post:nth-child(4)::before {
+  content: ""; position: absolute; left: -30%; top: -18%; width: 170%; height: 18%;
+  background: linear-gradient(180deg, #e0c788, #6e5320); border-radius: 1px;
+}
+/* Cream cloth gathered inside the window, warm light still in the middle. */
+.dress-window { left: var(--win-x); top: var(--win-y); width: var(--win-w); height: var(--win-h); }
+.dress-window::before {
+  content: ""; position: absolute; left: 8%; right: 8%; top: 1%; height: 4.5%;
+  background: linear-gradient(180deg, #f6e7c4, #8a6a38 58%, #4a3818);
+  border-radius: 4px; box-shadow: 0 1px 0 #2a2218;
+}
+.dress-window .cloth {
+  position: absolute; top: 5.5%; width: 42%; height: 88%;
+  background:
+    linear-gradient(90deg, rgb(90 62 36 / 0.28), transparent 14% 86%, rgb(50 32 16 / 0.32)),
+    repeating-linear-gradient(90deg, rgb(247 241 230 / 0.94) 0 4px, rgb(196 164 122 / 0.9) 4px 6px, rgb(252 246 236 / 0.92) 6px 11px, rgb(154 116 74 / 0.92) 11px 13px);
+  box-shadow: inset 0 8px 8px rgb(255 198 120 / 0.28);
+  -webkit-mask-image: linear-gradient(#000 0 82%, transparent 100%);
+  mask-image: linear-gradient(#000 0 82%, transparent 100%);
+}
+.dress-window .cloth:first-child { left: 2%; clip-path: polygon(0 0, 78% 0, 100% 100%, 0 100%); }
+.dress-window .cloth:last-child { right: 2%; clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%); }
+/* Beveled brass plate on the door. No lettering. */
+.dress-plate {
+  left: var(--plate-x); top: var(--plate-y); width: var(--plate-w); height: var(--plate-h);
+  border-radius: 1px;
+  background: linear-gradient(158deg, #f6e7c4 0%, #e0c788 32%, #c9a35e 70%, #8a6a38);
+  box-shadow: inset 0 1px 0 #fff4d8, inset 0 -1px 0 #3a2c14, inset 1px 0 0 #f0d7a0, inset -1px 0 0 #6e5320, 0 1px 1px rgb(0 0 0 / 0.55);
+}
+.dress-plate::after {
+  content: ""; position: absolute; inset: 16% 10%;
+  background:
+    radial-gradient(circle at 7% 50%, #5c4318 0 0.7px, transparent 1.2px),
+    radial-gradient(circle at 93% 50%, #5c4318 0 0.7px, transparent 1.2px),
+    linear-gradient(#2a2218, #2a2218) center / 56% 1px no-repeat;
+}
+.dresser { display: grid; gap: 10px; margin-top: 14px; }
+.dresser-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid var(--color-border); }
 .house-thumb { float: right; width: 96px; height: 72px; object-fit: cover; border-radius: 8px; margin: 0 0 6px 10px; }
 .house-drive { display: flex; align-items: center; gap: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgb(255 255 255 / 0.04); border: 1px dashed rgb(232 199 122 / 0.35); }
 .house-drive img { width: 168px; height: auto; }

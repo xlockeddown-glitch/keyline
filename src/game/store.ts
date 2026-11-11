@@ -10,6 +10,7 @@ import { carOf, driveOf, isCarId, type CarId } from "./cars";
 import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
 import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
+import { dressOf, isDress, type DressId } from "./houseDress";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
@@ -375,6 +376,8 @@ export type GameState = {
   buyCar: (id: CarId) => void;
   paintCar: (id: CarId, color: string) => void;
   buyHouse: (city: CityId, tier: HouseTier) => void;
+  /** 0.1.154: one dresser piece on a house in this city. Once. Look only. */
+  buyDress: (city: CityId, item: DressId) => void;
   turnKey: (city: CityId) => void;
   setHouseOpen: (open: boolean) => void;
   setSkinsOpen: (open: boolean) => void;
@@ -986,7 +989,10 @@ function cleanHouses(v: unknown): Partial<Record<CityId, HouseState>> {
   const out: Partial<Record<CityId, HouseState>> = {};
   if (v && typeof v === "object")
     for (const [k, h] of Object.entries(v as Record<string, { tier?: unknown; items?: unknown }>))
-      if (k in CITIES && h && isHouseTier(h.tier)) out[k as CityId] = { tier: h.tier, ...(Array.isArray(h.items) ? { items: h.items.filter((x) => typeof x === "string") } : {}) };
+      if (k in CITIES && h && isHouseTier(h.tier)) {
+        const items = Array.isArray(h.items) ? h.items.filter((x): x is DressId => typeof x === "string" && isDress(x)) : [];
+        out[k as CityId] = { tier: h.tier, ...(items.length ? { items } : {}) };
+      }
   return out;
 }
 
@@ -2297,6 +2303,31 @@ export const useGame = create<GameState>((set, get) => ({
     pushOp({ kind: "house", city, tier: def.id }, () => set(before));
     sfx.craft();
     flashToast(set, get, owned ? `Upgraded to the ${def.name}.` : `The ${def.name} is yours! Open ${HOME_LAMPS} vaults here, then turn the key for your daily key.`, 2400);
+    scheduleSave(get);
+  },
+  buyDress: (city, item) => {
+    const piece = dressOf(item);
+    if (!piece) return;
+    const st = get();
+    const house = st.houses[city];
+    if (!house) {
+      flashToast(set, get, "Own a house here first.", 1600);
+      return;
+    }
+    if ((house.items ?? []).includes(piece.id)) {
+      flashToast(set, get, "Already on this door.", 1400);
+      return;
+    }
+    if (st.points < piece.price) {
+      flashToast(set, get, `Need ${piece.price.toLocaleString("en-US")} coin.`, 1600);
+      return;
+    }
+    const before = { houses: st.houses, points: st.points };
+    const items = [...(house.items ?? []), piece.id];
+    set({ points: st.points - piece.price, houses: { ...st.houses, [city]: { ...house, items } } });
+    pushOp({ kind: "decor", city, item: piece.id }, () => set(before));
+    sfx.craft();
+    flashToast(set, get, `${piece.name} is on the door. The key pays the same.`, 2000);
     scheduleSave(get);
   },
   turnKey: (city) => {

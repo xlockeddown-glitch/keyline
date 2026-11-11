@@ -12,6 +12,7 @@ import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { printLook } from "./printsServer.ts";
 import { HOME_LAMPS, KEY_MATCHES, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
+import { dressKey, dressOf, isDress } from "./houseDress.ts";
 import { cityDay } from "./vaultStack.ts";
 import { PAINT_COLORS, type PaintColor } from "./ingredients.ts";
 import { paintCost, type PaintBench, type PaintJob } from "./paint.ts";
@@ -580,7 +581,15 @@ export async function housesOf(sql: Sql, userId: string): Promise<Partial<Record
     const [, city, tier] = r.op_key.split(":");
     if (!city || !(city in CITIES) || !isHouseTier(tier)) continue;
     const c = city as CityId;
-    if (houseRank(tier) > houseRank(out[c]?.tier)) out[c] = { tier };
+    if (houseRank(tier) > houseRank(out[c]?.tier)) out[c] = { tier, ...(out[c]?.items ? { items: out[c]!.items } : {}) };
+  }
+  const decor = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"decor:%"}`;
+  for (const r of decor) {
+    const [, city, item] = r.op_key.split(":");
+    if (!city || !(city in CITIES) || !item || !isDress(item) || !out[city as CityId]) continue;
+    const c = city as CityId;
+    const items = out[c]!.items ?? [];
+    if (!items.includes(item)) out[c] = { ...out[c]!, items: [...items, item] };
   }
   return out;
 }
@@ -1340,6 +1349,8 @@ export type ClientOp =
   | { kind: "car"; id: string }
   | { kind: "paint"; car: string; color: string }
   | { kind: "house"; city: CityId; tier: string }
+  /** 0.1.154: one dresser piece on a house you own. Once per city. */
+  | { kind: "decor"; city: CityId; item: string }
   | { kind: "home"; city: CityId }
   /** 0.1.59 Lantern Shop: buy one in a city; collect its waiting coin. */
   | { kind: "shop"; city: CityId }
@@ -1399,6 +1410,25 @@ export type ClientResult = Applied & {
   /** 0.1.153: the recolor this week's pull granted. */
   pull?: PressPull;
 };
+
+/**
+ * 0.1.154: one dresser piece on a house you own. `decor:<city>:<item>`, once.
+ * A replay does not charge. No key and no payout moves.
+ */
+export async function grantHouseDress(sql: Sql, sessionUserId: string, city: CityId, item: string): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  const piece = dressOf(item);
+  if (!piece || !(city in CITIES)) return refused(wallet, "unknown");
+  const house = (await housesOf(sql, sessionUserId))[city];
+  if (!house) return refused(wallet, "unowned");
+  const held = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${dressKey(city, piece.id)} limit 1`;
+  if (held.length) return applied({ ok: true, replay: true, wallet });
+  const r = await mutateWallet(sql, sessionUserId, dressKey(city, piece.id), (w) => {
+    if (w.coins < piece.price) return { ok: false, reason: "short-coins" };
+    return { ...applyDelta(w, { coins: -piece.price }), detail: JSON.stringify({ city, item: piece.id }) };
+  });
+  return applied(r);
+}
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
@@ -1580,6 +1610,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   // 0.1.12: buy a house, or step up: any order, the difference in price, never down. Signed-in only (sync above).
+  if (op.kind === "decor") return grantHouseDress(sql, sessionUserId, op.city, op.item);
+
   if (op.kind === "house") {
     const def = houseOf(op.tier);
     if (!def || !(op.city in CITIES)) return refused(wallet, "unknown");

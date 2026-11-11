@@ -4,6 +4,7 @@ import { carOf } from "@/game/cars";
 import { carSprite } from "@/game/carPaint";
 import { TIER_LABEL } from "@/game/data";
 import type { Tier } from "@/game/types";
+import { DRESS } from "@/game/houseDress";
 import { HOUSES, HOME_LAMPS, KEY_MATCHES, houseArt, houseCost, houseOf, lotOf } from "@/game/houses";
 import { useGame } from "@/game/store";
 import { cityDay } from "@/game/vaultStack";
@@ -22,6 +23,7 @@ export function HouseSheet() {
   const carOn = useGame((s) => s.carOn);
   const paint = useGame((s) => s.carPaint);
   const buyHouse = useGame((s) => s.buyHouse);
+  const buyDress = useGame((s) => s.buyDress);
   const turnKey = useGame((s) => s.turnKey);
   useSheetOpen(open);
   if (!open) return null;
@@ -38,6 +40,7 @@ export function HouseSheet() {
           <div>
             <p className="kicker">{owned ? "Your house" : "House for sale"} · {lot.name}</p>
             <h2 className="font-display text-2xl">{owned ? owned.name : "Buy a house here"}</h2>
+            <p className="mt-1 font-display text-lg tabular-nums" data-testid="house-coin">{points.toLocaleString("en-US")} coin</p>
             <p className="mt-1 text-sm text-pretty text-fg-muted">
               {owned
                 ? `Once a day: open ${HOME_LAMPS} vaults in this city, then turn the key for ${keyPay(owned)}.`
@@ -51,7 +54,37 @@ export function HouseSheet() {
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {owned ? (
             <div className="house-owned" data-testid="house-owned">
-              <img className="house-art" src={houseArt(owned.id)} alt="" width={480} height={360} />
+              <div className="house-figure" data-testid="house-figure">
+                <img className="house-art" src={houseArt(owned.id)} alt="" width={480} height={360} />
+                <DressSet items={house?.items ?? []} tier={owned.id} />
+              </div>
+              {owned ? (
+                <div className="dresser" data-testid="dresser">
+                  <p className="kicker">Dresser</p>
+                  <p className="text-xs text-pretty text-fg-subtle">Look only. The key still pays the same.</p>
+                  {DRESS.map((d) => {
+                    const have = (house?.items ?? []).includes(d.id);
+                    const short = !have && points < d.price;
+                    return (
+                      <div key={d.id} className="dresser-row">
+                        <div className="min-w-0">
+                          <p className="font-display text-base leading-tight">{d.name}</p>
+                          <p className="text-xs text-fg-muted">{d.blurb}</p>
+                          {short ? <p className="text-xs text-fg-subtle">Not enough coin yet</p> : null}
+                        </div>
+                        <button
+                          type="button"
+                          className={`btn ${have ? "btn-ghost is-worn" : short ? "btn-quiet" : "btn-primary"} shrink-0 px-3 text-xs`}
+                          data-testid={`dress-${d.id}`}
+                          onClick={() => buyDress(cityId, d.id)}
+                        >
+                          {have ? "On the door" : d.price.toLocaleString("en-US")}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               <div className="house-drive" data-testid="house-drive">
                 <span className="kicker">Drive</span>
                 {car ? (
@@ -118,6 +151,30 @@ export function HouseSheet() {
 }
 
 /** 0.1.42: what the daily key pays, e.g. "2 Amber matches + 25,000 coins". */
+function DressSet({ items, tier }: { items: readonly string[]; tier: string }) {
+  return (
+    <span className="dress-set" data-tier={tier} data-dress={items.join(" ")} aria-hidden>
+      <i className="dress dress-lamp">
+        <i className="lamp-glow" />
+        <i className="lamp-cap" />
+        <i className="lamp-glass" />
+        <i className="lamp-post" />
+      </i>
+      <i className="dress dress-rail">
+        <i className="rail-bar" />
+        <i className="rail-post" />
+        <i className="rail-post" />
+        <i className="rail-post" />
+      </i>
+      <i className="dress dress-window">
+        <i className="cloth" />
+        <i className="cloth" />
+      </i>
+      <i className="dress dress-plate" />
+    </span>
+  );
+}
+
 function keyPay(h: { match: Tier; keyCoin: number }) {
   return `${KEY_MATCHES} ${TIER_LABEL[h.match]} keys + ${h.keyCoin.toLocaleString("en-US")} coins`;
 }

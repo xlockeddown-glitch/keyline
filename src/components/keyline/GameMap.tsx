@@ -6,6 +6,7 @@ import { anyPois, livePois } from "@/game/nightMarket";
 import { DEALER_REACH_M, carOf, carPace, dealerOf, dealerTap } from "@/game/cars";
 import { lampFromRide, rideOf, seatIsOwnCar, trimToReach } from "@/game/carReach";
 import { factoryColor } from "@/game/carPaint";
+import { dressMarkup } from "@/game/houseDress";
 import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
 import { SkinSheet } from "./SkinSheet";
@@ -527,7 +528,7 @@ export function GameMap() {
     const m = L.marker([houseDoor.current.lat, houseDoor.current.lng], {
       icon: L.divIcon({
         className: "",
-        html: `<div class="house-pin house-map${mine ? " is-home" : ""}" data-testid="house-pin" data-tier="${mine ? tier : ""}" style="--house-w:${houseWidthPx(tier)}px"><i class="house-shadow" aria-hidden="true"></i><i class="house-glow" aria-hidden="true"></i><img class="house-sprite" src="${houseMapArt(tier)}" alt="" draggable="false"><span class="house-chip">${chip}</span></div>`,
+        html: `<div class="house-pin house-map${mine ? " is-home" : ""}" data-testid="house-pin" data-tier="${mine ? tier : ""}" style="--house-w:${houseWidthPx(tier)}px"><i class="house-shadow" aria-hidden="true"></i><i class="house-glow" aria-hidden="true"></i><span class="house-face"><img class="house-sprite" src="${houseMapArt(tier)}" alt="" draggable="false">${mine ? dressMarkup(mine.items, tier) : ""}</span><span class="house-chip">${chip}</span></div>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       }),
