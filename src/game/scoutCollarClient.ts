@@ -1,7 +1,7 @@
 /** 0.1.154: buy or wear a scout collar. The tap spends 12,000 and puts the scarf on together. */
 import { SCOUTS } from "./data";
 import { sfx } from "./audio";
-import { COLLAR_PRICE, collarPair, guestCollarPaid, isCollarColor, isCollarScout, undoCollarBuy, withCollar, withCollarWorn, type CollarColor } from "./scoutCollar";
+import { COLLAR_PRICE, collarPair, isCollarColor, isCollarScout, undoCollarBuy, withCollar, withCollarWorn, type CollarColor } from "./scoutCollar";
 import { useGame } from "./store";
 import type { ScoutId } from "./types";
 import { commitWallet, walletLive } from "./walletClient";
@@ -60,10 +60,7 @@ async function buyScoutCollarNow(scout: string, color: string): Promise<void> {
   useGame.getState().setCollars(withCollar(book, scout as ScoutId, color));
   useGame.getState().keepPoints(st.points - COLLAR_PRICE);
   const paid = `${SCOUTS[scout].name} wears a ${color} collar. It does not change pay.`;
-  if (!walletLive()) {
-    guestCollarPaid.add(key);
-    return toast(paid);
-  }
+  if (!walletLive()) return toast(paid);
   const r = await commitWallet({ kind: "collar", scout, color });
   if (!r?.ok) {
     useGame.getState().setCollars(undoCollarBuy(useGame.getState().collars, scout, color, prevWorn));

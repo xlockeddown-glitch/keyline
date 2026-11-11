@@ -12,7 +12,7 @@ import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
-import { COLLAR_PRICE, cleanCollarBook, collarOffers, collarPair, guestCollarPaid, isCollarColor, isCollarScout, withCollar, withCollarWorn, type CollarBook } from "./scoutCollar";
+import { cleanCollarBook, collarOffers, collarPair, isCollarColor, isCollarScout, settleCollars, type CollarBook } from "./scoutCollar";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
@@ -970,8 +970,8 @@ function wornPicks(s: GameState): WornPicks {
 
 /** 0.1.105: the account's paint bench from the last sign-in sync, waiting for syncDyes. */
 let accountDyes: ServerBench | null = null;
-/** 0.1.154: scarves this device had that the account had not charged for, offered once sign-in is live. */
-let collarBackfill: { pairs: string[]; worn: CollarBook["worn"] } | null = null;
+/** 0.1.154: the account collar book from the last sign-in, applied by syncCollars without wiping the save first. */
+let accountCollars: CollarBook | null = null;
 
 function cleanServerBench(v: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }): ServerBench {
   return { ...cleanPaint(v), rows: Number(v.rows) || 0 };
@@ -2472,16 +2472,7 @@ export const useGame = create<GameState>((set, get) => ({
     for (const x of o.scouts) serverOwnedScouts.add(x);
     if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
     if ("patron" in o) set({ patron: o.patron ?? null });
-    let collarChanged = false;
-    if (o.collars) {
-      // The account book is the one that was charged. Local-only pairs are offered in syncCollars.
-      const serverBook = cleanCollarBook(o.collars);
-      collarBackfill = { pairs: collarOffers(get().collars, serverBook), worn: get().collars.worn };
-      if (JSON.stringify(serverBook) !== JSON.stringify(get().collars)) {
-        set({ collars: serverBook });
-        collarChanged = true;
-      }
-    }
+    if (o.collars) accountCollars = cleanCollarBook(o.collars);
     if (o.cans) set({ carCans: o.cans.filter((x) => parseCan(x)) });
     if (o.houses) set({ houses: cleanHouses(o.houses) });
     if (o.homeClaims) set({ homeClaims: o.homeClaims.filter((x) => typeof x === "string") });
@@ -2496,10 +2487,7 @@ export const useGame = create<GameState>((set, get) => ({
     const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
     const lucky = st.lucky || o.charms.includes("lucky");
     const cloths = Array.from(new Set([...(st.quests.cloths ?? []), ...(o.cloths as typeof st.quests.cloths)]));
-    if (scouts.length === st.scouts.length && lucky === st.lucky && cloths.length === (st.quests.cloths ?? []).length) {
-      if (collarChanged) saveNow(get);
-      return;
-    }
+    if (scouts.length === st.scouts.length && lucky === st.lucky && cloths.length === (st.quests.cloths ?? []).length) return;
     set({ scouts, lucky, quests: { ...st.quests, cloths } });
     saveNow(get);
   },
@@ -2621,34 +2609,32 @@ export const useGame = create<GameState>((set, get) => ({
     }
   },
   syncCollars: async (localCoins) => {
-    const offer = collarBackfill;
-    if (!offer || !walletLive()) return;
-    collarBackfill = null;
-    let book = get().collars;
-    for (const pair of offer.pairs) {
-      const split = pair.indexOf(":");
-      const scout = pair.slice(0, split);
-      const color = pair.slice(split + 1);
-      if (!isCollarScout(scout) || !isCollarColor(color)) continue;
-      const r = await commitWallet({ kind: "collar", scout, color });
-      if (r?.ok) {
-        book = withCollar(book, scout, color);
-        continue;
-      }
-      // The guest spend only stuck when this device's lower count won the first sync.
-      if (r?.reason === "short-coins" && guestCollarPaid.has(pair) && get().points <= localCoins) {
-        useGame.getState().keepPoints(get().points + COLLAR_PRICE);
-        guestCollarPaid.delete(pair);
+    const serverBook = accountCollars;
+    if (!serverBook || !walletLive()) return;
+    accountCollars = null;
+    const local = get().collars;
+    // First sync keeps the higher pocket. A lower local count means the guest spend already stuck.
+    const spendStuck = get().points <= localCoins;
+    const charged: string[] = [];
+    if (!spendStuck) {
+      for (const pair of collarOffers(local, serverBook)) {
+        const split = pair.indexOf(":");
+        const scout = pair.slice(0, split);
+        const color = pair.slice(split + 1);
+        if (!isCollarScout(scout) || !isCollarColor(color)) continue;
+        const r = await commitWallet({ kind: "collar", scout, color });
+        if (r?.ok) charged.push(pair);
       }
     }
-    for (const scout of Object.keys(offer.worn)) {
+    const book = settleCollars(local, serverBook, spendStuck, charged);
+    for (const scout of Object.keys(book.worn)) {
       if (!isCollarScout(scout)) continue;
-      const color = offer.worn[scout];
-      if (!color || !book.owned.includes(collarPair(scout, color))) continue;
-      book = withCollarWorn(book, scout, color);
+      const color = book.worn[scout];
+      const pair = color ? collarPair(scout, color) : "";
+      if (!color || (!serverBook.owned.includes(pair) && !charged.includes(pair))) continue;
       await commitWallet({ kind: "collarOn", scout, color });
     }
-    if (JSON.stringify(book) !== JSON.stringify(get().collars)) useGame.getState().setCollars(book);
+    if (JSON.stringify(book) !== JSON.stringify(local)) useGame.getState().setCollars(book);
   },
   adoptWardrobe: (w) => {
     const next = cleanWardrobe(w);

@@ -132,5 +132,17 @@ export function collarOffers(local: CollarBook, server: CollarBook): string[] {
   return local.owned.filter((pair) => !server.owned.includes(pair));
 }
 
-/** Guest buys this session. Sign-in offers each one to the account; it is not a free scarf. */
-export const guestCollarPaid = new Set<string>();
+/**
+ * Sign-in book. When the guest's lower pocket won the first sync, those scarves stay and are not
+ * charged again. When the account pocket is higher, only pairs the account just charged stay.
+ */
+export function settleCollars(local: CollarBook, server: CollarBook, spendStuck: boolean, charged: readonly string[]): CollarBook {
+  const owned = [...server.owned];
+  const keep = spendStuck ? collarOffers(local, server) : charged;
+  for (const pair of keep) if (!owned.includes(pair)) owned.push(pair);
+  const worn = { ...server.worn };
+  for (const [scout, color] of Object.entries(local.worn)) {
+    if (isCollarScout(scout) && isCollarColor(color) && owned.includes(collarPair(scout, color))) worn[scout] = color;
+  }
+  return cleanCollarBook({ owned, worn });
+}

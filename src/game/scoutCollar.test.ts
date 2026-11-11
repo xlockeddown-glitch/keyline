@@ -11,7 +11,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { SCOUTS } from "./data.ts";
-import { COLLAR_COLORS, COLLAR_PRICE, COLLAR_SCOUTS, collarKey, collarOffers, parseCollarRows, undoCollarBuy } from "./scoutCollar.ts";
+import { COLLAR_COLORS, COLLAR_PRICE, COLLAR_SCOUTS, collarKey, parseCollarRows, settleCollars, undoCollarBuy } from "./scoutCollar.ts";
 import type { LocalSnap } from "./wallet.ts";
 
 function sqlOf(db: PGlite): Sql {
@@ -111,17 +111,23 @@ test("scout collar: 12,000 once per color, a second tap is free, an unhired scou
   assert.equal((await pocket()).coins, 36_000);
 });
 
-test("a failed buy puts the old scarf back, and a guest pair is charged on the account", () => {
+test("a failed buy puts the old scarf back, and sign-in does not charge a spend that already stuck", () => {
   const undone = undoCollarBuy({ owned: ["raccoon:amber", "raccoon:red"], worn: { raccoon: "red" } }, "raccoon", "red", "amber");
   assert.deepEqual(undone.owned, ["raccoon:amber"]);
   assert.equal(undone.worn.raccoon, "amber");
-  assert.deepEqual(
-    collarOffers({ owned: ["raccoon:amber"], worn: { raccoon: "amber" } }, { owned: ["cat:blue"], worn: { cat: "blue" } }),
-    ["raccoon:amber"],
-  );
+  const local = { owned: ["raccoon:amber"], worn: { raccoon: "amber" as const } };
+  const server = { owned: [] as string[], worn: {} };
+  const stuck = settleCollars(local, server, true, []);
+  assert.deepEqual(stuck.owned, ["raccoon:amber"]);
+  assert.equal(stuck.worn.raccoon, "amber");
+  const dropped = settleCollars(local, server, false, []);
+  assert.deepEqual(dropped.owned, []);
+  const charged = settleCollars(local, server, false, ["raccoon:amber"]);
+  assert.deepEqual(charged.owned, ["raccoon:amber"]);
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
-  assert.match(store, /commitWallet\(\{ kind: "collar", scout, color \}\)/);
-  assert.doesNotMatch(store, /mergeCollarBooks/);
+  const fn = store.slice(store.indexOf("syncCollars: async"), store.indexOf("adoptWardrobe: (w)"));
+  assert.match(fn, /spendStuck/);
+  assert.doesNotMatch(fn, /keepPoints/);
 });
 
 test("the collar does not touch payouts", () => {
