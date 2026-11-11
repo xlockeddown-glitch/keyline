@@ -1,15 +1,27 @@
 # Keyline art direction
 
-**Status: direction approved with 0.1.134.** Use it for new and changed art so later passes match. A slice changes the surfaces it names. 0.1.135: the counter sign carries three vault keys, not matches.
+**Status: the Gemini picture style is the standard for sprites and scenes.** The 0.1.134 notes below stay as written. A slice still changes only the surfaces it names. 0.1.135: the counter sign carries three vault keys, not matches.
 
 The older note [`visual-direction.md`](visual-direction.md) still holds on one point: the basemap stays real OSM tiles. This file is the contract for everything drawn on top.
+
+## The standard
+
+Sprites and scenes are Gemini pictures: an outlined cartoon, or painterly, as in the airport scene and the three airliner poses. Pieces drawn entirely in code stay fine only where they already work. Do not lay new CSS or SVG on top of a painted sprite.
+
+How an asset is made:
+
+1. Ryan generates it in Gemini. Attach a reference screenshot, or an existing asset, so the style matches.
+2. Use a wide canvas. The subject fills about 90% of the width. A tall canvas left the planes at about 500px, and the edges went fuzzy.
+3. Cutouts get a flat, plain background.
+4. If the subject appears at about 300 CSS px on a phone, draw it at least about 1000px wide, so a 3× screen does not upscale it.
+5. The builder cuts it out, optimises it, and checks its own 4× close-ups before reporting.
 
 ## How a slice is made
 
 Ryan approved these four rules. They bind every art slice.
 
 1. Any art slice gets one mock image that Ryan approves before any code is written.
-2. No code-drawn CSS or SVG pieces laid over flat painted sprites. Scout collars and the house dresser failed this way, and both were dropped. Generate a dressed picture variant, or skip the slice. Pieces drawn entirely in code, like the airliner scene, are fine.
+2. No code-drawn CSS or SVG pieces laid over flat painted sprites. Scout collars and the house dresser failed this way, and both were dropped. Generate a dressed picture variant, or skip the slice. Pieces drawn entirely in code stay fine only where they already work.
 3. The builder inspects its own 4x close-ups on every variant and fixes anything floating, blown out or misplaced before reporting.
 4. One rework round at most. If it still fails, drop the slice and tell Ryan.
 
@@ -108,7 +120,7 @@ The counter sheet and the counter pin are the same file (`street-counter-v2.png`
 
 ## Pixel props
 
-`scripts/draw-counter-press.py` is the reference for a small prop:
+New sprites follow **The standard** above. This recipe is only the old stall grid (the counter and the press):
 
 1. Draw on a coarse grid (counter 40×52, press 64×86).
 2. Scale with nearest-neighbour (×4). No bilinear upscale.
@@ -157,7 +169,7 @@ Cars, houses and scout sheets do not get `image-rendering: pixelated`.
 - Don't pixelate a car, a house, or a scout to "match" a stall.
 - Don't replace a vault SVG with a PNG in a prop slice.
 - Don't use magenta, pure `#ffff00`, or a saturated rainbow.
-- Don't treat the palette and silhouette notes as a new approval beyond what this file already says. The four slice rules above are approved.
+- Don't treat the palette and silhouette notes as a new approval beyond what this file already says. The Gemini picture style and the four slice rules above are approved.
 
 ## Screenshot review
 
