@@ -5,6 +5,7 @@ import { carSprite } from "@/game/carPaint";
 import { TIER_LABEL } from "@/game/data";
 import type { Tier } from "@/game/types";
 import { DRESS } from "@/game/houseDress";
+import { dressAnchorVars } from "@/game/houseAnchors";
 import { HOUSES, HOME_LAMPS, KEY_MATCHES, houseArt, houseCost, houseOf, lotOf } from "@/game/houses";
 import { useGame } from "@/game/store";
 import { cityDay } from "@/game/vaultStack";
@@ -153,7 +154,7 @@ export function HouseSheet() {
 /** 0.1.42: what the daily key pays, e.g. "2 Amber matches + 25,000 coins". */
 function DressSet({ items, tier }: { items: readonly string[]; tier: string }) {
   return (
-    <span className="dress-set" data-tier={tier} data-dress={items.join(" ")} aria-hidden>
+    <span className="dress-set" data-tier={tier} data-dress={items.join(" ")} style={dressAnchorVars(tier) as React.CSSProperties} aria-hidden>
       <i className="dress dress-lamp">
         <i className="lamp-glow" />
         <i className="lamp-cap" />

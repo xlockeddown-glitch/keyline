@@ -3643,40 +3643,40 @@ h3 {
 .dress-set {
   position: absolute; inset: 0; pointer-events: none;
   --lamp-x: 38.2%; --lamp-y: 48%; --lamp-w: 7.6%; --lamp-h: 15.2%;
-  --win-x: 54.4%; --win-y: 51.4%; --win-w: 10.6%; --win-h: 15.6%;
-  --plate-x: 41.4%; --plate-y: 63.6%; --plate-w: 9.4%; --plate-h: 4.8%;
-  --ax: 30%; --at: 79.5%; --af: 88%;
-  --bx: 33.2%; --bt: 81.9%; --bf: 88.2%;
-  --cx: 36.8%; --ct: 84.2%; --cf: 92.4%;
-  --rx1: 29.4%; --ry1: 79.5%; --rail-len: 8.2%; --rail-angle: 25.5deg;
+  --win-x: 54%; --win-y: 50%; --win-w: 9.6%; --win-h: 16%;
+  --plate-x: 38.4%; --plate-y: 66.2%; --plate-w: 7.6%; --plate-h: 4.2%;
+  --ax: 30.2%; --at: 80.4%; --af: 87.6%;
+  --bx: 33.6%; --bt: 82.7%; --bf: 87.8%;
+  --cx: 37%; --ct: 85%; --cf: 92.2%;
+  --rx1: 30.2%; --ry1: 80.4%; --rail-len: 7.6%; --rail-angle: 26.9deg;
 }
 /* The sheet painting and the map cutout are framed differently, so each tier anchors its own door. */
 .dress-set[data-tier="row"] {
   --lamp-x: 40%; --lamp-y: 46.5%; --lamp-w: 5.2%; --lamp-h: 9%;
-  --win-x: 53%; --win-y: 57.8%; --win-w: 6.8%; --win-h: 9.4%;
-  --plate-x: 47.2%; --plate-y: 64.2%; --plate-w: 5.2%; --plate-h: 3.1%;
-  --ax: 37.5%; --at: 86.3%; --af: 94%;
-  --bx: 39.6%; --bt: 83.4%; --bf: 91.4%;
-  --cx: 41.8%; --ct: 80.9%; --cf: 89%;
-  --rx1: 37%; --ry1: 86.3%; --rail-len: 6.3%; --rail-angle: -40deg;
+  --win-x: 54.8%; --win-y: 56.2%; --win-w: 5.8%; --win-h: 12.8%;
+  --plate-x: 47.2%; --plate-y: 64.2%; --plate-w: 4%; --plate-h: 3.4%;
+  --ax: 37.8%; --at: 87%; --af: 93.2%;
+  --bx: 40.4%; --bt: 80.5%; --bf: 86.8%;
+  --cx: 43%; --ct: 74%; --cf: 80.2%;
+  --rx1: 37.8%; --ry1: 87%; --rail-len: 11.1%; --rail-angle: -61.9deg;
 }
 .dress-set[data-tier="town"] {
   --lamp-x: 52.5%; --lamp-y: 57%; --lamp-w: 5.4%; --lamp-h: 8%;
-  --win-x: 42.2%; --win-y: 65.4%; --win-w: 6.8%; --win-h: 7.2%;
-  --plate-x: 56%; --plate-y: 70.8%; --plate-w: 4.6%; --plate-h: 2.8%;
-  --ax: 45.5%; --at: 78%; --af: 84%;
-  --bx: 48%; --bt: 80.2%; --bf: 86%;
-  --cx: 50.5%; --ct: 82.4%; --cf: 88%;
-  --rx1: 44.9%; --ry1: 78%; --rail-len: 6.8%; --rail-angle: 33deg;
+  --win-x: 40.6%; --win-y: 62.4%; --win-w: 8.6%; --win-h: 11.2%;
+  --plate-x: 56.2%; --plate-y: 68.6%; --plate-w: 3.2%; --plate-h: 3.8%;
+  --ax: 49.6%; --at: 78.2%; --af: 84.2%;
+  --bx: 52.2%; --bt: 81.4%; --bf: 87.4%;
+  --cx: 54.8%; --ct: 84.6%; --cf: 90.6%;
+  --rx1: 49.6%; --ry1: 78.2%; --rail-len: 7.1%; --rail-angle: 42.7deg;
 }
 .dress-set[data-tier="villa"] {
   --lamp-x: 48.6%; --lamp-y: 54.5%; --lamp-w: 3.6%; --lamp-h: 8.5%;
-  --win-x: 61.6%; --win-y: 52.2%; --win-w: 6.4%; --win-h: 6.4%;
-  --plate-x: 54%; --plate-y: 57.4%; --plate-w: 6%; --plate-h: 2.8%;
-  --ax: 46.2%; --at: 61.4%; --af: 65%;
-  --bx: 47.5%; --bt: 61.8%; --bf: 65.5%;
-  --cx: 48.8%; --ct: 62.2%; --cf: 66%;
-  --rx1: 45.6%; --ry1: 61.4%; --rail-len: 3.5%; --rail-angle: 13deg;
+  --win-x: 61.4%; --win-y: 54.2%; --win-w: 5.2%; --win-h: 6.8%;
+  --plate-x: 53.9%; --plate-y: 57.4%; --plate-w: 4.6%; --plate-h: 3.2%;
+  --ax: 48.4%; --at: 61.8%; --af: 65.2%;
+  --bx: 50%; --bt: 62.2%; --bf: 65.6%;
+  --cx: 51.6%; --ct: 62.6%; --cf: 66%;
+  --rx1: 48.4%; --ry1: 61.8%; --rail-len: 3.3%; --rail-angle: 10.6deg;
 }
 .house-face .dress-set[data-tier="cottage"] {
   --lamp-x: 32%; --lamp-y: 46%; --lamp-w: 9%; --lamp-h: 16%;
@@ -3769,7 +3769,7 @@ h3 {
 /* Soft cream cloth inside the glass. The warm room stays visible in the middle. */
 .dress-window { left: var(--win-x); top: var(--win-y); width: var(--win-w); height: var(--win-h); }
 .dress-window::before {
-  content: ""; position: absolute; left: 1%; right: 1%; top: 0; height: 7%;
+  content: ""; position: absolute; left: 1%; right: 1%; top: 0; height: 4px;
   border-radius: 999px;
   background:
     radial-gradient(circle at 0 50%, #f6e7c4 0 3px, transparent 3.5px),
@@ -3778,14 +3778,14 @@ h3 {
   box-shadow: 0 1px 1px rgb(0 0 0 / 0.45);
 }
 .dress-window .cloth {
-  position: absolute; top: 6%; width: 38%; height: 90%;
+  position: absolute; top: 8%; width: 32%; height: 78%;
   background: linear-gradient(90deg,
-    rgb(176 128 76 / 0.9) 0%,
-    rgb(248 232 206 / 0.74) 30%,
-    rgb(168 120 72 / 0.86) 62%,
-    rgb(236 214 180 / 0.66) 100%);
-  -webkit-mask-image: linear-gradient(#000 0 76%, transparent 100%);
-  mask-image: linear-gradient(#000 0 76%, transparent 100%);
+    rgb(186 140 88 / 0.62) 0%,
+    rgb(255 236 214 / 0.4) 32%,
+    rgb(168 122 74 / 0.55) 62%,
+    rgb(255 244 228 / 0.26) 100%);
+  -webkit-mask-image: linear-gradient(#000 0 70%, transparent 100%);
+  mask-image: linear-gradient(#000 0 70%, transparent 100%);
 }
 .dress-window .cloth:first-child { left: 2%; }
 .dress-window .cloth:last-child { right: 2%; }
