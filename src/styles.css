@@ -130,7 +130,8 @@ h3 {
   height:48px;
   filter:none
 }
-/* 0.1.154: a vat-color scarf. The coat mask covers the whole coat, so this band is the collar. */
+/* 0.1.154: a vat-color scarf. The coat mask covers the whole coat, so the scarf is CSS.
+   It wraps the neck and drapes onto both shoulders, with a knot and a short tail. */
 .collar-offer{ margin-top:10px }
 .collar-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
 .collar-swatch.btn{
@@ -149,20 +150,39 @@ h3 {
 .collar-swatch[data-color="red"]{ --collar:var(--color-vault-red) }
 .collar-swatch[data-color="violet"]{ --collar:var(--color-vault-violet) }
 .collar-swatch.is-on{ box-shadow:inset 0 0 0 2px var(--color-bg), 0 0 0 2px var(--color-accent) }
+.scout-marker[data-collar]{ --scarf: 0% }
+.scout-marker[data-scout="owl"][data-collar]{ --scarf: -6% }
+.scout-marker[data-collar]::before,
 .scout-marker[data-collar]::after{
   content:"";
   position:absolute;
-  left:41%;
-  width:20%;
-  top:40%;
-  height:8%;
-  border-radius:2px;
-  background:linear-gradient(180deg, color-mix(in oklab, white 32%, var(--collar, var(--color-vault-amber))) 0%, var(--collar, var(--color-vault-amber)) 46%, color-mix(in oklab, black 28%, var(--collar, var(--color-vault-amber))) 100%);
-  box-shadow:0 1px 0 color-mix(in oklab, black 45%, transparent);
-  pointer-events:none
+  pointer-events:none;
+  --cloth: var(--collar, var(--color-vault-amber))
 }
-.scout-marker[data-scout="giraffe"][data-collar]::after{ top:42% }
-.scout-marker[data-scout="corgi"][data-collar]::after{ top:31% }
+/* Neck wrap, higher in the middle, ends resting on the shoulders. */
+.scout-marker[data-collar]::after{
+  left:36%;
+  width:28%;
+  top:calc(36% + var(--scarf));
+  height:15%;
+  background:
+    linear-gradient(125deg, color-mix(in oklab, white 42%, var(--cloth)) 0%, transparent 46%),
+    linear-gradient(180deg, color-mix(in oklab, white 16%, var(--cloth)) 0%, var(--cloth) 48%, color-mix(in oklab, black 30%, var(--cloth)) 100%);
+  clip-path:polygon(26% 18%, 74% 18%, 88% 42%, 96% 76%, 72% 58%, 58% 68%, 42% 68%, 28% 58%, 4% 76%, 12% 42%);
+}
+/* Knot and a short tail down the front, clear of the lantern. */
+.scout-marker[data-collar]::before{
+  z-index:1;
+  left:47%;
+  width:8%;
+  top:calc(43% + var(--scarf));
+  height:12%;
+  border-radius:40% 40% 44% 48%;
+  transform:rotate(6deg);
+  transform-origin:50% 0;
+  background:linear-gradient(180deg, color-mix(in oklab, white 30%, var(--cloth)) 0%, var(--cloth) 38%, color-mix(in oklab, black 26%, var(--cloth)) 100%);
+  box-shadow:inset 0 1px 0 color-mix(in oklab, white 40%, transparent)
+}
 .scout-marker[data-collar="white"]{ --collar:var(--color-vault-white) }
 .scout-marker[data-collar="blue"]{ --collar:var(--color-vault-blue) }
 .scout-marker[data-collar="green"]{ --collar:var(--color-vault-green) }
