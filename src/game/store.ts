@@ -2622,7 +2622,12 @@ export const useGame = create<GameState>((set, get) => ({
         const scout = pair.slice(0, split);
         const color = pair.slice(split + 1);
         if (!isCollarScout(scout) || !isCollarColor(color)) continue;
-        const r = await commitWallet({ kind: "collar", scout, color });
+        let r = await commitWallet({ kind: "collar", scout, color });
+        // A guest hire is on this device only. Record it, then the collar, once each.
+        if (!r?.ok && r?.reason === "unowned") {
+          const hired = await commitWallet({ kind: "scout", id: scout });
+          if (hired?.ok) r = await commitWallet({ kind: "collar", scout, color });
+        }
         if (r?.ok) charged.push(pair);
       }
     }

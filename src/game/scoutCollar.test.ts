@@ -127,6 +127,7 @@ test("a failed buy puts the old scarf back, and sign-in does not charge a spend 
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
   const fn = store.slice(store.indexOf("syncCollars: async"), store.indexOf("adoptWardrobe: (w)"));
   assert.match(fn, /spendStuck/);
+  assert.match(fn, /kind: "scout"/);
   assert.doesNotMatch(fn, /keepPoints/);
 });
 
