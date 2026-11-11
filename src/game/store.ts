@@ -12,6 +12,7 @@ import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
+import { cleanCollarBook, type CollarBook } from "./scoutCollar";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
 import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
@@ -191,6 +192,8 @@ export type GameState = {
   marketLight: string;
   /** 0.1.138: cosmetic market bulb for the open cycle. Null when the cycle has ended. */
   patron: PatronHold | null;
+  /** 0.1.154: paid collars and the color each scout is wearing. Cosmetic. */
+  collars: CollarBook;
   /** 0.1.8: cars owned (server-reported) and the one you drive (null = the city cab). Showroom open at the dealer. */
   carsOwned: CarId[];
   carOn: CarId | null;
@@ -405,7 +408,7 @@ export type GameState = {
   /** Copy a server wallet over coins, matches and city passes, and tell the other tab. */
   adoptWallet: (w: { coins: number; keys: Record<Tier, number>; cities: CityUnlocks; credit?: Partial<Record<Tier, number>> }) => void;
   /** 0.0.95: merge what the account owns on the server (sign-in on any device, after a logout). Never removes. */
-  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>>; patron?: PatronHold | null }) => void;
+  adoptOwned: (o: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>>; patron?: PatronHold | null; collars?: CollarBook }) => void;
   /** Spend a set number of one paint on a coat or the street vaults, and put it on. */
   mixPaint: (color: PaintColor, job: PaintJob) => void;
   /** Wear a mixed paint job, or take it off with null. */
@@ -417,6 +420,8 @@ export type GameState = {
   buyPatron: (bulb: PatronBulb) => void;
   /** Write the coin pocket and the save. The server replaces it when a charge is confirmed. */
   keepPoints: (n: number) => void;
+  /** 0.1.154: replace the collar book and write the save. */
+  setCollars: (book: CollarBook) => void;
   startContract: () => void;
   toggleHq: (v?: boolean) => void;
   toggleGuide: (v?: boolean) => void;
@@ -660,6 +665,7 @@ function persistable(s: GameState) {
     lightsOwned: s.lightsOwned,
     marketLight: s.marketLight,
     patron: s.patron,
+    collars: s.collars,
     carsOwned: s.carsOwned,
     carOn: s.carOn,
     carCab: s.carCab,
@@ -1133,6 +1139,7 @@ export const useGame = create<GameState>((set, get) => ({
   lightsOwned: Array.isArray(saved?.lightsOwned) ? saved.lightsOwned.filter((x: unknown) => typeof x === "string") : ["amber"],
   marketLight: typeof saved?.marketLight === "string" ? saved.marketLight : "amber",
   patron: cleanPatron((saved as { patron?: unknown } | null)?.patron, Date.now()),
+  collars: cleanCollarBook((saved as { collars?: unknown } | null)?.collars),
   carsOwned: Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [],
   carOn: driveOf(Array.isArray(saved?.carsOwned) ? saved.carsOwned.filter(isCarId) : [], isCarId(saved?.carOn) ? saved.carOn : null, saved?.carCab === true),
   carCab: saved?.carCab === true,
@@ -2461,6 +2468,14 @@ export const useGame = create<GameState>((set, get) => ({
     for (const x of o.scouts) serverOwnedScouts.add(x);
     if (o.lights) set({ lightsOwned: Array.from(new Set(["amber", ...o.lights])) });
     if ("patron" in o) set({ patron: o.patron ?? null });
+    let collarChanged = false;
+    if (o.collars) {
+      const next = cleanCollarBook(o.collars);
+      if (JSON.stringify(next) !== JSON.stringify(get().collars)) {
+        set({ collars: next });
+        collarChanged = true;
+      }
+    }
     if (o.cans) set({ carCans: o.cans.filter((x) => parseCan(x)) });
     if (o.houses) set({ houses: cleanHouses(o.houses) });
     if (o.homeClaims) set({ homeClaims: o.homeClaims.filter((x) => typeof x === "string") });
@@ -2475,7 +2490,10 @@ export const useGame = create<GameState>((set, get) => ({
     const scouts = Array.from(new Set([...st.scouts, ...(o.scouts.filter((x) => x in SCOUTS) as ScoutId[])]));
     const lucky = st.lucky || o.charms.includes("lucky");
     const cloths = Array.from(new Set([...(st.quests.cloths ?? []), ...(o.cloths as typeof st.quests.cloths)]));
-    if (scouts.length === st.scouts.length && lucky === st.lucky && cloths.length === (st.quests.cloths ?? []).length) return;
+    if (scouts.length === st.scouts.length && lucky === st.lucky && cloths.length === (st.quests.cloths ?? []).length) {
+      if (collarChanged) saveNow(get);
+      return;
+    }
     set({ scouts, lucky, quests: { ...st.quests, cloths } });
     saveNow(get);
   },
@@ -2618,6 +2636,10 @@ export const useGame = create<GameState>((set, get) => ({
   },
   keepPoints: (n) => {
     set({ points: Math.max(0, Math.floor(n)) });
+    scheduleSave(get);
+  },
+  setCollars: (book) => {
+    set({ collars: cleanCollarBook(book) });
     scheduleSave(get);
   },
   buyPatron: (bulb) => {

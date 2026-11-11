@@ -3,6 +3,8 @@ import { CAT_LABEL, FAV_BONUS, FAV_BOTH, SCOUT_FAV } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { SCOUT_LIST, SUPER_LEGENDARY_ID, SUPER_LEGENDARY_LABEL, cityShop } from "@/game/data";
 import { sfx } from "@/game/audio";
+import { COLLAR_COLORS, COLLAR_PRICE, collarPair } from "@/game/scoutCollar";
+import { buyScoutCollar } from "@/game/scoutCollarClient";
 import { useGame } from "@/game/store";
 import { PrintShop } from "./PrintShop";
 import { useSheetOpen } from "./useSheetOpen";
@@ -11,6 +13,7 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
   const points = useGame((s) => s.points);
   const scouts = useGame((s) => s.scouts);
   const scout = useGame((s) => s.scout);
+  const collars = useGame((s) => s.collars);
   const buyScout = useGame((s) => s.buyScout);
   const wearScout = useGame((s) => s.wearScout);
   const cityId = useGame((s) => s.cityId);
@@ -24,7 +27,7 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
         return (
           <div key={s.id} className="scout-row flex items-start gap-3 rounded-md border border-border bg-bg-subtle/50 p-4">
             <div className="scout-hire" aria-hidden>
-              <span className="scout-marker is-idle" data-scout={s.id} data-row="0" data-col="0" />
+              <span className="scout-marker is-idle" data-scout={s.id} {...(collars.worn[s.id] ? { "data-collar": collars.worn[s.id] } : {})} data-row="0" data-col="0" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
@@ -73,6 +76,32 @@ export function ScoutRoster({ hire }: { hire: boolean }) {
                   {wearing ? <p className="mt-1 kicker">{s.bed}</p> : null}
               </div>
               {owned || !hire || points >= s.coins ? null : <p className="mt-1 text-xs text-fg-subtle">Not enough coin yet</p>}
+              {owned && hire ? (
+                <div className="collar-offer" data-testid={`collar-${s.id}`}>
+                  <p className="kicker">Collar · {COLLAR_PRICE.toLocaleString()}</p>
+                  <div className="collar-row" role="group" aria-label={`${s.name} collars`}>
+                    {COLLAR_COLORS.map((color) => {
+                      const have = collars.owned.includes(collarPair(s.id, color));
+                      const on = collars.worn[s.id] === color;
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`btn collar-swatch${on ? " is-on" : ""}`}
+                          data-color={color}
+                          aria-pressed={on}
+                          aria-label={have ? `${color} collar${on ? ", wearing" : ""}` : `${color} collar, ${COLLAR_PRICE.toLocaleString()} coin`}
+                          onClick={() => void buyScoutCollar(s.id, color)}
+                        />
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-xs text-fg-subtle">A scarf in the vat's colors. It does not change pay.</p>
+                  {points < COLLAR_PRICE && !collars.owned.some((pair) => pair.startsWith(`${s.id}:`)) ? (
+                    <p className="mt-1 text-xs text-fg-subtle">Not enough coin yet</p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         );
@@ -86,6 +115,7 @@ export function ScoutShop() {
   const closeShop = useGame((s) => s.closeShop);
   const cityId = useGame((s) => s.cityId);
   const shop = cityShop(cityId);
+  const points = useGame((s) => s.points);
   const [tab, setTab] = useState<"hire" | "print">("hire");
   useSheetOpen(Boolean(shopOpen && shop));
   if (!shopOpen || !shop) return null;
@@ -98,6 +128,7 @@ export function ScoutShop() {
             <p className="kicker">Outfitter</p>
             <h2 className="font-display text-2xl">{shop.name}</h2>
             <p className="mt-1 text-sm text-pretty text-fg-muted">{shop.lore}</p>
+            <p className="mt-1 font-display text-lg tabular-nums" data-testid="shop-coin">{points.toLocaleString()} coin</p>
           </div>
           <button type="button" className="btn btn-quiet size-11 p-0" onClick={() => closeShop()} aria-label="Close">
             <X className="size-4" />

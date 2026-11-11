@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.153";
+export const APP_VERSION = "0.1.154";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1153a";
+export const PUBLISH_STAMP = "k1154a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -250,3 +250,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.151: trial-run trivia batch (plus_20261110k, easy/medium white/green/blue cards from the Nov 10 free-model trial, current-events share below 40%) (k1151a).
 // 0.1.152: when a Hearth skips Math, the 4th slot is a field the owner did not pick. The server deals that field (k1152a).
 // 0.1.153: weekly press pull. One recolor each Monday, the same offer for everyone, 25,000 coin once (`pull:<week>`). It dyes a coat or paints a vault case you already own, from the colours the vat already mixes. It does not change pay (k1153a).
+// 0.1.154: scout collars. 12,000 coin once per hired scout per vat color (`collar:<scout>:<color>`, six colors, not prism). The Raccoon is already hired; the Penguin's collar needs the Penguin. A scarf band in that color, not a second coat. Wearing an owned color does not charge. It does not change pay (k1154a).

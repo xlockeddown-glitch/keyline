@@ -130,6 +130,45 @@ h3 {
   height:48px;
   filter:none
 }
+/* 0.1.154: a vat-color scarf. The coat mask covers the whole coat, so this band is the collar. */
+.collar-offer{ margin-top:10px }
+.collar-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
+.collar-swatch.btn{
+  width:44px;
+  min-width:44px;
+  height:44px;
+  padding:0;
+  background:var(--collar, var(--color-vault-amber));
+  border-color:var(--color-border-strong);
+  box-shadow:inset 0 1px 0 color-mix(in oklab, white 42%, transparent), inset 0 -2px 0 color-mix(in oklab, black 32%, transparent)
+}
+.collar-swatch[data-color="white"]{ --collar:var(--color-vault-white) }
+.collar-swatch[data-color="blue"]{ --collar:var(--color-vault-blue) }
+.collar-swatch[data-color="green"]{ --collar:var(--color-vault-green) }
+.collar-swatch[data-color="amber"]{ --collar:var(--color-vault-amber) }
+.collar-swatch[data-color="red"]{ --collar:var(--color-vault-red) }
+.collar-swatch[data-color="violet"]{ --collar:var(--color-vault-violet) }
+.collar-swatch.is-on{ box-shadow:inset 0 0 0 2px var(--color-bg), 0 0 0 2px var(--color-accent) }
+.scout-marker[data-collar]::after{
+  content:"";
+  position:absolute;
+  left:41%;
+  width:20%;
+  top:40%;
+  height:8%;
+  border-radius:2px;
+  background:linear-gradient(180deg, color-mix(in oklab, white 32%, var(--collar, var(--color-vault-amber))) 0%, var(--collar, var(--color-vault-amber)) 46%, color-mix(in oklab, black 28%, var(--collar, var(--color-vault-amber))) 100%);
+  box-shadow:0 1px 0 color-mix(in oklab, black 45%, transparent);
+  pointer-events:none
+}
+.scout-marker[data-scout="giraffe"][data-collar]::after{ top:42% }
+.scout-marker[data-scout="corgi"][data-collar]::after{ top:31% }
+.scout-marker[data-collar="white"]{ --collar:var(--color-vault-white) }
+.scout-marker[data-collar="blue"]{ --collar:var(--color-vault-blue) }
+.scout-marker[data-collar="green"]{ --collar:var(--color-vault-green) }
+.scout-marker[data-collar="amber"]{ --collar:var(--color-vault-amber) }
+.scout-marker[data-collar="red"]{ --collar:var(--color-vault-red) }
+.scout-marker[data-collar="violet"]{ --collar:var(--color-vault-violet) }
 .vault-pin{
   pointer-events:auto;
   place-items:end center;

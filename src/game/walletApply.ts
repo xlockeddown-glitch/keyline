@@ -8,6 +8,7 @@ import { marketMult } from "./nightMarket.ts";
 import { cleanPatron, patronBulb, patronCycle, patronKey, patronOpen, patronUntil, type PatronBulb, type PatronHold } from "./patron.ts";
 import { HEARTH_POLISH_PRICE, cleanPolish, hearthWeek, polishKey, polishUntil, type PolishHold } from "./hearthPolish.ts";
 import { PRESS_PULL_PRICE, pressKey, pressOffer, pullBaseOwned, type PressPull } from "./pressPull.ts";
+import { COLLAR_PRICE, collarKey, cleanCollarBook, isCollarColor, isCollarScout, parseCollarRows, type CollarBook, type CollarColor } from "./scoutCollar.ts";
 import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { printLook } from "./printsServer.ts";
@@ -97,7 +98,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null; collars?: CollarBook } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -635,7 +636,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   giftNotes.push(...(await grantStockCoin(sql, userId)));
   giftNotes.push(...(await grantShopRetire(sql, userId)));
   const pt = await paintOf(sql, userId);
-  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId), patron: await patronNow(sql, userId, Date.now()) };
+  const owned = { ...(await ownedOf(sql, userId)), lights: (await lightsOf(sql, userId)).ids, cars: await carsOf(sql, userId), cans: pt.cans.map((c) => canId(c.can)), paint: pt.paint, houses: await housesOf(sql, userId), homeClaims: await homeClaimsOf(sql, userId), ...(await skinsOf(sql, userId)), dyes: await dyesOf(sql, userId), worn: await wornOf(sql, userId), patron: await patronNow(sql, userId, Date.now()), collars: await collarsOf(sql, userId) };
   const until = await doubleUntil(sql, userId);
   const streak = await rememberStreak(sql, userId);
   const fresh = (await canonicalWallet(sql, userId)).wallet;
@@ -1358,6 +1359,10 @@ export type ClientOp =
   | { kind: "hpolish"; id: string }
   /** 0.1.153: buy this Monday's press pull. The server picks the recolor from the clock. */
   | { kind: "pull" }
+  /** 0.1.154: one vat-color collar on a hired scout. Once per pair. */
+  | { kind: "collar"; scout: ScoutId; color: CollarColor }
+  /** 0.1.154: wear an owned collar. No charge. */
+  | { kind: "collarOn"; scout: ScoutId; color: CollarColor }
   | { kind: "hurry"; min: number }
   /** 0.1.58: the Loop (crate roll + route poster). 0.1.125: `ride: false` (the instant Arrive) is refused "retired". */
   | { kind: "loop"; ride: boolean }
@@ -1398,6 +1403,8 @@ export type ClientResult = Applied & {
   polish?: PolishHold;
   /** 0.1.153: the recolor this week's pull granted. */
   pull?: PressPull;
+  /** 0.1.154: the collar this charge bought or wore. */
+  collar?: { scout: ScoutId; color: CollarColor };
 };
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
@@ -1416,6 +1423,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   if (op.kind === "plant") return plantOp(sql, sessionUserId, op);
   if (op.kind === "hpolish") return grantHearthPolish(sql, sessionUserId, op.id, Date.now());
   if (op.kind === "pull") return grantPressPull(sql, sessionUserId, Date.now());
+  if (op.kind === "collar") return grantScoutCollar(sql, sessionUserId, op.scout, op.color);
+  if (op.kind === "collarOn") return grantCollarOn(sql, sessionUserId, op.scout, op.color);
 
   if (op.kind === "own") return ownLampOp(sql, sessionUserId, op.poi, op.free === true);
 
@@ -1991,6 +2000,53 @@ export async function grantPressPull(sql: Sql, sessionUserId: string, at: number
     await mutateWallet(sql, sessionUserId, `dye:${offer.job}:${offer.color}`, (w) => ({ ok: true, wallet: w, detail: JSON.stringify({ pull: offer.week }) }));
   }
   return { ...applied(r), pull: offer };
+}
+
+/** Collars this account has paid for, and the color each scout is wearing. */
+export async function collarsOf(sql: Sql, userId: string): Promise<CollarBook> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string; detail: string }>`
+    select op_key, detail from wallet_ledger
+    where user_id = ${id} and (op_key like ${"collar:%"} or op_key like ${"collaron:%"})
+    order by created_at asc, op_key asc
+  `;
+  return cleanCollarBook(parseCollarRows(rows));
+}
+
+/**
+ * 0.1.154: a dyed collar on a hired scout. 12,000 coin, one ledger row
+ * `collar:<scout>:<color>`. The Raccoon is already hired. Everyone else, including
+ * the Penguin, has to be on the account. A replay does not charge. No key and no payout moves.
+ */
+export async function grantScoutCollar(sql: Sql, sessionUserId: string, scout: string, color: string): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  if (!isCollarScout(scout) || !isCollarColor(color)) return refused(wallet, "unknown");
+  const hired = SCOUTS[scout].coins === 0 || (await ownedOf(sql, sessionUserId)).scouts.includes(scout);
+  if (!hired) return refused(wallet, "unowned");
+  const held = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${collarKey(scout, color)} limit 1`;
+  if (held.length) return { ...applied({ ok: true, replay: true, wallet }), collar: { scout, color } };
+  const r = await mutateWallet(sql, sessionUserId, collarKey(scout, color), (w) => {
+    if (w.coins < COLLAR_PRICE) return { ok: false, reason: "short-coins" };
+    return { ...applyDelta(w, { coins: -COLLAR_PRICE }), detail: JSON.stringify({ scout, color }) };
+  });
+  if (!r.ok) return applied(r);
+  return { ...applied(r), collar: { scout, color } };
+}
+
+/** Wear a collar already paid for. A new row, no coin. */
+export async function grantCollarOn(sql: Sql, sessionUserId: string, scout: string, color: string): Promise<ClientResult> {
+  const { wallet } = await canonicalWallet(sql, sessionUserId);
+  if (!isCollarScout(scout) || !isCollarColor(color)) return refused(wallet, "unknown");
+  const book = await collarsOf(sql, sessionUserId);
+  if (!book.owned.includes(`${scout}:${color}`)) return refused(wallet, "unowned");
+  if (book.worn[scout] === color) return { ...applied({ ok: true, replay: true, wallet }), collar: { scout, color } };
+  const r = await mutateWallet(sql, sessionUserId, `collaron:${scout}:${Date.now()}`, (w) => ({
+    ok: true,
+    wallet: w,
+    detail: JSON.stringify({ color }),
+  }));
+  if (!r.ok) return applied(r);
+  return { ...applied(r), collar: { scout, color } };
 }
 
 function refused(wallet: WalletState, reason: string): ClientResult {

@@ -4,6 +4,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { viewerMiddleware } from "@/lib/auth/viewer-middleware";
 import { CITY_LIST, KIOSK, KIOSK_RETIRED } from "./data";
 import { PAINT_COLORS } from "./ingredients";
+import { COLLAR_COLORS, COLLAR_SCOUTS } from "./scoutCollar";
 import type { ClientOp } from "./walletApply";
 import type { LegacyGrant, QuestStatus } from "./questServer";
 import { QUEST_PERIOD_KEY } from "./questPeriods";
@@ -76,6 +77,8 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("patron"), bulb: z.enum(["brass", "copper", "night"]) }),
   z.object({ kind: z.literal("hpolish"), id: z.string().regex(/^placed-[a-z0-9]+$/).max(40) }),
   z.object({ kind: z.literal("pull") }),
+  z.object({ kind: z.literal("collar"), scout: z.enum(COLLAR_SCOUTS), color: z.enum(COLLAR_COLORS) }),
+  z.object({ kind: z.literal("collarOn"), scout: z.enum(COLLAR_SCOUTS), color: z.enum(COLLAR_COLORS) }),
   z.object({ kind: z.literal("car"), id: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("paint"), car: z.string().min(1).max(20), color: z.string().min(1).max(20) }),
   z.object({ kind: z.literal("house"), city: City, tier: z.string().min(1).max(20) }),
@@ -191,7 +194,7 @@ export type SyncWire = {
   /** 0.0.95: notes for one-time gifts the server paid on this sync. */
   giftNotes?: string[];
   /** 0.0.95: what the account owns on the server (scouts, charms, cloths); merged into the save on sign-in. */
-  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>>; patron?: { bulb: "brass" | "copper" | "night"; cycle: number; until: number } | null };
+  owned?: { scouts: string[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Record<string, string>; houses?: Record<string, { tier: string; items?: string[] }>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: { coats: string[]; vaults: string[]; wornCoat: string | null; wornVault: string | null; rows: number }; worn?: Partial<Record<"print" | "cloth" | "car" | "light", string | null>>; patron?: { bulb: "brass" | "copper" | "night"; cycle: number; until: number } | null; collars?: { owned: string[]; worn: Partial<Record<string, string>> } };
 };
 
 export const syncWallet = createServerFn({ method: "POST" })

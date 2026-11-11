@@ -1275,7 +1275,7 @@ export function GameMap() {
 
       const icon = L.divIcon({
         className: "",
-        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}"${coatAttr(wornLook(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat))} data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
+        html: `<div class="pawn"><div class="scout-marker is-idle" data-scout="${useGame.getState().scout}"${coatAttr(wornLook(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat))}${useGame.getState().collars.worn[useGame.getState().scout] ? ` data-collar="${useGame.getState().collars.worn[useGame.getState().scout]}"` : ""} data-row="0" data-col="0"></div>${cabMarkup("down", false).replace("<div ", "<div hidden ")}</div>`,
         iconSize: [56, 56],
         iconAnchor: [28, 30],
       });
@@ -2190,6 +2190,9 @@ export function GameMap() {
         if (st.quests.worn) el.dataset.cloth = st.quests.worn;
         else el.removeAttribute("data-cloth");
         setCoat(el, wornLook(st.paints.wornCoat, st.wardrobe.coat));
+        const collar = st.collars.worn[st.scout];
+        if (collar) el.dataset.collar = collar;
+        else if (el.hasAttribute("data-collar")) el.removeAttribute("data-collar");
         // 0.0.83: redrawn scouts use one 8x6 sheet (8-frame strides) — same stride time, twice the frames.
         const v2 = V2_SCOUTS.has(st.scout);
         const tick = (v2 ? anim.current.loop : anim.current.frame) + Math.min(1, anim.current.acc / frameDt);
