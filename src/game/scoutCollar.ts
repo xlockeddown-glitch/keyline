@@ -120,12 +120,17 @@ export function withoutCollar(book: CollarBook, scout: ScoutId, color: CollarCol
   return cleanCollarBook({ owned: book.owned.filter((pair) => pair !== collarPair(scout, color)), worn });
 }
 
-/**
- * The account's collars plus any this device already paid for. A sign-in must not
- * drop a guest scarf: the first sync already kept the lower coin count.
- */
-export function mergeCollarBooks(local: CollarBook, server: CollarBook): CollarBook {
-  const owned = [...server.owned];
-  for (const pair of local.owned) if (!owned.includes(pair)) owned.push(pair);
-  return cleanCollarBook({ owned, worn: { ...local.worn, ...server.worn } });
+/** A refused buy takes the new color off and puts the previous scarf back on. */
+export function undoCollarBuy(book: CollarBook, scout: ScoutId, color: CollarColor, prevWorn?: CollarColor): CollarBook {
+  const next = withoutCollar(book, scout, color);
+  if (prevWorn && next.owned.includes(collarPair(scout, prevWorn))) return withCollarWorn(next, scout, prevWorn);
+  return next;
 }
+
+/** Pairs this device shows that the account has not charged for yet. */
+export function collarOffers(local: CollarBook, server: CollarBook): string[] {
+  return local.owned.filter((pair) => !server.owned.includes(pair));
+}
+
+/** Guest buys this session. Sign-in offers each one to the account; it is not a free scarf. */
+export const guestCollarPaid = new Set<string>();

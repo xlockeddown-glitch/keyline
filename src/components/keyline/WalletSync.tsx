@@ -68,6 +68,7 @@ export function WalletSync() {
     void (async () => {
       try {
         const id = deviceId();
+        const localCoins = useGame.getState().points;
         let r: SyncWire = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         const notes = [...(r.giftNotes ?? [])];
         if (!live) return;
@@ -97,6 +98,7 @@ export function WalletSync() {
         setWalletLive(true);
         // 0.1.105: coat / vault paint follows the account (offers this device's mixes on first sync).
         void useGame.getState().syncDyes();
+        void useGame.getState().syncCollars(localCoins);
         // 0.1.106: and the worn print, cloth, car and market light.
         void useGame.getState().syncWorn();
         useGame.getState().bindStreet();

@@ -11,7 +11,7 @@ import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
 import { freshUnlocks } from "./cityPass.ts";
 import { SCOUTS } from "./data.ts";
-import { COLLAR_COLORS, COLLAR_PRICE, COLLAR_SCOUTS, collarKey, mergeCollarBooks, parseCollarRows, withoutCollar } from "./scoutCollar.ts";
+import { COLLAR_COLORS, COLLAR_PRICE, COLLAR_SCOUTS, collarKey, collarOffers, parseCollarRows, undoCollarBuy } from "./scoutCollar.ts";
 import type { LocalSnap } from "./wallet.ts";
 
 function sqlOf(db: PGlite): Sql {
@@ -111,18 +111,17 @@ test("scout collar: 12,000 once per color, a second tap is free, an unhired scou
   assert.equal((await pocket()).coins, 36_000);
 });
 
-test("a sign-in keeps a guest scarf and a failed second buy drops only that pair", () => {
-  const local = { owned: ["raccoon:amber", "raccoon:red"], worn: { raccoon: "amber" as const } };
-  const server = { owned: ["raccoon:red"], worn: { raccoon: "red" as const } };
-  const merged = mergeCollarBooks(local, server);
-  assert.deepEqual(merged.owned, ["raccoon:red", "raccoon:amber"]);
-  assert.equal(merged.worn.raccoon, "red");
-  const undone = withoutCollar({ owned: ["raccoon:red", "cat:blue"], worn: { raccoon: "red", cat: "blue" } }, "cat", "blue");
-  assert.deepEqual(undone.owned, ["raccoon:red"]);
-  assert.equal(undone.worn.raccoon, "red");
-  assert.equal(undone.worn.cat, undefined);
+test("a failed buy puts the old scarf back, and a guest pair is charged on the account", () => {
+  const undone = undoCollarBuy({ owned: ["raccoon:amber", "raccoon:red"], worn: { raccoon: "red" } }, "raccoon", "red", "amber");
+  assert.deepEqual(undone.owned, ["raccoon:amber"]);
+  assert.equal(undone.worn.raccoon, "amber");
+  assert.deepEqual(
+    collarOffers({ owned: ["raccoon:amber"], worn: { raccoon: "amber" } }, { owned: ["cat:blue"], worn: { cat: "blue" } }),
+    ["raccoon:amber"],
+  );
   const store = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
-  assert.match(store, /mergeCollarBooks\(get\(\)\.collars, cleanCollarBook\(o\.collars\)\)/);
+  assert.match(store, /commitWallet\(\{ kind: "collar", scout, color \}\)/);
+  assert.doesNotMatch(store, /mergeCollarBooks/);
 });
 
 test("the collar does not touch payouts", () => {
