@@ -51,17 +51,19 @@ export function hearthOf(id: string): HearthView | null {
 
 /**
  * 0.1.114 (Ryan): a Hearth card always shows 4 fields. Math keeps the 43% show rule (keepsMath, same seed as lamps);
- * when it's skipped, a field the owner didn't pick (never Math) takes its slot, picked from the same seed.
+ * when it's skipped, the 4th slot is a field the owner didn't pick (never Math), picked from the same seed.
  */
 export function hearthOffer(cats: readonly string[], poiId: string, vaultsOpened: number, step = 0): string[] {
   // 0.1.117: each question of a Double/Triple rolls the Math rule again (its own seed); question 1 keeps the old one.
   const seed = step > 0 ? `${poiId}#${vaultsOpened}#q${step}` : `${poiId}#${vaultsOpened}`;
   if (!cats.includes("math") || keepsMath(seed)) return [...cats];
+  // 0.1.152: Math's visit is skipped, so the 4th slot is a field the owner did not pick. Never Math.
+  const kept = cats.filter((c) => c !== "math");
   const pool = PLANT_CATS.filter((c) => c !== "math" && !cats.includes(c));
   let h = 0x811c9dc5;
   for (const ch of `${seed}#sub`) h = Math.imul(h ^ ch.charCodeAt(0), 0x01000193);
   const sub = pool[(h >>> 0) % pool.length]!;
-  return cats.map((c) => (c === "math" ? sub : c));
+  return [...kept, sub].slice(0, 4);
 }
 
 /**

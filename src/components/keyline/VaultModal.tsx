@@ -227,7 +227,7 @@ export function VaultModal() {
                 {hearth
                   ? offered.includes("math") || !hearth.cats.includes("math")
                     ? "The owner picked these 4. They never rotate."
-                    : `The owner picked these. Math sits out this visit; ${TRIVIA_CATS.find((t) => t.id === offered[hearth.cats.indexOf("math")])?.label ?? "another field"} stands in.`
+                    : `The owner picked these. Math sits out this visit; ${TRIVIA_CATS.find((t) => t.id === offered[3])?.label ?? "another field"} fills the 4th slot.`
                   : "Six this vault, or Random. They rotate. The trivia cards prefer the ground you're on."}
               </p>
               <div className="field-grid mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">

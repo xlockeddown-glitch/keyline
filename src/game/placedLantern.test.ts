@@ -264,8 +264,8 @@ test("0.1.114: a Hearth card always offers 4 fields; Math's stand-in is a field 
     else {
       skipped++;
       assert.ok(!o.includes("math"));
-      const sub = o[2]!;
-      assert.ok(!withMath.includes(sub), "the stand-in takes Math's slot and wasn't picked");
+      assert.deepEqual(o.slice(0, 3), ["local", "history", "music"]);
+      assert.ok(!withMath.includes(o[3]!), "the 4th slot is a field the owner did not pick");
       assert.deepEqual(hearthOffer(withMath, "placed-abc", n), o, "same open, same stand-in");
     }
   }
@@ -304,6 +304,38 @@ test("0.1.114 server: a Hearth vault with Math deals a stand-in field as red; on
   assert.equal((await dealFor(deps, { userId: "vis" } as never, input(noMath.id, "sports"))).ok, false);
   const spent = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'vis' and op_key like 'deal:%'`;
   assert.equal(spent.length, 1, "the stand-in open spent one V key");
+});
+
+test("0.1.152: when Math sits out, the 4th slot is an unpicked field and the server deals it", async () => {
+  const { dealFor } = await import("./triviaService.ts");
+  const { hearthOffer } = await import("./hearthVaults.ts");
+  const { keepsMath } = await import("./triviaMeta.ts");
+  const { applyClientOp, placedViews } = await import("./walletApply.ts");
+  const { CITIES } = await import("./data.ts");
+  const sql = await db();
+  await syncPlayer(sql, "ace", snap(), "acephone1");
+  await syncPlayer(sql, "vis", { ...snap(), keys: { red: 2 } }, "visphone1");
+  await reds(sql, "ace");
+  const s = CITIES.austin.spawn;
+  const cats = ["local", "history", "science", "math"];
+  assert.equal((await applyClientOp(sql, "ace", { kind: "plant", city: "austin", lat: s.lat + 0.004, lng: s.lng + 0.004, name: 1, cats })).ok, true);
+  const id = (await placedViews(sql, "austin", "vis"))[0]!.id;
+  let fourth = "";
+  let opens = 0;
+  for (let n = 0; n < 40 && !fourth; n++) {
+    if (keepsMath(`${id}#${n}`)) continue;
+    const offer = hearthOffer(cats, id, n);
+    assert.equal(offer.length, 4);
+    assert.deepEqual(offer.slice(0, 3), ["local", "history", "science"]);
+    assert.ok(!cats.includes(offer[3]!), offer[3]);
+    fourth = offer[3]!;
+    opens = n;
+  }
+  assert.ok(fourth, "a skipped Math visit exists in 40 opens");
+  const card = { id: "c4", q: "Q?", choices: ["a", "b", "c", "d"], answer: "a", diff: 3, rarity: "rare" };
+  const deps = { now: () => Date.now(), secret: "s", rand: () => 0.2, pick: () => card, card: () => card, namedPoi: () => null, sql: async () => sql } as never;
+  const dealt = await dealFor(deps, { userId: "vis" } as never, { city: "austin", cat: fourth, poiId: id, windowMs: 25000, seen: [], saveId: "11111111-2222-3333-4444-555555555555" } as never);
+  assert.equal(dealt.ok, true, `server refused the 4th slot ${fourth} at open ${opens}`);
 });
 
 test("0.1.122 server: one Hearth of each version; a second of the same version is refused; each has its own id, key and stats", async () => {
