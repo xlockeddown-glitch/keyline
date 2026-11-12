@@ -84,3 +84,51 @@ test("0.1.31: a bought car is driven in every city and session, no dealer visit"
   const arrive = store.slice(store.indexOf("tickJourney:"), store.indexOf("tickJourney:") + 4000);
   assert.ok(!/carOn|carsOwned/.test(arrive), "arriving in a new city leaves the car alone");
 });
+
+test("0.1.161 painted cars: every base view ships as an RGBA webp, sides 640 px wide, and every paint variant exists", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  const { CAR_COLORS, carSprite, factoryColor } = await import("./carPaint.ts");
+  const file = (p: string) => new URL(`../../public${p}`, import.meta.url);
+  assert.equal(CARS.length, 8);
+  for (const c of CARS) {
+    for (const view of ["side", "front", "back"] as const) {
+      const path = carSprite(c.id, view);
+      assert.equal(path, `/sprites/cars/${c.id}-${view}.webp`);
+      const buf = readFileSync(file(path));
+      assert.equal(buf.toString("ascii", 0, 4), "RIFF", path);
+      assert.equal(buf.toString("ascii", 8, 12), "WEBP", path);
+      assert.equal(buf.toString("ascii", 12, 16), "VP8X", `${path}: extended webp (alpha)`);
+      assert.ok(buf[20]! & 0x10, `${path}: alpha flag`);
+      const w = 1 + buf.readUIntLE(24, 3), h = 1 + buf.readUIntLE(27, 3);
+      if (view === "side") assert.equal(w, 640, `${path}: ${w}x${h}`);
+      // Front and back are cut at the side's pixel density: well past 2x of the 40px map width.
+      else assert.ok(w >= 280 && w <= 400, `${path}: ${w}x${h}`);
+      assert.ok(h >= 180 && h < w, `${path}: ${w}x${h}`);
+      assert.ok(buf.length < 80_000, `${path}: ${buf.length} bytes`);
+      for (const p of CAR_COLORS[c.id]) {
+        const v = carSprite(c.id, view, p.id);
+        assert.equal(v.endsWith(".webp"), true);
+        assert.equal(v.includes("/paint/"), p.id !== factoryColor(c.id));
+        assert.ok(existsSync(file(v)), `${v} exists`);
+      }
+    }
+  }
+});
+
+test("0.1.161 painted cars: the stylesheet points at the webps only and never pixelates the cab", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.equal(/\/sprites\/cars\/[^")]*\.png/.test(css), false, "no car png left in the stylesheet");
+  const urls = [...new Set(css.match(/\/sprites\/cars\/[^")]+\.webp/g) ?? [])];
+  assert.equal(urls.length, 8 * 3 * 6, "8 cars, 3 views, 6 colours");
+  for (const u of urls) assert.ok(existsSync(new URL(`../../public${u}`, import.meta.url)), `${u} exists`);
+  const cab = css.match(/\n\.cab-sprite \{[^}]*\}/)?.[0] ?? "";
+  assert.match(cab, /width: 56px/);
+  assert.doesNotMatch(cab, /image-rendering/);
+  assert.match(css, /\.cab-sprite\[data-car\]:not\(\[data-car=""\]\) \{[^}]*image-rendering: auto/);
+  // The Loop skid glows under the wheels, behind the painting; the sled keeps its 0.1.157 seat on the near rails.
+  assert.match(css, /\.loop-skid \{[^}]*z-index: -1;[^}]*bottom: -1px;/);
+  assert.match(css, /\.loop-sled \{[^}]*left: calc\(50% \+ 6px\);\s*top: 76\.5%;[^}]*transform: scale\(3\);/);
+  // The streak pixel perk keeps its own crisp scaling: it is an effect, not the car.
+  assert.match(css, /\.pawn\.is-driving\.is-streak-pixel::before\s*\{[^}]*image-rendering:\s*pixelated/);
+});

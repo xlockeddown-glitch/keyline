@@ -112,5 +112,5 @@ export function rollCan(r: number): Can {
 
 /** Sprite for a car in a colour (the factory colour is the base art). */
 export function carSprite(car: CarId, view: "side" | "front" | "back", color?: string | null): string {
-  return !color || color === factoryColor(car) ? `/sprites/cars/${car}-${view}.png` : `/sprites/cars/paint/${car}-${color}-${view}.png`;
+  return !color || color === factoryColor(car) ? `/sprites/cars/${car}-${view}.webp` : `/sprites/cars/paint/${car}-${color}-${view}.webp`;
 }

@@ -1589,7 +1589,6 @@ h3 {
   position: relative;
   width: 56px;
   height: 56px;
-  image-rendering: pixelated;
   background: url("/sprites/cab.png") no-repeat;
   background-size: 200% 200%;
   filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.45));
@@ -3387,7 +3386,7 @@ h3 {
 
 /* 0.1.8 car dealerships: the lot sign on the map, the Showroom cards, and your own car on the road (top-down art). */
 .dealer-pin { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: auto; cursor: pointer; }
-.dealer-sign { display: block; width: 34px; height: 26px; border-radius: 6px; border: 2px solid #e8c77a; background: #1b2030 url("/sprites/cars/civic-side.png") center / contain no-repeat; box-shadow: 0 0 10px rgb(232 199 122 / 0.45), 0 2px 6px rgb(0 0 0 / 0.5); }
+.dealer-sign { display: block; width: 34px; height: 26px; border-radius: 6px; border: 2px solid #e8c77a; background: #1b2030 url("/sprites/cars/civic-side.webp") center / contain no-repeat; box-shadow: 0 0 10px rgb(232 199 122 / 0.45), 0 2px 6px rgb(0 0 0 / 0.5); }
 .dealer-name { font-size: 11px; font-weight: 600; color: #f3e6c4; white-space: nowrap; padding: 1px 6px; border-radius: 999px; background: rgb(15 18 26 / 0.82); border: 1px solid rgb(232 199 122 / 0.5); }
 .dealer-btn { align-self: center; margin-bottom: 8px; padding: 8px 14px; border-radius: 999px; border: 1px solid #e8c77a; background: rgb(21 24 33 / 0.94); color: #f3e6c4; font-size: 13px; box-shadow: 0 0 14px rgb(232 199 122 / 0.35); }
 .car-card { border-radius: 12px; border: 1px solid var(--color-border); background: color-mix(in oklab, var(--color-bg-subtle) 60%, transparent); padding: 10px 14px 12px; }
@@ -3398,151 +3397,151 @@ h3 {
 /* 0.1.8: cars use the cab's four views (front/back/side, side mirrored for left) drawn at their own aspect:
    background-size contain keeps them uniform-scaled inside the 56px pawn box, wheels on the box floor. */
 .cab-sprite[data-car]:not([data-car=""]) { background-size: contain; background-position: 50% 100% !important; background-repeat: no-repeat; image-rendering: auto; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45)); }
-.cab-sprite[data-car="civic"][data-face="down"] { background-image: url("/sprites/cars/civic-front.png"); }
-.cab-sprite[data-car="civic"][data-face="up"] { background-image: url("/sprites/cars/civic-back.png"); }
-.cab-sprite[data-car="civic"][data-face="left"], .cab-sprite[data-car="civic"][data-face="right"] { background-image: url("/sprites/cars/civic-side.png"); }
-.cab-sprite[data-car="f150"][data-face="down"] { background-image: url("/sprites/cars/f150-front.png"); }
-.cab-sprite[data-car="f150"][data-face="up"] { background-image: url("/sprites/cars/f150-back.png"); }
-.cab-sprite[data-car="f150"][data-face="left"], .cab-sprite[data-car="f150"][data-face="right"] { background-image: url("/sprites/cars/f150-side.png"); }
-.cab-sprite[data-car="mustang"][data-face="down"] { background-image: url("/sprites/cars/mustang-front.png"); }
-.cab-sprite[data-car="mustang"][data-face="up"] { background-image: url("/sprites/cars/mustang-back.png"); }
-.cab-sprite[data-car="mustang"][data-face="left"], .cab-sprite[data-car="mustang"][data-face="right"] { background-image: url("/sprites/cars/mustang-side.png"); }
-.cab-sprite[data-car="roadster"][data-face="down"] { background-image: url("/sprites/cars/roadster-front.png"); }
-.cab-sprite[data-car="roadster"][data-face="up"] { background-image: url("/sprites/cars/roadster-back.png"); }
-.cab-sprite[data-car="roadster"][data-face="left"], .cab-sprite[data-car="roadster"][data-face="right"] { background-image: url("/sprites/cars/roadster-side.png"); }
-.cab-sprite[data-car="roadster2"][data-face="down"] { background-image: url("/sprites/cars/roadster2-front.png"); }
-.cab-sprite[data-car="roadster2"][data-face="up"] { background-image: url("/sprites/cars/roadster2-back.png"); }
-.cab-sprite[data-car="roadster2"][data-face="left"], .cab-sprite[data-car="roadster2"][data-face="right"] { background-image: url("/sprites/cars/roadster2-side.png"); }
-.cab-sprite[data-car="ioniq5"][data-face="down"] { background-image: url("/sprites/cars/ioniq5-front.png"); }
-.cab-sprite[data-car="ioniq5"][data-face="up"] { background-image: url("/sprites/cars/ioniq5-back.png"); }
-.cab-sprite[data-car="ioniq5"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-face="right"] { background-image: url("/sprites/cars/ioniq5-side.png"); }
-.cab-sprite[data-car="model3"][data-face="down"] { background-image: url("/sprites/cars/model3-front.png"); }
-.cab-sprite[data-car="model3"][data-face="up"] { background-image: url("/sprites/cars/model3-back.png"); }
-.cab-sprite[data-car="model3"][data-face="left"], .cab-sprite[data-car="model3"][data-face="right"] { background-image: url("/sprites/cars/model3-side.png"); }
-.cab-sprite[data-car="belair57"][data-face="down"] { background-image: url("/sprites/cars/belair57-front.png"); }
-.cab-sprite[data-car="belair57"][data-face="up"] { background-image: url("/sprites/cars/belair57-back.png"); }
-.cab-sprite[data-car="belair57"][data-face="left"], .cab-sprite[data-car="belair57"][data-face="right"] { background-image: url("/sprites/cars/belair57-side.png"); }
+.cab-sprite[data-car="civic"][data-face="down"] { background-image: url("/sprites/cars/civic-front.webp"); }
+.cab-sprite[data-car="civic"][data-face="up"] { background-image: url("/sprites/cars/civic-back.webp"); }
+.cab-sprite[data-car="civic"][data-face="left"], .cab-sprite[data-car="civic"][data-face="right"] { background-image: url("/sprites/cars/civic-side.webp"); }
+.cab-sprite[data-car="f150"][data-face="down"] { background-image: url("/sprites/cars/f150-front.webp"); }
+.cab-sprite[data-car="f150"][data-face="up"] { background-image: url("/sprites/cars/f150-back.webp"); }
+.cab-sprite[data-car="f150"][data-face="left"], .cab-sprite[data-car="f150"][data-face="right"] { background-image: url("/sprites/cars/f150-side.webp"); }
+.cab-sprite[data-car="mustang"][data-face="down"] { background-image: url("/sprites/cars/mustang-front.webp"); }
+.cab-sprite[data-car="mustang"][data-face="up"] { background-image: url("/sprites/cars/mustang-back.webp"); }
+.cab-sprite[data-car="mustang"][data-face="left"], .cab-sprite[data-car="mustang"][data-face="right"] { background-image: url("/sprites/cars/mustang-side.webp"); }
+.cab-sprite[data-car="roadster"][data-face="down"] { background-image: url("/sprites/cars/roadster-front.webp"); }
+.cab-sprite[data-car="roadster"][data-face="up"] { background-image: url("/sprites/cars/roadster-back.webp"); }
+.cab-sprite[data-car="roadster"][data-face="left"], .cab-sprite[data-car="roadster"][data-face="right"] { background-image: url("/sprites/cars/roadster-side.webp"); }
+.cab-sprite[data-car="roadster2"][data-face="down"] { background-image: url("/sprites/cars/roadster2-front.webp"); }
+.cab-sprite[data-car="roadster2"][data-face="up"] { background-image: url("/sprites/cars/roadster2-back.webp"); }
+.cab-sprite[data-car="roadster2"][data-face="left"], .cab-sprite[data-car="roadster2"][data-face="right"] { background-image: url("/sprites/cars/roadster2-side.webp"); }
+.cab-sprite[data-car="ioniq5"][data-face="down"] { background-image: url("/sprites/cars/ioniq5-front.webp"); }
+.cab-sprite[data-car="ioniq5"][data-face="up"] { background-image: url("/sprites/cars/ioniq5-back.webp"); }
+.cab-sprite[data-car="ioniq5"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-face="right"] { background-image: url("/sprites/cars/ioniq5-side.webp"); }
+.cab-sprite[data-car="model3"][data-face="down"] { background-image: url("/sprites/cars/model3-front.webp"); }
+.cab-sprite[data-car="model3"][data-face="up"] { background-image: url("/sprites/cars/model3-back.webp"); }
+.cab-sprite[data-car="model3"][data-face="left"], .cab-sprite[data-car="model3"][data-face="right"] { background-image: url("/sprites/cars/model3-side.webp"); }
+.cab-sprite[data-car="belair57"][data-face="down"] { background-image: url("/sprites/cars/belair57-front.webp"); }
+.cab-sprite[data-car="belair57"][data-face="up"] { background-image: url("/sprites/cars/belair57-back.webp"); }
+.cab-sprite[data-car="belair57"][data-face="left"], .cab-sprite[data-car="belair57"][data-face="right"] { background-image: url("/sprites/cars/belair57-side.webp"); }
 /* 0.1.9 car paint: recolours from scripts/art/cars-paint.py (side mirrored for left, as above). */
-.cab-sprite[data-car="civic"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-black-front.png"); }
-.cab-sprite[data-car="civic"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-black-back.png"); }
-.cab-sprite[data-car="civic"][data-paint="black"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-black-side.png"); }
-.cab-sprite[data-car="civic"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-silver-front.png"); }
-.cab-sprite[data-car="civic"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-silver-back.png"); }
-.cab-sprite[data-car="civic"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-silver-side.png"); }
-.cab-sprite[data-car="civic"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-red-front.png"); }
-.cab-sprite[data-car="civic"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-red-back.png"); }
-.cab-sprite[data-car="civic"][data-paint="red"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-red-side.png"); }
-.cab-sprite[data-car="civic"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-blue-front.png"); }
-.cab-sprite[data-car="civic"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-blue-back.png"); }
-.cab-sprite[data-car="civic"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-blue-side.png"); }
-.cab-sprite[data-car="civic"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-sig-front.png"); }
-.cab-sprite[data-car="civic"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-sig-back.png"); }
-.cab-sprite[data-car="civic"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-sig-side.png"); }
-.cab-sprite[data-car="f150"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-black-front.png"); }
-.cab-sprite[data-car="f150"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-black-back.png"); }
-.cab-sprite[data-car="f150"][data-paint="black"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-black-side.png"); }
-.cab-sprite[data-car="f150"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-silver-front.png"); }
-.cab-sprite[data-car="f150"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-silver-back.png"); }
-.cab-sprite[data-car="f150"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-silver-side.png"); }
-.cab-sprite[data-car="f150"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-red-front.png"); }
-.cab-sprite[data-car="f150"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-red-back.png"); }
-.cab-sprite[data-car="f150"][data-paint="red"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-red-side.png"); }
-.cab-sprite[data-car="f150"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-blue-front.png"); }
-.cab-sprite[data-car="f150"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-blue-back.png"); }
-.cab-sprite[data-car="f150"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-blue-side.png"); }
-.cab-sprite[data-car="f150"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-sig-front.png"); }
-.cab-sprite[data-car="f150"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-sig-back.png"); }
-.cab-sprite[data-car="f150"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-sig-side.png"); }
-.cab-sprite[data-car="mustang"][data-paint="white"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-white-front.png"); }
-.cab-sprite[data-car="mustang"][data-paint="white"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-white-back.png"); }
-.cab-sprite[data-car="mustang"][data-paint="white"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="white"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-white-side.png"); }
-.cab-sprite[data-car="mustang"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-black-front.png"); }
-.cab-sprite[data-car="mustang"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-black-back.png"); }
-.cab-sprite[data-car="mustang"][data-paint="black"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-black-side.png"); }
-.cab-sprite[data-car="mustang"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-red-front.png"); }
-.cab-sprite[data-car="mustang"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-red-back.png"); }
-.cab-sprite[data-car="mustang"][data-paint="red"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-red-side.png"); }
-.cab-sprite[data-car="mustang"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-blue-front.png"); }
-.cab-sprite[data-car="mustang"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-blue-back.png"); }
-.cab-sprite[data-car="mustang"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-blue-side.png"); }
-.cab-sprite[data-car="mustang"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-sig-front.png"); }
-.cab-sprite[data-car="mustang"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-sig-back.png"); }
-.cab-sprite[data-car="mustang"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-sig-side.png"); }
-.cab-sprite[data-car="roadster"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-black-front.png"); }
-.cab-sprite[data-car="roadster"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-black-back.png"); }
-.cab-sprite[data-car="roadster"][data-paint="black"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-black-side.png"); }
-.cab-sprite[data-car="roadster"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-silver-front.png"); }
-.cab-sprite[data-car="roadster"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-silver-back.png"); }
-.cab-sprite[data-car="roadster"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-silver-side.png"); }
-.cab-sprite[data-car="roadster"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-red-front.png"); }
-.cab-sprite[data-car="roadster"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-red-back.png"); }
-.cab-sprite[data-car="roadster"][data-paint="red"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-red-side.png"); }
-.cab-sprite[data-car="roadster"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-blue-front.png"); }
-.cab-sprite[data-car="roadster"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-blue-back.png"); }
-.cab-sprite[data-car="roadster"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-blue-side.png"); }
-.cab-sprite[data-car="roadster"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-sig-front.png"); }
-.cab-sprite[data-car="roadster"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-sig-back.png"); }
-.cab-sprite[data-car="roadster"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-sig-side.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-black-front.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-black-back.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="black"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-black-side.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-silver-front.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-silver-back.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-silver-side.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-red-front.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-red-back.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="red"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-red-side.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-blue-front.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-blue-back.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-blue-side.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-sig-front.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-sig-back.png"); }
-.cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-sig-side.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-black-front.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-black-back.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-black-side.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-silver-front.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-silver-back.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-silver-side.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-red-front.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-red-back.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-red-side.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-blue-front.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-blue-back.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-blue-side.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-sig-front.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-sig-back.png"); }
-.cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-sig-side.png"); }
-.cab-sprite[data-car="model3"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-black-front.png"); }
-.cab-sprite[data-car="model3"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-black-back.png"); }
-.cab-sprite[data-car="model3"][data-paint="black"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-black-side.png"); }
-.cab-sprite[data-car="model3"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-silver-front.png"); }
-.cab-sprite[data-car="model3"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-silver-back.png"); }
-.cab-sprite[data-car="model3"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-silver-side.png"); }
-.cab-sprite[data-car="model3"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-red-front.png"); }
-.cab-sprite[data-car="model3"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-red-back.png"); }
-.cab-sprite[data-car="model3"][data-paint="red"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-red-side.png"); }
-.cab-sprite[data-car="model3"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-blue-front.png"); }
-.cab-sprite[data-car="model3"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-blue-back.png"); }
-.cab-sprite[data-car="model3"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-blue-side.png"); }
-.cab-sprite[data-car="model3"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-sig-front.png"); }
-.cab-sprite[data-car="model3"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-sig-back.png"); }
-.cab-sprite[data-car="model3"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-sig-side.png"); }
-.cab-sprite[data-car="belair57"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-black-front.png"); }
-.cab-sprite[data-car="belair57"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-black-back.png"); }
-.cab-sprite[data-car="belair57"][data-paint="black"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-black-side.png"); }
-.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-silver-front.png"); }
-.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-silver-back.png"); }
-.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-silver-side.png"); }
-.cab-sprite[data-car="belair57"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-red-front.png"); }
-.cab-sprite[data-car="belair57"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-red-back.png"); }
-.cab-sprite[data-car="belair57"][data-paint="red"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-red-side.png"); }
-.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-blue-front.png"); }
-.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-blue-back.png"); }
-.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-blue-side.png"); }
-.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-sig-front.png"); }
-.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-sig-back.png"); }
-.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-sig-side.png"); }
+.cab-sprite[data-car="civic"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-black-front.webp"); }
+.cab-sprite[data-car="civic"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-black-back.webp"); }
+.cab-sprite[data-car="civic"][data-paint="black"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-black-side.webp"); }
+.cab-sprite[data-car="civic"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-silver-front.webp"); }
+.cab-sprite[data-car="civic"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-silver-back.webp"); }
+.cab-sprite[data-car="civic"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-silver-side.webp"); }
+.cab-sprite[data-car="civic"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-red-front.webp"); }
+.cab-sprite[data-car="civic"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-red-back.webp"); }
+.cab-sprite[data-car="civic"][data-paint="red"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-red-side.webp"); }
+.cab-sprite[data-car="civic"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-blue-front.webp"); }
+.cab-sprite[data-car="civic"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-blue-back.webp"); }
+.cab-sprite[data-car="civic"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-blue-side.webp"); }
+.cab-sprite[data-car="civic"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-sig-front.webp"); }
+.cab-sprite[data-car="civic"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-sig-back.webp"); }
+.cab-sprite[data-car="civic"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="civic"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/civic-sig-side.webp"); }
+.cab-sprite[data-car="f150"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-black-front.webp"); }
+.cab-sprite[data-car="f150"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-black-back.webp"); }
+.cab-sprite[data-car="f150"][data-paint="black"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-black-side.webp"); }
+.cab-sprite[data-car="f150"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-silver-front.webp"); }
+.cab-sprite[data-car="f150"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-silver-back.webp"); }
+.cab-sprite[data-car="f150"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-silver-side.webp"); }
+.cab-sprite[data-car="f150"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-red-front.webp"); }
+.cab-sprite[data-car="f150"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-red-back.webp"); }
+.cab-sprite[data-car="f150"][data-paint="red"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-red-side.webp"); }
+.cab-sprite[data-car="f150"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-blue-front.webp"); }
+.cab-sprite[data-car="f150"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-blue-back.webp"); }
+.cab-sprite[data-car="f150"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-blue-side.webp"); }
+.cab-sprite[data-car="f150"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/f150-sig-front.webp"); }
+.cab-sprite[data-car="f150"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/f150-sig-back.webp"); }
+.cab-sprite[data-car="f150"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="f150"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/f150-sig-side.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="white"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-white-front.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="white"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-white-back.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="white"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="white"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-white-side.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-black-front.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-black-back.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="black"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-black-side.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-red-front.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-red-back.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="red"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-red-side.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-blue-front.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-blue-back.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-blue-side.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/mustang-sig-front.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/mustang-sig-back.webp"); }
+.cab-sprite[data-car="mustang"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="mustang"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/mustang-sig-side.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-black-front.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-black-back.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="black"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-black-side.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-silver-front.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-silver-back.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-silver-side.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-red-front.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-red-back.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="red"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-red-side.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-blue-front.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-blue-back.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-blue-side.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster-sig-front.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster-sig-back.webp"); }
+.cab-sprite[data-car="roadster"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="roadster"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster-sig-side.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-black-front.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-black-back.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="black"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-black-side.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-silver-front.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-silver-back.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-silver-side.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-red-front.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-red-back.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="red"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-red-side.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-blue-front.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-blue-back.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-blue-side.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/roadster2-sig-front.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/roadster2-sig-back.webp"); }
+.cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="roadster2"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/roadster2-sig-side.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-black-front.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-black-back.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-black-side.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-silver-front.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-silver-back.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-silver-side.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-red-front.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-red-back.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-red-side.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-blue-front.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-blue-back.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-blue-side.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/ioniq5-sig-front.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/ioniq5-sig-back.webp"); }
+.cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="ioniq5"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/ioniq5-sig-side.webp"); }
+.cab-sprite[data-car="model3"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-black-front.webp"); }
+.cab-sprite[data-car="model3"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-black-back.webp"); }
+.cab-sprite[data-car="model3"][data-paint="black"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-black-side.webp"); }
+.cab-sprite[data-car="model3"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-silver-front.webp"); }
+.cab-sprite[data-car="model3"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-silver-back.webp"); }
+.cab-sprite[data-car="model3"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-silver-side.webp"); }
+.cab-sprite[data-car="model3"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-red-front.webp"); }
+.cab-sprite[data-car="model3"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-red-back.webp"); }
+.cab-sprite[data-car="model3"][data-paint="red"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-red-side.webp"); }
+.cab-sprite[data-car="model3"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-blue-front.webp"); }
+.cab-sprite[data-car="model3"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-blue-back.webp"); }
+.cab-sprite[data-car="model3"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-blue-side.webp"); }
+.cab-sprite[data-car="model3"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/model3-sig-front.webp"); }
+.cab-sprite[data-car="model3"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/model3-sig-back.webp"); }
+.cab-sprite[data-car="model3"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="model3"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/model3-sig-side.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-black-front.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-black-back.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="black"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="black"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-black-side.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-silver-front.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-silver-back.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="silver"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="silver"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-silver-side.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="red"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-red-front.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="red"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-red-back.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="red"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="red"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-red-side.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-blue-front.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-blue-back.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="blue"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="blue"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-blue-side.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="down"] { background-image: url("/sprites/cars/paint/belair57-sig-front.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="up"] { background-image: url("/sprites/cars/paint/belair57-sig-back.webp"); }
+.cab-sprite[data-car="belair57"][data-paint="sig"][data-face="left"], .cab-sprite[data-car="belair57"][data-paint="sig"][data-face="right"] { background-image: url("/sprites/cars/paint/belair57-sig-side.webp"); }
 .paint-chip { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgb(255 255 255 / 0.35); vertical-align: -2px; }
 .cab-sprite[data-car]:not([data-car=""])[data-face="down"], .cab-sprite[data-car]:not([data-car=""])[data-face="up"] { background-size: 40px auto; }
 .cab-sprite[data-car]:not([data-car=""])[data-face="left"] { transform: scaleX(-1); }
@@ -3828,11 +3827,13 @@ h3 {
 .loop-sled .cab-sprite {
   filter: drop-shadow(0 0 6px rgb(160 200 255 / 0.5));
 }
+/* 0.1.161: the skid glows on the ties under the wheels, behind the painted car. Nothing is drawn over the painting. */
 .loop-skid {
   position: absolute;
+  z-index: -1;
   left: 2px;
   right: 2px;
-  bottom: 9px;
+  bottom: -1px;
   height: 3px;
   border-radius: 2px;
   background: linear-gradient(90deg, transparent, #7fd4ff, transparent);
