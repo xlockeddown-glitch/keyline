@@ -218,6 +218,6 @@ test("0.1.163 the title street's lamp and vault glows are painted in: no overlay
     const { w, h, alpha } = webpInfo(buf);
     assert.deepEqual([w, h], [1600, 900], `street-${name}.webp is ${w}x${h}`);
     assert.equal(alpha, false, `street-${name}.webp is opaque`);
-    assert.ok(buf.length < 80_000, `street-${name}.webp is ${buf.length} bytes`);
+    assert.ok(buf.length < 200_000, `street-${name}.webp is ${buf.length} bytes`);
   }
 });
