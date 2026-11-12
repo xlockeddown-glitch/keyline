@@ -160,66 +160,8 @@
   }
 }
 
-.shop-awning{
-  background:linear-gradient(180deg,var(--skin-cap-hi,#e0c788) 0%,var(--skin-cap-mid,#c9a35e) 42%,var(--skin-cap-lo,#8a6a38) 100%);
-  box-shadow:0 1px 0 var(--skin-cap-shadow,#5a4528);
-  filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))
-}
-.shop-pin.near .shop-awning{
-  filter:drop-shadow(0 2px 5px color-mix(in oklab, #c9a35e 45%, transparent))
-}
-
-.shop-body{
-  border-color:var(--skin-rim,#8a7348);
-  box-shadow:inset 0 0 0 1px #2a2218
-}
-
-.shop-window{
-  background:
-    radial-gradient(ellipse 70% 60% at 50% 60%,
-      color-mix(in oklab, var(--glow, var(--color-vault-amber)) 80%, #fff4d6) 0%,
-      color-mix(in oklab, var(--glow, var(--color-vault-amber)) 35%, #1a1612) 70%,
-      #0c0a08 100%);
-  box-shadow:
-    inset 0 0 2px rgba(255,244,214,.35),
-    0 0 5px color-mix(in oklab, var(--glow, var(--color-vault-amber)) 45%, transparent)
-}
-
-.shop-pin{
-  --glow:var(--color-vault-amber)
-}
-.shop-awning::before{
-  content:"";
-  position:absolute;
-  right:6px;
-  top:100%;
-  width:1px;
-  height:4px;
-  background:linear-gradient(180deg,#e0c788,#8a6a38);
-  z-index:3
-}
-.shop-pin::after{
-  content:"";
-  position:absolute;
-  right:3px;
-  top:10px;
-  width:8px;
-  height:10px;
-  z-index:3;
-  pointer-events:none;
-  border-radius:1px;
-  border:1px solid #8a7348;
-  box-shadow:
-    inset 0 0 0 1px #2a2218,
-    0 0 5px color-mix(in oklab, var(--glow) 45%, transparent);
-  background:
-    linear-gradient(180deg,#e0c788 0%,#c9a35e 35%,#8a6a38 100%) 0 0/8px 3px no-repeat,
-    radial-gradient(ellipse 70% 55% at 50% 62%,
-      color-mix(in oklab, var(--glow) 85%, #fff4d6) 0%,
-      color-mix(in oklab, var(--glow) 35%, #1a1612) 58%,
-      #0c0a08 100%);
-  background-color:#12100e
-}
+/* 0.1.162: the outfitter pin is a finished painting (prop-art.css, pins.ts shopPinHtml); the CSS awning,
+   window and hanging lamp that used to sit here are gone, so nothing is drawn over it. */
 
 .panel:has(.hq-tabs){
   border-color:var(--skin-rim,#8a7348);

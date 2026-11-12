@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.159";
+export const APP_VERSION = "0.1.162";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1159a";
+export const PUBLISH_STAMP = "k1162a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -256,3 +256,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.157 follow-up (same version, still k1157a): map houses drawn larger with a per-tier floor and a warm light behind them, so each is at least as tall as the old art; the Loop sled sits on the near rails and one tunnel copy zooms once over the ride (no double exposure).
 // 0.1.158: True/False and Closest Number formats on street lamps (opt-in deal). Closest Number pays on a sliding relative-error scale (×1 on the dot, down to ×0 at 25% off). 0.1.155 is held for trivia cards. Ships with the Comet vault in 0.1.159 (k1158a).
 // 0.1.159: Comet vault — a rare timed green vault in each city every 6 hours, open 20 minutes, on a baked walkable street near spawn, clear of the night markets and the lamps; opens with a green key, pays ×1.5 green coin plus a guaranteed blue key and the usual key back, once per window (signed in: an ev: ledger row; guests go dark locally); never stacks with the night market. Painted open/cooling/locked pins from the approved Gemini mock; the HUD reads "Comet vault on … · N min left" / "next comet in …". Also ships True/False and Closest Number formats (0.1.158). 0.1.155 is still held for trivia (k1159a).
+// 0.1.162: Painted shop and sign art — the print shop, street counter, outfitter, station sign and notice board use Ryan's approved Gemini paintings (transparent webp cutouts) in place of the pixel props and the inline-SVG enamel plates, matching the Comet pin; the outfitter's Hire tab shows its front like the print shop and counter do; fare and cooling stay off the painting (a "Fare" label under the station pin, a whole-image filter for cooling). 0.1.160 and 0.1.161 are held for the painted vaults and cars. 0.1.155 is still held for trivia (k1162a).

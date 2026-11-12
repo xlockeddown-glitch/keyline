@@ -67,30 +67,45 @@ export function cometPinHtml(o: { cooling?: boolean; lockout?: boolean; title?: 
   return `<div class="vault-pin comet-pin tier-green is-${state}${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}" title="${title}"><img class="comet-sprite" src="/sprites/comet/${state}.webp" width="48" height="58" alt="" draggable="false" /></div>`;
 }
 
-/** Front of a carriage on rails: lamps, windscreen, buffers. Reads as "train" at 20px. */
-const TRAIN = `<svg class="station-train" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="15" rx="3.5"/><rect class="pane" x="7.4" y="5" width="9.2" height="5.2" rx="1"/><circle class="eye" cx="8.6" cy="13.6" r="1.25"/><circle class="eye" cx="15.4" cy="13.6" r="1.25"/><path class="rails" d="M8 17.5 5.5 21.5M16 17.5l2.5 4M4 21.5h16"/></svg>`;
+/**
+ * 0.1.162 painted shop and sign pins: Ryan's approved Gemini paintings, cut to transparent webps. Each pin is a
+ * wrapper plus one <img>, like the Comet pin: nothing is drawn over the painting (no SVG, enamel plate, CSS post,
+ * ring or extra shadow). The CSS boxes below are the map sizes; GameMap anchors each foot on the shared shadow.
+ */
+export const PAINTED_PIN = {
+  shop: { src: "/sprites/outfitter.webp", w: 60, h: 56 },
+  counter: { src: "/sprites/street-counter.webp", w: 48, h: 60 },
+  station: { src: "/sprites/station-sign.webp", w: 44, h: 60 },
+  board: { src: "/sprites/notice-sign.webp", w: 44, h: 60 },
+} as const;
+/** Place names go into a title attribute: drop the characters that could close it. */
+const esc = (s: string) => s.replace(/[<>"]/g, "");
+const sprite = (k: keyof typeof PAINTED_PIN) =>
+  `<img class="${k}-sprite" src="${PAINTED_PIN[k].src}" width="${PAINTED_PIN[k].w}" height="${PAINTED_PIN[k].h}" alt="" draggable="false" />`;
 
 /**
  * Fare desk marker: a station sign, never a lamp. No lantern parts and no tier class, so it
- * can't be mistaken for any tier at a glance. `fare` lights it when the player holds a fare.
+ * can't be mistaken for any tier at a glance. Holding a fare adds `has-fare` and a small "Fare" label under the
+ * post, beside the painting, never on it. Cooling dims the whole image (CSS).
  */
 export function stationPinHtml(o: { cooling?: boolean; fare?: boolean } = {}) {
-  return `<div class="station-pin${o.fare ? " has-fare" : ""}${o.cooling ? " cooling" : ""}"><span class="station-sign">${TRAIN}</span><i class="station-post"></i></div>`;
+  const title = o.fare ? "Station · you hold a fare" : o.cooling ? "Station · the desk is resting" : "Station";
+  return `<div class="station-pin painted-station-pin${o.fare ? " has-fare" : ""}${o.cooling ? " cooling" : ""}" title="${title}">${sprite("station")}${o.fare ? `<b class="station-fare">Fare</b>` : ""}</div>`;
 }
 
-/** 0.1.27: the board is an enamel sign built like the station's, with a bold "!" instead of the train. */
-const NOTICE = `<svg class="service-glyph board-bang" viewBox="0 0 24 24" aria-hidden="true"><rect x="9.4" y="3" width="5.2" height="12.4" rx="2.6"/><circle cx="12" cy="19.4" r="2.7"/></svg>`;
-/** Three matches. The counter sells them, so the sign is a fan of matches, not a stall. */
-const CUP = `<svg class="service-glyph" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="#ece4d6" stroke-width="1.7" stroke-linecap="round"><path d="M8.2 19 7 8.6M12 19.6V8.2M15.8 19 17 8.6"/></g><circle cx="6.8" cy="6.6" r="2.05" fill="#efe8dc"/><circle cx="12" cy="6.1" r="2.05" fill="#6e8fa8"/><circle cx="17.2" cy="6.6" r="2.05" fill="#cba56c"/></svg>`;
+/** Outfitter: the painted shop front (suit in the window, red and cream awning). */
+export function shopPinHtml(name: string) {
+  return `<div class="shop-pin painted-shop-pin" title="${esc(name)}">${sprite("shop")}</div>`;
+}
 
-/** Street counter: enamel sign, deep green, a match in a cup. Not a lamp. */
+/** Street counter: the painted stall with three vault keys on its green sign. Not a lamp. */
 export function counterPinHtml(name: string) {
-  return `<div class="service-pin counter-pin" title="${name}"><span class="service-sign">${CUP}</span><i class="service-post"></i></div>`;
+  return `<div class="service-pin counter-pin painted-counter-pin" title="${esc(name)}">${sprite("counter")}</div>`;
 }
 
-/** Notice board: enamel sign, ink brown, a posted sheet. Not a lamp. */
+/** Notice board: the painted oxblood sign with a cream "!". Not a lamp. Unread and errand details stay in the card. */
 export function boardPinHtml(name: string) {
-  return `<div class="service-pin board-pin" title="${name}"><span class="service-sign">${NOTICE}</span><i class="service-post"></i></div>`;
+  return `<div class="service-pin board-pin painted-board-pin" title="${esc(name)}">${sprite("board")}</div>`;
 }
 
 /** Tier class on a marker's root element, or null if it has none. */

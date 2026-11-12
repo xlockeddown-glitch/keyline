@@ -93,29 +93,58 @@
 .matchbook-stick.tier-red{ background-image:url("/sprites/matches/red.png") }
 .matchbook-stick.tier-violet{ background-image:url("/sprites/matches/violet.png") }
 
+/* 0.1.162: painted shop and sign pins (docs/ART_DIRECTION.md, pins.ts). Each pin is one transparent webp in an
+   <img>: no background sprite, no filter or drop-shadow, nothing drawn over the painting. The older CSS lamp on
+   the shop (lantern-art.css .shop-pin::after) is switched off here. */
 .shop-pin{
-  width:44px;
-  height:66px;
-  /* 0.1.27: redrawn in the lantern/vault style (iron, brass trim, lit window). */
-  background:url("/sprites/outfitter-front.png?v=k127a") center bottom / contain no-repeat;
-  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
+  width:60px;
+  height:56px;
+  background:none;
+  filter:none
 }
-.shop-awning,
-.shop-body{
+.shop-pin.painted-shop-pin::before,
+.shop-pin.painted-shop-pin::after{
   display:none
+}
+.shop-sprite{
+  display:block;
+  width:60px;
+  height:56px;
+  object-fit:contain;
+  object-position:50% 100%;
+  image-rendering:auto
 }
 
-/* Art contract: docs/ART_DIRECTION.md. 0.1.135: the sign shows three vault keys, not matches. */
 .counter-pin{
-  width:46px;
-  height:58px;
-  background:url("/sprites/street-counter-v2.png?v=k1135a") center bottom / contain no-repeat;
-  image-rendering:pixelated;
-  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 5px rgb(255 170 70 / .35))
+  width:48px;
+  height:60px;
+  background:none;
+  image-rendering:auto;
+  filter:none
 }
-.counter-pin .service-sign,
-.counter-pin .service-post{
-  display:none
+.counter-sprite{
+  display:block;
+  width:48px;
+  height:60px;
+  object-fit:contain;
+  object-position:50% 100%
+}
+.board-pin{
+  width:44px;
+  height:60px;
+  background:none;
+  filter:none
+}
+.board-sprite,
+.station-sprite{
+  display:block;
+  width:44px;
+  height:60px;
+  object-fit:contain;
+  object-position:50% 100%
+}
+.station-pin{
+  filter:none
 }
 
 .print-front{
@@ -130,7 +159,8 @@
   height:148px;
   width:auto;
   max-width:100%;
-  image-rendering:pixelated
+  object-fit:contain;
+  image-rendering:auto
 }
 /* Same night plate as the print shop, shorter, so the counter sheet shows the map drawing. */
 .counter-front{
@@ -138,6 +168,10 @@
 }
 .counter-front img{
   height:124px
+}
+/* 0.1.162: the outfitter's own front on the Hire tab, the same painting as its map pin. */
+.shop-front img{
+  height:148px
 }
 
 .title-night.is-blade{
