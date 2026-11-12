@@ -46,4 +46,11 @@ test("Travel sheet offers the Loop, no train (0.1.95) and no Arrive (0.1.125); t
   const cut = readFileSync(new URL("../components/keyline/LoopScreen.tsx", import.meta.url), "utf8");
   assert.match(cut, /prefers-reduced-motion: reduce/);
   assert.match(cut, /data-testid="loop-skip"/);
+  // 0.1.157: the painted tunnel replaces the CSS rings and lights; reduced motion keeps one still copy.
+  assert.match(cut, /className="loop-paint"/);
+  assert.doesNotMatch(cut, /loop-ring|loop-light/);
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.match(css, /url\("\/sprites\/loop\/tunnel\.webp"\)/);
+  assert.match(css, /\.loop-screen\.is-reduced \.loop-paint \{\s*animation: none;/);
+  assert.doesNotMatch(css, /@keyframes loop-ring|@keyframes loop-light/);
 });

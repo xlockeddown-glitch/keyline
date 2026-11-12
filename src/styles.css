@@ -3635,8 +3635,9 @@ h3 {
 .house-pic { display: block; width: 44px; height: 35px; border-radius: 6px; border: 2px solid #e8c77a; background: #1b2030 center / cover no-repeat; box-shadow: 0 0 10px rgb(232 199 122 / 0.45), 0 2px 6px rgb(0 0 0 / 0.5); }
 .house-pin.is-home .house-pic { border-color: #9fe0a8; box-shadow: 0 0 12px rgb(255 200 110 / 0.6), 0 2px 6px rgb(0 0 0 / 0.5); }
 .house-chip { font-size: 11px; font-weight: 600; color: #f3e6c4; white-space: nowrap; padding: 1px 6px; border-radius: 999px; background: rgb(15 18 26 / 0.82); border: 1px solid rgb(232 199 122 / 0.5); }
-.house-art { display: block; width: 100%; height: auto; border-radius: 10px; }
-.house-thumb { float: right; width: 96px; height: 72px; object-fit: cover; border-radius: 8px; margin: 0 0 6px 10px; }
+/* 0.1.157: house art is a transparent cutout; the sheet puts it on the night field (behind the painting, nothing drawn over it). */
+.house-art { display: block; width: 100%; height: auto; border-radius: 10px; background: linear-gradient(#10141a, #24303c); }
+.house-thumb { float: right; width: 96px; height: 72px; object-fit: contain; border-radius: 8px; margin: 0 0 6px 10px; background: linear-gradient(#10141a, #24303c); }
 .house-drive { display: flex; align-items: center; gap: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgb(255 255 255 / 0.04); border: 1px dashed rgb(232 199 122 / 0.35); }
 .house-drive img { width: 168px; height: auto; }
 
@@ -3774,13 +3775,14 @@ h3 {
 .pawn.is-seated.has-driver:has(.cab-sprite[data-face="down"]),
 .pawn.is-seated.has-driver:has(.cab-sprite[data-face="up"]) { --drv-s: 0.5; --drv-y: -13px; }
 
-/* 0.1.58 The Loop: tunnel ride (CSS only). Rings and lights grow from the vanishing point; the sled holds the middle. */
+/* 0.1.58 The Loop: tunnel ride; the sled holds the middle. 0.1.157: the tube is the painted tunnel (public/sprites/loop/tunnel.webp).
+   Two copies zoom 1x to 2x into the vanishing point (52.6% 51.6% of the painting) half a cycle apart, so one is always fully in. */
 .loop-screen {
   position: fixed;
   inset: 0;
   z-index: 900;
   overflow: hidden;
-  background: radial-gradient(circle at 50% 46%, #1b2230 0%, #0b0e14 38%, #030407 75%);
+  background: #07090d;
   animation: loop-in 500ms ease-out both, loop-out 600ms ease-in calc(var(--loop-ms) - 600ms) both;
 }
 .loop-screen.is-reduced {
@@ -3791,36 +3793,18 @@ h3 {
   inset: 0;
   perspective: 600px;
 }
-.loop-ring {
+.loop-paint {
   position: absolute;
-  left: 50%;
-  top: 46%;
-  width: 140vmax;
-  height: 140vmax;
-  margin: -70vmax 0 0 -70vmax;
-  border-radius: 50%;
-  border: 2px solid rgb(120 150 190 / 0.35);
-  box-shadow: inset 0 0 40px rgb(80 110 160 / 0.25);
-  animation: loop-ring 0.9s linear infinite;
+  inset: 0;
+  background: url("/sprites/loop/tunnel.webp") 52.6% 51.6% / cover no-repeat;
+  transform-origin: 52.6% 51.6%;
+  animation: loop-zoom 2.4s linear infinite;
 }
-.loop-light {
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  width: 6px;
-  height: 22px;
-  margin-left: -3px;
-  border-radius: 3px;
-  background: #ffe6a8;
-  box-shadow: 0 0 14px 4px rgb(255 214 140 / 0.7);
-  transform-origin: 50% 0;
-  animation: loop-light 0.9s linear infinite;
+.loop-paint.is-next {
+  animation-delay: -1.2s;
 }
-.loop-light:nth-child(odd) {
-  --side: -1;
-}
-.loop-light:nth-child(even) {
-  --side: 1;
+.loop-screen.is-reduced .loop-paint {
+  animation: none;
 }
 .loop-sled {
   position: absolute;
@@ -3856,21 +3840,20 @@ h3 {
   color: #e9eef7;
   text-shadow: 0 2px 10px #000;
 }
+.loop-route .kicker {
+  color: #e0c788;
+}
 .loop-skip {
   position: absolute;
   right: 16px;
   bottom: calc(24px + env(safe-area-inset-bottom));
   min-width: 88px;
 }
-@keyframes loop-ring {
-  from { transform: scale(0.02); opacity: 0; }
-  20% { opacity: 1; }
-  to { transform: scale(1); opacity: 0.2; }
-}
-@keyframes loop-light {
-  from { transform: translate(0, 0) scale(0.1); opacity: 0; }
-  20% { opacity: 1; }
-  to { transform: translate(calc(var(--side) * 46vw), 40vh) scale(2.4); opacity: 0; }
+@keyframes loop-zoom {
+  from { transform: scale(1); opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  to { transform: scale(2); opacity: 0; }
 }
 @keyframes loop-sled {
   from { translate: 0 0; }
@@ -3883,7 +3866,8 @@ h3 {
   to { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .loop-ring, .loop-light, .loop-sled { animation: none; }
+  .loop-paint, .loop-sled { animation: none; }
+  .loop-paint.is-next { display: none; }
 }
 
 /* 0.1.58 tunnel posters in the Journal. */

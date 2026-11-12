@@ -93,7 +93,8 @@ export const houseArt = (t: HouseTier) => `/houses/${t}.webp`;
 export const housePin = (t: HouseTier) => `/houses/${t}-pin.webp`;
 /** The map cutout (transparent) and its rough frontage in metres, so the house draws at building scale. */
 export const houseMapArt = (t: HouseTier) => `/houses/${t}-map.webp`;
-export const HOUSE_METERS: Record<HouseTier, number> = { cottage: 11, row: 8, town: 12, villa: 26 };
+// 0.1.157: town 12 → 16 m. The approved Ivy Townhouse painting is a wide manor (about 5:3), so at 12 m it drew no bigger than the cottage.
+export const HOUSE_METERS: Record<HouseTier, number> = { cottage: 11, row: 8, town: 16, villa: 26 };
 
 /** 0.1.40: the Journal's "Your houses" list — owned houses (city order) first, then every other city's lot for sale. */
 export function houseList(houses: Partial<Record<CityId, HouseState>>): {

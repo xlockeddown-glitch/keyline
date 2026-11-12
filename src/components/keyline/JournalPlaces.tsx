@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { CAT_LABEL, cotdAt } from "@/game/carPerks";
 import { CITIES, KIND_LABEL, TIER_LABEL } from "@/game/data";
-import { KEY_MATCHES, houseArt, houseList } from "@/game/houses";
+import { KEY_MATCHES, houseList, housePin } from "@/game/houses";
 import { MARKET_TAG } from "@/game/nightMarket";
 import { useOwnedLamps } from "@/game/ownLampsClient";
 import { useGame } from "@/game/store";
@@ -196,7 +196,7 @@ export function PlacesTab() {
             const done = claims.includes(`hook:${h.city}:${cityDay(h.city, now)}`);
             return (
               <li key={h.city} className="hq-row jr-detail" data-testid={`place-house-${h.city}`}>
-                <img src={houseArt(h.house.id)} alt="" width={36} height={36} className="shrink-0 rounded object-cover" />
+                <img src={housePin(h.house.id)} alt="" width={36} height={36} className="shrink-0 rounded bg-bg-subtle object-contain" />
                 <div className="hq-row-copy">
                   <p className="hq-row-title">
                     {CITIES[h.city].name} · {h.house.name}

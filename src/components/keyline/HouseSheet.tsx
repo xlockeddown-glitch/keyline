@@ -4,7 +4,7 @@ import { carOf } from "@/game/cars";
 import { carSprite } from "@/game/carPaint";
 import { TIER_LABEL } from "@/game/data";
 import type { Tier } from "@/game/types";
-import { HOUSES, HOME_LAMPS, KEY_MATCHES, houseArt, houseCost, houseOf, lotOf } from "@/game/houses";
+import { HOUSES, HOME_LAMPS, KEY_MATCHES, houseArt, houseCost, houseOf, housePin, lotOf } from "@/game/houses";
 import { useGame } from "@/game/store";
 import { cityDay } from "@/game/vaultStack";
 import { ItemIcon } from "./ItemIcon";
@@ -51,7 +51,7 @@ export function HouseSheet() {
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {owned ? (
             <div className="house-owned" data-testid="house-owned">
-              <img className="house-art" src={houseArt(owned.id)} alt="" width={480} height={360} />
+              <img className="house-art" src={houseArt(owned.id)} alt="" width={1080} height={810} />
               <div className="house-drive" data-testid="house-drive">
                 <span className="kicker">Drive</span>
                 {car ? (
@@ -87,7 +87,7 @@ export function HouseSheet() {
               const short = cost !== null && points < cost;
               return (
                 <div key={h.id} className={`car-card${h.star ? " is-star" : ""}`} data-testid={`house-${h.id}`}>
-                  <img className="house-thumb" src={houseArt(h.id)} alt="" width={160} height={120} loading="lazy" />
+                  <img className="house-thumb" src={housePin(h.id)} alt="" width={336} height={264} loading="lazy" />
                   <div className="flex items-end justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="font-display text-lg leading-tight">{h.name}</p>
