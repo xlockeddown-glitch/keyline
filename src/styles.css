@@ -1194,6 +1194,10 @@ h3 {
   .sheet-open .leaflet-control-zoom{
     display:none
   }
+  /* 0.1.156: the OSM credit sat on the last Journal rows the same way. */
+  .sheet-open .leaflet-control-attribution{
+    display:none
+  }
   /* 0.0.57: the page is viewport-fit=cover, so a bottom sheet's last row sat under the home indicator. */
   .sheet-bottom{
     padding-bottom:env(safe-area-inset-bottom, 0px)

@@ -19,6 +19,7 @@ export type PoiKind =
   | "board";
 
 export type CityId = "austin" | "temple" | "nyc" | "sf" | "london" | "chicago" | "detroit" | "tucson" | "toronto" | "la" | "boston" | "nola" | "seattle" | "denver" | "nashville" | "philly";
+export const CITY_IDS = ["austin", "temple", "nyc", "sf", "london", "chicago", "detroit", "tucson", "toronto", "la", "boston", "nola", "seattle", "denver", "nashville", "philly"] as const satisfies readonly CityId[];
 
 export type TriviaCat = "sports" | "local" | "political" | "food" | "arts" | "math" | "science" | "history" | "nature" | "games" | "celebrity" | "music" | "books" | "geography";
 
