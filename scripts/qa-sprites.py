@@ -40,8 +40,8 @@ SCOUTS = SPR / "scouts"
 
 # Idle is 2x2 @ 256; walk is 4x4 @ 384. Raccoon uses the player sheets.
 SHEETS = {
-    "raccoon-idle": (SPR / "player-idle.png", (256, 256)),
-    "raccoon-walk": (SPR / "player-walk.png", (384, 384)),
+    "raccoon-idle": (SPR / "player-idle.webp", (256, 256)),
+    "raccoon-walk": (SPR / "player-walk.webp", (384, 384)),
     "cat-idle": (SCOUTS / "cat-idle.png", (256, 256)),
     "cat-walk": (SCOUTS / "cat-walk.png", (384, 384)),
     "corgi-idle": (SCOUTS / "corgi-idle.png", (256, 256)),
@@ -59,7 +59,7 @@ SHEETS = {
     "giraffe-idle": (SCOUTS / "giraffe-idle.png", (256, 256)),
     "giraffe-walk": (SCOUTS / "giraffe-walk.png", (384, 384)),
     # Side idles: 2x2 @ 96 — row 0 faces left, row 1 faces right.
-    "raccoon-idle-side": (SPR / "player-idle-side.png", (192, 192)),
+    "raccoon-idle-side": (SPR / "player-idle-side.webp", (192, 192)),
     "cat-idle-side": (SCOUTS / "cat-idle-side.png", (192, 192)),
     "corgi-idle-side": (SCOUTS / "corgi-idle-side.png", (192, 192)),
     "fox-idle-side": (SCOUTS / "fox-idle-side.png", (192, 192)),
@@ -71,7 +71,7 @@ SHEETS = {
 }
 # Shop icons (one 96 px idle-style portrait each); checked against the idle coat, not inspected as sheets.
 SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe", "panda"]  # 0.0.51: + the Giraffe
-ICONS = {s: SCOUTS / f"{s}.png" for s in SCOUT_IDS}
+ICONS = {s: SCOUTS / f"{s}.webp" for s in SCOUT_IDS}
 
 # 0.0.83: scouts redrawn on the v2 sheets (src/game/coatLayer.ts V2_SCOUTS) — one 8x6 sheet of 192 px cells plus a
 # coat mask, checked by v2_check(). Every other check here covers the legacy 4x4 / 2x2 sheets only.

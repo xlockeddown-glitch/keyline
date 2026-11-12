@@ -1620,8 +1620,8 @@ export async function bootstrapDrive(lat: number, lng: number, hubs: Pt[], signa
   const inTime = await Promise.race([live, new Promise<null>((r) => setTimeout(() => r(null), DRIVE_LIVE_WAIT_MS))]);
   if (inTime !== true || g.segs.length < 8) {
     if (cityId) {
-      const baked = await fetch(`/streets/${cityId}.json`)
-        .then(async (res) => (res.ok ? ((await res.json()) as { lines?: number[][] }).lines ?? [] : []))
+      const baked = await fetch(`/streets/${cityId}.json.gz`)
+        .then(async (res) => (res.ok ? (await readGzJson<{ lines?: number[][] }>(res)).lines ?? [] : []))
         .catch(() => [] as number[][]);
       if (baked.length) ingestOsmWays(g, unpackLines(baked), true);
     }
@@ -1752,11 +1752,15 @@ export function loadBakedCity(cityId: string): Promise<BakedCity | null> {
 }
 
 /** The file ships as .json.gz; inflate it unless the host already sent it decoded (Content-Encoding: gzip). */
-async function readBaked(res: Response): Promise<BakedCity> {
+async function readGzJson<T>(res: Response): Promise<T> {
   const buf = new Uint8Array(await res.arrayBuffer());
   let bytes: Uint8Array | ArrayBuffer = buf;
   if (buf[0] === 0x1f && buf[1] === 0x8b) bytes = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
-  return JSON.parse(new TextDecoder().decode(bytes)) as BakedCity;
+  return JSON.parse(new TextDecoder().decode(bytes)) as T;
+}
+/** 0.1.163: the fallback maps (/streets/<id>.json.gz, <id>-fw.json.gz) read the same way. */
+function readBaked(res: Response): Promise<BakedCity> {
+  return readGzJson<BakedCity>(res);
 }
 
 /** Straight into the graph: walk (flag 1, freeways to the no-walk layer) or drive (flag 2, arterial from flag 8). */
@@ -1846,17 +1850,17 @@ export async function bootstrapStreets(cityId: string, lat: number, lng: number,
   // 0.0.52b: the city's freeway layer ships with the build, so walks are held off ramps and feeders even when
   // the live street fetch fails and the graph is only the baked foot routes. Load it before the foot graph so
   // corner bridges can see the centerlines.
-  const fwP = fetch(`/streets/${cityId}-fw.json`)
+  const fwP = fetch(`/streets/${cityId}-fw.json.gz`)
     .then(async (res) => {
       if (!res.ok) return [] as Pt[][];
-      const packed = (await res.json()) as { lines?: number[][] };
+      const packed = await readGzJson<{ lines?: number[][] }>(res);
       return unpackFreeways(packed.lines ?? []);
     })
     .catch(() => [] as Pt[][]);
-  const streetsP = fetch(`/streets/${cityId}.json`)
+  const streetsP = fetch(`/streets/${cityId}.json.gz`)
     .then(async (res) => {
       if (!res.ok) return [] as OsmWay[];
-      const packed = (await res.json()) as { lines?: number[][] };
+      const packed = await readGzJson<{ lines?: number[][] }>(res);
       return packed.lines?.length ? unpackLines(packed.lines) : [];
     })
     .catch(() => [] as OsmWay[]);

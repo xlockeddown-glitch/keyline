@@ -1,9 +1,10 @@
 // 0.0.52b: bake each city's freeway layer (motorways, trunks, their ramps and feeders) for the walk graph's
 // no-walk check, so walks stay off them even when the live Overpass fetch fails and the graph is only the baked
-// foot routes. One file per city, loaded with /streets/<id>.json:
-//   node --experimental-strip-types scripts/bake-freeways.mts [cityId…]  → public/streets/<id>-fw.json
+// foot routes. One file per city, loaded with /streets/<id>.json.gz (0.1.163: both ship gzipped, level 9, zero mtime):
+//   node --experimental-strip-types scripts/bake-freeways.mts [cityId…]  → public/streets/<id>-fw.json.gz
 // Lines are delta-packed integers at 1e-5°: [lat0, lng0, dLat1, dLng1, …], points ≥ STEP m apart.
 import { writeFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { CITIES } from "../src/game/data.ts";
 import { FREEWAY_HIGHWAY_RE, isFreeway } from "../src/game/walkable.ts";
 
@@ -64,6 +65,6 @@ for (const city of Object.values(CITIES)) {
     const line = pack(el.geometry);
     if (line.length >= 4) lines.push(line);
   }
-  writeFileSync(`public/streets/${city.id}-fw.json`, JSON.stringify({ v: 1, step: STEP, source: "OpenStreetMap contributors (ODbL)", lines }));
+  writeFileSync(`public/streets/${city.id}-fw.json.gz`, gzipSync(JSON.stringify({ v: 1, step: STEP, source: "OpenStreetMap contributors (ODbL)", lines }), { level: 9 }));
   console.log(city.id, "freeway lines", lines.length);
 }

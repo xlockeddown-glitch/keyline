@@ -45,9 +45,9 @@ function TitleStreet({ cityId, known }: { cityId: CityId; known: boolean }) {
       <SkyLayer />
       <div className="ts-cast">
         <img className="ts-car" src={carSprite(car, "side", carOn ? paint[car] : null)} alt="" width={640} height={240} />
-        <img className="ts-scout" src="/title/scout-corgi.png" alt="" width={86} height={146} />
-        <img className="ts-scout is-penguin" src="/title/scout-lynx.png" alt="" width={90} height={143} />
-        <img className="ts-scout" src="/title/scout-fox.png" alt="" width={87} height={151} />
+        <img className="ts-scout" src="/title/scout-corgi.webp" alt="" width={86} height={146} />
+        <img className="ts-scout is-penguin" src="/title/scout-lynx.webp" alt="" width={90} height={143} />
+        <img className="ts-scout" src="/title/scout-fox.webp" alt="" width={87} height={151} />
       </div>
     </div>
   );

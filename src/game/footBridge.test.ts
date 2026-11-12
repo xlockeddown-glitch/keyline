@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { bridgeByFoot, createGraph, ingestFreeway, ingestOsmWays, nearest, routeOnGraph, unpackFreeways, WALK_REACH_M } from "./streets.ts";
 
 // Cass Corridor, Oct 24: live streets down, baked Detroit spines only. The green lamp by 2nd Ave / Brainard sat
@@ -9,7 +10,7 @@ const player = { lat: 42.3423, lng: -83.059 };
 const lamp = { lat: 42.3478, lng: -83.064 };
 
 function bakedDetroit() {
-  const read = (f: string) => JSON.parse(fs.readFileSync(new URL(`../../public/streets/${f}`, import.meta.url), "utf8")) as { lines: number[][] };
+  const read = (f: string) => JSON.parse(gunzipSync(fs.readFileSync(new URL(`../../public/streets/${f}.gz`, import.meta.url))).toString("utf8")) as { lines: number[][] };
   const g = createGraph(player.lat, player.lng);
   for (const l of unpackFreeways(read("detroit-fw.json").lines)) ingestFreeway(g, l);
   ingestOsmWays(

@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { CITIES } from "../src/game/data.ts";
 
 // Foot profile only. Never router.project-osrm.org — it answers every profile with car routes
@@ -25,7 +26,7 @@ async function bake() {
   mkdirSync("public/streets", { recursive: true });
   for (const city of Object.values(CITIES)) {
     if (FORCE.size && !FORCE.has(city.id)) continue;
-    if (!FORCE.has(city.id) && existsSync(`public/streets/${city.id}.json`)) {
+    if (!FORCE.has(city.id) && existsSync(`public/streets/${city.id}.json.gz`)) {
       console.log(city.id, "skip");
       continue;
     }
@@ -47,7 +48,8 @@ async function bake() {
       if (ln) lines.push(ln);
       cur = nxt;
     }
-    writeFileSync(`public/streets/${city.id}.json`, JSON.stringify({ lines }));
+    // 0.1.163: shipped gzipped (level 9; Node writes a zero mtime, so a re-bake of the same lines is byte-stable).
+    writeFileSync(`public/streets/${city.id}.json.gz`, gzipSync(JSON.stringify({ lines }), { level: 9 }));
     console.log(city.id, "lines", lines.length);
   }
 }

@@ -1,9 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { canGrabMatch, clearOfFreeway, constrainStep, createGraph, finishPath, freewayRide, ingestFreeway, ingestLine, ingestOsmWays, unpackFreeways, MATCH_GRAB_M, nearest, offFreeway, onFreeway, OSRM_FOOT, pickWalk, pullToStreet, randomOnStreet, routeOnGraph, spreadOnGraph, standOpen, WALK_REACH_M, type Pt } from "./streets.ts";
 import { isExpresswayNamed, isFreeway, isWalkableWay } from "./walkable.ts";
 import { freewayGap, freewayRun } from "./pathCheck.ts";
+
+/** 0.1.163: the fallback maps ship gzipped (public/streets/<name>.json.gz). */
+const readStreets = (name: string): unknown => JSON.parse(gunzipSync(readFileSync(new URL(`../../public/streets/${name}.json.gz`, import.meta.url))).toString("utf8"));
 
 // Real OSM snapshots (scripts/fetch-path-fixtures.mjs) around freeways that walks used to ride.
 type FixWay = { id: number; tags: Record<string, string>; line: number[] };
@@ -153,7 +157,7 @@ test("an online route down the Lodge trench loses to the walk graph", () => {
 
 test("baked city streets don't ride freeways", () => {
   for (const city of ["detroit", "nyc", "austin", "seattle", "denver", "nashville", "chicago"]) {
-    const baked = JSON.parse(readFileSync(new URL(`../../public/streets/${city}.json`, import.meta.url), "utf8")) as { lines: number[][] };
+    const baked = readStreets(city) as { lines: number[][] };
     for (const l of baked.lines) {
       const path: Pt[] = [];
       for (let i = 0; i + 1 < l.length; i += 2) path.push({ lat: l[i]!, lng: l[i + 1]! });
@@ -400,18 +404,18 @@ test("every fixture city: a start dropped on any ramp or feeder snaps off it and
 test("baked freeway layers: every city ships one, and Chicago's holds the Ohio Street feeder with no live fetch", async () => {
   const { CITIES } = await import("./data.ts");
   for (const id of Object.keys(CITIES)) {
-    const packed = JSON.parse(readFileSync(new URL(`../../public/streets/${id}-fw.json`, import.meta.url), "utf8")) as { lines: number[][] };
+    const packed = readStreets(`${id}-fw`) as { lines: number[][] };
     assert.ok(packed.lines.length > 20, `${id}-fw.json has freeway lines`);
   }
   // The sparse graph a failed Overpass fetch leaves: baked foot routes + the baked freeway layer only.
   const g = createGraph(41.8827, -87.6233);
-  const baked = JSON.parse(readFileSync(new URL("../../public/streets/chicago.json", import.meta.url), "utf8")) as { lines: number[][] };
+  const baked = readStreets("chicago") as { lines: number[][] };
   for (const l of baked.lines) {
     const line: Pt[] = [];
     for (let i = 0; i + 1 < l.length; i += 2) line.push({ lat: l[i]!, lng: l[i + 1]! });
     ingestLine(g, line);
   }
-  const fwBaked = JSON.parse(readFileSync(new URL("../../public/streets/chicago-fw.json", import.meta.url), "utf8")) as { lines: number[][] };
+  const fwBaked = readStreets("chicago-fw") as { lines: number[][] };
   for (const line of unpackFreeways(fwBaked.lines)) ingestFreeway(g, line);
   // Every point of the fixture's feeder is covered by the baked layer.
   for (const p of ohioFeeder()) assert.equal(onFreeway(g, p), true, `baked layer misses the feeder at ${p.lat},${p.lng}`);
@@ -433,7 +437,7 @@ test("every city: spawn and start sit off the baked freeway layer", async () => 
   const { CITIES } = await import("./data.ts");
   for (const city of Object.values(CITIES)) {
     const g = createGraph(city.spawn.lat, city.spawn.lng);
-    const packed = JSON.parse(readFileSync(new URL(`../../public/streets/${city.id}-fw.json`, import.meta.url), "utf8")) as { lines: number[][] };
+    const packed = readStreets(`${city.id}-fw`) as { lines: number[][] };
     for (const line of unpackFreeways(packed.lines)) ingestFreeway(g, line);
     // (Lamps and the fare desk may sit under a viaduct — New Orleans' station is under the Pontchartrain
     // Expressway — so placeOnStreet / offFreeway handle those against the live walk graph instead.)
@@ -521,7 +525,7 @@ test("corners a few meters apart join, unless that step crosses a freeway", () =
 });
 
 test("Camp Mabry has no street within a door-step, so the west curb is not the destination", () => {
-  const packed = JSON.parse(readFileSync(new URL("../../public/streets/austin.json", import.meta.url), "utf8")) as { lines: number[][] };
+  const packed = readStreets("austin") as { lines: number[][] };
   const g = createGraph(30.2672, -97.7431);
   for (const line of packed.lines) {
     const pts: Pt[] = [];

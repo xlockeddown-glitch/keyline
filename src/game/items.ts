@@ -15,25 +15,25 @@ export const MATERIALS: Record<
     id: "brass",
     name: "Brass",
     blurb: "Metal from vaults. Spend it at the outfitter shop.",
-    src: "/sprites/items/brass.png",
+    src: "/sprites/items/brass.webp",
   },
   ink: {
     id: "ink",
     name: "Ink",
     blurb: "Ink from vaults. Some shop items need it.",
-    src: "/sprites/items/ink.png",
+    src: "/sprites/items/ink.webp",
   },
   vellum: {
     id: "vellum",
     name: "Vellum",
     blurb: "Paper from vaults. Some shop items need it.",
-    src: "/sprites/items/vellum.png",
+    src: "/sprites/items/vellum.webp",
   },
   schematic: {
     id: "schematic",
     name: "Schematic",
     blurb: "A rare plan from vaults. Night glass can use one in place of press stock.",
-    src: "/sprites/items/schematic.png",
+    src: "/sprites/items/schematic.webp",
   },
 };
 
@@ -57,11 +57,11 @@ export function isMaterial(id: string): id is MaterialId {
 }
 
 export function itemSrc(id: ItemId): string {
-  if (isTier(id)) return `/sprites/keys/${id}.png`;
+  if (isTier(id)) return `/sprites/keys/${id}.webp`;
   if (isMaterial(id)) return MATERIALS[id].src;
-  if (id === "crate") return "/sprites/items/crate.png";
-  if (id === "coin") return "/sprites/items/coin.png";
-  return "/sprites/items/satchel.png";
+  if (id === "crate") return "/sprites/items/crate.webp";
+  if (id === "coin") return "/sprites/items/coin.webp";
+  return "/sprites/items/satchel.webp";
 }
 
 export function itemName(id: ItemId): string {

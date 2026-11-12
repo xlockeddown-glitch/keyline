@@ -3,7 +3,7 @@
 .lantern{
   width:18px;
   height:46px;
-  background:url("/sprites/lanterns/brass.png") center / 100% 100% no-repeat;
+  background:url("/sprites/lanterns/brass.webp") center / 100% 100% no-repeat;
   filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 6px var(--glow))
 }
 .lantern-hero{
@@ -30,17 +30,17 @@
   box-shadow:none
 }
 
-[data-lantern="copper"] .lantern{ background-image:url("/sprites/lanterns/copper.png?v=k99a") }
-[data-lantern="iron"] .lantern{ background-image:url("/sprites/lanterns/iron.png?v=k99a") }
-[data-lantern="verdigris"] .lantern{ background-image:url("/sprites/lanterns/verdigris.png?v=k99a") }
-[data-lantern="nickel"] .lantern{ background-image:url("/sprites/lanterns/nickel.png?v=k99a") }
+[data-lantern="copper"] .lantern{ background-image:url("/sprites/lanterns/copper.webp?v=k1163a") }
+[data-lantern="iron"] .lantern{ background-image:url("/sprites/lanterns/iron.webp?v=k1163a") }
+[data-lantern="verdigris"] .lantern{ background-image:url("/sprites/lanterns/verdigris.webp?v=k1163a") }
+[data-lantern="nickel"] .lantern{ background-image:url("/sprites/lanterns/nickel.webp?v=k1163a") }
 /* 0.1.1: a preview names its own skin. Without the .skin-swatch prefix the worn skin on <html> tied on specificity
    and the later rule won, so every preview showed whatever the player was wearing (nickel -> all nickel). */
-.skin-swatch[data-lantern="brass"] .lantern{ background-image:url("/sprites/lanterns/brass.png") }
-.skin-swatch[data-lantern="copper"] .lantern{ background-image:url("/sprites/lanterns/copper.png?v=k99a") }
-.skin-swatch[data-lantern="iron"] .lantern{ background-image:url("/sprites/lanterns/iron.png?v=k99a") }
-.skin-swatch[data-lantern="verdigris"] .lantern{ background-image:url("/sprites/lanterns/verdigris.png?v=k99a") }
-.skin-swatch[data-lantern="nickel"] .lantern{ background-image:url("/sprites/lanterns/nickel.png?v=k99a") }
+.skin-swatch[data-lantern="brass"] .lantern{ background-image:url("/sprites/lanterns/brass.webp") }
+.skin-swatch[data-lantern="copper"] .lantern{ background-image:url("/sprites/lanterns/copper.webp?v=k1163a") }
+.skin-swatch[data-lantern="iron"] .lantern{ background-image:url("/sprites/lanterns/iron.webp?v=k1163a") }
+.skin-swatch[data-lantern="verdigris"] .lantern{ background-image:url("/sprites/lanterns/verdigris.webp?v=k1163a") }
+.skin-swatch[data-lantern="nickel"] .lantern{ background-image:url("/sprites/lanterns/nickel.webp?v=k1163a") }
 
 .skin-swatch{
   width:64px;
@@ -86,12 +86,12 @@
   width:1.7rem;
   background:center bottom / contain no-repeat
 }
-.matchbook-stick.tier-white{ background-image:url("/sprites/matches/white.png") }
-.matchbook-stick.tier-blue{ background-image:url("/sprites/matches/blue.png") }
-.matchbook-stick.tier-green{ background-image:url("/sprites/matches/green.png") }
-.matchbook-stick.tier-amber{ background-image:url("/sprites/matches/amber.png") }
-.matchbook-stick.tier-red{ background-image:url("/sprites/matches/red.png") }
-.matchbook-stick.tier-violet{ background-image:url("/sprites/matches/violet.png") }
+.matchbook-stick.tier-white{ background-image:url("/sprites/matches/white.webp") }
+.matchbook-stick.tier-blue{ background-image:url("/sprites/matches/blue.webp") }
+.matchbook-stick.tier-green{ background-image:url("/sprites/matches/green.webp") }
+.matchbook-stick.tier-amber{ background-image:url("/sprites/matches/amber.webp") }
+.matchbook-stick.tier-red{ background-image:url("/sprites/matches/red.webp") }
+.matchbook-stick.tier-violet{ background-image:url("/sprites/matches/violet.webp") }
 
 /* 0.1.162: painted shop and sign pins (docs/ART_DIRECTION.md, pins.ts). Each pin is one transparent webp in an
    <img>: no background sprite, no filter or drop-shadow, nothing drawn over the painting. The older CSS lamp on

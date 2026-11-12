@@ -12,7 +12,7 @@ export function ItemIcon({
   if (isTier(item)) {
     return (
       <img
-        src={`/sprites/keys/${item}.png`}
+        src={`/sprites/keys/${item}.webp`}
         alt=""
         width={size}
         height={Math.round(size * 1.45)}

@@ -1755,7 +1755,7 @@ export function GameMap() {
       const marker = L.marker([k.lat, k.lng], {
         icon: L.divIcon({
           className: "",
-          html: worldObj(`<div class="match-pin tier-${k.tier}" title="${k.tier} key"><img class="key-pin-art" src="/sprites/keys/${k.tier}.png" alt="" draggable="false"></div>`, 10, 21),
+          html: worldObj(`<div class="match-pin tier-${k.tier}" title="${k.tier} key"><img class="key-pin-art" src="/sprites/keys/${k.tier}.webp" alt="" draggable="false"></div>`, 10, 21),
           iconSize: [20, 42],
           iconAnchor: [10, 21],
         }),

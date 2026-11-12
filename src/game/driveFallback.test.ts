@@ -3,11 +3,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 test("0.1.32: live roads failing (Temple), the car drives the baked streets within seconds", async () => {
-  const baked = readFileSync(new URL("../../public/streets/temple.json", import.meta.url), "utf8");
+  // 0.1.163: the fallback map ships gzipped; hand the bytes over as the host does and let bootstrapDrive inflate them.
+  const baked = readFileSync(new URL("../../public/streets/temple.json.gz", import.meta.url));
   const real = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input instanceof Request ? input.url : input);
-    if (url.endsWith("/streets/temple.json")) return new Response(baked, { status: 200 });
+    if (url.endsWith("/streets/temple.json.gz")) return new Response(new Uint8Array(baked), { status: 200 });
     throw new TypeError("network down"); // server fn, Overpass, OSRM: all failing
   }) as typeof fetch;
   try {

@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { test } from "node:test";
 import { createGraph, ingestLine, nearest, nearestFullScan } from "./streets.ts";
 
 // 0.1.34 heat: the pruned nearest() must give exactly the same snap as the old full scan on a real city.
 test("nearest matches the full scan on baked city streets", () => {
   for (const city of ["detroit", "austin"]) {
-    const { lines } = JSON.parse(readFileSync(new URL(`../../public/streets/${city}.json`, import.meta.url), "utf8")) as { lines: number[][] };
+    const { lines } = JSON.parse(gunzipSync(readFileSync(new URL(`../../public/streets/${city}.json.gz`, import.meta.url))).toString("utf8")) as { lines: number[][] };
     const g = createGraph(lines[0]![0]!, lines[0]![1]!);
     for (const l of lines) {
       const pts = [];
