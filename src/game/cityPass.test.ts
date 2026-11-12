@@ -180,3 +180,44 @@ test("a new player's city picker comes before the gift note", async () => {
   const title = readFileSync(new URL("../components/keyline/TitleScreen.tsx", import.meta.url), "utf8");
   assert.match(title, /if \(!g\.cities\.start\) \{\s*setScreen\("cities"\);/, "the title sends a new player to the picker first");
 });
+
+/** WebP canvas size and alpha flag, for any of the three containers (lossy VP8, lossless VP8L, extended VP8X). */
+function webpInfo(b: Buffer): { w: number; h: number; alpha: boolean } {
+  assert.equal(b.toString("ascii", 0, 4), "RIFF");
+  assert.equal(b.toString("ascii", 8, 12), "WEBP");
+  const kind = b.toString("ascii", 12, 16);
+  if (kind === "VP8 ") {
+    assert.equal(b.readUIntBE(23, 3), 0x9d012a, "VP8 key-frame start code");
+    return { w: b.readUInt16LE(26) & 0x3fff, h: b.readUInt16LE(28) & 0x3fff, alpha: false };
+  }
+  if (kind === "VP8L") {
+    assert.equal(b[20], 0x2f, "VP8L signature");
+    const bits = b.readUInt32LE(21);
+    return { w: 1 + (bits & 0x3fff), h: 1 + ((bits >>> 14) & 0x3fff), alpha: ((bits >>> 28) & 1) === 1 };
+  }
+  assert.equal(kind, "VP8X");
+  return { w: 1 + b.readUIntLE(24, 3), h: 1 + b.readUIntLE(27, 3), alpha: (b[20] & 0x10) !== 0 };
+}
+
+test("0.1.163 the title street's lamp and vault glows are painted in: no overlay on the art", async () => {
+  const { readFileSync } = await import("node:fs");
+  const title = readFileSync(new URL("../components/keyline/TitleScreen.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(title, /ts-vault|ts-lamp/, "no glow elements over the painted street");
+  assert.match(title, /className="ts-headlights"/, "the passing headlights stay");
+  assert.match(title, /className="ts-flies"/, "the clear-night fireflies stay");
+
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.doesNotMatch(css, /\.ts-vault|\.ts-lamp/, "no glow rules");
+  assert.doesNotMatch(css, /@keyframes ts-(vault|flicker)\b/, "no vault pulse or lamp flicker");
+  assert.match(css, /\.ts-headlights \{/);
+  assert.match(css, /\.ts-flies i \{/);
+  assert.match(css, /prefers-reduced-motion: reduce\) \{[^}]*\}\s*\.ts-headlights, \.ts-flies \{ display: none; \}/, "reduced motion still drops both");
+
+  for (const name of ["generic", "nyc", "chicago", "sf"]) {
+    const buf = readFileSync(new URL(`../../public/title/street-${name}.webp`, import.meta.url));
+    const { w, h, alpha } = webpInfo(buf);
+    assert.deepEqual([w, h], [1600, 900], `street-${name}.webp is ${w}x${h}`);
+    assert.equal(alpha, false, `street-${name}.webp is opaque`);
+    assert.ok(buf.length < 80_000, `street-${name}.webp is ${buf.length} bytes`);
+  }
+});

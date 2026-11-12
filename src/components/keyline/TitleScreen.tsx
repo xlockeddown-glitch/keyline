@@ -16,7 +16,8 @@ import { SkyLayer, useSky } from "./Sky";
 const SKYLINES: Partial<Record<CityId, string>> = { chicago: "chicago", nyc: "nyc", sf: "sf" };
 
 /** 0.1.148 title: a warm night avenue. Lit storefronts, a brass vault, the last city's skyline.
- * Lamp and vault glows are CSS and stop under prefers-reduced-motion. The cast stands on the road. */
+ * 0.1.163: lamp and vault glows are painted into the street webps, so nothing CSS or SVG is laid over the painting.
+ * Passing headlights and clear-night fireflies stay as optional motion and stop under prefers-reduced-motion. The cast stands on the road. */
 function TitleStreet({ cityId, known }: { cityId: CityId; known: boolean }) {
   const sky = useSky();
   const carOn = useGame((s) => s.carOn);
@@ -28,11 +29,6 @@ function TitleStreet({ cityId, known }: { cityId: CityId; known: boolean }) {
     <div className={`ts-scene${wet ? " is-wet" : ""}`} data-testid="title-street" data-skyline={skyline} data-weather={sky.weather} aria-hidden>
       <div className="ts-frame">
         <img className="ts-back" src={`/title/street-${skyline}.webp`} alt="" decoding="async" fetchPriority="high" />
-        <i className="ts-vault" />
-        <i className="ts-lamp" />
-        <i className="ts-lamp is-right" />
-        <i className="ts-lamp is-far" />
-        <i className="ts-lamp is-far is-right" />
         <i className="ts-headlights" />
         {sky.weather === "clear" ? (
           <div className="ts-flies">

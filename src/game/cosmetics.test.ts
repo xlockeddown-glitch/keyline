@@ -240,6 +240,51 @@ test("art wiring: the coat palette, the generated coat CSS and the lantern-skin 
   assert.ok(root.includes("/coats.css"));
 });
 
+test("0.1.163 lantern skins are finished paintings: no CSS bloom, glass, wick or tier glow over them", () => {
+  const props = read("../../public/prop-art.css").replace(/\/\*[\s\S]*?\*\//g, "");
+  /** Every declaration block whose selector list names `sel` exactly. */
+  const blocks = (sel: string) =>
+    [...props.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter((m) => m[1].split(",").some((s) => s.trim() === sel)).map((m) => m[2]);
+  for (const sel of [".lantern::before", ".lantern-hero::before", ".lantern-glass", ".lantern-glass::before", ".lantern-glass::after"]) {
+    assert.ok(blocks(sel).some((b) => /display:\s*none/.test(b)), `${sel} is off`);
+  }
+  // No tier-coloured shadow on the lamp; only the dark foot shadow may stay.
+  for (const sel of [".lantern", ".lantern-hero", ".skin-swatch .lantern", ':root[data-sky-phase="night"] .vault-pin .lantern']) {
+    const filters = blocks(sel).flatMap((b) => b.match(/filter:[^;}]*/g) ?? []);
+    assert.ok(filters.length > 0, `${sel} sets its own filter`);
+    for (const f of filters) {
+      assert.doesNotMatch(f, /--glow/, `${sel}: ${f}`);
+      assert.match(f, /^filter:\s*drop-shadow\(0 [12]px 1px #0000008c\)\s*$/, `${sel}: ${f}`);
+    }
+  }
+  // Nothing in the lantern rules of this sheet reads the tier colour at all.
+  for (const m of props.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    if (/\.lantern\b/.test(m[1])) assert.doesNotMatch(m[2], /--glow/, m[1].trim());
+  }
+  assert.match(props, /\.lantern\{[^}]*width:18px;[^}]*height:46px;[^}]*100% 100%/);
+  assert.match(props, /\.lantern-hero\{[^}]*width:42px;[^}]*height:108px/);
+
+  for (const id of ["brass", "copper", "iron", "nickel", "verdigris"]) {
+    const b = readFileSync(new URL(`../../public/sprites/lanterns/${id}.webp`, import.meta.url));
+    assert.equal(b.toString("ascii", 0, 4), "RIFF", id);
+    assert.equal(b.toString("ascii", 8, 12), "WEBP", id);
+    const kind = b.toString("ascii", 12, 16);
+    let w: number, h: number, alpha: boolean;
+    if (kind === "VP8L") {
+      assert.equal(b[20], 0x2f, `${id}: VP8L signature`);
+      const bits = b.readUInt32LE(21);
+      [w, h, alpha] = [1 + (bits & 0x3fff), 1 + ((bits >>> 14) & 0x3fff), ((bits >>> 28) & 1) === 1];
+    } else {
+      // Lossy VP8 alone has no alpha, so anything else must be the extended container.
+      assert.equal(kind, "VP8X", `${id}: ${kind} cannot carry alpha`);
+      [w, h, alpha] = [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3), (b[20] & 0x10) !== 0];
+    }
+    assert.deepEqual([w, h], [125, 320], `${id}.webp is ${w}x${h}`);
+    assert.equal(alpha, true, `${id}.webp has an alpha channel`);
+    assert.ok(b.length < 40_000, `${id}.webp is ${b.length} bytes`);
+  }
+});
+
 test("0.1.136 vault skins recolour the case and leave the tier dial", () => {
   const skins = read("../../public/wardrobe.css");
   const pins = read("./pins.ts");

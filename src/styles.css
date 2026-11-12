@@ -3444,7 +3444,8 @@ h3 {
 .cab-sprite[data-car]:not([data-car=""]) .cab-lamp, .cab-sprite[data-car]:not([data-car=""]) .cab-cone { display: none; }
 
 /* 0.1.10 title: full night street. The painted backdrop (public/title/street-<city>.webp, 16:9) is laid out in its own
-   frame so lamp, vault and headlight overlays sit on the painting at any size; the cast stands on the pavement. */
+   frame so it scales as one piece; the cast stands on the pavement. 0.1.163: lamp and vault glows are painted into the
+   webps, so no glow, pulse or other piece is laid over the art. Passing headlights and fireflies are the only motion. */
 .title-night.is-blade.is-street { justify-content: flex-start; background: #07090f; }
 .title-night.is-street > :not(.ts-scene) { position: relative; z-index: 2; }
 .title-night.is-street > .title-trivia-count { position: absolute; color: #cdd5df; text-shadow: 0 1px 3px #000; }
@@ -3465,26 +3466,6 @@ h3 {
 }
 .ts-frame::after { content: ""; position: absolute; inset: auto 0 -1px; height: 16%; background: linear-gradient(180deg, transparent, #0a0b10); }
 .ts-back { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.ts-vault { position: absolute; left: 50%; top: 48%; width: 13%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(255 236 196 / 0.42), rgb(201 163 94 / 0.16) 40%, transparent 70%); mix-blend-mode: screen; animation: ts-vault 4.5s ease-in-out infinite; }
-/* Glows sit on the painted lantern glass. Each skyline hangs its lamps in a slightly different place. */
-.ts-lamp { position: absolute; left: 12%; top: 35.5%; width: 6.2%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
-  background: radial-gradient(closest-side, #ffecc4 0%, rgb(255 214 140 / 0.5) 26%, rgb(255 170 70 / 0.14) 52%, transparent 72%); mix-blend-mode: screen; animation: ts-flicker 3.1s steps(1) infinite; }
-.ts-lamp.is-right { left: 87.5%; top: 36%; animation-delay: -1.3s; }
-.ts-lamp.is-far { left: 31%; top: 52%; width: 3.2%; animation-delay: -0.6s; }
-.ts-lamp.is-far.is-right { left: 69.5%; top: 52%; animation-delay: -2.1s; }
-.ts-scene[data-skyline="chicago"] .ts-lamp { left: 16.5%; top: 26.5%; }
-.ts-scene[data-skyline="chicago"] .ts-lamp.is-right { left: 84%; top: 26.5%; }
-.ts-scene[data-skyline="chicago"] .ts-lamp.is-far { left: 35.5%; top: 52.5%; }
-.ts-scene[data-skyline="chicago"] .ts-lamp.is-far.is-right { left: 67%; top: 52.5%; }
-.ts-scene[data-skyline="nyc"] .ts-lamp { left: 17%; top: 24%; }
-.ts-scene[data-skyline="nyc"] .ts-lamp.is-right { left: 84%; top: 24%; }
-.ts-scene[data-skyline="nyc"] .ts-lamp.is-far { left: 34.5%; top: 52%; }
-.ts-scene[data-skyline="nyc"] .ts-lamp.is-far.is-right { left: 68%; top: 52%; }
-.ts-scene[data-skyline="sf"] .ts-lamp { left: 12%; top: 28.7%; }
-.ts-scene[data-skyline="sf"] .ts-lamp.is-right { left: 88%; top: 28.8%; }
-.ts-scene[data-skyline="sf"] .ts-lamp.is-far { left: 33%; top: 56%; }
-.ts-scene[data-skyline="sf"] .ts-lamp.is-far.is-right { left: 67%; top: 56%; }
 .ts-headlights { position: absolute; top: 57%; left: -30%; width: 26%; height: 9%; border-radius: 50%;
   background: radial-gradient(closest-side, rgb(255 246 214 / 0.55), rgb(255 230 170 / 0.12) 60%, transparent); mix-blend-mode: screen; opacity: 0; animation: ts-pass 13s linear infinite 3s; }
 .ts-flies i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #ffe9a6; box-shadow: 0 0 6px 2px rgb(255 220 120 / 0.6); opacity: 0; animation: ts-fly 7s ease-in-out infinite; }
@@ -3518,8 +3499,6 @@ h3 {
 .is-street .blade-stage .title-more { color: #e3e8ef; }
 .is-street .book-ver, .is-street .book-coin, .is-street .blade-note { color: #cdd5df; text-shadow: 0 1px 2px #000; }
 .is-street .book-ver, .is-street .book-coin { background: rgb(8 10 18 / 0.72); border-radius: 999px; padding: 0.05rem 0.45rem; }
-@keyframes ts-flicker { 0%, 100% { opacity: 1; } 37% { opacity: 0.82; } 41% { opacity: 1; } 68% { opacity: 0.9; } 71% { opacity: 1; } }
-@keyframes ts-vault { 0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.96); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); } }
 @keyframes ts-pass { 0% { left: -30%; opacity: 0; } 4% { opacity: 1; } 30% { opacity: 1; } 34% { left: 104%; opacity: 0; } 100% { left: 104%; opacity: 0; } }
 @keyframes ts-fly { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 0.9; } 50% { transform: translate(14px, -18px); opacity: 0.6; } 75% { opacity: 0.9; transform: translate(-8px, -30px); } }
 @keyframes ts-bulbs { 50% { opacity: 0.55; } }

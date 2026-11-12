@@ -4,12 +4,28 @@
   width:18px;
   height:46px;
   background:url("/sprites/lanterns/brass.webp") center / 100% 100% no-repeat;
-  filter:drop-shadow(0 2px 1px #0000008c) drop-shadow(0 0 6px var(--glow))
+  filter:drop-shadow(0 2px 1px #0000008c)
 }
 .lantern-hero{
   width:42px;
   height:108px;
-  transform:none
+  transform:none;
+  filter:drop-shadow(0 2px 1px #0000008c)
+}
+/* 0.1.163: the five lantern webps bake the wick, the amber glass and its bloom into the painting, so the CSS
+   lamp bloom, glass and wick are off and no tier-coloured shadow is cast: nothing is drawn over the sprite.
+   Only the dark foot shadow stays (the night rule in styles.css used to add a tier glow and a brightness lift). */
+.lantern::before,
+.lantern-hero::before{
+  display:none
+}
+.lantern-glass,
+.lantern-glass::before,
+.lantern-glass::after{
+  display:none
+}
+:root[data-sky-phase="night"] .vault-pin .lantern{
+  filter:drop-shadow(0 2px 1px #0000008c)
 }
 .vault-pin{
   width:20px;
@@ -50,9 +66,9 @@
   transform:scale(1.55);
   transform-origin:50% 55%
 }
-/* 0.0.99: a softer glow in the shop preview so the metal reads. */
+/* 0.1.163: the shop preview keeps the foot shadow only (the glow is painted in). */
 .skin-swatch .lantern{
-  filter:drop-shadow(0 1px 1px #0000008c) drop-shadow(0 0 2px var(--glow))
+  filter:drop-shadow(0 1px 1px #0000008c)
 }
 
 .match-pin{
