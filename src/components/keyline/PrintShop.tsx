@@ -10,7 +10,8 @@ import { buyPressPull } from "@/game/pressClient";
 import { PAINT_USE } from "@/game/paint";
 
 // 0.0.99: warm amber glass so the metal reads; the wrapper's data-lantern re-cases this lamp exactly like the street ones.
-const LAMP = vaultPinHtml({ tier: "amber" });
+// 0.1.160: street vaults are painted by default; the shop's swatches stay the code-drawn SVG case the skins recolour.
+const LAMP = vaultPinHtml({ tier: "amber" }, { svg: true });
 
 function LampSwatch({ skin, label }: { skin: string; label: string }) {
   return (

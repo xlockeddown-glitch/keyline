@@ -14,7 +14,7 @@ import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
 import { driveAccel, drivePace, perksAt } from "@/game/streakMile";
-import { boardPinHtml, cometPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
+import { boardPinHtml, cometPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml, hearthGhostVaultHtml, vaultSkinned, HEARTH_BOX, VAULT_SPRITE, VAULT_SVG_BOX } from "@/game/pins";
 import { cometAt, cometId, cometStart, cometVault, cometWindow, cometWindowEnd, isComet } from "@/game/eventVault";
 import { gameNow, setDevClockShift } from "@/game/gameClock";
 import { FACET_COLOR, hearthOf, isHearthId } from "@/game/hearthVaults";
@@ -99,7 +99,7 @@ import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
 import { MARKET_TAG, closestOnStreet, inZone, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
 import { patronLive } from "@/game/patron";
-import { visibleCoat } from "@/game/paint";
+import { visibleCoat, visibleLantern } from "@/game/paint";
 
 /** 0.0.99: a worn city print shows over any coat or paint. */
 function wornLook(paint: Parameters<typeof visibleCoat>[0], coat: string | null): string | null {
@@ -304,8 +304,8 @@ export function GameMap() {
     const map = mapRef.current;
     if (!L || !map) return;
     const html = (name: string, g: ReturnType<typeof ghostLine>) =>
-      `<div class="hearth-ghost"><span class="hg-check ${g.ok ? "ok" : "bad"}">${g.text}</span>${vaultPinHtml({ tier: "red" })}<span class="hg-plate">${name}</span></div>`;
-    const icon = (name: string, g: ReturnType<typeof ghostLine>) => L.divIcon({ className: "", html: html(name, g), iconSize: [260, 96], iconAnchor: [130, 92] });
+      `<div class="hearth-ghost"><span class="hg-check ${g.ok ? "ok" : "bad"}">${g.text}</span>${hearthGhostVaultHtml()}<span class="hg-plate">${name}</span></div>`;
+    const icon = (name: string, g: ReturnType<typeof ghostLine>) => L.divIcon({ className: "", html: html(name, g), iconSize: [260, 113], iconAnchor: [130, 109] });
     let mark: Marker | null = null;
     const tick = () => {
       const at = { lat: pos.current.lat, lng: pos.current.lng };
@@ -485,6 +485,19 @@ export function GameMap() {
     });
   }
 
+  // 0.1.160: wearing or taking off a vault skin / vault paint swaps painted pins for the skinnable SVG vault (and
+  // back) straight away, no reload.
+  useEffect(
+    () =>
+      useGame.subscribe((st, prev) => {
+        if (visibleLantern(st.paints.wornVault, st.wardrobe.lantern) === visibleLantern(prev.paints.wornVault, prev.wardrobe.lantern)) return;
+        const L = Lref.current;
+        const map = mapRef.current;
+        if (L && map) rebuildPins(L, map);
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   // 0.1.12: buying or stepping up swaps the house marker straight away.
   useEffect(
     () =>
@@ -1680,6 +1693,9 @@ export function GameMap() {
     const st = useGame.getState();
     const city = CITIES[st.cityId];
     const now = Date.now();
+    // 0.1.160: a worn print-shop skin or vault paint keeps the skinnable SVG vault; stock brass shows the paintings.
+    const skin = visibleLantern(st.paints.wornVault, st.wardrobe.lantern);
+    const svgVault = vaultSkinned(skin);
     for (const m of vaultMarkers.current.values()) m.remove();
     vaultMarkers.current.clear();
     for (const poi of livePois(city, st.blanks)) {
@@ -1702,14 +1718,17 @@ export function GameMap() {
                 ? cometPinHtml({ cooling, lockout: cooling && v?.lockout === true })
               : isHearthId(poi.id)
                 ? hearthPinHtml(poi.name, hearthOf(poi.id)?.cats ?? [], FACET_COLOR, { cooling, lockout: cooling && v?.lockout === true, polished: (hearthOf(poi.id)?.polish ?? 0) > now })
-                : vaultPinHtml(poi, { cooling, lockout: cooling && v?.lockout === true });
+                : vaultPinHtml(poi, { cooling, lockout: cooling && v?.lockout === true, skin });
       const hearth = isHearthId(poi.id);
       const comet = isComet(poi.id);
       // 0.1.102 Vault Keys: street vaults are 40 px SVG boxes standing on the CSS ground shadow.
       // 0.1.159: the painted Comet vault is 48×58 (vault box ~40 px wide, plus the trail and the painted ring),
       // anchored on the centre of its painted ring.
-      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : hearth ? [76, 72] : comet ? [48, 58] : [40, 44];
-      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : hearth ? [38, 56] : comet ? [24, 51] : [20, 40];
+      // 0.1.160: painted street vaults are 48×50 with the foot of the box on the shadow; the Hearth box also holds
+      // its name plate and field label under the painting, anchored at the vault's foot.
+      const vbox = svgVault ? VAULT_SVG_BOX : VAULT_SPRITE;
+      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : hearth ? [HEARTH_BOX.w, HEARTH_BOX.h] : comet ? [48, 58] : [vbox.w, vbox.h];
+      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : hearth ? [...HEARTH_BOX.anchor] : comet ? [24, 51] : [...vbox.anchor];
       // 0.1.68: one z band so Leaflet's own latitude order puts nearer (southern) pins in front. 0.1.102: vaults get the ground shadow too.
       const marker = L.marker([poi.lat, poi.lng], {
         icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1]), iconSize: size, iconAnchor: anchor }),

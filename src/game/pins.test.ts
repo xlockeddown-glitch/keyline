@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CITY_LIST } from "./data.ts";
 import { RARITY_LADDER as TIERS } from "./rarity.ts";
-import { cometPinHtml, cometPinState, pinTier, stationPinHtml, vaultPinHtml } from "./pins.ts";
+import { HEARTH_BOX, HEARTH_SPRITE, VAULT_SPRITE, VAULT_SVG_BOX, cometPinHtml, cometPinState, hearthGhostVaultHtml, hearthPinHtml, pinTier, stationPinHtml, vaultPinHtml, vaultSkinned, vaultSvg } from "./pins.ts";
+import { visibleLantern } from "./paint.ts";
+import { FACET_COLOR } from "./hearthVaults.ts";
 import { isFareDesk } from "./ticket.ts";
 
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
@@ -13,6 +15,9 @@ test("street marker tier === required match tier, all six tiers", () => {
   for (const tier of TIERS) {
     assert.equal(pinTier(vaultPinHtml({ tier })), tier, `lamp ${tier}`);
     assert.equal(pinTier(vaultPinHtml({ tier }, { cooling: true })), tier, `cooling ${tier}`);
+    assert.equal(pinTier(vaultPinHtml({ tier }, { cooling: true, lockout: true })), tier, `lockout ${tier}`);
+    // The skinned SVG path reads the same tier in every state.
+    for (const o of [{}, { cooling: true }, { cooling: true, lockout: true }]) assert.equal(pinTier(vaultPinHtml({ tier }, { ...o, skin: "copper" })), tier, `skinned ${tier}`);
   }
 });
 
@@ -112,4 +117,150 @@ test("0.1.159 the comet sprites ship as RGBA webp, sized for 3x screens", () => 
     assert.ok(w >= 48 * 3 && h >= 58 * 3, `${s}: ${w}x${h}`);
     assert.ok(buf.length < 60_000, `${s}: ${buf.length} bytes`);
   }
+});
+
+const webp = (rel: string) => {
+  const buf = readFileSync(new URL(rel, import.meta.url));
+  assert.equal(buf.toString("ascii", 0, 4), "RIFF", rel);
+  assert.equal(buf.toString("ascii", 8, 12), "WEBP", rel);
+  assert.equal(buf.toString("ascii", 12, 16), "VP8X", `${rel}: extended webp (alpha)`);
+  assert.ok(buf[20]! & 0x10, `${rel}: alpha flag`);
+  return { w: 1 + buf.readUIntLE(24, 3), h: 1 + buf.readUIntLE(27, 3), bytes: buf.length };
+};
+
+test("0.1.160 a painted street vault is a wrapper and one <img>, in every tier and state", () => {
+  for (const tier of TIERS) {
+    const states = [
+      ["open", vaultPinHtml({ tier })],
+      ["cooling", vaultPinHtml({ tier }, { cooling: true })],
+      ["locked", vaultPinHtml({ tier }, { cooling: true, lockout: true })],
+      // Stock brass and "no lantern" are the paintings too.
+      ["open", vaultPinHtml({ tier }, { skin: null })],
+      ["open", vaultPinHtml({ tier }, { skin: "brass" })],
+    ] as const;
+    for (const [state, html] of states) {
+      assert.equal(pinTier(html), tier, `${tier} ${state}`);
+      assert.match(html, new RegExp(`^<div class="vault-pin painted-vault-pin tier-${tier} is-${state}\\b`));
+      assert.match(html, new RegExp(`src="/sprites/vaults/${tier}\\.webp"`));
+      assert.equal((html.match(/<img /g) ?? []).length, 1, `${tier} ${state}: one image`);
+      // Nothing over the painting: no SVG, lockbar, facet or any other element.
+      assert.doesNotMatch(html, /<svg|vk-vault|vk-lockbar|<i class="hf|<span|<i /, `${tier} ${state}`);
+      assert.match(html, /^<div [^>]*><img [^>]*\/><\/div>$/, `${tier} ${state}: wrapper + img only`);
+      assert.match(html, new RegExp(`width="${VAULT_SPRITE.w}" height="${VAULT_SPRITE.h}"`));
+    }
+    assert.match(vaultPinHtml({ tier }, { cooling: true }), /class="[^"]* cooling"/);
+    const locked = vaultPinHtml({ tier }, { cooling: true, lockout: true });
+    assert.match(locked, /class="[^"]* locked-out"/);
+    assert.doesNotMatch(locked, /class="[^"]* cooling"/);
+    assert.match(locked, /title="[^"]*Locked out after a wrong answer"/);
+  }
+});
+
+test("0.1.160 a worn print-shop skin or vault paint keeps the skinnable SVG vault", () => {
+  assert.equal(vaultSkinned(null), false);
+  assert.equal(vaultSkinned(undefined), false);
+  assert.equal(vaultSkinned("brass"), false);
+  for (const id of ["copper", "iron", "verdigris", "nickel", "paint-amber", "paint-prism"]) assert.equal(vaultSkinned(id), true, id);
+  assert.equal(vaultSkinned(visibleLantern(null, null)), false);
+  assert.equal(vaultSkinned(visibleLantern(null, "copper")), true);
+  assert.equal(vaultSkinned(visibleLantern("amber", null)), true);
+  for (const tier of TIERS) {
+    for (const o of [{ skin: "copper" }, { skin: "paint-red" }, { svg: true }, { svg: true, skin: "brass" }]) {
+      const html = vaultPinHtml({ tier }, o);
+      assert.ok(html.includes(vaultSvg(tier)), `${tier} ${JSON.stringify(o)}: the SVG case`);
+      assert.match(html, /class="vk-vault"/);
+      assert.match(html, new RegExp(`^<div class="vault-pin tier-${tier}"`));
+      assert.doesNotMatch(html, /<img|painted-vault-pin|sprites\/vaults/);
+    }
+    // The SVG keeps its 0.1.107 lockbar and cooling class, unchanged.
+    assert.match(vaultPinHtml({ tier }, { skin: "iron", cooling: true, lockout: true }), /locked-out" title="Locked out after a wrong answer">.*<span class="vk-lockbar"/);
+    assert.match(vaultPinHtml({ tier }, { skin: "iron", cooling: true }), new RegExp(`^<div class="vault-pin tier-${tier} cooling">`));
+  }
+  // The shop swatches force the SVG; the map passes the worn skin and rebuilds its pins when it changes.
+  assert.match(read("../components/keyline/PrintShop.tsx"), /vaultPinHtml\(\{ tier: "amber" \}, \{ svg: true \}\)/);
+  const map = read("../components/keyline/GameMap.tsx");
+  assert.match(map, /const skin = visibleLantern\(st\.paints\.wornVault, st\.wardrobe\.lantern\)/);
+  assert.match(map, /vaultPinHtml\(poi, \{[^}]*\bskin\b[^}]*\}\)/);
+  assert.match(map, /visibleLantern\(st\.paints\.wornVault, st\.wardrobe\.lantern\) === visibleLantern\(prev\.paints\.wornVault, prev\.wardrobe\.lantern\)\) return;[\s\S]{0,160}rebuildPins\(L, map\)/);
+  assert.match(map, /svgVault \? VAULT_SVG_BOX : VAULT_SPRITE/);
+  // Hearth and comet pins take no skin.
+  assert.doesNotMatch(map, /hearthPinHtml\([^\n]*skin/);
+  assert.doesNotMatch(map, /cometPinHtml\([^\n]*skin/);
+});
+
+test("0.1.160 the Hearth pin is the painting, with its four fields in a label under it", () => {
+  const cats = ["history", "science", "music", "games"];
+  const names = ["History", "Science", "Music", "Video games"];
+  for (const o of [{}, { cooling: true }, { cooling: true, lockout: true }, { polished: true }]) {
+    const html = hearthPinHtml("The Ember", cats, FACET_COLOR, o);
+    assert.equal(pinTier(html), "red");
+    assert.match(html, /^<div class="vault-pin painted-vault-pin tier-red hearth-pin\b/);
+    assert.match(html, /src="\/sprites\/vaults\/hearth\.webp"/);
+    assert.equal((html.match(/<img /g) ?? []).length, 1);
+    assert.doesNotMatch(html, /<svg|vk-vault|vk-lockbar|<i class="hf|class="hf\b|hf-(tl|tr|bl|br)/);
+    // The image comes first and closes before the label starts: the label is under the pin, not on it.
+    assert.match(html, /^<div [^>]*><img [^>]*\/><span class="hp-label"><span class="hp-plate">The Ember<\/span><span class="hp-fields"/);
+    const fields = [...html.matchAll(/<span class="hp-field" data-field="([\w-]+)"><i class="hp-dot" style="--hf:(#[0-9a-f]+)"><\/i>([^<]+)<\/span>/g)];
+    assert.deepEqual(fields.map((m) => m[1]), cats);
+    assert.deepEqual(fields.map((m) => m[3]), names);
+    assert.deepEqual(fields.map((m) => m[2]), cats.map((c) => FACET_COLOR[c]));
+    assert.match(html, /title="The Ember · Hearth vault · History, Science, Music, Video games[^"]*"/);
+  }
+  assert.match(hearthPinHtml("X", cats, FACET_COLOR, { cooling: true, lockout: true }), /locked-out" title="[^"]*Locked out after a wrong answer"/);
+  assert.match(hearthPinHtml("X", cats, FACET_COLOR, { cooling: true }), /hearth-pin cooling"/);
+  assert.match(hearthPinHtml("X", cats, FACET_COLOR, { polished: true }), /is-polished/);
+  assert.doesNotMatch(hearthPinHtml('<b>"x"</b>', cats, FACET_COLOR), /<b>|"x"/);
+  // The placement preview is the same painting, with no fields and nothing over it.
+  const ghost = hearthGhostVaultHtml();
+  assert.match(ghost, /^<div [^>]*><img [^>]*hearth\.webp[^>]*\/><\/div>$/);
+  const map = read("../components/keyline/GameMap.tsx");
+  assert.match(map, /class="hearth-ghost">[^`]*\$\{hearthGhostVaultHtml\(\)\}/);
+  // The cards use the painting too.
+  assert.match(read("../components/keyline/HearthOwner.tsx"), /src="\/sprites\/vaults\/hearth\.webp"/);
+  assert.doesNotMatch(read("../components/keyline/HearthOwner.tsx"), /vaultSvg/);
+  const modal = read("../components/keyline/VaultModal.tsx");
+  assert.match(modal, /src="\/sprites\/vaults\/hearth\.webp"/);
+  assert.match(modal, /src=\{`\/sprites\/vaults\/\$\{poi\.tier\}\.webp`\}/);
+  assert.match(modal, /!skinned \?/);
+  assert.match(modal, /vaultSvgCentered\(poi\.tier\)/);
+});
+
+test("0.1.160 painted pins get no bloom, overlay or extra shadow in CSS; states are a filter on the image", () => {
+  const css = read("../styles.css");
+  assert.match(css, /\.vault-pin\.painted-vault-pin::before, \.vault-pin\.painted-vault-pin::after\{ display:none \}/);
+  assert.match(css, /\.painted-vault-pin\.cooling \.vault-sprite\{ filter:grayscale\([^}]*brightness\([^}]*\}/);
+  assert.match(css, /\.painted-vault-pin\.locked-out \.vault-sprite\{ filter:grayscale\([^}]*brightness\([^}]*\}/);
+  assert.match(css, new RegExp(`\\.vault-sprite\\{[^}]*width:${VAULT_SPRITE.w}px; height:${VAULT_SPRITE.h}px`));
+  assert.match(css, new RegExp(`\\.hearth-sprite\\{ width:${HEARTH_SPRITE.w}px; height:${HEARTH_SPRITE.h}px`));
+  assert.match(css, new RegExp(`\\.vault-pin\\.hearth-pin\\{[^}]*width:${HEARTH_BOX.w}px; height:${HEARTH_BOX.h}px`));
+  for (const rule of css.match(/[^{}]*(?:vault-sprite|hearth-sprite)[^{}]*\{[^}]*\}/g) ?? []) assert.doesNotMatch(rule, /drop-shadow|box-shadow|background|outline/, rule);
+  // The old facet squares and the bevel behind the pin are gone.
+  assert.doesNotMatch(css, /\.hearth-pin[^{]*\.hf\b|\.hf-(tl|tr|bl|br)\b/);
+  assert.doesNotMatch(css, /\.hearth-pin\.is-polished::before/);
+});
+
+test("0.1.160 pin boxes: a street vault reads at least as large as the comet, anchored at its foot", () => {
+  // Comet: 48×58, anchored [24, 51].
+  assert.ok(Math.max(VAULT_SPRITE.w, VAULT_SPRITE.h) >= 48);
+  assert.equal(VAULT_SPRITE.anchor[0], VAULT_SPRITE.w / 2);
+  assert.ok(VAULT_SPRITE.anchor[1] > VAULT_SPRITE.h * 0.8 && VAULT_SPRITE.anchor[1] < VAULT_SPRITE.h);
+  assert.deepEqual([VAULT_SVG_BOX.w, VAULT_SVG_BOX.h, ...VAULT_SVG_BOX.anchor], [40, 44, 20, 40]);
+  assert.ok(HEARTH_SPRITE.w >= VAULT_SPRITE.w && HEARTH_SPRITE.h >= VAULT_SPRITE.h);
+  assert.equal(HEARTH_BOX.anchor[0], HEARTH_BOX.w / 2);
+  // The Hearth anchor is the vault's foot (inside the painting), above the label.
+  assert.ok(HEARTH_BOX.anchor[1] > HEARTH_SPRITE.h * 0.8 && HEARTH_BOX.anchor[1] < HEARTH_SPRITE.h);
+  assert.ok(HEARTH_BOX.h > HEARTH_SPRITE.h + 30, "the box holds the plate and two field rows");
+});
+
+test("0.1.160 the vault sprites ship as RGBA webp, sized for 3x screens", () => {
+  for (const tier of TIERS) {
+    const { w, h, bytes } = webp(`../../public/sprites/vaults/${tier}.webp`);
+    assert.ok(w >= VAULT_SPRITE.w * 3 && h >= VAULT_SPRITE.h * 3 && Math.max(w, h) >= 48 * 3, `${tier}: ${w}x${h}`);
+    assert.ok(Math.abs(w / h - VAULT_SPRITE.w / VAULT_SPRITE.h) < 0.02, `${tier}: aspect ${w}x${h}`);
+    assert.ok(bytes < 60_000, `${tier}: ${bytes} bytes`);
+  }
+  const { w, h, bytes } = webp("../../public/sprites/vaults/hearth.webp");
+  assert.ok(w >= HEARTH_SPRITE.w * 3 && h >= HEARTH_SPRITE.h * 3, `hearth: ${w}x${h}`);
+  assert.ok(Math.abs(w / h - HEARTH_SPRITE.w / HEARTH_SPRITE.h) < 0.02, `hearth: aspect ${w}x${h}`);
+  assert.ok(bytes < 80_000, `hearth: ${bytes} bytes`);
 });

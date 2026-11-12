@@ -1,4 +1,5 @@
 import type { Poi, Tier } from "./types";
+import { TRIVIA_CATS } from "./triviaMeta.ts";
 
 /**
  * Street marker markup. The tier class must come from the same field the store checks for
@@ -45,10 +46,43 @@ export function vaultSvg(tier: Tier) {
   return `<svg class="vk-vault" viewBox="0 0 60 60" aria-hidden="true">${VK_DEFS}${VK_CASE}${VAULT_DIAL_OPEN}${VK_DIAL}${VK_HUB(tier)}${VK_SLOT(tier)}</g></svg>`;
 }
 
-export function vaultPinHtml(poi: Pick<Poi, "tier">, o: { cooling?: boolean; lockout?: boolean } = {}) {
-  // 0.1.107: lock-out is a red rim, red reader and a striped LOCKED bar (text + stripes, not colour alone).
-  const lock = o.lockout ? `<span class="vk-lockbar" aria-label="Locked out">LOCKED</span>` : "";
-  return `<div class="vault-pin tier-${poi.tier}${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}"${o.lockout ? ' title="Locked out after a wrong answer"' : ""}>${vaultSvg(poi.tier)}${lock}</div>`;
+/**
+ * 0.1.160 painted street vaults: Ryan's approved Gemini plate, cut to one transparent webp per tier
+ * (public/sprites/vaults). The painting is finished art, so a painted pin is the wrapper and one <img>: no SVG, no
+ * lockbar, no ring and no extra shadow. Cooling and lock-out are a CSS filter on the whole image (styles.css) and
+ * the lock-out says so in the title. CSS box, map icon size and the anchor on the shared ground shadow:
+ */
+export const VAULT_SPRITE = { w: 48, h: 50, anchor: [24, 45] } as const;
+/** The code-drawn SVG vault's map box (0.1.102), still used when a print-shop skin or vault paint is worn. */
+export const VAULT_SVG_BOX = { w: 40, h: 44, anchor: [20, 40] } as const;
+
+/**
+ * A print-shop metal skin or vault paint recolours the code-drawn case (wardrobe.css --vk-*), so a walker wearing
+ * one keeps the SVG vault. Stock brass (null, or the shop's "brass" swatch id) shows the paintings.
+ * Pass visibleLantern(wornVault, wardrobe.lantern).
+ */
+export function vaultSkinned(lantern: string | null | undefined): boolean {
+  return Boolean(lantern) && lantern !== "brass";
+}
+
+export type VaultPinOpts = {
+  cooling?: boolean;
+  lockout?: boolean;
+  /** The worn lantern skin / vault paint id. Any skin but stock brass keeps the skinnable SVG vault. */
+  skin?: string | null;
+  /** Force the code-drawn SVG vault (the print shop's skin swatches, stock brass included). */
+  svg?: boolean;
+};
+
+export function vaultPinHtml(poi: Pick<Poi, "tier">, o: VaultPinOpts = {}) {
+  if (o.svg || vaultSkinned(o.skin)) {
+    // 0.1.107: lock-out is a red rim, red reader and a striped LOCKED bar (text + stripes, not colour alone).
+    const lock = o.lockout ? `<span class="vk-lockbar" aria-label="Locked out">LOCKED</span>` : "";
+    return `<div class="vault-pin tier-${poi.tier}${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}"${o.lockout ? ' title="Locked out after a wrong answer"' : ""}>${vaultSvg(poi.tier)}${lock}</div>`;
+  }
+  const state = o.lockout ? "locked" : o.cooling ? "cooling" : "open";
+  const title = `${VK_NUM[poi.tier]} vault${o.lockout ? " · Locked out after a wrong answer" : o.cooling ? " · cooling" : ""}`;
+  return `<div class="vault-pin painted-vault-pin tier-${poi.tier} is-${state}${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}" title="${title}"><img class="vault-sprite" src="/sprites/vaults/${poi.tier}.webp" width="${VAULT_SPRITE.w}" height="${VAULT_SPRITE.h}" alt="" draggable="false" /></div>`;
 }
 
 /**
@@ -100,19 +134,32 @@ export function pinTier(html: string): Tier | null {
 }
 
 /**
- * 0.1.110: a placed Hearth vault: the red (V) vault in copper, the owner's 4 fields as side facets (top-left, top-right,
- * bottom-left, bottom-right in pick order, so position marks them as well as color) and a name plate.
+ * 0.1.110: a placed Hearth vault. 0.1.160: the pin is the approved Hearth painting (hearth.webp), one <img> with
+ * nothing drawn over it. The owner's 4 fields moved off the vault into a label under it: the name plate, then the
+ * four field names in pick order, each with its field colour dot (name and order mark them, not colour alone).
+ * The gems painted on the door are decoration, not the fields. Cooling / lock-out are a filter on the image.
+ * Hearth pins are never skinned.
  */
+export const HEARTH_SPRITE = { w: 56, h: 61 } as const;
+/** Map box: the painting, the name plate and two rows of fields. The anchor is the vault's foot, not the label's. */
+export const HEARTH_BOX = { w: 104, h: 104, anchor: [52, 55] } as const;
+const hearthImg = `<img class="vault-sprite hearth-sprite" src="/sprites/vaults/hearth.webp" width="${HEARTH_SPRITE.w}" height="${HEARTH_SPRITE.h}" alt="" draggable="false" />`;
+const fieldLabel = (c: string) => (TRIVIA_CATS.find((t) => t.id === c)?.label ?? c).replace(/[<>&"]/g, "");
+
 export function hearthPinHtml(name: string, cats: readonly string[], colors: Record<string, string>, o: { cooling?: boolean; lockout?: boolean; polished?: boolean } = {}) {
-  const pos = ["tl", "tr", "bl", "br"];
-  const facets = cats
-    .slice(0, 4)
-    .map((c, i) => `<i class="hf hf-${pos[i]}" style="--hf:${colors[c] ?? "#ccc"}" title="${c}"></i>`)
-    .join("");
-  const lock = o.lockout ? `<span class="vk-lockbar" aria-label="Locked out">LOCKED</span>` : "";
+  const four = cats.slice(0, 4);
+  const names = four.map(fieldLabel);
+  const fields = four.map((c, i) => `<span class="hp-field" data-field="${c.replace(/[^\w-]/g, "")}"><i class="hp-dot" style="--hf:${colors[c] ?? "#ccc"}"></i>${names[i]}</span>`).join("");
   const safe = name.replace(/[<>&"]/g, "");
   const look = o.lockout ? " locked-out" : `${o.cooling ? " cooling" : ""}${o.polished ? " is-polished" : ""}`;
-  return `<div class="vault-pin tier-red hearth-pin${look}" title="${safe} · Hearth vault">${facets}${vaultSvg("red")}${lock}<span class="hp-plate">${safe}</span></div>`;
+  const state = o.lockout ? " · Locked out after a wrong answer" : o.cooling ? " · cooling" : "";
+  const title = `${safe} · Hearth vault${names.length ? ` · ${names.join(", ")}` : ""}${state}`;
+  return `<div class="vault-pin painted-vault-pin tier-red hearth-pin${look}" title="${title}">${hearthImg}<span class="hp-label"><span class="hp-plate">${safe}</span>${fields ? `<span class="hp-fields" aria-label="Fields: ${names.join(", ")}">${fields}</span>` : ""}</span></div>`;
+}
+
+/** 0.1.160: the placement preview's vault: the same Hearth painting, no fields yet. */
+export function hearthGhostVaultHtml() {
+  return `<div class="vault-pin painted-vault-pin tier-red hearth-ghost-vault">${hearthImg}</div>`;
 }
 
 /**

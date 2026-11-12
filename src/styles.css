@@ -4140,6 +4140,22 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .vault-hero.vault-pin:has(.comet-hero)::before{ display:none }
 .comet-sprite{ display:block; width:48px; height:58px; object-fit:contain; pointer-events:none; user-select:none; -webkit-user-drag:none }
 
+/* 0.1.160 painted street vaults (pins.ts vaultPinHtml): one transparent webp per tier, 48×50, beside the 48×58
+   comet. Finished paintings: no lamp bloom, glow, outline, lockbar or shadow is drawn over or behind them; the
+   shared contact shadow stays (.world-obj). Cooling and lock-out are a filter on the whole image, lock-out dimmer. */
+.vault-pin.painted-vault-pin{ width:48px; height:50px; place-items:stretch; opacity:1 }
+.vault-pin.painted-vault-pin::before, .vault-pin.painted-vault-pin::after{ display:none }
+.vault-sprite{ display:block; width:48px; height:50px; object-fit:contain; pointer-events:none; user-select:none; -webkit-user-drag:none }
+.painted-vault-pin.near .vault-sprite{ transform:scale(1.08); transform-origin:50% 90% }
+.painted-vault-pin.cooling .vault-sprite{ filter:grayscale(.85) brightness(.7) }
+.painted-vault-pin.locked-out .vault-sprite{ filter:grayscale(1) brightness(.5) contrast(1.1) }
+@media (prefers-reduced-motion: reduce){ .painted-vault-pin.near .vault-sprite{ transform:none } }
+/* The vault card's hero is the same painting. */
+.vault-hero-art{ display:block; width:72px; height:75px; object-fit:contain }
+.vault-hero:has(.vault-hero-art){ width:72px; height:78px; transform:none; place-items:center }
+.vault-hero.vault-pin:has(.vault-hero-art)::before, .vault-hero.vault-pin:has(.vault-hero-art)::after{ display:none }
+.hearth-hero-art{ height:78px }
+
 /* 0.1.107 Vault Keys lock-out: red rim + red reader + striped LOCKED bar (shape and text, not colour alone). */
 .vault-pin.locked-out{ position:relative; --lock:#ff4a4a }
 .vault-pin.locked-out .vk-vault{ z-index:0 }
@@ -4203,27 +4219,25 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
   .plant-actions .btn-primary{ flex:1 }
 }
 .hearth-ghost{ display:grid; justify-items:center; gap:3px; pointer-events:none }
-.hearth-ghost .vault-pin{ --glow:#d0785a; opacity:.82; filter:sepia(.55) hue-rotate(-18deg) saturate(1.5) }
-.hearth-ghost .vk-vault{ width:54px; height:54px }
+/* 0.1.160: the placement preview is the Hearth painting, see-through (opacity on the whole image, nothing over it). */
+.hearth-ghost .vault-pin.hearth-ghost-vault{ width:56px; height:61px; opacity:.82 }
 .hearth-ghost .hg-plate{ font-size:10px; padding:1px 6px; border-radius:4px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a88; white-space:nowrap }
 .hearth-ghost .hg-check{ font-size:11px; font-weight:600; padding:2px 7px; border-radius:6px; white-space:nowrap; border:1px solid }
 .hearth-ghost .hg-check.ok{ color:#7be08f; border-color:#3f9a52; background:#0e2414ee }
 .hearth-ghost .hg-check.bad{ color:#ff8b8b; border-color:#b84343; background:#2a1010ee }
 
-/* 0.1.110: placed Hearth vault on the map: copper red vault, 4 facets by position + color, name plate. */
-.hearth-pin{ --glow:#d0785a; width:64px; height:72px; position:relative; place-items:center; grid-template-rows:56px 16px }
-.hearth-pin .vk-vault{ width:44px; height:44px; filter:sepia(.55) hue-rotate(-18deg) saturate(1.5) drop-shadow(0 0 6px #d0785a99) }
-.hearth-pin.cooling .vk-vault{ filter:sepia(.55) hue-rotate(-18deg) grayscale(.7) brightness(.8) }
-.hearth-pin > .hf{ display:block !important; position:absolute; width:6px; height:18px; border-radius:2px; z-index:300;
-  background:
-    linear-gradient(135deg, rgb(255 248 230 / .75), rgb(255 248 230 / 0) 42%),
-    linear-gradient(150deg, color-mix(in srgb, var(--hf, #ccc) 72%, #f2d38a), var(--hf, #ccc) 46%, color-mix(in srgb, var(--hf, #ccc) 35%, #1a1410));
-  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .8), inset -1px -1px 0 #1a1410, 0 0 0 1px #6e5320; }
-.hearth-pin .hf-tl{ left:4px; top:10px } .hearth-pin .hf-bl{ left:4px; top:30px }
-.hearth-pin .hf-tr{ right:4px; top:10px } .hearth-pin .hf-br{ right:4px; top:30px }
-.hearth-pin .hp-plate{ font-size:9px; line-height:13px; padding:0 5px; border-radius:3px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a99; white-space:nowrap; max-width:84px; overflow:hidden; text-overflow:ellipsis }
+/* 0.1.110: placed Hearth vault on the map. 0.1.160: the Hearth painting (56×61) with a label under it: the name
+   plate, then the owner's four fields (name + field-colour dot) in pick order. Nothing sits on the painting. */
+.vault-pin.hearth-pin{ --glow:#d0785a; width:104px; height:104px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start }
+.hearth-sprite{ width:56px; height:61px; flex:none }
+.hearth-pin .hp-label{ display:flex; flex-direction:column; align-items:center; gap:2px; margin-top:2px; pointer-events:none }
+.hearth-pin .hp-plate{ font-size:9px; line-height:13px; padding:0 5px; border-radius:3px; background:#2a1a12; color:#f0c9a8; border:1px solid #d0785a99; white-space:nowrap; max-width:100px; overflow:hidden; text-overflow:ellipsis }
+.hearth-pin .hp-fields{ display:grid; grid-template-columns:auto auto; gap:1px 6px; padding:2px 5px; border-radius:3px; background:#12161cdd; border:1px solid #2f343c }
+.hearth-pin .hp-field{ display:flex; align-items:center; gap:3px; font:600 8px/10px var(--font-sans, system-ui, sans-serif); color:#e9e4da; white-space:nowrap }
+.hearth-pin .hp-dot{ display:block; flex:none; width:5px; height:5px; border-radius:50%; background:var(--hf, #ccc); box-shadow:0 0 0 1px #1a1410 }
+.hearth-pin.cooling .hp-label, .hearth-pin.locked-out .hp-label{ opacity:.7 }
 .field-card.hearth-field{ border-left:4px solid var(--hf) }
-.hearth-hero{ display:grid; place-items:center; width:64px; height:72px; filter:drop-shadow(0 0 10px #ff3b3b88) }
+.hearth-hero{ display:grid; place-items:center; width:72px; height:78px }
 /* 0.1.117 Double/Triple Hearth: tier chips (done / current / locked), the run note, used fields */
 .hearth-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px }
 .hearth-chip{ display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; border:2px solid #1a1410; font:800 12px Georgia,serif; color:#e9edf4; background:#2b3139 }
@@ -4236,14 +4250,9 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .field-card.hearth-field.is-used{ opacity:.38; border-style:dashed; cursor:not-allowed }
 .plant-version .plant-chip{ display:inline-flex; align-items:center; gap:6px }
 .plant-version .plant-tiers{ font:800 11px Georgia,serif; opacity:.85 }
-/* 0.1.110: facets closer to the mock: taller bars that stand off the vault sides. */
-.hearth-pin{ width:76px }
-.hearth-pin > .hf{ width:7px !important; height:21px !important }
-.hearth-pin .hf-tl, .hearth-pin .hf-bl{ left:6px !important } .hearth-pin .hf-tr, .hearth-pin .hf-br{ right:6px !important }
-.hearth-pin .hf-tl, .hearth-pin .hf-tr{ top:6px !important } .hearth-pin .hf-bl, .hearth-pin .hf-br{ top:30px !important }
-.vault-pin.hearth-pin{ width:76px !important; justify-items:center }
-/* 0.1.149 hearth polish: a brass bevel and a short lantern halo. Static — no new motion. */
-.hearth-pin.is-polished::before,
+/* 0.1.149 hearth polish: a brass bevel and a short lantern halo. Static — no new motion.
+   0.1.160: on the painted map pin the polish is a brighter painting (a filter on the whole image) and the brass
+   name plate; no bevel or halo is drawn behind or over the painting. */
 .ho-art.is-polished .ho-vault::before {
   content: "";
   position: absolute;
@@ -4255,15 +4264,9 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
     linear-gradient(145deg, #f4e2b0 0%, #e0c788 30%, #8a6a38 68%, #3a2a12 100%);
   box-shadow: inset 1px 1px 0 rgb(255 248 230 / .85), inset -1px -1px 0 #3a2a12, 0 0 10px 2px rgb(255 214 140 / .55);
 }
-.hearth-pin.is-polished::before { left: 50%; top: 1px; width: 50px; height: 50px; transform: translateX(-50%); }
 .ho-art.is-polished .ho-vault::before { inset: -7px; border-radius: 12px; }
-.hearth-pin .vk-vault, .ho-vault .vk-vault { position: relative; z-index: 1; }
-.hearth-pin.is-polished:not(.cooling) .vk-vault {
-  filter: sepia(.4) hue-rotate(-12deg) saturate(1.35) drop-shadow(0 0 1px #fff6df) drop-shadow(0 0 6px #e0c788dd) drop-shadow(0 0 14px #ffd68c73);
-}
-.hearth-pin.is-polished > .hf {
-  box-shadow: inset 1px 1px 0 rgb(255 248 230 / .95), inset -1px -1px 0 #3a2a12, 0 0 0 1px #e0c788, 0 0 5px rgb(255 214 140 / .7);
-}
+.ho-vault .vk-vault { position: relative; z-index: 1; }
+.hearth-pin.is-polished:not(.cooling) .hearth-sprite { filter: brightness(1.14) saturate(1.2); }
 .hearth-pin.is-polished .hp-plate,
 .ho-art.is-polished .ho-plate {
   color: #f3e6c4;
@@ -4322,6 +4325,11 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .vault-pin.ho-vault .vk-vault{ filter:drop-shadow(0 0 9px #d0785a99) }
 @media (max-width: 640px){ .hearth-owner{ top:122px; max-height:calc(100dvh - 132px) } .vault-pin.ho-vault, .ho-vault .vk-vault{ width:80px !important; height:80px !important } .ho-bars i{ height:34px } }
 .ho-art{ column-gap:3px }
+/* 0.1.160: the owner card's vault is the Hearth painting: no copper tint or glow filter on it; polish brightens it. */
+.ho-vault.is-painted{ width:96px; height:104px; filter:none }
+.ho-vault-art{ display:block; width:96px; height:104px; object-fit:contain }
+.ho-art.is-polished .ho-vault.is-painted{ filter:brightness(1.14) saturate(1.2) }
+@media (max-width: 640px){ .ho-vault.is-painted, .ho-vault-art{ width:74px; height:80px } }
 
 /* 0.1.112: vault cards show the vault (centered drawing), with one tier quirk on open. */
 .vault-hero:has(.vk-hero){ width:72px; height:72px; transform:none }

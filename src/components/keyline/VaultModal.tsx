@@ -1,4 +1,5 @@
-import { vaultSvgCentered } from "@/game/pins";
+import { vaultSkinned, vaultSvgCentered } from "@/game/pins";
+import { visibleLantern } from "@/game/paint";
 import { useEffect, useState, type CSSProperties } from "react";
 import { cotdAt, perkFavs, favBonus, CAT_BONUS_CAP, RANDOM_BONUS } from "@/game/carPerks";
 import { BookOpen, Calculator, Dices, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
@@ -10,7 +11,7 @@ import { HEARTH_VERSION_NAME, HEARTH_TIERS, hearthSteps, hearthTierAt, hearthVer
 import { seatedCar, useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
 import { DIFF_LABEL, DIFF_MULT, TRIVIA_CATS, offerCats } from "@/game/triviaMeta";
-import { FACET_COLOR, FACET_POS, hearthOf, hearthOffer } from "@/game/hearthVaults";
+import { FACET_COLOR, hearthOf, hearthOffer } from "@/game/hearthVaults";
 import { placeLine } from "@/game/place";
 import type { TriviaCat } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
@@ -70,6 +71,8 @@ export function VaultModal() {
   const quiz = openVault?.question ?? null;
   const isOpen = Boolean(openVault);
   const scout = useGame((s) => s.scout);
+  // 0.1.160: a worn print-shop skin or vault paint keeps the SVG hero, so the skin shows on the card.
+  const skinned = useGame((s) => vaultSkinned(visibleLantern(s.paints.wornVault, s.wardrobe.lantern)));
   const carNow = useGame((s) => seatedCar(s));
   const owned = useOwnedPoi(openVault?.poiId);
 
@@ -156,14 +159,19 @@ export function VaultModal() {
           <div className="flex items-start gap-4">
             <div className={`vault-hero vault-pin tier-${poi.tier}`}>
               {hearth ? (
+                // 0.1.160: the Hearth painting (it was a key icon). The tier a step plays at is in the kicker and the chips.
                 <span className="hearth-hero" data-testid="hearth-hero">
-                  <ItemIcon item={multi ? hTier : "red"} size={56} />
+                  <img className="vault-hero-art hearth-hero-art" src="/sprites/vaults/hearth.webp" width={72} height={78} alt="" draggable={false} data-testid="hearth-hero-art" />
                 </span>
               ) : isComet(poi.id) ? (
                 // 0.1.159: the Comet vault's own painting (the approved Gemini mock), nothing drawn over it.
                 <img className="comet-hero" src="/sprites/comet/open.webp" width={72} height={86} alt="" draggable={false} data-testid="comet-hero-art" />
+              ) : !skinned ? (
+                // 0.1.160: the tier's painting, the same sprite as the street pin. Nothing is drawn over it.
+                <img className="vault-hero-art" src={`/sprites/vaults/${poi.tier}.webp`} width={72} height={75} alt="" draggable={false} data-testid="vault-hero-painted" />
               ) : (
-                // 0.1.112: the vault itself (centered drawing, dial concentric), with its tier quirk.
+                // 0.1.112: the vault itself (centered drawing, dial concentric), with its tier quirk. 0.1.160: only for a
+                // walker wearing a print-shop skin or vault paint, so the worn skin shows on the card too.
                 <span className={`vk-hero vk-q-${poi.tier}`} data-testid="vault-hero-art" dangerouslySetInnerHTML={{ __html: vaultSvgCentered(poi.tier) }} />
               )}
             </div>
@@ -287,7 +295,7 @@ export function VaultModal() {
                         </span>
                         {multi ? <span className="hearth-plays mt-1 block text-xs text-fg-subtle">Plays at {VK_NUM[hTier]}</span> : null}
                         <span className="field-blurb mt-1 block text-xs text-fg-subtle">
-                          {hearth ? (hearth.cats.includes(c.id as never) ? `${FACET_POS[hearth.cats.indexOf(c.id as never)] ?? ""} facet · ` : "Stands in for Math today · ") : ""}
+                          {hearth ? (hearth.cats.includes(c.id as never) ? `Field ${hearth.cats.indexOf(c.id as never) + 1} of ${hearth.cats.length} · ` : "Stands in for Math today · ") : ""}
                           {c.blurb}
                         </span>
                       </span>

@@ -1,7 +1,6 @@
 /** 0.1.111: "Your Hearth": the owner's numbers for their placed vault (opens, cut vs the daily cap, V keys, lifetime). */
 import { CITIES } from "@/game/data";
 import { FACET_COLOR } from "@/game/hearthVaults";
-import { vaultSvgCentered } from "@/game/pins";
 import { HEARTH_CUT, PLANT_NAMES } from "@/game/placedLantern";
 import { HEARTH_POLISH_PRICE, polishLive } from "@/game/hearthPolish";
 import { myHearths, placedVersion, polishHearth, setPlant, usePlant } from "@/game/plantClient";
@@ -47,7 +46,10 @@ export function HearthOwner() {
               <i key={i} style={{ "--hf": FACET_COLOR[c ?? ""] ?? "#ccc" } as React.CSSProperties} title={c} />
             ))}
           </span>
-          <span className="ho-vault vault-pin tier-red" dangerouslySetInnerHTML={{ __html: vaultSvgCentered("red") }} />
+          {/* 0.1.160: the Hearth painting; the field bars stand beside it, never on it. */}
+          <span className="ho-vault is-painted">
+            <img className="ho-vault-art" src="/sprites/vaults/hearth.webp" width={96} height={104} alt="" draggable={false} data-testid="ho-vault-art" />
+          </span>
           <span className="ho-bars">
             {[mine.cats[1], mine.cats[3]].map((c, i) => (
               <i key={i} style={{ "--hf": FACET_COLOR[c ?? ""] ?? "#ccc" } as React.CSSProperties} title={c} />
