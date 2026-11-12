@@ -70,7 +70,7 @@ function depsAt(clock: { t: number }, sql?: Sql, picks: string[] = []): TriviaDe
 const dealIn = (over: Partial<Parameters<typeof deal>[2]> = {}) =>
   DealIn.parse({ city: "austin", cat: "local", poiId: LAMP.id, windowMs: 25000, seen: [], saveId: SAVE, ...over });
 
-async function db() {
+async function db(extra: string[] = []) {
   const pg = new PGlite();
   await pg.exec(migration("0001_auth.sql"));
   await pg.exec(migration("0002_vault_clears.sql"));
@@ -81,6 +81,7 @@ async function db() {
   await pg.exec(migration("0011_player_links.sql"));
   await pg.exec(migration("0015_paint_finds.sql"));
   await pg.exec(migration("0016_player_wallet.sql"));
+  for (const name of extra) await pg.exec(migration(name));
   await pg.query(`insert into "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") values ('ann', 'Ann Baker', 'ann@x.test', true, now(), now())`);
   return sqlOf(pg);
 }
@@ -295,4 +296,90 @@ test("0.1.107 lock-out: a wrong keyed answer writes a ledger row and the server 
   if (!g.ok) return;
   const gm = await grade(d, { userId: null }, { token: g.token, choice: "nope", clientMs: 1000 });
   assert.ok(gm.ok && gm.lockoutMs === LOCKOUT_SHORT_MS);
+});
+
+test("0.1.159 Comet vault: server clock + baked spot only, once per window, a replay pays once", async () => {
+  const { COMET_SKEW_MS, cometById, cometEnd, cometId, cometOfWindow, cometStart, cometWindow } = await import("./eventVault.ts");
+  const { syncPlayer } = await import("./walletApply.ts");
+  const { freshUnlocks } = await import("./cityPass.ts");
+  const { lampGiftClock, welcomeClock } = await import("./lampGift.ts");
+  welcomeClock.cutoff = "2999-01-01T00:00:00Z";
+  lampGiftClock.cutoff = "2000-01-01T00:00:00Z";
+  const sql = await db(["0013_trivia_recent.sql", "0014_walk_distance.sql"]);
+  const city = "austin" as const;
+  const w = cometWindow(city, Date.UTC(2026, 10, 11)) + 1;
+  const id = cometId(city, w);
+  const spot = cometOfWindow(city, w)!;
+  const clock = { t: cometStart(city, w) + 4 * 60_000 };
+  const base = depsAt(clock, sql);
+  const d: TriviaDeps = { ...base, namedPoi: (c, pid) => base.namedPoi(c, pid) ?? cometById(c, pid, clock.t, COMET_SKEW_MS) };
+  const comet = (over: Partial<Parameters<typeof deal>[2]> = {}) => dealIn({ poiId: id, ...over });
+
+  // Guests and signed-in walkers both deal inside the window, as tier III (green) at the baked spot.
+  const g = await dealFor(d, { userId: null }, comet());
+  assert.ok(g.ok, "guest deal inside the window");
+  if (!g.ok) return;
+  const gb = openToken("test-secret", g.token)!;
+  assert.equal(gb.k, "green");
+  assert.equal(gb.x?.pt, "green");
+  assert.equal(gb.x?.la, spot.lat, "the sealed spot is the server's, not the client's");
+
+  // A forged blank (white tier, any name) is ignored: still green.
+  const forged = await dealFor(d, { userId: null }, comet({ blank: { name: "Cheap", kind: "landmark", tier: "white" }, pay: { streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], lat: 1, lng: 1 } }));
+  assert.ok(forged.ok);
+  if (!forged.ok) return;
+  assert.equal(openToken("test-secret", forged.token)!.k, "green");
+  assert.equal(openToken("test-secret", forged.token)!.x?.la, spot.lat);
+  // No sparks at a comet.
+  assert.deepEqual(await dealFor(d, { userId: null }, comet({ spark: true })), { ok: false, reason: "no-match" });
+
+  // Outside the window (past the minute of skew), even with a blank, it is refused.
+  const saved = clock.t;
+  clock.t = cometEnd(city, w) + COMET_SKEW_MS + 1;
+  assert.deepEqual(await dealFor(d, { userId: null }, comet({ blank: { name: "x", kind: "landmark", tier: "green" } })), { ok: false, reason: "unknown-lamp" });
+  clock.t = cometStart(city, w) - 1;
+  assert.deepEqual(await dealFor(d, { userId: null }, comet()), { ok: false, reason: "unknown-lamp" });
+  assert.deepEqual(await dealFor(d, { userId: null }, dealIn({ poiId: cometId(city, w + 1) })), { ok: false, reason: "unknown-lamp" }, "a future window");
+  clock.t = saved;
+
+  // Signed in with a green key on the server: deal, answer right, the ev: row lands and the comet pays.
+  await syncPlayer(sql, "ann", { coins: 0, keys: { green: 3 }, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }, "annphone1");
+  const a = await dealFor(d, { userId: "ann" }, comet());
+  assert.ok(a.ok, "signed-in deal inside the window");
+  if (!a.ok) return;
+  assert.equal(a.wallet?.keys.green, 2, "the green key is spent through spendDealt");
+  // A second card dealt before the first is graded (two tabs).
+  const twin = await dealFor(d, { userId: "ann" }, comet());
+  assert.ok(twin.ok);
+  if (!twin.ok) return;
+  clock.t += 2000;
+  const right = await grade(d, { userId: "ann" }, { token: a.token, choice: "Colorado", clientMs: 1900 });
+  assert.ok(right.ok && right.correct && right.credited);
+  if (!right.ok) return;
+  assert.ok(right.award?.boosts.some((b) => b.startsWith("Comet ×1.5")), "comet bonus on the award");
+  assert.ok((right.award?.keys.blue ?? 0) >= 1, "the guaranteed blue key");
+  const ev = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = 'ann' and op_key = ${"ev:" + id}`;
+  assert.equal(ev.length, 1);
+  const gradeRow = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = 'ann' and op_key like 'grade:%'`;
+  assert.ok(gradeRow.some((r) => String(r.detail).includes('"ev":1')), "the grade row carries ev:1");
+  // A replayed token changes nothing.
+  const coins = right.wallet!.coins;
+  const replay = await grade(d, { userId: "ann" }, { token: a.token, choice: "Colorado", clientMs: 1900 });
+  assert.ok(replay.ok && replay.replay);
+  if (!replay.ok) return;
+  assert.equal(replay.wallet?.coins, coins, "a replay pays nothing more");
+  assert.equal((await sql`select op_key from wallet_ledger where op_key like 'ev:%'`).length, 1);
+  // The twin card, answered right after the clear, pays as a plain green vault (the bonus is paid once).
+  const twinCard = BANK.find((c) => publicCardId(c) === twin.card.id)!;
+  const twinG = await grade(d, { userId: "ann" }, { token: twin.token, choice: twinCard.answer, clientMs: 1000 });
+  assert.ok(twinG.ok && twinG.correct);
+  if (!twinG.ok) return;
+  assert.ok(!twinG.award?.boosts.some((b) => b.startsWith("Comet")), "no second comet bonus");
+  assert.equal(twinG.award?.keys.blue ?? 0, 0, "no second blue key");
+  // A fresh deal (a reload, another device) after the clear is refused for the rest of the window.
+  assert.deepEqual(await dealFor(d, { userId: "ann" }, comet()), { ok: false, reason: "comet-done" });
+  // The next window is a new comet.
+  clock.t = cometStart(city, w + 1) + 60_000;
+  const next = await dealFor(d, { userId: "ann" }, dealIn({ poiId: cometId(city, w + 1) }));
+  assert.ok(next.ok, "next comet deals");
 });

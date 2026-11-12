@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { cotdAt, perkFavs, favBonus, CAT_BONUS_CAP, RANDOM_BONUS } from "@/game/carPerks";
 import { BookOpen, Calculator, Dices, FlaskConical, Gamepad2, Globe, Landmark, Leaf, MapPinned, Music, Palette, ScrollText, Star, Trophy, Utensils } from "lucide-react";
 import { anyPois } from "@/game/nightMarket";
+import { isComet } from "@/game/eventVault";
 import { CITIES, KIND_LABEL, TIER_LABEL } from "@/game/data";
 import { VK_NUM } from "@/game/pins";
 import { HEARTH_VERSION_NAME, HEARTH_TIERS, hearthSteps, hearthTierAt, hearthVersion, slotOf } from "@/game/hearthMulti";
@@ -145,6 +146,9 @@ export function VaultModal() {
                 <span className="hearth-hero" data-testid="hearth-hero">
                   <ItemIcon item={multi ? hTier : "red"} size={56} />
                 </span>
+              ) : isComet(poi.id) ? (
+                // 0.1.159: the Comet vault's own painting (the approved Gemini mock), nothing drawn over it.
+                <img className="comet-hero" src="/sprites/comet/open.webp" width={72} height={86} alt="" draggable={false} data-testid="comet-hero-art" />
               ) : (
                 // 0.1.112: the vault itself (centered drawing, dial concentric), with its tier quirk.
                 <span className={`vk-hero vk-q-${poi.tier}`} data-testid="vault-hero-art" dangerouslySetInnerHTML={{ __html: vaultSvgCentered(poi.tier) }} />

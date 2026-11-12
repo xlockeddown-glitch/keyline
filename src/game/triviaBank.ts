@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { CITIES } from "./data";
 import { marketLanternById } from "./nightMarket";
+import { COMET_SKEW_MS, cometById } from "./eventVault";
 import { DOOR_QUIZZES } from "./doorQuizzes";
 import { sealPlate } from "./rarity";
 import { everyCard, everyCardCat, pickTrivia } from "./trivia";
@@ -52,9 +53,22 @@ export function cardCat(id: string): TriviaCat | null {
   return catById.get(id) ?? null;
 }
 
-function namedPoi(city: CityId, poiId: string): Poi | null {
+function namedPoi(city: CityId, poiId: string, now = Date.now()): Poi | null {
   // 0.1.7: the open market's three lanterns are real lamps while it is open (rebuilt from the baked street).
-  return CITIES[city]?.pois.find((p) => p.id === poiId) ?? marketLanternById(city, poiId, Date.now());
+  // 0.1.159: so is an open Comet vault (server clock + baked streets; a minute of skew at the close).
+  return CITIES[city]?.pois.find((p) => p.id === poiId) ?? marketLanternById(city, poiId, Date.now()) ?? cometById(city, poiId, now, COMET_SKEW_MS);
+}
+
+/** Dev server only: the forced QA clock (gameClock.ts) from its cookie. Always 0 in a production build. */
+async function devShift(): Promise<number> {
+  if (!import.meta.env?.DEV) return 0;
+  try {
+    const { getCookie } = await import("@tanstack/react-start/server");
+    const { DEV_CLOCK_COOKIE, parseDevShift } = await import("./gameClock");
+    return parseDevShift(getCookie(DEV_CLOCK_COOKIE));
+  } catch {
+    return 0;
+  }
 }
 
 const RETUNE_MS = 10 * 60 * 1000;
@@ -87,12 +101,14 @@ function secret(): string {
 
 export async function triviaDeps(): Promise<TriviaDeps> {
   await freshRetune();
+  const shift = await devShift();
+  const now = () => Date.now() + shift;
   return {
-    now: () => Date.now(),
+    now,
     secret: secret(),
     pick: pickTrivia,
     card: cardAny,
-    namedPoi,
+    namedPoi: (city, poiId) => namedPoi(city, poiId, now()),
     sql: async () => (await import("@/lib/db")).getSql(),
   };
 }

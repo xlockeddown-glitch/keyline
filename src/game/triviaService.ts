@@ -14,6 +14,7 @@ import { SCOUTS } from "./data.ts";
 import { hearthLast, hearthNext, hearthSteps, hearthTierAt, hearthVersion, type HearthVersion } from "./hearthMulti.ts";
 import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
 import { awardGrade, carsOf, noteBlitzCard, ownedOf, spendDealt } from "./walletApply.ts";
+import { isComet } from "./eventVault.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
 export type { DealInput, DealResult, GradeInput, GradeResult, Grade, PublicCard } from "./triviaSchema";
 
@@ -270,10 +271,26 @@ async function hearthStep(deps: TriviaDeps, viewer: Viewer, sql: Sql | null, inp
   return { v, step: next.step, used: next.used };
 }
 
+/** 0.1.159: the ledger key that marks one walker's clear of one Comet vault window. */
+export const eventKey = (poiId: string) => `ev:${poiId}`;
+
+async function eventDone(sql: Sql, userId: string, poiId: string): Promise<boolean> {
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${userId} and op_key = ${eventKey(poiId)} limit 1`;
+  return rows.length > 0;
+}
+
 export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput): Promise<DealResult> {
   // 0.1.117: a Hearth's step comes from the server's own chain, never from the client's `step`.
   if (input.poiId.startsWith("placed-")) input = { ...input, step: undefined };
   else if (input.hearthPrev) input = { ...input, hearthPrev: undefined };
+  // 0.1.159: a Comet vault's tier, spot and window come from the server clock and the baked streets only:
+  // the client's blank is dropped (as for placed vaults), and it never sparks (it opens with a green key).
+  const comet = isComet(input.poiId);
+  if (comet) {
+    input = { ...input, blank: undefined, step: undefined };
+    if (input.spark) return { ok: false, reason: "no-match" };
+    if (!deps.namedPoi(input.city, input.poiId)) return { ok: false, reason: "unknown-lamp" };
+  }
   let recent: string[] = [];
   let sql: Sql | null = null;
   let proven: Proven = {};
@@ -286,6 +303,14 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
     } catch (e) {
       sql = null;
       console.warn("[trivia] recent list unavailable", e instanceof Error ? e.message : e);
+    }
+  }
+  // 0.1.159: once per window per walker (signed in: the `ev:<id>` row survives reloads and other devices).
+  if (comet && viewer.userId && deps.sql) {
+    try {
+      if (await eventDone(sql ?? (await deps.sql()), viewer.userId, input.poiId)) return { ok: false, reason: "comet-done" };
+    } catch (e) {
+      console.warn("[trivia] comet ledger read failed", e instanceof Error ? e.message : e);
     }
   }
   // 0.1.107: a vault locked out after a wrong answer deals nothing until the ledger's unlock time.
@@ -315,7 +340,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
     const stepPoi: Poi = { ...hp.poi, tier: hearthTierAt(h.v, h.step) };
     dealDeps = { ...deps, namedPoi: (c, id) => (id === stepPoi.id ? stepPoi : deps.namedPoi(c, id)) };
   }
-  const r = deal(dealDeps, viewer, { ...input, blank: input.poiId.startsWith("placed-") ? undefined : input.blank }, recent, proven, hearth);
+  const r = deal(dealDeps, viewer, { ...input, blank: input.poiId.startsWith("placed-") || comet ? undefined : input.blank }, recent, proven, hearth);
   if (!r.ok) return r;
   // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
   // 0.1.117: a Hearth run spends its one key (the first question's tier) on the first deal only.
@@ -547,6 +572,23 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   let wallet: ServerWallet | undefined;
   let award: ServerAward | undefined;
   let can: { car: string; color: string } | undefined;
+  // 0.1.159: a right Comet answer claims this window's `ev:<id>` row. If another token already claimed it (two cards
+  // dealt before either was graded), this one pays as an ordinary green vault: the comet bonus is paid once.
+  let cometSpent = false;
+  const cometPi = t.x?.pi ?? "";
+  if (signedIn && credited && correct && isComet(cometPi) && deps.sql) {
+    try {
+      const sql = await deps.sql();
+      const got = await sql<{ op_key: string }>`
+        insert into wallet_ledger (user_id, op_key, detail) values (${viewer.userId}, ${eventKey(cometPi)}, ${JSON.stringify({ n: t.n, at: t.t })})
+        on conflict (user_id, op_key) do nothing returning op_key
+      `;
+      cometSpent = got.length === 0;
+    } catch (e) {
+      console.warn("[trivia] comet ledger write failed", e instanceof Error ? e.message : e);
+      cometSpent = true;
+    }
+  }
   if (signedIn && (credited || replay) && deps.sql && !blitz) {
     try {
       const sql = await deps.sql();
@@ -573,6 +615,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         charmTopics: Array.isArray(x?.ct) ? (x.ct as TriviaCat[]) : [],
         topic: (x?.cat ?? null) as TriviaCat | null,
         dealtAt: t.t,
+        ...(cometSpent ? { cometSpent: true } : {}),
         luckyHit: x?.lk === 1 && rand() < LUCKY_MATCH_CHANCE,
         perfectBlue: g?.grade === "perfect" && rand() < PERFECT_BLUE_CHANCE,
         scout: scoutOf(x?.sc),

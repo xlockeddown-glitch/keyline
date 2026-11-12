@@ -7,6 +7,8 @@ import { payDaily } from "./dailyRun.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS, blitzMatch } from "./dailyBlitz.ts";
 import { SURVEY_GOALS, isPlace } from "./survey.ts";
 import { MARKET_MULT, marketAt, marketMult, marketPay } from "./nightMarket.ts";
+import { COMET_BONUS, COMET_MULT, COMET_SKEW_MS, COMET_TAG, cometById } from "./eventVault.ts";
+export { COMET_TAG };
 import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { BAMBOO_TAG, owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
 import { lightOf, type LightId } from "./marketLights.ts";
@@ -679,6 +681,8 @@ export type GradePay = {
   charmTopics: TriviaCat[];
   topic: TriviaCat | null;
   dealtAt: number;
+  /** 0.1.159: another token already claimed this Comet window's `ev:` row; this grade pays as a plain green vault. */
+  cometSpent?: boolean;
   luckyHit: boolean;
   perfectBlue: boolean;
   /** 0.0.96: worn coat and the server's ability rolls (Raccoon blue drop, Plate refund). */
@@ -692,6 +696,14 @@ export type GradePay = {
   /** 0.1.14: first right lamp today in this 800 m square (server-decided from its grade rows, see district.ts). */
   freshDistrict?: boolean;
 };
+
+/**
+ * 0.1.159: does this grade pay the Comet bonus? Only for a lamp clear whose sealed deal time is inside the comet's
+ * window (plus the server's minute of skew), and not when another token already claimed the window.
+ */
+export function cometPays(p: Pick<GradePay, "city" | "poiId" | "dealtAt" | "clearTier" | "cometSpent">): boolean {
+  return p.clearTier != null && !p.cometSpent && cometById(p.city, p.poiId, p.dealtAt, COMET_SKEW_MS) != null;
+}
 
 function gradeLetter(ms: number): "perfect" | "great" | "good" {
   if (ms <= 3000) return "perfect";
@@ -782,8 +794,12 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const baseKeys: Partial<Record<Tier, number>> = {};
   if (p.lucky && p.luckyHit) baseKeys[p.poiTier] = 1;
   if (gradeLetter(p.elapsedMs) === "perfect" && p.perfectBlue) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
-  const lampMult = marketMult(p.city, p.dealtAt, spot);
+  // 0.1.159: a Comet vault pays ×1.5 vault coin instead of any market multiplier (never both).
+  const comet = cometPays(p);
+  const lampMult = comet ? 1 : marketMult(p.city, p.dealtAt, spot);
   const pay = marketPay(lampCoin * triple, baseKeys, lampMult);
+  const cometCoin = comet ? Math.round(lampCoin * triple * COMET_MULT) - lampCoin * triple : 0;
+  pay.coin += cometCoin;
   pay.coin += owlExtraCoin(p.scout ?? null, lampMult, lampCoin, lightOf(p.light));
   const marketBump =
     (p.serverRun ?? 0) >= MARKET_AT && lampMult > 1
@@ -806,6 +822,19 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
     if (r.tier) lKeys[r.tier] = (lKeys[r.tier] ?? 0) + 1;
     rummageCoin = r.coin;
   }
+  // 0.1.159: the Comet's guaranteed blue key, through the pocket rule (a full pocket steps up or pays coin).
+  let cometKeyCoin = 0;
+  if (comet) {
+    for (const [t, n] of Object.entries(COMET_BONUS) as [Tier, number][]) {
+      for (let i = 0; i < n; i++) {
+        const have = { ...w.keys };
+        for (const [u, m] of Object.entries(lKeys) as [Tier, number][]) have[u] = (have[u] ?? 0) + (m ?? 0);
+        const r = payMatch(have, t);
+        if (r.tier) lKeys[r.tier] = (lKeys[r.tier] ?? 0) + 1;
+        cometKeyCoin += r.coin;
+      }
+    }
+  }
   // 0.1.14: new-district bonus, a quarter of the base lamp coin. Never on a market lamp (no camping reward).
   const fresh = p.freshDistrict && lampMult === 1 ? freshDistrictCoin(lampCoin) : 0;
   // 0.1.47 Panda (Bamboo luck): the lamp coin (after category boosts, before the market) is paid once more.
@@ -816,8 +845,9 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const freshTagged = fresh ? { ...catTagged, labels: [...catTagged.labels, `${FRESH_DISTRICT_TAG} +${fresh}`] } : catTagged;
   const tagged = bamboo ? { ...freshTagged, labels: [...freshTagged.labels, `${BAMBOO_TAG} +${bamboo}`] } : freshTagged;
   const tripled = triple === 3 ? { ...tagged, labels: [...tagged.labels, "Streak ×3 vault coin"] } : tagged;
-  const bumped = marketBump ? { ...tripled, labels: [...tripled.labels, `Night market streak +${marketBump}`] } : tripled;
-  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo, lKeys, bumped, lit.u);
+  const bumped0 = marketBump ? { ...tripled, labels: [...tripled.labels, `Night market streak +${marketBump}`] } : tripled;
+  const bumped = comet ? { ...bumped0, labels: [...bumped0.labels, COMET_TAG] } : bumped0;
+  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo + cometKeyCoin, lKeys, bumped, lit.u);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */

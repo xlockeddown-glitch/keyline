@@ -51,6 +51,22 @@ export function vaultPinHtml(poi: Pick<Poi, "tier">, o: { cooling?: boolean; loc
   return `<div class="vault-pin tier-${poi.tier}${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}"${o.lockout ? ' title="Locked out after a wrong answer"' : ""}>${vaultSvg(poi.tier)}${lock}</div>`;
 }
 
+/**
+ * 0.1.159 Comet vault: Ryan's approved painted Gemini mock, cut to three transparent sprites (open, cooling,
+ * locked). The painting is finished art: nothing is drawn over it (no ring, glyph, lockbar or extra shadow). The
+ * root keeps `tier-green` so pinTier and the tier checks read it as a III vault. A wrong-answer lock-out switches to
+ * the locked painting and says so in the title; a cleared comet shows the cooling painting until its window ends.
+ */
+export type CometPinState = "open" | "cooling" | "locked";
+export function cometPinState(o: { cooling?: boolean; lockout?: boolean } = {}): CometPinState {
+  return o.lockout ? "locked" : o.cooling ? "cooling" : "open";
+}
+export function cometPinHtml(o: { cooling?: boolean; lockout?: boolean; title?: string } = {}) {
+  const state = cometPinState(o);
+  const title = (o.title ?? (state === "locked" ? "Comet vault · locked out after a wrong answer" : state === "cooling" ? "Comet vault · cleared, dark until the comet passes" : "Comet vault · open now")).replace(/[<>&"]/g, "");
+  return `<div class="vault-pin comet-pin tier-green is-${state}${o.lockout ? " locked-out" : o.cooling ? " cooling" : ""}" title="${title}"><img class="comet-sprite" src="/sprites/comet/${state}.webp" width="48" height="58" alt="" draggable="false" /></div>`;
+}
+
 /** Front of a carriage on rails: lamps, windscreen, buffers. Reads as "train" at 20px. */
 const TRAIN = `<svg class="station-train" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="15" rx="3.5"/><rect class="pane" x="7.4" y="5" width="9.2" height="5.2" rx="1"/><circle class="eye" cx="8.6" cy="13.6" r="1.25"/><circle class="eye" cx="15.4" cy="13.6" r="1.25"/><path class="rails" d="M8 17.5 5.5 21.5M16 17.5l2.5 4M4 21.5h16"/></svg>`;
 

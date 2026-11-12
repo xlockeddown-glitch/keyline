@@ -126,6 +126,7 @@ export const PAY_NOTES = [
   "Opening a vault uses one key of its color. A very fast right answer has a 1 in 10 chance of a free blue key. With Lucky on (kept from the old Lucky bit, or a month from the Full month quest), about 1 in 7 vaults also give back a key of their color.",
   `Paint is that vault's color. Prism is separate: any vault, about 1 in ${ULTRA_DROP_IN.toLocaleString()}, and it can land with the color can.`,
   "Vaults inside a night market pay double coin and double bonus keys (not paint), then rest four times as long.",
+  "A Comet vault comes to each city every 6 hours and stays open 20 minutes. It opens with a green key and pays green coin ×1.5 plus one blue key, on top of the usual key back. You can open each comet once; it never doubles with a night market.",
   "Each time you open the same vault on the same day, it stays dark longer: the usual time after the 1st open, twice as long after the 2nd, three times after the 3rd, and so on. It starts over at midnight in that city. Night market lanterns open once per market.",
 ] as const;
 

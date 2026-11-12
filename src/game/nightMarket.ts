@@ -13,6 +13,8 @@ import { MARKET_STREETS } from "./marketStreets.ts";
 import type { CityId, Poi, Tier } from "./types";
 import { CITIES } from "./data.ts";
 import { hearthPois } from "./hearthVaults.ts";
+import { COMET_LATE_MS, cometById, cometVault } from "./eventVault.ts";
+import { gameNow } from "./gameClock.ts";
 
 /** 0.1.2: a market cycle is 15 minutes: open 10, dark 5, then it reopens at a new spot. "hour" fields now count cycles. */
 export const MARKET_OPEN_MS = 10 * 60_000;
@@ -735,9 +737,10 @@ export function marketLanternById(city: CityId, id: string, at: number): Poi | n
   return marketLanterns(m).find((p) => p.id === id) ?? null;
 }
 
-/** Every lamp on the map right now: the city's, the street blanks and the open market's lanterns. */
-export function livePois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], at = Date.now()): Poi[] {
-  const extra = marketLanterns(marketAt(city.id, at));
+/** Every lamp on the map right now: the city's, the street blanks, the open market's lanterns and (0.1.159) an open Comet vault. */
+export function livePois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], at = gameNow()): Poi[] {
+  const comet = cometVault(city.id, at);
+  const extra = comet ? [...marketLanterns(marketAt(city.id, at)), comet] : marketLanterns(marketAt(city.id, at));
   // 0.1.110: placed Hearth vaults in this city (client registry; empty on the server).
   const hearth = hearthPois(city.id);
   return extra.length || blanks.length || hearth.length ? [...city.pois, ...blanks, ...extra, ...hearth] : city.pois;
@@ -745,9 +748,12 @@ export function livePois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], 
 
 /** livePois plus the lanterns of a market that closed in the last few minutes, so a quiz opened just before the
  * close still finds its lamp. For lookups by id only; the map shows livePois. */
-export function anyPois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], at = Date.now()): Poi[] {
+export function anyPois(city: { id: CityId; pois: Poi[] }, blanks: Poi[] = [], at = gameNow()): Poi[] {
   const live = livePois(city, blanks, at);
   const late = marketLanterns(marketAt(city.id, at - 10 * 60_000)).filter((p) => !live.some((q) => q.id === p.id));
+  // 0.1.159: the comet that closed in the last few minutes, by the same late grace.
+  const lateComet = cometVault(city.id, at - COMET_LATE_MS);
+  if (lateComet && !live.some((q) => q.id === lateComet.id) && cometById(city.id, lateComet.id, at, COMET_LATE_MS)) late.push(lateComet);
   return late.length ? [...live, ...late] : live;
 }
 

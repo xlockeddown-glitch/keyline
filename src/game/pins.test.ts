@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CITY_LIST } from "./data.ts";
 import { RARITY_LADDER as TIERS } from "./rarity.ts";
-import { pinTier, stationPinHtml, vaultPinHtml } from "./pins.ts";
+import { cometPinHtml, cometPinState, pinTier, stationPinHtml, vaultPinHtml } from "./pins.ts";
 import { isFareDesk } from "./ticket.ts";
 
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
@@ -81,4 +81,35 @@ test("0.1.119 the ladder art is retired (no ladder pin markup or CSS left)", asy
   const pins = await import("./pins.ts");
   for (const k of ["ladderColumnSvg", "ladderLampHtml", "seriesPinHtml"]) assert.equal(k in pins, false, k);
   assert.doesNotMatch(read("../styles.css"), /\.is-ladder\b|\.ladder-col\b/);
+});
+
+test("0.1.159 the painted Comet pin reads tier-green in every state, with nothing drawn over the painting", () => {
+  const states = [
+    ["open", cometPinHtml()],
+    ["cooling", cometPinHtml({ cooling: true })],
+    ["locked", cometPinHtml({ cooling: true, lockout: true })],
+  ] as const;
+  for (const [state, html] of states) {
+    assert.equal(pinTier(html), "green", state);
+    assert.match(html, new RegExp(`src="/sprites/comet/${state}\\.webp"`));
+    // Only the wrapper and the painted sprite: no SVG, lockbar, ring or extra markup over the image.
+    assert.doesNotMatch(html, /<svg|vk-lockbar|<span|<i /);
+    assert.equal((html.match(/<img /g) ?? []).length, 1);
+  }
+  assert.equal(cometPinState({ cooling: true, lockout: true }), "locked");
+  assert.equal(cometPinState({ cooling: true }), "cooling");
+  assert.equal(cometPinState(), "open");
+});
+
+test("0.1.159 the comet sprites ship as RGBA webp, sized for 3x screens", () => {
+  for (const s of ["open", "cooling", "locked"]) {
+    const buf = readFileSync(new URL(`../../public/sprites/comet/${s}.webp`, import.meta.url));
+    assert.equal(buf.toString("ascii", 0, 4), "RIFF");
+    assert.equal(buf.toString("ascii", 8, 12), "WEBP");
+    assert.equal(buf.toString("ascii", 12, 16), "VP8X", `${s}: extended webp (alpha)`);
+    assert.ok(buf[20]! & 0x10, `${s}: alpha flag`);
+    const w = 1 + buf.readUIntLE(24, 3), h = 1 + buf.readUIntLE(27, 3);
+    assert.ok(w >= 48 * 3 && h >= 58 * 3, `${s}: ${w}x${h}`);
+    assert.ok(buf.length < 60_000, `${s}: ${buf.length} bytes`);
+  }
 });

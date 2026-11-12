@@ -14,7 +14,9 @@ import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
 import { driveAccel, drivePace, perksAt } from "@/game/streakMile";
-import { boardPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
+import { boardPinHtml, cometPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml } from "@/game/pins";
+import { cometAt, cometId, cometStart, cometVault, cometWindow, cometWindowEnd, isComet } from "@/game/eventVault";
+import { gameNow, setDevClockShift } from "@/game/gameClock";
 import { FACET_COLOR, hearthOf, isHearthId } from "@/game/hearthVaults";
 import { faceFromYaw as cabFace, spriteCell, walkRow } from "@/game/facing";
 import { roadTilt, worldScale } from "@/game/grounded";
@@ -967,7 +969,9 @@ export function GameMap() {
     const cid = useGame.getState().cityId;
     const now = Date.now();
     const m = marketAt(cid, now);
-    const key = m ? `${cid}|${m.hour}|${graphRef.current?.segs.length ?? 0}` : "";
+    // 0.1.159: the Comet vault comes and goes on its own clock; its window joins the key so the pins follow it.
+    const cs = cometAt(cid, gameNow());
+    const key = `${m ? `${cid}|${m.hour}|${graphRef.current?.segs.length ?? 0}` : ""}|comet:${cs.open ? cs.w : "-"}`;
     const sign = marketLayers.current.find((l): l is Marker => l instanceof L.Marker);
     if (marketKey.current === key) {
       const el = sign?.getElement()?.querySelector(".market-pin-left");
@@ -1163,6 +1167,24 @@ export function GameMap() {
 
       mapRef.current = map;
       if (import.meta.env.DEV) {
+        // 0.1.159 QA: `?comet=open|cooling|locked` forces this city's Comet window open (6 min in) on the dev clock,
+        // and for cooling / locked marks it cleared / locked out locally. Production never reads it.
+        const want = new URLSearchParams(window.location.search).get("comet");
+        if (want === "open" || want === "cooling" || want === "locked") {
+          const cid = useGame.getState().cityId;
+          const real = Date.now();
+          const w = cometWindow(cid, real);
+          setDevClockShift(cometStart(cid, w) + 6 * 60_000 - real);
+          const id = cometId(cid, w);
+          const vaults = { ...useGame.getState().vaults };
+          if (want === "open") delete vaults[id];
+          else
+            vaults[id] =
+              want === "locked"
+                ? { state: "cooling", coolUntil: Date.now() + 3 * 60_000, lockout: true }
+                : { state: "cooling", coolUntil: Date.now() + Math.max(0, cometWindowEnd(id) - gameNow()) };
+          useGame.setState({ vaults });
+        }
         // Dev/QA only: lets smoke scripts stand the walker at a spot and read the walk graph.
         (window as unknown as { __keylineMap?: unknown }).__keylineMap = {
           map: () => mapRef.current,
@@ -1177,6 +1199,8 @@ export function GameMap() {
           plan: (lat: number, lng: number, keyId?: string) => planWalk(lat, lng, false, keyId),
           daily: () => useDaily.getState(),
           market: () => marketAt(useGame.getState().cityId, Date.now()),
+          // 0.1.159 QA: the open Comet vault (dev clock), so shot scripts can walk to it.
+          comet: () => cometVault(useGame.getState().cityId, gameNow()),
           // 0.1.8 QA: the car lot's door and the CAB / Car button.
           dealer: () => (dealerDoor.current ? { ...dealerDoor.current } : null),
           house: () => (houseDoor.current ? { ...houseDoor.current } : null),
@@ -1674,13 +1698,18 @@ export function GameMap() {
             ? boardPinHtml(poi.name)
             : desk
               ? stationPinHtml({ cooling, fare: lit })
+              : isComet(poi.id)
+                ? cometPinHtml({ cooling, lockout: cooling && v?.lockout === true })
               : isHearthId(poi.id)
                 ? hearthPinHtml(poi.name, hearthOf(poi.id)?.cats ?? [], FACET_COLOR, { cooling, lockout: cooling && v?.lockout === true, polished: (hearthOf(poi.id)?.polish ?? 0) > now })
                 : vaultPinHtml(poi, { cooling, lockout: cooling && v?.lockout === true });
       const hearth = isHearthId(poi.id);
+      const comet = isComet(poi.id);
       // 0.1.102 Vault Keys: street vaults are 40 px SVG boxes standing on the CSS ground shadow.
-      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : hearth ? [76, 72] : [40, 44];
-      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : hearth ? [38, 56] : [20, 40];
+      // 0.1.159: the painted Comet vault is 48×58 (vault box ~40 px wide, plus the trail and the painted ring),
+      // anchored on the centre of its painted ring.
+      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : hearth ? [76, 72] : comet ? [48, 58] : [40, 44];
+      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : hearth ? [38, 56] : comet ? [24, 51] : [20, 40];
       // 0.1.68: one z band so Leaflet's own latitude order puts nearer (southern) pins in front. 0.1.102: vaults get the ground shadow too.
       const marker = L.marker([poi.lat, poi.lng], {
         icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1]), iconSize: size, iconAnchor: anchor }),

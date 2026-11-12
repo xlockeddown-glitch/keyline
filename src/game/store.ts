@@ -10,6 +10,8 @@ import { carOf, driveOf, isCarId, type CarId } from "./cars";
 import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
 import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
 import { HOME_LAMPS, houseCost, houseOf, isHouseTier, type HouseState, type HouseTier } from "./houses";
+import { COMET_BONUS, COMET_MULT, COMET_SKEW_MS, COMET_TAG, cometById, cometLeft, cometAt, cometWindowEnd, isComet } from "./eventVault";
+import { gameNow } from "./gameClock";
 import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, livePois, marketLanternById, marketAt, marketCoolMs, marketMatches, marketMult, marketOverflowCoin, marketPay, onMarket, pointOnMarket } from "./nightMarket";
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
@@ -880,11 +882,15 @@ async function dealCard(
   step: number,
   prevToken?: string,
   hearthPrev?: string,
-): Promise<{ card: DealtCard; token: string; windowMs: number; wallet?: ServerWallet } | { need: true } | { lockedMs: number } | null> {
+): Promise<{ card: DealtCard; token: string; windowMs: number; wallet?: ServerWallet } | { need: true } | { lockedMs: number } | { cometDone: true } | null> {
   foldSavedSeen(set, get);
   const st = get();
   const city = CITIES[st.cityId];
-  const named = city.pois.find((p) => p.id === poiId) ?? marketLanternById(st.cityId, poiId, Date.now()) ?? hearthPois(st.cityId).find((p) => p.id === poiId);
+  const named =
+    city.pois.find((p) => p.id === poiId) ??
+    marketLanternById(st.cityId, poiId, Date.now()) ??
+    cometById(st.cityId, poiId, gameNow(), COMET_SKEW_MS) ??
+    hearthPois(st.cityId).find((p) => p.id === poiId);
   const blank = named ? undefined : st.blanks.find((p) => p.id === poiId);
   const dealBlank =
     blank && lampKind(blank.kind)
@@ -921,7 +927,7 @@ async function dealCard(
   };
   try {
     const r = await dealTrivia({ data: input });
-    if (!r.ok) return r.reason === "no-match" ? { need: true } : r.reason === "locked-out" ? { lockedMs: r.leftMs } : null;
+    if (!r.ok) return r.reason === "no-match" ? { need: true } : r.reason === "locked-out" ? { lockedMs: r.leftMs } : r.reason === "comet-done" ? { cometDone: true } : null;
     return { card: r.card, token: r.token, windowMs: r.windowMs, wallet: r.wallet };
   } catch {
     return null;
@@ -1492,6 +1498,8 @@ export const useGame = create<GameState>((set, get) => ({
     if (!hasMatch(get().keys, poi.tier)) {
       // 0.1.19 (Ryan): violet never sparks; it needs a violet match.
       if (!sparkTier(poi.tier)) return `Need a ${TIER_LABEL[poi.tier]} key.`;
+      // 0.1.159: a Comet vault opens with a green key, never a spark.
+      if (isComet(poiId)) return `Need a ${TIER_LABEL[poi.tier]} key. A comet vault opens with a key, not a spark.`;
       const spark = sparksNow(get);
       if (spark.sparkN >= SPARK_DAY) return `Need a ${TIER_LABEL[poi.tier]} key. Sparks are spent today.`;
       if (spark.sparkLamps.includes(poiId)) return `Need a ${TIER_LABEL[poi.tier]} key. This vault already sparked.`;
@@ -1559,6 +1567,15 @@ export const useGame = create<GameState>((set, get) => ({
         scheduleSave(get);
         return;
       }
+      if ("cometDone" in dealt) {
+        // 0.1.159: this walker already cleared this comet (the server's ledger): dark until the window ends.
+        const prev = get().vaults[ov.poiId];
+        const left = Math.max(0, cometWindowEnd(ov.poiId) - gameNow());
+        set({ openVault: null, vaults: { ...get().vaults, [ov.poiId]: { ...prev, state: "cooling", coolUntil: Date.now() + left } } });
+        flashToast(set, get, `You've cleared this comet. Next one in ${cometLeft(cometAt(get().cityId, gameNow() + left).startsAt - gameNow())}.`, 3000);
+        scheduleSave(get);
+        return;
+      }
       if ("need" in dealt) {
         set({ openVault: null });
         flashToast(set, get, `Need a ${TIER_LABEL[cost!]} key.`, 2400);
@@ -1590,7 +1607,7 @@ export const useGame = create<GameState>((set, get) => ({
           startedAt: shown,
           deadline: shown + dealt.windowMs,
           spark,
-          dealtAt: Date.now(),
+          dealtAt: gameNow(),
           held: cost ?? undefined,
           ...(run ? { hearth: run } : {}),
         },
@@ -1845,7 +1862,9 @@ export const useGame = create<GameState>((set, get) => ({
       }) * (hRun && hV > 1 ? hearthBoost(hV, hRun.step) : 1),
     );
     const lampMarket = marketAt(city.id, ov.dealtAt ?? Date.now());
-    const lampMult = onMarket(lampMarket, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }) ? MARKET_MULT : 1;
+    // 0.1.159: a Comet vault pays ×1.5 and a blue key instead of the market (never both). Same rule as gradeGrant.
+    const cometPay = isComet(poi.id) && cometById(city.id, poi.id, ov.dealtAt ?? gameNow(), COMET_SKEW_MS) != null;
+    const lampMult = !cometPay && onMarket(lampMarket, { kind: "lamp", poiId: poi.id, lat: poi.lat, lng: poi.lng }) ? MARKET_MULT : 1;
     // 0.1.82: brass, ink, vellum and press stock are cut (nothing spent them); only paint still drops.
     const brass = 0;
     const ink = 0;
@@ -1860,6 +1879,10 @@ export const useGame = create<GameState>((set, get) => ({
     if (grade === "perfect" && Math.random() < PERFECT_BLUE_CHANCE) baseKeys.blue = (baseKeys.blue ?? 0) + 1;
     // Night market: the trivia card's coin and its bonus matches double; the cloth tip and boosts don't.
     const lampPay = marketPay(lampCoin, baseKeys, lampMult);
+    if (cometPay) {
+      lampPay.coin = Math.round(lampCoin * COMET_MULT);
+      for (const [t, n] of Object.entries(COMET_BONUS) as [Tier, number][]) lampPay.keys[t] = (lampPay.keys[t] ?? 0) + n;
+    }
     const points = lampPay.coin + tip;
     const extraKeys: Partial<Record<Tier, number>> = lampPay.keys;
 
@@ -1903,7 +1926,7 @@ export const useGame = create<GameState>((set, get) => ({
     if (paid.whiteAdded) extraKeys.white = (extraKeys.white ?? 0) + paid.whiteAdded;
     loot.keys = extraKeys;
     loot.points = paid.points - get().points;
-    loot.boosts = paid.boosts.length ? paid.boosts : undefined;
+    loot.boosts = paid.boosts.length || cometPay ? [...paid.boosts, ...(cometPay ? [COMET_TAG] : [])] : undefined;
     // 0.1.6: a lamp on the open night market rests four times as long (was 3x faster in 0.0.90 — players camped it).
     // 0.1.7: and each open of the same lamp today rests longer: 1x, 2x, 3x… (resets at the city's midnight).
     const openDay = cityDay(get().cityId, Date.now());
@@ -1913,7 +1936,9 @@ export const useGame = create<GameState>((set, get) => ({
     const coolMs = stackedCoolMs(marketCoolMs(lampCoolMs(poi.tier), lampMult), opens);
     const restMs = Math.round(coolMs * carCool(seatedCar(get())));
     // 0.1.7: a market lantern opens once per market — it stays dark until its market closes (and then it is gone).
-    const lanternLeft = isMarketLantern(poi.id) ? Math.max(restMs, lanternCycleEnd(poi.id) - Date.now()) : restMs;
+    const lanternLeft0 = isMarketLantern(poi.id) ? Math.max(restMs, lanternCycleEnd(poi.id) - Date.now()) : restMs;
+    // 0.1.159: a cleared Comet vault stays dark until its window ends, the same way (guests too, locally).
+    const lanternLeft = isComet(poi.id) ? Math.max(restMs, cometWindowEnd(poi.id) - gameNow()) : lanternLeft0;
     const vaults = { ...get().vaults, [poi.id]: { state: "cooling" as const, coolUntil: Date.now() + lanternLeft, opens, openDay } };
     let contract = get().contract;
     let contractToast: string | null = null;

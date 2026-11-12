@@ -4130,6 +4130,16 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .vk-ring{ stroke:var(--glow) }
 .vault-pin.cooling .vk-ring{ stroke:#3a414c }
 
+/* 0.1.159 Comet vault: the painted Gemini sprite (pins.ts cometPinHtml), 48×58 so the trail and the painted ring
+   are never cropped. Finished painting: no glow halo, dimming, outline or shadow is drawn over or behind it here;
+   the state is the sprite itself (open / cooling / locked). The shared contact shadow stays (.world-obj). */
+.vault-pin.comet-pin{ width:48px; height:58px; place-items:stretch; opacity:1 }
+.vault-pin.comet-pin::before, .vault-pin.comet-pin::after{ display:none }
+.comet-hero{ display:block; width:72px; height:86px; object-fit:contain }
+.vault-hero:has(.comet-hero){ width:72px; height:86px; transform:none }
+.vault-hero.vault-pin:has(.comet-hero)::before{ display:none }
+.comet-sprite{ display:block; width:48px; height:58px; object-fit:contain; pointer-events:none; user-select:none; -webkit-user-drag:none }
+
 /* 0.1.107 Vault Keys lock-out: red rim + red reader + striped LOCKED bar (shape and text, not colour alone). */
 .vault-pin.locked-out{ position:relative; --lock:#ff4a4a }
 .vault-pin.locked-out .vk-vault{ z-index:0 }

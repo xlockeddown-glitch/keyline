@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.157";
+export const APP_VERSION = "0.1.159";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1157a";
+export const PUBLISH_STAMP = "k1159a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -254,3 +254,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.156: Ladders extras — weekly, city and friends views on the Journal Ladders board, plus first-to-title badges. 0.1.155 is held for trivia. Ships with the house and Loop art in 0.1.157 (k1157a).
 // 0.1.157: houses use the approved Gemini paintings (cottage, row, town, villa) as transparent cutouts on the map, the sheet and the Journal; sheet thumbs use the pin cut. The Loop tunnel is the painted tunnel zooming into its vanishing point; reduced motion holds a still frame. Prices, ids and Loop timing are unchanged. Ladders extras (weekly, city and friends views, first-to-title badges) ship in this same release. 0.1.155 is held for trivia (k1157a).
 // 0.1.157 follow-up (same version, still k1157a): map houses drawn larger with a per-tier floor and a warm light behind them, so each is at least as tall as the old art; the Loop sled sits on the near rails and one tunnel copy zooms once over the ride (no double exposure).
+// 0.1.159: Comet vault — a rare timed green vault in each city every 6 hours, open 20 minutes, on a baked walkable street near spawn, clear of the night markets and the lamps; opens with a green key, pays ×1.5 green coin plus a guaranteed blue key and the usual key back, once per window (signed in: an ev: ledger row; guests go dark locally); never stacks with the night market. Painted open/cooling/locked pins from the approved Gemini mock; the HUD reads "Comet vault on … · N min left" / "next comet in …". 0.1.155 is still held for trivia, 0.1.158 for formats (k1159a).

@@ -21,6 +21,8 @@ import { TouchPad } from "./TouchPad";
 import { AudioDock } from "./AudioDock";
 import { DailyHudLine } from "./DailyRun";
 import { MarketHudLine, useMarket } from "./NightMarket";
+import { CometHudLine } from "./CometHud";
+import { isComet } from "@/game/eventVault";
 import { MARKET_TAG, onMarket } from "@/game/nightMarket";
 import { StreakPlate } from "./StreakPlate";
 
@@ -88,7 +90,8 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const sparksLeft = (sparkDay === today ? SPARK_DAY - sparkN : SPARK_DAY);
   const sparkedHere = Boolean(nearest && sparkDay === today && sparkLamps.includes(nearest.id));
   const canSpark = Boolean(
-    inReach && needTier && !haveKey && !recasting && !service && sparksLeft > 0 && !sparkedHere,
+    // 0.1.159: a Comet vault opens with a key, never a spark.
+    inReach && needTier && !haveKey && !recasting && !service && sparksLeft > 0 && !sparkedHere && !isComet(nearest?.id ?? ""),
   );
   const armed = Boolean(atShop || atCounter || atBoard || (inReach && haveKey && !recasting) || canSpark);
   const fares = useGame((s) => s.fares);
@@ -131,9 +134,11 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
         ? `Strike a spark · E — earn a ${TIER_LABEL[nearest.tier]} key`
         : sparkedHere
           ? `Need a ${TIER_LABEL[nearest.tier]} key. This vault already sparked.`
-          : sparksLeft < 1
-            ? `Need a ${TIER_LABEL[nearest.tier]} key. Sparks are spent today.`
-            : `Need a ${TIER_LABEL[nearest.tier]} key`;
+          : isComet(nearest.id)
+            ? `Need a ${TIER_LABEL[nearest.tier]} key. A comet takes a key, not a spark.`
+            : sparksLeft < 1
+              ? `Need a ${TIER_LABEL[nearest.tier]} key. Sparks are spent today.`
+              : `Need a ${TIER_LABEL[nearest.tier]} key`;
     }
     else if (armed) cue = "At the vault · E or tap";
     else cue = hud.routeStops > 0 ? `${formatDist(hud.nearestDist)} · tap to go there instead` : `${formatDist(hud.nearestDist)} · click to walk`;
@@ -202,6 +207,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
           <DailyHudLine />
           {/* 0.1.98: phones keep the market line in the plate; sm and up it sits under the kit row. */}
           {wide ? null : <MarketHudLine onWalk={onMarketWalk} />}
+          {wide ? null : <CometHudLine />}
           <SkyChip />
         </div>
 
@@ -249,6 +255,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
         {wide ? (
           <div className="hud-market flex flex-col items-end">
             <MarketHudLine onWalk={onMarketWalk} />
+            <CometHudLine />
           </div>
         ) : null}
         </div>

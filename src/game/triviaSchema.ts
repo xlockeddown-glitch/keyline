@@ -78,6 +78,8 @@ export type ServerAward = { coins: number; keys: Partial<Record<Tier, number>>; 
 export type DealResult =
   | { ok: true; token: string; card: PublicCard; windowMs: number; wallet?: ServerWallet }
   | { ok: false; reason: "unknown-lamp" | "slow" | "no-match" }
+  /** 0.1.159: this walker already cleared this Comet vault window (server ledger `ev:<id>`). */
+  | { ok: false; reason: "comet-done" }
   /** 0.1.107: this vault is locked out after a wrong answer (server ledger); `leftMs` until it opens. */
   | { ok: false; reason: "locked-out"; leftMs: number };
 

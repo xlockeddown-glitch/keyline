@@ -1454,3 +1454,47 @@ test("0.1.42 house keys: every tier pays 2 keys of its color plus its coin, once
   assert.equal(w.coins, COIN_CAP);
   assert.equal(w.keys.amber, amber + 2);
 });
+
+test("0.1.159 Comet: ×1.5 vault coin and a blue key only when the sealed deal time is inside the window; never with the market", async () => {
+  const { cometId, cometOfWindow, cometStart, cometEnd, cometWindow, COMET_OPEN_MS, COMET_SKEW_MS } = await import("./eventVault.ts");
+  const city = "austin" as const;
+  const w = cometWindow(city, Date.UTC(2026, 10, 11)) + 1;
+  const id = cometId(city, w);
+  const spot = cometOfWindow(city, w)!;
+  const base = { city, clearTier: "green" as const, poiTier: "green" as const, poiId: id, lat: spot.lat, lng: spot.lng };
+  const lampCoin = rewardPoints("green", { mult: 1, bonus: 1 + Math.min(0.4, 1 * 0.05), diffMult: 1, loot: 1 });
+  // Inside the window (perfect answer): 1.5x coin, the blue key, and the green key back.
+  const inside = gradeGrant(emptyWallet(), pay({ ...base, dealtAt: cometStart(city, w) + 5 * 60_000 }));
+  assert.ok(inside.ok);
+  assert.equal(inside.award?.coins, Math.round(lampCoin * 1.5));
+  assert.deepEqual(inside.award?.keys, { green: 1, blue: 1 });
+  assert.ok(inside.award?.boosts.some((b) => b.startsWith("Comet ×1.5")));
+  // A slow answer dealt inside still pays the comet (the token sealed the time), at the slow coin.
+  const slowCoin = rewardPoints("green", { mult: 0.4, bonus: 1.05, diffMult: 1, loot: 1 });
+  const slow = gradeGrant(emptyWallet(), pay({ ...base, mult: 0.4, elapsedMs: 15_000, dealtAt: cometEnd(city, w) - 1000 }));
+  assert.equal(slow.award?.coins, Math.round(slowCoin * 1.5));
+  assert.deepEqual(slow.award?.keys, { green: 1, blue: 1 });
+  // Dealt after the window (past the minute of skew): a plain green vault.
+  const after = gradeGrant(emptyWallet(), pay({ ...base, dealtAt: cometEnd(city, w) + COMET_SKEW_MS + 1 }));
+  assert.equal(after.award?.coins, lampCoin);
+  assert.deepEqual(after.award?.keys, { green: 1 });
+  assert.equal(gradeGrant(emptyWallet(), pay({ ...base, dealtAt: cometStart(city, w) - 1 })).award?.coins, lampCoin, "before it opens");
+  // Another token already claimed this window's ev: row: plain green.
+  const spent = gradeGrant(emptyWallet(), pay({ ...base, dealtAt: cometStart(city, w) + 60_000, cometSpent: true }));
+  assert.equal(spent.award?.coins, lampCoin);
+  assert.deepEqual(spent.award?.keys, { green: 1 });
+  // Never stacks with the night market: even sealed at a market zone while it is open, the comet pays 1.5x, not 3x.
+  let t = cometStart(city, w);
+  while (!marketAt(city, t) && t < cometStart(city, w) + COMET_OPEN_MS) t += 60_000;
+  const m = marketAt(city, t)!;
+  assert.ok(m, "a market is open during the comet window");
+  const inMarket = { ...base, lat: m.zone.lat, lng: m.zone.lng, dealtAt: t };
+  const stacked = gradeGrant(emptyWallet(), pay(inMarket));
+  assert.equal(stacked.award?.coins, Math.round(lampCoin * 1.5));
+  assert.deepEqual(stacked.award?.keys, { green: 1, blue: 1 });
+  // (A plain green lamp at that market spot would be doubled: the comet replaces the market, it doesn't add.)
+  const plainMarket = gradeGrant(emptyWallet(), pay({ ...inMarket, poiId: "not-a-comet" }));
+  assert.equal(plainMarket.award?.coins, lampCoin * 2);
+  // A wrong answer pays nothing either way.
+  assert.equal(gradeGrant(emptyWallet(), pay({ ...base, correct: false, dealtAt: cometStart(city, w) + 1 })).award?.coins, 0);
+});

@@ -37,6 +37,7 @@ import {
   friendOp,
   goalOp,
   gradeGrant,
+  cometPays,
   gradedPlace,
   kioskOp,
   mergeFirstSync,
@@ -769,6 +770,7 @@ export async function awardGrade(
     random: pay.random === true,
     topic: pay.topic,
     dealtAt: pay.dealtAt,
+    ...(pay.cometSpent ? { cometSpent: true } : {}),
     luckyHit: false,
     perfectBlue: pay.perfectBlue,
     scout: pay.scout ?? null,
@@ -843,6 +845,7 @@ export async function awardGrade(
   let v2Paid = false;
   let rtPaid = false;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
+  const cometClear = full.correct && cometPays(full);
   // 0.1.22: a quest lamp is a right answer on a lamp that spent a match (never a spark, never a blitz card).
   const questLamp = full.correct && full.clearTier != null && !spark && !full.poiId.startsWith("blitz-");
   const detailOf = (award: AwardView, counts = true) =>
@@ -862,8 +865,10 @@ export async function awardGrade(
       ...(spark && sparkOk ? { sp: 1 } : {}),
       ...(v2Paid ? { v2: 1 } : {}),
       ...(rtPaid ? { rt: 1 } : {}),
-      // 0.0.98: night-market lamp, for the Night Owl title.
-      ...(full.correct && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
+      // 0.0.98: night-market lamp, for the Night Owl title. 0.1.159: a Comet clear is never a market lamp.
+      ...(full.correct && !cometClear && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
+      // 0.1.159: a Comet vault clear that paid the comet bonus, for later quests and titles.
+      ...(cometClear ? { ev: 1 } : {}),
     });
   // 0.1.42: did this write burn a match on a miss (an owned lamp's owner is paid for those)?
   let matchLost = false;
