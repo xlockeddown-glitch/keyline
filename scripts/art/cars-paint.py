@@ -1,7 +1,9 @@
 """0.1.9: factory-colour recolors of the v3 car sprites (public/sprites/cars/<car>-<view>.png) ->
 public/sprites/cars/paint/<car>-<color>-<view>.png. Only body paint changes: bright, low-saturation pixels in the
 big connected panels. Glass, tyres, lights, rims, badges and plates (dark, saturated, or small islands) keep their pixels.
-  python3 scripts/art/cars-paint.py   (colours are read from src/game/carPaint.ts)"""
+  python3 scripts/art/cars-paint.py   (colours are read from src/game/carPaint.ts)
+Historical since 0.1.161: the png sprites are gone. The painted webp cars and their paint variants come from
+scripts/art/cars-cut-painted.py."""
 import re, os, numpy as np
 from PIL import Image
 from scipy import ndimage

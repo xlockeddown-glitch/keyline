@@ -55,7 +55,7 @@ export function HouseSheet() {
               <div className="house-drive" data-testid="house-drive">
                 <span className="kicker">Drive</span>
                 {car ? (
-                  <img src={carSprite(car.id, "side", paint[car.id])} alt={car.name} width={192} height={64} />
+                  <img src={carSprite(car.id, "side", paint[car.id])} alt={car.name} width={640} height={240} />
                 ) : (
                   <span className="text-sm text-fg-subtle">Empty — you're on the city cab.</span>
                 )}

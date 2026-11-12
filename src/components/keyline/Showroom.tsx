@@ -49,7 +49,7 @@ export function Showroom() {
               const short = points < c.price;
               return (
                 <div key={c.id} className={`car-card${c.star ? " is-star" : ""}`} data-testid={`car-${c.id}`}>
-                  <img className="car-art" src={carSprite(c.id, "side", mine ? paint[c.id] : null)} alt="" width={192} height={64} />
+                  <img className="car-art" src={carSprite(c.id, "side", mine ? paint[c.id] : null)} alt="" width={640} height={240} />
                   <div className="flex items-end justify-between gap-3">
                     <div className="min-w-0">
                       {c.star ? <p className="kicker car-star">The one to want</p> : null}
