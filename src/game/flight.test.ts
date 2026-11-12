@@ -100,3 +100,37 @@ test("wiring: the wire accepts loop and fly, the sheet offers Fly on far routes,
   const pkg = readFileSync(new URL("../../package.json", import.meta.url), "utf8");
   assert.match(pkg, /src\/game\/flight\.test\.ts/);
 });
+
+test("0.1.164 the flight window uses painted webps and no glare overlay", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  const cut = readFileSync(
+    new URL("../components/keyline/FlightScreen.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(cut, /earth\.webp/);
+  assert.match(cut, /wing\.webp/);
+  assert.match(cut, /cloud-a\.webp/);
+  assert.match(cut, /cloud-b\.webp/);
+  assert.match(cut, /cloud-c\.webp/);
+  assert.doesNotMatch(cut, /earth\.svg|wing\.svg|cloud-[abc]\.svg/);
+  assert.doesNotMatch(cut, /flight-glare/, "sun glare is painted into the wing");
+
+  const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  assert.doesNotMatch(css, /\.flight-glare/, "no glare rule over the painting");
+  assert.doesNotMatch(css, /\.fl-earth[^}]*mask-image/, "no horizon fade over the painted earth");
+  assert.doesNotMatch(
+    css,
+    /\.fl-cloud\.w4[^}]*filter:\s*blur/,
+    "no blur filter on the painted clouds",
+  );
+
+  const dir = new URL("../../public/sprites/flight/", import.meta.url);
+  for (const name of ["earth.webp", "wing.webp", "cloud-a.webp", "cloud-b.webp", "cloud-c.webp"]) {
+    const p = new URL(name, dir);
+    assert.equal(existsSync(p), true, `${name} is present`);
+    assert.ok(readFileSync(p).length > 1000, `${name} is a real image`);
+  }
+  for (const name of ["earth.svg", "wing.svg", "cloud-a.svg", "cloud-b.svg", "cloud-c.svg"]) {
+    assert.equal(existsSync(new URL(name, dir)), false, `${name} was removed`);
+  }
+});

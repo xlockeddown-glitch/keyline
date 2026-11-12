@@ -6,7 +6,7 @@ import { useGame } from "@/game/store";
 import { dealTrivia, gradeTrivia } from "@/game/triviaApi";
 import { SEEN_MAX, type PublicCard } from "@/game/triviaSchema";
 
-/** 0.1.154: Gemini takeoff in public/sprites/flight. The painted scene stays still, the pavement strip scrolls, and three poses swap (gear down, nose up, gear up). The window seat keeps its own wing and clouds. */
+/** 0.1.154: Gemini takeoff in public/sprites/flight. The painted scene stays still, the pavement strip scrolls, and three poses swap (gear down, nose up, gear up). 0.1.164: the window seat uses painted earth, wing and clouds (glare is painted into the wing). */
 const ART = "/sprites/flight/";
 const SEEN_ID = /^[A-Za-z0-9_:.~-]{1,80}$/;
 type Phase = "takeoff" | "window" | "landing";
@@ -111,13 +111,12 @@ export function FlightScreen() {
         <div className="flight-cabin" aria-hidden="true">
           <div className="flight-window">
             <div className="flight-sky">
-              <img className="fl-earth" src={`${ART}earth.svg`} alt="" draggable={false} />
-              <img className="fl-cloud w1" src={`${ART}cloud-c.svg`} alt="" draggable={false} />
-              <img className="fl-cloud w2" src={`${ART}cloud-a.svg`} alt="" draggable={false} />
-              <img className="fl-cloud w3" src={`${ART}cloud-b.svg`} alt="" draggable={false} />
-              <img className="fl-wing" src={`${ART}wing.svg`} alt="" draggable={false} />
-              <img className="fl-cloud w4" src={`${ART}cloud-a.svg`} alt="" draggable={false} />
-              <i className="flight-glare" />
+              <img className="fl-earth" src={`${ART}earth.webp`} alt="" draggable={false} />
+              <img className="fl-cloud w1" src={`${ART}cloud-c.webp`} alt="" draggable={false} />
+              <img className="fl-cloud w2" src={`${ART}cloud-a.webp`} alt="" draggable={false} />
+              <img className="fl-cloud w3" src={`${ART}cloud-b.webp`} alt="" draggable={false} />
+              <img className="fl-wing" src={`${ART}wing.webp`} alt="" draggable={false} />
+              <img className="fl-cloud w4" src={`${ART}cloud-a.webp`} alt="" draggable={false} />
             </div>
             <i className="flight-shade" />
           </div>

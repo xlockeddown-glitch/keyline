@@ -3924,16 +3924,15 @@ h3 {
     0 14px 30px 18px #0000001c, inset 0 0 0 7px #ddd6c9, inset 0 0 0 9px #b6ae9f, inset 0 6px 16px 9px #0000004d;
 }
 .flight-sky { position: absolute; inset: 9px; border-radius: 48% / 34%; overflow: hidden; background: linear-gradient(#2c5ea6 0%, #5f92d0 30%, #a8c8ea 50%, #dce8f3 58%, #e7eef5 62%); }
-.fl-earth { position: absolute; left: -10%; width: 120%; top: 58%; height: 46%; object-fit: cover; object-position: 50% 0; opacity: .9; -webkit-mask-image: linear-gradient(#0000, #000 30%); mask-image: linear-gradient(#0000, #000 30%); }
+.fl-earth { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
 .flight-sky .fl-cloud { will-change: transform; }
 .flight-sky .fl-cloud.w1 { top: 52%; width: 90%; opacity: .7; animation: fl-pass 26s linear -6s infinite; }
 .flight-sky .fl-cloud.w2 { top: 64%; width: 62%; animation: fl-pass 14s linear -3s infinite; }
 .flight-sky .fl-cloud.w3 { top: 22%; width: 50%; opacity: .55; animation: fl-pass 34s linear -20s infinite; }
-.flight-sky .fl-cloud.w4 { top: 84%; width: 140%; opacity: .95; filter: blur(1.5px); animation: fl-pass 7s linear -2s infinite; }
+.flight-sky .fl-cloud.w4 { top: 84%; width: 140%; opacity: .95; animation: fl-pass 7s linear -2s infinite; }
 @keyframes fl-pass { from { transform: translateX(120%); } to { transform: translateX(-150%); } }
 .fl-wing { position: absolute; left: -8%; width: 128%; top: 46%; height: auto; animation: fl-bob 4.6s ease-in-out infinite alternate; }
 @keyframes fl-bob { to { transform: translateY(1.6%) rotate(-.6deg); } }
-.flight-glare { position: absolute; inset: 0; z-index: 3; background: linear-gradient(118deg, #ffffff38 0 14%, #fff0 26%, #fff0 70%, #ffffff14 82%, #fff0 90%); pointer-events: none; }
 .flight-shade {
   position: absolute; left: 9px; right: 9px; top: 9px; height: 24%; z-index: 4; border-radius: 48% 48% 0 0 / 60% 60% 0 0;
   background: repeating-linear-gradient(#f3efe8 0 9px, #e3ddd2 9px 10px), #efeae2;
