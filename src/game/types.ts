@@ -49,6 +49,17 @@ export type TriviaQ = {
   rarity: Tier;
 };
 
+/**
+ * 0.1.158 street-lamp formats (server-only cards, never in everyCard): True/False and Closest Number.
+ * `cat` on a TF card is the field it deals under.
+ */
+export type FormatQ =
+  | { kind: "tf"; q: string; answer: "True" | "False"; fact?: string; cat?: TriviaCat; diff: TriviaDiff; id: string; rarity: Tier }
+  | { kind: "near"; q: string; value: number; unit?: string; diff: TriviaDiff; id: string; rarity: Tier };
+
+/** 0.1.158 Closest Number reveal: the exact answer, the guess, and the raw relative miss (0.016 = 1.6%). */
+export type NearReveal = { value: number; guess: number; offPct: number };
+
 export type PlaceTopic =
   | "defense"
   | "aerospace"
@@ -171,6 +182,8 @@ export type LootDrop = {
   /** Prism, when the same clear also dropped the ultra can. */
   extraPaint?: { id: string; name: string };
   boosts?: string[];
+  /** 0.1.158 Closest Number: the answer, the guess and the miss. */
+  near?: NearReveal;
   /** Night market (0.0.46): this reward was earned on the market street and paid ×mult; `coin` is what the market added. */
   market?: { street: string; mult: number; coin: number; matches: number };
 };
@@ -178,6 +191,8 @@ export type LootDrop = {
 export type MissFlash = {
   answer: string;
   fact?: string;
+  /** 0.1.158 Closest Number: the answer, the guess and the miss. */
+  near?: NearReveal;
   /** 0.1.107: the vault locked out for this long (ms) after the wrong answer. */
   lockMs?: number;
 };

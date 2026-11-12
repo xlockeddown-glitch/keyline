@@ -50,6 +50,8 @@ export const DealIn = z.object({
       car: z.string().max(20).optional(),
     })
     .optional(),
+  /** 0.1.158: the card formats this client can show (street lamps only). Absent: four-choice cards only. */
+  formats: z.array(z.enum(["tf", "near"])).max(2).optional(),
 });
 export type DealInput = z.infer<typeof DealIn>;
 
@@ -59,11 +61,25 @@ export const GradeIn = z.object({
   choice: z.string().max(400).nullable(),
   /** The client's own stopwatch, from the card showing to the tap. */
   clientMs: z.number().finite().min(0).max(600000),
+  /** 0.1.158 Closest Number: the typed guess (only read on a Closest Number card). */
+  guess: z.number().finite().min(-1e12).max(1e12).optional(),
 });
 export type GradeInput = z.infer<typeof GradeIn>;
 
 /** What the browser gets for a dealt card — the prompt and shuffled choices, never the answer. */
-export type PublicCard = { id: string; q: string; choices: string[]; diff: TriviaDiff; rarity: Tier; /** 0.0.96 Fox: a wrong option the server crossed out. */ struck?: string };
+export type PublicCard = {
+  id: string;
+  q: string;
+  choices: string[];
+  diff: TriviaDiff;
+  rarity: Tier;
+  /** 0.0.96 Fox: a wrong option the server crossed out. */
+  struck?: string;
+  /** 0.1.158: "tf" (choices are True, False) or "near" (no choices: type a number). Absent: four choices. */
+  kind?: "tf" | "near";
+  /** 0.1.158 Closest Number: a unit to show after the input, if any. */
+  unit?: string;
+};
 /** Signed-in wallet after a migrated deal spend or grade. Absent for guests and before the first sync. */
 export type ServerWallet = {
   coins: number;
@@ -93,7 +109,7 @@ export type GradeResult =
       /** Server-bounded answer time (ms) — what grade, perfect timing and the streak spark use. */
       elapsedMs: number;
       grade: Grade | null;
-      /** Base coin multiplier for a lamp card from the grade (1 / 0.7 / 0.4); 0 when wrong. */
+      /** Base coin multiplier for a lamp card from the grade (1 / 0.7 / 0.4; Closest Number slides); 0 when wrong. */
       mult: number;
       /** The tier this right answer cleared on the rolls (server-written for a signed-in walker). */
       clearTier: Tier | null;
@@ -116,6 +132,8 @@ export type GradeResult =
       wallet?: ServerWallet;
       /** Coins and matches this grade added. Present with `wallet` on a right answer. */
       award?: ServerAward;
+      /** 0.1.158 Closest Number: the exact answer, the guess and the raw relative miss (0.016 = 1.6%). */
+      near?: { value: number; guess: number; offPct: number };
     }
   | { ok: false; reason: "bad-token" | "not-yours" | "unknown-card" | "slow" };
 

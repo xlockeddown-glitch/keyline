@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MATH_LADDER, generateFor, ladderCard, mathShape, mathTier, type Shape } from "./mathLadder.ts";
+import { MATH_LADDER, generateFor, generateNear, ladderCard, mathShape, mathTier, type Shape } from "./mathLadder.ts";
 import type { Tier } from "./types";
 
 const bareSq = (s: Shape) => s.nums.length === 1 && s.ops.length === 0 && s.pow.length === 1 && s.pow[0] === 2;
@@ -72,4 +72,23 @@ test("static cards: re-tiered, far-off options become near misses, word problems
   const word = { q: "How many sides does a hexagon have?", choices: ["5", "6", "7", "8"] as [string, string, string, string], answer: "6", diff: 1 as const, id: "y", rarity: "white" as Tier };
   assert.equal(ladderCard(word), word);
   assert.equal(ladderCard({ ...word, q: "What is 3^5?", answer: "243" }), null);
+});
+
+test("0.1.158 generateNear is deterministic, answers are at least 200, and ids are unique and stable", () => {
+  for (const t of ["amber", "red", "violet"] as const) {
+    const a = generateNear(t, 40);
+    const b = generateNear(t, 40);
+    assert.equal(a.length, 40, t);
+    assert.deepEqual(a.map((c) => c.id), b.map((c) => c.id), `${t} ids must be stable`);
+    const ids = new Set<string>();
+    for (const c of a) {
+      assert.equal(c.kind, "near");
+      assert.equal(c.rarity, t);
+      assert.ok(c.value >= 200, `${c.id} value ${c.value}`);
+      assert.ok(Number.isInteger(c.value), c.id);
+      assert.match(c.id, new RegExp(`^gn${t[0]}[0-9a-z]+-` + String(c.value) + "$"), c.id);
+      assert.ok(ids.add(c.id), `duplicate id ${c.id}`);
+      assert.ok(c.q.startsWith("About how much is "), c.q);
+    }
+  }
 });

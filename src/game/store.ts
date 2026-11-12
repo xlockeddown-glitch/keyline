@@ -14,7 +14,7 @@ import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, liv
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
-import { SEEN_MAX, type DealInput, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
+import { SEEN_MAX, type DealInput, type Grade, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
 import { RECENT_MAX, pushRecent, type RecentReward, type RewardSource } from "./recentRewards";
 import { bestLight, nextLight, type LightId } from "./marketLights";
 import { commitWallet, streetPlayer, tokenNonce, walletLive } from "./walletClient";
@@ -34,6 +34,7 @@ import type {
   LootDrop,
   MapKey,
   MissFlash,
+  NearReveal,
   Poi,
   PoiKind,
   Screen,
@@ -132,7 +133,19 @@ type Hud = {
 export type DealtCard = PublicCard;
 
 /** The server's grade of the open card, as `settleAnswer` applies it. */
-type Graded = { correct: boolean; elapsed: number; reveal: string; fact?: string; credited: boolean; paints?: string[]; lockoutMs?: number };
+type Graded = {
+  correct: boolean;
+  elapsed: number;
+  reveal: string;
+  fact?: string;
+  credited: boolean;
+  paints?: string[];
+  lockoutMs?: number;
+  /** 0.1.158 Closest Number: the server's sliding-scale grade and the reveal (the client never times these). */
+  near?: NearReveal;
+  grade?: Grade | null;
+  mult?: number;
+};
 
 type OpenVault = {
   poiId: string;
@@ -337,6 +350,8 @@ export type GameState = {
   closeErrand: () => void;
   pickCategory: (cat: FieldPick, now: number) => void;
   answer: (choice: string, now: number) => void;
+  /** 0.1.158 Closest Number: send the typed guess (the timeout still goes through `answer("__timeout__")`). */
+  answerNear: (guess: number, now: number) => void;
   /** Apply a server-graded answer to the open card (rewards, streak, seen memory). Internal to the lamp flow. */
   settleAnswer: (out: Graded, now: number) => void;
   closeVault: () => void;
@@ -895,6 +910,8 @@ async function dealCard(
   const extra = (st.pressPass > 0 ? 5000 : 0) + bestVaultMs(wornPerk(st.scout).vaultMs, seatedCar(st));
   const windowMs = spark ? 20000 : step > 0 ? 25000 : 25000 + extra;
   const spot = named ?? blank;
+  // 0.1.158: only a street lamp's first card can be True/False or Closest Number (no spark, Hearth, Blitz or Flight).
+  const street = !spark && step === 0 && !hearthPrev && !poiId.startsWith("placed-") && !poiId.startsWith("blitz-");
   const input: DealInput = {
     city: st.cityId,
     cat,
@@ -918,6 +935,7 @@ async function dealCard(
       scout: st.scout,
       ...(seatedCar(st) ? { car: seatedCar(st)! } : {}),
     },
+    ...(street ? { formats: ["tf", "near"] as ("tf" | "near")[] } : {}),
   };
   try {
     const r = await dealTrivia({ data: input });
@@ -1111,6 +1129,55 @@ const passGiftDue = typeof window !== "undefined" && saved?.passGift !== true;
 const oldCharmsRaw = (saved as { charms?: unknown } | null)?.charms;
 const oldCharms: string[] = Array.isArray(oldCharmsRaw) ? oldCharmsRaw.filter((x): x is string => typeof x === "string") : [];
 const savedCity = saved?.cityId && saved.cityId in CITIES ? saved.cityId : "austin";
+
+/** Send the open card's answer to the server and apply its grade. `choice` and `guess` both absent: the wick ran out. */
+function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, choice: string | null, guess: number | undefined, now: number) {
+  const ov = get().openVault;
+  if (!ov?.question || ov.pending) return;
+  const token = ov.token;
+  const timeout = choice == null && guess == null;
+  const clientMs = Math.max(0, now - ov.startedAt);
+  if (!token) return;
+  set({ openVault: { ...ov, pending: "grade" } });
+  const lost = () => {
+    const cur = get().openVault;
+    if (!cur || cur.token !== token) return;
+    if (timeout || performance.now() >= cur.deadline) {
+      // The wick is out and the lamp can't be reached: a miss (never a reward without the server's grade).
+      set({ openVault: { ...cur, pending: undefined } });
+      get().settleAnswer({ correct: false, elapsed: clientMs, reveal: "The vault lost its line — no answer this time.", credited: false }, performance.now());
+      return;
+    }
+    set({ openVault: { ...cur, pending: undefined } });
+    flashToast(set, get, "The vault lost its line. Tap your answer again.", 2600);
+  };
+  void gradeTrivia({ data: { token, choice: timeout ? null : choice, clientMs, ...(guess != null ? { guess } : {}) } })
+    .then((res: GradeResult) => {
+      const cur = get().openVault;
+      if (!cur || cur.token !== token) return;
+      if (!res.ok) return lost();
+      set({ openVault: { ...cur, pending: undefined } });
+      const surveyBefore = get().survey;
+      const goalsBefore = get().cities.goalsPaid;
+      const contractBefore = get().contract;
+      get().settleAnswer(
+        {
+          correct: res.correct,
+          elapsed: res.elapsedMs,
+          reveal: res.answer,
+          fact: res.fact,
+          credited: res.credited,
+          paints: res.paints,
+          lockoutMs: res.lockoutMs,
+          ...(res.near ? { near: res.near, grade: res.grade, mult: res.mult } : {}),
+        },
+        performance.now(),
+      );
+      if (res.wallet) applyServerGrade(res.wallet, res.award, surveyBefore, goalsBefore, contractBefore);
+      if (res.can) gotCan(res.can);
+    })
+    .catch(() => lost());
+}
 
 export const useGame = create<GameState>((set, get) => ({
   screen: "title",
@@ -1600,40 +1667,10 @@ export const useGame = create<GameState>((set, get) => ({
       saveNow(get);
     });
   },
-  answer: (choice, now) => {
-    const ov = get().openVault;
-    if (!ov?.question || ov.pending) return;
-    const token = ov.token;
-    const timeout = choice === "__timeout__";
-    const clientMs = Math.max(0, now - ov.startedAt);
-    if (!token) return;
-    set({ openVault: { ...ov, pending: "grade" } });
-    const lost = () => {
-      const cur = get().openVault;
-      if (!cur || cur.token !== token) return;
-      if (timeout || performance.now() >= cur.deadline) {
-        // The wick is out and the lamp can't be reached: a miss (never a reward without the server's grade).
-        set({ openVault: { ...cur, pending: undefined } });
-        get().settleAnswer({ correct: false, elapsed: clientMs, reveal: "The vault lost its line — no answer this time.", credited: false }, performance.now());
-        return;
-      }
-      set({ openVault: { ...cur, pending: undefined } });
-      flashToast(set, get, "The vault lost its line. Tap your answer again.", 2600);
-    };
-    void gradeTrivia({ data: { token, choice: timeout ? null : choice, clientMs } })
-      .then((res: GradeResult) => {
-        const cur = get().openVault;
-        if (!cur || cur.token !== token) return;
-        if (!res.ok) return lost();
-        set({ openVault: { ...cur, pending: undefined } });
-        const surveyBefore = get().survey;
-        const goalsBefore = get().cities.goalsPaid;
-        const contractBefore = get().contract;
-        get().settleAnswer({ correct: res.correct, elapsed: res.elapsedMs, reveal: res.answer, fact: res.fact, credited: res.credited, paints: res.paints, lockoutMs: res.lockoutMs }, performance.now());
-        if (res.wallet) applyServerGrade(res.wallet, res.award, surveyBefore, goalsBefore, contractBefore);
-        if (res.can) gotCan(res.can);
-      })
-      .catch(() => lost());
+  answer: (choice, now) => sendAnswer(set, get, choice === "__timeout__" ? null : choice, undefined, now),
+  answerNear: (guess, now) => {
+    if (get().openVault?.question?.kind !== "near" || !Number.isFinite(guess)) return;
+    sendAnswer(set, get, null, guess, now);
   },
   settleAnswer: (out, now) => {
     const ov = get().openVault;
@@ -1815,7 +1852,7 @@ export const useGame = create<GameState>((set, get) => ({
         ...logged,
         openVault: null,
         loot: null,
-        miss: { answer: out.reveal, fact: out.fact, ...(lockMs > 0 ? { lockMs } : {}) },
+        miss: { answer: out.reveal, fact: out.fact, ...(lockMs > 0 ? { lockMs } : {}), ...(out.near ? { near: out.near } : {}) },
         toast: null,
         quests: answered(get, false, false),
       });
@@ -1824,7 +1861,11 @@ export const useGame = create<GameState>((set, get) => ({
     }
     let grade: LootDrop["grade"] = "good";
     let mult = 0.4;
-    if (elapsed <= 3000) {
+    if (out.near && out.grade) {
+      // 0.1.158 Closest Number: accuracy pays (the server's sliding scale), not speed.
+      grade = out.grade;
+      mult = out.mult ?? 0;
+    } else if (elapsed <= 3000) {
       grade = "perfect";
       mult = 1;
     } else if (elapsed <= 10000) {
@@ -1876,6 +1917,7 @@ export const useGame = create<GameState>((set, get) => ({
       paint: paints[0] ? { id: paints[0], name: ingredientName(paints[0]) } : undefined,
       extraPaint: paints[1] ? { id: paints[1], name: ingredientName(paints[1]) } : undefined,
       market: lampMult > 1 && lampMarket ? { street: lampMarket.street.name, mult: lampMult, coin: lampPay.extraCoin, matches: lampPay.extraMatches } : undefined,
+      ...(out.near ? { near: out.near } : {}),
     };
     let nextKeys = { ...keys };
     for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) {

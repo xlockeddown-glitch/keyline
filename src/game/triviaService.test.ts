@@ -8,22 +8,27 @@ import { PGlite } from "@electric-sql/pglite";
 import { isSeen, plateId, sealPlate, seenSet } from "./rarity.ts";
 import {
   DealIn,
+  FORMAT_CHANCE,
   GradeIn,
+  NEAR_EXTRA_MS,
   RTT_GRACE_MS,
   avoidList,
   deal,
   dealFor,
   effectiveMs,
+  formatFor,
   grade,
   gradeOf,
+  nonceRoll,
   openToken,
   publicCardId,
+  publicFormatId,
   resetGradeRing,
   sealToken,
   type TriviaDeps,
 } from "./triviaService.ts";
 import type { Sql } from "../lib/db.ts";
-import type { Poi, TriviaQ } from "./types";
+import type { FormatQ, Poi, TriviaQ } from "./types";
 
 const migration = (name: string) => readFileSync(new URL(`../../migrations/${name}`, import.meta.url), "utf8");
 
@@ -295,4 +300,186 @@ test("0.1.107 lock-out: a wrong keyed answer writes a ledger row and the server 
   if (!g.ok) return;
   const gm = await grade(d, { userId: null }, { token: g.token, choice: "nope", clientMs: 1000 });
   assert.ok(gm.ok && gm.lockoutMs === LOCKOUT_SHORT_MS);
+});
+
+const TF: Extract<FormatQ, { kind: "tf" }> = {
+  kind: "tf",
+  q: "At sea level, pure water boils at about 100 °C.",
+  answer: "True",
+  fact: "At standard pressure it does.",
+  cat: "science",
+  diff: 1,
+  id: "tf-sci-boil",
+  rarity: "white",
+};
+const NEAR: Extract<FormatQ, { kind: "near" }> = {
+  kind: "near",
+  q: "About how much is 387 × 42?",
+  value: 16254,
+  diff: 2,
+  id: "gna0-16254",
+  rarity: "amber",
+};
+const AMBER_LAMP: Poi = { id: "math-lamp", name: "Math lamp", lat: 30.28, lng: -97.74, kind: "campus", tier: "amber", lore: "" };
+const WHITE_LAMP: Poi = { ...LAMP, id: "white-lamp", tier: "white", name: "White lamp" };
+
+function nonceThat(wantHit: boolean): string {
+  for (let i = 0; i < 20_000; i++) {
+    const n = `n${i}`;
+    if ((nonceRoll("kl-format", n) < FORMAT_CHANCE) === wantHit) return n;
+  }
+  throw new Error("no nonce");
+}
+
+function fmtDeps(clock: { t: number }, sql?: Sql, poi: Poi = WHITE_LAMP): TriviaDeps {
+  const d = depsAt(clock, sql);
+  const bank = new Map<string, FormatQ>();
+  for (const c of [TF, NEAR]) {
+    bank.set(c.id, c);
+    bank.set(publicFormatId(c), c);
+  }
+  return {
+    ...d,
+    namedPoi: (_city, id) => (id === poi.id ? poi : d.namedPoi(_city, id)),
+    fmt: (id) => bank.get(id) ?? null,
+    pickFormat: (kind, _cat, _tier) => (kind === "tf" ? TF : NEAR),
+  };
+}
+
+const fmtIn = (over: Partial<Parameters<typeof deal>[2]> = {}) =>
+  DealIn.parse({ city: "austin", cat: "science", poiId: WHITE_LAMP.id, windowMs: 25000, seen: [], saveId: SAVE, formats: ["tf", "near"], ...over });
+
+test("0.1.158: a format card is dealt only when the deal opts in, and the public card carries no answer, value or fact", () => {
+  const clock = { t: 1_000_000 };
+  const hit = nonceThat(true);
+  const miss = nonceThat(false);
+  const d = { ...fmtDeps(clock), nonce: () => hit };
+  const r = deal(d, { userId: null }, fmtIn());
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  assert.equal(r.card.kind, "tf");
+  assert.deepEqual(r.card.choices, ["True", "False"]);
+  const wire = JSON.stringify(r);
+  assert.doesNotMatch(wire, /"answer"|At standard pressure|"value"/);
+  assert.ok(!wire.includes(TF.fact!));
+  assert.ok(!wire.includes(TF.id));
+  assert.equal(r.card.id, publicFormatId(TF));
+  assert.match(r.card.id, /^f/);
+  const body = openToken("test-secret", r.token)!;
+  assert.equal(body.f, "tf");
+  assert.ok(!JSON.stringify(body).includes("True"));
+
+  const noOpt = deal({ ...fmtDeps(clock), nonce: () => hit }, { userId: null }, dealIn({ poiId: WHITE_LAMP.id }));
+  assert.ok(noOpt.ok && !("kind" in (noOpt.ok ? noOpt.card : {}) && noOpt.ok && noOpt.card.kind));
+  if (noOpt.ok) assert.equal(noOpt.card.kind, undefined);
+
+  const rolledOut = deal({ ...fmtDeps(clock), nonce: () => miss }, { userId: null }, fmtIn());
+  assert.ok(rolledOut.ok);
+  if (rolledOut.ok) assert.equal(rolledOut.card.kind, undefined);
+
+  const nearDeps = { ...fmtDeps(clock, undefined, AMBER_LAMP), nonce: () => hit };
+  const near = deal(nearDeps, { userId: null }, fmtIn({ cat: "math", poiId: AMBER_LAMP.id }));
+  assert.ok(near.ok);
+  if (!near.ok) return;
+  assert.equal(near.card.kind, "near");
+  assert.deepEqual(near.card.choices, []);
+  assert.equal(near.windowMs, 25000 + NEAR_EXTRA_MS);
+  const nearWire = JSON.stringify(near);
+  assert.doesNotMatch(nearWire, /16254|"value"/);
+  assert.equal(openToken("test-secret", near.token)!.f, "near");
+});
+
+test("0.1.158: formatFor only allows TF at white/blue/green and Closest Number at amber/red/violet math lamps", () => {
+  const hit = nonceThat(true);
+  const miss = nonceThat(false);
+  const base = fmtIn();
+  assert.equal(formatFor(base, WHITE_LAMP, "science", hit), "tf");
+  assert.equal(formatFor(base, WHITE_LAMP, "science", miss), null);
+  assert.equal(formatFor(dealIn(), WHITE_LAMP, "science", hit), null, "no opt-in, no format");
+  assert.equal(formatFor({ ...base, spark: true }, WHITE_LAMP, "science", hit), null);
+  assert.equal(formatFor(base, { ...WHITE_LAMP, id: "placed-1" }, "science", hit), null);
+  assert.equal(formatFor(base, { ...WHITE_LAMP, id: "blitz-1" }, "science", hit), null);
+  assert.equal(formatFor(fmtIn({ cat: "math", poiId: AMBER_LAMP.id }), AMBER_LAMP, "math", hit), "near");
+  assert.equal(formatFor(fmtIn({ cat: "science", poiId: AMBER_LAMP.id }), AMBER_LAMP, "science", hit), null, "non-math amber is not Closest Number");
+  assert.equal(formatFor(base, AMBER_LAMP, "math", hit), "near");
+});
+
+test("0.1.158: Closest Number grades on the sliding scale, never on speed; a four-choice guess is wrong", async () => {
+  const clock = { t: 2_000_000 };
+  const hits: string[] = [];
+  for (let i = 0; hits.length < 8 && i < 40_000; i++) {
+    const n = `n${i}`;
+    if (nonceRoll("kl-format", n) < FORMAT_CHANCE) hits.push(n);
+  }
+  const dealNear = (nonce: string) => {
+    resetGradeRing();
+    const d = { ...fmtDeps(clock, undefined, AMBER_LAMP), nonce: () => nonce };
+    const dealt = deal(d, { userId: null }, fmtIn({ cat: "math", poiId: AMBER_LAMP.id }));
+    assert.ok(dealt.ok);
+    return { d, dealt };
+  };
+
+  const a = dealNear(hits[0]!);
+  if (!a.dealt.ok) return;
+  clock.t += 4000;
+  const exact = await grade(a.d, { userId: null }, GradeIn.parse({ token: a.dealt.token, choice: null, clientMs: 3900, guess: 16254 }));
+  assert.ok(exact.ok && exact.correct && exact.grade === "perfect" && exact.mult === 1);
+  if (exact.ok) assert.deepEqual(exact.near, { value: 16254, guess: 16254, offPct: 0 });
+
+  const b = dealNear(hits[1]!);
+  if (!b.dealt.ok) return;
+  // 5% of 16254 is 812.7; 16254 * 0.95 = 15441.3
+  const five = await grade(b.d, { userId: null }, { token: b.dealt.token, choice: "ignored", clientMs: 500, guess: 16254 * 0.95 });
+  assert.ok(five.ok && five.correct && five.grade === "great");
+  if (five.ok) assert.ok(Math.abs(five.mult - 0.8) < 1e-9, String(five.mult));
+
+  const c = dealNear(hits[2]!);
+  if (!c.dealt.ok) return;
+  const mid = await grade(c.d, { userId: null }, { token: c.dealt.token, choice: null, clientMs: 1000, guess: 16254 * 0.875 });
+  assert.ok(mid.ok && mid.correct && mid.grade === "good");
+  if (mid.ok) assert.ok(Math.abs(mid.mult - 0.5) < 1e-9, String(mid.mult));
+
+  const d4 = dealNear(hits[3]!);
+  if (!d4.dealt.ok) return;
+  const far = await grade(d4.d, { userId: null }, { token: d4.dealt.token, choice: null, clientMs: 1000, guess: 1 });
+  assert.ok(far.ok && !far.correct && far.grade === null && far.mult === 0);
+  if (far.ok) assert.ok(far.near && far.near.guess === 1);
+
+  const d5 = dealNear(hits[4]!);
+  if (!d5.dealt.ok) return;
+  const timed = await grade(d5.d, { userId: null }, { token: d5.dealt.token, choice: null, clientMs: 1000 });
+  assert.ok(timed.ok && timed.timedOut && !timed.correct);
+
+  // A guess on a four-choice token is wrong, even if the choice text is right.
+  const four = deal(depsAt(clock), { userId: null }, dealIn());
+  if (!four.ok) return;
+  const cheat = await grade(depsAt(clock), { userId: null }, { token: four.token, choice: "Colorado", clientMs: 1000, guess: 1 });
+  assert.ok(cheat.ok && !cheat.correct, "a guess on a four-choice token grades wrong");
+});
+
+test("0.1.158: a wrong Closest Number answer locks the vault and a replay keeps the first result", async () => {
+  const sql = await db();
+  const clock = { t: Date.UTC(2026, 10, 11, 12) };
+  const hit = nonceThat(true);
+  const d = { ...fmtDeps(clock, sql, AMBER_LAMP), nonce: () => hit };
+  const r = deal(d, { userId: "ann" }, fmtIn({ cat: "math", poiId: AMBER_LAMP.id }));
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  clock.t += 3000;
+  const miss = await grade(d, { userId: "ann" }, { token: r.token, choice: null, clientMs: 2900, guess: 1 });
+  assert.ok(miss.ok && !miss.correct && miss.lockoutMs && miss.lockoutMs > 0);
+  const again = await grade(d, { userId: "ann" }, { token: r.token, choice: null, clientMs: 2900, guess: 16254 });
+  assert.ok(again.ok && again.replay && !again.correct, "learning the value and re-sending doesn't flip the grade");
+});
+
+test("0.1.158: Fox and Autopilot never strike a True/False card", () => {
+  const clock = { t: 3_000_000 };
+  const hit = nonceThat(true);
+  // Fox on a TF card must not strike even if the client claims the coat and a car with Autopilot.
+  const r = deal({ ...fmtDeps(clock), nonce: () => hit, rand: () => 0 }, { userId: null }, fmtIn({ pay: { streak: 0, loot: 1, lucky: false, cloth: null, charmDay: "", charmTopics: [], lat: 0, lng: 0, scout: "fox", car: "model3" } }));
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  assert.equal(r.card.kind, "tf");
+  assert.equal(r.card.struck, undefined);
+  assert.deepEqual(r.card.choices, ["True", "False"]);
 });

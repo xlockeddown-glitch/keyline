@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { OFFER_SNOOZE_MS, RECENT_KEEP, RECENT_KEY, SESSION_KEY, SNOOZE_KEY, noteAnswered, noteDismissed, noteIgnored, offerAllowed, readOffer, readRecent } from "./friendOffer.ts";
+import { OFFER_SNOOZE_MS, RECENT_KEEP, RECENT_KEY, SESSION_KEY, SNOOZE_KEY, noteAnswered, noteDismissed, noteIgnored, offerAllowed, offerable, readOffer, readRecent } from "./friendOffer.ts";
 
 function store() {
   const m = new Map<string, string>();
@@ -80,4 +80,17 @@ test("the Journal row sends through the same sheet (server daily cap), without t
   assert.ok(ft.indexOf("noteAnswered(") < ft.indexOf("if (offerAllowed("), "kept before the snooze check");
   assert.match(ft, /reason === "daily-cap"/, "the sheet reports the server's daily cap");
   assert.match(hq, /<FriendJournalRow \/>/);
+});
+
+test("0.1.158: an f… format card is never kept on the offerable recent list", () => {
+  assert.equal(offerable("fAbc123"), false);
+  assert.equal(offerable("cAbc123"), true);
+  const local = store();
+  noteAnswered(local, { id: "c99", q: "Four choice?", at: T });
+  noteAnswered(local, { id: "fTfCard", q: "Water boils at 100 °C?", at: T + 1 });
+  const recent = readRecent(local);
+  assert.deepEqual(recent.map((c) => c.id), ["c99"]);
+  // A stored f… id is also filtered on read.
+  local.setItem(RECENT_KEY, JSON.stringify([{ id: "fOld", q: "old", at: T }, { id: "c1", q: "ok", at: T }]));
+  assert.deepEqual(readRecent(local).map((c) => c.id), ["c1"]);
 });

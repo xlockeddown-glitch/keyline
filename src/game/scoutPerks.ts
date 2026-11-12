@@ -48,6 +48,8 @@ export function owlMatchCoin(id: ScoutId | null, mult: number, tier: Tier, light
 export function strikeOption(id: ScoutId | null, rarity: Tier, choices: readonly string[], answer: string, roll: number): string | null {
   if (!perkOf(id)?.strike) return null;
   if (rarity !== "red" && rarity !== "violet") return null;
+  // 0.1.158: never on a two-choice (True/False) or no-choice card: a strike there would leave only the answer.
+  if (choices.length < 3) return null;
   const wrong = choices.filter((c) => c !== answer);
   if (!wrong.length) return null;
   return wrong[Math.min(wrong.length - 1, Math.floor(roll * wrong.length))]!;

@@ -4,8 +4,9 @@ import { marketLanternById } from "./nightMarket";
 import { DOOR_QUIZZES } from "./doorQuizzes";
 import { sealPlate } from "./rarity";
 import { everyCard, everyCardCat, pickTrivia } from "./trivia";
-import { publicCardId, type TriviaDeps } from "./triviaService";
-import type { CityId, Poi, TriviaCat, TriviaQ } from "./types";
+import { publicCardId, publicFormatId, type TriviaDeps } from "./triviaService";
+import { formatCards } from "./banks/formats";
+import type { CityId, FormatQ, Poi, Tier, TriviaCat, TriviaQ } from "./types";
 
 /**
  * 0.0.53 — SERVER-ONLY card index (the whole bank plus door quizzes), by raw id and by public id. Imported only
@@ -30,6 +31,39 @@ function build(): Map<string, TriviaQ> {
 export function cardAny(id: string): TriviaQ | null {
   byId ??= build();
   return byId.get(id) ?? null;
+}
+
+let fmtById: Map<string, FormatQ> | null = null;
+let fmtAll: FormatQ[] | null = null;
+
+/**
+ * 0.1.158: a True/False or Closest Number card by public id (`f…`) or raw id. A separate index: cardAny and
+ * everyCard never see these, so a friend ticket can't be made from one.
+ */
+export function formatAny(id: string): FormatQ | null {
+  if (!fmtById) {
+    fmtAll = formatCards();
+    const m = new Map<string, FormatQ>();
+    for (const c of fmtAll) {
+      if (!m.has(c.id)) m.set(c.id, c);
+      m.set(publicFormatId(c), c);
+    }
+    fmtById = m;
+  }
+  return fmtById.get(id) ?? null;
+}
+
+/**
+ * 0.1.158: a format card for this lamp. TF: a statement in the chosen field (same colour first, then any TF colour).
+ * Closest Number: a sum for the lamp's colour. Unseen cards only; null when none is left (the lamp deals four choices).
+ */
+export function pickFormatCard(kind: "tf" | "near", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number): FormatQ | null {
+  formatAny("");
+  const seen = new Set(avoid);
+  const fresh = fmtAll!.filter((c) => c.kind === kind && !seen.has(c.id) && !seen.has(c.q) && (c.kind === "near" ? c.rarity === tier : c.cat === cat));
+  const pool = kind === "tf" ? (fresh.some((c) => c.rarity === tier) ? fresh.filter((c) => c.rarity === tier) : fresh) : fresh;
+  if (!pool.length) return null;
+  return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))]!;
 }
 
 let catById: Map<string, TriviaCat> | null = null;
@@ -92,6 +126,8 @@ export async function triviaDeps(): Promise<TriviaDeps> {
     secret: secret(),
     pick: pickTrivia,
     card: cardAny,
+    fmt: formatAny,
+    pickFormat: pickFormatCard,
     namedPoi,
     sql: async () => (await import("@/lib/db")).getSql(),
   };

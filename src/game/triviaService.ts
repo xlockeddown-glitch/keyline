@@ -8,7 +8,8 @@ import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import { randomCat } from "./triviaMeta.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
 import type { PaintId } from "./ingredients.ts";
-import type { CityId, Poi, PoiKind, ScoutId, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
+import type { CityId, FormatQ, Poi, PoiKind, ScoutId, Tier, TriviaCat, TriviaDiff, TriviaQ } from "./types";
+import { NEAR_EXTRA_MS, nearScore } from "./nearScore.ts";
 import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward, ServerWallet } from "./triviaSchema";
 import { SCOUTS } from "./data.ts";
 import { hearthLast, hearthNext, hearthSteps, hearthTierAt, hearthVersion, type HearthVersion } from "./hearthMulti.ts";
@@ -16,6 +17,7 @@ import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CH
 import { awardGrade, carsOf, noteBlitzCard, ownedOf, spendDealt } from "./walletApply.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
 export type { DealInput, DealResult, GradeInput, GradeResult, Grade, PublicCard } from "./triviaSchema";
+export { NEAR_EXTRA_MS, nearScore } from "./nearScore.ts";
 
 /**
  * 0.0.53 server-side trivia — SERVER-ONLY (node:crypto, the bank). The browser asks for one card at a time
@@ -74,6 +76,8 @@ type TokenBody = {
   pr?: 0 | 1;
   sv: string;
   n: string;
+  /** 0.1.158: the card's format, set by the server ("tf" True/False, "near" Closest Number). Absent: four choices. */
+  f?: "tf" | "near";
   /**
    * Pay context sealed at deal (0.0.78). The grade recomputes coins from this plus its own clock and rolls.
    * Absent on a token dealt before the wallet moved server-side: that grade pays with the defaults.
@@ -115,6 +119,10 @@ export type TriviaDeps = {
   pick: (city: CityId, cat: TriviaCat, poi: Poi, tier: Tier, avoid: readonly string[], want?: TriviaDiff) => TriviaQ;
   /** Card by public id or raw id. */
   card: (id: string) => TriviaQ | null;
+  /** 0.1.158: a True/False or Closest Number card by public or raw id (a separate index from `card`). */
+  fmt?: (id: string) => FormatQ | null;
+  /** 0.1.158: a format card for this lamp, or null (nothing fits or everything was seen): deal four choices then. */
+  pickFormat?: (kind: "tf" | "near", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number) => FormatQ | null;
   /** A named lamp of this city, or null. */
   namedPoi: (city: CityId, poiId: string) => Poi | null;
   /** Signed-in writes; absent (or throwing) leaves the grade intact and credits nothing. */
@@ -131,6 +139,36 @@ const b64u = (buf: Buffer) => buf.toString("base64url");
 export function publicCardId(card: { q: string; choices: readonly string[] }): string {
   const h = createHash("sha256").update(`kl53\0${card.q}\0${[...card.choices].sort().join("\0")}`).digest();
   return `c${b64u(h).slice(0, 14)}`;
+}
+
+/** 0.1.158: a format card's public id. `f` + sha256(kind + prompt): never the answer or the value. */
+export function publicFormatId(card: { kind: "tf" | "near"; q: string }): string {
+  const h = createHash("sha256").update(`klf158\0${card.kind}\0${card.q}`).digest();
+  return `f${b64u(h).slice(0, 14)}`;
+}
+
+/** 0.1.158: about 1 in 5 eligible street lamps deal a new format. */
+export const FORMAT_CHANCE = 0.2;
+const TF_TIERS: readonly Tier[] = ["white", "blue", "green"];
+const NEAR_TIERS: readonly Tier[] = ["amber", "red", "violet"];
+
+/** A roll in [0, 1) from the deal nonce and a label (the server's, so a client can't choose its format). */
+export function nonceRoll(label: string, nonce: string): number {
+  return createHash("sha256").update(`${label}\0${nonce}`).digest().readUInt32BE(0) / 4294967296;
+}
+
+/**
+ * 0.1.158: which format this deal is, if any. Only a deal that opts in (`formats`), only a street lamp (no spark,
+ * Hearth, Blitz or Flight), TF at white/blue/green lamps, Closest Number at amber/red/violet math lamps.
+ */
+export function formatFor(input: DealInput, poi: Poi, cat: TriviaCat, nonce: string): "tf" | "near" | null {
+  const want = input.formats;
+  if (!want?.length || input.spark) return null;
+  if (poi.id.startsWith("placed-") || poi.id.startsWith("blitz-") || poi.id.startsWith("flight-")) return null;
+  if (nonceRoll("kl-format", nonce) >= FORMAT_CHANCE) return null;
+  if (want.includes("tf") && TF_TIERS.includes(poi.tier)) return "tf";
+  if (want.includes("near") && cat === "math" && NEAR_TIERS.includes(poi.tier)) return "near";
+  return null;
 }
 
 function coord(n: number | undefined, lim: number) {
@@ -188,11 +226,11 @@ export function clampWindow(ms: number) {
 }
 
 /** The save's seen ids (public or raw, oldest first) as the picker's history: ids, then their prompts. */
-export function avoidList(deps: Pick<TriviaDeps, "card">, seen: readonly string[]): string[] {
+export function avoidList(deps: Pick<TriviaDeps, "card" | "fmt">, seen: readonly string[]): string[] {
   const ids: string[] = [];
   const qs: string[] = [];
   for (const id of seen) {
-    const c = deps.card(id);
+    const c = deps.card(id) ?? deps.fmt?.(id);
     if (!c) {
       ids.push(id);
       continue;
@@ -335,7 +373,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
   }
   if (sql && viewer.userId) {
     try {
-      const raw = deps.card(r.card.id)?.id ?? r.card.id;
+      const raw = (r.card.kind ? deps.fmt?.(r.card.id)?.id : deps.card(r.card.id)?.id) ?? r.card.id;
       await noteDealt(sql, viewer.userId, raw, new Date(deps.now()));
     } catch (e) {
       console.warn("[trivia] recent note failed", e instanceof Error ? e.message : e);
@@ -356,9 +394,15 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   const paintRoll = clearTier != null && (!hearth || hearthLast(hearth.v, hearth.step));
   // 0.1.116 Random: the server rolls the field; the client never names it.
   const cat = input.cat === "random" ? randomCat((deps.rand ?? Math.random)(), `${poi.id}#random#${b64u(randomBytes(6))}`) : input.cat;
-  const plate = deps.pick(input.city, cat, poi, poi.tier, avoidList(deps, [...recent, ...input.seen]));
-  const pub = publicCardId(plate);
-  const windowMs = clampWindow(input.windowMs);
+  const nonce = deps.nonce?.() ?? b64u(randomBytes(12));
+  const avoid = avoidList(deps, [...recent, ...input.seen]);
+  // 0.1.158: a street lamp that opted in may deal True/False or Closest Number (rolled from the nonce).
+  const kind = deps.pickFormat ? formatFor(input, poi, cat, nonce) : null;
+  const fq = kind ? deps.pickFormat!(kind, cat, poi.tier, avoid, nonceRoll("kl-format-pick", nonce)) : null;
+  const plate: TriviaQ | FormatQ = fq ?? deps.pick(input.city, cat, poi, poi.tier, avoid);
+  const pub = fq ? publicFormatId(fq) : publicCardId(plate as TriviaQ);
+  // Closest Number gets 8 s more for typing.
+  const windowMs = clampWindow(input.windowMs + (fq?.kind === "near" ? NEAR_EXTRA_MS : 0));
   const scout = scoutOf(input.pay?.scout);
   const named = deps.namedPoi(input.city, input.poiId);
   const pay = input.pay;
@@ -368,7 +412,6 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     const subject = viewer.userId ? `u:${viewer.userId}` : "g";
     if (prev && prev.s === subject) pv = prev.n;
   }
-  const nonce = deps.nonce?.() ?? b64u(randomBytes(12));
   const token = sealToken(deps.secret, {
     v: TOKEN_VERSION,
     c: pub,
@@ -382,6 +425,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     pr: paintRoll ? 1 : 0,
     sv: input.saveId,
     n: nonce,
+    ...(fq ? { f: fq.kind } : {}),
     x: {
       sk: clampStreak(pay?.streak ?? 0),
       lt: clampLoot(pay?.loot ?? 1),
@@ -404,21 +448,31 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   });
   // 0.0.96 Fox: the server strikes one wrong option on red/violet lamps (never the answer).
   // 0.1.51 Model 3 Autopilot: 1 in 10 lamp questions (rolled from the nonce) lose one wrong option, never on top of the Fox's.
+  // 0.1.158: never on a True/False or Closest Number card.
+  if (fq) {
+    const card =
+      fq.kind === "tf"
+        ? { id: pub, q: fq.q, choices: ["True", "False"], diff: 1 as const, rarity: fq.rarity, kind: "tf" as const }
+        : { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "near" as const, ...(fq.unit ? { unit: fq.unit } : {}) };
+    return { ok: true, token, windowMs, card };
+  }
+  const four = plate as TriviaQ;
   const struck = input.spark
     ? null
-    : (strikeOption(scout, plate.rarity, plate.choices, plate.answer, (deps.rand ?? Math.random)()) ?? autopilotStrike(proven.car ?? null, nonce, plate.choices, plate.answer));
+    : (strikeOption(scout, four.rarity, four.choices, four.answer, (deps.rand ?? Math.random)()) ?? autopilotStrike(proven.car ?? null, nonce, four.choices, four.answer));
   return {
     ok: true,
     token,
     windowMs,
-    card: { id: pub, q: plate.q, choices: shuffle(plate.choices, deps.rand), diff: plate.diff ?? 2, rarity: plate.rarity, ...(struck ? { struck } : {}) },
+    card: { id: pub, q: four.q, choices: shuffle(four.choices, deps.rand), diff: four.diff ?? 2, rarity: four.rarity, ...(struck ? { struck } : {}) },
   };
 }
 
 /** Guests (and a DB hiccup) fall back to this per-instance ring so a token can't simply be graded twice. */
 const RING_MAX = 5000;
-const ring = new Map<string, { correct: boolean; elapsedMs: number; timedOut: boolean }>();
-function ringPut(nonce: string, v: { correct: boolean; elapsedMs: number; timedOut: boolean }) {
+type RingEntry = { correct: boolean; elapsedMs: number; timedOut: boolean; near?: { guess: number } };
+const ring = new Map<string, RingEntry>();
+function ringPut(nonce: string, v: RingEntry) {
   ring.set(nonce, v);
   if (ring.size > RING_MAX) ring.delete(ring.keys().next().value!);
 }
@@ -437,21 +491,36 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   const t = openToken(deps.secret, input.token);
   if (!t) return { ok: false, reason: "bad-token" };
   if (t.s !== "g" && t.s !== `u:${viewer.userId ?? ""}`) return { ok: false, reason: "not-yours" };
-  const card = deps.card(t.c);
+  // 0.1.158: a format token looks its card up in the format index only (never the four-choice bank).
+  const fc = t.f ? (deps.fmt?.(t.c) ?? null) : null;
+  const four = t.f ? null : deps.card(t.c);
+  if (t.f && (!fc || fc.kind !== t.f)) return { ok: false, reason: "unknown-card" };
+  const card: { id: string; answer: string; fact?: string } | null = fc
+    ? fc.kind === "tf"
+      ? { id: fc.id, answer: fc.answer, fact: fc.fact }
+      : { id: fc.id, answer: fc.value.toLocaleString("en-US") }
+    : four;
   if (!card) return { ok: false, reason: "unknown-card" };
   const now = deps.now();
   const serverMs = Math.max(0, now - t.t);
   const late = serverMs > t.w + LATE_GRACE_MS;
-  const timedOut = input.choice == null || late;
+  // Closest Number reads only `guess` (a missing one is a timeout); every other card reads only `choice`.
+  const nearCard = fc?.kind === "near" ? fc : null;
+  const prior = ring.get(t.n);
+  const guess = nearCard ? (prior?.near?.guess ?? input.guess) : undefined;
+  const timedOut = (nearCard ? guess == null || !Number.isFinite(guess) : input.choice == null) || late;
   const elapsedMs = timedOut ? Math.max(serverMs, Math.round(input.clientMs)) : effectiveMs(input.clientMs, serverMs);
-  let correct = !timedOut && input.choice === card.answer && elapsedMs <= t.w + LATE_GRACE_MS;
+  const near = nearCard && guess != null && Number.isFinite(guess) ? nearScore(guess, nearCard.value) : null;
+  let correct =
+    !timedOut &&
+    elapsedMs <= t.w + LATE_GRACE_MS &&
+    (nearCard ? near!.correct : input.guess == null && input.choice === card.answer);
   let replay = false;
   let credited = false;
   let paints: PaintId[] | undefined;
   const paintRoll = t.k != null && t.pr !== 0;
   const eventId = `t:${t.n}`;
 
-  const prior = ring.get(t.n);
   if (prior) {
     replay = true;
     correct = prior.correct;
@@ -529,7 +598,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
       console.warn("[trivia] paint replay failed", e instanceof Error ? e.message : e);
     }
   }
-  if (!prior) ringPut(t.n, { correct, elapsedMs, timedOut });
+  if (!prior) ringPut(t.n, { correct, elapsedMs, timedOut, ...(near && guess != null ? { near: { guess } } : {}) });
   // 0.1.107: a wrong answer with a key at a street or placed vault locks it (3 min I-III, 5 min IV-VI).
   const lockPoi = t.x?.pi ?? "";
   const lockTier = (t.x?.pt ?? t.k ?? null) as Tier | null;
@@ -541,7 +610,8 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
       console.warn("[trivia] lockout write failed", e instanceof Error ? e.message : e);
     }
   }
-  const g = correct ? gradeOf(elapsedMs) : null;
+  // Closest Number pays on accuracy (the sliding scale), never on speed.
+  const g = !correct ? null : nearCard ? (near?.grade ? { grade: near.grade, mult: near.mult } : null) : gradeOf(elapsedMs);
   // Blitz pays through its own ladder (bankBlitz), not the street spark formula.
   const blitz = t.x?.pi?.startsWith("blitz-") === true;
   let wallet: ServerWallet | undefined;
@@ -610,5 +680,6 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     ...(paints !== undefined ? { paints } : {}),
     ...(wallet ? { wallet, ...(award ? { award } : {}) } : {}),
     ...(can ? { can } : {}),
+    ...(nearCard && guess != null && Number.isFinite(guess) ? { near: { value: nearCard.value, guess, offPct: near?.offPct ?? Infinity } } : {}),
   };
 }

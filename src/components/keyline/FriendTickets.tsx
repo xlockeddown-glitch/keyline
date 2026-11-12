@@ -43,7 +43,8 @@ export function FriendTickets() {
         const card = p.openVault?.question;
         // A card was answered (asked grows on every answer, never on Leave lamp) and the lamp closed.
         // 0.0.53: not after a "Not now" in the last 24 h, and at most one unused nudge a session (friendOffer.ts).
-        if (card && !s.openVault && s.asked !== p.asked) {
+        // 0.1.158: a True/False or Closest Number card is never offered (only four-choice cards can be tickets).
+        if (card && !card.kind && !s.openVault && s.asked !== p.asked) {
           const { local, session } = browserStores();
           // Always kept for the Journal's "Send a friend ticket" row, even when the chip is snoozed.
           noteAnswered(local, { id: card.id, q: card.q, at: Date.now() });
