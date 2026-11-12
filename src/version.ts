@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.161";
+export const APP_VERSION = "0.1.162";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1161a";
+export const PUBLISH_STAMP = "k1162a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -258,3 +258,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.159: Comet vault — a rare timed green vault in each city every 6 hours, open 20 minutes, on a baked walkable street near spawn, clear of the night markets and the lamps; opens with a green key, pays ×1.5 green coin plus a guaranteed blue key and the usual key back, once per window (signed in: an ev: ledger row; guests go dark locally); never stacks with the night market. Painted open/cooling/locked pins from the approved Gemini mock; the HUD reads "Comet vault on … · N min left" / "next comet in …". Also ships True/False and Closest Number formats (0.1.158). 0.1.155 is still held for trivia (k1159a).
 // 0.1.160: Painted street vault pins — the six tier colors and the Hearth use Ryan's approved Gemini paintings (transparent webp cutouts) in place of the code-drawn vaultSvg, matching the Comet pin; locked/cooling states are a CSS filter on the whole image, no overlays; Hearth field squares move off the painting into a label under the pin and the vault card; a walker with a print-shop vault skin or vault paint equipped still sees the existing SVG vault so purchased skins keep working. 0.1.155 is still held for trivia (k1160a).
 // 0.1.161: painted Gemini cars — Ryan's approved painted sheets replace the photo/pixel car sprites on the map cab, the Showroom, the garage, the title screen, the dealer sign and the Loop sled (8 cars × side/front/back, webp, sides 640 px wide; scripts/art/cars-cut-painted.py). Paint variants are recolours of the new bases, same paint ids. Cars render smooth (no image-rendering: pixelated on .cab-sprite); nothing is drawn over the paintings. Prices, ids, perks and Loop timing are unchanged. 0.1.160 is the parallel painted-vaults branch, not this one (k1161a).
+// 0.1.162: Painted shop and sign art — the print shop, street counter, outfitter, station sign and notice board use Ryan's approved Gemini paintings (transparent webp cutouts) in place of the pixel props and the inline-SVG enamel plates, matching the Comet pin; the outfitter's Hire tab shows its front like the print shop and counter do; fare and cooling stay off the painting (a "Fare" label under the station pin, a whole-image filter for cooling). 0.1.160 and 0.1.161 are held for the painted vaults and cars. 0.1.155 is still held for trivia (k1162a).

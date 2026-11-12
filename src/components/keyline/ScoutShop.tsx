@@ -6,6 +6,7 @@ import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
 import { PrintShop } from "./PrintShop";
 import { useSheetOpen } from "./useSheetOpen";
+import { PUBLISH_STAMP } from "@/version";
 
 export function ScoutRoster({ hire }: { hire: boolean }) {
   const points = useGame((s) => s.points);
@@ -125,7 +126,19 @@ export function ScoutShop() {
             </button>
           ))}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{tab === "hire" ? <ScoutRoster hire /> : <PrintShop counter />}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          {tab === "hire" ? (
+            <div className="grid gap-3">
+              {/* 0.1.162: the outfitter's painted front, the same drawing as its map pin. */}
+              <figure className="print-front shop-front">
+                <img src={`/sprites/outfitter.webp?v=${PUBLISH_STAMP}`} alt="" />
+              </figure>
+              <ScoutRoster hire />
+            </div>
+          ) : (
+            <PrintShop counter />
+          )}
+        </div>
       </div>
     </div>
   );

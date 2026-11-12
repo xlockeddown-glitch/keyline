@@ -1,6 +1,6 @@
 # Keyline art direction
 
-**Status: direction approved with 0.1.134.** Use it for new and changed art so later passes match. A slice changes the surfaces it names. 0.1.135: the counter sign carries three vault keys, not matches.
+**Status: direction approved with 0.1.134.** Use it for new and changed art so later passes match. A slice changes the surfaces it names. 0.1.135: the counter sign carries three vault keys, not matches. 0.1.162: the print shop, street counter, outfitter, station sign and notice board are Ryan's approved paintings; see the last section, which replaces the pixel-prop and enamel-plate notes for those five.
 
 The older note [`visual-direction.md`](visual-direction.md) still holds on one point: the basemap stays real OSM tiles. This file is the contract for everything drawn on top.
 
@@ -186,3 +186,22 @@ Left on purpose:
 ## 0.1.136 vault skins
 
 The four print-shop metal skins (and vault paint, including prism) recolour the vault SVG case. Stock is the steel-and-brass drawing with no skin attribute. The glyph, numeral and slot stay on the tier colour. Hearth pins stay copper. No new prices, ids or motion.
+
+## 0.1.162 painted shops and signs
+
+Ryan approved Gemini paintings for the five service surfaces. They replace the pixel props and the inline-SVG enamel plates, the same way the Comet pin (0.1.159) is a painting. Where this section and an older note above disagree about these five, this section wins.
+
+| Place | File | Where |
+| --- | --- | --- |
+| Print shop | `public/sprites/print-shop.webp` | `.print-front` on the Print shop tab |
+| Street counter | `public/sprites/street-counter.webp` | `.counter-pin` (48×60) and `.counter-front` |
+| Outfitter | `public/sprites/outfitter.webp` | `.shop-pin` (60×56) and `.shop-front` on the Hire tab |
+| Station | `public/sprites/station-sign.webp` | `.station-pin` (44×60, plus 14 px for the fare label) |
+| Notice board | `public/sprites/notice-sign.webp` | `.board-pin` (44×60) |
+
+- Each pin is a wrapper and one `<img>` built in `src/game/pins.ts` (`PAINTED_PIN`, `shopPinHtml`, `counterPinHtml`, `stationPinHtml`, `boardPinHtml`). No SVG, enamel plate, CSS post, awning, lamp, ring, drop-shadow or background sprite. `object-fit: contain`, smooth sampling, no `image-rendering: pixelated`.
+- The only shadow is the shared ellipse. The painted ground shadows were cut away; the stoops, the posts and a little grass stay.
+- State never goes on the painting. A held fare is the small cream "Fare" label under the station post. Cooling dims the whole station image. The notice board has no badge; unread and errand details stay in its card.
+- One drawing per place still holds: the counter and outfitter sheets show their pin's file.
+- The cuts are recorded in `scripts/art/shops/cut.py`. Shots come from `scripts/shops-shots.mjs` and `scripts/art/shops/contact.py`.
+- The old `print-shop.png`, `street-counter-v2.png` and `outfitter-front.png` are no longer referenced. Do not wire them back in.

@@ -156,7 +156,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
   return (
     <div className="grid gap-3" data-testid="print-shop">
       <figure className="print-front">
-        <img src={`/sprites/print-shop.png?v=${PUBLISH_STAMP}`} alt="" />
+        <img src={`/sprites/print-shop.webp?v=${PUBLISH_STAMP}`} alt="" />
       </figure>
       <WeeklyPull />
       {counter ? (

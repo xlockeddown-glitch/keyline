@@ -14,7 +14,7 @@ import { CACHE_GRAB_M, CACHE_SEE_M, cacheSeed } from "@/game/goals";
 import { cacheAnywhere, reachMult } from "@/game/scoutPerks";
 import { MAGNET_PULL_MS, bestReach, hasMagnet, magnetPick } from "@/game/carPerks";
 import { driveAccel, drivePace, perksAt } from "@/game/streakMile";
-import { boardPinHtml, cometPinHtml, counterPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml, hearthGhostVaultHtml, vaultSkinned, HEARTH_BOX, VAULT_SPRITE, VAULT_SVG_BOX } from "@/game/pins";
+import { boardPinHtml, cometPinHtml, counterPinHtml, shopPinHtml, stationPinHtml, vaultPinHtml, hearthPinHtml, hearthGhostVaultHtml, vaultSkinned, HEARTH_BOX, VAULT_SPRITE, VAULT_SVG_BOX } from "@/game/pins";
 import { cometAt, cometId, cometStart, cometVault, cometWindow, cometWindowEnd, isComet } from "@/game/eventVault";
 import { gameNow, setDevClockShift } from "@/game/gameClock";
 import { FACET_COLOR, hearthOf, isHearthId } from "@/game/hearthVaults";
@@ -1707,7 +1707,7 @@ export function GameMap() {
       const board = isBoard(poi);
       const lit = desk && st.fares > 0;
       const el = shop
-        ? `<div class="shop-pin" title="${poi.name}"><span class="shop-awning"></span><span class="shop-body"><i class="shop-window"></i><i class="shop-door"></i></span></div>`
+        ? shopPinHtml(poi.name)
         : counter
           ? counterPinHtml(poi.name)
           : board
@@ -1726,9 +1726,12 @@ export function GameMap() {
       // anchored on the centre of its painted ring.
       // 0.1.160: painted street vaults are 48×50 with the foot of the box on the shadow; the Hearth box also holds
       // its name plate and field label under the painting, anchored at the vault's foot.
+      // 0.1.162: the painted outfitter (60×56), counter (48×60) and the station / notice signs (44×60) are sized
+      // against the 48×58 comet. Each anchor is the painted foot (stoop, stall base, post), so it stands on the
+      // shared shadow. The station box is 14 px taller for the "Fare" label under the post.
       const vbox = svgVault ? VAULT_SVG_BOX : VAULT_SPRITE;
-      const size: [number, number] = shop ? [46, 70] : counter ? [48, 64] : board ? [34, 70] : desk ? [30, 72] : hearth ? [HEARTH_BOX.w, HEARTH_BOX.h] : comet ? [48, 58] : [vbox.w, vbox.h];
-      const anchor: [number, number] = shop ? [23, 68] : counter ? [24, 62] : board ? [17, 68] : desk ? [15, 70] : hearth ? [...HEARTH_BOX.anchor] : comet ? [24, 51] : [...vbox.anchor];
+      const size: [number, number] = shop ? [60, 56] : counter ? [48, 60] : board ? [44, 60] : desk ? [44, 74] : hearth ? [HEARTH_BOX.w, HEARTH_BOX.h] : comet ? [48, 58] : [vbox.w, vbox.h];
+      const anchor: [number, number] = shop ? [26, 52] : counter ? [23, 55] : board ? [22, 58] : desk ? [22, 58] : hearth ? [...HEARTH_BOX.anchor] : comet ? [24, 51] : [...vbox.anchor];
       // 0.1.68: one z band so Leaflet's own latitude order puts nearer (southern) pins in front. 0.1.102: vaults get the ground shadow too.
       const marker = L.marker([poi.lat, poi.lng], {
         icon: L.divIcon({ className: "", html: worldObj(el, anchor[0], anchor[1]), iconSize: size, iconAnchor: anchor }),
