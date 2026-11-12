@@ -6,6 +6,7 @@ import { useGame } from "@/game/store";
 import { POP_MAX_WAIT_MS, overlayBusy } from "@/game/overlayGate";
 import type { Tier } from "@/game/types";
 import { DIFF_LABEL } from "@/game/triviaMeta";
+import { nearLine } from "@/game/nearScore";
 import { streakPrize } from "@/game/goals";
 import type { LootDrop } from "@/game/types";
 import { ItemIcon } from "./ItemIcon";
@@ -67,7 +68,13 @@ export function LootToast() {
                 <p className="mt-3 text-sm text-fg-muted">
                   {miss!.lockMs ? "The vault locked you out and kept the key. Other vaults are still open. The right answer was:" : "Not this time (the key is used up). The right answer was:"}
                 </p>
-                <p className="mt-1 text-base font-medium text-pretty">{miss!.answer}</p>
+                {miss!.near ? (
+                  <p className="mt-1 text-base font-medium text-pretty" data-testid="near-line">
+                    {nearLine(miss!.near)}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-base font-medium text-pretty">{miss!.answer}</p>
+                )}
                 {miss!.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{miss!.fact}</p> : null}
               </>
             )}
@@ -229,6 +236,11 @@ function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
         </span>
       ) : null}
       <p className="emb-rating font-display" data-testid="loot-rating">{RATING[loot.grade]}</p>
+      {loot.near ? (
+        <p className="mt-2 text-sm text-fg-muted text-pretty" data-testid="near-line">
+          {nearLine(loot.near)}
+        </p>
+      ) : null}
       <div className="emb-badges">
         {loot.market ? (
           <span className="emb-badge is-market" data-testid="market-reward" title={`Night market ×${loot.market.mult} · ${loot.market.street}`}>

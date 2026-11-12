@@ -74,8 +74,15 @@ export function noteIgnored(session: KV | null) {
   }
 }
 
+/** 0.1.158: only four-choice cards can become friend tickets; format cards carry public ids starting `f`. */
+export function offerable(id: string): boolean {
+  return !id.startsWith("f");
+}
+
 /** A trivia card was answered: keep it (newest first, no repeats) for the Journal's send row. Never gated by the snooze. */
 export function noteAnswered(local: KV | null, card: RecentCard): RecentCard[] {
+  // 0.1.158: True/False and Closest Number cards (public ids `f…`) can't be friend tickets, so they are never offered.
+  if (!offerable(card.id)) return readRecent(local);
   const next = [card, ...readRecent(local).filter((c) => c.id !== card.id)].slice(0, RECENT_KEEP);
   try {
     local?.setItem(RECENT_KEY, JSON.stringify(next));
@@ -93,7 +100,7 @@ export function readRecent(local: KV | null): RecentCard[] {
     return v
       .filter(
         (c): c is RecentCard =>
-          !!c && typeof c.id === "string" && c.id.length > 0 && c.id.length <= 200 && typeof c.q === "string" && typeof c.at === "number",
+          !!c && typeof c.id === "string" && c.id.length > 0 && offerable(c.id) && c.id.length <= 200 && typeof c.q === "string" && typeof c.at === "number",
       )
       .slice(0, RECENT_KEEP);
   } catch {

@@ -135,6 +135,8 @@ export function autopilotHit(car: CarId | null, nonce: string): boolean {
 /** The wrong option Autopilot hides (never the answer), picked from the nonce too. */
 export function autopilotStrike(car: CarId | null, nonce: string, choices: readonly string[], answer: string): string | null {
   if (!autopilotHit(car, nonce)) return null;
+  // 0.1.158: never on a two-choice (True/False) or no-choice card.
+  if (choices.length < 3) return null;
   const wrong = [...choices].filter((c) => c !== answer).sort();
   if (!wrong.length) return null;
   return wrong[Math.min(wrong.length - 1, Math.floor(roll("autopilot-pick", nonce) * wrong.length))]!;

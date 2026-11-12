@@ -70,9 +70,26 @@ test("dropStaleFocus blurs a focused button and leaves other focus alone", () =>
   assert.equal(blurred, 1);
 });
 
+
+test("True/False goes through choiceButtons with T/F letters; the class is the same whatever the answer", () => {
+  for (const answer of ["True", "False"]) {
+    const buttons = choiceButtons("tf-1", ["True", "False"], ["T", "F"]);
+    assert.equal(buttons.length, 2);
+    assert.deepEqual(buttons.map((b) => b.letter), ["T", "F"]);
+    assert.deepEqual(buttons.map((b) => b.text), ["True", "False"]);
+    const shapes = buttons.map(({ text: _t, letter: _l, key: _k, ...rest }) => JSON.stringify(rest));
+    assert.equal(new Set(shapes).size, 1);
+    buttons.forEach((b) => {
+      assert.equal(b.className, "plate-choice");
+      const { text: _t, key: _k, letter: _l, ...rest } = b;
+      assert.ok(!JSON.stringify(rest).includes(answer));
+    });
+  }
+});
+
 test("VaultModal renders the trivia choices through choiceButtons, with nothing tied to the answer", () => {
   const src = read("../components/keyline/VaultModal.tsx");
-  assert.match(src, /choiceButtons\(quiz\.id, quiz\.choices\)\.map/);
+  assert.match(src, /choiceButtons\(quiz\.id, quiz\.choices/);
   const start = src.indexOf('<div className="plate-choices">');
   const end = src.indexOf("A–D or 1–4", start);
   assert.ok(start > 0 && end > start);

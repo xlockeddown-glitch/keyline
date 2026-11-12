@@ -9,7 +9,7 @@
  * Everything stays doable in your head: whole numbers only, except clean percents. A sum that fits nowhere is trimmed.
  * Prompts that aren't a bare sum (word problems, facts, geometry) keep their normal tier.
  */
-import type { Tier, TriviaDiff, TriviaQ } from "./types";
+import type { FormatQ, Tier, TriviaDiff, TriviaQ } from "./types";
 
 export const MATH_LADDER: Tier[] = ["white", "blue", "green", "amber", "red", "violet"];
 export const MATH_DIFF: Record<Tier, TriviaDiff> = { white: 1, blue: 1, green: 2, amber: 2, red: 3, violet: 3 };
@@ -196,7 +196,7 @@ export function seeded(seed: number): () => number {
   };
 }
 
-const int = (r: () => number, lo: number, hi: number) => lo + Math.floor(r() * (hi - lo + 1));
+export const int = (r: () => number, lo: number, hi: number) => lo + Math.floor(r() * (hi - lo + 1));
 
 /** One generated prompt for a tier (always lands on that tier: generateFor checks it). */
 export function genPrompt(tier: Tier, r: () => number): string {
@@ -285,4 +285,37 @@ export function ladderCard(item: TriviaQ): TriviaQ | null {
 export const GEN_PER_TIER: Record<Tier, number> = { white: 0, blue: 0, green: 60, amber: 160, red: 160, violet: 160 };
 export function generatedMath(): TriviaQ[] {
   return MATH_LADDER.flatMap((t) => generateFor(t, GEN_PER_TIER[t]));
+}
+
+/**
+ * 0.1.158 Closest Number: one estimation sum for an amber/red/violet lamp, in mathShape's own form so the value
+ * comes from the same parser. Amber 3-digit × 2-digit, red 4-digit ÷ 2-digit, violet a percent of a 4-5 digit number.
+ */
+export function genEstimate(tier: Tier, r: () => number): string {
+  if (tier === "amber") return `What is ${int(r, 120, 989)} × ${int(r, 13, 98)}?`;
+  if (tier === "red") return `What is ${int(r, 2100, 9890)} ÷ ${int(r, 13, 97)}?`;
+  return `${int(r, 11, 89)}% of ${int(r, 1200, 98000)} is…`;
+}
+
+const grouped = (n: number) => n.toLocaleString("en-US");
+
+/** n Closest Number cards for a tier (seeded; ids start "gn"). Whole-number answers, never under 200. */
+export function generateNear(tier: Tier, n: number, seed = 1158): Extract<FormatQ, { kind: "near" }>[] {
+  const r = seeded(seed + MATH_LADDER.indexOf(tier) * 7919);
+  const out: Extract<FormatQ, { kind: "near" }>[] = [];
+  const seen = new Set<string>();
+  for (let guard = 0; out.length < n && guard < n * 40; guard++) {
+    const sum = genEstimate(tier, r);
+    if (seen.has(sum)) continue;
+    const s = mathShape(sum);
+    if (!s) continue;
+    const value = Math.round(s.value);
+    if (!(value >= 200)) continue;
+    seen.add(sum);
+    const shown = s.pct
+      ? `${s.pct.p}% of ${grouped(s.pct.of)}`
+      : `${grouped(s.nums[0]!)} ${s.ops[0]} ${grouped(s.nums[1]!)}${s.ops[0] === "÷" ? " (to the nearest whole number)" : ""}`;
+    out.push({ kind: "near", q: `About how much is ${shown}?`, value, diff: MATH_DIFF[tier], id: `gn${tier[0]}${out.length.toString(36)}-${value}`, rarity: tier });
+  }
+  return out;
 }

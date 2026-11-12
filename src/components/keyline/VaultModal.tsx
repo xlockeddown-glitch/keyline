@@ -42,8 +42,10 @@ export function VaultModal() {
   const pickCategory = useGame((s) => s.pickCategory);
   const vaultsOpened = useGame((s) => s.vaultsOpened);
   const answer = useGame((s) => s.answer);
+  const answerNear = useGame((s) => s.answerNear);
   const closeVault = useGame((s) => s.closeVault);
   const [now, setNow] = useState(() => performance.now());
+  const [nearGuess, setNearGuess] = useState("");
 
   useEffect(() => {
     if (!openVault?.question) return;
@@ -86,18 +88,29 @@ export function VaultModal() {
   }, [isOpen, quiz]);
 
   useEffect(() => {
+    setNearGuess("");
+  }, [quiz?.id]);
+
+  useEffect(() => {
     if (!quiz) return;
     const onKey = (e: KeyboardEvent) => {
+      if (quiz.kind === "near") return;
       const idx =
-        e.code === "KeyA" || e.code === "Digit1" || e.code === "Numpad1"
-          ? 0
-          : e.code === "KeyB" || e.code === "Digit2" || e.code === "Numpad2"
-            ? 1
-            : e.code === "KeyC" || e.code === "Digit3" || e.code === "Numpad3"
-              ? 2
-              : e.code === "KeyD" || e.code === "Digit4" || e.code === "Numpad4"
-                ? 3
-                : -1;
+        quiz.kind === "tf"
+          ? e.code === "KeyT" || e.code === "Digit1" || e.code === "Numpad1"
+            ? 0
+            : e.code === "KeyF" || e.code === "Digit2" || e.code === "Numpad2"
+              ? 1
+              : -1
+          : e.code === "KeyA" || e.code === "Digit1" || e.code === "Numpad1"
+            ? 0
+            : e.code === "KeyB" || e.code === "Digit2" || e.code === "Numpad2"
+              ? 1
+              : e.code === "KeyC" || e.code === "Digit3" || e.code === "Numpad3"
+                ? 2
+                : e.code === "KeyD" || e.code === "Digit4" || e.code === "Numpad4"
+                  ? 3
+                  : -1;
       if (idx < 0) return;
       const choice = quiz.choices[idx];
       if (!choice || choice === quiz.struck) return;
@@ -116,7 +129,7 @@ export function VaultModal() {
   const left = quiz ? Math.max(0, openVault.deadline - now) : 0;
   const total = quiz ? Math.max(1, openVault.deadline - openVault.startedAt) : 1;
   const elapsed = quiz ? now - openVault.startedAt : 0;
-  const grade = elapsed <= 3000 ? "Perfect" : elapsed <= 10000 ? "Great" : "Good";
+  const grade = quiz?.kind === "near" ? "Estimate" : elapsed <= 3000 ? "Perfect" : elapsed <= 10000 ? "Great" : "Good";
   const frac = quiz ? Math.min(1, left / total) : 0;
   const catMeta = openVault.category === "random" ? { label: "Random" } : TRIVIA_CATS.find((c) => c.id === openVault.category);
   const today = cotdAt(Date.now());
@@ -134,7 +147,7 @@ export function VaultModal() {
     : offerCats(openVault.poiId, vaultsOpened, 6, poi, today);
   const favs = perkFavs(scout, true, carNow);
   const ground = poi ? placeLine(poi) : null;
-  const wickClass = left < 5000 ? "is-short" : `is-${grade.toLowerCase()}`;
+  const wickClass = left < 5000 ? "is-short" : quiz?.kind === "near" ? "is-good" : `is-${grade.toLowerCase()}`;
 
   return (
     <div className={`vault-night tier-${poi.tier} absolute inset-0 z-[800] flex items-end justify-center p-3 sm:items-center`}>
@@ -316,27 +329,59 @@ export function VaultModal() {
               </p>
 
               <p className="plate-q">{quiz.q}</p>
-              <div className="plate-choices">
-                {/* Before the answer every choice is the same button; only its text differs (choiceMarkup.ts). */}
-                {choiceButtons(quiz.id, quiz.choices).map((b) => (
-                  <button
-                    key={b.key}
-                    type="button"
-                    className={`${b.className}${quiz.struck === b.text ? " is-struck" : ""}`}
-                    disabled={openVault.pending === "grade" || quiz.struck === b.text}
-                    data-struck={quiz.struck === b.text ? "1" : undefined}
-                    onClick={() => {
-                      sfx.ui();
-                      answer(b.text, performance.now());
-                    }}
-                  >
-                    <span className="plate-letter">{b.letter}</span>
-                    <span className="min-w-0 text-pretty">{b.text}</span>
+              {quiz.kind === "near" ? (
+                <form
+                  className="mt-3 flex flex-col gap-2"
+                  data-testid="near-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const n = Number(nearGuess.replace(/,/g, "").trim());
+                    if (!Number.isFinite(n) || openVault.pending === "grade") return;
+                    sfx.ui();
+                    answerNear(n, performance.now());
+                  }}
+                >
+                  <label className="sr-only" htmlFor="near-guess">
+                    Your estimate{quiz.unit ? ` in ${quiz.unit}` : ""}
+                  </label>
+                  <input
+                    id="near-guess"
+                    className="acct-input tabular-nums"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={nearGuess}
+                    placeholder={quiz.unit ? quiz.unit : "Your estimate"}
+                    disabled={openVault.pending === "grade"}
+                    data-testid="near-guess"
+                    onChange={(e) => setNearGuess(e.currentTarget.value)}
+                  />
+                  <button type="submit" className="btn btn-primary w-full" disabled={openVault.pending === "grade"} data-testid="near-lock">
+                    Lock in
                   </button>
-                ))}
-              </div>
+                </form>
+              ) : (
+                <div className="plate-choices">
+                  {/* Before the answer every choice is the same button; only its text differs (choiceMarkup.ts). */}
+                  {choiceButtons(quiz.id, quiz.choices, quiz.kind === "tf" ? ["T", "F"] : undefined).map((b) => (
+                    <button
+                      key={b.key}
+                      type="button"
+                      className={`${b.className}${quiz.struck === b.text ? " is-struck" : ""}`}
+                      disabled={openVault.pending === "grade" || quiz.struck === b.text}
+                      data-struck={quiz.struck === b.text ? "1" : undefined}
+                      onClick={() => {
+                        sfx.ui();
+                        answer(b.text, performance.now());
+                      }}
+                    >
+                      <span className="plate-letter">{b.letter}</span>
+                      <span className="min-w-0 text-pretty">{b.text}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <p className="mt-2 text-xs text-fg-subtle" aria-live="polite">
-                {openVault.pending === "grade" ? "Checking your answer…" : "A–D or 1–4"}
+                {openVault.pending === "grade" ? "Checking your answer…" : quiz.kind === "tf" ? "T/F or 1/2" : quiz.kind === "near" ? "Type a number, then Lock in or press Enter" : "A–D or 1–4"}
               </p>
             </div>
           )}

@@ -14,11 +14,11 @@ export type ChoiceButton = {
   text: string;
 };
 
-export function choiceButtons(cardId: string, choices: readonly string[]): ChoiceButton[] {
+export function choiceButtons(cardId: string, choices: readonly string[], letters: readonly string[] = CHOICE_LETTERS): ChoiceButton[] {
   return choices.map((text, i) => ({
     key: `${cardId}:${i}`,
     className: "plate-choice",
-    letter: CHOICE_LETTERS[i] ?? String(i + 1),
+    letter: letters[i] ?? String(i + 1),
     text,
   }));
 }
