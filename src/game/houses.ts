@@ -94,7 +94,17 @@ export const housePin = (t: HouseTier) => `/houses/${t}-pin.webp`;
 /** The map cutout (transparent) and its rough frontage in metres, so the house draws at building scale. */
 export const houseMapArt = (t: HouseTier) => `/houses/${t}-map.webp`;
 // 0.1.157: town 12 → 16 m. The approved Ivy Townhouse painting is a wide manor (about 5:3), so at 12 m it drew no bigger than the cottage.
-export const HOUSE_METERS: Record<HouseTier, number> = { cottage: 11, row: 8, town: 16, villa: 26 };
+// 0.1.157 follow-up: the new cuts are much shorter for their width (cottage 0.53 tall per unit wide, was 1.02), so at the old
+// widths every house read about half as tall. These are draw-scale widths, not survey frontage: each house is at least as
+// tall and as large as the old art at the same zoom, and the ladder steps up to the villa.
+export const HOUSE_METERS: Record<HouseTier, number> = { cottage: 21, row: 13, town: 26, villa: 32 };
+/** Smallest map width per tier (CSS px), used at the default street zoom where the metre scale would be a speck. */
+export const HOUSE_MIN_PX: Record<HouseTier, number> = { cottage: 66, row: 52, town: 80, villa: 92 };
+export const HOUSE_MAX_PX = 260;
+/** Map sprite width in CSS px for a ground scale of `mpp` metres per pixel. Drawn ×3 like the scouts and cars. */
+export function houseMapWidth(tier: HouseTier, mpp: number): number {
+  return Math.round(Math.min(HOUSE_MAX_PX, Math.max(HOUSE_MIN_PX[tier], (HOUSE_METERS[tier] * 3) / mpp)));
+}
 
 /** 0.1.40: the Journal's "Your houses" list — owned houses (city order) first, then every other city's lot for sale. */
 export function houseList(houses: Partial<Record<CityId, HouseState>>): {

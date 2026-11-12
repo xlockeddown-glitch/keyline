@@ -3641,16 +3641,21 @@ h3 {
 .house-drive { display: flex; align-items: center; gap: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; background: rgb(255 255 255 / 0.04); border: 1px dashed rgb(232 199 122 / 0.35); }
 .house-drive img { width: 168px; height: auto; }
 
-/* 0.1.12: the house drawn on the map at building scale (width from zoom), grounded with a shadow and a window glow. */
-.house-map { --house-w: 48px; pointer-events: none; gap: 3px; }
+/* 0.1.12: the house drawn on the map at building scale (width from zoom), grounded with a shadow and a window glow.
+   0.1.157 follow-up: the night paintings sank into the dark tiles. A warm pool sits BEHIND the cutout (.house-glow, z 1),
+   and the sprite gets a light lift plus a thin warm rim and halo from filters around it. Nothing is drawn over the painting. */
+.house-map { --house-w: 66px; pointer-events: none; gap: 3px; }
 .leaflet-container .house-map img.house-sprite { display: block; width: var(--house-w); height: auto; pointer-events: auto; cursor: pointer; position: relative; z-index: 2;
-  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.5)); -webkit-user-drag: none; }
-.house-map .house-shadow { position: absolute; z-index: 0; left: 50%; bottom: 14px; width: calc(var(--house-w) * 1.25); height: calc(var(--house-w) * 0.22);
-  transform: translate(-50%, 45%); border-radius: 50%; background: radial-gradient(closest-side, rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.28) 60%, transparent); }
-.house-map .house-glow { position: absolute; z-index: 1; left: 50%; bottom: 14px; width: calc(var(--house-w) * 1.6); height: calc(var(--house-w) * 0.9);
-  transform: translate(-50%, 30%); border-radius: 50%; mix-blend-mode: screen; background: radial-gradient(closest-side, rgb(255 178 92 / 0.32), rgb(255 150 70 / 0.12) 55%, transparent); }
+  filter: brightness(1.14) drop-shadow(0 0 1px rgb(255 226 176 / 0.6)) drop-shadow(0 0 calc(var(--house-w) * 0.05) rgb(255 186 104 / 0.5)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+  -webkit-user-drag: none; }
+.house-map .house-shadow { position: absolute; z-index: 0; left: 50%; bottom: 18px; width: calc(var(--house-w) * 1.2); height: calc(var(--house-w) * 0.16);
+  transform: translate(-50%, 45%); border-radius: 50%; background: radial-gradient(closest-side, rgb(0 0 0 / 0.66), rgb(0 0 0 / 0.3) 60%, transparent); }
+.house-map .house-glow { position: absolute; z-index: 1; left: 50%; bottom: 14px; width: calc(var(--house-w) * 1.45); height: calc(var(--house-w) * 0.95);
+  transform: translate(-50%, 8%); border-radius: 50%; mix-blend-mode: screen;
+  background: radial-gradient(closest-side, rgb(255 186 100 / 0.5), rgb(255 160 80 / 0.2) 55%, transparent); }
 .house-map .house-chip { position: relative; z-index: 3; }
-.leaflet-container .house-map.is-home img.house-sprite { filter: drop-shadow(0 0 calc(var(--house-w) * 0.08) rgb(255 200 110 / 0.55)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.5)); }
+.leaflet-container .house-map.is-home img.house-sprite {
+  filter: brightness(1.14) drop-shadow(0 0 1px rgb(255 226 176 / 0.7)) drop-shadow(0 0 calc(var(--house-w) * 0.07) rgb(255 200 110 / 0.6)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.55)); }
 
 /* 0.1.13: center-on-me button under the zoom controls */
 .leaflet-control-zoom a.leaflet-control-center { display: flex; align-items: center; justify-content: center; }
@@ -3775,8 +3780,10 @@ h3 {
 .pawn.is-seated.has-driver:has(.cab-sprite[data-face="down"]),
 .pawn.is-seated.has-driver:has(.cab-sprite[data-face="up"]) { --drv-s: 0.5; --drv-y: -13px; }
 
-/* 0.1.58 The Loop: tunnel ride; the sled holds the middle. 0.1.157: the tube is the painted tunnel (public/sprites/loop/tunnel.webp).
-   Two copies zoom 1x to 2x into the vanishing point (52.6% 51.6% of the painting) half a cycle apart, so one is always fully in. */
+/* 0.1.58 The Loop: tunnel ride. 0.1.157: the tube is the painted tunnel (public/sprites/loop/tunnel.webp).
+   0.1.157 follow-up: one copy zooms into the vanishing point (52.6% 51.6% of the painting) once over the whole ride, so there
+   is no crossfade and no double exposure. Scaling about the vanishing point keeps the rail gauge at any screen height, so the
+   sled stays seated on the near ties for the whole zoom. */
 .loop-screen {
   position: fixed;
   inset: 0;
@@ -3798,18 +3805,16 @@ h3 {
   inset: 0;
   background: url("/sprites/loop/tunnel.webp") 52.6% 51.6% / cover no-repeat;
   transform-origin: 52.6% 51.6%;
-  animation: loop-zoom 2.4s linear infinite;
-}
-.loop-paint.is-next {
-  animation-delay: -1.2s;
+  animation: loop-zoom var(--loop-ms) cubic-bezier(0.45, 0, 0.8, 0.6) both;
 }
 .loop-screen.is-reduced .loop-paint {
   animation: none;
 }
 .loop-sled {
   position: absolute;
-  left: 50%;
-  top: 58%;
+  /* Wheels on the near ties. The rail centre at this height runs from about 196px of 390 at rest to about 205px fully zoomed. */
+  left: calc(50% + 6px);
+  top: 76.5%;
   width: 56px;
   height: 56px;
   margin: -28px 0 0 -28px;
@@ -3850,10 +3855,8 @@ h3 {
   min-width: 88px;
 }
 @keyframes loop-zoom {
-  from { transform: scale(1); opacity: 0; }
-  25% { opacity: 1; }
-  75% { opacity: 1; }
-  to { transform: scale(2); opacity: 0; }
+  from { transform: scale(1); }
+  to { transform: scale(2.2); }
 }
 @keyframes loop-sled {
   from { translate: 0 0; }
@@ -3867,7 +3870,6 @@ h3 {
 }
 @media (prefers-reduced-motion: reduce) {
   .loop-paint, .loop-sled { animation: none; }
-  .loop-paint.is-next { display: none; }
 }
 
 /* 0.1.58 tunnel posters in the Journal. */

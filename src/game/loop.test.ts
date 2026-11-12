@@ -53,4 +53,7 @@ test("Travel sheet offers the Loop, no train (0.1.95) and no Arrive (0.1.125); t
   assert.match(css, /url\("\/sprites\/loop\/tunnel\.webp"\)/);
   assert.match(css, /\.loop-screen\.is-reduced \.loop-paint \{\s*animation: none;/);
   assert.doesNotMatch(css, /@keyframes loop-ring|@keyframes loop-light/);
+  // 0.1.157 follow-up: one copy zooms once over the whole ride (no crossfaded second copy), and the sled sits low on the rails.
+  assert.doesNotMatch(cut, /loop-paint is-next/);
+  assert.match(css, /animation: loop-zoom var\(--loop-ms\)/);
 });

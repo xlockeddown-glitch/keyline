@@ -6,7 +6,7 @@ import { anyPois, livePois } from "@/game/nightMarket";
 import { DEALER_REACH_M, carOf, carPace, dealerOf, dealerTap } from "@/game/cars";
 import { lampFromRide, rideOf, seatIsOwnCar, trimToReach } from "@/game/carReach";
 import { factoryColor } from "@/game/carPaint";
-import { HOUSE_METERS, HOUSE_REACH_M, houseMapArt, houseOf, lotOf, type HouseTier } from "@/game/houses";
+import { HOUSE_REACH_M, houseMapArt, houseMapWidth, houseOf, lotOf, type HouseTier } from "@/game/houses";
 import { HouseSheet } from "./HouseSheet";
 import { SkinSheet } from "./SkinSheet";
 import { CITIES, SCOUTS, cabSpeed, interactRadius, isBoard, isCounter, isScoutShop, walkSpeed, WALK_PACE } from "@/game/data";
@@ -497,8 +497,8 @@ export function GameMap() {
     const door = houseDoor.current;
     if (!map || !door) return 48;
     const mpp = (156543.03392 * Math.cos((door.lat * Math.PI) / 180)) / 2 ** map.getZoom();
-    // Drawn ×3 like the scouts and cars (true scale is a 20 px speck at street zoom); never smaller than a lamp.
-    return Math.round(Math.min(220, Math.max(34, (HOUSE_METERS[tier] * 3) / mpp)));
+    // Drawn ×3 like the scouts and cars (true scale is a 20 px speck at street zoom), with a per-tier floor.
+    return houseMapWidth(tier, mpp);
   }
   function sizeHouse() {
     const el = houseMarker.current?.getElement()?.querySelector<HTMLElement>(".house-map");

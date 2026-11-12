@@ -5,7 +5,7 @@ import { factoryColor } from "@/game/carPaint";
 import { LOOP_FADE_MS, LOOP_MS } from "@/game/loop";
 import { useGame } from "@/game/store";
 
-/** 0.1.58: the Loop tunnel ride, your car on a sled. 0.1.157: the tube is Ryan's painted tunnel, two copies zooming into the vanishing point. */
+/** 0.1.58: the Loop tunnel ride, your car on a sled. 0.1.157: the tube is Ryan's painted tunnel, one copy zooming into the vanishing point over the ride; the sled sits on the near rails. */
 export function LoopScreen() {
   const loop = useGame((s) => s.loop);
   const carOn = useGame((s) => s.carOn);
@@ -43,7 +43,6 @@ export function LoopScreen() {
     <div className={`loop-screen${reduce ? " is-reduced" : ""}`} style={{ ["--loop-ms" as string]: `${LOOP_MS}ms` }} data-testid="loop-screen">
       <div className="loop-tube" aria-hidden="true">
         <i className="loop-paint" />
-        {reduce ? null : <i className="loop-paint is-next" />}
         <div className="loop-sled">
           <div className="cab-sprite" data-face="right" data-car={carOn ?? ""} data-paint={tint} />
           <i className="loop-skid" />

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { HOUSES, houseCost, houseList, HOUSE_LOTS, isHouseTier } from "./houses.ts";
+import { HOUSES, houseCost, houseList, HOUSE_LOTS, houseMapWidth, isHouseTier } from "./houses.ts";
 import { COIN_CAP } from "./wallet.ts";
 
 test("house price ladder and step-up difference", () => {
@@ -69,4 +69,30 @@ test("0.1.157: the approved Gemini houses ship as transparent cutouts, at least 
   }
   const sheet = readFileSync(new URL("../components/keyline/HouseSheet.tsx", import.meta.url), "utf8");
   assert.match(sheet, /className="house-thumb" src=\{housePin\(h\.id\)\}/);
+});
+
+test("0.1.157 follow-up: each map house is at least as tall and as large as the old art, and the ladder steps up to the villa", () => {
+  // Old cuts: height per unit width and the old sizing (floor 34 px, town 12 m). New cuts: the shipped -map.webp aspect.
+  const oldAspect = { cottage: 261 / 256, row: 411 / 256, town: 424 / 256, villa: 81 / 256 };
+  const oldM = { cottage: 11, row: 8, town: 12, villa: 26 };
+  const oldW = (t: keyof typeof oldM, mpp: number) => Math.round(Math.min(220, Math.max(34, (oldM[t] * 3) / mpp)));
+  const mppAt = (z: number) => (156543.03392 * Math.cos((42.33 * Math.PI) / 180)) / 2 ** z; // Detroit
+  const area: Record<string, number> = {};
+  for (const h of HOUSES) {
+    const map = webpInfo(`../../public/houses/${h.id}-map.webp`);
+    for (const z of [16, 17, 18]) {
+      const w = houseMapWidth(h.id, mppAt(z));
+      const nh = (w * map.h) / map.w;
+      const ow = oldW(h.id, mppAt(z));
+      const oh = ow * oldAspect[h.id];
+      assert.ok(w * nh >= ow * oh, `${h.id} z${z}: area ${Math.round(w * nh)} < old ${Math.round(ow * oh)}`);
+      assert.ok(Math.max(w, nh) >= Math.max(ow, oh) - 1, `${h.id} z${z}: longer side shrank`);
+      if (h.id === "cottage" || h.id === "row") assert.ok(nh >= oh - 1, `${h.id} z${z}: ${Math.round(nh)} px tall < old ${Math.round(oh)}`);
+      area[`${h.id}${z}`] = w * nh;
+    }
+  }
+  for (const z of [16, 18]) {
+    assert.ok(area[`town${z}`] > area[`cottage${z}`] && area[`town${z}`] > area[`row${z}`], `town is not a step up at z${z}`);
+    assert.ok(area[`villa${z}`] > area[`town${z}`], `villa is not the largest at z${z}`);
+  }
 });
