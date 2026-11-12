@@ -9,6 +9,7 @@ import {
   ackNews,
   answerTicket,
   createTicket,
+  friendIdsOf,
   friendNews,
   openTicket,
   peekTicket,
@@ -264,5 +265,31 @@ test("0.1.26 friend ladder on the server: climbs a rung a day, wrong resets, cap
   // Other pairs climb on their own; news reports the server's colour.
   const news = await friendNews(d, "ann");
   assert.ok(news.length > 0 && news.every((n) => n.pay && ["white", "blue", "green", "amber", "red"].includes(n.pay.tier)));
+  await db.close();
+});
+
+test("0.1.156 friendIdsOf: both directions count, unredeemed tickets don't, aliases fold", async () => {
+  const db = new PGlite();
+  await db.exec(migration("0009_friend_tickets.sql"));
+  await db.exec(`create table player_links (alias_id text primary key, primary_id text not null)`);
+  const sql = sqlOf(db);
+  const now = new Date().toISOString();
+  const ticket = async (token: string, sender: string, friend: string | null) => {
+    await sql.query(
+      `insert into friend_tickets (token, sender_id, sender_name, card_id, prompt, choices, answer, diff, created_at, expires_at, friend_id, friend_name)
+       values ($1, $2, $2, 'c', 'q', '[]'::jsonb, 'a', 2, $3, $3, $4, $4)`,
+      [token, sender, now, friend],
+    );
+  };
+  await ticket("t-open", "ann", "ben");
+  await ticket("t-back", "cat", "ann");
+  await ticket("t-live", "ann", null);
+  await db.exec(`insert into player_links values ('ben2', 'ben')`);
+  await ticket("t-alias", "dan", "ben2");
+  assert.deepEqual((await friendIdsOf(sql, "ann")).sort(), ["ben", "cat"]);
+  assert.deepEqual((await friendIdsOf(sql, "ben")).sort(), ["ann", "dan"]);
+  assert.deepEqual(await friendIdsOf(sql, "ben2"), ["ann", "dan"], "an alias looks up the primary's tickets and folds dan");
+  assert.deepEqual(await friendIdsOf(sql, "dan"), ["ben"]);
+  assert.deepEqual(await friendIdsOf(sql, "nobody"), []);
   await db.close();
 });

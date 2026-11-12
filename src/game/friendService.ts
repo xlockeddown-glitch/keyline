@@ -20,6 +20,7 @@ import {
   type RewardWhy,
   type TicketRow,
 } from "./friendTicket.ts";
+import { groupIds } from "./playerLinks.ts";
 import type { TriviaDiff } from "./types";
 
 /**
@@ -382,4 +383,22 @@ export async function ackNews(d: FriendDeps, userId: string, ids: readonly strin
     n += rows.length;
   }
   return n;
+}
+
+/**
+ * 0.1.156 friends ladder: everyone this player has opened a friend ticket with, either direction, each folded to
+ * their primary id through player_links (as the ladders board keys players). Unredeemed tickets don't count.
+ */
+export async function friendIdsOf(sql: Sql, userId: string): Promise<string[]> {
+  const [me, ...aliases] = await groupIds(sql, userId);
+  const mine = [me!, ...aliases];
+  const rows = await sql.query<{ id: string }>(
+    `select distinct coalesce(l.primary_id, o.id) as id from (
+      select case when sender_id = any($1) then friend_id else sender_id end as id
+      from friend_tickets where friend_id is not null and (sender_id = any($1) or friend_id = any($1))
+    ) o left join player_links l on l.alias_id = o.id
+    order by 1`,
+    [mine],
+  );
+  return rows.map((r) => r.id).filter((id) => id !== me);
 }
