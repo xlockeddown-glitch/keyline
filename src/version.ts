@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.164";
+export const APP_VERSION = "0.1.165";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1164a";
+export const PUBLISH_STAMP = "k1165a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -261,3 +261,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.162: Painted shop and sign art — the print shop, street counter, outfitter, station sign and notice board use Ryan's approved Gemini paintings (transparent webp cutouts) in place of the pixel props and the inline-SVG enamel plates, matching the Comet pin; the outfitter's Hire tab shows its front like the print shop and counter do; fare and cooling stay off the painting (a "Fare" label under the station pin, a whole-image filter for cooling). 0.1.160 and 0.1.161 are held for the painted vaults and cars. 0.1.155 is still held for trivia (k1162a).
 // 0.1.163: Painted title street and static headroom — the four title streets (generic, NYC, Chicago, SF) are new cottage-painted 1600×900 opaque webps with the lamp and vault glows baked in, so the .ts-vault / .ts-lamp overlays and the vault pulse are gone and nothing is laid over the painting; passing headlights and clear-night fireflies stay. Static headroom from earlier in this version is unchanged: unused leftover sprites removed (old vault.png / key.png and the retired charm icons); used PNG props converted to lossless exact webp (lanterns, keys, matches, items, cab, legacy player fallback sheets, scout icons, title scouts); walker v2 sheets and coat masks kept as PNG; fallback city street maps (public/streets/*.json) ship gzipped like the v2 bakes. 0.1.155 is still held for trivia (k1163a).
 // 0.1.164: Painted flight-window art — earth, wing and three clouds replace the old SVGs; the wing's sun glare is painted in, so the .flight-glare overlay is gone and nothing is laid over the paintings. 0.1.155 is still held for trivia (k1164a).
+// 0.1.165: trial-run trivia batch (plus_20261113, Claude Opus candidates, all 300 source-checked; sports and midterm cards trimmed for balance; current-events share below the 40% trial target) (k1165a).

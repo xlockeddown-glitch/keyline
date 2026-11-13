@@ -1,0 +1,56 @@
+# Trivia current-events sources — batch 20261113 (trial run 2)
+
+Each card's prompt, answer and source page. Wikipedia pages were fetched (parse HTML including infoboxes, plus full extracts) on 13 Nov 2026 (America/Chicago). Trivia Master source-checked every card (the free-model checker lineup could not run) and confirmed the fact in the page text. Window: settled facts 20 October 2026 through 13 November 2026, or properly time-anchored "as of" counts.
+
+- [sports] As of November 2026, how many Grands Prix had Kimi Antonelli won in his title-winning Formula One season? — **Nine** — https://en.wikipedia.org/wiki/Kimi_Antonelli
+- [sports] Which driver took pole position at the 2026 Mexico City Grand Prix? — **Lewis Hamilton** — https://en.wikipedia.org/wiki/2026_Mexico_City_Grand_Prix
+- [sports] In what position did Kimi Antonelli finish the 2026 Mexico City Grand Prix to clinch the title? — **Third** — https://en.wikipedia.org/wiki/2026_Mexico_City_Grand_Prix
+- [sports] What was Andreas Almgren's winning time at the 2026 New York City Marathon? — **2:06:01** — https://en.wikipedia.org/wiki/Andreas_Almgren
+- [sports] Andreas Almgren's win at the 2026 New York City Marathon was which of his career marathons? — **His first** — https://en.wikipedia.org/wiki/Andreas_Almgren
+- [sports] Who won the women's race at the 2026 New York City Marathon on November 1, 2026? — **Sheila Chepkirui** — https://en.wikipedia.org/wiki/2026_New_York_City_Marathon
+- [sports] Who won the men's wheelchair race at the 2026 New York City Marathon? — **Marcel Hug** — https://en.wikipedia.org/wiki/2026_New_York_City_Marathon
+- [sports] How many games did the October 2026 World Series between Milwaukee and Tampa Bay last? — **Five** — https://en.wikipedia.org/wiki/2026_World_Series
+- [sports] How long a World Series drought did the Milwaukee Brewers end by winning the 2026 title? — **57 years** — https://en.wikipedia.org/wiki/Milwaukee_Brewers
+- [sports] Who managed the Milwaukee Brewers to their 2026 World Series title? — **Pat Murphy** — https://en.wikipedia.org/wiki/Milwaukee_Brewers
+- [sports] Which team swept the Yokohama DeNA BayStars to win the 2026 Japan Series in October 2026? — **Fukuoka SoftBank Hawks** — https://en.wikipedia.org/wiki/2026_Japan_Series
+- [sports] Who was named MVP of the 2026 Japan Series, played in October 2026? — **Tomoya Masaki** — https://en.wikipedia.org/wiki/2026_Japan_Series
+- [sports] On what date was the 70th Ballon d'Or ceremony held? — **October 26, 2026** — https://en.wikipedia.org/wiki/Ballon_d%27Or
+- [sports] Besides the Ballon d'Or, which award did Harry Kane win for a second time in 2026? — **Gerd Müller Trophy** — https://en.wikipedia.org/wiki/Harry_Kane
+- [sports] Which award did Alexia Putellas win in October 2026 after captaining Barcelona to a quadruple in 2025–26? — **Ballon d'Or Féminin** — https://en.wikipedia.org/wiki/Alexia_Putellas
+- [sports] Which event did figure skater Mao Shimada win on her senior Grand Prix debut in 2026? — **Skate Canada International** — https://en.wikipedia.org/wiki/Mao_Shimada
+- [sports] Who won the 2026 São Paulo Grand Prix on 8 November 2026? — **Lando Norris** — https://en.wikipedia.org/wiki/2026_S%C3%A3o_Paulo_Grand_Prix
+- [sports] After the 2026 season, how many NASCAR Cup Series championships had Kyle Larson won? — **Three** — https://en.wikipedia.org/wiki/Kyle_Larson
+- [sports] Which track hosted the 2026 NASCAR Cup Series season finale, where Kyle Larson won the title? — **Homestead-Miami Speedway** — https://en.wikipedia.org/wiki/Kyle_Larson
+- [sports] What was golfer Blades Brown's highest world ranking as of November 8, 2026? — **62** — https://en.wikipedia.org/wiki/Blades_Brown
+- [sports] As of 8 November 2026, how many league goals had Lionel Messi scored for Inter Miami? — **76** — https://en.wikipedia.org/wiki/Lionel_Messi
+- [sports] Who won the 2026 MLS Golden Boot? — **Lionel Messi** — https://en.wikipedia.org/wiki/MLS_Golden_Boot
+- [sports] In which month of 2026 did the LIV Golf tour fold? — **November** — https://en.wikipedia.org/wiki/LIV_Golf
+- [sports] In November 2026, which firm's plan to keep funding LIV Golf was withdrawn? — **BC Partners** — https://en.wikipedia.org/wiki/LIV_Golf
+- [sports] Which tournament did Japan's Yuri Yoshida win on 25 October 2026 for her first LPGA Tour title? — **BMW Ladies Championship** — https://en.wikipedia.org/wiki/Yuri_Yoshida
+- [sports] Which jockey rode the winner of the 2026 Melbourne Cup? — **Ethan Brown** — https://en.wikipedia.org/wiki/2026_Melbourne_Cup
+- [sports] Who trained Point Of Law, winner of the 2026 Melbourne Cup? — **Ciaron Maher** — https://en.wikipedia.org/wiki/2026_Melbourne_Cup
+- [sports] Which skipper won the 2026 Route du Rhum in record time? — **Tom Laperche** — https://en.wikipedia.org/wiki/Route_du_Rhum
+- [sports] Whose 2022 race record was broken by over six hours in the November 2026 Route du Rhum? — **Charles Caudrelier** — https://en.wikipedia.org/wiki/Route_du_Rhum
+- [sports] In November 2026, ESPN extended its rights to cover a College Football Playoff expanding to how many teams? — **24** — https://en.wikipedia.org/wiki/College_Football_Playoff
+- [sports] In November 2026, ESPN extended its College Football Playoff media rights through which season? — **2031–32** — https://en.wikipedia.org/wiki/College_Football_Playoff
+- [political] On what date in November 2026 were the U.S. midterm elections held? — **November 3** — https://en.wikipedia.org/wiki/2026_United_States_elections
+- [political] How many governorships did Democrats flip in the November 2026 U.S. elections? — **Six** — https://en.wikipedia.org/wiki/2026_United_States_elections
+- [political] Who led the Senate Democrats to a majority in the November 2026 elections? — **Chuck Schumer** — https://en.wikipedia.org/wiki/2026_United_States_Senate_elections
+- [political] Which former senator won Ohio's November 2026 U.S. Senate special election? — **Sherrod Brown** — https://en.wikipedia.org/wiki/2026_United_States_Senate_elections
+- [political] On what date is Keisha Lance Bottoms, elected in November 2026, set to take office as Georgia governor? — **January 11, 2027** — https://en.wikipedia.org/wiki/Keisha_Lance_Bottoms
+- [political] As of November 2026, who is lieutenant governor-elect alongside Georgia's governor-elect Keisha Lance Bottoms? — **Josh McLaurin** — https://en.wikipedia.org/wiki/Keisha_Lance_Bottoms
+- [political] Who won Michigan's U.S. Senate race on November 3, 2026? — **Abdul El-Sayed** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Michigan
+- [political] By winning a 2026 Senate seat, Abdul El-Sayed became the first U.S. senator-elect of which faith? — **Muslim** — https://en.wikipedia.org/wiki/Abdul_El-Sayed
+- [political] Whose Texas U.S. Senate seat did James Talarico win in the November 3, 2026 election? — **John Cornyn** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Texas
+- [political] What share of the vote did James Talarico win in Texas's November 3, 2026 Senate election? — **55.06%** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Texas
+- [political] Who unseated Cindy Hyde-Smith in Mississippi's November 3, 2026 U.S. Senate election? — **Scott Colom** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Mississippi
+- [political] With his November 2026 win, Scott Colom became Mississippi's first Democratic senator elected since what year? — **1982** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Mississippi
+- [political] Lula's October 2026 runoff win re-elected him to which term as Brazil's president? — **Fourth** — https://en.wikipedia.org/wiki/2026_Brazilian_general_election
+- [political] Who was Lula's running mate in Brazil's October 2026 presidential election? — **Geraldo Alckmin** — https://en.wikipedia.org/wiki/2026_Brazilian_general_election
+- [political] Who won Bulgaria's presidential runoff held on 1 November 2026? — **Iliana Iotova** — https://en.wikipedia.org/wiki/2026_Bulgarian_presidential_election
+- [political] What share of the vote did Iliana Iotova win in Bulgaria's November 2026 presidential runoff? — **57.6%** — https://en.wikipedia.org/wiki/2026_Bulgarian_presidential_election
+- [political] After the November 2026 Bulgarian election, who is Iliana Iotova's vice president-elect? — **Kiril Valchev** — https://en.wikipedia.org/wiki/Iliana_Iotova
+- [political] In October 2026, Paul St-Pierre Plamondon became which numbered premier of Quebec? — **34th** — https://en.wikipedia.org/wiki/Paul_St-Pierre_Plamondon
+- [political] Who became deputy premier of Quebec under Paul St-Pierre Plamondon after he took office in October 2026? — **Catherine Gentilcore** — https://en.wikipedia.org/wiki/Paul_St-Pierre_Plamondon
+- [political] At Grenada's 5 November 2026 general election, how many of the 15 seats did the NDC win? — **14** — https://en.wikipedia.org/wiki/2026_Grenadian_general_election
+- [political] In Grenada's November 2026 election, who defeated NNP leader Emmalin Pierre in her seat? — **David Andrew** — https://en.wikipedia.org/wiki/2026_Grenadian_general_election
