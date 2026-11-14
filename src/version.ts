@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.165";
+export const APP_VERSION = "0.1.166";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1165a";
+export const PUBLISH_STAMP = "k1166a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -262,3 +262,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.163: Painted title street and static headroom — the four title streets (generic, NYC, Chicago, SF) are new cottage-painted 1600×900 opaque webps with the lamp and vault glows baked in, so the .ts-vault / .ts-lamp overlays and the vault pulse are gone and nothing is laid over the painting; passing headlights and clear-night fireflies stay. Static headroom from earlier in this version is unchanged: unused leftover sprites removed (old vault.png / key.png and the retired charm icons); used PNG props converted to lossless exact webp (lanterns, keys, matches, items, cab, legacy player fallback sheets, scout icons, title scouts); walker v2 sheets and coat masks kept as PNG; fallback city street maps (public/streets/*.json) ship gzipped like the v2 bakes. 0.1.155 is still held for trivia (k1163a).
 // 0.1.164: Painted flight-window art — earth, wing and three clouds replace the old SVGs; the wing's sun glare is painted in, so the .flight-glare overlay is gone and nothing is laid over the paintings. 0.1.155 is still held for trivia (k1164a).
 // 0.1.165: trial-run trivia batch (plus_20261113, Claude Opus candidates, all 300 source-checked; sports and midterm cards trimmed for balance; current-events share below the 40% trial target) (k1165a).
+// 0.1.166: Hearth 4th slot when Math sits out: no code change (shipped in 0.1.152 and still holds); a new server test runs a Triple where the stand-in is taken on question 1, 2 or 3 and checks that every offered field deals and grades (k1166a).

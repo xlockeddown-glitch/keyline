@@ -241,3 +241,52 @@ test("picker: the placement sheet offers Single, Double and Triple with their ti
   const vm = readFileSync(new URL("../components/keyline/VaultModal.tsx", import.meta.url), "utf8");
   for (const id of ["hearth-chips", "hearth-used", "hearth-note"]) assert.match(vm, new RegExp(`data-testid="${id}"`));
 });
+
+test("0.1.166 server: every field a Hearth card offers deals and grades, on any question of a run, when Math sits out", async () => {
+  const { applyClientOp, placedViews, syncPlayer } = await import("./walletApply.ts");
+  const { dealFor, grade, resetGradeRing } = await import("./triviaService.ts");
+  const { hearthOffer } = await import("./hearthVaults.ts");
+  const { keepsMath } = await import("./triviaMeta.ts");
+  const { CITIES } = await import("./data.ts");
+  const cats = ["history", "math", "food", "geography"];
+  const vis = { userId: "vis" } as never;
+  // One Triple run per `standInAt`: the question where the player takes the 4th slot (Math's stand-in).
+  for (const standInAt of [0, 1, 2]) {
+    resetGradeRing();
+    const sql = await db();
+    await syncPlayer(sql, "tri", snap({ green: 5 }), "triphone1");
+    await sql`insert into wallet_ledger (user_id, op_key, detail) values ('tri', 'plantok', '{"via":"red10"}')`;
+    await syncPlayer(sql, "vis", snap({ green: 3 }), "visphone1");
+    const s = CITIES.austin.spawn;
+    assert.equal((await applyClientOp(sql, "tri", { kind: "plant", city: "austin", lat: s.lat + 0.004, lng: s.lng + 0.004, name: 2, cats, v: 3 })).ok, true);
+    const id = (await placedViews(sql, "austin", "vis"))[0]!.id;
+    // The player's open count where Math sits out on the question that takes the stand-in.
+    const seedOf = (n: number, step: number) => (step > 0 ? `${id}#${n}#q${step}` : `${id}#${n}`);
+    let opens = -1;
+    for (let n = 0; n < 200 && opens < 0; n++) if (!keepsMath(seedOf(n, standInAt))) opens = n;
+    assert.ok(opens >= 0, "a visit where Math sits out");
+    const deps = depsFor(sql, { tier: "" });
+    const used: string[] = [];
+    let prev: string | undefined;
+    for (let step = 0; step < 3; step++) {
+      const offer = hearthOffer(cats, id, opens, step);
+      assert.equal(offer.length, 4, `question ${step + 1} shows 4 fields`);
+      assert.equal(new Set(offer).size, 4);
+      const open = offer.filter((c) => !slotUsed(cats, used, c));
+      assert.equal(open.length, 4 - step, `question ${step + 1}: ${4 - step} fields left`);
+      const fourth = offer[3]!;
+      if (step === standInAt) {
+        assert.ok(!cats.includes(fourth) && fourth !== "math", `the 4th slot is a field the owner did not pick (${fourth})`);
+        assert.ok(open.includes(fourth));
+      }
+      const pick = step === standInAt ? fourth : open.find((c) => cats.includes(c) && c !== "math")!;
+      const q = await dealFor(deps, vis, dealIn(id, pick, prev ? { hearthPrev: prev } : {}));
+      assert.equal(q.ok, true, `question ${step + 1} deals ${pick} (stand-in on question ${standInAt + 1})`);
+      prev = (q as { token: string }).token;
+      const g = await grade(deps, vis, { token: prev, choice: "a", clientMs: 2000 });
+      assert.equal(g.ok && g.correct, true, `question ${step + 1} grades ${pick}`);
+      used.push(pick);
+    }
+    assert.equal(await spent(sql), 1, "one key for the run");
+  }
+});
