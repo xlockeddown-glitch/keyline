@@ -3,22 +3,23 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { canonicalId } from "./playerLinks";
-import { isLadderCity, type LadderBoard } from "./ladderBoard";
+import { isLadderCity, type LadderBoard, type LadderPick } from "./ladderBoard";
 import type { CityId, TriviaCat } from "./types";
 
 const CATS = ["sports", "local", "political", "food", "arts", "math", "science", "history", "nature", "games", "celebrity", "music", "books", "geography"] as const satisfies readonly TriviaCat[];
+/** 0.1.167: cat may be "overall" (every category) or "auto" (my most-played; overall for guests). */
 /** 0.1.156: span / scope / city are optional; an older client gets the all-time, everyone board. */
 const Input = (u: unknown) =>
   z
     .object({
-      cat: z.enum(CATS),
+      cat: z.enum([...CATS, "overall", "auto"]),
       span: z.enum(["all", "week"]).default("all"),
       scope: z.enum(["all", "city", "friends"]).default("all"),
       city: z.custom<CityId>((c) => isLadderCity(c)).optional(),
     })
     .refine((d) => d.scope !== "city" || d.city)
     .parse(u);
-const empty = (cat: TriviaCat): LadderBoard => ({ cat, top: [], mine: { value: 0, pct: null, rank: null, rung: null, rival: null } });
+const empty = (pick: LadderPick): LadderBoard => ({ cat: pick === "auto" ? "overall" : pick, top: [], mine: { value: 0, pct: null, rank: null, rung: null, rival: null } });
 
 /** 0.1.69: a category's Ladders board (top 5), for anyone. 0.1.156: a guest's friends board is empty. */
 export const fetchLadder = createServerFn({ method: "GET" })

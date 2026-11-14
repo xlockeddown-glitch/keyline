@@ -3828,6 +3828,8 @@ h3 {
 .ladder-pick { background: var(--color-bg-elevated); color: var(--color-fg); }
 .ladder-pick option { background: var(--color-bg-elevated); color: var(--color-fg); }
 .jr-row.is-me .jr-title { color: var(--color-accent); }
+/* 0.1.167 Ladders: the player just above you, the one to pass. */
+.jr-row.is-rival { background: color-mix(in oklab, var(--color-accent) 10%, transparent); }
 /* 0.1.70 Airports: flight cutscene. 0.1.154: Gemini scene stays still, the pavement strip scrolls and fades into the field, and the airliner swaps gear-down / nose-up / gear-up. Durations match TAKEOFF_MS (2.6s) and LANDING_MS (2.2s). Transforms and opacity only. The window seat below is unchanged. */
 .flight-screen {
   position: fixed;

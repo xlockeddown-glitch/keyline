@@ -1,18 +1,21 @@
 /** 0.1.69: Journal · Leaderboard · Ladders: one category at a time, single-line rows in the Progress style. */
+/** 0.1.167: Overall in the picker, opening on my most-played category; "N pts to pass <name>" with the rival row marked. */
 /** 0.1.156: All time | This week, and Everyone | city | Friends pills (RollsBoard style); first-to-title chips. */
 import { useEffect, useState } from "react";
 import { sfx } from "@/game/audio";
 import { CAT_LABEL } from "@/game/carPerks";
 import { CITIES } from "@/game/data";
 import { fetchLadder, fetchMyLadder } from "@/game/ladderApi";
-import type { LadderBoard, LadderScope, LadderSpan } from "@/game/ladderBoard";
+import type { LadderBoard, LadderCat, LadderPick, LadderScope, LadderSpan } from "@/game/ladderBoard";
+import { toPass } from "@/game/ladderRival";
 import { CAT_LADDERS } from "@/game/levels";
 import { useGame } from "@/game/store";
-import type { TriviaCat } from "@/game/types";
 import { useCurrentUser } from "@/lib/auth/use-current-user";
 import { usePlayerId } from "./PlayerLink";
 
-const CATS = Object.keys(CAT_LADDERS) as TriviaCat[];
+const CATS: LadderCat[] = ["overall", ...(Object.keys(CAT_LADDERS) as LadderCat[])];
+const catLabel = (c: LadderCat) => (c === "overall" ? "Overall" : CAT_LABEL[c]);
+const pts = (n: number) => `${n.toLocaleString("en-US")} ${n === 1 ? "pt" : "pts"}`;
 
 /** 0.1.90: percent right in this category; "—" with no tries or an older cached board without the field. */
 const pctLabel = (p: number | null | undefined) => (typeof p === "number" && Number.isFinite(p) ? `${p}%` : "—");
@@ -58,7 +61,7 @@ export function LadderBoardSection() {
   const user = useCurrentUser();
   const playerId = usePlayerId();
   const cityId = useGame((s) => s.cityId);
-  const [cat, setCat] = useState<TriviaCat>("sports");
+  const [cat, setCat] = useState<LadderPick>("auto");
   const [span, setSpan] = useState<LadderSpan>("all");
   const [pick, setScope] = useState<LadderScope>("all");
   const [board, setBoard] = useState<LadderBoard | null>(null);
@@ -83,6 +86,9 @@ export function LadderBoardSection() {
   const me = playerId ?? user?.id ?? null;
   const mine = board?.mine;
   const inTop = Boolean(me && board?.top.some((r) => r.userId === me));
+  const shown: LadderCat = cat === "auto" ? (board?.cat ?? "overall") : cat;
+  const rivalRank = mine?.rival && mine.rank ? mine.rank - 1 : null;
+  const rivalOff = Boolean(mine?.rival && rivalRank && !inTop && !board?.top.some((r) => r.rank === rivalRank));
   const scopes: { id: LadderScope; label: string }[] = [
     { id: "all", label: "Everyone" },
     { id: "city", label: CITIES[cityId]?.name ?? "This city" },
@@ -94,10 +100,10 @@ export function LadderBoardSection() {
         <p className="kicker">Ladders</p>
         <label className="flex items-center gap-2 text-xs text-fg-muted">
           <span className="sr-only">Category</span>
-          <select className="ladder-pick min-h-11 rounded border border-border px-2 text-sm" value={cat} onChange={(e) => setCat(e.target.value as TriviaCat)} data-testid="ladder-cat">
+          <select className="ladder-pick min-h-11 rounded border border-border px-2 text-sm" value={shown} onChange={(e) => setCat(e.target.value as LadderCat)} data-testid="ladder-cat">
             {CATS.map((c) => (
               <option key={c} value={c}>
-                {CAT_LABEL[c]}
+                {catLabel(c)}
               </option>
             ))}
           </select>
@@ -106,7 +112,11 @@ export function LadderBoardSection() {
       <Pills label="Span" prefix="ladder-span" items={SPANS} on={span} set={setSpan} />
       <Pills label="Players" prefix="ladder-scope" items={scopes} on={scope} set={setScope} />
       <p className="mt-2 text-xs text-fg-muted">
-        {span === "week" ? `Right answers in ${CAT_LABEL[cat]} this week · resets Mon 12 a.m. CT.` : `Right answers in ${CAT_LABEL[cat]}. Titles at 250, 1,000 and 2,000.`}
+        {span === "week"
+          ? `Right answers in ${shown === "overall" ? "every category" : catLabel(shown)} this week · resets Mon 12 a.m. CT.`
+          : shown === "overall"
+            ? "Right answers in every category. 1 pt each."
+            : `Right answers in ${catLabel(shown)}. Titles at 250, 1,000 and 2,000.`}
       </p>
       {failed ? (
         <p className="mt-2 text-xs text-fg-subtle">Couldn't load the board. Try again in a minute.</p>
@@ -117,7 +127,7 @@ export function LadderBoardSection() {
       ) : (
         <ol className="jr-list mt-1">
           {board.top.map((r) => (
-            <li key={r.userId} className={`jr-row${r.userId === me ? " is-me" : ""}`}>
+            <li key={r.userId} className={`jr-row${r.userId === me ? " is-me" : r.rank === rivalRank ? " is-rival" : ""}`} data-testid={r.rank === rivalRank ? "ladder-rival-row" : undefined}>
               <span className="jr-val tabular-nums w-5">{r.rank}</span>
               <span className="jr-main">
                 <span className="jr-title">{r.name}</span>
@@ -129,6 +139,15 @@ export function LadderBoardSection() {
               </span>
             </li>
           ))}
+          {rivalOff && mine?.rival ? (
+            <li className="jr-row is-rival" data-testid="ladder-rival-row">
+              <span className="jr-val tabular-nums w-5">{rivalRank}</span>
+              <span className="jr-main">
+                <span className="jr-title">{mine.rival.name}</span>
+              </span>
+              <span className="jr-val tabular-nums whitespace-nowrap">{(mine.value + mine.rival.gap).toLocaleString("en-US")}</span>
+            </li>
+          ) : null}
           {mine?.rank && !inTop ? (
             <li className="jr-row is-me" data-testid="ladder-own">
               <span className="jr-val tabular-nums w-5">{mine.rank}</span>
@@ -146,7 +165,7 @@ export function LadderBoardSection() {
       )}
       {mine?.rival ? (
         <p className="mt-2 text-xs text-fg-muted" data-testid="ladder-rival">
-          {mine.rival.gap === 0 ? `Tied with ${mine.rival.name}` : `${mine.rival.gap.toLocaleString("en-US")} behind ${mine.rival.name}`}
+          {`${pts(toPass(mine.rival))} to pass ${mine.rival.name}`}
         </p>
       ) : null}
       {scope === "friends" && board && board.top.length > 0 && board.top.every((r) => r.userId === me) ? (
@@ -154,7 +173,7 @@ export function LadderBoardSection() {
       ) : null}
       {span === "week" && board?.lastWeek ? (
         <p className="mt-2 text-xs text-fg-muted" data-testid="ladder-last-week">
-          Last week: {board.lastWeek.name} topped {CAT_LABEL[cat]} with {board.lastWeek.value.toLocaleString("en-US")}.
+          Last week: {board.lastWeek.name} topped {catLabel(shown)} with {board.lastWeek.value.toLocaleString("en-US")}.
         </p>
       ) : null}
       {board?.firsts?.map((f) => (

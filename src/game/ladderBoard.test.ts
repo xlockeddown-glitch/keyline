@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import type { Sql } from "../lib/db.ts";
-import { LADDER_CATS, countByCat, pctOf, ladderBoard, rankLadder, resetLadderCache, rungFor } from "./ladderBoard.ts";
+import { LADDER_CATS, countByCat, mergeCats, mostPlayed, pctOf, ladderBoard, rankLadder, resetLadderCache, rungFor } from "./ladderBoard.ts";
+import { toPass } from "./ladderRival.ts";
 import type { TriviaCat } from "./types.ts";
 
 test("0.1.69 ladders: 14 categories; rung names at 250 / 1000 / 2000", () => {
@@ -245,4 +246,62 @@ test("0.1.156 ladders firsts: earliest crosser wins; stable on rerun; follows re
   assert.deepEqual(m.firsts?.map((f) => [f.rung, f.userId]), [["Air Guitarist", "b"]]);
   const s = await ladderBoard(sql, "sports", null, { now, catOf: music });
   assert.deepEqual(s.firsts, []);
+});
+
+// 0.1.167 ladders: Overall category, most-played default, points to pass the rival.
+test("0.1.167 ladders: rival needs gap + 1 to pass; ties need 1; first place has no rival", () => {
+  const names = new Map([["a", "Amanda Gray"], ["b", "Bob Builder"], ["c", "Cat Dee"]]);
+  const sorted = [{ userId: "b", n: 40, tries: 50 }, { userId: "a", n: 28, tries: 30 }, { userId: "c", n: 28, tries: 28 }];
+  const a = rankLadder("sports", sorted, names, "a").mine.rival!;
+  assert.deepEqual(a, { name: "Bob B.", gap: 12 });
+  assert.equal(toPass(a), 13, "12 behind: 13 more to pass");
+  const c = rankLadder("sports", sorted, names, "c").mine.rival!;
+  assert.deepEqual(c, { name: "Amanda G.", gap: 0 });
+  assert.equal(toPass(c), 1, "tied: one more passes");
+  assert.equal(rankLadder("sports", sorted, names, "b").mine.rival, null);
+  assert.equal(rankLadder("overall", sorted, names, "a").mine.rung, null, "overall has no titles");
+});
+
+test("0.1.167 ladders: overall sums every category; most-played picks my category with the most tries", () => {
+  const cat = (id: string): TriviaCat | null => (id.startsWith("s") ? "sports" : id.startsWith("m") ? "music" : null);
+  const by = countByCat(
+    [
+      { userId: "a", plateId: "s1", n: 5, tries: 6 }, { userId: "a", plateId: "m1", n: 4, tries: 20 },
+      { userId: "b", plateId: "s1", n: 8, tries: 8 }, { userId: "c", plateId: "m1", n: 1, tries: 1 },
+      { userId: "d", plateId: "x", n: 99, tries: 99 },
+    ],
+    cat,
+  );
+  assert.deepEqual(mergeCats(by), [{ userId: "a", n: 9, tries: 26 }, { userId: "b", n: 8, tries: 8 }, { userId: "c", n: 1, tries: 1 }]);
+  assert.equal(mostPlayed(by, "a"), "music", "most tries, not most right");
+  assert.equal(mostPlayed(by, "b"), "sports");
+  assert.equal(mostPlayed(by, "zz"), "overall", "no answers yet");
+  assert.equal(mostPlayed(by, null), "overall", "guest");
+});
+
+test("0.1.167 ladders server: overall and auto boards; filters still apply; no card ids or full names", async (ctx) => {
+  const { pg, sql, ans } = await extrasDb();
+  ctx.after(async () => { await pg.close(); });
+  const t = Date.UTC(2026, 10, 3);
+  await ans("a", "sp", 3, t);
+  await ans("a", "mu", 6, t, { city: "nyc" });
+  await ans("b", "sp", 8, t);
+  await ans("c", "mu", 2, t);
+  resetLadderCache();
+  const now = t + 3600_000;
+  const o = await ladderBoard(sql, "overall", "a", { now, catOf });
+  assert.equal(o.cat, "overall");
+  assert.deepEqual(o.top.map((r) => [r.userId, r.value, r.rung]), [["a", 9, null], ["b", 8, null], ["c", 2, null]]);
+  assert.deepEqual(o.firsts, []);
+  const auto = await ladderBoard(sql, "auto", "a", { now, catOf });
+  assert.equal(auto.cat, "music", "a played music most");
+  assert.deepEqual(auto.top.map((r) => r.userId), ["a", "c"]);
+  assert.equal((await ladderBoard(sql, "auto", null, { now, catOf })).cat, "overall", "guest opens on overall");
+  const city = await ladderBoard(sql, "overall", "a", { scope: "city", city: "austin", now, catOf });
+  assert.deepEqual(city.top.map((r) => [r.userId, r.value]), [["b", 8], ["a", 3], ["c", 2]]);
+  assert.deepEqual(city.mine.rival, { name: "Bob B.", gap: 5 });
+  const fr = await ladderBoard(sql, "overall", "c", { scope: "friends", friendIds: ["a"], now, catOf });
+  assert.deepEqual(fr.top.map((r) => r.userId), ["a", "c"]);
+  const json = JSON.stringify([o, auto, city, fr]);
+  assert.ok(!/"sp"|"mu"|Builder|Gray/.test(json), "no card ids or full names");
 });

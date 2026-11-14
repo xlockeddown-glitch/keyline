@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.166";
+export const APP_VERSION = "0.1.167";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1166a";
+export const PUBLISH_STAMP = "k1167a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -263,3 +263,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.164: Painted flight-window art — earth, wing and three clouds replace the old SVGs; the wing's sun glare is painted in, so the .flight-glare overlay is gone and nothing is laid over the paintings. 0.1.155 is still held for trivia (k1164a).
 // 0.1.165: trial-run trivia batch (plus_20261113, Claude Opus candidates, all 300 source-checked; sports and midterm cards trimmed for balance; current-events share below the 40% trial target) (k1165a).
 // 0.1.166: Hearth 4th slot when Math sits out: no code change (shipped in 0.1.152 and still holds); a new server test runs a Triple where the stand-in is taken on question 1, 2 or 3 and checks that every offered field deals and grades (k1166a).
+// 0.1.167: Ladders board — an Overall category (right answers across every category, no titles) and the picker opens on your most-played category (Overall for guests or before your first answer); the rival line reads "N pts to pass <name>" and the player just above you is highlighted, with their row shown above yours when you are outside the top 5 (k1167a).

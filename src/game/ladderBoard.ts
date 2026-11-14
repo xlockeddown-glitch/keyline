@@ -11,6 +11,9 @@ import { currentPeriod, previousPeriod, weekKey } from "./questPeriods.ts";
 import { CITY_IDS, type CityId, type TriviaCat } from "./types.ts";
 
 export const LADDER_CATS = Object.keys(CAT_LADDERS) as TriviaCat[];
+/** 0.1.167: "overall" sums every category (no titles); "auto" asks the server for my most-played category. */
+export type LadderCat = TriviaCat | "overall";
+export type LadderPick = LadderCat | "auto";
 
 /** 0.1.90: `pct` = whole percent right of all answered tries in the category; null when no tries are known. */
 /** 0.1.156: `first` = holds a first-to-title in this category (absent on older boards). */
@@ -18,7 +21,7 @@ export type LadderRow = { userId: string; name: string; rank: number; value: num
 export type LadderMine = { value: number; pct: number | null; rank: number | null; rung: string | null; rival: { name: string; gap: number } | null; first?: boolean };
 /** 0.1.156: span/scope/week/lastWeek/firsts are optional so older cached boards still read. */
 export type LadderBoard = {
-  cat: TriviaCat;
+  cat: LadderCat;
   top: LadderRow[];
   mine: LadderMine;
   span?: LadderSpan;
@@ -29,7 +32,8 @@ export type LadderBoard = {
 };
 
 /** Highest title reached in `cat` with `n` right answers, or null below the first rung. */
-export function rungFor(cat: TriviaCat, n: number): string | null {
+export function rungFor(cat: LadderCat, n: number): string | null {
+  if (cat === "overall") return null;
   let out: string | null = null;
   TITLE_RUNGS.forEach((need, i) => {
     if (n >= need) out = CAT_LADDERS[cat][i] ?? out;
@@ -61,8 +65,30 @@ export function countByCat(rows: { userId: string; plateId: string; n: number; t
   return out;
 }
 
+/** 0.1.167: one list across every category, summing right answers and tries per player. */
+export function mergeCats(by: Map<TriviaCat, Count[]>): Count[] {
+  const m = new Map<string, Count>();
+  for (const list of by.values())
+    for (const r of list) {
+      const p = m.get(r.userId);
+      m.set(r.userId, { userId: r.userId, n: (p?.n ?? 0) + r.n, tries: (p?.tries ?? 0) + r.tries });
+    }
+  return [...m.values()].sort(order);
+}
+
+/** 0.1.167: my category with the most tries (ties go to the earlier category), or "overall" when I have none. */
+export function mostPlayed(by: Map<TriviaCat, Count[]>, me?: string | null): LadderCat {
+  let best: LadderCat = "overall";
+  let most = 0;
+  for (const c of LADDER_CATS) {
+    const t = me ? (by.get(c)?.find((r) => r.userId === me)?.tries ?? 0) : 0;
+    if (t > most) [best, most] = [c, t];
+  }
+  return best;
+}
+
 /** Top `limit`, plus my value, rank, rung and the player one place above me (names resolved by `names`). */
-export function rankLadder(cat: TriviaCat, sorted: Count[], names: Map<string, string>, me?: string | null, limit = RIDE_BOARD_TOP): { top: LadderRow[]; mine: LadderMine } {
+export function rankLadder(cat: LadderCat, sorted: Count[], names: Map<string, string>, me?: string | null, limit = RIDE_BOARD_TOP): { top: LadderRow[]; mine: LadderMine } {
   const top = sorted.slice(0, limit).map((r, i) => ({ userId: r.userId, name: publicStandingName(names.get(r.userId) ?? ""), rank: i + 1, value: r.n, pct: pctOf(r.n, r.tries), rung: rungFor(cat, r.n) }));
   const i = me ? sorted.findIndex((r) => r.userId === me) : -1;
   if (i < 0) return { top, mine: { value: 0, pct: null, rank: null, rung: null, rival: null } };
@@ -189,7 +215,7 @@ async function namesOf(sql: Sql, ids: string[]): Promise<Map<string, string>> {
  * scan), and again when the Chicago week turns. Defaults are the 0.1.69 all-time, everyone board.
  * 0.1.156: a 4th-arg function is still the `catOf` test hook; the server maps cards with triviaBank's cardCat.
  */
-export async function ladderBoard(sql: Sql, cat: TriviaCat, me?: string | null, opts?: CatOf | LadderOpts): Promise<LadderBoard> {
+export async function ladderBoard(sql: Sql, ask: LadderPick, me?: string | null, opts?: CatOf | LadderOpts): Promise<LadderBoard> {
   const o: LadderOpts = typeof opts === "function" ? { catOf: opts } : (opts ?? {});
   const span = o.span ?? "all";
   const scope = o.scope ?? "all";
@@ -197,8 +223,10 @@ export async function ladderBoard(sql: Sql, cat: TriviaCat, me?: string | null, 
   const city = scope === "city" ? (o.city as CityId) : null;
   const now = o.now ?? Date.now();
   const c = await load(sql, now, o.catOf);
+  const cat: LadderCat = ask === "auto" ? mostPlayed(view("all", null), me) : ask;
   const keep = scope === "friends" ? new Set(me ? [me, ...(o.friendIds ?? [])] : []) : null;
-  const pick = (v: Map<TriviaCat, Count[]>) => (v.get(cat) ?? []).filter((r) => !keep || keep.has(r.userId));
+  const listOf = (v: Map<TriviaCat, Count[]>) => (cat === "overall" ? mergeCats(v) : (v.get(cat) ?? []));
+  const pick = (v: Map<TriviaCat, Count[]>) => listOf(v).filter((r) => !keep || keep.has(r.userId));
   const sorted = pick(view(span, city));
   const last = span === "week" ? (pick(view("last", city))[0] ?? null) : null;
   const firsts = c.firsts.filter((f) => f.cat === cat);
@@ -210,7 +238,7 @@ export async function ladderBoard(sql: Sql, cat: TriviaCat, me?: string | null, 
   const names = await namesOf(sql, ids);
   const { top, mine } = rankLadder(cat, sorted, names, me);
   // Titles are earned once: weekly, city and friends rows still show the all-time rung.
-  const allTime = new Map((view("all", null).get(cat) ?? []).map((r) => [r.userId, r.n]));
+  const allTime = new Map(listOf(view("all", null)).map((r) => [r.userId, r.n]));
   const held = new Set(firsts.map((f) => f.userId));
   const rows = top.map((r) => ({ ...r, rung: rungFor(cat, allTime.get(r.userId) ?? r.value), ...(held.has(r.userId) ? { first: true } : {}) }));
   const week = currentPeriod("week", now);
@@ -222,7 +250,7 @@ export async function ladderBoard(sql: Sql, cat: TriviaCat, me?: string | null, 
     scope,
     week: { key: week.key, end: week.end },
     lastWeek: last ? { name: publicStandingName(names.get(last.userId) ?? ""), value: last.n } : null,
-    firsts: firsts.map((f) => ({ rung: CAT_LADDERS[cat][f.rung] ?? "", userId: f.userId, name: publicStandingName(names.get(f.userId) ?? ""), at: f.at })),
+    firsts: firsts.map((f) => ({ rung: CAT_LADDERS[f.cat][f.rung] ?? "", userId: f.userId, name: publicStandingName(names.get(f.userId) ?? ""), at: f.at })),
   };
 }
 
