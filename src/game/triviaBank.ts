@@ -7,6 +7,7 @@ import { sealPlate } from "./rarity";
 import { everyCard, everyCardCat, pickTrivia } from "./trivia";
 import { publicCardId, publicFormatId, type TriviaDeps } from "./triviaService";
 import { formatCards } from "./banks/formats";
+import { pickWhere, whereCards } from "./whereAmI";
 import type { CityId, FormatQ, Poi, Tier, TriviaCat, TriviaQ } from "./types";
 
 /**
@@ -25,6 +26,8 @@ function build(): Map<string, TriviaQ> {
   };
   for (const c of everyCard()) add(c);
   for (const seeds of Object.values(DOOR_QUIZZES)) for (const s of seeds) add(sealPlate(s, { city: true }));
+  // 0.1.168: the Loop's Where am I? cards, for grading (never in everyCard, so the trivia count and picker skip them).
+  for (const cards of whereCards().values()) for (const c of cards) add(c);
   return m;
 }
 
@@ -144,6 +147,7 @@ export async function triviaDeps(): Promise<TriviaDeps> {
     card: cardAny,
     fmt: formatAny,
     pickFormat: pickFormatCard,
+    pickWhere,
     namedPoi: (city, poiId) => namedPoi(city, poiId, now()),
     sql: async () => (await import("@/lib/db")).getSql(),
   };

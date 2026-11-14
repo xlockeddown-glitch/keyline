@@ -55,6 +55,9 @@ export const GREAT_MS = 10000;
 export const WINDOW_MIN_MS = 15000;
 export const WINDOW_MAX_MS = 40000;
 
+/** 0.1.168: deal ids `where-<from>-<to>` are the Loop's Where am I? card. */
+export const WHERE_PREFIX = "where-";
+
 export type Viewer = { userId: string | null };
 
 type TokenBody = {
@@ -124,6 +127,8 @@ export type TriviaDeps = {
   fmt?: (id: string) => FormatQ | null;
   /** 0.1.158: a format card for this lamp, or null (nothing fits or everything was seen): deal four choices then. */
   pickFormat?: (kind: "tf" | "near", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number) => FormatQ | null;
+  /** 0.1.168: a Where am I? card for the Loop (whereAmI.ts), or null: the deal falls back to `pick`. */
+  pickWhere?: (city: CityId, avoid: readonly string[], rand?: () => number) => TriviaQ | null;
   /** A named lamp of this city, or null. */
   namedPoi: (city: CityId, poiId: string) => Poi | null;
   /** Signed-in writes; absent (or throwing) leaves the grade intact and credits nothing. */
@@ -321,6 +326,10 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
   // 0.1.117: a Hearth's step comes from the server's own chain, never from the client's `step`.
   if (input.poiId.startsWith("placed-")) input = { ...input, step: undefined };
   else if (input.hearthPrev) input = { ...input, hearthPrev: undefined };
+  // 0.1.168: the Loop's Where am I? card is always a white Geography spark, whatever the client sent.
+  if (input.poiId.startsWith(WHERE_PREFIX)) {
+    input = { ...input, cat: "geography", spark: true, step: undefined, hearthPrev: undefined, formats: undefined, blank: { name: "Where am I?", kind: "landmark", tier: "white" } };
+  }
   // 0.1.159: a Comet vault's tier, spot and window come from the server clock and the baked streets only:
   // the client's blank is dropped (as for placed vaults), and it never sparks (it opens with a green key).
   const comet = isComet(input.poiId);
@@ -424,7 +433,9 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   // 0.1.158: a street lamp that opted in may deal True/False or Closest Number (rolled from the nonce).
   const kind = deps.pickFormat ? formatFor(input, poi, cat, nonce) : null;
   const fq = kind ? deps.pickFormat!(kind, cat, poi.tier, avoid, nonceRoll("kl-format-pick", nonce)) : null;
-  const plate: TriviaQ | FormatQ = fq ?? deps.pick(input.city, cat, poi, poi.tier, avoid);
+  // 0.1.168: the Loop's Where am I? deals from the city's places, not the bank.
+  const where = !fq && input.poiId.startsWith(WHERE_PREFIX) ? (deps.pickWhere?.(input.city, avoid, deps.rand) ?? null) : null;
+  const plate: TriviaQ | FormatQ = fq ?? where ?? deps.pick(input.city, cat, poi, poi.tier, avoid);
   const pub = fq ? publicFormatId(fq) : publicCardId(plate as TriviaQ);
   // Closest Number gets 8 s more for typing.
   const windowMs = clampWindow(input.windowMs + (fq?.kind === "near" ? NEAR_EXTRA_MS : 0));

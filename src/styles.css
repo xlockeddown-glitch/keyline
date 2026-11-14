@@ -3733,6 +3733,23 @@ h3 {
   bottom: calc(24px + env(safe-area-inset-bottom));
   min-width: 88px;
 }
+/* 0.1.168 Where am I?: the offer sits opposite Skip; the card sits under the route, clear of the sled. A started card drops the fade-out so the ride holds. */
+.loop-screen.is-playing {
+  animation: loop-in 500ms ease-out both;
+}
+.loop-where {
+  position: absolute;
+  left: 16px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.loop-card {
+  position: absolute;
+  left: 50%;
+  top: calc(12% + 76px);
+  width: min(92vw, 420px);
+  transform: translateX(-50%);
+  padding: 16px;
+}
 @keyframes loop-zoom {
   from { transform: scale(1); }
   to { transform: scale(2.2); }

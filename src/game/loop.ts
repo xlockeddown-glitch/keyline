@@ -8,6 +8,14 @@ import type { CityId, Tier } from "./types.ts";
 /** Cutscene length (ms); reduced motion plays a short fade instead. */
 export const LOOP_MS = 7000;
 export const LOOP_FADE_MS = 600;
+/** 0.1.168 Where am I?: the card's answer window (a spark's 20 s) and how long the answer stays up before landing. */
+export const WHERE_WINDOW_MS = 20000;
+export const WHERE_REVEAL_MS = 1800;
+
+/** 0.1.168: the deal id for a route's Where am I? card. The server reads the `where-` prefix (triviaService WHERE_PREFIX). */
+export function wherePoiId(from: CityId, to: CityId): string {
+  return `where-${from}-${to}`;
+}
 /** About 1 Loop ride in 12 turns up a mystery crate. */
 export const LOOP_CRATE_ONE_IN = 12;
 
