@@ -4,12 +4,26 @@
 
 The older note [`visual-direction.md`](visual-direction.md) still holds on one point: the basemap stays real OSM tiles. This file is the contract for everything drawn on top.
 
+## The standard
+
+New sprites and scenes use Gemini pictures: outlined cartoon or painterly art, as in the airport scene and the three airliner poses. Pieces drawn entirely in code stay only where they already work; this does not replace explicit layer contracts such as the layered SVG vaults. The 0.1.162 section below remains authoritative for its five painted service surfaces.
+
+Asset preparation follows the approved mock-before-code rule below:
+
+1. Ryan generates the picture in Gemini, using a reference screenshot or existing asset so the style matches.
+2. For wide subjects, use a wide canvas with the subject filling about 90% of its width. Avoid wasting resolution on empty canvas; tall props retain an appropriate aspect ratio.
+3. Cutouts get a flat, plain background.
+4. Size the source for its displayed dimensions and screen density: a subject about 300 CSS px wide on a phone should be at least about 1000px wide.
+5. The builder cuts it out, optimises it, and inspects its own 4x close-ups before reporting.
+
+This standard does not expand the scope of a slice or change the approval status of the palette and silhouette notes below.
+
 ## How a slice is made
 
 Ryan approved these four rules. They bind every art slice.
 
 1. Any art slice gets one mock image that Ryan approves before any code is written.
-2. No code-drawn CSS or SVG pieces laid over flat painted sprites. Scout collars and the house dresser failed this way, and both were dropped. Generate a dressed picture variant, or skip the slice. Pieces drawn entirely in code, like the airliner scene, are fine.
+2. No code-drawn CSS or SVG pieces laid over flat painted sprites. Scout collars and the house dresser failed this way, and both were dropped. Generate a dressed picture variant, or skip the slice. Pieces drawn entirely in code stay only where they already work.
 3. The builder inspects its own 4x close-ups on every variant and fixes anything floating, blown out or misplaced before reporting.
 4. One rework round at most. If it still fails, drop the slice and tell Ryan.
 
@@ -108,7 +122,7 @@ The counter sheet and the counter pin are the same file (`street-counter-v2.png`
 
 ## Pixel props
 
-`scripts/draw-counter-press.py` is the reference for a small prop:
+`scripts/draw-counter-press.py` records the historical pixel recipe for the counter and press. New sprites follow **The standard** above; the five service surfaces follow **0.1.162 painted shops and signs** below. Do not restore their retired PNGs.
 
 1. Draw on a coarse grid (counter 40×52, press 64×86).
 2. Scale with nearest-neighbour (×4). No bilinear upscale.
