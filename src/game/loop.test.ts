@@ -46,6 +46,10 @@ test("Travel sheet offers the Loop, no train (0.1.95) and no Arrive (0.1.125); t
   const cut = readFileSync(new URL("../components/keyline/LoopScreen.tsx", import.meta.url), "utf8");
   assert.match(cut, /prefers-reduced-motion: reduce/);
   assert.match(cut, /data-testid="loop-skip"/);
+  // 0.1.168 fix: reduced motion has no timed landing and still offers Where am I? (it waits for a tap on play or Skip).
+  assert.match(cut, /if \(reduce\) return \(\) => window\.clearTimeout\(endTimer\.current\);/);
+  assert.doesNotMatch(cut, /LOOP_FADE_MS/);
+  assert.match(cut, /\{!playing \? \(\s*<button[^>]*data-testid="loop-where"/);
   // 0.1.157: the painted tunnel replaces the CSS rings and lights; reduced motion keeps one still copy.
   assert.match(cut, /className="loop-paint"/);
   assert.doesNotMatch(cut, /loop-ring|loop-light/);

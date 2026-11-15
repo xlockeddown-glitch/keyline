@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { sfx } from "@/game/audio";
 import { CITIES } from "@/game/data";
 import { factoryColor } from "@/game/carPaint";
-import { LOOP_FADE_MS, LOOP_MS, WHERE_REVEAL_MS, WHERE_WINDOW_MS, wherePoiId } from "@/game/loop";
+import { LOOP_MS, WHERE_REVEAL_MS, WHERE_WINDOW_MS, wherePoiId } from "@/game/loop";
 import { useGame } from "@/game/store";
 import { dealTrivia, gradeTrivia } from "@/game/triviaApi";
 import { SEEN_MAX, type PublicCard } from "@/game/triviaSchema";
@@ -41,10 +41,8 @@ export function LoopScreen() {
       done.current = true;
       finish();
     };
-    if (reduce) {
-      endTimer.current = window.setTimeout(land, LOOP_FADE_MS);
-      return () => window.clearTimeout(endTimer.current);
-    }
+    // 0.1.168 fix: reduced motion holds the still tunnel until the player taps Where am I? or Skip (no timed fade-out).
+    if (reduce) return () => window.clearTimeout(endTimer.current);
     sfx.loopWhoosh();
     const swoop = window.setTimeout(() => sfx.loopWhoosh(), LOOP_MS - 1400);
     endTimer.current = window.setTimeout(land, LOOP_MS);
@@ -144,7 +142,7 @@ export function LoopScreen() {
           {where.reveal ? <p className="mt-2 text-sm text-fg-muted">{where.reveal.correct ? "Right." : `It was ${where.reveal.answer}.`}</p> : null}
         </div>
       ) : null}
-      {!reduce && !playing ? (
+      {!playing ? (
         <button type="button" className="btn btn-primary loop-where" data-testid="loop-where" onClick={play}>
           Where am I?
         </button>

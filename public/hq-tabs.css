@@ -73,7 +73,8 @@
   .hq-tabs{
     display:grid;
     grid-auto-flow:column;
-    grid-auto-columns:minmax(0,1fr);
+    /* 0.1.168: a tab is never narrower than its label (equal 1fr columns clipped "Leaderboard" at 390 px). */
+    grid-auto-columns:minmax(min-content,1fr);
     overflow:hidden;
     gap:4px;
     padding:8px 10px 10px

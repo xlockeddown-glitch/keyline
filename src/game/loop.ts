@@ -5,9 +5,8 @@
 import { crateLoot } from "./crate.ts";
 import type { CityId, Tier } from "./types.ts";
 
-/** Cutscene length (ms); reduced motion plays a short fade instead. */
+/** Cutscene length (ms). Reduced motion shows the still tunnel and waits for Where am I? or Skip. */
 export const LOOP_MS = 7000;
-export const LOOP_FADE_MS = 600;
 /** 0.1.168 Where am I?: the card's answer window (a spark's 20 s) and how long the answer stays up before landing. */
 export const WHERE_WINDOW_MS = 20000;
 export const WHERE_REVEAL_MS = 1800;
