@@ -13,7 +13,10 @@ theirs; the rules below name the file to open at each point it matters.
 Before any change to how Keyline looks — sprites, map pins, facades, UI chrome,
 motion, or generated art — read [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md)
 in full and follow it. That file is the art contract. [`docs/visual-direction.md`](docs/visual-direction.md)
-is the older hybrid note and does not override it. The four rules under
+is the older hybrid note and does not override it. The Gemini picture standard
+applies to new sprites and scenes; preserve that file's explicit existing-layer
+exceptions and newer painted-shop rules.
+The four rules under
 "How a slice is made" in that file are approved and binding: one mock Ryan
 approves before code, no CSS or SVG pieces laid over a painted sprite, inspect
 your own 4x close-ups, and one rework round at most. The palette and silhouette
