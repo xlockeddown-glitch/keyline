@@ -128,7 +128,7 @@ function MatchPopView({ pop }: { pop: import("@/game/store").MatchPop }) {
           ))}
         </span>
         {pop.cheer ? <Cheerer cheer={pop.cheer} /> : null}
-        <span className="mp-flame" aria-hidden><img src={`/sprites/match-pop/${emblem}.webp?v=${PUBLISH_STAMP}`} srcSet={`/sprites/match-pop/${emblem}.webp?v=${PUBLISH_STAMP} 1x, /sprites/match-pop/${emblem}@2x.webp?v=${PUBLISH_STAMP} 2x`} width={40} height={40} alt="" /></span>
+        <span className="mp-flame" aria-hidden><img src={`/sprites/match-pop/${emblem}@2x.webp?v=${PUBLISH_STAMP}`} width={40} height={40} alt="" /></span>
         <p className="mp-big font-display">{pop.big}</p>
         <span
           className="mp-emblems"

@@ -121,8 +121,7 @@ export function MysteryWheel() {
         <div className={`wheel-stage mt-4${spinning ? " is-spinning" : ""}${landed ? " is-landed" : ""}`}>
           <div ref={pointerRef} className="wheel-pointer" aria-hidden onAnimationEnd={(e) => e.currentTarget.classList.remove("is-tick")} />
           <img className="wheel-disc" data-testid="wheel-disc"
-            src={`/sprites/wheel/${wheel.tier}.webp?v=${PUBLISH_STAMP}`}
-            srcSet={`/sprites/wheel/${wheel.tier}.webp?v=${PUBLISH_STAMP} 1x, /sprites/wheel/${wheel.tier}@2x.webp?v=${PUBLISH_STAMP} 2x`}
+            src={`/sprites/wheel/${wheel.tier}@2x.webp?v=${PUBLISH_STAMP}`}
             width={216} height={216} alt="" style={{ transform: `rotate(${angle}deg)` }} />
         </div>
         <ul className="wheel-legend" aria-label="Wheel prizes" aria-live="polite">
