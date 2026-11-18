@@ -108,7 +108,8 @@ test("qa:sprites checks the v2 scouts: every frame, planted feet, the mask on th
       // Profiles: planted feet hold the floor. Toward/away from camera the stepping foot lands a little lower
       // (it comes toward the viewer) — but it must move at all, or the walk is marching in place again.
       if (row.row === 1 || row.row === 2) assert.ok(spread <= 3, `${t.scout} row ${row.row} feet ${row.feet}`);
-      else assert.ok(spread >= 2 && spread <= 4, `${t.scout} row ${row.row} feet ${row.feet}`);
+      // 0.1.170: 128 px cells shrink the designed front/back foot raise (~3 px at 192) to 1-2 px.
+      else assert.ok(spread >= 1 && spread <= 4, `${t.scout} row ${row.row} feet ${row.feet}`);
     }
     assert.deepEqual(t.idle.map((r) => r.face), ["down", "left", "right"]);
     assert.ok(t.maskHueGap <= 14, `mask hue gap ${t.maskHueGap}`);
@@ -134,7 +135,7 @@ test("qa:sprites fails a see-through hole in a v2 frame (the 0.0.89 Raccoon show
   const { status, verdict } = runWith(`raccoon-v2=${v2Fixture("punched-hole")}`);
   assert.equal(status, 1);
   assert.ok(
-    verdict.failures.some((f) => /^raccoon-v2: 1 see-through holes, 12px: walk left frame 3 12px/.test(f)),
+    verdict.failures.some((f) => /^raccoon-v2: 1 see-through holes, 4px: walk left frame 3 4px/.test(f)),
     verdict.failures.join("\n"),
   );
   const t = runWith(`turtle-v2=${v2Fixture("punched-hole-turtle")}`);

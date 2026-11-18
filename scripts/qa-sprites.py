@@ -568,7 +568,8 @@ MAX_V2_IDLE_HEAD = 3
 MIN_V2_COAT_SHARE = 0.12    # every frame shows the coat
 MAX_V2_COAT_WOBBLE = 0.25   # coat pixel count vs the row median (a frame that loses the coat layer)
 MAX_V2_MASK_HUE = 14.0      # median hue gap between masked base pixels and the default coat
-MIN_V2_MASK_FIT = 0.75      # share of masked pixels painted as the default coat (true mask ~0.87; mask over the whole body ~0.49)
+MIN_V2_MASK_FIT = 0.75      # share of masked pixels painted as the default coat (true mask ~0.82-0.99)
+MAX_V2_BODY_SHARE = 0.60    # 0.1.170: a mask over the whole body (~1.0) is not a coat; true coats cover ~0.33-0.44 of opaque px
 MAX_V2_TARGET_HUE = 20.0
 
 
@@ -717,8 +718,11 @@ def v2_check() -> tuple[list[dict], list[str]]:
         fit = float(((_gap(hue, default["h"]) <= 10) & (np.abs(chroma - model) <= 6)).mean()) if full.any() else 0.0
         rec["maskHueGap"] = round(mask_gap, 2)
         rec["maskFit"] = round(fit, 3)
-        if mask_gap > MAX_V2_MASK_HUE or fit < MIN_V2_MASK_FIT:
-            fails.append(f"{s}-v2-coat: masked pixels are not the base coat (hue gap {mask_gap:.1f}°, {fit:.0%} painted as the coat < {MIN_V2_MASK_FIT:.0%})")
+        body = int((alpha > 200).sum())
+        body_share = float(full.sum()) / max(1, body)
+        rec["maskBodyShare"] = round(body_share, 3)
+        if mask_gap > MAX_V2_MASK_HUE or fit < MIN_V2_MASK_FIT or body_share > MAX_V2_BODY_SHARE:
+            fails.append(f"{s}-v2-coat: masked pixels are not the base coat (hue gap {mask_gap:.1f}°, {fit:.0%} painted as the coat, covers {body_share:.0%} of the body)")
         # Every print-shop coat and dye: only masked pixels change, the coat lands on the target hue.
         variants = []
         for cid, tgt in COATS.items():

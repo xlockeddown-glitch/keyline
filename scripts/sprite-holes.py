@@ -34,10 +34,11 @@ from PIL import Image
 from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parent.parent
-CELL = 192
+# 0.1.170: v2 sheets are 8x6 of 128 px (was 192). Scale the stride exemption with the cell.
+CELL = 128
 SOLID_A, SEE_A, DEPTH, MIN_AREA = 128, 200, 2, 4
 HAND_IDS, LEG_ID, ART_GAP_ID = (5, 6), 4, 7
-STRIDE_RADIUS = 3.5
+STRIDE_RADIUS = 3.5 * 128 / 192
 VIEWS = {0: "walk down", 1: "walk left", 2: "walk right", 3: "walk up", 4: "idle 3/4"}
 
 
@@ -82,6 +83,9 @@ def cell_holes(cell: np.ndarray, lab: np.ndarray | None) -> list[dict]:
 def sheet_holes(sheet: Path, parts: Path | None) -> list[dict]:
     s = np.asarray(Image.open(sheet).convert("RGBA"))
     P = np.asarray(Image.open(parts)) if parts and parts.exists() else None
+    if P is not None and P.shape[:2] != s.shape[:2]:
+        # parts-v2 is still authored at 192 px cells; nearest-resize onto the shipping sheet.
+        P = np.asarray(Image.fromarray(P).resize((s.shape[1], s.shape[0]), Image.Resampling.NEAREST))
     rows, cols = s.shape[0] // CELL, s.shape[1] // CELL
     found = []
     for r in range(rows):
