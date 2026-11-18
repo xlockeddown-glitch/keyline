@@ -90,7 +90,8 @@ function v2Fixture(kind) {
     // 0.0.89: a see-through hole in the Raccoon's coat (left walk, frame 3): the map would show through the body.
     "punched-hole": `from PIL import Image\nim = Image.open("public/sprites/scouts/raccoon-v2.png").convert("RGBA")\nim.paste((0, 0, 0, 0), (3 * 128 + 59, 128 + 63, 3 * 128 + 61, 128 + 65))\nim.save("${out}")`,
     // The same kind of hole in the Turtle (left walk, frame 3, mid-body): every scout is held to zero.
-    "punched-hole-turtle": `from PIL import Image\nimport numpy as np\nim = Image.open("public/sprites/scouts/turtle-v2.png").convert("RGBA")\na = np.asarray(im)[128:256, 384:512, 3]\nys, xs = np.where(a == a.max())\ny, x = int(np.median(ys)), int(np.median(xs))\nim.paste((0, 0, 0, 0), (384 + x - 3, 128 + y - 3, 384 + x + 3, 128 + y + 3))\nim.save("${out}")`,
+    // Punch a core pixel of left-walk frame 3 (cell col 3, row 1), not the median of max-alpha edge pixels.
+    "punched-hole-turtle": `from PIL import Image\nim = Image.open("public/sprites/scouts/turtle-v2.png").convert("RGBA")\nim.paste((0, 0, 0, 0), (3 * 128 + 59, 128 + 51, 3 * 128 + 65, 128 + 57))\nim.save("${out}")`,
     "missing-frame": `from PIL import Image\nim = Image.open("public/sprites/scouts/turtle-v2.png").convert("RGBA")\nim.paste((0, 0, 0, 0), (3 * 128, 2 * 128, 4 * 128, 3 * 128))\nim.save("${out}")`,
   }[kind];
   const r = spawnSync("python3", ["-c", py], { cwd: root, encoding: "utf8" });
