@@ -10,7 +10,7 @@ const player = { lat: 42.3423, lng: -83.059 };
 const lamp = { lat: 42.3478, lng: -83.064 };
 
 function bakedDetroit() {
-  const read = (f: string) => JSON.parse(gunzipSync(fs.readFileSync(new URL(`../../public/streets/${f}.gz`, import.meta.url))).toString("utf8")) as { lines: number[][] };
+  const read = (f: string) => JSON.parse(gunzipSync(fs.readFileSync(new URL(`./fixtures/streets/${f}.gz`, import.meta.url))).toString("utf8")) as { lines: number[][] };
   const g = createGraph(player.lat, player.lng);
   for (const l of unpackFreeways(read("detroit-fw.json").lines)) ingestFreeway(g, l);
   ingestOsmWays(
