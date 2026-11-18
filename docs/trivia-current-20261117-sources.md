@@ -1,0 +1,76 @@
+# Trivia current-events sources — batch 20261117 (trial run 3)
+
+Bank: `src/game/banks/plus_20261117.ts`. Window: settled facts from 18 October 2026 through 17 November 2026, each prompt time-anchored. Wikipedia pages fetched 17 Nov 2026 (America/Chicago); in-window hooks were first located on the Wikipedia Current events portal pages for the same dates. Every card was source-checked against the page text (the free-model cross-check could not run).
+
+- [books] On what date did Archive of Our Own come back online after its 2026 security incident? — **15 November 2026** — https://en.wikipedia.org/wiki/Archive_of_Our_Own
+- [books] Which author won France's 2026 Prix Goncourt? — **Philippe Jaenada** — https://en.wikipedia.org/wiki/Prix_Goncourt
+- [books] In November 2026, which word did Collins English Dictionary name its word of the year? — **Mogging** — https://en.wikipedia.org/wiki/Word_of_the_year
+- [books] Which word did Dictionary.com name its Word of the Year for 2026? — **Maxxing** — https://en.wikipedia.org/wiki/Word_of_the_year
+- [celebrity] In November 2026, who became Nvidia's interim CEO after Jensen Huang resigned? — **Colette Kress** — https://en.wikipedia.org/wiki/Jensen_Huang
+- [celebrity] In November 2026, Jensen Huang resigned as president and CEO of which tech company? — **Nvidia** — https://en.wikipedia.org/wiki/Jensen_Huang
+- [celebrity] Who did People magazine name its Sexiest Man Alive for 2026? — **Noah Wyle** — https://en.wikipedia.org/wiki/People_(magazine)
+- [food] Which company announced plans in October 2026 to acquire Instacart? — **DoorDash** — https://en.wikipedia.org/wiki/Instacart
+- [food] In October 2026, roughly how much was DoorDash's announced deal to acquire Instacart worth? — **$17 billion** — https://en.wikipedia.org/wiki/Instacart
+- [games] Which team won the League of Legends World Championship final on 14 November 2026? — **Bilibili Gaming** — https://en.wikipedia.org/wiki/2026_League_of_Legends_World_Championship
+- [games] Which LCK team lost the 2026 League of Legends World Championship final in November 2026? — **Gen.G** — https://en.wikipedia.org/wiki/2026_League_of_Legends_World_Championship
+- [games] Which player was named MVP of the 2026 League of Legends World Championship final in November 2026? — **Zhuo "Knight" Ding** — https://en.wikipedia.org/wiki/2026_League_of_Legends_World_Championship
+- [games] Where was the League of Legends World Championship final played on 14 November 2026? — **New York City** — https://en.wikipedia.org/wiki/2026_League_of_Legends_World_Championship
+- [games] Which game was inducted into the National Toy Hall of Fame on November 5, 2026? — **Bingo** — https://en.wikipedia.org/wiki/National_Toy_Hall_of_Fame
+- [games] Which toy line was inducted into the National Toy Hall of Fame in November 2026? — **Care Bears** — https://en.wikipedia.org/wiki/National_Toy_Hall_of_Fame
+- [games] Which game received the most nominations when The Game Awards 2026 nominees were announced in November 2026? — **Grand Theft Auto VI** — https://en.wikipedia.org/wiki/The_Game_Awards_2026
+- [games] How many nominations did Grand Theft Auto VI get for The Game Awards 2026, announced in November 2026? — **8** — https://en.wikipedia.org/wiki/The_Game_Awards_2026
+- [music] Which Puerto Rican actress hosted the 27th Annual Latin Grammy Awards in November 2026? — **Roselyn Sánchez** — https://en.wikipedia.org/wiki/27th_Annual_Latin_Grammy_Awards
+- [music] Who was the Latin Recording Academy Person of the Year at the 2026 Latin Grammy Awards? — **Daddy Yankee** — https://en.wikipedia.org/wiki/27th_Annual_Latin_Grammy_Awards
+- [music] Which artist won the most awards at the 27th Annual Latin Grammy Awards in November 2026? — **Rosalía** — https://en.wikipedia.org/wiki/27th_Annual_Latin_Grammy_Awards
+- [music] Which artist led the 69th Annual Grammy Awards nominations announced in November 2026? — **Raye** — https://en.wikipedia.org/wiki/69th_Annual_Grammy_Awards
+- [music] How many nominations did Raye receive for the 69th Annual Grammy Awards in November 2026? — **11** — https://en.wikipedia.org/wiki/69th_Annual_Grammy_Awards
+- [music] Which country won the inaugural Eurovision Song Contest Asia on 14 November 2026? — **Philippines** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_Asia
+- [music] Which singer performed the winning entry at Eurovision Song Contest Asia in November 2026? — **Carmelle** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_Asia
+- [music] In which city was the inaugural Eurovision Song Contest Asia held on 14 November 2026? — **Bangkok** — https://en.wikipedia.org/wiki/Eurovision_Song_Contest_Asia
+- [nature] In which Turkish city did the COP31 climate conference open in November 2026? — **Antalya** — https://en.wikipedia.org/wiki/2026_United_Nations_Climate_Change_Conference
+- [nature] Which Turkish minister was COP President at COP31, held in Antalya in November 2026? — **Murat Kurum** — https://en.wikipedia.org/wiki/2026_United_Nations_Climate_Change_Conference
+- [nature] Which Indian city hosted the sixth Earthshot Prize awards ceremony on 17 November 2026? — **Mumbai** — https://en.wikipedia.org/wiki/Earthshot_Prize
+- [political] Which option won Alberta's independence referendum question on October 19, 2026? — **Remain in Canada** — https://en.wikipedia.org/wiki/2026_Alberta_independence_referendum
+- [political] What share of valid votes did 'Remain' win in Alberta's October 19, 2026 independence vote? — **74.95%** — https://en.wikipedia.org/wiki/2026_Alberta_independence_referendum
+- [political] Who won Cape Verde's presidential election held on 15 November 2026? — **José Maria Neves** — https://en.wikipedia.org/wiki/2026_Cape_Verdean_presidential_election
+- [political] About what share of the vote did José Maria Neves win in Cape Verde's 15 November 2026 election? — **About 64%** — https://en.wikipedia.org/wiki/2026_Cape_Verdean_presidential_election
+- [political] Which party won the most Knesset seats in Israel's 27 October 2026 election? — **Likud** — https://en.wikipedia.org/wiki/2026_Israeli_legislative_election
+- [political] Who led the new Yashar party in Israel's October 2026 legislative election? — **Gadi Eisenkot** — https://en.wikipedia.org/wiki/2026_Israeli_legislative_election
+- [political] What was the name of Naftali Bennett's new party in Israel's October 2026 election? — **Together** — https://en.wikipedia.org/wiki/2026_Israeli_legislative_election
+- [political] Which incumbent governor lost the November 2026 Texas gubernatorial election? — **Greg Abbott** — https://en.wikipedia.org/wiki/2026_Texas_gubernatorial_election
+- [political] About what share of the vote did Gina Hinojosa win in Texas's November 2026 governor's race? — **About 53%** — https://en.wikipedia.org/wiki/2026_Texas_gubernatorial_election
+- [political] Who won the U.S. Senate election in Kansas on November 3, 2026? — **Adam Hamilton** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Kansas
+- [political] Adam Hamilton's November 2026 win made him Kansas's first Democratic senator-elect since what year? — **1932** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Kansas
+- [political] What was Adam Hamilton's profession when he won Kansas's Senate race in November 2026? — **Pastor** — https://en.wikipedia.org/wiki/2026_United_States_Senate_election_in_Kansas
+- [political] In October 2026, Christine Lagarde confirmed she would leave which post eight months early? — **President of the European Central Bank** — https://en.wikipedia.org/wiki/Christine_Lagarde
+- [political] James Talarico's 2026 win made him Texas's first Democrat to win a U.S. Senate race since what year? — **1988** — https://en.wikipedia.org/wiki/James_Talarico
+- [political] Which independent Russian newspaper ceased publication on 9 November 2026? — **Novaya Gazeta** — https://en.wikipedia.org/wiki/Novaya_Gazeta
+- [political] When Novaya Gazeta closed in November 2026, what reason did it give? — **Repression by Russian authorities** — https://en.wikipedia.org/wiki/Novaya_Gazeta
+- [political] Who became President of Paraguay on 6 November 2026? — **Pedro Alliana** — https://en.wikipedia.org/wiki/Pedro_Alliana
+- [political] Which impeached Paraguayan president did Pedro Alliana replace in November 2026? — **Santiago Peña** — https://en.wikipedia.org/wiki/Pedro_Alliana
+- [political] Which bank's failure caused the crisis behind Pedro Alliana becoming Paraguay's president in November 2026? — **Ueno Bank** — https://en.wikipedia.org/wiki/Pedro_Alliana
+- [science] On November 14, 2026, which Starship upper stage did the launch tower catch on Flight 15? — **Ship 42** — https://en.wikipedia.org/wiki/Starship_flight_15
+- [science] What words were inscribed on the ship flown on Starship Flight 15 in November 2026? — **Don't Panic** — https://en.wikipedia.org/wiki/Starship_flight_15
+- [sports] Which team won the 113th Grey Cup on November 15, 2026? — **Edmonton Elks** — https://en.wikipedia.org/wiki/113th_Grey_Cup
+- [sports] Who was named Most Valuable Player of the 113th Grey Cup in November 2026? — **Cody Fajardo** — https://en.wikipedia.org/wiki/113th_Grey_Cup
+- [sports] Who sang the national anthem at the 113th Grey Cup in November 2026? — **Sarah McLachlan** — https://en.wikipedia.org/wiki/113th_Grey_Cup
+- [sports] Which club won the 2026 Canadian Championship final on October 21, 2026? — **Forge FC** — https://en.wikipedia.org/wiki/2026_Canadian_Championship_final
+- [sports] Which stadium hosted the 2026 Canadian Championship final on October 21, 2026? — **Saputo Stadium** — https://en.wikipedia.org/wiki/2026_Canadian_Championship_final
+- [sports] How many people got red cards in the Uberlândia v Mamoré under-20 match on 1 November 2026? — **53** — https://en.wikipedia.org/wiki/2026_Mamor%C3%A9-Uberl%C3%A2ndia_football_match_incident
+- [sports] In Week 8 of the 2026 NFL season, which team won a game without completing a single pass? — **Tampa Bay Buccaneers** — https://en.wikipedia.org/wiki/2026_NFL_season
+- [sports] Who won the singles title at the 2026 Rolex Paris Masters in November 2026? — **Carlos Alcaraz** — https://en.wikipedia.org/wiki/2026_Rolex_Paris_Masters
+- [sports] Who lost the singles final of the 2026 Rolex Paris Masters in November 2026? — **Ben Shelton** — https://en.wikipedia.org/wiki/2026_Rolex_Paris_Masters
+- [sports] Which club won the 2026 U.S. Open Cup final on penalties on October 21, 2026? — **St. Louis City SC** — https://en.wikipedia.org/wiki/2026_U.S._Open_Cup_final
+- [sports] Who lost the singles final of the 2026 WTA Finals in November 2026? — **Elina Svitolina** — https://en.wikipedia.org/wiki/2026_WTA_Finals
+- [sports] In which city were the 2026 WTA Finals played in November 2026? — **Indian Wells** — https://en.wikipedia.org/wiki/2026_WTA_Finals
+- [sports] Which pair won the doubles title at the 2026 WTA Finals in November 2026? — **Kateřina Siniaková / Taylor Townsend** — https://en.wikipedia.org/wiki/2026_WTA_Finals
+- [sports] Who beat Elina Svitolina in the final to take the 2026 WTA Finals crown in November 2026? — **Mirra Andreeva** — https://en.wikipedia.org/wiki/2026_WTA_Finals
+- [sports] Which nation won the 2026 Women's Rugby League World Cup, claiming its 4th title? — **Australia** — https://en.wikipedia.org/wiki/2026_Women%27s_Rugby_League_World_Cup
+- [sports] Who was the top try scorer at the 2026 Women's Rugby League World Cup, with 13 tries? — **Jaime Chapman** — https://en.wikipedia.org/wiki/2026_Women%27s_Rugby_League_World_Cup
+- [sports] Which Hendrick Motorsports driver won at Talladega Superspeedway on October 25, 2026? — **Kyle Larson** — https://en.wikipedia.org/wiki/2026_YellaWood_500
+- [sports] As of 16 November 2026, who was the top scorer in the 2026–27 UEFA Nations League A, with 8 goals? — **Harry Kane** — https://en.wikipedia.org/wiki/2026%E2%80%9327_UEFA_Nations_League_A
+- [sports] Which team topped Group 1 of the 2026–27 UEFA Nations League A league phase with 13 points? — **France** — https://en.wikipedia.org/wiki/2026%E2%80%9327_UEFA_Nations_League_A
+- [sports] After the October 2026 relocation, in which European country was the 2027 Dakar Rally set to start? — **Portugal** — https://en.wikipedia.org/wiki/2027_Dakar_Rally
+- [sports] The 2027 Dakar Rally, relocated in October 2026, was set to return to Africa for the first time since which year? — **2007** — https://en.wikipedia.org/wiki/2027_Dakar_Rally
+- [sports] With their 2026 Grey Cup win, how many Grey Cup titles have the Edmonton Elks won in total? — **15** — https://en.wikipedia.org/wiki/Edmonton_Elks
+- [sports] What was Mirra Andreeva's WTA singles ranking on 16 November 2026? — **No. 2** — https://en.wikipedia.org/wiki/Mirra_Andreeva
