@@ -81,7 +81,7 @@ function gridGraph(spawn: Pt) {
 
 function bakedGraph(id: string, spawn: Pt) {
   const g = createGraph(spawn.lat, spawn.lng);
-  const f = `public/streets/${id}.json.gz`;
+  const f = `src/game/fixtures/streets/${id}.json.gz`;
   if (!existsSync(f)) return null;
   const packed = JSON.parse(gunzipSync(readFileSync(f)).toString("utf8")) as { lines: number[][] };
   ingestOsmWays(g, packed.lines.map((line) => ({ geometry: Array.from({ length: line.length / 2 }, (_, i) => ({ lat: line[2 * i]!, lon: line[2 * i + 1]! })) })));

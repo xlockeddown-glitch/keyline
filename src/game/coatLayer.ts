@@ -1,7 +1,7 @@
 /**
  * 0.0.83 redrawn ("v2") sprite sheets: one sheet per scout with every walk and idle frame, plus a coat mask.
  *
- * Layout (scripts/sprite-rig.py writes it): 8 x 6 cells of 192 px.
+ * Layout (scripts/sprite-rig.py writes it): 8 x 6 cells of 128 px.
  *   rows 0-3  walk, 8 frames per stride: down, left, right, up
  *   row 4     idle down: the 3/4 standing idle, 8 frames
  *   row 5     idle left (cols 0-3), idle right (cols 4-7); stopping after walking up shows the down idle
@@ -28,7 +28,7 @@ export const V2_IDLE_FRAMES = 8;
 export const V2_SIDE_IDLE_FRAMES = 4;
 
 /** Cache stamp for the v2 sheets (styles.css uses the same one). */
-export const V2_STAMP = "k96a";
+export const V2_STAMP = "k1170a";
 
 /** Coat each v2 base sheet is painted in (scripts/sprite-redraw/<scout>/rig.json `default_coat`). */
 export const V2_DEFAULT_COAT: Record<string, DyeTarget> = {
@@ -69,8 +69,8 @@ export function v2MaskUrl(scout: string): string {
  * eases off in the shadows. Unmasked pixels are returned untouched. Twin of apply_coat in scripts/sprite-rig.py.
  */
 /** Cell size of a v2 sheet, and how many pixels one full prism rainbow spans along the cell diagonal. */
-export const V2_CELL = 192;
-export const PRISM_BAND = 72;
+export const V2_CELL = 128;
+export const PRISM_BAND = 48;
 
 /** Prism hue (degrees) at a sheet pixel: a full rainbow every PRISM_BAND pixels of x + y inside its cell. */
 export function prismHue(x: number, y: number): number {

@@ -14,7 +14,7 @@ Since 0.0.81 every coat variant also keeps its colour off the fur (coat_leak). S
     off the character's own coat (ΔE) and onto the catalogue hue (scripts/coat-variants.json);
   * one coat per outfit: walk facings and side idles match the idle coat (ΔH), like the base sheets.
 Since 0.0.83 scouts on the redrawn v2 sheets (src/game/coatLayer.ts V2_SCOUTS) get v2_check instead: one 8x6 sheet
-of 192 px cells (8-frame walks, an 8-frame 3/4 front idle, 4-frame side idles) plus a coat mask — cell hygiene and registration, the mask sits on
+of 128 px cells (8-frame walks, an 8-frame 3/4 front idle, 4-frame side idles) plus a coat mask — cell hygiene and registration, the mask sits on
 the base coat, and every coat and dye changes only masked pixels and lands on the catalogue hue. Since 0.0.89 v2_check
 also fails interior alpha holes (scripts/sprite-holes.py: the map showing through gaps between rig parts or keyed-out
 paint, in any frame of any view); every v2 scout must have none.
@@ -73,7 +73,7 @@ SHEETS = {
 SCOUT_IDS = ["raccoon", "cat", "corgi", "fox", "lynx", "owl", "sloth", "turtle", "giraffe", "panda"]  # 0.0.51: + the Giraffe
 ICONS = {s: SCOUTS / f"{s}.webp" for s in SCOUT_IDS}
 
-# 0.0.83: scouts redrawn on the v2 sheets (src/game/coatLayer.ts V2_SCOUTS) — one 8x6 sheet of 192 px cells plus a
+# 0.0.83: scouts redrawn on the v2 sheets (src/game/coatLayer.ts V2_SCOUTS) — one 8x6 sheet of 128 px cells plus a
 # coat mask, checked by v2_check(). Every other check here covers the legacy 4x4 / 2x2 sheets only.
 _v2_src = (ROOT / "src" / "game" / "coatLayer.ts").read_text()
 V2_IDS = re.findall(r'"([a-z]+)"', re.search(r"V2_SCOUTS[^=]*=\s*new Set\(\[([^\]]*)\]", _v2_src).group(1))
@@ -555,12 +555,12 @@ def inspect(name: str, path: Path, size: tuple[int, int]) -> dict:
 
 
 # ── 0.0.83 v2 sheets ─────────────────────────────────────────────────────
-V2_CELL, V2_COLS, V2_ROWS = 192, 8, 6
+V2_CELL, V2_COLS, V2_ROWS = 128, 8, 6
 V2_WALK_FRAMES = 8
 # idle facing -> (row, first col, frames): the 3/4 front idle is 8 frames; side idles 4. No up idle (stopping
 # after walking up shows the front idle).
 V2_IDLE_CELLS = {"down": (4, 0, 8), "left": (5, 0, 4), "right": (5, 4, 4)}
-MAX_V2_FOOT_SPREAD = 3      # floor line wobble inside one walk row (192 px cells)
+MAX_V2_FOOT_SPREAD = 3      # floor line wobble inside one walk row (128 px cells)
 MAX_V2_FOOT_SPREAD_FB = 4   # front/back rows: the foot stepping toward the viewer lands ~3 px lower, by design
 MAX_V2_CROSS_FOOT = 4       # floor difference between facings, and idle vs walk
 MAX_V2_HEAD_DRIFT = 6       # head x range inside one walk row (front sway is ~1 px; the rest is the lean)

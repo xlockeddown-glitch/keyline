@@ -5,7 +5,7 @@
  *
  * Rendering: the scout's coat mask (coatLayer.ts) is filled with a repeating pixel tile. Each tile pixel is
  * a Lab target; the base coat's light/shade offset is kept (softened) so folds and seams still read.
- * Coordinates are taken inside each 192 px sprite cell, so the print sits still on the body while walking.
+ * Coordinates are taken inside each 128 px sprite cell, so the print sits still on the body while walking.
  */
 import type { DyeTarget } from "./dyeRecolor.ts";
 import { fromLab, pyRound, toLab } from "./dyeRecolor.ts";
@@ -27,7 +27,7 @@ export type CityPrint = {
   /** Rows of equal length; each char keys `palette`. */
   tile: readonly string[];
   palette: Readonly<Record<string, DyeTarget>>;
-  /** Source px per tile px (sprite cells are 192 px, drawn ~48-56 px on the map). */
+  /** Source px per tile px (sprite cells are 128 px, drawn ~48-56 px on the map). */
   scale: number;
   /** Swatch for chips. */
   swatch: string;
@@ -46,7 +46,7 @@ const AUSTIN_BLUEBONNET: CityPrint = {
   name: "Bluebonnet Field",
   blurb: "Hill Country in April: bluebonnet spikes with white tips on a cream field.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#3d5fb8",
   palette: {
     ".": { L: 86, C: 12, h: 90 }, // cream field
@@ -81,7 +81,7 @@ const CHICAGO_L: CityPrint = {
   name: "'L' Trestle",
   blurb: "Riveted Loop girders over a steel-gray coat, a red line running through.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#4a4f57",
   palette: {
     ".": { L: 34, C: 5, h: 250 }, // steel grey
@@ -117,7 +117,7 @@ const DETROIT_ASSEMBLY: CityPrint = {
   name: "Assembly Line",
   blurb: "Motor City: red coupes rolling down a chrome-studded line on a navy shop floor.",
   goal: PRINT_GOAL_FIRST,
-  scale: 2,
+  scale: 1,
   swatch: "#b8323a",
   palette: {
     ".": { L: 22, C: 22, h: 268 }, // navy shop floor
@@ -154,7 +154,7 @@ const TEMPLE_WARBONNET: CityPrint = {
   name: "Santa Fe Warbonnet",
   blurb: "A Santa Fe rail town since 1881: warbonnet red and yellow sweeping over stainless silver, ties below.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#c23b2c",
   palette: {
     ".": { L: 74, C: 3, h: 250 }, // stainless silver
@@ -191,7 +191,7 @@ const NYC_CHECKER: CityPrint = {
   name: "Checker Cab",
   blurb: "Taxi yellow from fender to fender, with the black-and-white checker band down the side.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#f2c230",
   palette: {
     ".": { L: 80, C: 70, h: 88 }, // taxi yellow
@@ -226,7 +226,7 @@ const SF_GOLDEN_GATE: CityPrint = {
   name: "Golden Gate",
   blurb: "International Orange towers and swooping cables over a fog-gray bay.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#c0362c",
   palette: {
     ".": { L: 70, C: 5, h: 240 }, // fog
@@ -261,7 +261,7 @@ const LONDON_ROUNDEL: CityPrint = {
   name: "Underground Roundel",
   blurb: "The Tube's red ring and blue bar, repeated down a cream station wall.",
   goal: PRINT_GOAL_FIRST,
-  scale: 2,
+  scale: 1,
   swatch: "#d2232a",
   palette: {
     ".": { L: 90, C: 10, h: 88 }, // cream tile
@@ -296,7 +296,7 @@ const TUCSON_SAGUARO: CityPrint = {
   name: "Saguaro Stand",
   blurb: "Sonoran Desert: ribbed saguaros raising their arms over warm desert sand.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#3f7a4a",
   palette: {
     ".": { L: 78, C: 22, h: 70 }, // desert sand
@@ -331,7 +331,7 @@ const TORONTO_CN_TOWER: CityPrint = {
   name: "CN Tower",
   blurb: "The needle over the lake: concrete shaft, ringed pod and antenna against a Lake Ontario blue.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#2f5f8f",
   palette: {
     ".": { L: 40, C: 30, h: 250 }, // lake-sky blue
@@ -367,7 +367,7 @@ const LA_PALMS: CityPrint = {
   name: "Sunset Palms",
   blurb: "Tall fan palms silhouetted on an orange-to-pink Los Angeles sunset.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#e0784a",
   palette: {
     ".": { L: 70, C: 50, h: 55 }, // sunset orange
@@ -402,7 +402,7 @@ const BOSTON_FREEDOM_TRAIL: CityPrint = {
   name: "Freedom Trail",
   blurb: "The red-brick line through the old city, set into gray cobbles with a bronze marker.",
   goal: PRINT_GOAL_FIRST,
-  scale: 2,
+  scale: 1,
   swatch: "#9e3b2c",
   palette: {
     ".": { L: 52, C: 4, h: 250 }, // cobble
@@ -438,7 +438,7 @@ const DENVER_ASPEN: CityPrint = {
   name: "Aspen Gold",
   blurb: "Snowcapped Rocky Mountain peaks over a stand of gold fall aspens with white bark.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#d9a521",
   palette: {
     ".": { L: 62, C: 26, h: 245 }, // mountain sky
@@ -477,7 +477,7 @@ const NASHVILLE_GUITAR: CityPrint = {
   name: "Honky-Tonk Neon",
   blurb: "Music City at night: honey-wood guitars under neon pink stars and cyan music notes.",
   goal: PRINT_GOAL_FIRST,
-  scale: 2,
+  scale: 1,
   swatch: "#d14a8b",
   palette: {
     ".": { L: 16, C: 24, h: 290 }, // night
@@ -515,7 +515,7 @@ const NOLA_IRON_LACE: CityPrint = {
   name: "Iron Lace Balcony",
   blurb: "A French Quarter iron rail and fleur-de-lis scroll on peach stucco, with a swag of purple, green and gold Mardi Gras beads.",
   goal: PRINT_GOAL_FIRST,
-  scale: 2,
+  scale: 1,
   swatch: "#6b3fa0",
   palette: {
     ".": { L: 72, C: 24, h: 55 }, // peach stucco
@@ -551,7 +551,7 @@ const SEATTLE_NEEDLE: CityPrint = {
   name: "Needle in the Rain",
   blurb: "The Space Needle in a steady drizzle, a ridge of evergreens below the gray sky.",
   goal: PRINT_GOAL_FIRST,
-  scale: 3,
+  scale: 2,
   swatch: "#2f6b4f",
   palette: {
     ".": { L: 50, C: 10, h: 235 }, // rain sky
@@ -587,7 +587,7 @@ const PHILLY_BELL: CityPrint = {
   name: "Liberty Bell",
   blurb: "The cracked State House bell under its oak yoke: flared lip, rounded shoulder, the crack climbing from the lip.",
   goal: PRINT_GOAL_FIRST,
-  scale: 2,
+  scale: 1,
   swatch: "#c48a3a",
   palette: {
     ".": { L: 78, C: 8, h: 70 }, // plain cream field (like other city prints' open ground)
@@ -660,7 +660,7 @@ export function printProgress(p: CityPrint, got: PrintProgress) {
   return { correct: c, meters: m, done: c >= 1 && m >= 1 };
 }
 
-const CELL = 192;
+const CELL = 128;
 
 /**
  * Fill the coat mask of a v2 sheet with a print. `def` is the scout's default coat target (its light/shade

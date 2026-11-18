@@ -39,25 +39,25 @@ print(base64.b64encode(out.tobytes()).decode())
 test("v2 coat recolour matches the sprite rig, and never touches a pixel outside the coat mask", () => {
   // Walk right frames 0-2 and the first standing frame, for every v2 scout.
   for (const [scout, coat, box] of [
-    ["turtle", "plum", [0, 384, 576, 576]],
-    ["turtle", "dye-red", [0, 768, 384, 960]],
-    ["turtle", "oilskin", [768, 0, 1152, 192]],
-    ["cat", "bottle", [0, 384, 576, 576]],
-    ["cat", "dye-white", [0, 768, 384, 960]],
-    ["fox", "oxblood", [0, 384, 576, 576]],
-    ["fox", "dye-amber", [0, 768, 384, 960]],
-    ["corgi", "plum", [0, 384, 576, 576]],
-    ["corgi", "dye-blue", [0, 768, 384, 960]],
-    ["sloth", "oilskin", [0, 384, 576, 576]],
-    ["sloth", "dye-violet", [0, 768, 384, 960]],
-    ["raccoon", "bottle", [0, 384, 576, 576]],
-    ["raccoon", "dye-red", [0, 768, 384, 960]],
-    ["owl", "oxblood", [0, 384, 576, 576]],
-    ["owl", "dye-white", [0, 768, 384, 960]],
-    ["lynx", "plum", [0, 384, 576, 576]],
-    ["lynx", "dye-violet", [0, 768, 384, 960]],
-    ["giraffe", "oilskin", [0, 384, 576, 576]],
-    ["giraffe", "dye-green", [0, 768, 384, 960]],
+    ["turtle", "plum", [0, 256, 384, 384]],
+    ["turtle", "dye-red", [0, 512, 256, 640]],
+    ["turtle", "oilskin", [512, 0, 768, 128]],
+    ["cat", "bottle", [0, 256, 384, 384]],
+    ["cat", "dye-white", [0, 512, 256, 640]],
+    ["fox", "oxblood", [0, 256, 384, 384]],
+    ["fox", "dye-amber", [0, 512, 256, 640]],
+    ["corgi", "plum", [0, 256, 384, 384]],
+    ["corgi", "dye-blue", [0, 512, 256, 640]],
+    ["sloth", "oilskin", [0, 256, 384, 384]],
+    ["sloth", "dye-violet", [0, 512, 256, 640]],
+    ["raccoon", "bottle", [0, 256, 384, 384]],
+    ["raccoon", "dye-red", [0, 512, 256, 640]],
+    ["owl", "oxblood", [0, 256, 384, 384]],
+    ["owl", "dye-white", [0, 512, 256, 640]],
+    ["lynx", "plum", [0, 256, 384, 384]],
+    ["lynx", "dye-violet", [0, 512, 256, 640]],
+    ["giraffe", "oilskin", [0, 256, 384, 384]],
+    ["giraffe", "dye-green", [0, 512, 256, 640]],
   ] as const) {
     const { w, h, base, mask, out } = pythonCoat(scout, coat, [...box]);
     const mine = applyCoatLayer(new Uint8ClampedArray(base), new Uint8ClampedArray(mask), V2_PALETTE[coat]!, V2_DEFAULT_COAT[scout]!);
@@ -71,7 +71,7 @@ test("v2 coat recolour matches the sprite rig, and never touches a pixel outside
     for (let i = 0; i < mask.length; i += 4) if (mask[i]! > 0 && base[i + 3]! > 0) coatPx++;
     assert.ok(worst <= 1, `${scout} ${coat}: worst byte gap ${worst} (${w}x${h})`);
     assert.equal(off, 0, `${scout} ${coat}: ${off} bytes changed outside the coat mask`);
-    assert.ok(coatPx > 1000, `${scout} ${coat}: strip has a coat to recolour`);
+    assert.ok(coatPx > 450, `${scout} ${coat}: strip has a coat to recolour`);
   }
 });
 
@@ -107,12 +107,12 @@ test("v2 cells: 8 walk frames per stride on rows 0-3, 4-frame idles, standing af
 });
 
 test("prism paints the coat in rainbow bands, not one teal", () => {
-  const w = 192;
+  const w = 128;
   const base = new Uint8ClampedArray(w * w * 4).fill(120);
   const mask = new Uint8ClampedArray(w * w * 4).fill(255);
   const out = applyCoatLayer(base, mask, V2_PALETTE["dye-prism"]!, V2_DEFAULT_COAT.fox!, w);
   const hues = new Set<number>();
-  for (let x = 0; x < 72; x += 6) {
+  for (let x = 0; x < 48; x += 4) {
     const i = x * 4;
     const [, a, b] = toLab(out[i]!, out[i + 1]!, out[i + 2]!);
     hues.add(Math.round(((Math.atan2(b, a) * 180) / Math.PI + 360) % 360 / 60));

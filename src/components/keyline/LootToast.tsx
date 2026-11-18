@@ -1,3 +1,4 @@
+import { PUBLISH_STAMP } from "@/version";
 import { lockClock } from "@/game/lockout";
 import { visibleCoat } from "@/game/paint";
 import { PERFECT_REFUND_LINE } from "@/game/perfectRefund";
@@ -110,6 +111,7 @@ function MatchPopView({ pop }: { pop: import("@/game/store").MatchPop }) {
     };
   }, [pop.id]);
   const tone = pop.tiers[0] ?? "amber";
+  const emblem = pop.kind === "level" ? "star" : pop.kind === "print" ? "thread" : pop.kind === "streak" ? "match" : pop.kind === "perfect" ? "heart" : "confetti";
   return (
     <div className="pointer-events-none absolute inset-0 z-[860] flex items-center justify-center px-4 pb-32">
       <button
@@ -126,7 +128,7 @@ function MatchPopView({ pop }: { pop: import("@/game/store").MatchPop }) {
           ))}
         </span>
         {pop.cheer ? <Cheerer cheer={pop.cheer} /> : null}
-        <span className="mp-flame" aria-hidden>{pop.kind === "level" ? "⭐" : pop.kind === "print" ? "🧵" : pop.kind === "streak" ? "🔥" : pop.kind === "perfect" ? "💜" : "🎉"}</span>
+        <span className="mp-flame" aria-hidden><img src={`/sprites/match-pop/${emblem}.webp?v=${PUBLISH_STAMP}`} srcSet={`/sprites/match-pop/${emblem}.webp?v=${PUBLISH_STAMP} 1x, /sprites/match-pop/${emblem}@2x.webp?v=${PUBLISH_STAMP} 2x`} width={40} height={40} alt="" /></span>
         <p className="mp-big font-display">{pop.big}</p>
         <span
           className="mp-emblems"

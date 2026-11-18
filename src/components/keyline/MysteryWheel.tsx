@@ -2,76 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { TIER_LABEL } from "@/game/data";
 import { useGame } from "@/game/store";
 import { sfx } from "@/game/audio";
-import { wheelAngle, wheelSliceTone, type WheelPrize } from "@/game/wheel";
+import { wheelAngle, wheelSliceTone } from "@/game/wheel";
+import { PUBLISH_STAMP } from "@/version";
 
 const TURNS = 6;
 const SPIN_MS = 4600;
-const R = 100;
-const RIM_LIGHTS = 18;
-
-const FILL: Record<string, [string, string]> = {
-  white: ["#f4f0e6", "#2a241c"],
-  blue: ["#5f9ad0", "#0f1c2a"],
-  green: ["#5fb36a", "#0f2412"],
-  amber: ["#f0b445", "#2a1c06"],
-  red: ["#e2604c", "#2a0c08"],
-  violet: ["#9c84d8", "#160f2a"],
-  brass: ["#7a5a2c", "#fbe7bf"],
-  ink: ["#2f3a4a", "#e6eef8"],
-  jackpot: ["url(#wheel-gold)", "#3a2304"],
-  blank: ["#8b8f96", "#2b2e33"],
-};
-
-function point(deg: number, r: number) {
-  const a = ((deg - 90) * Math.PI) / 180;
-  return [R + r * Math.cos(a), R + r * Math.sin(a)] as const;
-}
-
-function slicePath(from: number, to: number) {
-  const [x1, y1] = point(from, R - 6);
-  const [x2, y2] = point(to, R - 6);
-  return `M${R},${R} L${x1.toFixed(2)},${y1.toFixed(2)} A${R - 6},${R - 6} 0 0 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z`;
-}
-
-function Icon({ prize, color }: { prize: WheelPrize; color: string }) {
-  if (prize.kind === "key") {
-    // A match: stick and flame.
-    return (
-      <g>
-        <rect x={-1.6} y={-2} width={3.2} height={13} rx={1.2} fill={color} />
-        <path d="M0,-11 C4,-7 3.5,-3 0,-2 C-3.5,-3 -4,-7 0,-11 Z" fill="#ffb347" stroke={color} strokeWidth={0.8} />
-      </g>
-    );
-  }
-  if (prize.kind === "all") {
-    // Take all: a star.
-    return <path d="M0,-9 L2.6,-2.8 L9,-2.8 L3.8,1.2 L5.8,7.6 L0,3.8 L-5.8,7.6 L-3.8,1.2 L-9,-2.8 L-2.6,-2.8 Z" fill="#fff4c2" stroke={color} strokeWidth={1.1} />;
-  }
-  if (prize.kind === "nothing") {
-    return (
-      <g>
-        <circle r={7} fill="none" stroke={color} strokeWidth={1.6} />
-        <line x1={-4.5} y1={4.5} x2={4.5} y2={-4.5} stroke={color} strokeWidth={1.6} />
-      </g>
-    );
-  }
-  if (prize.kind === "coins") {
-    return (
-      <g>
-        <circle r={7.5} fill="#f2c45a" stroke={color} strokeWidth={1.2} />
-        <circle r={4.5} fill="none" stroke="#9a6f1f" strokeWidth={1} />
-      </g>
-    );
-  }
-  // An ingredient: a little jar.
-  return (
-    <g>
-      <rect x={-5} y={-4} width={10} height={11} rx={2.5} fill="#cfe3d2" stroke={color} strokeWidth={1.1} />
-      <rect x={-6} y={-7} width={12} height={3.5} rx={1} fill={color} />
-    </g>
-  );
-}
-
 export function MysteryWheel() {
   const wheel = useGame((s) => s.wheel);
   const loot = useGame((s) => s.loot);
@@ -185,55 +120,19 @@ export function MysteryWheel() {
         <p className="mt-1 text-sm text-fg-muted">The wheel doesn't say what it will pay.</p>
         <div className={`wheel-stage mt-4${spinning ? " is-spinning" : ""}${landed ? " is-landed" : ""}`}>
           <div ref={pointerRef} className="wheel-pointer" aria-hidden onAnimationEnd={(e) => e.currentTarget.classList.remove("is-tick")} />
-          <div className="wheel-rim" aria-hidden>
-            {Array.from({ length: RIM_LIGHTS }, (_, i) => (
-              <span key={i} className={`wheel-bulb${i % 2 ? " is-odd" : ""}`} style={{ transform: `rotate(${(i * 360) / RIM_LIGHTS}deg) translateY(-112px)` }} />
-            ))}
-          </div>
-          <svg className="wheel-disc" data-testid="wheel-disc" viewBox={`0 0 ${2 * R} ${2 * R}`} style={{ transform: `rotate(${angle}deg)` }} aria-hidden>
-            <defs>
-              <linearGradient id="wheel-gold" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#fff1a8" />
-                <stop offset="0.5" stopColor="#f2b51e" />
-                <stop offset="1" stopColor="#b8780a" />
-              </linearGradient>
-            </defs>
-            <circle cx={R} cy={R} r={R - 1} fill="#1a140e" />
-            {slices.map((s, i) => {
-              const tone = wheelSliceTone(s);
-              const [fill, ink] = FILL[tone]!;
-              const mid = midOf(i);
-              const narrow = units[i]! < 1;
-              const [ix, iy] = point(mid, R * 0.8);
-              const [tx, ty] = point(mid, R * 0.56);
-              const won = landed && i === win;
-              return (
-                <g key={i} data-testid={`wheel-slice-${i}`} data-tone={tone} className={won ? "wheel-won" : undefined}>
-                  <path d={slicePath(starts[i]!, starts[i]! + widthOf(i))} fill={fill} stroke="#fff8e8" strokeWidth={1.6} />
-                  <g transform={`translate(${ix.toFixed(2)},${iy.toFixed(2)}) rotate(${mid})`}>
-                    <Icon prize={s} color={ink} />
-                  </g>
-                  <text
-                    x={tx}
-                    y={ty}
-                    fill={ink}
-                    fontSize={7}
-                    fontWeight={700}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    letterSpacing="0.06em"
-                    transform={`rotate(${narrow ? mid - 90 : mid} ${tx.toFixed(2)} ${ty.toFixed(2)})`}
-                  >
-                    {s.face.toUpperCase()}
-                  </text>
-                </g>
-              );
-            })}
-            <circle cx={R} cy={R} r={13} fill="#2a1f14" stroke="#e9c27a" strokeWidth={2.5} />
-            <circle cx={R} cy={R} r={4} fill="#e9c27a" />
-          </svg>
-          {landed && !reduce ? <div className="wheel-burst" data-testid="wheel-burst" aria-hidden /> : null}
+          <img className="wheel-disc" data-testid="wheel-disc"
+            src={`/sprites/wheel/${wheel.tier}.webp?v=${PUBLISH_STAMP}`}
+            srcSet={`/sprites/wheel/${wheel.tier}.webp?v=${PUBLISH_STAMP} 1x, /sprites/wheel/${wheel.tier}@2x.webp?v=${PUBLISH_STAMP} 2x`}
+            width={216} height={216} alt="" style={{ transform: `rotate(${angle}deg)` }} />
         </div>
+        <ul className="wheel-legend" aria-label="Wheel prizes" aria-live="polite">
+          {slices.map((prize, i) => (
+            <li key={i} data-testid={`wheel-slice-${i}`} data-tone={wheelSliceTone(prize)}
+              className={landed && i === win ? "wheel-won" : undefined}>
+              <span>{prize.face}</span><b>{prize.label}</b>
+            </li>
+          ))}
+        </ul>
         {landed ? (
           <div className="mt-4 text-center">
             <p className="kicker">It landed</p>

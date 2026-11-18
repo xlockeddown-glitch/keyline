@@ -1609,22 +1609,13 @@ export async function bootstrapDrive(lat: number, lng: number, hubs: Pt[], signa
     ingestBaked(g, baked, true);
     if (g.segs.length >= 8) return g;
   }
-  // 0.1.32: the drive graph had no baked fallback, only live Overpass (then a few OSRM spines ~45 s later). When
-  // the fetch is slow or failing (Temple, Oct 22) the car and the cab both said "No road that way." Give the
-  // live fetch a few seconds; if it isn't in, drive the city's baked streets now and let the live roads join the
-  // same graph when (if) they land.
+  // 0.1.170: missing or small v2 maps fall through to live Overpass, then OSRM.
   const live = expandGraph(g, lat, lng, 2000, signal, true).then(
     () => true,
     () => false,
   );
   const inTime = await Promise.race([live, new Promise<null>((r) => setTimeout(() => r(null), DRIVE_LIVE_WAIT_MS))]);
   if (inTime !== true || g.segs.length < 8) {
-    if (cityId) {
-      const baked = await fetch(`/streets/${cityId}.json.gz`)
-        .then(async (res) => (res.ok ? (await readGzJson<{ lines?: number[][] }>(res)).lines ?? [] : []))
-        .catch(() => [] as number[][]);
-      if (baked.length) ingestOsmWays(g, unpackLines(baked), true);
-    }
     if (g.segs.length >= 8) return g;
     if (inTime === null) await live;
   }
@@ -1847,26 +1838,7 @@ export async function bootstrapStreets(cityId: string, lat: number, lng: number,
     ingestBaked(g, baked);
     if (g.segs.length >= 8) return g;
   }
-  // 0.0.52b: the city's freeway layer ships with the build, so walks are held off ramps and feeders even when
-  // the live street fetch fails and the graph is only the baked foot routes. Load it before the foot graph so
-  // corner bridges can see the centerlines.
-  const fwP = fetch(`/streets/${cityId}-fw.json.gz`)
-    .then(async (res) => {
-      if (!res.ok) return [] as Pt[][];
-      const packed = await readGzJson<{ lines?: number[][] }>(res);
-      return unpackFreeways(packed.lines ?? []);
-    })
-    .catch(() => [] as Pt[][]);
-  const streetsP = fetch(`/streets/${cityId}.json.gz`)
-    .then(async (res) => {
-      if (!res.ok) return [] as OsmWay[];
-      const packed = await readGzJson<{ lines?: number[][] }>(res);
-      return packed.lines?.length ? unpackLines(packed.lines) : [];
-    })
-    .catch(() => [] as OsmWay[]);
-  const [fwLines, streetWays] = await Promise.all([fwP, streetsP]);
-  for (const line of fwLines) ingestFreeway(g, line);
-  if (streetWays.length) ingestOsmWays(g, streetWays);
+  // 0.1.170: v2 contains the baked road layers; no legacy v1 fetches.
   if (g.segs.length < 8) {
     try {
       await expandGraph(g, lat, lng, 2000, signal);

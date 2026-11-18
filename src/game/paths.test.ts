@@ -6,8 +6,8 @@ import { canGrabMatch, clearOfFreeway, constrainStep, createGraph, finishPath, f
 import { isExpresswayNamed, isFreeway, isWalkableWay } from "./walkable.ts";
 import { freewayGap, freewayRun } from "./pathCheck.ts";
 
-/** 0.1.163: the fallback maps ship gzipped (public/streets/<name>.json.gz). */
-const readStreets = (name: string): unknown => JSON.parse(gunzipSync(readFileSync(new URL(`../../public/streets/${name}.json.gz`, import.meta.url))).toString("utf8"));
+/** 0.1.163: the fallback maps ship gzipped (src/game/fixtures/streets/<name>.json.gz). */
+const readStreets = (name: string): unknown => JSON.parse(gunzipSync(readFileSync(new URL(`./fixtures/streets/${name}.json.gz`, import.meta.url))).toString("utf8"));
 
 // Real OSM snapshots (scripts/fetch-path-fixtures.mjs) around freeways that walks used to ride.
 type FixWay = { id: number; tags: Record<string, string>; line: number[] };
