@@ -69,7 +69,7 @@ export const MATH_BANK: TriviaQ[] = [
   q("How many seconds in 3 minutes?", ["60", "120", "150", "180"], "180", 2),
   q("Convert 2.5 hours to minutes.", ["90", "120", "150", "180"], "150", 2),
   q("The slope of the line through (0,0) and (2,4) is\u2026", ["1/2", "1", "2", "4"], "2", 2),
-  q("Absolute value of \u22129 is\u2026", ["-9", "0", "9", "81"], "9", 2),
+  q("Absolute value of 3 \u2212 12 is\u2026", ["-9", "0", "9", "15"], "9", 2),
   q("What is \u22123 \u00d7 \u22124?", ["-12", "-7", "7", "12"], "12", 2),
   q("What is \u22128 + 3?", ["-11", "-5", "5", "11"], "-5", 2),
   q("Scientific notation: 3,000 is\u2026", ["3 \u00d7 10\u00b2", "3 \u00d7 10\u00b3", "3 \u00d7 10\u2074", "30 \u00d7 10\u00b2"], "3 \u00d7 10\u00b3", 2),

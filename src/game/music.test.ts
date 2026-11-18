@@ -90,7 +90,7 @@ test("city bed in play, scout bed on the title screen; gating on unlock, toggle,
   assert.equal(musicAudible({ unlocked: true, musicOn: true, muted: false, hidden: false }), true);
   for (const k of ["unlocked", "musicOn"] as const) assert.equal(musicAudible({ unlocked: true, musicOn: true, muted: false, hidden: false, [k]: false }), false);
   for (const k of ["muted", "hidden"] as const) assert.equal(musicAudible({ unlocked: true, musicOn: true, muted: false, hidden: false, [k]: true }), false);
-  const src = readFileSync(new URL("./audio.ts", import.meta.url), "utf8");
+  const src = readFileSync(new URL("./audio.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.match(src, /function tick\(\) \{\n {2}if \(!ctx \|\| !musicAudible\(/);
   assert.match(src, /export function startBed[\s\S]*?if \(!ctx \|\| !musicFilter \|\| !musicOn \|\| muted\) return;/);
   assert.match(src, /visibilitychange[\s\S]*ctx\.suspend\(\)/);

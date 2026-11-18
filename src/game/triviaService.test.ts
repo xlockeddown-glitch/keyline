@@ -571,3 +571,18 @@ test("0.1.158: Fox and Autopilot never strike a True/False card", () => {
   assert.equal(r.card.struck, undefined);
   assert.deepEqual(r.card.choices, ["True", "False"]);
 });
+
+test("linked accounts share vault lockouts via canonicalId", async () => {
+  const sql = await db();
+  await sql`insert into player_links (alias_id, primary_id, how) values ('ann-alt', 'ann', 'code')`;
+  const clock = { t: 4_000_000 };
+  const d = { ...depsAt(clock, sql), nonce: () => "lock-link-1" };
+  const r = await dealFor(d, { userId: "ann" }, dealIn());
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  clock.t += 2000;
+  const miss = await grade(d, { userId: "ann" }, { token: r.token, choice: "Wrong", clientMs: 1900 });
+  assert.ok(miss.ok && !miss.correct && (miss.lockoutMs ?? 0) > 0);
+  const blocked = await dealFor({ ...depsAt(clock, sql), nonce: () => "lock-link-2" }, { userId: "ann-alt" }, dealIn());
+  assert.deepEqual(blocked, { ok: false, reason: "locked-out", leftMs: miss.lockoutMs });
+});

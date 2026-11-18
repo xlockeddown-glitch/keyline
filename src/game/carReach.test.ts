@@ -26,7 +26,7 @@ test("a drive to a lamp stops at the curb within reach, not at the road's end", 
 });
 
 test("GameMap: lamp, vault and match taps use the ride rule; dealer and house stay on foot", () => {
-  const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
+  const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.match(src, /if \(d > reach\(\) \|\| !lampFromRide\(ride\(\)\)\)/);
   assert.match(src, /if \(!lampFromRide\(ride\(\)\)\) \{\n\s*flash\("Park at the curb. Keys are on foot."/);
   assert.match(src, /trimToReach\(raw, target/);
@@ -39,7 +39,7 @@ test("0.1.35: owning a car makes any seat your car; it answers lamps and picks m
   assert.equal(seatIsOwnCar(null), false, "chose the cab on purpose (carOn null): still the city cab");
   assert.equal(lampFromRide(rideOf(true, seatIsOwnCar("roadster"))), true);
   assert.equal(lampFromRide(rideOf(true, seatIsOwnCar(null))), false);
-  const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
+  const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   // Entering a cab already parked at the curb used to keep own unset, so lamps said "Park at the curb".
   assert.match(src, /cab\.seated = true;\n\s*cab\.hail = null;\n\s*cab\.own = seatIsOwnCar\(useGame\.getState\(\)\.carOn\);/);
   // The drive-by match pickup used to stop for any seat.

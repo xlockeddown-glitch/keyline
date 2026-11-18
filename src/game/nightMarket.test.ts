@@ -304,7 +304,7 @@ test("doubling scope: Daily Lantern Run, print shop prices, the bank and the loc
     },
   );
   // The store only reaches for the market inside the lamp / spark / street-match paths.
-  const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   for (const fn of ["payDailyRun", "bankUp", "bankDown", "payCosmetic", "printPattern", "buyScout", "buyKiosk", "claimWheel", "claimCrate", "claimPulse"]) {
     const start = src.search(new RegExp(`\\n  ${fn}: \\([\\w, ]*\\) => \\{\\n`));
     assert.ok(start > 0, fn);
@@ -357,7 +357,7 @@ test("0.1.6: a lamp on the open market rests four times as long (no camping); of
   // Per minute, a market lamp now pays less than a normal one, so parking in the circle never beats walking on.
   assert.ok(MARKET_MULT / MARKET_REST < 1 && 2.5 / MARKET_REST < 1);
   assert.equal(marketCoolMs(300_000, 1), 300_000);
-  const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8");
+  const src = readFileSync(new URL("./store.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.match(src, /const coolMs = stackedCoolMs\(marketCoolMs\(lampCoolMs\(poi\.tier\), lampMult\), opens\);/); // 0.1.7 stacks on top
 });
 

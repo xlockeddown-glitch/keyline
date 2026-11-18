@@ -4,6 +4,20 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { DYE_TARGETS, recolorSheet, type SheetKind } from "./dyeRecolor.ts";
 
+function findPython(): string | null {
+  for (const cmd of ["python3", "python"]) {
+    try {
+      execFileSync(cmd, ["-c", "import numpy, PIL"], { stdio: "ignore" });
+      return cmd;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+const PYTHON = findPython();
+
 function pythonSheet(scout: string, kind: SheetKind, dye: string): { w: number; h: number; src: Buffer; out: Buffer } {
   const py = `
 import base64, importlib.util, os
@@ -28,7 +42,7 @@ print(src.size[0], src.size[1])
 print(base64.b64encode(src.tobytes()).decode())
 print(base64.b64encode(out.tobytes()).decode())
 `;
-  const text = execFileSync("python3", ["-c", py], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
+  const text = execFileSync(PYTHON!, ["-c", py], { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
   const [head, a, b] = text.trim().split("\n");
   const [w, h] = head!.split(" ").map(Number);
   return { w: w!, h: h!, src: Buffer.from(a!, "base64"), out: Buffer.from(b!, "base64") };
@@ -49,13 +63,15 @@ function check(scout: string, kind: SheetKind, dye: string) {
   assert.equal(worst, 0, `${scout} ${kind} ${dye}: ${diff} bytes differ, worst ${worst}`);
 }
 
-test("dyed coat matches the sprite mixer", () => {
+test("dyed coat matches the sprite mixer", (t) => {
+  if (!PYTHON) return t.skip("python3/python with numpy+PIL not available");
   check("giraffe", "idle", "dye-blue"); // 0.0.91: was the Lynx slot's Penguin (v2 now, coatLayer.test.ts)
   check("giraffe", "walk", "dye-blue"); // 0.0.87: the Corgi moved to the v2 sheets (coatLayer.test.ts)
   check("giraffe", "idle-side", "dye-violet"); // 0.0.86/0.0.90: was the Fox, then the Owl (both v2 now, coatLayer.test.ts)
 });
 
-test("0.0.81 clean-up (lightness window, hole fill, enclosed holes) matches the sprite mixer", () => {
+test("0.0.81 clean-up (lightness window, hole fill, enclosed holes) matches the sprite mixer", (t) => {
+  if (!PYTHON) return t.skip("python3/python with numpy+PIL not available");
   check("giraffe", "idle", "dye-red"); // 0.0.87/0.0.90/0.0.91: was the Corgi, the Owl, then the Penguin (all v2 now)
   check("giraffe", "walk", "dye-amber"); // 0.0.83-0.0.91: was the Turtle, the Sloth, the Raccoon, then the Penguin (all v2 now, coatLayer.test.ts)
   check("giraffe", "idle-side", "dye-green"); // 0.0.85/0.0.91: was the Tabby, then the Penguin (both v2 now, coatLayer.test.ts)

@@ -504,6 +504,7 @@ export function GameMap() {
       useGame.subscribe((st, prev) => {
         if (st.houses !== prev.houses && houseMarker.current) paintHouse();
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   /** 0.1.12: house width in screen px for its real footprint at this zoom (scales with the map). */
@@ -1892,6 +1893,7 @@ export function GameMap() {
       window.removeEventListener("keyup", up, true);
       window.removeEventListener("blur", blur);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -1916,6 +1918,7 @@ export function GameMap() {
     return () => {
       delete window.__controlsTest;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -2359,6 +2362,7 @@ export function GameMap() {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityId]);
 
   useEffect(() => {
@@ -2408,6 +2412,7 @@ export function GameMap() {
       }
     });
     return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -2494,6 +2499,7 @@ const CACHE_PIN_HTML =
       cacheRef.current?.marker.remove();
       cacheRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streets, cityId]);
 
   return (

@@ -4,6 +4,7 @@ import { isCarId, type CarId } from "./cars.ts";
 import { doubleUpHit, rummageHit, scoutOf, shellBackHit, strikeOption } from "./scoutPerks.ts";
 import type { Sql } from "../lib/db.ts";
 import { lockable, lockoutLeftFor, lockoutMs, noteLockout } from "./lockout.ts";
+import { canonicalId } from "./playerLinks.ts";
 import { loadRecent, noteDealt } from "./triviaRecent.ts";
 import { randomCat } from "./triviaMeta.ts";
 import { paintsForEvent, shadowPaints } from "./shadowRoll.ts";
@@ -300,8 +301,9 @@ async function hearthStep(deps: TriviaDeps, viewer: Viewer, sql: Sql | null, inp
   if ("refused" in next) return null;
   if (!(await answeredRight(sql, viewer.userId != null, prev.n))) return null;
   if (viewer.userId && sql) {
+    const uid = await canonicalId(sql, viewer.userId);
     const claimed = await sql<{ op_key: string }>`
-      insert into wallet_ledger (user_id, op_key, detail) values (${viewer.userId}, ${`hnext:${prev.n}`}, ${JSON.stringify({ pi: input.poiId, s: next.step })})
+      insert into wallet_ledger (user_id, op_key, detail) values (${uid}, ${`hnext:${prev.n}`}, ${JSON.stringify({ pi: input.poiId, s: next.step })})
       on conflict (user_id, op_key) do nothing returning op_key
     `;
     if (!claimed.length) return null;
@@ -313,7 +315,8 @@ async function hearthStep(deps: TriviaDeps, viewer: Viewer, sql: Sql | null, inp
 export const eventKey = (poiId: string) => `ev:${poiId}`;
 
 async function eventDone(sql: Sql, userId: string, poiId: string): Promise<boolean> {
-  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${userId} and op_key = ${eventKey(poiId)} limit 1`;
+  const id = await canonicalId(sql, userId);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key = ${eventKey(poiId)} limit 1`;
   return rows.length > 0;
 }
 
@@ -649,8 +652,9 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   if (signedIn && credited && correct && isComet(cometPi) && deps.sql) {
     try {
       const sql = await deps.sql();
+      const uid = await canonicalId(sql, viewer.userId!);
       const got = await sql<{ op_key: string }>`
-        insert into wallet_ledger (user_id, op_key, detail) values (${viewer.userId}, ${eventKey(cometPi)}, ${JSON.stringify({ n: t.n, at: t.t })})
+        insert into wallet_ledger (user_id, op_key, detail) values (${uid}, ${eventKey(cometPi)}, ${JSON.stringify({ n: t.n, at: t.t })})
         on conflict (user_id, op_key) do nothing returning op_key
       `;
       cometSpent = got.length === 0;

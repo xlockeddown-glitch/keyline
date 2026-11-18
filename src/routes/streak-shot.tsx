@@ -1,7 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { StreakPlate } from "@/components/keyline/StreakPlate";
 
 export const Route = createFileRoute("/streak-shot")({
+  beforeLoad: () => {
+    if (!import.meta.env.DEV) throw notFound();
+  },
   component: StreakShot,
 });
 

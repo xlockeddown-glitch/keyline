@@ -177,7 +177,7 @@ test("squatter guard: an unverified X sign-in cannot take over a password accoun
 });
 
 test("an X sign-in still joins a Google account that has no password", async () => {
-  const { auth, oauth, db } = await setup(null);
+  const { oauth, db } = await setup(null);
   const id = await oauth("grok-google", { id: "g-only", email: "both@gmail.example", emailVerified: true, name: "Both" });
   const x = await oauth("grok-x", { id: "x-both", email: "both@gmail.example", emailVerified: false, name: "Both" });
   assert.equal(x, id);

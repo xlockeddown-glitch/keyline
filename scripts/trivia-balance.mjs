@@ -570,7 +570,6 @@ export async function runBalance({ root = ROOT, json = false, warn = false, chec
 }
 
 function isMain() {
-  const self = fileURLToPath(import.meta.url);
   const entry = process.argv[1] ? join(process.argv[1]) : "";
   return entry.endsWith("trivia-balance.mjs") || import.meta.url === `file://${entry}`;
 }

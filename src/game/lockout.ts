@@ -6,6 +6,7 @@
  * No migration: the row lives in the existing ledger. Ladders and Blitz keep their own rules.
  */
 import type { Sql } from "../lib/db.ts";
+import { canonicalId } from "./playerLinks.ts";
 import type { Tier } from "./types.ts";
 
 export const LOCKOUT_SHORT_MS = 3 * 60_000;
@@ -30,15 +31,17 @@ export function lockable(poiId: string): boolean {
 }
 
 export async function noteLockout(sql: Sql, userId: string, poiId: string, until: number): Promise<void> {
+  const id = await canonicalId(sql, userId);
   await sql`
     insert into wallet_ledger (user_id, op_key, detail, created_at)
-    values (${userId}, ${lockoutKey(poiId)}, ${String(Math.round(until))}, now())
+    values (${id}, ${lockoutKey(poiId)}, ${String(Math.round(until))}, now())
     on conflict (user_id, op_key) do update set detail = excluded.detail, created_at = now()
   `;
 }
 
 export async function lockoutLeftFor(sql: Sql, userId: string, poiId: string, now: number): Promise<number> {
-  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${userId} and op_key = ${lockoutKey(poiId)}`;
+  const id = await canonicalId(sql, userId);
+  const rows = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${lockoutKey(poiId)}`;
   return lockoutLeft(rows[0]?.detail, now);
 }
 

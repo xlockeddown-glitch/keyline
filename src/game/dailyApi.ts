@@ -138,11 +138,12 @@ export const fetchDailyMine = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<DailyState> => {
     const day = utcDay();
-    const r = await rowFor(context.userId, day, data.city);
+    const me = await canonicalId(await getSql(), context.userId);
+    const r = await rowFor(me, day, data.city);
     if (!r) return stateOf(null, day, "none");
     const row = toRun(r);
     if (row.voided) return stateOf(row, day, "void");
-    if (row.timeMs != null) return stateOf(row, day, "done", await rankOf(day, row.city, context.userId));
+    if (row.timeMs != null) return stateOf(row, day, "done", await rankOf(day, row.city, me));
     return stateOf(row, day, "open");
   });
 
@@ -154,26 +155,27 @@ export const startDailyRun = createServerFn({ method: "POST" })
     const day = utcDay();
     const route = dailyRoute(data.city, day);
     const sql = await getSql();
-    const had = await rowFor(context.userId, day, data.city);
+    const me = await canonicalId(sql, context.userId);
+    const had = await rowFor(me, day, data.city);
     const now = Date.now();
     const d = startDecision(route, had ? toRun(had) : null, data, now);
     if (d.kind === "far") return stateOf(null, day, "far", null, "Stand at vault 1 to start the clock.");
     if (d.kind === "void") return stateOf(had ? toRun(had) : null, day, "void", null, `Today's ${cityName(data.city)} run was voided.`);
-    if (d.kind === "done") return stateOf(d.row, day, "done", await rankOf(day, d.row.city, context.userId));
+    if (d.kind === "done") return stateOf(d.row, day, "done", await rankOf(day, d.row.city, me));
     if (d.kind === "resume") return stateOf(d.row, day, "open");
     const people = await sql<{ name: string | null }>`select name from "user" where id = ${context.userId} limit 1`;
     const name = standingName(people[0]?.name);
     const at = new Date(now).toISOString();
     await sql`
       insert into daily_runs (day, user_id, city, display_name, started_at, last_at, last_lat, last_lng, lit)
-      values (${day}, ${context.userId}, ${data.city}, ${name}, ${at}, ${at}, ${data.lat}, ${data.lng}, 1)
+      values (${day}, ${me}, ${data.city}, ${name}, ${at}, ${at}, ${data.lat}, ${data.lng}, 1)
       on conflict (day, user_id, city) do nothing
     `;
-    const fresh = await rowFor(context.userId, day, data.city);
+    const fresh = await rowFor(me, day, data.city);
     if (!fresh) throw new Error("daily run did not save");
     const row = toRun(fresh);
     if (row.voided) return stateOf(row, day, "void", null, `Today's ${cityName(data.city)} run was voided.`);
-    if (row.timeMs != null) return stateOf(row, day, "done", await rankOf(day, row.city, context.userId));
+    if (row.timeMs != null) return stateOf(row, day, "done", await rankOf(day, row.city, me));
     return stateOf(row, day, "open");
   });
 
@@ -185,17 +187,18 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<DailyState> => {
     const sql = await getSql();
+    const me = await canonicalId(sql, context.userId);
     // The open run in this city (a run begun before midnight UTC keeps its own day's route).
     const open = await sql<DbRow>`
       select * from daily_runs
-      where user_id = ${context.userId} and city = ${data.city} and time_ms is null and not voided
+      where user_id = ${me} and city = ${data.city} and time_ms is null and not voided
       order by started_at desc
       limit 1
     `;
     const day = utcDay();
     if (!open[0]) {
-      const today = await rowFor(context.userId, day, data.city);
-      if (today && toRun(today).timeMs != null) return stateOf(toRun(today), day, "done", await rankOf(day, toRun(today).city, context.userId));
+      const today = await rowFor(me, day, data.city);
+      if (today && toRun(today).timeMs != null) return stateOf(toRun(today), day, "done", await rankOf(day, toRun(today).city, me));
       return stateOf(null, day, "none", null, "Open vault 1 first.");
     }
     const row = toRun(open[0]);
@@ -204,14 +207,14 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
     const d = lightDecision(route, row, data.index, data, data.clientMs, now);
     if (d.kind === "already") return stateOf(row, row.day, "open");
     if (d.kind === "expire") {
-      await sql`update daily_runs set voided = true where day = ${row.day} and user_id = ${context.userId} and city = ${row.city}`;
+      await sql`update daily_runs set voided = true where day = ${row.day} and user_id = ${me} and city = ${row.city}`;
       return stateOf(row, row.day, "void", null, `Two hours passed. Today's ${cityName(row.city)} run expired.`);
     }
     if (d.kind === "reject") {
       if (d.strike) {
         const strikes = row.strikes + 1;
         const voided = strikes >= DAILY_STRIKES;
-        await sql`update daily_runs set strikes = ${strikes}, voided = ${voided} where day = ${row.day} and user_id = ${context.userId} and city = ${row.city}`;
+        await sql`update daily_runs set strikes = ${strikes}, voided = ${voided} where day = ${row.day} and user_id = ${me} and city = ${row.city}`;
         if (voided) return stateOf(row, row.day, "void", null, `Too many impossible legs. Today's ${cityName(row.city)} run was voided.`);
       }
       const why = d.reason === "too-fast" ? "Faster than any walker. That vault didn't count." : d.reason === "far" ? "Not at the vault yet." : "Vaults open in order.";
@@ -229,10 +232,10 @@ export const lightDailyLamp = createServerFn({ method: "POST" })
         client_splits = ${JSON.stringify(next.clientSplits)}::jsonb,
         finished_at = ${finishedAt},
         time_ms = ${next.timeMs}
-      where day = ${row.day} and user_id = ${context.userId} and city = ${row.city} and lit = ${row.lit} and time_ms is null and not voided
+      where day = ${row.day} and user_id = ${me} and city = ${row.city} and lit = ${row.lit} and time_ms is null and not voided
       returning lit
     `;
     if (!updated.length) return stateOf(row, row.day, "open");
-    if (d.finished) return stateOf(next, row.day, "done", await rankOf(row.day, row.city, context.userId));
+    if (d.finished) return stateOf(next, row.day, "done", await rankOf(row.day, row.city, me));
     return stateOf(next, row.day, "open");
   });

@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { SEED, STREET_CAP, STREET_DAY_CAP, streetSpot } from "./streetSpots.ts";
 import { autoCrateDue, blitzOfferDue, playerFree, type FreeState } from "./dailyPop.ts";
 
-const src = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
+const src = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const body = (s: string, head: string) => {
   const i = s.indexOf(head);
   assert.ok(i > 0, head);

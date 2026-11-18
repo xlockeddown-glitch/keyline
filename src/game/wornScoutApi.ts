@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { SCOUTS } from "./data";
+import { canonicalId } from "./playerLinks";
 import { WORN_SELECT, WORN_UPSERT, wornFromRow, type Worn } from "./wornScoutSql";
 
 /**
@@ -12,7 +13,8 @@ import { WORN_SELECT, WORN_UPSERT, wornFromRow, type Worn } from "./wornScoutSql
  */
 async function load(userId: string): Promise<Worn | null> {
   const sql = await getSql();
-  const rows = await sql.query<{ scout: string; worn_at: number | string }>(WORN_SELECT, [userId]);
+  const id = await canonicalId(sql, userId);
+  const rows = await sql.query<{ scout: string; worn_at: number | string }>(WORN_SELECT, [id]);
   return wornFromRow(rows[0]);
 }
 
@@ -34,8 +36,9 @@ export const syncWornScout = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<Worn | null> => {
     try {
       const sql = await getSql();
-      await sql.query(WORN_UPSERT, [context.userId, data.scout, data.at]);
-      return await load(context.userId);
+      const id = await canonicalId(sql, context.userId);
+      await sql.query(WORN_UPSERT, [id, data.scout, data.at]);
+      return await load(id);
     } catch {
       return null;
     }

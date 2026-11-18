@@ -18,7 +18,7 @@ test("house price ladder and step-up difference", () => {
 });
 
 test("paintCab never removes the dealer or house markers", () => {
-  const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8");
+  const src = readFileSync(new URL("../components/keyline/GameMap.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   const i = src.indexOf("function paintCab()");
   assert.ok(i > 0);
   const body = src.slice(i, src.indexOf("\n  }\n", i));

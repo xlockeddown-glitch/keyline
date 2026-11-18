@@ -8,6 +8,20 @@ import { DYE_TARGETS, toLab } from "./dyeRecolor.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
+function findPython(): string | null {
+  for (const cmd of ["python3", "python"]) {
+    try {
+      execFileSync(cmd, ["-c", "import numpy, PIL"], { stdio: "ignore" });
+      return cmd;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+const PYTHON = findPython();
+
 /** A strip of the committed v2 sheet (base RGBA, mask as RGBA) and Python's recolour of it (scripts/sprite-rig.py). */
 function pythonCoat(scout: string, coat: string, box: [number, number, number, number]) {
   const py = `
@@ -30,13 +44,14 @@ print(base64.b64encode(base.tobytes()).decode())
 print(base64.b64encode(np.repeat(mask[..., None], 4, -1).tobytes()).decode())
 print(base64.b64encode(out.tobytes()).decode())
 `;
-  const text = execFileSync("python3", ["-c", py], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const text = execFileSync(PYTHON!, ["-c", py], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const [head, b, m, o] = text.trim().split("\n");
   const [w, h] = head!.split(" ").map(Number);
   return { w: w!, h: h!, base: Buffer.from(b!, "base64"), mask: Buffer.from(m!, "base64"), out: Buffer.from(o!, "base64") };
 }
 
-test("v2 coat recolour matches the sprite rig, and never touches a pixel outside the coat mask", () => {
+test("v2 coat recolour matches the sprite rig, and never touches a pixel outside the coat mask", (t) => {
+  if (!PYTHON) return t.skip("python3/python with numpy+PIL not available");
   // Walk right frames 0-2 and the first standing frame, for every v2 scout.
   for (const [scout, coat, box] of [
     ["turtle", "plum", [0, 384, 576, 576]],

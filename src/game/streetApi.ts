@@ -24,11 +24,39 @@ const OVERPASS = [
 ];
 
 const cache = new Map<string, { lines: number[][]; freeways: number[][]; drive: { line: number[]; arterial: boolean }[] }>();
+const osmHits = new Map<string, { win: number; n: number }>();
+const OSM_RATE = { limit: 30, windowMs: 60_000, maxBuckets: 1000 } as const;
+
+async function clientIp(): Promise<string> {
+  try {
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const h = getRequest()?.headers;
+    const ip = h?.get("x-forwarded-for")?.split(",")[0]?.trim() || h?.get("x-real-ip")?.trim();
+    return (ip || "local").slice(0, 64);
+  } catch {
+    return "local";
+  }
+}
+
+function allowOsmHit(ip: string, now = Date.now()): boolean {
+  const win = Math.floor(now / OSM_RATE.windowMs);
+  const cur = osmHits.get(ip);
+  if (!cur || cur.win !== win) {
+    osmHits.set(ip, { win, n: 1 });
+    if (osmHits.size > OSM_RATE.maxBuckets) {
+      const oldest = osmHits.keys().next().value;
+      if (oldest) osmHits.delete(oldest);
+    }
+    return true;
+  }
+  cur.n += 1;
+  return cur.n <= OSM_RATE.limit;
+}
 
 const Input = z.object({
-  lat: z.number(),
-  lng: z.number(),
-  radius: z.number().min(200).max(3600),
+  lat: z.number().finite().min(-90).max(90),
+  lng: z.number().finite().min(-180).max(180),
+  radius: z.number().finite().min(200).max(3600),
 });
 
 async function postOverpass(url: string, query: string) {
@@ -78,6 +106,7 @@ export const getOsmWays = createServerFn({ method: "POST" })
     const key = `walk5:${lat.toFixed(3)},${lng.toFixed(3)},${Math.round(radius / 50) * 50}`;
     const hit = cache.get(key);
     if (hit) return hit;
+    if (!allowOsmHit(await clientIp())) throw new Error("overpass rate limit");
     // Walkable and drivable ways together; drive rows keep the old access rule, walk rows use isWalkableWay.
     // 0.0.52b: plus the freeway layer (motorways, trunks, ramps, feeders) so the client can keep walks off it.
     const at = `(around:${Math.round(radius)},${lat.toFixed(5)},${lng.toFixed(5)})`;

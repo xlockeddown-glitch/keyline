@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { WARDROBE_UPSERT } from "./wardrobeSql";
+import { canonicalId } from "./playerLinks";
 import { COSMETIC_IDS, EMPTY_WARDROBE, applyWardrobeSync, cleanWardrobe, type Wardrobe } from "./cosmetics";
 
 /**
@@ -34,7 +35,8 @@ function fromRow(r: Row | undefined): Wardrobe {
 
 async function load(userId: string): Promise<Wardrobe> {
   const sql = await getSql();
-  const rows = await sql<Row>`select owned, paid, coat, lantern, equip_at from wardrobes where user_id = ${userId} limit 1`;
+  const id = await canonicalId(sql, userId);
+  const rows = await sql<Row>`select owned, paid, coat, lantern, equip_at from wardrobes where user_id = ${id} limit 1`;
   return fromRow(rows[0]);
 }
 
@@ -46,16 +48,17 @@ export const syncWardrobe = createServerFn({ method: "POST" })
   .validator((u: unknown) => WardrobeSchema.parse(u))
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<Wardrobe> => {
-    const recorded = await load(context.userId);
-    const next = applyWardrobeSync(recorded, cleanWardrobe(data));
     const sql = await getSql();
+    const id = await canonicalId(sql, context.userId);
+    const recorded = await load(id);
+    const next = applyWardrobeSync(recorded, cleanWardrobe(data));
     await sql.query(WARDROBE_UPSERT, [
-      context.userId,
+      id,
       JSON.stringify(next.owned),
       JSON.stringify(next.paid),
       next.coat,
       next.lantern,
       next.at,
     ]);
-    return load(context.userId);
+    return load(id);
   });
