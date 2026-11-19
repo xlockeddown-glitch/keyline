@@ -18,6 +18,8 @@ Asset preparation follows the approved mock-before-code rule below:
 
 This standard does not expand the scope of a slice or change the approval status of the palette and silhouette notes below.
 
+Later painted work — title streets, flight windows, wheel discs, emblems, houses and cars — follows this same Gemini picture standard.
+
 ## How a slice is made
 
 Ryan approved these four rules. They bind every art slice.
