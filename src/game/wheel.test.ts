@@ -24,6 +24,16 @@ test("a color owes a spin on every 25th correct, and old saves do not back-pay",
   assert.equal(caughtUpClaims({ ...EMPTY, violet: 40, blue: 25 }).blue, 1);
 });
 
+test("wheel key labels use correct plurals and articles", () => {
+  const label = (tier: "white" | "amber", face: string) =>
+    wheelSlices(tier, "nyc").find((s) => s.prize.face === face)!.prize.label;
+  assert.equal(label("white", "Match"), "A white key");
+  assert.equal(label("white", "Pair"), "2 White keys");
+  assert.equal(label("amber", "Match"), "An amber key");
+  assert.equal(label("amber", "Pair"), "2 Amber keys");
+  assert.equal(label("white", "Rare"), "A blue key");
+});
+
 test("rarer vaults pay more coin and lean toward matches", () => {
   const white = wheelSlices("white", "nyc");
   const violet = wheelSlices("violet", "nyc");

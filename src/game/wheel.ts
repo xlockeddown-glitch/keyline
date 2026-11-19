@@ -60,7 +60,7 @@ function coinPrize(n: number, face: string): WheelPrize {
 
 function keyPrize(tier: Tier, n: number): WheelPrize {
   const name = `${TIER_LABEL[tier]} key`;
-  return { kind: "key", tier, n, face: "Match", label: n > 1 ? `${n} ${name}es` : `A ${name.toLowerCase()}` };
+  return { kind: "key", tier, n, face: "Match", label: n > 1 ? `${n} ${name}s` : `${/^[aeiou]/i.test(name) ? "An" : "A"} ${name.toLowerCase()}` };
 }
 
 

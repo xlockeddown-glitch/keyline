@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.170";
+export const APP_VERSION = "0.1.171";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1170a";
+export const PUBLISH_STAMP = "k1171a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -268,3 +268,5 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.169: trial-run trivia batch plus_20261117 — 246 cards (72 current events, 29%), Claude Opus candidates; all 279 Opus-reviewed plus 12 Trivia-written/restored cards source-checked against Wikipedia; no math (k1169a).
 
 // 0.1.170: painted Mystery Wheel discs per vault tier, match-pop emblems, amounts in a legend; static trim: 128px scout sheets, lossy flight planes, drop v1 street-map fallbacks (k1170a).
+
+// 0.1.171: Mystery Wheel discs now paint keys (not matchsticks) on Match, Pair and Rare; the streak match-pop medal is a white key; legend wording uses "keys" / "An amber key"; the landed wheel heading no longer slips under the HUD (k1171a).
