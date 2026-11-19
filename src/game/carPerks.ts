@@ -1,3 +1,4 @@
+import { isClassic } from "./classicKind.ts";
 /**
  * 0.1.45: car perks, favorite categories and the category of the day (design: /workspace/car-perks-design.md).
  * A car's perk works only while you sit in that car. A car perk and a coat perk of the same kind don't add up:
@@ -133,7 +134,8 @@ export function autopilotHit(car: CarId | null, nonce: string): boolean {
 }
 
 /** The wrong option Autopilot hides (never the answer), picked from the nonce too. */
-export function autopilotStrike(car: CarId | null, nonce: string, choices: readonly string[], answer: string): string | null {
+export function autopilotStrike(car: CarId | null, nonce: string, choices: readonly string[], answer: string, kind?: string): string | null {
+  if (!isClassic({ kind })) return null;
   if (!autopilotHit(car, nonce)) return null;
   // 0.1.158: never on a two-choice (True/False) or no-choice card.
   if (choices.length < 3) return null;

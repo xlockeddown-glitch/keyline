@@ -42,7 +42,7 @@ let fmtAll: FormatQ[] | null = null;
 
 /**
  * 0.1.158: a True/False or Closest Number card by public id (`f…`) or raw id. A separate index: cardAny and
- * everyCard never see these, so a friend ticket can't be made from one.
+ * everyCard never see these; classic-only allow-lists also protect the picker and friend tickets.
  */
 export function formatAny(id: string): FormatQ | null {
   if (!fmtById) {
@@ -61,10 +61,10 @@ export function formatAny(id: string): FormatQ | null {
  * 0.1.158: a format card for this lamp. TF: a statement in the chosen field (same colour first, then any TF colour).
  * Closest Number: a sum for the lamp's colour. Unseen cards only; null when none is left (the lamp deals four choices).
  */
-export function pickFormatCard(kind: "tf" | "near", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number): FormatQ | null {
+export function pickFormatCard(kind: "tf" | "near" | "order", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number): FormatQ | null {
   formatAny("");
   const seen = new Set(avoid);
-  const fresh = fmtAll!.filter((c) => c.kind === kind && !seen.has(c.id) && !seen.has(c.q) && (c.kind === "near" ? c.rarity === tier : c.cat === cat));
+  const fresh = fmtAll!.filter((c) => c.kind === kind && !seen.has(c.id) && (c.kind === "order" || !seen.has(c.q)) && (c.kind === "near" ? c.rarity === tier : c.kind === "order" ? c.rarity === tier && c.cat === cat : c.cat === cat));
   const pool = kind === "tf" ? (fresh.some((c) => c.rarity === tier) ? fresh.filter((c) => c.rarity === tier) : fresh) : fresh;
   if (!pool.length) return null;
   return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))]!;

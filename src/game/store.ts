@@ -6,6 +6,7 @@ import { cleanCredit, creditHint, settlePocket } from "./goals";
 import { CITIES, CITY_LIST, KIOSK, SCOUTS, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop, kioskRetired, wornPerk, type KioskId } from "./data";
 import { reachableDrop, streetDrop } from "./streets";
 import { cityDay, openNumber, stackedCoolMs } from "./vaultStack";
+import { orderCoins } from "./orderPay";
 import { carOf, driveOf, isCarId, type CarId } from "./cars";
 import { canId, colorOf, paintPrice, parseCan } from "./carPaint";
 import { cleanSkins, isSkinId, skinOf, skinOwned, type SkinId } from "./skins";
@@ -145,6 +146,7 @@ type Graded = {
   lockoutMs?: number;
   /** 0.1.158 Closest Number: the server's sliding-scale grade and the reveal (the client never times these). */
   near?: NearReveal;
+  order?: import("./types").OrderReveal;
   grade?: Grade | null;
   mult?: number;
 };
@@ -354,6 +356,7 @@ export type GameState = {
   answer: (choice: string, now: number) => void;
   /** 0.1.158 Closest Number: send the typed guess (the timeout still goes through `answer("__timeout__")`). */
   answerNear: (guess: number, now: number) => void;
+  answerOrder: (tokens: string[], now: number) => void;
   /** Apply a server-graded answer to the open card (rewards, streak, seen memory). Internal to the lamp flow. */
   settleAnswer: (out: Graded, now: number) => void;
   closeVault: () => void;
@@ -941,7 +944,7 @@ async function dealCard(
       scout: st.scout,
       ...(seatedCar(st) ? { car: seatedCar(st)! } : {}),
     },
-    ...(street ? { formats: ["tf", "near"] as ("tf" | "near")[] } : {}),
+    ...(street ? { formats: ["tf", "near", "order"] as ("tf" | "near" | "order")[] } : {}),
   };
   try {
     const r = await dealTrivia({ data: input });
@@ -1137,11 +1140,11 @@ const oldCharms: string[] = Array.isArray(oldCharmsRaw) ? oldCharmsRaw.filter((x
 const savedCity = saved?.cityId && saved.cityId in CITIES ? saved.cityId : "austin";
 
 /** Send the open card's answer to the server and apply its grade. `choice` and `guess` both absent: the wick ran out. */
-function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, choice: string | null, guess: number | undefined, now: number) {
+function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, choice: string | null, guess: number | undefined, now: number, order?: string[]) {
   const ov = get().openVault;
   if (!ov?.question || ov.pending) return;
   const token = ov.token;
-  const timeout = choice == null && guess == null;
+  const timeout = choice == null && guess == null && order == null;
   const clientMs = Math.max(0, now - ov.startedAt);
   if (!token) return;
   set({ openVault: { ...ov, pending: "grade" } });
@@ -1157,7 +1160,7 @@ function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, 
     set({ openVault: { ...cur, pending: undefined } });
     flashToast(set, get, "The vault lost its line. Tap your answer again.", 2600);
   };
-  void gradeTrivia({ data: { token, choice: timeout ? null : choice, clientMs, ...(guess != null ? { guess } : {}) } })
+  void gradeTrivia({ data: { token, choice: timeout ? null : choice, clientMs, ...(guess != null ? { guess } : {}), ...(order ? { order } : {}) } })
     .then((res: GradeResult) => {
       const cur = get().openVault;
       if (!cur || cur.token !== token) return;
@@ -1176,6 +1179,8 @@ function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, 
           paints: res.paints,
           lockoutMs: res.lockoutMs,
           ...(res.near ? { near: res.near, grade: res.grade, mult: res.mult } : {}),
+          // 0.1.173: `mult` is the graded value; a swap's half coin comes from `order.result` alone.
+          ...(res.order ? { order: res.order, grade: res.grade, mult: res.mult } : {}),
         },
         performance.now(),
       );
@@ -1685,6 +1690,10 @@ export const useGame = create<GameState>((set, get) => ({
     });
   },
   answer: (choice, now) => sendAnswer(set, get, choice === "__timeout__" ? null : choice, undefined, now),
+  answerOrder: (tokens, now) => {
+    if (get().openVault?.question?.kind !== "order") return;
+    sendAnswer(set, get, null, undefined, now, tokens);
+  },
   answerNear: (guess, now) => {
     if (get().openVault?.question?.kind !== "near" || !Number.isFinite(guess)) return;
     sendAnswer(set, get, null, guess, now);
@@ -1869,7 +1878,7 @@ export const useGame = create<GameState>((set, get) => ({
         ...logged,
         openVault: null,
         loot: null,
-        miss: { answer: out.reveal, fact: out.fact, ...(lockMs > 0 ? { lockMs } : {}), ...(out.near ? { near: out.near } : {}) },
+        miss: { answer: out.reveal, fact: out.fact, ...(lockMs > 0 ? { lockMs } : {}), ...(out.near ? { near: out.near } : {}), ...(out.order ? { order: out.order } : {}) },
         toast: null,
         quests: answered(get, false, false),
       });
@@ -1878,7 +1887,7 @@ export const useGame = create<GameState>((set, get) => ({
     }
     let grade: LootDrop["grade"] = "good";
     let mult = 0.4;
-    if (out.near && out.grade) {
+    if ((out.near || out.order) && out.grade) {
       // 0.1.158 Closest Number: accuracy pays (the server's sliding scale), not speed.
       grade = out.grade;
       mult = out.mult ?? 0;
@@ -1940,7 +1949,7 @@ export const useGame = create<GameState>((set, get) => ({
       paint: paints[0] ? { id: paints[0], name: ingredientName(paints[0]) } : undefined,
       extraPaint: paints[1] ? { id: paints[1], name: ingredientName(paints[1]) } : undefined,
       market: lampMult > 1 && lampMarket ? { street: lampMarket.street.name, mult: lampMult, coin: lampPay.extraCoin, matches: lampPay.extraMatches } : undefined,
-      ...(out.near ? { near: out.near } : {}),
+      ...(out.near ? { near: out.near } : {}), ...(out.order ? { order: out.order } : {}),
     };
     let nextKeys = { ...keys };
     for (const [t, n] of Object.entries(extraKeys) as [Tier, number][]) {
@@ -1967,7 +1976,11 @@ export const useGame = create<GameState>((set, get) => ({
     nextKeys = paid.keys;
     if (paid.whiteAdded) extraKeys.white = (extraKeys.white ?? 0) + paid.whiteAdded;
     loot.keys = extraKeys;
-    loot.points = paid.points - get().points;
+    // 0.1.173: an order card one adjacent swap off pays half of this whole coin total, rounded down. `loot.points` is
+    // both what the toast shows and what the pocket gains below, so the two cannot disagree. (Signed in, the server's
+    // award replaces both in applyServerGrade.)
+    loot.points = orderCoins(paid.points - get().points, out.order?.result);
+    if (out.order) loot.order = { ...out.order, coins: loot.points };
     loot.boosts = paid.boosts.length || cometPay ? [...paid.boosts, ...(cometPay ? [COMET_TAG] : [])] : undefined;
     // 0.1.6: a lamp on the open night market rests four times as long (was 3x faster in 0.0.90 — players camped it).
     // 0.1.7: and each open of the same lamp today rests longer: 1x, 2x, 3x… (resets at the city's midnight).

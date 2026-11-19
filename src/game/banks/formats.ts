@@ -1,3 +1,4 @@
+import { ORDER_CARDS, generatedOrder } from "./order.ts";
 import { generateNear } from "../mathLadder.ts";
 import type { FormatQ, Tier, TriviaCat } from "../types.ts";
 
@@ -52,5 +53,5 @@ export function generatedNear(): Extract<FormatQ, { kind: "near" }>[] {
 }
 
 export function formatCards(): FormatQ[] {
-  return [...TF_CARDS, ...generatedNear()];
+  return [...TF_CARDS, ...generatedNear(), ...ORDER_CARDS, ...generatedOrder()];
 }

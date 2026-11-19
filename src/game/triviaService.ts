@@ -1,3 +1,5 @@
+import { orderItems, orderLabels, orderScore } from "./banks/order.ts";
+import { isClassic } from "./classicKind.ts";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { autopilotStrike, perkFavs, regenHit } from "./carPerks.ts";
 import { isCarId, type CarId } from "./cars.ts";
@@ -14,6 +16,7 @@ import type { DealInput, DealResult, GradeInput, GradeResult, Grade, ServerAward
 import { SCOUTS } from "./data.ts";
 import { hearthLast, hearthNext, hearthSteps, hearthTierAt, hearthVersion, type HearthVersion } from "./hearthMulti.ts";
 import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CHANCE } from "./wallet.ts";
+import { cleanOrder, type OrderOutcome } from "./orderPay.ts";
 import { awardGrade, carsOf, noteBlitzCard, ownedOf, spendDealt } from "./walletApply.ts";
 import { isComet } from "./eventVault.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
@@ -81,7 +84,7 @@ type TokenBody = {
   sv: string;
   n: string;
   /** 0.1.158: the card's format, set by the server ("tf" True/False, "near" Closest Number). Absent: four choices. */
-  f?: "tf" | "near";
+  f?: "tf" | "near" | "order";
   /**
    * Pay context sealed at deal (0.0.78). The grade recomputes coins from this plus its own clock and rolls.
    * Absent on a token dealt before the wallet moved server-side: that grade pays with the defaults.
@@ -126,7 +129,7 @@ export type TriviaDeps = {
   /** 0.1.158: a True/False or Closest Number card by public or raw id (a separate index from `card`). */
   fmt?: (id: string) => FormatQ | null;
   /** 0.1.158: a format card for this lamp, or null (nothing fits or everything was seen): deal four choices then. */
-  pickFormat?: (kind: "tf" | "near", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number) => FormatQ | null;
+  pickFormat?: (kind: "tf" | "near" | "order", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number) => FormatQ | null;
   /** 0.1.168: a Where am I? card for the Loop (whereAmI.ts), or null: the deal falls back to `pick`. */
   pickWhere?: (city: CityId, avoid: readonly string[], rand?: () => number) => TriviaQ | null;
   /** A named lamp of this city, or null. */
@@ -148,8 +151,9 @@ export function publicCardId(card: { q: string; choices: readonly string[] }): s
 }
 
 /** 0.1.158: a format card's public id. `f` + sha256(kind + prompt): never the answer or the value. */
-export function publicFormatId(card: { kind: "tf" | "near"; q: string }): string {
-  const h = createHash("sha256").update(`klf158\0${card.kind}\0${card.q}`).digest();
+export function publicFormatId(card: { kind: "tf" | "near" | "order"; q: string; items?: { label: string }[] }): string {
+  const identity = card.kind === "order" ? `\0${JSON.stringify(card.items?.map((x) => x.label).sort())}` : "";
+  const h = createHash("sha256").update(`klf158\0${card.kind}\0${card.q}${identity}`).digest();
   return `f${b64u(h).slice(0, 14)}`;
 }
 
@@ -167,11 +171,15 @@ export function nonceRoll(label: string, nonce: string): number {
  * 0.1.158: which format this deal is, if any. Only a deal that opts in (`formats`), only a street lamp (no spark,
  * Hearth, Blitz, Flight or Comet vault), TF at white/blue/green lamps, Closest Number at amber/red/violet math lamps.
  */
-export function formatFor(input: DealInput, poi: Poi, cat: TriviaCat, nonce: string): "tf" | "near" | null {
+export function formatFor(input: DealInput, poi: Poi, cat: TriviaCat, nonce: string): "tf" | "near" | "order" | null {
   const want = input.formats;
   if (!want?.length || input.spark) return null;
   if (poi.id.startsWith("placed-") || poi.id.startsWith("blitz-") || poi.id.startsWith("flight-") || isComet(poi.id)) return null;
   if (nonceRoll("kl-format", nonce) >= FORMAT_CHANCE) return null;
+  // Keep the existing 20% slot. Where TF/near also fits, give order one quarter of it.
+  const orderEligible = want.includes("order") && ["history", "geography", "science", "math"].includes(cat) && ["green", "amber", "red"].includes(poi.tier);
+  const existing = (want.includes("tf") && TF_TIERS.includes(poi.tier)) || (want.includes("near") && cat === "math" && NEAR_TIERS.includes(poi.tier));
+  if (orderEligible && (!existing || nonceRoll("kl-order", nonce) < 0.25)) return "order";
   if (want.includes("tf") && TF_TIERS.includes(poi.tier)) return "tf";
   if (want.includes("near") && cat === "math" && NEAR_TIERS.includes(poi.tier)) return "near";
   return null;
@@ -242,7 +250,7 @@ export function avoidList(deps: Pick<TriviaDeps, "card" | "fmt">, seen: readonly
       continue;
     }
     ids.push(c.id);
-    qs.push(c.q);
+    if (c.kind !== "order") qs.push(c.q);
   }
   return [...ids, ...qs];
 }
@@ -407,7 +415,9 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
   }
   if (sql && viewer.userId) {
     try {
-      const raw = (r.card.kind ? deps.fmt?.(r.card.id)?.id : deps.card(r.card.id)?.id) ?? r.card.id;
+      // 0.1.173: a four-choice card may now name its kind ("where", "classic"); only format cards live in the format index.
+      const isFormat = r.card.kind === "tf" || r.card.kind === "near" || r.card.kind === "order";
+      const raw = (isFormat ? deps.fmt?.(r.card.id)?.id : deps.card(r.card.id)?.id) ?? r.card.id;
       await noteDealt(sql, viewer.userId, raw, new Date(deps.now()));
     } catch (e) {
       console.warn("[trivia] recent note failed", e instanceof Error ? e.message : e);
@@ -436,6 +446,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   // 0.1.168: the Loop's Where am I? deals from the city's places, not the bank.
   const where = !fq && input.poiId.startsWith(WHERE_PREFIX) ? (deps.pickWhere?.(input.city, avoid, deps.rand) ?? null) : null;
   const plate: TriviaQ | FormatQ = fq ?? where ?? deps.pick(input.city, cat, poi, poi.tier, avoid);
+  if (!fq && !where && !isClassic(plate)) return { ok: false, reason: "unknown-lamp" };
   const pub = fq ? publicFormatId(fq) : publicCardId(plate as TriviaQ);
   // Closest Number gets 8 s more for typing.
   const windowMs = clampWindow(input.windowMs + (fq?.kind === "near" ? NEAR_EXTRA_MS : 0));
@@ -489,24 +500,27 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     const card =
       fq.kind === "tf"
         ? { id: pub, q: fq.q, choices: ["True", "False"], diff: 1 as const, rarity: fq.rarity, kind: "tf" as const }
-        : { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "near" as const, ...(fq.unit ? { unit: fq.unit } : {}) };
+        : fq.kind === "order"
+          ? { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "order" as const, items: shuffle(orderItems(fq, deps.secret, nonce), deps.rand) }
+          : { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "near" as const, ...(fq.unit ? { unit: fq.unit } : {}) };
     return { ok: true, token, windowMs, card };
   }
   const four = plate as TriviaQ;
   const struck = input.spark
     ? null
-    : (strikeOption(scout, four.rarity, four.choices, four.answer, (deps.rand ?? Math.random)()) ?? autopilotStrike(proven.car ?? null, nonce, four.choices, four.answer));
+    : (strikeOption(scout, four.rarity, four.choices, four.answer, (deps.rand ?? Math.random)(), four.kind) ?? autopilotStrike(proven.car ?? null, nonce, four.choices, four.answer, four.kind));
   return {
     ok: true,
     token,
     windowMs,
-    card: { id: pub, q: four.q, choices: shuffle(four.choices, deps.rand), diff: four.diff ?? 2, rarity: four.rarity, ...(struck ? { struck } : {}) },
+    card: { ...(four.kind ? { kind: four.kind } : {}), id: pub, q: four.q, choices: shuffle(four.choices, deps.rand), diff: four.diff ?? 2, rarity: four.rarity, ...(struck ? { struck } : {}) },
   };
 }
 
 /** Guests (and a DB hiccup) fall back to this per-instance ring so a token can't simply be graded twice. */
 const RING_MAX = 5000;
-type RingEntry = { correct: boolean; elapsedMs: number; timedOut: boolean; near?: { guess: number } };
+/** 0.1.173: an order card keeps its graded outcome here, never the submitted tokens. */
+type RingEntry = { correct: boolean; elapsedMs: number; timedOut: boolean; near?: { guess: number }; order?: OrderOutcome };
 const ring = new Map<string, RingEntry>();
 function ringPut(nonce: string, v: RingEntry) {
   ring.set(nonce, v);
@@ -534,7 +548,9 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   const card: { id: string; answer: string; fact?: string } | null = fc
     ? fc.kind === "tf"
       ? { id: fc.id, answer: fc.answer, fact: fc.fact }
-      : { id: fc.id, answer: fc.value.toLocaleString("en-US") }
+      : fc.kind === "order"
+        ? { id: fc.id, answer: orderLabels(fc).join(" → "), fact: fc.fact }
+        : { id: fc.id, answer: fc.value.toLocaleString("en-US") }
     : four;
   if (!card) return { ok: false, reason: "unknown-card" };
   const now = deps.now();
@@ -542,15 +558,19 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   const late = serverMs > t.w + LATE_GRACE_MS;
   // Closest Number reads only `guess` (a missing one is a timeout); every other card reads only `choice`.
   const nearCard = fc?.kind === "near" ? fc : null;
+  const orderCard = fc?.kind === "order" ? fc : null;
   const prior = ring.get(t.n);
+  // 0.1.173: only a short list of short strings is read; anything else is [] (a miss). Absent: the wick ran out.
+  const submitted = orderCard && input.order != null ? cleanOrder(input.order) : null;
+  let ordered: OrderOutcome | null = orderCard ? (prior?.order ?? orderScore(orderCard, deps.secret, t.n, submitted)) : null;
   const guess = nearCard ? (prior?.near?.guess ?? input.guess) : undefined;
-  const timedOut = (nearCard ? guess == null || !Number.isFinite(guess) : input.choice == null) || late;
-  const elapsedMs = timedOut ? Math.max(serverMs, Math.round(input.clientMs)) : effectiveMs(input.clientMs, serverMs);
+  const timedOut = orderCard && prior ? prior.timedOut : (nearCard ? guess == null || !Number.isFinite(guess) : orderCard ? submitted == null : input.choice == null) || late;
+  const elapsedMs = orderCard && prior ? prior.elapsedMs : timedOut ? Math.max(serverMs, Math.round(input.clientMs)) : effectiveMs(input.clientMs, serverMs);
   const near = nearCard && guess != null && Number.isFinite(guess) ? nearScore(guess, nearCard.value) : null;
   let correct =
     !timedOut &&
     elapsedMs <= t.w + LATE_GRACE_MS &&
-    (nearCard ? near!.correct : input.guess == null && input.choice === card.answer);
+    (nearCard ? near!.correct : orderCard ? ordered !== "miss" : input.guess == null && input.choice === card.answer);
   let replay = false;
   let credited = false;
   let paints: PaintId[] | undefined;
@@ -561,6 +581,8 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     replay = true;
     correct = prior.correct;
   }
+  // Set when the database (not this instance's ring) says the token was already graded.
+  let dbReplay = false;
   // Signed-in, dealt to this walker: the server records the card (and the clear) itself, once per token.
   const signedIn = viewer.userId != null && t.s === `u:${viewer.userId}`;
   if (signedIn && !replay && deps.sql) {
@@ -581,6 +603,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
       `;
       if (!inserted.length) {
         replay = true;
+        dbReplay = true;
         const first = await sql<{ correct: boolean }>`select correct from plate_events where id = ${id} limit 1`;
         correct = Boolean(first[0]?.correct);
       } else {
@@ -634,7 +657,12 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
       console.warn("[trivia] paint replay failed", e instanceof Error ? e.message : e);
     }
   }
-  if (!prior) ringPut(t.n, { correct, elapsedMs, timedOut, ...(near && guess != null ? { near: { guess } } : {}) });
+  // 0.1.173: the outcome follows the recorded grade. A first grade that missed (late, wrong) is a miss whatever the
+  // tokens say; a recorded clear replayed on another instance is never upgraded to "exact" by the resent tokens
+  // (the wallet row below settles which it was).
+  if (orderCard) ordered = !correct ? "miss" : dbReplay && !prior ? "swap" : ordered === "miss" ? "swap" : ordered;
+  const entry: RingEntry | null = prior ? null : { correct, elapsedMs, timedOut, ...(near && guess != null ? { near: { guess } } : {}), ...(ordered ? { order: ordered } : {}) };
+  if (entry) ringPut(t.n, entry);
   // 0.1.107: a wrong answer with a key at a street or placed vault locks it (3 min I-III, 5 min IV-VI).
   const lockPoi = t.x?.pi ?? "";
   const lockTier = (t.x?.pt ?? t.k ?? null) as Tier | null;
@@ -679,6 +707,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         correct,
         elapsedMs,
         mult: g?.mult ?? 0,
+        orderHalf: orderCard != null && ordered === "swap",
         city: t.city,
         diff: t.d,
         clearTier: t.k,
@@ -714,6 +743,11 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         award = awarded.award;
         can = awarded.can;
       }
+      // 0.1.173: a replayed order grade reports what the first grade paid: the stored row says exact or swap.
+      if (orderCard && correct && awarded.replay && awarded.detail) {
+        ordered = /"oh":1/.test(awarded.detail) ? "swap" : "exact";
+        if (entry) entry.order = ordered;
+      }
     } catch (e) {
       console.warn("[trivia] wallet award failed", e instanceof Error ? e.message : e);
     }
@@ -734,6 +768,9 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     ...(paints !== undefined ? { paints } : {}),
     ...(wallet ? { wallet, ...(award ? { award } : {}) } : {}),
     ...(can ? { can } : {}),
+    // 0.1.173: `result` is the one half-coin signal. `coins` is the server wallet's award (stored value on a replay);
+    // 0 when the server paid nothing here (a guest pays locally from `result`, see store settleAnswer).
+    ...(orderCard ? { order: { result: ordered ?? "miss", labels: orderLabels(orderCard), coins: award?.coins ?? 0 } } : {}),
     ...(nearCard && guess != null && Number.isFinite(guess) ? { near: { value: nearCard.value, guess, offPct: near?.offPct ?? Infinity } } : {}),
   };
 }

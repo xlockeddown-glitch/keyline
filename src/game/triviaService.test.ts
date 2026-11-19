@@ -571,3 +571,90 @@ test("0.1.158: Fox and Autopilot never strike a True/False card", () => {
   assert.equal(r.card.struck, undefined);
   assert.deepEqual(r.card.choices, ["True", "False"]);
 });
+
+test("0.1.173: a signed-in order swap pays half once; a replay on another instance keeps the stored result and coins", async () => {
+  const { ORDER_CARDS, orderItems, orderLabels } = await import("./banks/order.ts");
+  const { syncPlayer } = await import("./walletApply.ts");
+  const { canonicalWallet } = await import("./walletSql.ts");
+  const { freshUnlocks } = await import("./cityPass.ts");
+  const { lampGiftClock, welcomeClock } = await import("./lampGift.ts");
+  welcomeClock.cutoff = "2999-01-01T00:00:00Z";
+  lampGiftClock.cutoff = "2000-01-01T00:00:00Z";
+  const sql = await db(["0013_trivia_recent.sql", "0014_walk_distance.sql"]);
+  await syncPlayer(sql, "ann", { coins: 1001, keys: { amber: 3 }, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }, "annphone1");
+  const card = ORDER_CARDS.find((c) => c.rarity === "amber")!;
+  const clock = { t: 5_000_000 };
+  const base = fmtDeps(clock, sql, AMBER_LAMP);
+  const inp = fmtIn({ poiId: AMBER_LAMP.id, cat: "history", formats: ["tf", "near", "order"] });
+  const right = (nonce: string) => {
+    const items = orderItems(card, base.secret, nonce);
+    return orderLabels(card).map((l) => items.find((x) => x.label === l)!.token);
+  };
+  const play = async (nonce: string, swap: boolean) => {
+    const d: TriviaDeps = { ...base, nonce: () => nonce, pickFormat: () => card, fmt: (id) => (id === card.id || id === publicFormatId(card) ? card : null) };
+    const dealt = deal(d, { userId: "ann" }, inp);
+    assert.ok(dealt.ok);
+    if (!dealt.ok) throw new Error("deal");
+    assert.equal(dealt.card.kind, "order");
+    const order = right(nonce);
+    if (swap) [order[1], order[2]] = [order[2]!, order[1]!];
+    clock.t += 2000;
+    const before = (await canonicalWallet(sql, "ann")).wallet.coins;
+    const g = await grade(d, { userId: "ann" }, { token: dealt.token, choice: null, clientMs: 1900, order });
+    assert.ok(g.ok && g.correct && g.credited);
+    if (!g.ok) throw new Error("grade");
+    return { d, token: dealt.token, g, before, exact: right(nonce) };
+  };
+  const hits: string[] = [];
+  for (let i = 0; hits.length < 2; i++) if (nonceRoll("kl-format", `o${i}`) < FORMAT_CHANCE) hits.push(`o${i}`);
+
+  const swap = await play(hits[0]!, true);
+  assert.equal(swap.g.order?.result, "swap");
+  assert.ok(swap.g.award && swap.g.wallet && swap.g.award.coins > 0, "the server wallet paid");
+  assert.equal(swap.g.order!.coins, swap.g.award!.coins, "the reveal carries the server award");
+  assert.equal(swap.g.wallet!.coins - swap.before, swap.g.award!.coins, "wallet delta equals the halved award exactly");
+  assert.equal(swap.g.mult, gradeOf(swap.g.elapsedMs).mult, "mult stays as graded: order.result is the only half-coin signal");
+  const row = await sql<{ detail: string }>`select detail from wallet_ledger where op_key = ${"grade:" + hits[0]}`;
+  assert.match(String(row[0]!.detail), /"oh":1/, "the outcome is stored with the paid coins");
+
+  // Another instance (empty ring) gets the same token again, now with the exact order: nothing changes.
+  resetGradeRing();
+  clock.t += 60_000;
+  const again = await grade(swap.d, { userId: "ann" }, { token: swap.token, choice: null, clientMs: 1900, order: swap.exact });
+  assert.ok(again.ok && again.replay && again.correct && !again.credited);
+  if (!again.ok) return;
+  assert.deepEqual(again.order, swap.g.order, "the first result and coins, never upgraded to exact");
+  assert.equal(again.wallet?.coins, swap.g.wallet!.coins, "a replay pays nothing more");
+  // And the same instance afterwards (ring now holds the outcome).
+  const third = await grade(swap.d, { userId: "ann" }, { token: swap.token, choice: null, clientMs: 1900, order: [] });
+  assert.ok(third.ok && third.replay);
+  if (third.ok) assert.deepEqual(third.order, swap.g.order);
+
+  // An exact order replayed elsewhere with a swapped (or junk) list stays exact and keeps its full coins.
+  const exact = await play(hits[1]!, false);
+  assert.equal(exact.g.order?.result, "exact");
+  assert.equal(exact.g.wallet!.coins - exact.before, exact.g.award!.coins);
+  const exactRow = await sql<{ detail: string }>`select detail from wallet_ledger where op_key = ${"grade:" + hits[1]}`;
+  assert.doesNotMatch(String(exactRow[0]!.detail), /"oh":1/);
+  resetGradeRing();
+  const swapped = [...exact.exact];
+  [swapped[0], swapped[1]] = [swapped[1]!, swapped[0]!];
+  for (const order of [swapped, ["junk"]]) {
+    resetGradeRing();
+    const r = await grade(exact.d, { userId: "ann" }, { token: exact.token, choice: null, clientMs: 1900, order });
+    assert.ok(r.ok && r.replay);
+    if (r.ok) assert.deepEqual(r.order, exact.g.order);
+  }
+
+  // A signed-in walker whose wallet write fails gets 0, never a made-up guest figure.
+  const lost = hits[1]! + "x";
+  let n = lost;
+  for (let i = 0; nonceRoll("kl-format", n) >= FORMAT_CHANCE; i++) n = `${lost}${i}`;
+  const noWallet: TriviaDeps = { ...base, sql: undefined, nonce: () => n, pickFormat: () => card, fmt: () => card };
+  const dealt = deal(noWallet, { userId: "ann" }, inp);
+  assert.ok(dealt.ok);
+  if (!dealt.ok) return;
+  const g = await grade(noWallet, { userId: "ann" }, { token: dealt.token, choice: null, clientMs: 1900, order: right(n) });
+  assert.ok(g.ok && g.correct && !g.award);
+  if (g.ok) assert.deepEqual(g.order, { result: "exact", labels: orderLabels(card), coins: 0 });
+});

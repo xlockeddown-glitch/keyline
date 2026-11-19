@@ -64,12 +64,12 @@ export function LootToast() {
                     <b>LOCKED OUT</b> · {lockClock(miss!.lockMs)} · this vault only
                   </p>
                 ) : null}
-                <p className="kicker">Wrong answer</p>
+                <p className="kicker">{miss!.order ? "Order missed" : "Wrong answer"}</p>
                 <p className="font-display mt-1 text-3xl leading-none">Not quite</p>
                 <p className="mt-3 text-sm text-fg-muted">
                   {miss!.lockMs ? "The vault locked you out and kept the key. Other vaults are still open. The right answer was:" : "Not this time (the key is used up). The right answer was:"}
                 </p>
-                {miss!.near ? (
+                {miss!.order ? <p className="mt-1 text-base font-medium text-pretty">Correct order: {miss!.order.labels.join(" → ")}</p> : miss!.near ? (
                   <p className="mt-1 text-base font-medium text-pretty" data-testid="near-line">
                     {nearLine(miss!.near)}
                   </p>
@@ -237,7 +237,8 @@ function LootEmblems({ loot, streak }: { loot: LootDrop; streak: number }) {
           ))}
         </span>
       ) : null}
-      <p className="emb-rating font-display" data-testid="loot-rating">{RATING[loot.grade]}</p>
+      <p className="emb-rating font-display" data-testid="loot-rating">{loot.order ? loot.order.result === "exact" ? "Exact order" : "One swap off — half coin" : RATING[loot.grade]}</p>
+      {loot.order ? <p className="mt-2 text-sm text-fg-muted text-pretty">Correct order: {loot.order.labels.join(" → ")}</p> : null}
       {loot.near ? (
         <p className="mt-2 text-sm text-fg-muted text-pretty" data-testid="near-line">
           {nearLine(loot.near)}

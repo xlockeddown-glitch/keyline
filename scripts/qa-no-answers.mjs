@@ -8,7 +8,9 @@
  *   - any card prompt from the server bank (prompts of 28+ characters; a prompt in the bundle means the bank shipped),
  *   - answer-shaped keys: `answer:"…"` / `"answer":"…"`, `correctIndex`, `correct_index`, `answerIndex`,
  *     `choices:[…],answer` (a card literal),
- *   - a handful of known, unique correct answers (door quizzes and bank cards that no UI copy uses).
+ *   - a handful of known, unique correct answers (door quizzes and bank cards that no UI copy uses),
+ *   - 0.1.173 Put in order: an item with its sort key (`label:"…",key:1947`, or the bank's `["…",1947]` seed pair next
+ *     to a bank label), and every authored order label or fact of 16+ characters (the server-only bank shipped).
  *
  *   npm run qa:no-answers            # after npm run build
  *   node scripts/qa-no-answers.mjs --dir path/to/client
@@ -31,7 +33,31 @@ export const KNOWN_ANSWERS = [
   "LEO broadband satellite network",
 ];
 
+export const KNOWN_ORDER_LABELS = [
+  "First transistor demonstrated",
+  "Magellan expedition returns",
+  "Stockton–Darlington Railway",
+  "Nitrogen (boiling)",
+];
+
+/** Order labels and facts shorter than this are too generic to probe verbatim ("Mount Fuji", "Helium"). */
+export const MIN_ORDER_PROBE = 16;
+
+/** Order labels that the public map copy (place lore in the data chunk) also uses, so finding them proves nothing. */
+export const ORDER_PUBLIC_COPY = ["Declaration of Independence", "Louisiana Purchase"];
+
+/** Every authored order label and fact long enough to probe (the bank is server-only, so none may be in the bundle). */
+export function orderProbes(cards) {
+  return [...new Set(cards.flatMap((c) => [...c.items.map((x) => x.label), c.fact]))].filter(
+    (s) => typeof s === "string" && s.length >= MIN_ORDER_PROBE && !ORDER_PUBLIC_COPY.includes(s),
+  );
+}
+
 const KEY_PATTERNS = [
+  { name: "order answer key", re: /\b(?:sortKey|correctOrder|sortedIndex)\b/ },
+  // The shape order.ts really builds: an item's label next to its numeric sort key, quoted or minified, either order.
+  { name: "order item with its sort key", re: /["']?\blabel["']?\s*:\s*(?:"[^"\n]{1,120}"|'[^'\n]{1,120}'|`[^`\n]{1,120}`)\s*,\s*["']?key["']?\s*:\s*-?\.?\d/ },
+  { name: "order item with its sort key", re: /["']?\bkey["']?\s*:\s*-?\.?\d[\d.e+-]*\s*,\s*["']?label["']?\s*:\s*["'`]/ },
   { name: "answer key with a string value", re: /["']?\banswer["']?\s*:\s*["'`]/ },
   { name: "card literal (choices then answer)", re: /choices["']?\s*:\s*\[[^\]]{0,600}\]\s*,\s*["']?answer\b/ },
   { name: "correctIndex key", re: /\bcorrect_?[Ii]ndex\b/ },
@@ -42,7 +68,7 @@ const SCAN_EXT = new Set([".js", ".mjs", ".cjs", ".json", ".html", ".map", ".txt
 export const MIN_PROMPT = 28;
 
 /** Hits for one file's text. `prompts` are card prompts (server bank) to look for verbatim. */
-export function scanText(text, { prompts = [], answers = KNOWN_ANSWERS } = {}) {
+export function scanText(text, { prompts = [], answers = [...KNOWN_ANSWERS, ...KNOWN_ORDER_LABELS] } = {}) {
   const hits = [];
   for (const k of KEY_PATTERNS) {
     const m = text.match(k.re);
@@ -111,10 +137,24 @@ async function main() {
     console.error("[no-answers] self-check failed: the detector missed a planted card");
     process.exit(1);
   }
+  const { ORDER_CARDS } = await import("../src/game/banks/order.ts");
+  if (KNOWN_ORDER_LABELS.some((label) => !ORDER_CARDS.some((c) => c.items.some((x) => x.label === label)))) {
+    console.error("[no-answers] KNOWN_ORDER_LABELS no longer match the authored order bank (pick new ones)");
+    process.exit(1);
+  }
+  const orderAnswers = [...new Set([...KNOWN_ORDER_LABELS, ...orderProbes(ORDER_CARDS)])];
+  // Authored order stems are dealt like prompts, never bundled.
+  for (const c of ORDER_CARDS) if (c.q.length >= MIN_PROMPT && !prompts.includes(c.q)) prompts.push(c.q);
+  // Self-check on the real shape: one authored item with its key must trip the detector.
+  const item = ORDER_CARDS[0].items[0];
+  if (!scanText(`items:[{label:${JSON.stringify(item.label)},key:${item.key}}]`, { answers: [] }).some((h) => h.kind === "order item with its sort key")) {
+    console.error("[no-answers] self-check failed: the detector missed a planted order item");
+    process.exit(1);
+  }
   const files = walk(dir);
   let bad = 0;
   for (const f of files) {
-    const hits = scanText(readFileSync(f, "utf8"), { prompts });
+    const hits = scanText(readFileSync(f, "utf8"), { prompts, answers: [...KNOWN_ANSWERS, ...orderAnswers] });
     if (!hits.length) continue;
     bad += 1;
     console.error(`[no-answers] ${relative(root, f)}`);
@@ -124,7 +164,7 @@ async function main() {
     console.error(`[no-answers] FAIL — ${bad} client file(s) carry trivia answers or cards`);
     process.exit(1);
   }
-  console.log(`[no-answers] ok — ${files.length} client files in ${relative(root, dir) || "."}, ${prompts.length} bank prompts and ${KNOWN_ANSWERS.length} known answers absent, no answer keys`);
+  console.log(`[no-answers] ok — ${files.length} client files in ${relative(root, dir) || "."}, ${prompts.length} bank prompts, ${KNOWN_ANSWERS.length} known answers and ${orderAnswers.length} order labels/facts absent, no answer keys`);
 }
 
 if (isMainModule(import.meta.url)) await main();

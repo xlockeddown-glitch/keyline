@@ -51,7 +51,7 @@ export const DealIn = z.object({
     })
     .optional(),
   /** 0.1.158: the card formats this client can show (street lamps only). Absent: four-choice cards only. */
-  formats: z.array(z.enum(["tf", "near"])).max(2).optional(),
+  formats: z.array(z.enum(["tf", "near", "order"])).max(3).optional(),
 });
 export type DealInput = z.infer<typeof DealIn>;
 
@@ -61,6 +61,11 @@ export const GradeIn = z.object({
   choice: z.string().max(400).nullable(),
   /** The client's own stopwatch, from the card showing to the tap. */
   clientMs: z.number().finite().min(0).max(600000),
+  /**
+   * 0.1.173 Put in order: the tapped token permutation. Bounded; anything malformed becomes [] here (and is
+   * sanitized again by the server), so it grades as a miss instead of failing the request.
+   */
+  order: z.array(z.string().max(64)).max(8).optional().catch([]),
   /** 0.1.158 Closest Number: the typed guess (only read on a Closest Number card). */
   guess: z.number().finite().min(-1e12).max(1e12).optional(),
 });
@@ -75,8 +80,9 @@ export type PublicCard = {
   rarity: Tier;
   /** 0.0.96 Fox: a wrong option the server crossed out. */
   struck?: string;
-  /** 0.1.158: "tf" (choices are True, False) or "near" (no choices: type a number). Absent: four choices. */
-  kind?: "tf" | "near";
+  /** 0.1.158: "tf" (choices are True, False) or "near" (type a number), "order" (tap a permutation), "where" (ride clue). Absent: classic four choices. */
+  kind?: "classic" | "where" | "tf" | "near" | "order";
+  items?: { token: string; label: string }[];
   /** 0.1.158 Closest Number: a unit to show after the input, if any. */
   unit?: string;
 };
@@ -111,7 +117,7 @@ export type GradeResult =
       /** Server-bounded answer time (ms) — what grade, perfect timing and the streak spark use. */
       elapsedMs: number;
       grade: Grade | null;
-      /** Base coin multiplier for a lamp card from the grade (1 / 0.7 / 0.4; Closest Number slides); 0 when wrong. */
+      /** Base coin multiplier for a lamp card from the grade (1 / 0.7 / 0.4; Closest Number slides); 0 when wrong. An order swap keeps the graded value: `order.result` is the only half-coin signal. */
       mult: number;
       /** The tier this right answer cleared on the rolls (server-written for a signed-in walker). */
       clearTier: Tier | null;
@@ -135,6 +141,7 @@ export type GradeResult =
       /** Coins and matches this grade added. Present with `wallet` on a right answer. */
       award?: ServerAward;
       /** 0.1.158 Closest Number: the exact answer, the guess and the raw relative miss (0.016 = 1.6%). */
+      order?: import("./types").OrderReveal;
       near?: { value: number; guess: number; offPct: number };
     }
   | { ok: false; reason: "bad-token" | "not-yours" | "unknown-card" | "slow" };

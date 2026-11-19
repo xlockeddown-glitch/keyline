@@ -4,6 +4,7 @@ import { useCurrentUser, useCurrentUserState } from "@/lib/auth/use-current-user
 import { useGame } from "@/game/store";
 import { ackFriendNews, fetchFriendNews, sendFriendTicket } from "@/game/friendApi";
 import { DAILY_TICKETS, LADDER, type LadderPay } from "@/game/friendTicket";
+import { isClassic } from "@/game/classicKind";
 import { browserStores, noteAnswered, noteDismissed, noteIgnored, offerAllowed, readOffer, readRecent, type RecentCard } from "@/game/friendOffer";
 import { SignInActions } from "./AuthChip";
 
@@ -11,7 +12,7 @@ import { SignInActions } from "./AuthChip";
 const OFFER_MS = 15_000;
 const POLL_MS = 45_000;
 
-type Offer = { id: string; q: string; at: number };
+type Offer = { kind?: string; id: string; q: string; at: number };
 
 /** 0.0.53: the Journal's send row opens the same sheet, whatever the chip's snooze says. */
 const sheetListeners = new Set<(card: Offer) => void>();
@@ -44,11 +45,11 @@ export function FriendTickets() {
         // A card was answered (asked grows on every answer, never on Leave lamp) and the lamp closed.
         // 0.0.53: not after a "Not now" in the last 24 h, and at most one unused nudge a session (friendOffer.ts).
         // 0.1.158: a True/False or Closest Number card is never offered (only four-choice cards can be tickets).
-        if (card && !card.kind && !s.openVault && s.asked !== p.asked) {
+        if (card && isClassic(card) && !s.openVault && s.asked !== p.asked) {
           const { local, session } = browserStores();
           // Always kept for the Journal's "Send a friend ticket" row, even when the chip is snoozed.
-          noteAnswered(local, { id: card.id, q: card.q, at: Date.now() });
-          if (offerAllowed(readOffer(local, session), Date.now())) setOffer({ id: card.id, q: card.q, at: Date.now() });
+          noteAnswered(local, { kind: card.kind, id: card.id, q: card.q, at: Date.now() });
+          if (offerAllowed(readOffer(local, session), Date.now())) setOffer({ kind: card.kind, id: card.id, q: card.q, at: Date.now() });
         }
         else if (s.openVault && !p.openVault)
           setOffer((o) => {

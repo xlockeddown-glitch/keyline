@@ -97,7 +97,7 @@ test("server deal: a white Geography spark from the destination, no answer in th
   const card = d.card(r.card.id)!;
   assert.ok(card.id.startsWith("where-"), "dealt from the city's places");
   assert.ok((whereCards().get(to) ?? []).some((c) => c.id === card.id), "from the destination city");
-  assert.equal(r.card.kind, undefined, "four choices, never True/False or Closest Number");
+  assert.equal(r.card.kind, "where", "explicit kind excludes the ride card from classic-only features");
   assert.equal(r.card.struck, undefined);
   assert.equal(r.card.choices.length, 4);
   const wire = JSON.stringify(r.card);

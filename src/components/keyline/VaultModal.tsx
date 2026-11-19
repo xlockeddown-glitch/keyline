@@ -43,6 +43,8 @@ export function VaultModal() {
   const pickCategory = useGame((s) => s.pickCategory);
   const vaultsOpened = useGame((s) => s.vaultsOpened);
   const answer = useGame((s) => s.answer);
+  const answerOrder = useGame((s) => s.answerOrder);
+  const [order, setOrder] = useState<string[]>([]);
   const answerNear = useGame((s) => s.answerNear);
   const closeVault = useGame((s) => s.closeVault);
   const [now, setNow] = useState(() => performance.now());
@@ -92,12 +94,13 @@ export function VaultModal() {
 
   useEffect(() => {
     setNearGuess("");
-  }, [quiz?.id]);
+    setOrder([]);
+  }, [quiz?.id, openVault?.token]);
 
   useEffect(() => {
     if (!quiz) return;
     const onKey = (e: KeyboardEvent) => {
-      if (quiz.kind === "near") return;
+      if (quiz.kind === "near" || quiz.kind === "order") return;
       const idx =
         quiz.kind === "tf"
           ? e.code === "KeyT" || e.code === "Digit1" || e.code === "Numpad1"
@@ -132,7 +135,7 @@ export function VaultModal() {
   const left = quiz ? Math.max(0, openVault.deadline - now) : 0;
   const total = quiz ? Math.max(1, openVault.deadline - openVault.startedAt) : 1;
   const elapsed = quiz ? now - openVault.startedAt : 0;
-  const grade = quiz?.kind === "near" ? "Estimate" : elapsed <= 3000 ? "Perfect" : elapsed <= 10000 ? "Great" : "Good";
+  const grade = quiz?.kind === "order" ? "Order" : quiz?.kind === "near" ? "Estimate" : elapsed <= 3000 ? "Perfect" : elapsed <= 10000 ? "Great" : "Good";
   const frac = quiz ? Math.min(1, left / total) : 0;
   const catMeta = openVault.category === "random" ? { label: "Random" } : TRIVIA_CATS.find((c) => c.id === openVault.category);
   const today = cotdAt(Date.now());
@@ -150,7 +153,7 @@ export function VaultModal() {
     : offerCats(openVault.poiId, vaultsOpened, 6, poi, today);
   const favs = perkFavs(scout, true, carNow);
   const ground = poi ? placeLine(poi) : null;
-  const wickClass = left < 5000 ? "is-short" : quiz?.kind === "near" ? "is-good" : `is-${grade.toLowerCase()}`;
+  const wickClass = left < 5000 ? "is-short" : (quiz?.kind === "near" || quiz?.kind === "order") ? "is-good" : `is-${grade.toLowerCase()}`;
 
   return (
     <div className={`vault-night tier-${poi.tier} absolute inset-0 z-[800] flex items-end justify-center p-3 sm:items-center`}>
@@ -337,7 +340,27 @@ export function VaultModal() {
               </p>
 
               <p className="plate-q">{quiz.q}</p>
-              {quiz.kind === "near" ? (
+              {quiz.kind === "order" ? (
+                <form className="order-form mt-3 flex flex-col gap-2" data-testid="order-form" onSubmit={(e) => {
+                  e.preventDefault();
+                  if (order.length !== quiz.items?.length || openVault.pending === "grade") return;
+                  sfx.ui();
+                  answerOrder(order, performance.now());
+                }}>
+                  <p className="text-sm text-fg-muted">Tap in order. Tap again to remove and renumber.</p>
+                  {quiz.items?.map((item) => {
+                    const at = order.indexOf(item.token);
+                    return <button key={item.token} type="button" className="order-row btn btn-ghost w-full text-left" aria-pressed={at >= 0} disabled={openVault.pending === "grade"} onClick={() => setOrder((prev) => prev.includes(item.token) ? prev.filter((t) => t !== item.token) : [...prev, item.token])}>
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-accent tabular-nums">{at >= 0 ? at + 1 : "·"}</span>
+                      <span className="min-w-0 text-pretty">{item.label}</span>
+                    </button>;
+                  })}
+                  <div className="flex gap-2">
+                    <button type="button" className="btn btn-ghost min-h-12" disabled={!order.length || openVault.pending === "grade"} onClick={() => setOrder([])}>Clear</button>
+                    <button type="submit" className="btn btn-primary min-h-12 flex-1" disabled={order.length !== quiz.items?.length || openVault.pending === "grade"}>Submit</button>
+                  </div>
+                </form>
+              ) : quiz.kind === "near" ? (
                 <form
                   className="mt-3 flex flex-col gap-2"
                   data-testid="near-form"
@@ -389,7 +412,7 @@ export function VaultModal() {
                 </div>
               )}
               <p className="mt-2 text-xs text-fg-subtle" aria-live="polite">
-                {openVault.pending === "grade" ? "Checking your answer…" : quiz.kind === "tf" ? "T/F or 1/2" : quiz.kind === "near" ? "Type a number, then Lock in or press Enter" : "A–D or 1–4"}
+                {openVault.pending === "grade" ? "Checking your answer…" : quiz.kind === "tf" ? "T/F or 1/2" : quiz.kind === "order" ? "Exact order opens the vault. One adjacent swap pays half coin." : quiz.kind === "near" ? "Type a number, then Lock in or press Enter" : "A–D or 1–4"}
               </p>
             </div>
           )}

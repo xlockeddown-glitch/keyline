@@ -40,6 +40,8 @@ export type TriviaSeed = {
 };
 
 export type TriviaQ = {
+  /** Absent on legacy classic cards. Other formats must name their kind. */
+  kind?: "classic" | "where";
   q: string;
   choices: [string, string, string, string];
   answer: string;
@@ -50,12 +52,20 @@ export type TriviaQ = {
 };
 
 /**
- * 0.1.158 street-lamp formats (server-only cards, never in everyCard): True/False and Closest Number.
+ * 0.1.158 street-lamp formats (server-only cards, never in everyCard): True/False, Closest Number and Put in order.
  * `cat` on a TF card is the field it deals under.
  */
 export type FormatQ =
   | { kind: "tf"; q: string; answer: "True" | "False"; fact?: string; cat?: TriviaCat; diff: TriviaDiff; id: string; rarity: Tier }
-  | { kind: "near"; q: string; value: number; unit?: string; diff: TriviaDiff; id: string; rarity: Tier };
+  | { kind: "near"; q: string; value: number; unit?: string; diff: TriviaDiff; id: string; rarity: Tier }
+  | { kind: "order"; q: string; items: { label: string; key: number }[]; gap: "relative" | "years"; fact: string; cat: "history" | "geography" | "science" | "math"; diff: TriviaDiff; id: string; rarity: Tier };
+
+/**
+ * 0.1.173 Put in order reveal. `result` is the only half-coin signal ("swap" pays floor(total / 2)).
+ * `coins` is what was credited: the server wallet's award for a signed-in walker (0 when it paid nothing),
+ * and for a guest the amount the local store added (the server sends 0; it never sees a guest pocket).
+ */
+export type OrderReveal = { result: "exact" | "swap" | "miss"; labels: string[]; coins: number };
 
 /** 0.1.158 Closest Number reveal: the exact answer, the guess, and the raw relative miss (0.016 = 1.6%). */
 export type NearReveal = { value: number; guess: number; offPct: number };
@@ -184,6 +194,7 @@ export type LootDrop = {
   boosts?: string[];
   /** 0.1.158 Closest Number: the answer, the guess and the miss. */
   near?: NearReveal;
+  order?: OrderReveal;
   /** Night market (0.0.46): this reward was earned on the market street and paid ×mult; `coin` is what the market added. */
   market?: { street: string; mult: number; coin: number; matches: number };
 };
@@ -193,6 +204,7 @@ export type MissFlash = {
   fact?: string;
   /** 0.1.158 Closest Number: the answer, the guess and the miss. */
   near?: NearReveal;
+  order?: OrderReveal;
   /** 0.1.107: the vault locked out for this long (ms) after the wrong answer. */
   lockMs?: number;
 };

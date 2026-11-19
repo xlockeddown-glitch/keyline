@@ -1,3 +1,4 @@
+import { isClassic } from "./classicKind.ts";
 import { cardAny } from "./triviaBank";
 import type { FriendCard } from "./friendService";
 
@@ -8,6 +9,6 @@ import type { FriendCard } from "./friendService";
  */
 export function cardById(id: string): FriendCard | null {
   const c = cardAny(id);
-  if (!c || c.choices.length !== 4 || !c.choices.includes(c.answer)) return null;
+  if (!c || !isClassic(c) || c.choices.length !== 4 || !c.choices.includes(c.answer)) return null;
   return { id: c.id, q: c.q, choices: c.choices, answer: c.answer, fact: c.fact, diff: c.diff };
 }

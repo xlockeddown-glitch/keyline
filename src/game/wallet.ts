@@ -26,6 +26,7 @@ import { crateLoot, nextCrateStreak, CRATE_MAX } from "./crate.ts";
 import { payFriend } from "./friendTicket.ts";
 import type { RideGameId } from "./rideGames.ts";
 import { perfectBack } from "./perfectRefund.ts";
+import { orderCoins } from "./orderPay.ts";
 import { hearthBoost, hearthBoostLabel, hearthLast, type HearthVersion } from "./hearthMulti.ts";
 import { FARE_MAX_MS, FARES_CAP, matchCap } from "./ticket.ts";
 
@@ -649,6 +650,8 @@ export function clothOp(w: WalletState, id: string, proof?: { meters?: number; v
 }
 
 export type GradePay = {
+  /** 0.1.173: server-only flag for an order card one adjacent swap off (pays floor(total / 2)). Never read from GradeIn. */
+  orderHalf?: boolean;
   /** 0.1.117 Double/Triple Hearth: the version and step the server sealed (coin boost; the key back only on the last). */
   hearth?: { v: HearthVersion; step: number };
   /** 0.1.45: favorite categories the server verified at deal time (owned coat, seated owned car). */
@@ -723,7 +726,11 @@ function boostOf(p: GradePay, streakAfter: number) {
   });
 }
 
-function withBoost(w: WalletState, coins: number, keys: Partial<Record<Tier, number>>, boost: ReturnType<typeof applyTriviaBoosts>, cities?: CityUnlocks): OpResult & { award: AwardView } {
+/**
+ * `half` (0.1.173, an order card one adjacent swap off): the whole coin grant is halved, rounded down, before it is
+ * applied, so the wallet's gain and `award.coins` come from the same number (the coin cap aside). Keys are untouched.
+ */
+function withBoost(w: WalletState, coins: number, keys: Partial<Record<Tier, number>>, boost: ReturnType<typeof applyTriviaBoosts>, cities?: CityUnlocks, half = false): OpResult & { award: AwardView } {
   const base = cleanKeys({ ...cleanKeys(null), ...keys });
   const paid = creditWhite({ ...w.keys, ...addKeys(w.keys, base) }, boost.white);
   const whiteAdded = paid.added;
@@ -732,7 +739,7 @@ function withBoost(w: WalletState, coins: number, keys: Partial<Record<Tier, num
     const n = (base[t] ?? 0) + (t === "white" ? whiteAdded : 0);
     if (n) awardKeys[t] = n;
   }
-  const award: AwardView = { coins: coins + boost.coins, keys: awardKeys, boosts: boost.labels };
+  const award: AwardView = { coins: orderCoins(coins + boost.coins, half ? "swap" : null), keys: awardKeys, boosts: boost.labels };
   const applied = applyDelta(w, { coins: award.coins, keys: award.keys, ...(cities ? { cities } : {}) });
   if (!applied.ok) return { ...applied, award };
   return { ...applied, award };
@@ -847,7 +854,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const tripled = triple === 3 ? { ...tagged, labels: [...tagged.labels, "Streak ×3 vault coin"] } : tagged;
   const bumped0 = marketBump ? { ...tripled, labels: [...tripled.labels, `Night market streak +${marketBump}`] } : tripled;
   const bumped = comet ? { ...bumped0, labels: [...bumped0.labels, COMET_TAG] } : bumped0;
-  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo + cometKeyCoin, lKeys, bumped, lit.u);
+  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo + cometKeyCoin, lKeys, bumped, lit.u, p.orderHalf === true);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */

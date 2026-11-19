@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { ORDER_CARDS, generatedOrder } from "./banks/order.ts";
 import { TF_CARDS, formatCards, generatedNear } from "./banks/formats.ts";
 import { publicFormatId } from "./triviaService.ts";
 
@@ -37,5 +38,5 @@ test("generatedNear fills 40 cards per amber/red/violet and is included in forma
   const one = near[0]!;
   assert.equal(one.kind, "near");
   assert.match(publicFormatId(one), /^f/);
-  assert.equal(formatCards().length, TF_CARDS.length + near.length);
+  assert.equal(formatCards().length, TF_CARDS.length + near.length + ORDER_CARDS.length + generatedOrder().length);
 });

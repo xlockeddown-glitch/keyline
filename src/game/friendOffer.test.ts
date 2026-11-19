@@ -62,8 +62,8 @@ test("answered cards are kept for the Journal even while the chip is snoozed (ne
   assert.equal(readRecent(store()).length, 0, "nothing answered yet");
   local.setItem(RECENT_KEY, "{bad");
   assert.deepEqual(readRecent(local), []);
-  local.setItem(RECENT_KEY, JSON.stringify([{ id: 5, q: "x", at: 1 }, { id: "ok", q: "Fine", at: 2 }]));
-  assert.deepEqual(readRecent(local).map((c) => c.id), ["ok"]);
+  local.setItem(RECENT_KEY, JSON.stringify([{ id: 5, q: "x", at: 1 }, { id: "cOk", q: "Fine", at: 2 }]));
+  assert.deepEqual(readRecent(local).map((c) => c.id), ["cOk"]);
   assert.deepEqual(readRecent(null), []);
 });
 

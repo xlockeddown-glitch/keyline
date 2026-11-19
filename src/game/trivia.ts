@@ -1,3 +1,4 @@
+import { isClassic } from "./classicKind.ts";
 import { PLACE } from "@/game/banks/place";
 import { aboutTopic, placeWeights, topicsFor } from "./place";
 import { DOOR_QUIZZES } from "./doorQuizzes";
@@ -378,7 +379,7 @@ function mergeCat(a: TriviaQ[], b: TriviaQ[]): TriviaQ[] {
 	}
 	return out;
 }
-const GENERAL: Record<TriviaCat, TriviaQ[]> = {
+export const GENERAL: Record<TriviaCat, TriviaQ[]> = {
 	sports: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.sports ?? [], GENERAL_BANK.sports ?? []), WEEKLY_SPORTS_20261006), WEEKLY_SPORTS_20261009), WEEKLY_SPORTS_20261016), PLUS_SPORTS_20261019), CUR_SPORTS_20261021), PLUS_20261022.sports), VARIETY_20261025.sports), WEEKLY_SHARED_20261030.sports ?? []), CUR_SPORTS_20261031), PLUS_20261103E.sports), PLUS_20261106.sports), CUR_SPORTS_20261106), CUR_SPORTS_20261109A), CUR_SPORTS_20261109B), PLUS_20261109C.sports ?? []), CUR_SPORTS_20261109C), CUR_SPORTS_20261109E), PLUS_20261109G.sports ?? []), PLUS_20261110K.sports ?? []), PLUS_20261113.sports ?? []), PLUS_20261117.sports ?? []),
 	local: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.local ?? [], GENERAL_BANK.local ?? []), WEEKLY_LOCAL_20261006), PLUS_LOCAL_20261019), CUR_LOCAL_20261021), PLUS_20261022.local), PLUS_20261025.local),
 	political: mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(mergeCat(CORE_GENERAL.political ?? [], GENERAL_BANK.political ?? []), WEEKLY_POLITICAL), WEEKLY_POLITICAL_20261002), WEEKLY_POLITICAL_20261006), WEEKLY_POLITICAL_20261009), WEEKLY_POLITICAL_20261016), LEVEL_POLITICAL_20261016), PLUS_POLITICAL_20261019), CUR_POLITICAL_20261021), PLUS_20261022.political), VARIETY_20261025.political), PLUS_20261031B.political), CUR_POLITICAL_20261031), PLUS_20261103E.political), PLUS_20261106.political), CUR_POLITICAL_20261106), CUR_POLITICAL_20261109B), PLUS_20261109C.political ?? []), CUR_POLITICAL_20261109C), PLUS_20261109F.political ?? []), PLUS_20261109G.political ?? []), PLUS_20261109H.political ?? []), PLUS_20261109I.political ?? []), PLUS_20261110J.political ?? []), PLUS_20261110K.political ?? []), PLUS_20261113.political ?? []), PLUS_20261117.political ?? []),
@@ -2874,19 +2875,19 @@ export function pickTrivia(
   avoid: readonly string[] = [],
   want?: TriviaDiff,
 ): TriviaQ {
-	const cityQs = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []);
-	const regionQs = REGION[cityId]?.[cat] ?? [];
+	const cityQs = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []).filter(isClassic);
+	const regionQs = (REGION[cityId]?.[cat] ?? []).filter(isClassic);
 	const color: Tier = tier ?? poi?.tier ?? "white";
 	const mathLamp = cat === "math";
 	const prefer = want ?? (mathLamp ? preferMathDiff(color) : preferDiff(color));
 	const strict = want != null;
 	const seen = seenSet(avoid);
-	const placeQs = collectPlaceQs(cityId, cat, poi);
+	const placeQs = collectPlaceQs(cityId, cat, poi).filter(isClassic);
 	const cityPool = mergeCat(mergeCat(placeQs, cityQs), regionQs);
 	const globalPool =
 		cat === "local"
-			? (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId))
-			: (GENERAL[cat] ?? []);
+			? (GENERAL.local ?? []).filter(isClassic).filter((x) => aboutPlace(x, cityId))
+			: (GENERAL[cat] ?? []).filter(isClassic);
 	// 0.0.81: a blue math lamp draws its easy and medium blue cards alike (it only ever dealt the easy half).
 	// 0.0.99: math cards carry their ladder colour as rarity, so the colour alone picks them.
 	const mathSoft = mathLamp ? want : want;
@@ -2929,10 +2930,10 @@ export function pickTrivia(
 export function poolCensus(cityId: CityId): Record<TriviaCat, Record<Tier, number>> {
 	const out = {} as Record<TriviaCat, Record<Tier, number>>;
 	for (const cat of ALL_CATS) {
-		const cityQs = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []);
-		const regionQs = REGION[cityId]?.[cat] ?? [];
+		const cityQs = mergeCat(CITY[cityId]?.[cat] ?? [], CITY_EXTRA[cityId]?.[cat] ?? []).filter(isClassic);
+		const regionQs = (REGION[cityId]?.[cat] ?? []).filter(isClassic);
 		const globalPool =
-			cat === "local" ? (GENERAL.local ?? []).filter((x) => aboutPlace(x, cityId)) : (GENERAL[cat] ?? []);
+			cat === "local" ? (GENERAL.local ?? []).filter(isClassic).filter((x) => aboutPlace(x, cityId)) : (GENERAL[cat] ?? []).filter(isClassic);
 		const keys = Object.fromEntries(RARITY_TIERS.map((t) => [t, new Set<string>()])) as Record<Tier, Set<string>>;
 		for (const x of [...cityQs, ...regionQs, ...globalPool]) keys[x.rarity].add(dupKey(x.q));
 		out[cat] = Object.fromEntries(RARITY_TIERS.map((t) => [t, keys[t].size])) as Record<Tier, number>;
@@ -3022,11 +3023,11 @@ export function everyCardCat(): [TriviaQ, TriviaCat][] {
 	const out: [TriviaQ, TriviaCat][] = [];
 	for (const cat of ALL_CATS) {
 		const lists = [GENERAL[cat], ...Object.values(CITY).map((c) => c[cat]), ...Object.values(CITY_EXTRA).map((c) => c[cat]), ...Object.values(REGION).map((c) => c[cat])];
-		for (const l of lists) if (l) for (const q of l) out.push([q, cat]);
+		for (const l of lists) if (l) for (const q of l) if (isClassic(q)) out.push([q, cat]);
 	}
 	for (const topic of Object.values(PLACE)) {
 		if (!topic) continue;
-		for (const list of Object.values(topic)) if (list) for (const q of list) out.push([q, "local"]);
+		for (const list of Object.values(topic)) if (list) for (const q of list) if (isClassic(q)) out.push([q, "local"]);
 	}
 	return out;
 }
@@ -3034,7 +3035,7 @@ export function everyCardCat(): [TriviaQ, TriviaCat][] {
 export function everyCard(): TriviaQ[] {
 	const out: TriviaQ[] = [];
 	const add = (list: TriviaQ[] | undefined) => {
-		if (list) out.push(...list);
+		if (list) out.push(...list.filter(isClassic));
 	};
 	for (const cat of ALL_CATS) {
 		add(GENERAL[cat]);

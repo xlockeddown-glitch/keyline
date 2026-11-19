@@ -4345,3 +4345,9 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 }
 
 .mp-flame img { display: block; width: 1.9rem; height: 1.9rem; object-fit: contain; }
+
+/* Put-in-order: tap rows, never drag. Override the unlayered .btn minimum so every target stays 48px. */
+.order-form .btn { min-height:48px; }
+/* .btn is unlayered and centres one line; a row is a left-aligned label that wraps inside a 390px phone. */
+.order-form .order-row { justify-content:flex-start; gap:12px; padding:8px 12px; height:auto; text-align:left; white-space:normal; line-height:1.3; }
+.order-form .order-row > span:last-child { flex:1 1 0; min-width:0; overflow-wrap:anywhere; }

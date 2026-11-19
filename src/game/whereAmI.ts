@@ -73,6 +73,7 @@ export function whereCard(target: Poi, pois: readonly Poi[]): TriviaQ | null {
   }
   if (wrong.length < WHERE_CHOICES - 1) return null;
   return {
+    kind: "where",
     id: `where-${target.id}`,
     q: target.lore.trim(),
     choices: [target.name, wrong[0]!, wrong[1]!, wrong[2]!],

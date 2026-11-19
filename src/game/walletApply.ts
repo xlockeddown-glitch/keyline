@@ -752,6 +752,7 @@ export async function awardGrade(
     correct: pay.correct,
     elapsedMs: pay.elapsedMs,
     mult: pay.mult,
+    orderHalf: pay.orderHalf === true,
     city: pay.city,
     diff: pay.diff,
     clearTier: pay.clearTier,
@@ -869,6 +870,8 @@ export async function awardGrade(
       ...(full.correct && !cometClear && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
       // 0.1.159: a Comet vault clear that paid the comet bonus, for later quests and titles.
       ...(cometClear ? { ev: 1 } : {}),
+      // 0.1.173: an order card one adjacent swap off (paid half coin); a replay on another instance reads it back.
+      ...(full.correct && full.orderHalf ? { oh: 1 } : {}),
     });
   // 0.1.42: did this write burn a match on a miss (an owned lamp's owner is paid for those)?
   let matchLost = false;

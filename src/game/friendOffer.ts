@@ -10,6 +10,8 @@
  *    server still enforces the daily send cap (DAILY_TICKETS) on every send.
  * Pure rules + a tiny storage wrapper; FriendTickets.tsx uses them, friendOffer.test.ts checks them.
  */
+import { isClassic } from "./classicKind.ts";
+
 export const OFFER_SNOOZE_MS = 24 * 60 * 60 * 1000;
 export const SNOOZE_KEY = "keyline-friend-offer-v1";
 export const SESSION_KEY = "keyline-friend-offer-session-v1";
@@ -17,7 +19,7 @@ export const RECENT_KEY = "keyline-friend-recent-v1";
 /** How many recently answered cards the Journal keeps on offer. */
 export const RECENT_KEEP = 3;
 
-export type RecentCard = { id: string; q: string; at: number };
+export type RecentCard = { kind?: string; id: string; q: string; at: number };
 
 export type OfferMemory = { dismissedAt: number | null; nudgedThisSession: boolean };
 
@@ -75,14 +77,14 @@ export function noteIgnored(session: KV | null) {
 }
 
 /** 0.1.158: only four-choice cards can become friend tickets; format cards carry public ids starting `f`. */
-export function offerable(id: string): boolean {
-  return !id.startsWith("f");
+export function offerable(id: string, kind?: string): boolean {
+  return isClassic({ kind }) && /^(?:c[A-Za-z0-9_-]+|p[0-9a-f]{8})$/.test(id);
 }
 
 /** A trivia card was answered: keep it (newest first, no repeats) for the Journal's send row. Never gated by the snooze. */
 export function noteAnswered(local: KV | null, card: RecentCard): RecentCard[] {
   // 0.1.158: True/False and Closest Number cards (public ids `f…`) can't be friend tickets, so they are never offered.
-  if (!offerable(card.id)) return readRecent(local);
+  if (!offerable(card.id, card.kind)) return readRecent(local);
   const next = [card, ...readRecent(local).filter((c) => c.id !== card.id)].slice(0, RECENT_KEEP);
   try {
     local?.setItem(RECENT_KEY, JSON.stringify(next));
@@ -100,7 +102,7 @@ export function readRecent(local: KV | null): RecentCard[] {
     return v
       .filter(
         (c): c is RecentCard =>
-          !!c && typeof c.id === "string" && c.id.length > 0 && offerable(c.id) && c.id.length <= 200 && typeof c.q === "string" && typeof c.at === "number",
+          !!c && typeof c.id === "string" && c.id.length > 0 && offerable(c.id, c.kind) && c.id.length <= 200 && typeof c.q === "string" && typeof c.at === "number",
       )
       .slice(0, RECENT_KEEP);
   } catch {

@@ -1,3 +1,4 @@
+import { isClassic } from "./classicKind.ts";
 // 0.0.96: scout abilities. Pure rules the server (grade/deal) and the guest store share. The worn coat travels in
 // the deal's pay context (like loot always has); every chance below is rolled by the server, never the client.
 import { SCOUTS } from "./data.ts";
@@ -45,7 +46,8 @@ export function owlMatchCoin(id: ScoutId | null, mult: number, tier: Tier, light
 }
 
 /** Fox: strike one wrong option on a red/violet lamp. The server picks it from the wrong ones only. */
-export function strikeOption(id: ScoutId | null, rarity: Tier, choices: readonly string[], answer: string, roll: number): string | null {
+export function strikeOption(id: ScoutId | null, rarity: Tier, choices: readonly string[], answer: string, roll: number, kind?: string): string | null {
+  if (!isClassic({ kind })) return null;
   if (!perkOf(id)?.strike) return null;
   if (rarity !== "red" && rarity !== "violet") return null;
   // 0.1.158: never on a two-choice (True/False) or no-choice card: a strike there would leave only the answer.
