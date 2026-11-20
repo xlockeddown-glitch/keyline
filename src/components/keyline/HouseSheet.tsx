@@ -117,7 +117,7 @@ export function HouseSheet() {
   );
 }
 
-/** 0.1.42: what the daily key pays, e.g. "2 Amber matches + 25,000 coins". */
+/** 0.1.42: what the daily key pays, e.g. "2 Amber keys + 10,000 coins" (0.1.175 coin retune). */
 function keyPay(h: { match: Tier; keyCoin: number }) {
   return `${KEY_MATCHES} ${TIER_LABEL[h.match]} keys + ${h.keyCoin.toLocaleString("en-US")} coins`;
 }

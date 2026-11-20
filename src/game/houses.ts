@@ -20,9 +20,9 @@ export const KEY_MATCHES = 2;
 
 export const HOUSES: readonly HouseDef[] = [
   { id: "cottage", name: "Lantern Cottage", blurb: "Warm brick, a green door, a glowing lantern.", price: 40_000, match: "white", keyCoin: 1_000 },
-  { id: "row", name: "Gaslight Row House", blurb: "Red brick, tall lit windows, an iron stoop.", price: 130_000, match: "blue", keyCoin: 3_000 },
-  { id: "town", name: "Ivy Townhouse", blurb: "Pale limestone, ivy and golden windows.", price: 300_000, match: "green", keyCoin: 8_000 },
-  { id: "villa", name: "Grand Villa", blurb: "Sand stucco, a long drive, amber light.", price: 1_200_000, match: "amber", keyCoin: 25_000, star: true },
+  { id: "row", name: "Gaslight Row House", blurb: "Red brick, tall lit windows, an iron stoop.", price: 130_000, match: "blue", keyCoin: 2_000 },
+  { id: "town", name: "Ivy Townhouse", blurb: "Pale limestone, ivy and golden windows.", price: 300_000, match: "green", keyCoin: 5_000 },
+  { id: "villa", name: "Grand Villa", blurb: "Sand stucco, a long drive, amber light.", price: 1_200_000, match: "amber", keyCoin: 10_000, star: true },
 ];
 
 /** What the account holds in one city. `items` is room for later (interior decor); v1 never sets it. */

@@ -154,7 +154,6 @@ export const CUR_BOOKS_20261021: TriviaQ[] = [
   q("Which thriller topped the NYT hardcover fiction list dated Oct 25, 2026?", ["The Housemaid", "The Witch", "The Boyfriend", "The Teacher"], "The Witch", 2),
   q("Novelist Maaza Mengiste was named a 2026…", ["Booker winner", "MacArthur Fellow", "Nobel laureate", "U.S. Poet Laureate"], "MacArthur Fellow", 2),
   q("Valeria Luiselli's 2026 National Book Award finalist novel is…", ["Lost Children Archive", "Beginning Middle End", "Faces in the Crowd", "Paradiso 17"], "Beginning Middle End", 3),
-  q("The 2026 National Book Award winners were named on…", ["Oct 18, 2026", "Nov 18, 2026", "Dec 18, 2026", "Jan 18, 2027"], "Nov 18, 2026", 2),
 ];
 
 export const CUR_LOCAL_20261021: TriviaQ[] = [

@@ -2,6 +2,8 @@
 
 Live **0.1.136** (`APP_VERSION` in `src/version.ts`), main `5185fe8`. Analysis only. No game code in this change.
 
+For the 0.1.175 house key coin retune (row 2,000, town 5,000, villa 10,000), see [`coin-sinks-175.md`](coin-sinks-175.md). The house key numbers below are the 0.1.136 values.
+
 The print shop is the outfitter’s Print tab (`src/components/keyline/ScoutShop.tsx` → `PrintShop.tsx`). It sells four coats and four vault skins for **white and blue keys**, in instalments, and it mixes vault paint. It does not charge coins. Ladder coin (`white` 30, `blue` 90, …) is used to order the catalogue and to explain it (`src/game/cosmetics.ts` lines 9 and 31–32). Paying the shop never moves `coins`.
 
 A yes on the table below is a retune of those key prices and of white/blue dye cans, plus one guard so a wardrobe sync cannot grant the new prices for free. Coin faucets stay as they are. Repeatable coin sinks stay in the later coin-sinks slice.

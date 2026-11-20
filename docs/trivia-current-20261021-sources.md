@@ -72,7 +72,7 @@ Bank: `src/game/banks/current_20261021.ts` (0.1.20 / k120a). Researched 2026-10-
 
 ## Books
 - Booker 2026 shortlist (Sept 22), chair Mary Beard, judge Jarvis Cocker, Stuart "John of John", Strout "The Things We Never Say", James "The Disappearers", winner 9 Nov → thebookerprizes.com/the-booker-library/prize-years/2026
-- NBA 2026 fiction finalists (Oct 6): Danticat "Dèy", Luiselli "Beginning Middle End"; winners Nov 18 → nationalbook.org
+- NBA 2026 fiction finalists (Oct 6): Danticat "Dèy", Luiselli "Beginning Middle End" → nationalbook.org
 - NYT hardcover fiction list dated Oct 25, 2026: "The Witch" (Freida McFadden) → seattletimes.com ; library list mirrors
 
 ## Local

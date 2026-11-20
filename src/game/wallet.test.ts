@@ -1265,9 +1265,9 @@ test("0.1.12 houses: any tier first, step-up costs the difference, the key needs
   assert.equal(k.ok, true);
   assert.equal(k.home?.match, "amber");
   assert.equal(k.home?.n, 2);
-  assert.equal(k.home?.coin, 25_000);
+  assert.equal(k.home?.coin, 10_000);
   const after = (await canonicalWallet(sql, "hse")).wallet;
-  assert.equal(after.coins, before.coins + 25_000, "0.1.42: the villa key pays 25,000 coin");
+  assert.equal(after.coins, before.coins + 10_000, "0.1.175: the villa key pays 10,000 coin");
   assert.equal(after.keys.amber, before.keys.amber + 2, "0.1.42: and 2 amber keys");
   const again = await applyClientOp(sql, "hse", { kind: "home", city: "austin" });
   assert.equal(again.home?.match, null, "once a day");
@@ -1419,7 +1419,7 @@ test("0.1.115 owned lanterns: buying is closed; a vault bought before keeps its 
 });
 
 test("0.1.42 house keys: every tier pays 2 keys of its color plus its coin, once a day, clamped at the coin cap", async () => {
-  const want = { cottage: ["white", 1_000], row: ["blue", 3_000], town: ["green", 8_000], villa: ["amber", 25_000] } as const;
+  const want = { cottage: ["white", 1_000], row: ["blue", 2_000], town: ["green", 5_000], villa: ["amber", 10_000] } as const;
   for (const [tier, [color, coin]] of Object.entries(want)) {
     const sql = await db();
     const u = `key-${tier}`;
