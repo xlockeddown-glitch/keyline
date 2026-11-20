@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.173";
+export const APP_VERSION = "0.1.174";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1173a";
+export const PUBLISH_STAMP = "k1174a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -274,3 +274,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.172: docs refresh — land PR #27's Gemini picture standard on current main; later painted work (title streets, flight windows, wheel discs, emblems, houses, cars) follows the same standard (k1172a).
 
 // 0.1.173: Put-in-order street lamps (history/geography/science/math; 3 rows green, 4 amber/red): server keeps sort keys, client taps opaque per-deal tokens; exact clears, one adjacent swap opens at half coin; no-choice (no Autopilot/Fox strike); friend tickets, picker and everyCard use a classic-only allow-list (k1173a).
+// 0.1.174: weekly trivia batch plus_20261120 — 269 cards (55 current events, 20%), Claude Opus candidates, all 295 source-checked; 5 stale-wording fixes; no math (k1174a).

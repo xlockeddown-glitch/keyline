@@ -149,12 +149,12 @@ export const CUR_BOOKS_20261021: TriviaQ[] = [
   q("Douglas Stuart's 2026 Booker-shortlisted novel is…", ["Young Mungo", "John of John", "Shuggie Bain", "Mother of Mine"], "John of John", 2),
   q("Which Pulitzer-winning author's 'The Things We Never Say' made the 2026 Booker shortlist?", ["Anne Tyler", "Elizabeth Strout", "Ann Patchett", "Alice McDermott"], "Elizabeth Strout", 3),
   q("Which former Booker winner's 'The Disappearers' made the 2026 shortlist?", ["Marlon James", "Bernardine Evaristo", "Paul Lynch", "Shehan Karunatilaka"], "Marlon James", 3),
-  q("The 2026 Booker Prize winner is to be named on…", ["9 Oct 2026", "9 Nov 2026", "9 Dec 2026", "9 Jan 2027"], "9 Nov 2026", 2),
+  q("The 2026 Booker Prize winner was named on…", ["9 Oct 2026", "9 Nov 2026", "9 Dec 2026", "9 Jan 2027"], "9 Nov 2026", 2),
   q("Edwidge Danticat's 2026 National Book Award finalist novel is titled…", ["Dèy", "Krik? Krak!", "Claire of the Sea Light", "Breath, Eyes, Memory"], "Dèy", 3),
   q("Which thriller topped the NYT hardcover fiction list dated Oct 25, 2026?", ["The Housemaid", "The Witch", "The Boyfriend", "The Teacher"], "The Witch", 2),
   q("Novelist Maaza Mengiste was named a 2026…", ["Booker winner", "MacArthur Fellow", "Nobel laureate", "U.S. Poet Laureate"], "MacArthur Fellow", 2),
   q("Valeria Luiselli's 2026 National Book Award finalist novel is…", ["Lost Children Archive", "Beginning Middle End", "Faces in the Crowd", "Paradiso 17"], "Beginning Middle End", 3),
-  q("The 2026 National Book Award winners are set to be named on…", ["Oct 18, 2026", "Nov 18, 2026", "Dec 18, 2026", "Jan 18, 2027"], "Nov 18, 2026", 2),
+  q("The 2026 National Book Award winners were named on…", ["Oct 18, 2026", "Nov 18, 2026", "Dec 18, 2026", "Jan 18, 2027"], "Nov 18, 2026", 2),
 ];
 
 export const CUR_LOCAL_20261021: TriviaQ[] = [

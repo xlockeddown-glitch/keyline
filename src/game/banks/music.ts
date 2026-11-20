@@ -28,7 +28,7 @@ export const MUSIC_BANK: TriviaQ[] = [
   q("'Bohemian Rhapsody' is a song by…", ["Queen", "Elton John", "David Bowie", "ABBA"], "Queen", 1),
   q("'Dancing Queen' is a song by…", ["Bee Gees", "ABBA", "Blondie", "Boney M."], "ABBA", 1),
   q("Bob Marley came from…", ["Trinidad", "Jamaica", "Barbados", "Cuba"], "Jamaica", 1),
-  q("Dolly Parton is best known as a … singer.", ["opera", "punk", "country", "jazz"], "country", 1),
+  q("Dolly Parton was best known as a … singer.", ["opera", "punk", "country", "jazz"], "country", 1),
   q("'Jolene' was written and sung by…", ["Loretta Lynn", "Tammy Wynette", "Dolly Parton", "Patsy Cline"], "Dolly Parton", 1),
   q("Nirvana's big hit was 'Smells Like ___'. The blank is…", ["Team Spirit", "Teen Spirit", "Green Spirit", "Mean Spirit"], "Teen Spirit", 1),
   q("Justin Timberlake first became famous in…", ["Backstreet Boys", "NSYNC", "New Kids on the Block", "Boyz II Men"], "NSYNC", 1),

@@ -112,7 +112,7 @@ Every card in `src/game/banks/current_20261031.ts`, grouped by source page (open
 
 ## https://www.nationalbook.org/2026-national-book-award-finalists-announced/
 - [books] Which Norwegian author's 'The School of Night' was a 2026 National Book Award finalist? → **Karl Ove Knausgaard**
-- [books] Who will receive the National Book Foundation's 2026 lifetime medal (DCAL), announced in Oct 2026? → **Salman Rushdie**
+- [books] Who received the National Book Foundation's 2026 lifetime medal (DCAL), announced in Oct 2026? → **Salman Rushdie**
 - [books] Which translator rendered Knausgaard's 2026 finalist 'The School of Night' into English? → **Martin Aitken**
 
 ## https://www.nintendoworldreport.com/review/77645/final-fantasy-resonance-switch-2-review

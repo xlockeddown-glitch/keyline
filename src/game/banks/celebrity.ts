@@ -46,7 +46,7 @@ export const CELEBRITY_BANK: TriviaQ[] = [
   q("Robert Downey Jr. played Marvel's…", ["Iron Man", "Captain America", "Thor", "Hulk"], "Iron Man", 2),
   q("Breaking Bad's Walter White was played by…", ["Bryan Cranston", "Aaron Paul", "Bob Odenkirk", "Jon Hamm"], "Bryan Cranston", 2),
   q("The Sopranos star James Gandolfini played…", ["Tony Soprano", "Walter White", "Don Draper", "Stringer Bell"], "Tony Soprano", 2),
-  q("Dolly Parton is a star of…", ["country music", "grand opera", "Atlanta hip-hop", "punk rock"], "country music", 2),
+  q("Dolly Parton was a star of…", ["country music", "grand opera", "Atlanta hip-hop", "punk rock"], "country music", 2),
   q("Prince's 1984 album and film is titled…", ["Purple Rain", "Thriller", "Born in the U.S.A.", "Like a Virgin"], "Purple Rain", 2),
   q("The first Academy Awards ceremony was held in…", ["1929", "1939", "1915", "1948"], "1929", 3),
   q("Wings won the first Academy Award for Outstanding Picture for films of…", ["1927–28", "1939", "1915", "1942"], "1927–28", 3),

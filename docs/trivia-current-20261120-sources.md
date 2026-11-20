@@ -1,0 +1,59 @@
+# Trivia current-events sources — batch 20261120 (trial run 4)
+
+Bank: `src/game/banks/plus_20261120.ts`. Window: settled facts from 20 October 2026 through 20 November 2026, each prompt time-anchored. Wikipedia pages fetched 20 Nov 2026 (America/Chicago); in-window hooks were first located on the Wikipedia Current events portal pages for the same dates. Every card was source-checked against the page text (the free-model cross-check could not run).
+
+- [arts] Which artist's painting set his own auction record by selling for US$190.4 million in November 2026? — **Vincent van Gogh** — https://en.wikipedia.org/wiki/Blossoming_Chestnut_Trees
+- [arts] Which auction house sold Van Gogh's Blossoming Chestnut Trees in New York in November 2026? — **Sotheby's** — https://en.wikipedia.org/wiki/Blossoming_Chestnut_Trees
+- [arts] Which art dealer placed the winning bid for Van Gogh's Blossoming Chestnut Trees in November 2026? — **Bill Acquavella** — https://en.wikipedia.org/wiki/Blossoming_Chestnut_Trees
+- [books] Who won the 2026 Booker Prize, announced in November 2026? — **M. John Harrison** — https://en.wikipedia.org/wiki/2026_Booker_Prize
+- [books] Which novel won the 2026 Booker Prize in November 2026? — **The End of Everything** — https://en.wikipedia.org/wiki/2026_Booker_Prize
+- [books] Which independent publisher won its first Booker Prize in November 2026? — **Serpent's Tail** — https://en.wikipedia.org/wiki/2026_Booker_Prize
+- [books] The 2026 Booker Prize winner, named in November 2026, was the first winner from which genre? — **Science fiction** — https://en.wikipedia.org/wiki/2026_Booker_Prize
+- [books] Who won the 2026 Baillie Gifford Prize for Non-Fiction? — **Edmund Richardson** — https://en.wikipedia.org/wiki/Baillie_Gifford_Prize
+- [books] Which book won Edmund Richardson the 2026 Baillie Gifford Prize? — **Alexander: God, King, Man** — https://en.wikipedia.org/wiki/Baillie_Gifford_Prize
+- [books] Who won the 2026 Giller Prize, Canada's top fiction award? — **Nicholas Herring** — https://en.wikipedia.org/wiki/Giller_Prize
+- [books] Which novel won the 2026 Giller Prize in November 2026? — **Your Breath in Charcoal** — https://en.wikipedia.org/wiki/Giller_Prize
+- [books] Who won the 2026 National Book Award for Fiction in November 2026? — **Hannah Lillith Assadi** — https://en.wikipedia.org/wiki/National_Book_Award_for_Fiction
+- [books] Which novel won the 2026 National Book Award for Fiction? — **Paradiso 17** — https://en.wikipedia.org/wiki/Paradiso_17
+- [books] In November 2026, what word did Cambridge Dictionary name as its word of the year? — **Human** — https://en.wikipedia.org/wiki/Word_of_the_year
+- [celebrity] In November 2026, which actor was revealed to have also auditioned for James Bond with Robert Pattinson? — **Nicholas Hoult** — https://en.wikipedia.org/wiki/Production_of_the_James_Bond_films
+- [celebrity] In November 2026, which actor did Amazon MGM Studios announce as the seventh actor to play James Bond? — **Robert Pattinson** — https://en.wikipedia.org/wiki/Robert_Pattinson
+- [games] In November 2026, Grand Theft Auto VI launched on PlayStation 5 and which other platform? — **Xbox Series X/S** — https://en.wikipedia.org/wiki/Grand_Theft_Auto_VI
+- [games] Roughly how many digital copies did Grand Theft Auto VI sell before its November 2026 launch? — **24 million** — https://en.wikipedia.org/wiki/Grand_Theft_Auto_VI
+- [games] As of November 2026, what overall Metacritic score did Grand Theft Auto VI hold? — **99** — https://en.wikipedia.org/wiki/Grand_Theft_Auto_VI
+- [games] Before its November 2026 launch, Grand Theft Auto VI passed which game as the most pre-ordered ever? — **Cyberpunk 2077** — https://en.wikipedia.org/wiki/Grand_Theft_Auto_VI
+- [games] As of November 2026, Grand Theft Auto VI tied which 1998 game as Metacritic's highest-rated video game? — **Ocarina of Time** — https://en.wikipedia.org/wiki/Grand_Theft_Auto_VI
+- [music] Who hosted the 60th Annual CMA Awards in November 2026? — **Lainey Wilson** — https://en.wikipedia.org/wiki/60th_Annual_Country_Music_Association_Awards
+- [music] Which artist won the most awards at the November 2026 CMA Awards, setting a record with six? — **Ella Langley** — https://en.wikipedia.org/wiki/60th_Annual_Country_Music_Association_Awards
+- [music] At the November 2026 CMA Awards, which duo received the Willie Nelson Lifetime Achievement Award? — **Brooks & Dunn** — https://en.wikipedia.org/wiki/60th_Annual_Country_Music_Association_Awards
+- [music] At which Nashville venue were the 60th CMA Awards held in November 2026? — **Bridgestone Arena** — https://en.wikipedia.org/wiki/60th_Annual_Country_Music_Association_Awards
+- [political] Which former prime minister lost Bulgaria's November 2026 presidential runoff? — **Andrey Gurov** — https://en.wikipedia.org/wiki/2026_Bulgarian_presidential_election
+- [political] What first did Iliana Iotova achieve by winning Bulgaria's presidential election in November 2026? — **First woman elected president** — https://en.wikipedia.org/wiki/2026_Bulgarian_presidential_election
+- [political] In which Chinese city was the APEC Economic Leaders' Meeting held in November 2026? — **Shenzhen** — https://en.wikipedia.org/wiki/APEC_China_2026
+- [political] Which three countries held an unprecedented trilateral summit on the sidelines of APEC in November 2026? — **China, Russia and U.S.** — https://en.wikipedia.org/wiki/APEC_China_2026
+- [political] Gilbert Houngbo was re-elected in November 2026 as Director-General of which UN agency? — **International Labour Organization** — https://en.wikipedia.org/wiki/Gilbert_Houngbo
+- [political] In November 2026, the ICJ found which country had committed genocide against the Rohingya? — **Myanmar** — https://en.wikipedia.org/wiki/Rohingya_genocide_case
+- [political] Which country brought the Rohingya genocide case that the ICJ decided in November 2026? — **The Gambia** — https://en.wikipedia.org/wiki/Rohingya_genocide_case
+- [political] Who became acting President of Mongolia on 19 November 2026? — **Sandagiin Byambatsogt** — https://en.wikipedia.org/wiki/Sandagiin_Byambatsogt
+- [political] Ukhnaagiin Khürelsükh resigned as president of which country in November 2026? — **Mongolia** — https://en.wikipedia.org/wiki/Ukhnaagiin_Kh%C3%BCrels%C3%BCkh
+- [science] In November 2026, University of Cambridge researchers used an mRNA therapy to repair which organ in mice? — **Heart** — https://en.wikipedia.org/wiki/2026_in_science
+- [science] In November 2026, trial results for the drug daraxonrasib with chemotherapy targeted which cancer? — **Pancreatic cancer** — https://en.wikipedia.org/wiki/2026_in_science
+- [science] Possible fossil red blood cells reported in November 2026 came from a dinosaur found in which country? — **Brazil** — https://en.wikipedia.org/wiki/2026_in_science
+- [science] On November 18, 2026, what distance milestone from Earth did NASA's Voyager 1 reach? — **One light-day** — https://en.wikipedia.org/wiki/Voyager_1
+- [science] In November 2026, NASA asked people to flash which Morse call sign skyward to mark Voyager 1's milestone? — **VGR** — https://en.wikipedia.org/wiki/Voyager_1
+- [sports] Which club won the 2026 CAF Women's Champions League in November 2026? — **AS FAR** — https://en.wikipedia.org/wiki/2026_CAF_Women%27s_Champions_League
+- [sports] Which country hosted the 2026 CAF Women's Champions League in November 2026? — **Egypt** — https://en.wikipedia.org/wiki/2026_CAF_Women%27s_Champions_League
+- [sports] Which country won the 2026 FIFA U-17 Women's World Cup in Morocco in November 2026? — **Nigeria** — https://en.wikipedia.org/wiki/2026_FIFA_U-17_Women%27s_World_Cup
+- [sports] Which team lost the final of the 2026 FIFA U-17 Women's World Cup in November 2026? — **Japan** — https://en.wikipedia.org/wiki/2026_FIFA_U-17_Women%27s_World_Cup
+- [sports] Which team finished runner-up at the 2026 Men's Rugby League World Cup in November 2026? — **New Zealand** — https://en.wikipedia.org/wiki/2026_Men%27s_Rugby_League_World_Cup
+- [sports] In which city was the 2026 Men's Rugby League World Cup final played in November 2026? — **Brisbane** — https://en.wikipedia.org/wiki/2026_Men%27s_Rugby_League_World_Cup
+- [sports] Which Chinese city hosted the 2026 World Weightlifting Championships, which ended in November 2026? — **Ningbo** — https://en.wikipedia.org/wiki/2026_World_Weightlifting_Championships
+- [sports] Which nation topped the medal table at the 2026 World Weightlifting Championships, held through November 2026? — **North Korea** — https://en.wikipedia.org/wiki/2026_World_Weightlifting_Championships
+- [sports] Which New York Yankees pitcher won the 2026 American League Cy Young Award in November 2026? — **Cam Schlittler** — https://en.wikipedia.org/wiki/Cam_Schlittler
+- [sports] In November 2026, which award did Brewers pitcher Jacob Misiorowski win unanimously? — **NL Cy Young Award** — https://en.wikipedia.org/wiki/Jacob_Misiorowski
+- [sports] Jacob Misiorowski's 2026 Cy Young and World Series-clinching win was a first since which pitcher in 2001? — **Randy Johnson** — https://en.wikipedia.org/wiki/Jacob_Misiorowski
+- [sports] In November 2026, Pat Murphy won NL Manager of the Year for which consecutive season? — **Third** — https://en.wikipedia.org/wiki/Pat_Murphy_%28baseball_manager%29
+- [sports] In November 2026, what fielding award did Pete Crow-Armstrong win for a second straight year? — **Gold Glove Award** — https://en.wikipedia.org/wiki/Pete_Crow-Armstrong
+- [sports] Which Chicago Cubs outfielder won the 2026 National League MVP Award in November 2026? — **Pete Crow-Armstrong** — https://en.wikipedia.org/wiki/Pete_Crow-Armstrong
+- [sports] Will Venable was named 2026 AL Manager of the Year for managing which team? — **Chicago White Sox** — https://en.wikipedia.org/wiki/Will_Venable
+- [sports] Which Houston Astros slugger unanimously won the American League MVP Award in November 2026? — **Yordan Alvarez** — https://en.wikipedia.org/wiki/Yordan_Alvarez

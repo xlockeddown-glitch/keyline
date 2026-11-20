@@ -11,7 +11,7 @@ export const CUR_BOOKS_20261031: TriviaQ[] = [
 	// https://www.nationalbook.org/2026-national-book-award-finalists-announced/
 	q("Which Norwegian author's 'The School of Night' was a 2026 National Book Award finalist?", ["Jo Nesbø", "Karl Ove Knausgaard", "Lars Saabye Christensen", "Per Petterson"], "Karl Ove Knausgaard", 2),
 	// https://www.nationalbook.org/2026-national-book-award-finalists-announced/
-	q("Who will receive the National Book Foundation's 2026 lifetime medal (DCAL), announced in Oct 2026?", ["Salman Rushdie", "Toni Morrison", "Joyce Carol Oates", "Cormac McCarthy"], "Salman Rushdie", 2),
+	q("Who received the National Book Foundation's 2026 lifetime medal (DCAL), announced in Oct 2026?", ["Salman Rushdie", "Toni Morrison", "Joyce Carol Oates", "Cormac McCarthy"], "Salman Rushdie", 2),
 	// https://www.nationalbook.org/2026-national-book-award-finalists-announced/
 	q("Which translator rendered Knausgaard's 2026 finalist 'The School of Night' into English?", ["Jo Nesbø", "Martin Aitken", "Lars Saabye Christensen", "Per Petterson"], "Martin Aitken", 3),
 ];
