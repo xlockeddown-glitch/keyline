@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.175";
+export const APP_VERSION = "0.1.176";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1175a";
+export const PUBLISH_STAMP = "k1176a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -276,3 +276,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.173: Put-in-order street lamps (history/geography/science/math; 3 rows green, 4 amber/red): server keeps sort keys, client taps opaque per-deal tokens; exact clears, one adjacent swap opens at half coin; no-choice (no Autopilot/Fox strike); friend tickets, picker and everyCard use a classic-only allow-list (k1173a).
 // 0.1.174: weekly trivia batch plus_20261120 — 269 cards (55 current events, 20%), Claude Opus candidates, all 295 source-checked; 5 stale-wording fixes; no math (k1174a).
 // 0.1.175: house daily key coin retune — row 3,000→2,000, town 8,000→5,000, villa 25,000→10,000; cottage stays 1,000; the 2 keys of the house color and all buy prices are unchanged; coin already collected is not clawed back (docs/economy/coin-sinks-175.md). Trivia: cut the National Book Award ceremony-date card from current_20261021 (the source did not print the date) (k1175a).
+// 0.1.176: battery/speed — the GameMap rAF loop arms at ~30 fps when idle, pauses when the tab is hidden and drops to a 200 ms check while a card/panel is open (kicked at once by movement keys, the stick, a hail, a new stop, or the card closing); drive graph ingest yields until the walk graph is ready (k1176a).

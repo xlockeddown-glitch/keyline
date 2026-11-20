@@ -112,6 +112,12 @@ type LModule = typeof import("leaflet");
 const TURN = 2.8;
 const TURN_CAB = 1.8;
 const MAX_DT = 0.1;
+
+/** 0.1.176: run once the browser is idle (800 ms at the latest), or on the next task where idle callbacks are missing. */
+function whenIdle(fn: () => void) {
+  if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(() => fn(), { timeout: 800 });
+  else window.setTimeout(fn, 0);
+}
 const CAB_REACH = 28;
 
 type CabFace = "down" | "left" | "right" | "up";
@@ -274,6 +280,8 @@ export function GameMap() {
   const follow = useRef(true);
   const anim = useRef({ frame: 0, loop: 0, acc: 0 });
   const last = useRef(0);
+  // 0.1.176: wakes the map loop at once when it is idling on its slow arm (set by the loop effect).
+  const kickLoop = useRef<() => void>(() => {});
   // Battery: what the loop last pushed to Leaflet, and which pin was last marked near.
   const drawnPins = useRef(-1);
   const drawn = useRef({ lat: NaN, lng: NaN, pan: false, near: "" });
@@ -652,6 +660,7 @@ export function GameMap() {
       hail: path,
       hailAlong: 0,
     };
+    kickLoop.current();
     flash("Cab's coming to the curb.");
   }
 
@@ -878,6 +887,7 @@ export function GameMap() {
       return;
     }
     queue.current = [...queue.current, { lat, lng }];
+    kickLoop.current();
     paintQueue();
     syncRouteHud();
     flash(`Stop ${queue.current.length + 1} added.`, 1200);
@@ -1367,16 +1377,22 @@ export function GameMap() {
       .catch(() => {
         if (cancelled || abort.signal.aborted) return;
         setStreets("error");
-      });
-
-    void bootstrapDrive(dock.lat, dock.lng, city.pois, abort.signal, city.id).then((dg) => {
-      if (cancelled) return;
-      driveRef.current = dg;
-      void fillSurroundings(dg, dock.lat, dock.lng, city.pois, abort.signal, true).then(() => {
-        const d = dealerOf(city.id);
-        return expandGraph(dg, d.lat, d.lng, 700, abort.signal, true).catch(() => dg);
-      });
-    });
+      })
+      // 0.1.176: the road graph is ingested once the walk graph is in and the browser has had a turn, so the first
+      // walk paint and input are not stuck behind it.
+      .finally(() =>
+        whenIdle(() => {
+          if (cancelled || abort.signal.aborted) return;
+          void bootstrapDrive(dock.lat, dock.lng, city.pois, abort.signal, city.id).then((dg) => {
+            if (cancelled) return;
+            driveRef.current = dg;
+            void fillSurroundings(dg, dock.lat, dock.lng, city.pois, abort.signal, true).then(() => {
+              const d = dealerOf(city.id);
+              return expandGraph(dg, d.lat, d.lng, 700, abort.signal, true).catch(() => dg);
+            });
+          });
+        }),
+      );
 
     return () => {
       cancelled = true;
@@ -1501,6 +1517,7 @@ export function GameMap() {
     // A plain tap stands where the route can finish. A door keeps its pin; the last step is the hop.
     const pin = !cut && !door && !seated ? snapped : target;
     waypoint.current = { lat: pin.lat, lng: pin.lng, door, keyId: legKey.current ?? undefined };
+    kickLoop.current();
     routeAlong.current = 0;
     stuckFor.current = 0;
     skips.current = 0;
@@ -1839,6 +1856,7 @@ export function GameMap() {
         e.preventDefault();
       }
       keysHeld.current.add(e.code);
+      kickLoop.current();
       if (e.code === "KeyE" || e.code === "Space") interactNearest();
       if (e.code === "KeyF") {
         const s = useGame.getState();
@@ -1905,6 +1923,7 @@ export function GameMap() {
       },
       setKeys: (codes: string[]) => {
         injected.current = codes.length ? codes : null;
+        kickLoop.current();
       },
       goTo: (lat: number, lng: number) => {
         void setDestination(lat, lng);
@@ -1920,27 +1939,56 @@ export function GameMap() {
 
   useEffect(() => {
     let raf = 0;
-    const step = (t: number) => {
+    let timer = 0;
+    // Battery: standing still with nothing in motion, run the loop at ~30 fps (breathing idle, flicker timers and
+    // HUD checks look the same); any input, route, hail or leftover speed keeps the full rate.
+    const isIdle = () =>
+      !injected.current &&
+      keysHeld.current.size === 0 &&
+      Math.hypot(stick.current.x, stick.current.y) <= 0.12 &&
+      !routeRef.current &&
+      !waypoint.current &&
+      queue.current.length === 0 &&
+      !cabRef.current?.hail &&
+      pos.current.speed === 0;
+    const covered = (st: ReturnType<typeof useGame.getState>) =>
+      st.blitzOpen || Boolean(st.openVault) || st.hqOpen || st.invOpen || st.errandOpen || st.screen !== "play";
+    // 0.1.176: the callback is no longer re-armed at display rate when there is nothing to move. Idle waits on a
+    // timer and then takes one frame (~30 fps); a card or panel over the map waits 200 ms; a hidden tab is not armed.
+    const armSlow = (ms: number) => {
+      timer = window.setTimeout(() => {
+        timer = 0;
+        raf = requestAnimationFrame(step);
+      }, ms);
+    };
+    const kick = () => {
+      if (raf && !timer) return; // a frame is already on its way
+      if (timer) window.clearTimeout(timer);
+      timer = 0;
+      cancelAnimationFrame(raf);
       raf = requestAnimationFrame(step);
-      // Battery: standing still with nothing in motion, run the loop at ~30 fps (breathing idle, flicker timers and
-      // HUD checks look the same); any input, route, hail or leftover speed keeps the full rate.
-      if (
-        t - last.current < 30 &&
-        !injected.current &&
-        keysHeld.current.size === 0 &&
-        Math.hypot(stick.current.x, stick.current.y) <= 0.12 &&
-        !routeRef.current &&
-        !waypoint.current &&
-        queue.current.length === 0 &&
-        !cabRef.current?.hail &&
-        pos.current.speed === 0
-      )
+    };
+    const step = (t: number) => {
+      window.__mapFr = (window.__mapFr ?? 0) + 1;
+      raf = 0;
+      if (document.hidden) return; // visibilitychange kicks it again
+      const idle = isIdle();
+      if (idle && t - last.current < 30) {
+        raf = requestAnimationFrame(step); // early frame (fast display): the next one does the work
         return;
+      }
       const prev = last.current || t;
       last.current = t;
       const dt = Math.min(MAX_DT, (t - prev) / 1000);
       const st = useGame.getState();
-      if (st.blitzOpen || st.openVault || st.hqOpen || st.invOpen || st.errandOpen || st.screen !== "play") return;
+      if (covered(st)) {
+        last.current = 0; // the first step after it closes starts a fresh frame, as it did at 60 Hz
+        armSlow(200);
+        return;
+      }
+      // Idle: aim the timer a little before the frame 30 ms out, so the step lands on it.
+      if (idle) armSlow(Math.max(0, t + 24 - performance.now()));
+      else raf = requestAnimationFrame(step);
 
       const held = new Set(injected.current ?? keysHeld.current);
       const seated = Boolean(cabRef.current?.seated);
@@ -2356,9 +2404,24 @@ export function GameMap() {
           routeHold: routeHold.current,
         });
       }
+      if (timer && !isIdle()) kick(); // this step started a route: back to the full rate now
     };
+    kickLoop.current = kick;
+    const onVisible = () => {
+      if (!document.hidden) kick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const unsubCover = useGame.subscribe((s, p) => {
+      if (covered(p) && !covered(s)) kick();
+    });
     raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      kickLoop.current = () => {};
+      document.removeEventListener("visibilitychange", onVisible);
+      unsubCover();
+      if (timer) window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
+    };
   }, [cityId]);
 
   useEffect(() => {
@@ -2445,11 +2508,17 @@ export function GameMap() {
       .catch(() => {
         if (abort.signal.aborted) return;
         setStreets("error");
-      });
-    void bootstrapDrive(city.spawn.lat, city.spawn.lng, city.pois, abort.signal, city.id).then((dg) => {
-      driveRef.current = dg;
-      void fillSurroundings(dg, city.spawn.lat, city.spawn.lng, city.pois, abort.signal, true);
-    });
+      })
+      // 0.1.176: roads after the walk graph, as at map setup.
+      .finally(() =>
+        whenIdle(() => {
+          if (abort.signal.aborted) return;
+          void bootstrapDrive(city.spawn.lat, city.spawn.lng, city.pois, abort.signal, city.id).then((dg) => {
+            driveRef.current = dg;
+            void fillSurroundings(dg, city.spawn.lat, city.spawn.lng, city.pois, abort.signal, true);
+          });
+        }),
+      );
   }
 
   // 0.0.95: the match cache marker: a brass-banded wooden crate with a lit match on the lid and a warm glow.
@@ -2512,7 +2581,10 @@ const CACHE_PIN_HTML =
       <Hud
         onVector={(x, y) => {
           stick.current = { x, y };
-          if (x || y) follow.current = true;
+          if (x || y) {
+            follow.current = true;
+            kickLoop.current();
+          }
         }}
         onInteract={interactNearest}
         onCab={toggleCab}
@@ -2621,6 +2693,8 @@ const CACHE_PIN_HTML =
 
 declare global {
   interface Window {
+    /** 0.1.176: how many times the map loop callback has run (perf harness reads the rate). */
+    __mapFr?: number;
     __controlsTest?: {
       getYaw: () => number;
       getSpeed: () => number;
