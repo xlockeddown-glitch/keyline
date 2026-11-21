@@ -181,11 +181,11 @@ test("0.1.162 the five shop and sign paintings ship as RGBA webp, sized for 2-3x
   // [file, real size, CSS box it is shown in, minimum scale]. Pins need 3x their box; the sheet fronts need 2x of
   // the 148 px (print shop, outfitter) or 124 px (counter) figure height.
   const sprites = [
-    ["print-shop", 512, 460, 49074, [[0, 148, 2]]],
-    ["street-counter", 408, 512, 50582, [[PAINTED_PIN.counter.w, PAINTED_PIN.counter.h, 3], [0, 124, 2]]],
-    ["outfitter", 512, 478, 56136, [[PAINTED_PIN.shop.w, PAINTED_PIN.shop.h, 3], [0, 148, 2]]],
-    ["station-sign", 232, 320, 19290, [[PAINTED_PIN.station.w, PAINTED_PIN.station.h, 3]]],
-    ["notice-sign", 232, 320, 17298, [[PAINTED_PIN.board.w, PAINTED_PIN.board.h, 3]]],
+    ["print-shop", 512, 460, 33036, [[0, 148, 2]]],
+    ["street-counter", 408, 512, 35152, [[PAINTED_PIN.counter.w, PAINTED_PIN.counter.h, 3], [0, 124, 2]]],
+    ["outfitter", 512, 478, 38442, [[PAINTED_PIN.shop.w, PAINTED_PIN.shop.h, 3], [0, 148, 2]]],
+    ["station-sign", 232, 320, 13988, [[PAINTED_PIN.station.w, PAINTED_PIN.station.h, 3]]],
+    ["notice-sign", 232, 320, 12618, [[PAINTED_PIN.board.w, PAINTED_PIN.board.h, 3]]],
   ] as const;
   for (const [name, W, H, bytes, boxes] of sprites) {
     const buf = readFileSync(new URL(`../../public/sprites/${name}.webp`, import.meta.url));
