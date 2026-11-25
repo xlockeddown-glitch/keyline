@@ -69,7 +69,7 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
-import { MAGNET_DAY_CAP, MAGNET_GAP_MS, roadTripPays, v2lPays } from "./carPerks.ts";
+import { MAGNET_DAY_CAP, MAGNET_GAP_MS, hasOdometer, odometerPays, roadTripPays, v2lPays } from "./carPerks.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
@@ -98,7 +98,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -640,7 +640,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const until = await doubleUntil(sql, userId);
   const streak = await rememberStreak(sql, userId);
   const fresh = (await canonicalWallet(sql, userId)).wallet;
-  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord };
+  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId) };
   return giftNotes.length ? { ...out, giftNotes } : out;
 }
 
@@ -737,12 +737,74 @@ function chicagoDay(at: unknown): string {
   return d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
 }
 
+/** The Odometer count a grade row carries (`"od":N` in its detail JSON), or 0. */
+function odOfDetail(detail: unknown): number {
+  try {
+    const n = Number((JSON.parse(String(detail || "null")) as { od?: unknown } | null)?.od);
+    return Number.isInteger(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 0.1.178 Duesenberg Odometer: the lifetime count of vaults this account opened while seated in the Duesenberg.
+ * Read from the server's own grade rows only (the highest `"od":N` any of them carries). There is no wallet field,
+ * no save field and no client op behind it, so nothing a device sends can move it. `exceptNonce` leaves one grade out.
+ */
+export async function odometerOf(sql: Sql, userId: string, exceptNonce?: string): Promise<number> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ detail: string }>`
+    select detail from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + (exceptNonce ?? "")}
+      and detail like ${'%"od":%'} order by created_at desc limit 8
+  `;
+  return rows.reduce((m, r) => Math.max(m, odOfDetail(r.detail)), 0);
+}
+
+/** Who holds the `odo:<count>` payout claim: the grade nonce in its detail. */
+function odoHolder(detail: unknown): string {
+  try {
+    return String((JSON.parse(String(detail || "null")) as { g?: unknown } | null)?.g ?? "");
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * The Odometer's payout guard. A count that pays (25, 50, …) is claimed once per account as an `odo:<count>` ledger
+ * row naming the grade nonce that reached it; only that grade pays. So two answers racing to the same count cannot
+ * both pay, and a retry of the same nonce still holds its claim. A claim whose grade never landed (its write failed
+ * and was not retried) goes stale after ODO_CLAIM_STALE_MIN minutes and is handed to the next grade that reaches the
+ * count; a fresh claim is left alone, because its grade may still be mid-write.
+ */
+const ODO_CLAIM_STALE_MIN = 2;
+async function claimOdometer(sql: Sql, id: string, count: number, nonce: string): Promise<boolean> {
+  const key = `odo:${count}`;
+  const mine = JSON.stringify({ g: nonce, n: count });
+  await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${key}, ${mine}) on conflict (user_id, op_key) do nothing`;
+  const row = (
+    await sql<{ detail: string; stale: boolean }>`
+      select detail, (created_at < now() - make_interval(mins => ${ODO_CLAIM_STALE_MIN})) as stale from wallet_ledger where user_id = ${id} and op_key = ${key} limit 1
+    `
+  )[0];
+  const held = row?.detail ?? "";
+  const holder = odoHolder(held);
+  if (holder === nonce) return true;
+  if (!row?.stale) return false;
+  const landed = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${"grade:" + holder} limit 1`;
+  if (holder && odOfDetail(landed[0]?.detail) === count) return false;
+  const took = await sql<{ op_key: string }>`
+    update wallet_ledger set detail = ${mine}, created_at = now() where user_id = ${id} and op_key = ${key} and detail = ${held} returning op_key
+  `;
+  return took.length > 0;
+}
+
 export async function awardGrade(
   sql: Sql,
   userId: string,
   nonce: string,
   pay: GradePay & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null },
-): Promise<Applied & { can?: Can }> {
+): Promise<Applied & { can?: Can; odometer?: number }> {
   const { id } = await canonicalWallet(sql, userId);
   const prevNonce = pay.prevNonce;
   const refunded = pay.clearTier
@@ -843,8 +905,28 @@ export async function awardGrade(
         ).some((row) => chicagoDay(row.created_at) === chicagoDay(new Date()) && String(row.detail).includes(`"c":${JSON.stringify(full.city)}`)),
       )
     : false;
+  // 0.1.178 Duesenberg Odometer: every ODOMETER_EVERY-th vault opened while seated in the proven car pays +1 amber
+  // key. No RNG and no new table: the counter is the ledger.
+  //  - "A vault opened" is the Vehicle-to-load lit lamp above: a right answer that spent a key, never a blitz card,
+  //    with the car the server sealed into the deal (pay.car). Nothing in the answer request can say otherwise.
+  //  - Each such grade row records its running count as "od":N in its detail JSON. The next one reads the highest
+  //    prior N for the account and adds 1, so the count is lifetime: it survives days, cities and devices.
+  //  - A count divisible by 25 pays on this same grade write ("odp":1), guarded by the odo:<N> claim row above.
+  //  - Same nonce again: mutateWallet replays the stored row (same award, nothing new). A grade that already has
+  //    its row is never counted a second time here, whatever was graded in between.
+  let odCount = 0;
+  let odPays = false;
+  if (v2lLamp && hasOdometer(pay.car ?? null)) {
+    const own = await sql<{ detail: string | null }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${"grade:" + nonce} limit 1`;
+    if (!own[0]?.detail) {
+      odCount = (await odometerOf(sql, userId, nonce)) + 1;
+      odPays = odometerPays(pay.car ?? null, odCount) && (await claimOdometer(sql, id, odCount, nonce));
+    }
+  }
   let v2Paid = false;
   let rtPaid = false;
+  let odSeen = false;
+  let odPaid = false;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   const cometClear = full.correct && cometPays(full);
   // 0.1.22: a quest lamp is a right answer on a lamp that spent a match (never a spark, never a blitz card).
@@ -866,6 +948,8 @@ export async function awardGrade(
       ...(spark && sparkOk ? { sp: 1 } : {}),
       ...(v2Paid ? { v2: 1 } : {}),
       ...(rtPaid ? { rt: 1 } : {}),
+      ...(odSeen ? { od: odCount } : {}),
+      ...(odPaid ? { odp: 1 } : {}),
       // 0.0.98: night-market lamp, for the Night Owl title. 0.1.159: a Comet clear is never a market lamp.
       ...(full.correct && !cometClear && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
       // 0.1.159: a Comet vault clear that paid the comet bonus, for later quests and titles.
@@ -902,6 +986,25 @@ export async function awardGrade(
   };
   const withV2l = (res: OpResult & { detail?: string }): OpResult & { detail?: string } => {
     const flag = v2l ? "v2" : rt ? "rt" : null;
+    // The Odometer rides the same step (its car carries neither of the two perks above): count this vault, and pay
+    // the amber key when the count says so. An amber key over a full pocket follows the usual overflow rule.
+    if (!flag && odCount && res.ok && res.wallet.migrated) {
+      const award = res.award ?? { coins: 0, keys: {}, boosts: [] };
+      odSeen = true;
+      if (odPays) {
+        const p = payMatch(res.wallet.keys, "amber");
+        const k = p.tier ? { [p.tier]: 1 } : {};
+        const extra = applyDelta(res.wallet, { coins: p.coin, keys: k });
+        if (extra.ok) {
+          const keys = { ...award.keys };
+          for (const [t, n] of Object.entries(k) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
+          const odAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, "Odometer +1 amber key"] };
+          odPaid = true;
+          return withMile({ ok: true, wallet: extra.wallet, award: odAward, detail: detailOf(odAward) });
+        }
+      }
+      return withMile({ ...res, detail: detailOf(award) });
+    }
     if (!flag || !res.ok || !res.wallet.migrated) return withMile(res);
     const p = payMatch(res.wallet.keys, "white");
     const k = p.tier ? { [p.tier]: 1 } : {};
@@ -919,6 +1022,8 @@ export async function awardGrade(
     matchLost = false;
     v2Paid = false;
     rtPaid = false;
+    odSeen = false;
+    odPaid = false;
     const owned = provenBoost(pay.lucky, pay.cloth, { lucky: luckyLive(w.meta), cloths: new Set(w.meta.cloths) });
     full.lucky = owned.lucky;
     full.cloth = owned.cloth;
@@ -1002,15 +1107,18 @@ export async function awardGrade(
       await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${PLANT_OK_KEY}, ${JSON.stringify({ via: "red10", g: "grade:" + nonce })}) on conflict (user_id, op_key) do nothing`;
     }
   }
+  // 0.1.178: the Odometer count this grade row holds (a replay reads the stored row), for the HUD's plain text.
+  const odRow = r.ok ? odOfDetail(r.detail) : 0;
+  const odo = odRow ? { odometer: odRow } : {};
   // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.
   const odds = full.clearTier === "amber" ? CAN_ODDS.amber : full.clearTier === "red" ? CAN_ODDS.red : 0;
   // 0.1.117: a Double/Triple Hearth rolls its can on the last question only (like a ladder's last card).
   const canStep = !full.hearth || full.hearth.step + 1 >= (full.hearth.v === 3 ? 3 : 2);
   if (r.ok && !r.replay && r.wallet.migrated && full.correct && odds && pay.canRoll && canStep) {
     const can = await grantCan(sql, userId, `g:${nonce}`, odds, pay.canRoll[0], pay.canRoll[1]);
-    if (can) return { ...applied(r), can };
+    if (can) return { ...applied(r), can, ...odo };
   }
-  return applied(r);
+  return { ...applied(r), ...odo };
 }
 
 /* ---------------------------------------------------------------- 0.1.42 owned lanterns */

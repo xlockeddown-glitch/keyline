@@ -19,7 +19,9 @@ export const MAGNET_PULL_MS = 420;
 export const DRIVE_PING_MS = 60_000;
 /** 0.1.51 Ioniq 5 Vehicle-to-load: +1 white per lit lamp while seated, this many a day per player (Chicago day). */
 export const V2L_DAY_CAP = 20;
-export type CarPerk = { label: string; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number; roadTrip?: boolean };
+/** 0.1.178 Duesenberg Odometer: every this-many-th vault opened while seated in it pays +1 amber key (lifetime count, no RNG). */
+export const ODOMETER_EVERY = 25;
+export type CarPerk = { label: string; odometer?: number; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number; roadTrip?: boolean };
 
 export const CAR_PERKS: Record<CarId, CarPerk> = {
   civic: { label: "Glovebox · +1 s on vault timers", vaultMs: 1000 },
@@ -29,6 +31,7 @@ export const CAR_PERKS: Record<CarId, CarPerk> = {
   belair57: { label: "Road trip · the first vault you open in each city each day pays +1 white key", roadTrip: true },
   model3: { label: "Autopilot · 1 in 10 vault questions drop a wrong answer", autopilot: 10 },
   roadster: { label: "Regen · 1 in 5 failed vaults refund the key", refund: 5 },
+  duesenberg: { label: `Odometer · every ${ODOMETER_EVERY}th vault opened pays +1 amber key`, odometer: ODOMETER_EVERY },
   roadster2: { label: `Magnet · pulls in street keys within ${MAGNET_M} m as you drive`, magnet: true },
 };
 
@@ -36,7 +39,7 @@ export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_P
 
 export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", ioniq5: "arts", mustang: "sports",
   belair57: "geography",
-  model3: "math", roadster: "science", roadster2: "games" };
+  model3: "math", roadster: "science", duesenberg: "history", roadster2: "games" };
 export const SCOUT_FAV: Record<ScoutId, FieldPick> = {
   raccoon: "food",
   cat: "arts",
@@ -152,6 +155,25 @@ export function v2lPays(car: CarId | null, usedToday: number): boolean {
 /** 0.1.55 Bel Air Road trip: does this lit lamp pay the extra white? `paidHereToday`: a Road trip white already paid in this city today. */
 export function roadTripPays(car: CarId | null, paidHereToday: boolean): boolean {
   return Boolean(car && CAR_PERKS[car].roadTrip) && !paidHereToday;
+}
+
+/** 0.1.178 Duesenberg Odometer: does a car carry the counter at all (only vaults opened seated in it count)? */
+export const hasOdometer = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].odometer);
+
+/**
+ * 0.1.178 Duesenberg Odometer: does the vault that brought the lifetime count to `count` pay the amber key?
+ * `count` is the server's own count of vaults opened in this car (walletApply.awardGrade), this one included:
+ * 25, 50, 75… pay; nothing else does. No roll.
+ */
+export function odometerPays(car: CarId | null, count: number): boolean {
+  const n = car ? CAR_PERKS[car].odometer : undefined;
+  return Boolean(n) && Number.isInteger(count) && count > 0 && count % n! === 0;
+}
+
+/** "Odometer 17/25" for the HUD and the showroom: how far into the current 25 the server's count is. */
+export function odometerText(count: number): string {
+  const n = Math.max(0, Math.floor(count) || 0);
+  return `Odometer ${n % ODOMETER_EVERY}/${ODOMETER_EVERY}`;
 }
 
 /** Favorite categories that count on a lamp: the worn coat's (when proven) and the seated car's. */

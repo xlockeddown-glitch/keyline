@@ -8,7 +8,7 @@
  */
 import type { CityId } from "./types";
 
-export type CarId = "civic" | "f150" | "ioniq5" | "mustang" | "belair57" | "model3" | "roadster" | "roadster2";
+export type CarId = "civic" | "f150" | "ioniq5" | "mustang" | "belair57" | "model3" | "roadster" | "duesenberg" | "roadster2";
 
 export type Car = { id: CarId; name: string; year: string; blurb: string; price: number; pace: number; star?: boolean };
 
@@ -20,6 +20,8 @@ export const CARS: readonly Car[] = [
   { id: "belair57", name: "Chevrolet Bel Air Convertible", year: "1957", blurb: "Top down, tank full, nowhere to be.", price: 200_000, pace: 1.17 },
   { id: "model3", name: "Tesla Model 3", year: "Highland", blurb: "No grille, one screen, Autopilot.", price: 350_000, pace: 1.2 },
   { id: "roadster", name: "Tesla Roadster", year: "2008", blurb: "The original electric roadster.", price: 600_000, pace: 1.22 },
+  // 0.1.178: `pace` is a multiplier on the city cab's speed (`cabSpeed`) while you sit in that car; 1.00 = the city cab, so 1.25 = 25% faster than the city cab (carBoost shows "+25%"). Same definition as every car (Bel Air 1.17 = +17%, Mustang 1.15 = +15%, Roadster 2.0 1.3 = +30%). It is NOT relative to the previous best car.
+  { id: "duesenberg", name: "Duesenberg Model J", year: "1929", blurb: "Burgundy, whitewalls, side pipes: the Jazz Age's best.", price: 1_000_000, pace: 1.25 },
   { id: "roadster2", name: "Tesla Roadster 2.0", year: "Next-gen", blurb: "The fastest thing in Keyline.", price: 2_400_000, pace: 1.3, star: true },
 ];
 

@@ -703,6 +703,20 @@ h3 {
   border-color:var(--color-accent);
   color:var(--color-accent)
 }
+/* 0.1.178 Duesenberg Odometer: plain text on its own line over the key belt, same plate as the car chip. Not a button, not on the sprite. */
+.odo-chip{
+  display:inline-flex;
+  align-items:center;
+  border:1px solid var(--color-border);
+  background:color-mix(in oklab, var(--color-bg) 82%, transparent);
+  color:var(--color-fg-muted);
+  border-radius:var(--radius-md);
+  height:1.5rem;
+  padding:0 8px;
+  font-size:.75rem;
+  white-space:nowrap;
+  pointer-events:none
+}
 .key-belt{
   background:#0b0c0ed1
 }
@@ -3292,6 +3306,11 @@ h3 {
 .cab-sprite[data-car="belair57"][data-face="down"] { background-image: url("/sprites/cars/belair57-front.webp"); }
 .cab-sprite[data-car="belair57"][data-face="up"] { background-image: url("/sprites/cars/belair57-back.webp"); }
 .cab-sprite[data-car="belair57"][data-face="left"], .cab-sprite[data-car="belair57"][data-face="right"] { background-image: url("/sprites/cars/belair57-side.webp"); }
+/* 0.1.178 Duesenberg Model J: factory 3-view only, so no data-paint rules. Its side is 640x258 and its upright front
+   and back are 268x275 / 282x285; the shared contain / 40px-wide rules below size it like every other car. */
+.cab-sprite[data-car="duesenberg"][data-face="down"] { background-image: url("/sprites/cars/duesenberg-front.webp"); }
+.cab-sprite[data-car="duesenberg"][data-face="up"] { background-image: url("/sprites/cars/duesenberg-back.webp"); }
+.cab-sprite[data-car="duesenberg"][data-face="left"], .cab-sprite[data-car="duesenberg"][data-face="right"] { background-image: url("/sprites/cars/duesenberg-side.webp"); }
 /* 0.1.9 car paint: recolours from scripts/art/cars-paint.py (side mirrored for left, as above). */
 .cab-sprite[data-car="civic"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-black-front.webp"); }
 .cab-sprite[data-car="civic"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-black-back.webp"); }

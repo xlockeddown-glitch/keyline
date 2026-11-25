@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { bakedSnapshot } from "@/game/streets";
 import { CARS } from "@/game/cars";
 import { STREET_DAY_CAP } from "@/game/streetSpots";
-import { MAGNET_DAY_CAP, MAGNET_GAP_MS, V2L_DAY_CAP, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, RANDOM_BONUS, SCOUT_FAV } from "@/game/carPerks";
+import { MAGNET_DAY_CAP, MAGNET_GAP_MS, ODOMETER_EVERY, V2L_DAY_CAP, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, RANDOM_BONUS, SCOUT_FAV } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { SCOUT_LIST, TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -150,7 +150,7 @@ export function FieldGuide() {
                 <li>
                   The Magnet pulls at most one key every {MAGNET_GAP_MS / 1000} s and {MAGNET_DAY_CAP} a day per city, inside the usual {STREET_DAY_CAP} street keys a day. Vehicle-to-load pays its white key on at most {V2L_DAY_CAP} vaults a day.
                 </li>
-                <li>Autopilot never stacks on the Fox&apos;s struck option. Road trip pays once per city per day. A coat with the same kind of perk doesn&apos;t add to it.</li>
+                <li>Autopilot never stacks on the Fox&apos;s struck option. Road trip pays once per city per day. The Odometer counts every vault you open in the Duesenberg, for good, and pays an amber key on each {ODOMETER_EVERY}th. A coat with the same kind of perk doesn&apos;t add to it.</li>
               </More>
             </Topic>
             <Topic id="keys" icon={<span aria-hidden>⌨️</span>} title="Map controls" sub="Recenter and keyboard keys" open={topic} set={setTopic} testid="help-keys">

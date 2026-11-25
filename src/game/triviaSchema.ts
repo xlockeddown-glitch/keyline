@@ -125,6 +125,8 @@ export type GradeResult =
       credited: boolean;
       /** 0.1.9: a paint can this right answer turned up (amber / red vault, server-rolled). */
       can?: { car: string; color: string };
+      /** 0.1.178: Duesenberg Odometer count after this grade (server ledger). Only on a vault that counted. */
+      odometer?: number;
       /** True when this token had already been graded: the first result stands and nothing is credited. */
       replay: boolean;
       /** 0.1.107: a wrong answer at a keyed vault locks it this long (ms). Absent when nothing locks. */

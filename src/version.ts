@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.177";
+export const APP_VERSION = "0.1.178";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1177a";
+export const PUBLISH_STAMP = "k1178a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -278,3 +278,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.175: house daily key coin retune — row 3,000→2,000, town 8,000→5,000, villa 25,000→10,000; cottage stays 1,000; the 2 keys of the house color and all buy prices are unchanged; coin already collected is not clawed back (docs/economy/coin-sinks-175.md). Trivia: cut the National Book Award ceremony-date card from current_20261021 (the source did not print the date) (k1175a).
 // 0.1.176: battery/speed — the GameMap rAF loop arms at ~30 fps when idle, pauses when the tab is hidden and drops to a 200 ms check while a card/panel is open (kicked at once by movement keys, the stick, a hail, a new stop, or the card closing); drive graph ingest yields until the walk graph is ready (k1176a).
 // 0.1.177: static trim — recompressed 86 images in place (−446 KiB: 39 over-quality lossy WebP re-encoded at q80 (the Loop tunnel at q75) with lossless alpha; 20 scout/coat PNGs zopfli-deflated and 27 lossless WebP re-packed, all pixel-identical); same paths, formats and pixel sizes; cars untouched (already ~q75); no gameplay change (k1177a).
+// 0.1.178: Duesenberg Model J (1929) at the car lots — 1,000,000 coin, pace 1.25, between the Roadster (600k) and the Roadster 2.0 (2.4M); favorite History; factory burgundy 3-view only (no paint cans drop for it, no repaint offered). `pace` is a multiplier on the city cab's speed (`cabSpeed`) while you sit in that car; 1.00 = the city cab, so 1.25 = 25% faster than the city cab (carBoost shows "+25%"). Same definition as every car (Bel Air 1.17 = +17%, Mustang 1.15 = +15%, Roadster 2.0 1.3 = +30%). It is NOT relative to the previous best car. Perk Odometer: every 25th vault you open in this car drops 1 amber key — a lifetime server count with no roll: each vault opened seated in it (a right answer that spent a key, never a blitz card) writes its running count on its own grade row ("od":N), the next reads the highest and adds 1, and 25, 50, 75… pay on that same write behind a once-only odo:<N> claim; a replayed answer pays nothing new and no client field or op can move the count. The HUD and the showroom show it as plain text ("Odometer 17/25") from the server's count (k1178a).

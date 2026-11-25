@@ -180,6 +180,8 @@ export type SyncWire = {
   /** 0.1.133: answer streak the server counted, and whether Streak Lord is unlocked. */
   streakRun?: number;
   streakLord?: boolean;
+  /** 0.1.178: Duesenberg Odometer, the server's lifetime count of vaults opened in that car (ledger grade rows). */
+  odometer?: number;
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
@@ -215,6 +217,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       ...(r.doubleUntil ? { doubleUntil: r.doubleUntil } : {}),
       streakRun: r.view.streakRun ?? r.streakRun ?? 0,
       streakLord: r.view.streakLord === true || r.streakLord === true,
+      odometer: r.odometer ?? 0,
     };
   });
 

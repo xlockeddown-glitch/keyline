@@ -681,6 +681,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   let wallet: ServerWallet | undefined;
   let award: ServerAward | undefined;
   let can: { car: string; color: string } | undefined;
+  let odometer: number | undefined;
   // 0.1.159: a right Comet answer claims this window's `ev:<id>` row. If another token already claimed it (two cards
   // dealt before either was graded), this one pays as an ordinary green vault: the comet bonus is paid once.
   let cometSpent = false;
@@ -742,6 +743,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         wallet = awarded.view;
         award = awarded.award;
         can = awarded.can;
+        odometer = awarded.odometer;
       }
       // 0.1.173: a replayed order grade reports what the first grade paid: the stored row says exact or swap.
       if (orderCard && correct && awarded.replay && awarded.detail) {
@@ -768,6 +770,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     ...(paints !== undefined ? { paints } : {}),
     ...(wallet ? { wallet, ...(award ? { award } : {}) } : {}),
     ...(can ? { can } : {}),
+    ...(odometer ? { odometer } : {}),
     // 0.1.173: `result` is the one half-coin signal. `coins` is the server wallet's award (stored value on a replay);
     // 0 when the server paid nothing here (a guest pays locally from `result`, see store settleAnswer).
     ...(orderCard ? { order: { result: ordered ?? "miss", labels: orderLabels(orderCard), coins: award?.coins ?? 0 } } : {}),

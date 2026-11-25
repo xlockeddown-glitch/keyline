@@ -67,6 +67,9 @@ export const CAR_COLORS: Record<CarId, readonly PaintColor[]> = {
     { id: "blue", name: "Electric Blue", hex: "#1e5fc0" },
     { id: "sig", name: "Very Orange", hex: "#f06a12" },
   ],
+  // 0.1.178: the Duesenberg ships in its factory 3-view only. No colours means no can ever rolls for it (rollCan
+  // walks this table), parseCan/colorOf refuse any "duesenberg:*" can, and the showroom offers no repaint.
+  duesenberg: [],
   roadster2: [
     { id: "white", name: "Pearl White", hex: "#f4f4f2" },
     { id: "black", name: "Solid Black", hex: "#141518" },
@@ -86,8 +89,11 @@ export function paintPrice(car: CarId): number {
 }
 
 export function factoryColor(car: CarId): string {
-  return CAR_COLORS[car][0]!.id;
+  return CAR_COLORS[car][0]?.id ?? "";
 }
+
+/** 0.1.178: can this car be repainted at all? A factory-only car (the Duesenberg) has no colour list. */
+export const paintable = (car: CarId): boolean => CAR_COLORS[car].length > 0;
 
 export function colorOf(car: CarId, color: string): PaintColor | null {
   return CAR_COLORS[car]?.find((c) => c.id === color) ?? null;
@@ -112,5 +118,5 @@ export function rollCan(r: number): Can {
 
 /** Sprite for a car in a colour (the factory colour is the base art). */
 export function carSprite(car: CarId, view: "side" | "front" | "back", color?: string | null): string {
-  return !color || color === factoryColor(car) ? `/sprites/cars/${car}-${view}.webp` : `/sprites/cars/paint/${car}-${color}-${view}.webp`;
+  return !color || !paintable(car) || color === factoryColor(car) ? `/sprites/cars/${car}-${view}.webp` : `/sprites/cars/paint/${car}-${color}-${view}.webp`;
 }

@@ -13,6 +13,7 @@ test("0.1.8 cars: Ryan's prices and speeds, each car dearer and faster, Roadster
     ["belair57", 200_000, 1.17],
     ["model3", 350_000, 1.2],
     ["roadster", 600_000, 1.22],
+    ["duesenberg", 1_000_000, 1.25],
     ["roadster2", 2_400_000, 1.3],
   ]);
   for (let i = 1; i < CARS.length; i++) assert.ok(CARS[i]!.price > CARS[i - 1]!.price && CARS[i]!.pace > CARS[i - 1]!.pace);
@@ -89,7 +90,10 @@ test("0.1.161 painted cars: every base view ships as an RGBA webp, sides 640 px 
   const { readFileSync, existsSync } = await import("node:fs");
   const { CAR_COLORS, carSprite, factoryColor } = await import("./carPaint.ts");
   const file = (p: string) => new URL(`../../public${p}`, import.meta.url);
-  assert.equal(CARS.length, 8);
+  assert.equal(CARS.length, 9);
+  // 0.1.178: the Duesenberg is an upright 1929 body, so its approved front and back cuts are narrower and a touch
+  // taller than wide. Its three files are pinned to their exact sizes; every other car keeps the bounds below.
+  const UPRIGHT: Record<string, Record<string, [number, number]>> = { duesenberg: { side: [640, 258], front: [268, 275], back: [282, 285] } };
   for (const c of CARS) {
     for (const view of ["side", "front", "back"] as const) {
       const path = carSprite(c.id, view);
@@ -100,10 +104,12 @@ test("0.1.161 painted cars: every base view ships as an RGBA webp, sides 640 px 
       assert.equal(buf.toString("ascii", 12, 16), "VP8X", `${path}: extended webp (alpha)`);
       assert.ok(buf[20]! & 0x10, `${path}: alpha flag`);
       const w = 1 + buf.readUIntLE(24, 3), h = 1 + buf.readUIntLE(27, 3);
-      if (view === "side") assert.equal(w, 640, `${path}: ${w}x${h}`);
+      const exact = UPRIGHT[c.id]?.[view];
+      if (exact) assert.deepEqual([w, h], exact, `${path}: ${w}x${h}`);
+      else if (view === "side") assert.equal(w, 640, `${path}: ${w}x${h}`);
       // Front and back are cut at the side's pixel density: well past 2x of the 40px map width.
       else assert.ok(w >= 280 && w <= 400, `${path}: ${w}x${h}`);
-      assert.ok(h >= 180 && h < w, `${path}: ${w}x${h}`);
+      if (!exact) assert.ok(h >= 180 && h < w, `${path}: ${w}x${h}`);
       assert.ok(buf.length < 80_000, `${path}: ${buf.length} bytes`);
       for (const p of CAR_COLORS[c.id]) {
         const v = carSprite(c.id, view, p.id);
@@ -120,7 +126,9 @@ test("0.1.161 painted cars: the stylesheet points at the webps only and never pi
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   assert.equal(/\/sprites\/cars\/[^")]*\.png/.test(css), false, "no car png left in the stylesheet");
   const urls = [...new Set(css.match(/\/sprites\/cars\/[^")]+\.webp/g) ?? [])];
-  assert.equal(urls.length, 8 * 3 * 6, "8 cars, 3 views, 6 colours");
+  assert.equal(urls.length, 8 * 3 * 6 + 3, "8 cars, 3 views, 6 colours, plus the factory-only Duesenberg's 3 views");
+  assert.equal(urls.filter((u) => u.includes("duesenberg")).length, 3, "the Duesenberg has no paint files");
+  assert.doesNotMatch(css, /data-car="duesenberg"\]\[data-paint/, "and no paint rules");
   for (const u of urls) assert.ok(existsSync(new URL(`../../public${u}`, import.meta.url)), `${u} exists`);
   const cab = css.match(/\n\.cab-sprite \{[^}]*\}/)?.[0] ?? "";
   assert.match(cab, /width: 56px/);

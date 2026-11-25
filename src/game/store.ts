@@ -240,6 +240,9 @@ export type GameState = {
   serverStreak: number | null;
   /** Permanent Streak Lord flag from the server. Not written into the save. */
   streakLord: boolean;
+  /** 0.1.178: Duesenberg Odometer count from the server (sync and grade replies). Not written into the save, never
+   *  counted on the device. Null until this session syncs (guests: the perk is server-paid, so no count). */
+  odometer: number | null;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
   matchPop: MatchPop | null;
   /** 0.0.96 Tabby (Nine lives): Chicago day the first miss was forgiven. */
@@ -1186,6 +1189,7 @@ function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, 
       );
       if (res.wallet) applyServerGrade(res.wallet, res.award, surveyBefore, goalsBefore, contractBefore);
       if (res.can) gotCan(res.can);
+      if (typeof res.odometer === "number") useGame.setState({ odometer: Math.max(useGame.getState().odometer ?? 0, res.odometer) });
     })
     .catch(() => lost());
 }
@@ -1237,6 +1241,7 @@ export const useGame = create<GameState>((set, get) => ({
   streak: saved?.streak ?? 0,
   serverStreak: null,
   streakLord: false,
+  odometer: null,
   matchPop: null,
   shieldDay: saved?.shieldDay ?? "",
   bestStreak: saved?.bestStreak ?? 0,

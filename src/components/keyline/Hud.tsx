@@ -8,6 +8,7 @@ import { CREDIT_CALM_MS, Calm } from "@/game/calm";
 import { LevelHudBadge } from "./Levels";
 import { livePois } from "@/game/nightMarket";
 import { dealerOf } from "@/game/cars";
+import { hasOdometer, odometerText } from "@/game/carPerks";
 import { houseOf, lotOf } from "@/game/houses";
 import { CITIES, KIND_LABEL, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop } from "@/game/data";
 import { TIERS } from "@/game/items";
@@ -67,6 +68,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const toggleGuide = useGame((s) => s.toggleGuide);
   const streak = useGame((s) => s.streak);
   const serverStreak = useGame((s) => s.serverStreak);
+  const odometer = useGame((s) => s.odometer);
   const streakLord = useGame((s) => s.streakLord);
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
@@ -276,6 +278,13 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       {busy ? null : (
         <div className="hud-dock">
           <div className="hud-tools">
+            {/* 0.1.178 Duesenberg Odometer: plain HUD text on its own line over the key belt and car chip (never on
+                the sprite, and not in their row, which is full on a phone); the count is the server's. */}
+            {hud.seated && hasOdometer(carOn) && odometer != null ? (
+              <span className="odo-chip tabular-nums" data-testid="hud-odometer">
+                {odometerText(odometer)}
+              </span>
+            ) : null}
             <div className="hud-tool-row">
             <button
               type="button"

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { CAR_FAV, CAR_PERKS, CAT_LABEL, FAV_BONUS, FAV_BOTH } from "@/game/carPerks";
+import { CAR_FAV, CAR_PERKS, CAT_LABEL, FAV_BONUS, FAV_BOTH, hasOdometer, odometerText } from "@/game/carPerks";
 import { X } from "lucide-react";
-import { CAR_COLORS, carSprite, factoryColor, paintPrice } from "@/game/carPaint";
+import { CAR_COLORS, carSprite, factoryColor, paintPrice, paintable } from "@/game/carPaint";
 import { CARS, carBoost, dealerOf } from "@/game/cars";
 import { sfx } from "@/game/audio";
 import { useGame } from "@/game/store";
@@ -21,6 +21,7 @@ export function Showroom() {
   const cans = useGame((s) => s.carCans);
   const paint = useGame((s) => s.carPaint);
   const paintCar = useGame((s) => s.paintCar);
+  const odometer = useGame((s) => s.odometer);
   const [painting, setPainting] = useState<string | null>(null);
   useSheetOpen(open);
   if (!open) return null;
@@ -64,6 +65,11 @@ export function Showroom() {
                           {CAR_PERKS[c.id].label.includes(" · ") ? ` ${CAR_PERKS[c.id].label.split(" · ").slice(1).join(" · ")}` : ""} · Favorite: {CAT_LABEL[CAR_FAV[c.id]]} +{Math.round(FAV_BONUS * 100)}%, +{Math.round(FAV_BOTH * 100)}% with a coat that favors it too
                         </span>
                       </p>
+                      {mine && hasOdometer(c.id) && odometer != null ? (
+                        <p className="text-sm tabular-nums text-fg-muted" data-testid={`car-odometer-${c.id}`}>
+                          {odometerText(odometer)}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="shrink-0 text-right">
                       {mine ? (
@@ -78,6 +84,7 @@ export function Showroom() {
                         >
                           {driving ? "Driving" : "Drive this"}
                         </button>
+                        {paintable(c.id) ? (
                         <button
                           type="button"
                           className="btn btn-quiet px-3 text-xs"
@@ -89,6 +96,7 @@ export function Showroom() {
                         >
                           Paint{cans.some((x) => x.startsWith(`${c.id}:`)) ? " ·  can ready" : ""}
                         </button>
+                        ) : null}
                         </div>
                       ) : (
                         <>
@@ -108,7 +116,7 @@ export function Showroom() {
                       )}
                     </div>
                   </div>
-                  {mine && painting === c.id ? (
+                  {mine && paintable(c.id) && painting === c.id ? (
                     <div className="paint-shop mt-3 border-t border-border pt-3" data-testid={`paint-dialog-${c.id}`}>
                       <p className="kicker mb-1">Paint shop · {paintPrice(c.id).toLocaleString()} coin and one can</p>
                       <ul className="grid gap-1.5">

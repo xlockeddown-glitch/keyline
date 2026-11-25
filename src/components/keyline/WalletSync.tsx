@@ -61,7 +61,7 @@ export function WalletSync() {
     if (!userId) {
       setStreetPlayer("");
       setWalletLive(false);
-      useGame.setState({ serverStreak: null, streakLord: false });
+      useGame.setState({ serverStreak: null, streakLord: false, odometer: null });
       return;
     }
     let live = true;
@@ -76,7 +76,7 @@ export function WalletSync() {
         if (!r.revised) r = await syncWallet({ data: { ...snapOf(), deviceId: id } });
         if (!live) return;
         useGame.getState().adoptWallet(r);
-        useGame.setState({ serverStreak: r.streakRun ?? 0, streakLord: r.streakLord === true });
+        useGame.setState({ serverStreak: r.streakRun ?? 0, streakLord: r.streakLord === true, odometer: r.odometer ?? 0 });
         // 0.1.82: the server pays this account's stock trade-in, so this device never pays it again locally.
         useGame.setState({ stockPaid: true });
         if (r.owned) useGame.getState().adoptOwned(r.owned);
