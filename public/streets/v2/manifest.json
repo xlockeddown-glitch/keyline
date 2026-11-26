@@ -44,7 +44,31 @@
    "sha256": "2a8a95ff05934432353375efeeca4fa6f6c1fe726db8d213bd47b3f7b5d8bb23",
    "origin": "local",
    "url": "/streets/v2/boston.ee65ed59d9.json.gz",
-   "overlay": null
+   "overlay": {
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/boston-overlay.a1e74f0806cc890c13739118279a9d89694c891189bd8f012d76c24a0165afcc.webp",
+    "sha256": "a1e74f0806cc890c13739118279a9d89694c891189bd8f012d76c24a0165afcc",
+    "bytes": 260158,
+    "w": 2258,
+    "h": 1736,
+    "bounds": {
+     "nw": [
+      42.38518,
+      -71.12784
+     ],
+     "ne": [
+      42.38518,
+      -71.03094
+     ],
+     "se": [
+      42.33012,
+      -71.03094
+     ],
+     "sw": [
+      42.33012,
+      -71.12784
+     ]
+    }
+   }
   },
   "chicago": {
    "file": "chicago.16beb10673.json.gz",

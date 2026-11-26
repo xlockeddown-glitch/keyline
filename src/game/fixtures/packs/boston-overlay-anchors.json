@@ -1,0 +1,80 @@
+{
+ "image": {
+  "w": 2258,
+  "h": 1736
+ },
+ "anchors": [
+  {
+   "name": "Massachusetts State House",
+   "osm": "w29718019",
+   "lat": 42.358561,
+   "lng": -71.063802,
+   "px": 1492.24,
+   "py": 839.47,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Fenway Park",
+   "osm": "r11188464",
+   "lat": 42.346461,
+   "lng": -71.097272,
+   "px": 712.31,
+   "py": 1220.95,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Faneuil Hall",
+   "osm": "w29551702",
+   "lat": 42.360034,
+   "lng": -71.056234,
+   "px": 1668.59,
+   "py": 793.04,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Boston Public Library",
+   "osm": "r63755",
+   "lat": 42.349325,
+   "lng": -71.078289,
+   "px": 1154.67,
+   "py": 1130.64,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Widener Library",
+   "osm": "w29725638",
+   "lat": 42.373463,
+   "lng": -71.116489,
+   "px": 264.5,
+   "py": 369.56,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Museum of Fine Arts",
+   "osm": "r63938",
+   "lat": 42.339486,
+   "lng": -71.094187,
+   "px": 784.2,
+   "py": 1440.8,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  }
+ ]
+}
