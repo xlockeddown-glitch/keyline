@@ -10,6 +10,9 @@
  *     shares one count; a missing table falls back to per-instance memory instead of breaking sign-in.
  *   - 0.1.191: sign-in also counts per email, so a new IP or a fresh session cannot reset the cap on that account.
  *     The existing per-IP cap still applies (and covers a request with no email). No new table.
+ *   - 0.1.192: that cap counts tries before the password is checked, so on its own it let anyone who knows an email
+ *     lock the owner out. A device the player already signed in from (signed cookie, `./trusted-device.server`)
+ *     skips the per-account cap; strangers, and a new device, are still held to it.
  *   - Linking: an existing Google / X walker who signs up with the same email is told to sign in with Google / X
  *     (or reset to add a password). A Google or gate sign-in whose email matches an UNCONFIRMED password account
  *     links into it but removes that password — whoever typed it never proved they own the email. An X sign-in
@@ -17,7 +20,9 @@
  */
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { canonicalAuthLink, resetPasswordEmail, verifyEmail, type Mailer } from "./mailer.server.ts";
+import { createHash } from "node:crypto";
 import type { AuthRateLimitStore } from "./rate-limit.server.ts";
+import { DEVICE_COOKIE, DEVICE_TTL_MS, checkDevice, cookieFrom, mintDevice } from "./trusted-device.server.ts";
 
 export const emailAndPasswordEnabled = true;
 
@@ -94,11 +99,14 @@ export const AUTH_RATE_LIMIT = {
 /** Same window and max as the per-IP `/sign-in/email` rule. */
 export const SIGN_IN_ACCOUNT_RULE = AUTH_RATE_LIMIT.customRules["/sign-in/email"];
 
-/** Rate-limit key for one email on `/sign-in/email`. Empty or non-email strings are not keyed. */
+/**
+ * Rate-limit key for one email on `/sign-in/email`. The email is folded (case, spaces) and hashed, so the key is a
+ * fixed length whatever is typed and the table never holds an address (a made-up one included). Not an email: not keyed.
+ */
 export function accountSignInKey(email: string): string | null {
   const e = email.trim().toLowerCase();
   if (!e || !e.includes("@")) return null;
-  return `acct|/sign-in/email|${e}`;
+  return `acct|/sign-in/email|${createHash("sha256").update(e).digest("hex").slice(0, 32)}`;
 }
 
 /** Count a sign-in try against the email's own cap. A missing or empty email is not counted (the IP cap still applies). */
@@ -158,7 +166,7 @@ export function emailPasswordAuthOptions(mailer: Mailer | null, opts?: { signInL
         if (ctx.path === "/sign-in/email" && opts?.signInLimit) {
           const email = (ctx.body as { email?: unknown } | null | undefined)?.email;
           const r = await consumeSignInAccountLimit(opts.signInLimit, email);
-          if (!r.allowed) {
+          if (!r.allowed && !(await knownDevice(ctx, email))) {
             throw new APIError("TOO_MANY_REQUESTS", { message: "Too many tries. Wait a minute and try again.", code: "TOO_MANY_REQUESTS" });
           }
         }
@@ -166,8 +174,39 @@ export function emailPasswordAuthOptions(mailer: Mailer | null, opts?: { signInL
         const problem = signUpProblem(ctx.body as { email?: unknown; name?: unknown });
         if (problem) throw new APIError("BAD_REQUEST", { message: problem, code: "SIGN_UP_REFUSED" });
       }),
+      // After a successful email sign-in or sign-up, remember this device for this account (and refresh it).
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-in/email" && ctx.path !== "/sign-up/email") return;
+        const id = ctx.context.newSession?.user?.id;
+        if (!id) return;
+        ctx.setCookie(DEVICE_COOKIE, mintDevice(ctx.context.secret, id), {
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          path: "/",
+          maxAge: Math.floor(DEVICE_TTL_MS / 1000),
+        });
+      }),
     },
   };
+}
+
+type HookCtx = {
+  headers?: Headers;
+  context: { secret: string; internalAdapter: { findUserByEmail(email: string): Promise<{ user: { id: string } } | null> } };
+};
+
+/** True when the request carries this account's trusted-device cookie. Only read once the cap has been spent. */
+async function knownDevice(ctx: HookCtx, email: unknown): Promise<boolean> {
+  if (typeof email !== "string") return false;
+  const token = cookieFrom(ctx.headers?.get("cookie"), DEVICE_COOKIE);
+  if (!token) return false;
+  try {
+    const found = await ctx.context.internalAdapter.findUserByEmail(email.trim().toLowerCase());
+    return found ? checkDevice(ctx.context.secret, token, found.user.id) : false;
+  } catch {
+    return false;
+  }
 }
 
 type AccountRow = { id: string; providerId: string; userId: string };

@@ -12,11 +12,15 @@ type Query = (text: string, params?: unknown[]) => Promise<Record<string, unknow
 type Rule = { window: number; max: number };
 type Entry = { key: string; count: number; lastRequest: number };
 
+const PRUNE_EVERY_MS = 10 * 60_000;
+const STALE_MS = 2 * 3600_000;
+
 export type AuthRateLimitStore = ReturnType<typeof authRateLimitStorage>;
 
 export function authRateLimitStorage(getQuery: () => Promise<Query>, now: () => number = Date.now) {
   const memory = new Map<string, Entry>();
   let warned = false;
+  let prunedAt = 0;
 
   const memoryConsume = (key: string, rule: Rule) => {
     const t = now();
@@ -44,6 +48,12 @@ export function authRateLimitStorage(getQuery: () => Promise<Query>, now: () => 
       const ms = rule.window * 1000;
       try {
         const q = await getQuery();
+        // 0.1.192: every distinct key is a row (a per-email key for each email anyone types, real or not). The longest window
+        // is an hour, so a row idle for two hours is dead; sweep them at most every ten minutes per instance.
+        if (t - prunedAt > PRUNE_EVERY_MS) {
+          prunedAt = t;
+          await q(`delete from "rateLimit" where "lastRequest" < $1`, [t - STALE_MS]).catch(() => undefined);
+        }
         // New key or window elapsed -> 1 with a fresh window; otherwise +1 (denied requests keep counting, so a
         // hammering client stays blocked until the window that started at its first request runs out).
         const rows = await q(

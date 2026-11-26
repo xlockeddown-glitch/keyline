@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.191";
+export const APP_VERSION = "0.1.192";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1191a";
+export const PUBLISH_STAMP = "k1192a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -292,3 +292,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.189: Austin city map — the painted overlay (water, parks, 20 landmark footprints; drive streets left clear) Philly got in 0.1.180, drawn by the same generator from OSM polygons; the big parks read as places (lighter flat lawn, canopy only where woodland is mapped, paths, ballfields, courts, pools, parking, streams); Austin's street graph stays bundled (origin local), only the 259,308 B WebP lives on the keyline-packs host, pinned by sha256, byte length and its four corner coordinates in the manifest; it never blocks play, a dead host just leaves the plain map, and the static size is unchanged; no CSS or SVG on sprites (k1189a).
 // 0.1.190: Vault pay sealing — a deal request can no longer raise lamp coin, loot or the topic-bonus key, and an unowned coat no longer strikes a card or refunds a spent key: awardGrade overwrites streak from this pocket's grade rows, loot from the worn coat, and today's topics from the ledger (the request's charm list is not read); a coat's strike, loot and other paid perks apply only when provePerks found that coat on the account at deal time. A linked sign-in shares the Comet claim: deal and grade sit on the canonical pocket, so a second sign-in cannot take the bonus twice (k1190a).
 // 0.1.191: Sign-in lockout is per account, not per session — five tries on one email in a minute lock that email even from a new IP or a fresh session; the existing per-IP cap still applies (and covers a request with no email); counts live in the rateLimit table from 0017, no new migration (k1191a).
+// 0.1.192: Sign-in lockout step-up — the per-account cap (0.1.191) counted tries before the password was checked, so anyone who knew an email could lock its owner out. A device the player already signed in or up from now carries a signed HttpOnly cookie (HMAC of the user id and expiry with the app secret, 90 days, bound to that one account); a sign-in with it skips the per-account cap (the per-IP cap and the password check still apply), while strangers and new devices are still held to the cap, so cross-IP guessing stays limited. The per-email key is now a hash (no address in the table, fixed length) and stale rateLimit rows are swept (idle over 2 h, at most every 10 min); no new table, no migration, nothing on screen changes (k1192a).

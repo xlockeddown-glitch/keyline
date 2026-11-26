@@ -12,6 +12,7 @@ import { canonicalAuthLink, mailerFromEnv, resetPasswordEmail, RESEND_ENDPOINT, 
 import { emailAuthMessage } from "./email-messages.ts";
 import { authRateLimitStorage } from "./rate-limit.server.ts";
 import { sessionUserFromHeaders } from "./session-lookup.ts";
+import { DEVICE_COOKIE, DEVICE_TTL_MS, checkDevice, mintDevice } from "./trusted-device.server.ts";
 
 const quiet = () => {};
 
@@ -386,15 +387,129 @@ test("0.1.191: five failed sign-ins on one email block a sixth from a new IP / s
   await pg.close();
 });
 
-test("0.1.191: version 0.1.191 / k1191a everywhere", () => {
+test("0.1.191: the changelog line", () => {
+  // 0.1.192: the live version moved on; the current-version pins live in the newest slice's test (below).
   const root = new URL("../../../", import.meta.url);
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.191"/);
-  assert.match(v, /PUBLISH_STAMP = "k1191a"/);
-  assert.match(v, /\n\/\/ 0\.1\.191: Sign-in lockout is per account, not per session — [^\n]*\(k1191a\)\.\n$/);
+  assert.match(v, /\n\/\/ 0\.1\.191: Sign-in lockout is per account, not per session — [^\n]*\(k1191a\)\.\n/);
+});
+
+// ---- 0.1.192: the account cap no longer locks out the real player on a device they already signed in from ----
+
+const ORIGIN = "http://localhost:8080";
+const SECRET = "test-secret-test-secret-test-secret-0123";
+
+/** A real HTTP request through the router (same path as /api/auth/*), so both rate limits and the hooks run. */
+async function http(auth: { handler: (r: Request) => Promise<Response> }, path: string, body: unknown, ip: string, cookie?: string) {
+  const headers: Record<string, string> = { "content-type": "application/json", origin: ORIGIN, "x-forwarded-for": ip };
+  if (cookie) headers.cookie = cookie;
+  const res = await auth.handler(new Request(`${ORIGIN}/api/auth/${path}`, { method: "POST", headers, body: JSON.stringify(body) }));
+  const json = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+  return { status: res.status, code: json.code, message: json.message, res };
+}
+const signIn = (auth: Parameters<typeof http>[0], email: string, password: string, ip: string, cookie?: string) =>
+  http(auth, "sign-in/email", { email, password }, ip, cookie);
+const cookieOf = (res: Response, name: string) => {
+  const c = res.headers.getSetCookie().find((x) => x.startsWith(`${name}=`));
+  return c ? c.split(";")[0]! : undefined;
+};
+
+async function limited(opts: { clock?: { t: number } } = {}) {
+  const pg = await PGlite.create();
+  await pg.exec(readFileSync(new URL("../../../migrations/0017_auth_rate_limit.sql", import.meta.url), "utf8"));
+  const now = opts.clock ? () => opts.clock!.t : undefined;
+  const store = authRateLimitStorage(async () => async (text, params) => (await pg.query(text, params)).rows as Record<string, unknown>[], now);
+  const made = await setup(null, { rateLimit: { enabled: true, ...AUTH_RATE_LIMIT, customStorage: store } }, store);
+  return { ...made, pg, store };
+}
+
+test("0.1.192 routes: the per-IP cap and the per-account cap both answer 429 over HTTP", async () => {
+  const { auth, pg } = await limited();
+  // Per IP: five tries, a sixth from the same IP is refused by Better Auth's own limiter (a different email each time).
+  for (let i = 0; i < 5; i++) assert.equal((await signIn(auth, `ip${i}@example.com`, "wrong-password-1", "9.9.9.9")).status, 401);
+  const byIp = await signIn(auth, "ip5@example.com", "wrong-password-1", "9.9.9.9");
+  assert.equal(byIp.status, 429);
+  assert.equal(byIp.res.headers.get("x-retry-after") !== null, true, "the IP limiter says when to retry");
+  // Per account: six different IPs, one email. The sixth is refused by our hook.
+  for (let i = 0; i < 5; i++) assert.equal((await signIn(auth, "victim@example.com", "wrong-password-1", `10.0.0.${i + 1}`)).status, 401);
+  const byAccount = await signIn(auth, "victim@example.com", "wrong-password-1", "10.0.0.99");
+  assert.equal(byAccount.status, 429);
+  assert.equal(byAccount.code, "TOO_MANY_REQUESTS");
+  assert.equal((await signIn(auth, "bystander@example.com", "wrong-password-1", "10.0.0.99")).status, 401, "another email from that IP is not locked");
+  await pg.close();
+});
+
+test("0.1.192 expiry: the per-account lock ends when its window does", async () => {
+  const clock = { t: Date.now() };
+  const { auth, pg } = await limited({ clock });
+  for (let i = 0; i < 5; i++) await signIn(auth, "ryan@example.com", "wrong-password-1", `10.1.0.${i + 1}`);
+  assert.equal((await signIn(auth, "ryan@example.com", "wrong-password-1", "10.1.0.50")).status, 429);
+  clock.t += 61_000;
+  assert.equal((await signIn(auth, "ryan@example.com", "wrong-password-1", "10.1.0.51")).status, 401, "window elapsed: counted again, not locked");
+  await pg.close();
+});
+
+test("0.1.192 a device the player already signed in from is not locked out by someone else's bad passwords", async () => {
+  const { auth, pg } = await limited();
+  const up = await http(auth, "sign-up/email", { name: "Ryan Gray", email: "ryan@example.com", password: "lantern-walk-1" }, "1.1.1.1");
+  assert.equal(up.status, 200);
+  const device = cookieOf(up.res, DEVICE_COOKIE);
+  assert.ok(device, "sign-up leaves a trusted-device cookie");
+  // Someone who knows only the email spams wrong passwords from many IPs until the account is locked for strangers.
+  for (let i = 0; i < 5; i++) assert.equal((await signIn(auth, "ryan@example.com", "guess-guess-1", `10.2.0.${i + 1}`)).status, 401);
+  assert.equal((await signIn(auth, "ryan@example.com", "guess-guess-1", "10.2.0.60")).status, 429, "a stranger is locked");
+  assert.equal((await signIn(auth, "ryan@example.com", "lantern-walk-1", "10.2.0.61")).status, 429, "even a right password from a new device waits, so cross-IP guessing stays capped");
+  // The real player on the known device still gets in, from a new IP, with the account locked.
+  const ok = await signIn(auth, "ryan@example.com", "lantern-walk-1", "7.7.7.7", device);
+  assert.equal(ok.status, 200, "known device signs in");
+  assert.ok(cookieOf(ok.res, DEVICE_COOKIE), "and the cookie is refreshed");
+  // A known device does not skip the password: a wrong one is just wrong, and the stranger-lock is not what answered.
+  const wrong = await signIn(auth, "ryan@example.com", "guess-guess-1", "7.7.7.8", device);
+  assert.equal(wrong.status, 401);
+  assert.equal(wrong.code, "INVALID_EMAIL_OR_PASSWORD");
+  await pg.close();
+});
+
+test("0.1.192 trusted-device cookie: bound to the user, signed, and it expires", () => {
+  const t0 = 1_800_000_000_000;
+  const good = mintDevice(SECRET, "user-1", t0);
+  assert.equal(checkDevice(SECRET, good, "user-1", t0 + 1000), true);
+  assert.equal(checkDevice(SECRET, good, "user-2", t0 + 1000), false, "another account's cookie does not unlock this one");
+  assert.equal(checkDevice("other-secret-other-secret-other-0000", good, "user-1", t0 + 1000), false, "signed with the server secret");
+  assert.equal(checkDevice(SECRET, good.slice(0, -1) + (good.endsWith("0") ? "1" : "0"), "user-1", t0 + 1000), false, "tampered mac");
+  assert.equal(checkDevice(SECRET, good, "user-1", t0 + DEVICE_TTL_MS + 1), false, "expired");
+  for (const junk of ["", "x", "v1.a.b.c", undefined, null]) assert.equal(checkDevice(SECRET, junk as never, "user-1", t0), false);
+});
+
+test("0.1.192 cleanup: stale rate-limit rows (including keys for emails that never existed) are pruned, and keys hold no email", async () => {
+  const pg = await PGlite.create();
+  await pg.exec(readFileSync(new URL("../../../migrations/0017_auth_rate_limit.sql", import.meta.url), "utf8"));
+  const clock = { t: 5_000_000_000 };
+  const store = authRateLimitStorage(async () => async (text, params) => (await pg.query(text, params)).rows as Record<string, unknown>[], () => clock.t);
+  const { accountSignInKey } = await import("./email-password.ts");
+  const key = accountSignInKey("nobody-here@example.com")!;
+  assert.ok(!key.includes("nobody-here") && !key.includes("@"), "the email is hashed, never stored");
+  assert.equal(accountSignInKey("x".repeat(5000) + "@example.com")!.length, key.length, "any email gives a bounded key");
+  assert.equal(accountSignInKey("  NoBody-Here@Example.com ")!, key, "case and spaces fold");
+  await store.consume(key, { window: 60, max: 5 });
+  await store.consume("1.2.3.4|/sign-in/email", { window: 60, max: 5 });
+  const count = async () => Number(((await pg.query(`select count(*)::int as n from "rateLimit"`)).rows[0] as { n: number }).n);
+  assert.equal(await count(), 2);
+  clock.t += 3 * 3600_000; // far past every window (the longest is one hour)
+  await store.consume("fresh|/sign-in/email", { window: 60, max: 5 });
+  assert.equal(await count(), 1, "only the fresh row is left");
+  await pg.close();
+});
+
+test("0.1.192: version 0.1.192 / k1192a everywhere", () => {
+  const root = new URL("../../../", import.meta.url);
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.192"/);
+  assert.match(v, /PUBLISH_STAMP = "k1192a"/);
+  assert.match(v, /\n\/\/ 0\.1\.192: Sign-in lockout step-up — [^\n]*\(k1192a\)\.\n$/);
   const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.191");
+  assert.equal(pkg.version, "0.1.192");
   const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.191");
-  assert.equal(lock.packages[""]!.version, "0.1.191");
+  assert.equal(lock.version, "0.1.192");
+  assert.equal(lock.packages[""]!.version, "0.1.192");
 });
