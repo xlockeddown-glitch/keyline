@@ -8,6 +8,8 @@
  *     `AUTH_EMAIL_FROM` are set, a console log of the link in dev, and switched off in production until then.
  *   - Rate limits live in Postgres (`rateLimit`, migration 0017, `./rate-limit.server`) so every serverless instance
  *     shares one count; a missing table falls back to per-instance memory instead of breaking sign-in.
+ *   - 0.1.191: sign-in also counts per email, so a new IP or a fresh session cannot reset the cap on that account.
+ *     The existing per-IP cap still applies (and covers a request with no email). No new table.
  *   - Linking: an existing Google / X walker who signs up with the same email is told to sign in with Google / X
  *     (or reset to add a password). A Google or gate sign-in whose email matches an UNCONFIRMED password account
  *     links into it but removes that password — whoever typed it never proved they own the email. An X sign-in
@@ -15,6 +17,7 @@
  */
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { canonicalAuthLink, resetPasswordEmail, verifyEmail, type Mailer } from "./mailer.server.ts";
+import type { AuthRateLimitStore } from "./rate-limit.server.ts";
 
 export const emailAndPasswordEnabled = true;
 
@@ -88,7 +91,28 @@ export const AUTH_RATE_LIMIT = {
   },
 };
 
-export function emailPasswordAuthOptions(mailer: Mailer | null) {
+/** Same window and max as the per-IP `/sign-in/email` rule. */
+export const SIGN_IN_ACCOUNT_RULE = AUTH_RATE_LIMIT.customRules["/sign-in/email"];
+
+/** Rate-limit key for one email on `/sign-in/email`. Empty or non-email strings are not keyed. */
+export function accountSignInKey(email: string): string | null {
+  const e = email.trim().toLowerCase();
+  if (!e || !e.includes("@")) return null;
+  return `acct|/sign-in/email|${e}`;
+}
+
+/** Count a sign-in try against the email's own cap. A missing or empty email is not counted (the IP cap still applies). */
+export async function consumeSignInAccountLimit(
+  store: AuthRateLimitStore,
+  email: unknown,
+): Promise<{ allowed: boolean; retryAfter: number | null }> {
+  if (typeof email !== "string") return { allowed: true, retryAfter: null };
+  const key = accountSignInKey(email);
+  if (!key) return { allowed: true, retryAfter: null };
+  return store.consume(key, SIGN_IN_ACCOUNT_RULE);
+}
+
+export function emailPasswordAuthOptions(mailer: Mailer | null, opts?: { signInLimit?: AuthRateLimitStore }) {
   return {
     emailAndPassword: {
       enabled: true,
@@ -131,6 +155,13 @@ export function emailPasswordAuthOptions(mailer: Mailer | null) {
       : {}),
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/sign-in/email" && opts?.signInLimit) {
+          const email = (ctx.body as { email?: unknown } | null | undefined)?.email;
+          const r = await consumeSignInAccountLimit(opts.signInLimit, email);
+          if (!r.allowed) {
+            throw new APIError("TOO_MANY_REQUESTS", { message: "Too many tries. Wait a minute and try again.", code: "TOO_MANY_REQUESTS" });
+          }
+        }
         if (ctx.path !== "/sign-up/email") return;
         const problem = signUpProblem(ctx.body as { email?: unknown; name?: unknown });
         if (problem) throw new APIError("BAD_REQUEST", { message: problem, code: "SIGN_UP_REFUSED" });

@@ -7,7 +7,7 @@ import { handleOAuthUserInfo } from "better-auth/oauth2";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
-import { dropUnprovenPassword, emailPasswordAuthOptions, signUpProblem, trustedOriginsFor } from "./email-password.ts";
+import { AUTH_RATE_LIMIT, dropUnprovenPassword, emailPasswordAuthOptions, signUpProblem, trustedOriginsFor } from "./email-password.ts";
 import { canonicalAuthLink, mailerFromEnv, resetPasswordEmail, RESEND_ENDPOINT, type AuthEmail, type Mailer } from "./mailer.server.ts";
 import { emailAuthMessage } from "./email-messages.ts";
 import { authRateLimitStorage } from "./rate-limit.server.ts";
@@ -15,7 +15,7 @@ import { sessionUserFromHeaders } from "./session-lookup.ts";
 
 const quiet = () => {};
 
-async function setup(mailer: Mailer | null, extra: Record<string, unknown> = {}) {
+async function setup(mailer: Mailer | null, extra: Record<string, unknown> = {}, signInLimit?: import("./rate-limit.server.ts").AuthRateLimitStore) {
   const db: Record<string, Record<string, unknown>[]> = { user: [], session: [], account: [], verification: [] };
   // The hook reads the instance lazily, same as server.ts.
   const holder: { auth?: { $context: Promise<{ internalAdapter: unknown }> } } = {};
@@ -29,7 +29,7 @@ async function setup(mailer: Mailer | null, extra: Record<string, unknown> = {})
     databaseHooks: {
       account: { create: { before: async (account, ctx) => void (await dropUnprovenPassword(account, ctx?.context.internalAdapter ?? ((await holder.auth!.$context).internalAdapter as never))) } },
     },
-    ...emailPasswordAuthOptions(mailer),
+    ...emailPasswordAuthOptions(mailer, signInLimit ? { signInLimit } : undefined),
     logger: { disabled: true },
     ...extra,
   });
@@ -358,4 +358,43 @@ test("after a password reset the old session cookie no longer resolves a walker 
   const token = /reset-password\/([^\s?]+)/.exec(sent[0]!.text)![1]!;
   await auth.api.resetPassword({ body: { token, newPassword: "new-password-2" } });
   assert.equal(await sessionUserFromHeaders(auth.api as never, headers), null, "old cookie must not reach wallet or profile");
+});
+
+test("0.1.191: five failed sign-ins on one email block a sixth from a new IP / session", async () => {
+  const pg = await PGlite.create();
+  await pg.exec(readFileSync(new URL("../../../migrations/0017_auth_rate_limit.sql", import.meta.url), "utf8"));
+  const store = authRateLimitStorage(async () => async (text, params) => (await pg.query(text, params)).rows as Record<string, unknown>[]);
+  const { auth } = await setup(null, {
+    rateLimit: { enabled: true, ...AUTH_RATE_LIMIT, customStorage: store },
+  }, store);
+  await auth.api.signUpEmail({ body: { name: "Ryan Gray", email: "ryan@example.com", password: "lantern-walk-1" } });
+  const tryFrom = (ip: string, email = "ryan@example.com") =>
+    auth.api.signInEmail({
+      body: { email, password: "wrong-password-1" },
+      headers: new Headers({ "x-forwarded-for": ip }),
+    });
+  for (let i = 0; i < 5; i++) {
+    assert.equal(await errCode(tryFrom("1.2.3.4")), "INVALID_EMAIL_OR_PASSWORD", `try ${i + 1} from the first IP`);
+  }
+  // On main the cap is only IP + path, so a sixth try from a new IP is allowed. After the fix it stays locked.
+  assert.equal(await errCode(tryFrom("5.6.7.8")), "TOO_MANY_REQUESTS", "a new session / IP does not reset the account cap");
+  assert.equal(
+    await errCode(tryFrom("5.6.7.8", "other@example.com")),
+    "INVALID_EMAIL_OR_PASSWORD",
+    "a different email from the new IP is not locked",
+  );
+  await pg.close();
+});
+
+test("0.1.191: version 0.1.191 / k1191a everywhere", () => {
+  const root = new URL("../../../", import.meta.url);
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.191"/);
+  assert.match(v, /PUBLISH_STAMP = "k1191a"/);
+  assert.match(v, /\n\/\/ 0\.1\.191: Sign-in lockout is per account, not per session — [^\n]*\(k1191a\)\.\n$/);
+  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
+  assert.equal(pkg.version, "0.1.191");
+  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
+  assert.equal(lock.version, "0.1.191");
+  assert.equal(lock.packages[""]!.version, "0.1.191");
 });

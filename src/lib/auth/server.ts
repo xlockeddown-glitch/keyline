@@ -55,6 +55,11 @@ import {
 // Kick (and share) PGLite bootstrap as soon as the auth server module loads.
 void ensureDbReady();
 
+const authRateLimitStore = authRateLimitStorage(async () => {
+  const sql = await getSql();
+  return (text, params) => sql.query(text, params);
+});
+
 /**
  * Preview secret must outlive module reloads: PGLite (and its session rows) is
  * stored on `globalThis`, so an HMR re-eval of this file must NOT mint a new
@@ -231,14 +236,12 @@ export const auth = betterAuth({
   },
 
   // Local email/password — options, reset mail and sign-up checks live in `./email-password` (not a plugin).
-  ...(emailAndPasswordEnabled ? emailPasswordAuthOptions(mailerFromEnv()) : {}),
+  // One storage instance: per-IP path caps (Better Auth) and the 0.1.191 per-email sign-in cap share the same table.
+  ...(emailAndPasswordEnabled ? emailPasswordAuthOptions(mailerFromEnv(), { signInLimit: authRateLimitStore }) : {}),
   // Per-IP limits shared across serverless instances (`rateLimit` table, 0017). On in production only (default).
   rateLimit: {
     ...AUTH_RATE_LIMIT,
-    customStorage: authRateLimitStorage(async () => {
-      const sql = await getSql();
-      return (text, params) => sql.query(text, params);
-    }),
+    customStorage: authRateLimitStore,
   },
 
   // `__Host-` prefixed cookies: the browser REFUSES any same-named cookie that

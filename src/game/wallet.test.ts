@@ -1526,15 +1526,9 @@ test("a deal request cannot raise lamp coin, loot, or the topic-bonus key", asyn
   assert.equal(again.award?.coins, rewardPoints("blue", { mult: 1, bonus: 1.1, diffMult: 1, loot: 1 }), "one prior right is a 10% run, not 40%");
 });
 
-test("0.1.190: version 0.1.190 / k1190a everywhere", () => {
+test("0.1.190: the changelog line", () => {
+  // 0.1.191: the live version moved on; the current-version pins live in the newest slice's test (email-accounts.test.ts).
   const root = new URL("../../", import.meta.url);
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.190"/);
-  assert.match(v, /PUBLISH_STAMP = "k1190a"/);
-  assert.match(v, /\n\/\/ 0\.1\.190: Vault pay sealing — [^\n]*\(k1190a\)\.\n$/);
-  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.190");
-  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.190");
-  assert.equal(lock.packages[""]!.version, "0.1.190");
+  assert.match(v, /\n\/\/ 0\.1\.190: Vault pay sealing — [^\n]*\(k1190a\)\.\n/);
 });

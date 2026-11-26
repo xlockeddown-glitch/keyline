@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.190";
+export const APP_VERSION = "0.1.191";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1190a";
+export const PUBLISH_STAMP = "k1191a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -291,3 +291,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.188: Holiday Lights art rework — the 5th Journal ornament (the little lamppost with the red bow) is brass, as Ryan asked on Nov 26: its painted metal is gradient-mapped onto the Keyline brass ramp in scripts/art/holiday/cut.py (bow, snow, lit glass and alpha as painted); the other four ornaments and the route lamp are byte-identical; no CSS or SVG (k1188a).
 // 0.1.189: Austin city map — the painted overlay (water, parks, 20 landmark footprints; drive streets left clear) Philly got in 0.1.180, drawn by the same generator from OSM polygons; the big parks read as places (lighter flat lawn, canopy only where woodland is mapped, paths, ballfields, courts, pools, parking, streams); Austin's street graph stays bundled (origin local), only the 259,308 B WebP lives on the keyline-packs host, pinned by sha256, byte length and its four corner coordinates in the manifest; it never blocks play, a dead host just leaves the plain map, and the static size is unchanged; no CSS or SVG on sprites (k1189a).
 // 0.1.190: Vault pay sealing — a deal request can no longer raise lamp coin, loot or the topic-bonus key, and an unowned coat no longer strikes a card or refunds a spent key: awardGrade overwrites streak from this pocket's grade rows, loot from the worn coat, and today's topics from the ledger (the request's charm list is not read); a coat's strike, loot and other paid perks apply only when provePerks found that coat on the account at deal time. A linked sign-in shares the Comet claim: deal and grade sit on the canonical pocket, so a second sign-in cannot take the bonus twice (k1190a).
+// 0.1.191: Sign-in lockout is per account, not per session — five tries on one email in a minute lock that email even from a new IP or a fresh session; the existing per-IP cap still applies (and covers a request with no email); counts live in the rateLimit table from 0017, no new migration (k1191a).

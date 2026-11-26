@@ -12,6 +12,8 @@ type Query = (text: string, params?: unknown[]) => Promise<Record<string, unknow
 type Rule = { window: number; max: number };
 type Entry = { key: string; count: number; lastRequest: number };
 
+export type AuthRateLimitStore = ReturnType<typeof authRateLimitStorage>;
+
 export function authRateLimitStorage(getQuery: () => Promise<Query>, now: () => number = Date.now) {
   const memory = new Map<string, Entry>();
   let warned = false;
