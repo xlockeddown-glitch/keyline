@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
-import { fetchVerified, PACK_BACKOFF_MS, PACK_TIMEOUT_MS, setPackEnv } from "./packFetch.ts";
+import { fetchVerified, PACK_BACKOFF_MS, PACK_TIMEOUT_MS, setPackEnv, verifyPack } from "./packFetch.ts";
 import {
   bootstrapDrive,
   bootstrapStreets,
@@ -531,5 +531,20 @@ test("all 16 cities load through the verified loader (Philly from the vendored p
     assert.ok(path && path.length > 10, "6th and Chestnut walks to City Hall on the pack's graph");
   } finally {
     h.done();
+  }
+});
+
+test("a bundled city served already decoded (Content-Encoding: gzip) passes on the manifest's string length; a remote pack never does", async () => {
+  const { gunzipSync } = await import("node:zlib");
+  const man = JSON.parse(readFileSync("public/streets/v2/manifest.json", "utf8")) as { cities: Record<string, { file: string; bytes: number; gz: number; sha256: string; url: string; origin: string }> };
+  const digest = async (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
+  const env = { digest } as unknown as Parameters<typeof verifyPack>[2];
+  for (const id of ["austin", "tucson", "nyc"]) {
+    const e = man.cities[id]!;
+    const decoded = new Uint8Array(gunzipSync(readFileSync(`public/streets/v2/${e.file}`)));
+    const pin = { url: e.url, sha256: e.sha256, bytes: e.gz, remote: false, decodedBytes: e.bytes };
+    assert.equal(await verifyPack(decoded, pin, env), true, `${id} decoded body accepted`);
+    assert.equal(await verifyPack(decoded.subarray(0, decoded.length - 1), pin, env), false, `${id} short decoded body rejected`);
+    assert.equal(await verifyPack(decoded, { ...pin, remote: true }, env), false, `${id} remote never accepts a decoded body`);
   }
 });

@@ -11,7 +11,7 @@ export type PackPin = {
   remote: boolean;
   /**
    * Same-origin files only: the inflated size. A host that serves the .gz with Content-Encoding: gzip hands the
-   * browser the decoded JSON, which can't match the gz pin; that exact length (and no gzip magic) is let through.
+   * browser the decoded JSON, which can't match the gz pin; that exact string length (and no gzip magic) is let through.
    */
   decodedBytes?: number;
 };
@@ -67,7 +67,10 @@ export function packEnv(): PackEnv {
 /** Byte length and sha256 against the pin. */
 export async function verifyPack(bytes: Uint8Array, pin: PackPin, env: PackEnv = packEnv()): Promise<boolean> {
   if (bytes.byteLength !== pin.bytes) {
-    return !pin.remote && pin.decodedBytes === bytes.byteLength && !(bytes[0] === 0x1f && bytes[1] === 0x8b);
+    // The manifest's `bytes` is the baked JSON's string length (UTF-16 code units, as bake-city-graph writes it), not
+    // its UTF-8 byte count, so a decoded body is measured the same way.
+    if (pin.remote || pin.decodedBytes === undefined || (bytes[0] === 0x1f && bytes[1] === 0x8b)) return false;
+    return new TextDecoder().decode(bytes).length === pin.decodedBytes;
   }
   // No WebCrypto (plain http on a LAN address): a same-origin file passes on length; an off-origin pack never does.
   if (!env.digest) return !pin.remote;
