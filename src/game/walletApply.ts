@@ -71,6 +71,7 @@ import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
 import { ENCORE_DAY_CAP, MAGNET_DAY_CAP, MAGNET_GAP_MS, encoreLine, encorePays, hasEncore, hasOdometer, odometerPays, roadTripPays, v2lPays } from "./carPerks.ts";
 import { TIER_VALUE } from "./rewards.ts";
+import { SUNDAY_COIN, SUNDAY_DAY_CAP, SUNDAY_KM_M, SUNDAY_OPEN_MS, sundayCeiling, sundayDayAt, sundayKey, sundayLeg, sundayLine, type SundayDay, type SundayMode } from "./sundayDrive.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
@@ -99,7 +100,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; encore?: EncoreDay; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; encore?: EncoreDay; sunday?: SundayDay; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -641,7 +642,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const until = await doubleUntil(sql, userId);
   const streak = await rememberStreak(sql, userId);
   const fresh = (await canonicalWallet(sql, userId)).wallet;
-  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId), encore: await encoreOf(sql, userId) };
+  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId), encore: await encoreOf(sql, userId), sunday: await sundayOf(sql, userId) };
   return giftNotes.length ? { ...out, giftNotes } : out;
 }
 
@@ -1488,6 +1489,7 @@ export type ClientOp =
   | { kind: "refund"; token: string }
   | { kind: "street"; id: string; tier: Tier; city: CityId; lat: number; lng: number; via?: "magnet" }
   | { kind: "drive"; city: CityId }
+  | { kind: "sunday"; mode: SundayMode; meters: number }
   | { kind: "quest"; period: string; id: string }
   | { kind: "legacy"; claimed: string[]; circuits: string[]; unfinished: boolean; charms: string[] }
   | { kind: "cloth"; id: string }
@@ -1565,7 +1567,80 @@ export type ClientResult = Applied & {
   polish?: PolishHold;
   /** 0.1.153: the recolor this week's pull granted. */
   pull?: PressPull;
+  /** 0.1.181 Sunday Drive: today's paid km (ledger rows) and the Chicago day. */
+  sunday?: SundayDay;
 };
+
+/**
+ * 0.1.181 Sunday Drive for the HUD: how many km this account has been paid for today, and the Chicago day. The count
+ * is the account's own `sd:<day>:<k>` ledger rows and nothing else: no wallet field, no save field and no op
+ * argument carries it, so nothing a device sends can move it.
+ */
+export async function sundayOf(sql: Sql, userId: string, now = Date.now()): Promise<SundayDay> {
+  const { id } = await canonicalWallet(sql, userId);
+  const day = sundayDayAt(now);
+  const rows = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key like ${"sd:" + day + ":%"}`;
+  return { paid: Math.min(SUNDAY_DAY_CAP, Number(rows[0]?.n) || 0), day };
+}
+
+/**
+ * 0.1.181 Sunday Drive: one "I moved X m in mode M" ping, at server time `now` (rules: sundayDrive.ts).
+ *  - Clock: one upsert moves this account's clock to `now` and hands back the time before it (prev_at). Every ping
+ *    the server receives moves it, a rejected one too, so a bad ping burns its own window and can never bank time
+ *    for a later one. Pings inside a second of the last do not move it and add nothing. A first ping has no clock
+ *    and is judged over the fixed SUNDAY_OPEN_MS.
+ *  - Day: the same statement zeroes the meter when `now` is a new Chicago day, so the leftover is dropped and the
+ *    whole accepted ping lands on the receipt day (never split across midnight).
+ *  - Leg: sundayLeg takes it whole or not at all. The drive ceiling uses the cars this account owns on the server.
+ *  - Pay: each whole km is its own ledger row `sd:<day>:<k>` through mutateWallet, k = 1..8, so a replay or a race
+ *    returns the stored row and there is no 9th. Pays go by the count of those rows, so a km whose pay was lost to
+ *    a crash is paid by the next accepted ping. The meter itself keeps counting past 8 km; nothing more is paid.
+ *  - A bad ping voids only itself: there are no strikes, and paid km stay paid.
+ */
+export async function sundayPing(sql: Sql, sessionUserId: string, op: { mode: SundayMode; meters: number }, now = Date.now()): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  if (!wallet.migrated) return { ...applied({ ok: false, replay: false, reason: "sync", wallet }), authoritative: false };
+  const mode: SundayMode = op.mode === "drive" ? "drive" : "walk";
+  const day = sundayDayAt(now);
+  const at = new Date(now);
+  let clock: { prev_at: Date | string | null }[];
+  try {
+    clock = await sql<{ prev_at: Date | string | null }>`
+      insert into sunday_drive (user_id, day, meters, last_at, prev_at)
+      values (${id}, ${day}, 0, ${at}, null)
+      on conflict (user_id) do update set
+        prev_at = sunday_drive.last_at,
+        last_at = ${at},
+        meters = case when sunday_drive.day = ${day} then sunday_drive.meters else 0 end,
+        day = ${day}
+      where sunday_drive.last_at <= ${at}::timestamptz - interval '1 second'
+      returning prev_at
+    `;
+  } catch {
+    // Migration 0019 has not run: pay nothing, write nothing.
+    return refused(wallet, "unready");
+  }
+  if (!clock.length) return { ...refused(wallet, "retry"), sunday: await sundayOf(sql, sessionUserId, now) };
+  const prev = clock[0]!.prev_at;
+  const prevMs = prev == null ? null : prev instanceof Date ? prev.getTime() : Date.parse(String(prev));
+  const elapsed = prevMs == null || !Number.isFinite(prevMs) ? SUNDAY_OPEN_MS : now - prevMs;
+  const add = sundayLeg(mode, op.meters, elapsed, sundayCeiling(mode, mode === "drive" ? await carsOf(sql, sessionUserId) : []));
+  let coin = 0;
+  if (add > 0) {
+    const up = await sql<{ meters: number }>`update sunday_drive set meters = meters + ${add} where user_id = ${id} and day = ${day} returning meters`;
+    const km = Math.min(SUNDAY_DAY_CAP, Math.floor((Number(up[0]?.meters) || 0) / SUNDAY_KM_M));
+    for (let k = (await sundayOf(sql, sessionUserId, now)).paid + 1; k <= km; k++) {
+      const r = await mutateWallet(sql, sessionUserId, sundayKey(day, k), (w) => {
+        const res = applyDelta(w, { coins: SUNDAY_COIN, keys: {} });
+        return res.ok ? { ...res, award: { coins: SUNDAY_COIN, keys: {}, boosts: [sundayLine(SUNDAY_COIN)] } } : res;
+      });
+      if (r.ok && !r.replay) coin += SUNDAY_COIN;
+    }
+  }
+  const fresh = coin ? (await canonicalWallet(sql, sessionUserId)).wallet : wallet;
+  const award = coin ? { coins: coin, keys: {}, boosts: [sundayLine(coin)] } : undefined;
+  return { ...applied({ ok: true, replay: false, wallet: fresh, award }), authoritative: true, sunday: await sundayOf(sql, sessionUserId, now) };
+}
 
 export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
@@ -1888,6 +1963,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
     `;
     return { ...applied({ ok: true, replay: false, wallet }), authoritative: true };
   }
+
+  if (op.kind === "sunday") return sundayPing(sql, sessionUserId, op);
 
   if (op.kind === "street") {
     const parsed = parseStreetId(op.id);

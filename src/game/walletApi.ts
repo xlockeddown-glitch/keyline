@@ -10,6 +10,7 @@ import { QUEST_PERIOD_KEY } from "./questPeriods";
 import { COSMETIC_IDS, type Wardrobe } from "./cosmetics";
 import type { CityUnlocks } from "./cityPass";
 import type { CityId, Tier } from "./types";
+import { SUNDAY_PING_MAX_M } from "./sundayDrive";
 
 /**
  * 0.0.78 signed-in wallet. Guests never call these. Every handler takes the session user
@@ -115,6 +116,8 @@ const Op = z.discriminatedUnion("kind", [
     via: z.literal("magnet").optional(),
   }),
   z.object({ kind: z.literal("drive"), city: City }),
+  // 0.1.181 Sunday Drive: a claim of meters moved in one mode, nothing else. Unknown keys (a count, a total) are stripped.
+  z.object({ kind: z.literal("sunday"), mode: z.enum(["walk", "drive"]), meters: z.number().int().positive().max(SUNDAY_PING_MAX_M) }),
   z.object({ kind: z.literal("quest"), period: z.string().regex(QUEST_PERIOD_KEY), id: z.string().min(1).max(20) }),
   z.object({
     kind: z.literal("legacy"),
@@ -172,6 +175,8 @@ export type WalletWire = {
   legacy?: LegacyGrant[];
   /** 0.1.138: the patron bulb this cycle, when the op bought or replayed one. */
   patron?: { bulb: "brass" | "copper" | "night"; cycle: number; until: number };
+  /** 0.1.181 Sunday Drive: today's paid km (the server's `sd:` ledger rows) and the Chicago day they are for. */
+  sunday?: { paid: number; day: string };
 };
 
 export type SyncWire = {
@@ -184,6 +189,8 @@ export type SyncWire = {
   odometer?: number;
   /** 0.1.179: VW Microbus Encore pays used today (ledger grade rows flagged "en":1) and the Chicago day they are for. */
   encore?: { used: number; day: string };
+  /** 0.1.181: Sunday Drive km paid today (ledger rows `sd:<day>:<k>`) and the Chicago day they are for. */
+  sunday?: { paid: number; day: string };
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
@@ -221,6 +228,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       streakLord: r.view.streakLord === true || r.streakLord === true,
       odometer: r.odometer ?? 0,
       ...(r.encore ? { encore: r.encore } : {}),
+      ...(r.sunday ? { sunday: r.sunday } : {}),
     };
   });
 
@@ -250,6 +258,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       quest: r.quest,
       legacy: r.legacy,
       patron: r.patron,
+      ...(r.sunday ? { sunday: r.sunday } : {}),
     };
   });
 

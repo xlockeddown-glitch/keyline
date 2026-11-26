@@ -9,6 +9,7 @@ import { LevelHudBadge } from "./Levels";
 import { livePois } from "@/game/nightMarket";
 import { dealerOf } from "@/game/cars";
 import { encoreToday, encoreText, hasEncore, hasOdometer, odometerText } from "@/game/carPerks";
+import { sundayText, sundayToday } from "@/game/sundayDrive";
 import { houseOf, lotOf } from "@/game/houses";
 import { CITIES, KIND_LABEL, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop } from "@/game/data";
 import { TIERS } from "@/game/items";
@@ -70,6 +71,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const serverStreak = useGame((s) => s.serverStreak);
   const odometer = useGame((s) => s.odometer);
   const encore = useGame((s) => s.encore);
+  const sunday = useGame((s) => s.sunday);
   const streakLord = useGame((s) => s.streakLord);
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
@@ -279,6 +281,8 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
       {busy ? null : (
         <div className="hud-dock">
           <div className="hud-tools">
+            {/* 0.1.181: the plain text chips share one line and wrap (never overflow) on a phone. */}
+            <div className="odo-row">
             {/* 0.1.178 Duesenberg Odometer: plain HUD text on its own line over the key belt and car chip (never on
                 the sprite, and not in their row, which is full on a phone); the count is the server's. */}
             {hud.seated && hasOdometer(carOn) && odometer != null ? (
@@ -292,6 +296,14 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
                 {encoreText(encoreToday(encore, Date.now()))}
               </span>
             ) : null}
+            {/* 0.1.181 Sunday Drive: the same plain text line, on foot and seated, signed in only (null for guests);
+                the km count is the server's ledger count. */}
+            {sunday != null ? (
+              <span className="odo-chip tabular-nums" data-testid="hud-sunday">
+                {sundayText(sundayToday(sunday, Date.now()))}
+              </span>
+            ) : null}
+            </div>
             <div className="hud-tool-row">
             <button
               type="button"

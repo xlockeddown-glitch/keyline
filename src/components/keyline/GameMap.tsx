@@ -107,7 +107,7 @@ import { visibleCoat, visibleLantern } from "@/game/paint";
 function wornLook(paint: Parameters<typeof visibleCoat>[0], coat: string | null): string | null {
   return useGame.getState().printWorn ?? visibleCoat(paint, coat);
 }
-import { useWalkPoster } from "@/game/walkClient";
+import { noteSunday, useWalkPoster } from "@/game/walkClient";
 
 type LModule = typeof import("leaflet");
 
@@ -2151,6 +2151,8 @@ export function GameMap() {
       }
       const stepped = distM(prevLat, prevLng, pos.current.lat, pos.current.lng);
       if (!seated && stepped > 0.2) distAcc.current += stepped;
+      // 0.1.181 Sunday Drive: the snapped step, on foot or seated (its own feed; the walk board above is unchanged).
+      if (stepped > 0.2) noteSunday(seated ? "drive" : "walk", stepped);
       if (t - lastKeyCheck.current > 1000) {
         lastKeyCheck.current = t;
         if (!packDown.current) st.maybeSpawnKey(Date.now()); // 0.1.180: no match lands off the streets

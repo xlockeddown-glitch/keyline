@@ -246,6 +246,9 @@ export type GameState = {
   /** 0.1.179: VW Microbus Encore pays used today and the Chicago day they are for, from the server (sync and grade
    *  replies). Not written into the save, never counted on the device. Null until this session syncs. */
   encore: { used: number; day: string } | null;
+  /** 0.1.181: Sunday Drive km paid today and the Chicago day, from the server (sync and ping replies). Not written
+   *  into the save, never counted on the device. Null for guests and until this session syncs. */
+  sunday: { paid: number; day: string } | null;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
   matchPop: MatchPop | null;
   /** 0.0.96 Tabby (Nine lives): Chicago day the first miss was forgiven. */
@@ -1251,6 +1254,7 @@ export const useGame = create<GameState>((set, get) => ({
   streakLord: false,
   odometer: null,
   encore: null,
+  sunday: null,
   matchPop: null,
   shieldDay: saved?.shieldDay ?? "",
   bestStreak: saved?.bestStreak ?? 0,

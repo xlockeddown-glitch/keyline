@@ -3,6 +3,7 @@ import { bakedSnapshot } from "@/game/streets";
 import { CARS } from "@/game/cars";
 import { STREET_DAY_CAP } from "@/game/streetSpots";
 import { ENCORE_DAY_CAP, ENCORE_RATE, MAGNET_DAY_CAP, MAGNET_GAP_MS, ODOMETER_EVERY, V2L_DAY_CAP, CAR_PERKS, CAT_BONUS_CAP, CAT_LABEL, COTD_BONUS, FAV_BONUS, FAV_BOTH, RANDOM_BONUS, SCOUT_FAV } from "@/game/carPerks";
+import { SUNDAY_COIN, SUNDAY_DAY_CAP } from "@/game/sundayDrive";
 import { X } from "lucide-react";
 import { SCOUT_LIST, TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -101,6 +102,7 @@ export function FieldGuide() {
                 {PAY_NOTES.map((note) => (
                   <li key={note}>{note}</li>
                 ))}
+                <li>Sunday Drive: signed in, every whole km you walk or drive on the streets pays {SUNDAY_COIN} coin, {SUNDAY_DAY_CAP} times a day (the day turns at midnight Central, and leftover meters don&apos;t carry over).</li>
               </More>
             </Topic>
             <Topic id="lamps" icon={<ItemIcon item="white" size={26} />} title="Vaults & keys" sub="Carry, combine, streaks, badges" open={topic} set={setTopic} testid="help-badges">
