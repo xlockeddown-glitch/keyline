@@ -71,6 +71,7 @@ import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
 import { ENCORE_DAY_CAP, MAGNET_DAY_CAP, MAGNET_GAP_MS, encoreLine, encorePays, hasEncore, hasOdometer, odometerPays, roadTripPays, v2lPays } from "./carPerks.ts";
 import { TIER_VALUE } from "./rewards.ts";
+import { strayBonus, strayKey, strayLine, strayPays } from "./strayLamp.ts";
 import { SUNDAY_COIN, SUNDAY_DAY_CAP, SUNDAY_KM_M, SUNDAY_OPEN_MS, sundayCeiling, sundayDayAt, sundayKey, sundayLeg, sundayLine, type SundayDay, type SundayMode } from "./sundayDrive.ts";
 import { RADIO_HOP_M, radioKey, type RadioHop } from "./radioHop.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
@@ -831,7 +832,8 @@ export async function awardGrade(
   nonce: string,
   // `timedOut` and `struck` are server facts (triviaService.grade: the wick ran out / no answer came; a wrong option
   // was struck when the card was dealt, sealed in the token). Neither is ever read from a request.
-  pay: GradePay & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null; timedOut?: boolean; struck?: boolean },
+  // `now` is the server's own clock at grade time (0.1.185 Stray lamp); only the dev server and tests ever pass one.
+  pay: GradePay & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null; timedOut?: boolean; struck?: boolean; now?: number },
 ): Promise<Applied & { can?: Can; odometer?: number; encore?: EncoreDay }> {
   const { id } = await canonicalWallet(sql, userId);
   const prevNonce = pay.prevNonce;
@@ -964,11 +966,39 @@ export async function awardGrade(
   //  - Same nonce again: mutateWallet replays the stored row (same award, nothing new).
   const encoreLamp = !full.correct && pay.timedOut !== true && pay.struck !== true && full.clearTier != null && !full.poiId.startsWith("blitz-");
   const encoreCoin = encoreLamp && hasEncore(pay.car ?? null) ? encorePays(pay.car ?? null, TIER_VALUE[full.poiTier] ?? 0, (await encoreOf(sql, userId, nonce)).used) : 0;
+  // 0.1.185 Stray lamp (CARD-186): a RIGHT answer on the city's stray lamp, while its 15-minute window is open,
+  // pays an extra floor(STRAY_BONUS_RATE * base) coin, once per player per window.
+  //  - Nothing here comes from a request. The window and the lamp are rebuilt from the server's clock at grade time
+  //    and the baked POIs (strayLamp.ts): the clock must be inside the window, or within STRAY_SKEW_MS after its
+  //    close, and the token's sealed deal time inside the window too (same skew). The graded lamp must be that lamp.
+  //  - "A right answer" is the lit lamp above: correct, on a card that spent a key, never a blitz card or a spark.
+  //    A wrong answer, a timeout or a walked-away card pays no extra and writes no claim.
+  //  - base is that vault color's BASE ladder coin, TIER_VALUE[poiTier], as for Encore. The extra is added after
+  //    every boost, so no favorite, card-of-the-day, district, streak, hearth, scout, market or comet modifier
+  //    touches it (a stray lamp is never a market or comet lamp: the pool leaves them out).
+  //  - One per window: the stray:<city>:<w> claim row (zero delta, naming this grade's nonce), inserted here with
+  //    "on conflict do nothing". A second clear in the window, or a second token racing this one, finds the row
+  //    held by another nonce and pays no extra. A pay of 0 writes no claim, so it takes no slot.
+  //  - Same nonce again: mutateWallet replays the stored row (same award, nothing new).
+  //  - Fade (CARD-189, not built): the extra is part of award.coins, so a later fade of the grade's total coin
+  //    covers it with no change here.
+  let strayCoin = 0;
+  if (v2lLamp && (await canonicalWallet(sql, userId)).wallet.migrated) {
+    const hit = strayPays(full, pay.now ?? Date.now());
+    const coin = hit ? strayBonus(TIER_VALUE[full.poiTier] ?? 0) : 0;
+    if (hit && coin > 0) {
+      const key = strayKey(full.city, hit.w);
+      await sql`insert into wallet_ledger (user_id, op_key, detail) values (${id}, ${key}, ${JSON.stringify({ sy: 1, g: nonce, pi: full.poiId })}) on conflict (user_id, op_key) do nothing`;
+      const held = await sql<{ detail: string }>`select detail from wallet_ledger where user_id = ${id} and op_key = ${key} limit 1`;
+      if (odoHolder(held[0]?.detail) === nonce) strayCoin = coin;
+    }
+  }
   let v2Paid = false;
   let rtPaid = false;
   let odSeen = false;
   let odPaid = false;
   let enPaid = false;
+  let syPaid = false;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   const cometClear = full.correct && cometPays(full);
   // 0.1.22: a quest lamp is a right answer on a lamp that spent a match (never a spark, never a blitz card).
@@ -993,6 +1023,7 @@ export async function awardGrade(
       ...(odSeen ? { od: odCount } : {}),
       ...(odPaid ? { odp: 1 } : {}),
       ...(enPaid ? { en: 1 } : {}),
+      ...(syPaid ? { sy: 1 } : {}),
       // 0.0.98: night-market lamp, for the Night Owl title. 0.1.159: a Comet clear is never a market lamp.
       ...(full.correct && !cometClear && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
       // 0.1.159: a Comet vault clear that paid the comet bonus, for later quests and titles.
@@ -1072,8 +1103,20 @@ export async function awardGrade(
     enPaid = true;
     return { ok: true, wallet: extra.wallet, award: enAward, detail: detailOf(enAward) };
   };
+  // 0.1.185 Stray lamp: add the extra to a right answer's finished result (after every boost and the streak prize)
+  // and flag the row. With no stray extra due this returns its argument untouched, so every other grade is as before.
+  const withStray = (res: OpResult & { detail?: string }): OpResult & { detail?: string } => {
+    if (!strayCoin || !res.ok || !res.wallet.migrated) return res;
+    const extra = applyDelta(res.wallet, { coins: strayCoin, keys: {} });
+    if (!extra.ok) return res;
+    const award = res.award ?? { coins: 0, keys: {}, boosts: [] };
+    const syAward = { ...award, coins: award.coins + strayCoin, boosts: [...award.boosts, strayLine(strayCoin)] };
+    syPaid = true;
+    return { ok: true, wallet: extra.wallet, award: syAward, detail: detailOf(syAward) };
+  };
   let r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
     enPaid = false;
+    syPaid = false;
     matchLost = false;
     v2Paid = false;
     rtPaid = false;
@@ -1124,10 +1167,10 @@ export async function awardGrade(
         for (const [t, n] of Object.entries(p.add) as [Tier, number][]) keys[t] = (keys[t] ?? 0) + n;
         const label = `${after} in a row${doubled ? " ×2" : ""}`;
         const streakAward = { ...award, coins: award.coins + p.coin, keys, boosts: [...award.boosts, label] };
-        return withV2l({ ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) });
+        return withV2l(withStray({ ok: true, wallet: extra.wallet, award: streakAward, detail: detailOf(streakAward) }));
       }
     }
-    return withV2l({ ...grant, detail });
+    return withV2l(withStray({ ...grant, detail }));
   });
   if (r.ok && crossed(before, after, VIOLET_AT) && anchor) {
     const mile = await mutateWallet(sql, userId, `smile:${VIOLET_AT}:${anchor}`, (w) => {

@@ -103,6 +103,8 @@ import { holidayOpen, holidayRoute } from "@/game/holidayLights";
 import { checkHoliday } from "@/game/holidayClient";
 import { WARD_LAMPS, wardRoute } from "@/game/wardCircuit";
 import { checkWard } from "@/game/wardClient";
+import { walletLive } from "@/game/walletClient";
+import { STRAY_PIN_TITLE, strayLampAt } from "@/game/strayLamp";
 import { cityDay } from "@/game/vaultStack";
 import { MARKET_TAG, closestOnStreet, inZone, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
 import { patronLive } from "@/game/patron";
@@ -1075,7 +1077,9 @@ export function GameMap() {
     const m = marketAt(cid, now);
     // 0.1.159: the Comet vault comes and goes on its own clock; its window joins the key so the pins follow it.
     const cs = cometAt(cid, gameNow());
-    const key = `${m ? `${cid}|${m.hour}|${graphRef.current?.segs.length ?? 0}` : ""}|comet:${cs.open ? cs.w : "-"}`;
+    // 0.1.185: so does the Stray lamp's halo (signed-in server wallets only, the gate checkWard uses).
+    const sy = walletLive() ? strayLampAt(cid, gameNow()) : null;
+    const key = `${m ? `${cid}|${m.hour}|${graphRef.current?.segs.length ?? 0}` : ""}|comet:${cs.open ? cs.w : "-"}|stray:${sy ? sy.w : "-"}`;
     const sign = marketLayers.current.find((l): l is Marker => l instanceof L.Marker);
     if (marketKey.current === key) {
       const el = sign?.getElement()?.querySelector(".market-pin-left");
@@ -1307,6 +1311,8 @@ export function GameMap() {
           market: () => marketAt(useGame.getState().cityId, Date.now()),
           // 0.1.159 QA: the open Comet vault (dev clock), so shot scripts can walk to it.
           comet: () => cometVault(useGame.getState().cityId, gameNow()),
+          // 0.1.185 QA: the lamp awake right now (dev clock), or null between windows.
+          stray: () => strayLampAt(useGame.getState().cityId, gameNow()),
           // 0.1.8 QA: the car lot's door and the CAB / Car button.
           dealer: () => (dealerDoor.current ? { ...dealerDoor.current } : null),
           house: () => (houseDoor.current ? { ...houseDoor.current } : null),
@@ -1802,6 +1808,10 @@ export function GameMap() {
     const svgVault = vaultSkinned(skin);
     for (const m of vaultMarkers.current.values()) m.remove();
     vaultMarkers.current.clear();
+    // 0.1.185 Stray lamp: while its window is open, a signed-in player's stray lamp wears the Comet's painted pin
+    // (the same webps, nothing new and nothing drawn over them). It is still its own street lamp: same id, tier,
+    // key and vault card, so none of the isComet branches see it. Closed or skipped, it is its normal pin again.
+    const strayId = walletLive() ? (strayLampAt(st.cityId, gameNow())?.lamp.id ?? "") : "";
     for (const poi of livePois(city, st.blanks)) {
       const v = st.vaults[poi.id];
       const cooling = Boolean(v && v.state === "cooling" && v.coolUntil > now);
@@ -1820,11 +1830,13 @@ export function GameMap() {
               ? stationPinHtml({ cooling, fare: lit })
               : isComet(poi.id)
                 ? cometPinHtml({ cooling, lockout: cooling && v?.lockout === true })
+              : poi.id === strayId
+                ? cometPinHtml({ cooling, lockout: cooling && v?.lockout === true, title: cooling && v?.lockout === true ? "Stray lamp · locked out after a wrong answer" : cooling ? "Stray lamp · resting" : STRAY_PIN_TITLE })
               : isHearthId(poi.id)
                 ? hearthPinHtml(poi.name, hearthOf(poi.id)?.cats ?? [], FACET_COLOR, { cooling, lockout: cooling && v?.lockout === true, polished: (hearthOf(poi.id)?.polish ?? 0) > now })
                 : vaultPinHtml(poi, { cooling, lockout: cooling && v?.lockout === true, skin });
       const hearth = isHearthId(poi.id);
-      const comet = isComet(poi.id);
+      const comet = isComet(poi.id) || poi.id === strayId;
       // 0.1.102 Vault Keys: street vaults are 40 px SVG boxes standing on the CSS ground shadow.
       // 0.1.159: the painted Comet vault is 48×58 (vault box ~40 px wide, plus the trail and the painted ring),
       // anchored on the centre of its painted ring.

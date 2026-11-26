@@ -775,17 +775,12 @@ test("lines and client wiring: toasts, the HUD line, the lettered map pins on th
   assert.match(src("../components/keyline/FieldGuide.tsx"), /<li>Ward Circuit: signed in, each city sets \{WARD_LAMPS\} lettered lamps in \{WARD_LAMPS\} different districts every day/);
 });
 
-test("version: 0.1.184 / k1184a everywhere, and no migration for the circuit", () => {
+test("version: the 0.1.184 / k1184a changelog line, the test entry, and no migration for the circuit", () => {
+  // 0.1.185: the live version moved on; the current-version pins live in the newest slice's test.
   const v = src("../version.ts");
-  assert.match(v, /APP_VERSION = "0\.1\.184"/);
-  assert.match(v, /PUBLISH_STAMP = "k1184a"/);
-  assert.match(v, /\n\/\/ 0\.1\.184: Ward Circuit — [^\n]*\(k1184a\)\.\n$/);
+  assert.match(v, /\n\/\/ 0\.1\.184: Ward Circuit — [^\n]*\(k1184a\)\.\n/);
   const pkg = JSON.parse(src("../../package.json")) as { version: string; scripts: { test: string } };
-  assert.equal(pkg.version, "0.1.184");
   assert.match(pkg.scripts.test, / src\/game\/wardCircuit0184\.test\.ts /);
-  const lock = JSON.parse(src("../../package-lock.json")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.184");
-  assert.equal(lock.packages[""]!.version, "0.1.184");
   assert.doesNotMatch(src("./wardCircuit.ts"), /migration 00|create table/);
   assert.doesNotMatch(src("./walletApply.ts").slice(src("./walletApply.ts").indexOf("export async function wardOf("), src("./walletApply.ts").indexOf("/** `clock.now` is the server's own time")), /sunday_drive|radio_hop|create table|alter table/);
 });

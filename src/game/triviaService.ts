@@ -749,6 +749,8 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         // A choice that arrived past the window (by either clock) is a timeout too, not a wrong answer.
         timedOut: timedOut || elapsedMs > t.w + LATE_GRACE_MS,
         struck: x?.st === 1,
+        // 0.1.185 Stray lamp: the server's clock at this grade (deps.now), for the window check. Never the request's.
+        now,
         canRoll: [rand(), rand()],
       });
       if (awarded.authoritative) {
