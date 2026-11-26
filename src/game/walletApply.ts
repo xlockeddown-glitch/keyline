@@ -8,7 +8,7 @@ import { marketMult } from "./nightMarket.ts";
 import { cleanPatron, patronBulb, patronCycle, patronKey, patronOpen, patronUntil, type PatronBulb, type PatronHold } from "./patron.ts";
 import { HEARTH_POLISH_PRICE, cleanPolish, hearthWeek, polishKey, polishUntil, type PolishHold } from "./hearthPolish.ts";
 import { PRESS_PULL_PRICE, pressKey, pressOffer, pullBaseOwned, type PressPull } from "./pressPull.ts";
-import { districtOf, districtsInDetails, isFreshDistrict } from "./district.ts";
+import { districtOf, districtsInDetails, fadeCoin, fadeDue, isFreshDistrict, rightsInSquare } from "./district.ts";
 import { carOf, isCarId, type CarId } from "./cars.ts";
 import { printLook } from "./printsServer.ts";
 import { HOME_LAMPS, KEY_MATCHES, houseCost, houseOf, isHouseTier, houseRank, type HouseState } from "./houses.ts";
@@ -625,6 +625,21 @@ async function districtsToday(sql: Sql, id: string, city: CityId, now = Date.now
   return districtsInDetails(today.map((r) => String(r.detail)));
 }
 
+/**
+ * 0.1.187 Fading block: this account's counted rights in `district` in this city on its local day (rightsInSquare:
+ * rights with that "d", never market, Comet or Hearth), from the same grade rows, 30 h window and cityDay filter as
+ * districtsToday. The row for `nonce` itself is left out, so a grade never counts itself. `id` is the canonical id.
+ */
+async function squareRightsToday(sql: Sql, id: string, city: CityId, district: string, nonce: string, now = Date.now()): Promise<number> {
+  const rows = await sql<{ detail: string; created_at: unknown }>`
+    select detail, created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
+      and created_at >= ${new Date(now - 30 * 3600_000).toISOString()} and detail like ${`%"c":"${city}"%`}
+  `;
+  const day = cityDay(city, now);
+  const today = rows.filter((r) => cityDay(city, new Date(String(r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at)).getTime()) === day);
+  return rightsInSquare(today.map((r) => String(r.detail)), district);
+}
+
 /** 0.1.00: market lights this account bought (light:<id> ledger rows); amber is free. */
 export async function lightsOf(sql: Sql, userId: string): Promise<{ ids: LightId[]; best: LightId }> {
   const { id } = await canonicalWallet(sql, userId);
@@ -890,7 +905,8 @@ export async function awardGrade(
   const streakTier = full.correct ? streakPrize(after) : null;
   // 0.1.14: new-district bonus on a lamp: has this 800 m square been lit today here?
   const district = full.correct && full.clearTier ? districtOf(full.city, full.lat, full.lng) : "";
-  if (district) full.freshDistrict = isFreshDistrict(district, await districtsToday(sql, id, full.city));
+  // 0.1.187: read on the grade's own server clock (pay.now), the clock the Stray lamp and the Fading block use.
+  if (district) full.freshDistrict = isFreshDistrict(district, await districtsToday(sql, id, full.city, pay.now ?? Date.now()));
   // 0.1.19: a spark (no match held) is capped on the server too: six a day, one per lamp (Chicago day).
   const spark = full.correct && full.clearTier == null && !full.poiId.startsWith("blitz-");
   const sparkOk = spark && !sparkTier(full.poiTier)
@@ -980,8 +996,9 @@ export async function awardGrade(
   //    "on conflict do nothing". A second clear in the window, or a second token racing this one, finds the row
   //    held by another nonce and pays no extra. A pay of 0 writes no claim, so it takes no slot.
   //  - Same nonce again: mutateWallet replays the stored row (same award, nothing new).
-  //  - Fade (CARD-189, not built): the extra is part of award.coins, so a later fade of the grade's total coin
-  //    covers it with no change here.
+  //  - Fade (0.1.187 Fading block, CARD-189): when the grade is faded the extra fades with it as one total,
+  //    floor(0.50 x (grade coin + extra)). The claim row is still taken on the unfaded extra, so a faded clear
+  //    uses the window's one claim like any other.
   let strayCoin = 0;
   if (v2lLamp && (await canonicalWallet(sql, userId)).wallet.migrated) {
     const hit = strayPays(full, pay.now ?? Date.now());
@@ -993,6 +1010,28 @@ export async function awardGrade(
       if (odoHolder(held[0]?.detail) === nonce) strayCoin = coin;
     }
   }
+  const cometClear = full.correct && cometPays(full);
+  // 0.1.187 Fading block (CARD-189): the 4th and every later right vault in one 800 m square on one city-local day
+  // pays floor(0.50 x coin). Decided here, once, before the write, from server facts only (district.ts has the rule).
+  //  - Reaches the test: a right answer on a card that spent a key (so it has a district), never a blitz card or a
+  //    spark. Exempt, and never counted: a Hearth vault (any step; `placed-` ids), a Comet clear, a night-market lamp
+  //    (the same tests as the "ev" / "mk" flags below).
+  //  - The count is this account's own earlier grade rows for this square today (squareRightsToday), this nonce's row
+  //    left out. Nothing in a request can add a row, name a square or set the flag.
+  //  - What fades: the coin gradeGrant pays (full.fade) plus the stray extra (withStray), as one total. Keys, the
+  //    streak prize, Vehicle-to-load / Road trip / Odometer and level milestones are paid as before.
+  //  - Same nonce again: mutateWallet replays the stored row (same award, nothing recounted).
+  const hearthVault = full.hearth != null || full.poiId.startsWith("placed-");
+  const faded =
+    district !== "" &&
+    !full.poiId.startsWith("blitz-") &&
+    !hearthVault &&
+    !cometClear &&
+    marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) <= 1 &&
+    (await canonicalWallet(sql, userId)).wallet.migrated &&
+    fadeDue(await squareRightsToday(sql, id, full.city, district, nonce, pay.now ?? Date.now()));
+  if (faded) full.fade = { extra: strayCoin };
+  let fbPaid = false;
   let v2Paid = false;
   let rtPaid = false;
   let odSeen = false;
@@ -1000,7 +1039,6 @@ export async function awardGrade(
   let enPaid = false;
   let syPaid = false;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
-  const cometClear = full.correct && cometPays(full);
   // 0.1.22: a quest lamp is a right answer on a lamp that spent a match (never a spark, never a blitz card).
   const questLamp = full.correct && full.clearTier != null && !spark && !full.poiId.startsWith("blitz-");
   const detailOf = (award: AwardView, counts = true) =>
@@ -1030,6 +1068,9 @@ export async function awardGrade(
       ...(cometClear ? { ev: 1 } : {}),
       // 0.1.173: an order card one adjacent swap off (paid half coin); a replay on another instance reads it back.
       ...(full.correct && full.orderHalf ? { oh: 1 } : {}),
+      // 0.1.187 Fading block: a Hearth vault right (never counted, never faded), and a grade that was paid faded.
+      ...(full.correct && hearthVault ? { hh: 1 } : {}),
+      ...(fbPaid ? { fb: 1 } : {}),
     });
   // 0.1.42: did this write burn a match on a miss (an owned lamp's owner is paid for those)?
   let matchLost = false;
@@ -1107,16 +1148,19 @@ export async function awardGrade(
   // and flag the row. With no stray extra due this returns its argument untouched, so every other grade is as before.
   const withStray = (res: OpResult & { detail?: string }): OpResult & { detail?: string } => {
     if (!strayCoin || !res.ok || !res.wallet.migrated) return res;
-    const extra = applyDelta(res.wallet, { coins: strayCoin, keys: {} });
+    // 0.1.187: a faded grade pays the extra's half; with the grade's own faded coin that is floor(0.50 x (G + S)).
+    const coin = fbPaid ? fadeCoin(strayCoin) : strayCoin;
+    const extra = applyDelta(res.wallet, { coins: coin, keys: {} });
     if (!extra.ok) return res;
     const award = res.award ?? { coins: 0, keys: {}, boosts: [] };
-    const syAward = { ...award, coins: award.coins + strayCoin, boosts: [...award.boosts, strayLine(strayCoin)] };
+    const syAward = { ...award, coins: award.coins + coin, boosts: [...award.boosts, strayLine(coin)] };
     syPaid = true;
     return { ok: true, wallet: extra.wallet, award: syAward, detail: detailOf(syAward) };
   };
   let r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
     enPaid = false;
     syPaid = false;
+    fbPaid = false;
     matchLost = false;
     v2Paid = false;
     rtPaid = false;
@@ -1142,6 +1186,7 @@ export async function awardGrade(
     }
     const grant = gradeGrant(base, full);
     if (!grant.ok) return grant;
+    fbPaid = faded;
     const detail = detailOf(grant.award ?? { coins: 0, keys: {}, boosts: [] });
     matchLost = !full.correct && full.clearTier != null;
     // 0.0.96 Plate (Shell): a server-rolled 1 in 3 failed lamps hands the spent match back (overflow coin if full).

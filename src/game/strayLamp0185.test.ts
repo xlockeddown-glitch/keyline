@@ -614,6 +614,7 @@ test("version: the 0.1.185 / k1185a changelog line, the test entry, and no migra
   const pkg = JSON.parse(src("../../package.json")) as { version: string; scripts: { test: string } };
   assert.match(pkg.scripts.test, / src\/game\/strayLamp0185\.test\.ts /);
   assert.doesNotMatch(src("./strayLamp.ts"), /migration 00|create table/);
-  // The fade (CARD-189) is not built: the extra only has to be part of the grade's coin, and says so.
-  assert.match(src("./walletApply.ts"), /Fade \(CARD-189, not built\): the extra is part of award\.coins/);
+  // 0.1.187: the fade (CARD-189) is built; its tests live in fadingBlock0187.test.ts. The extra is still part of
+  // the grade's coin.
+  assert.match(src("./walletApply.ts"), /const syAward = \{ \.\.\.award, coins: award\.coins \+ coin, /);
 });

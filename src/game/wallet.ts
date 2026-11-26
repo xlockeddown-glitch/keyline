@@ -13,7 +13,7 @@ import { cleanKeys, refundMatch, spendMatch } from "./matchSpend.ts";
 import { BAMBOO_TAG, owlExtraCoin, owlMatchCoin } from "./scoutPerks.ts";
 import { lightOf, type LightId } from "./marketLights.ts";
 import { TRIPLE_AT, MARKET_AT, streakMarketCoin } from "./streakMile.ts";
-import { FRESH_DISTRICT_TAG, freshDistrictCoin } from "./district.ts";
+import { FADE_TAG, FRESH_DISTRICT_TAG, fadeCoin, freshDistrictCoin } from "./district.ts";
 import { cleanCredit, payMatch, payMatchesOf } from "./goals.ts";
 import type { ScoutId } from "./types";
 import { clothCoin, type ClothId } from "./quests.ts";
@@ -698,6 +698,12 @@ export type GradePay = {
   light?: LightId;
   /** 0.1.14: first right lamp today in this 800 m square (server-decided from its grade rows, see district.ts). */
   freshDistrict?: boolean;
+  /**
+   * 0.1.187 Fading block: the SERVER found this grade faded (awardGrade, from its own grade rows; never read from a
+   * request). `extra` is the unfaded Stray lamp extra this grade will also be paid (0 when none), so the two halves
+   * sum to floor(0.50 x (grade coin + extra)). Vault grades only; a spark ignores it.
+   */
+  fade?: { extra: number };
 };
 
 /**
@@ -730,7 +736,7 @@ function boostOf(p: GradePay, streakAfter: number) {
  * `half` (0.1.173, an order card one adjacent swap off): the whole coin grant is halved, rounded down, before it is
  * applied, so the wallet's gain and `award.coins` come from the same number (the coin cap aside). Keys are untouched.
  */
-function withBoost(w: WalletState, coins: number, keys: Partial<Record<Tier, number>>, boost: ReturnType<typeof applyTriviaBoosts>, cities?: CityUnlocks, half = false): OpResult & { award: AwardView } {
+function withBoost(w: WalletState, coins: number, keys: Partial<Record<Tier, number>>, boost: ReturnType<typeof applyTriviaBoosts>, cities?: CityUnlocks, half = false, fade?: { extra: number }): OpResult & { award: AwardView } {
   const base = cleanKeys({ ...cleanKeys(null), ...keys });
   const paid = creditWhite({ ...w.keys, ...addKeys(w.keys, base) }, boost.white);
   const whiteAdded = paid.added;
@@ -739,7 +745,13 @@ function withBoost(w: WalletState, coins: number, keys: Partial<Record<Tier, num
     const n = (base[t] ?? 0) + (t === "white" ? whiteAdded : 0);
     if (n) awardKeys[t] = n;
   }
-  const award: AwardView = { coins: orderCoins(coins + boost.coins, half ? "swap" : null), keys: awardKeys, boosts: boost.labels };
+  const full = orderCoins(coins + boost.coins, half ? "swap" : null);
+  // 0.1.187 Fading block: the grade's whole coin G and the stray extra x fade as one total, floor((G + x) / 2). The
+  // extra's own half, floor(x / 2), is added later (awardGrade), so this pays the rest. Keys are untouched.
+  const x = fade ? Math.max(0, Math.floor(fade.extra) || 0) : 0;
+  const award: AwardView = fade
+    ? { coins: Math.max(0, fadeCoin(full + x) - fadeCoin(x)), keys: awardKeys, boosts: [...boost.labels, FADE_TAG] }
+    : { coins: full, keys: awardKeys, boosts: boost.labels };
   const applied = applyDelta(w, { coins: award.coins, keys: award.keys, ...(cities ? { cities } : {}) });
   if (!applied.ok) return { ...applied, award };
   return { ...applied, award };
@@ -854,7 +866,7 @@ export function gradeGrant(w: WalletState, p: GradePay): OpResult & { award?: Aw
   const tripled = triple === 3 ? { ...tagged, labels: [...tagged.labels, "Streak ×3 vault coin"] } : tagged;
   const bumped0 = marketBump ? { ...tripled, labels: [...tripled.labels, `Night market streak +${marketBump}`] } : tripled;
   const bumped = comet ? { ...bumped0, labels: [...bumped0.labels, COMET_TAG] } : bumped0;
-  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo + cometKeyCoin, lKeys, bumped, lit.u, p.orderHalf === true);
+  return withBoost(w, pay.coin + tip + back.coin + rummageCoin + fresh + bamboo + cometKeyCoin, lKeys, bumped, lit.u, p.orderHalf === true, p.fade);
 }
 
 /** Lucky and a quest cloth pay only when this wallet already records them. */

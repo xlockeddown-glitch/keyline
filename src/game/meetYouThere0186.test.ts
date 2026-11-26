@@ -727,15 +727,11 @@ test("meetStatus: friends from the friend graph, names as the boards show them, 
   await conserved("status");
 });
 
-test("version: 0.1.186 / k1186a everywhere, migration 0021, the test entry", () => {
+test("version: the 0.1.186 / k1186a changelog line, migration 0021, the test entry", () => {
+  // 0.1.187: the live version moved on; the current-version pins live in the newest slice's test.
   const v = src("../version.ts");
-  assert.match(v, /APP_VERSION = "0\.1\.186"/);
-  assert.match(v, /PUBLISH_STAMP = "k1186a"/);
-  assert.match(v, /\n\/\/ 0\.1\.186: Meet you there — [^\n]*\(k1186a\)\.\n$/);
+  assert.match(v, /\n\/\/ 0\.1\.186: Meet you there — [^\n]*\(k1186a\)\.\n/);
   const pkg = JSON.parse(src("../../package.json")) as { version: string; scripts: { test: string } };
-  assert.equal(pkg.version, "0.1.186");
   assert.match(pkg.scripts.test, / src\/game\/meetYouThere0186\.test\.ts /);
-  const lock = JSON.parse(src("../../package-lock.json")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.186");
-  assert.equal(lock.packages[""]!.version, "0.1.186");
+  assert.match(v, /0\.1\.186: Meet you there — [^\n]*migration 0021/);
 });
