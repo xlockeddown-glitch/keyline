@@ -1,0 +1,80 @@
+{
+ "image": {
+  "w": 1400,
+  "h": 1527
+ },
+ "anchors": [
+  {
+   "name": "St. Louis Cathedral",
+   "osm": "w329364492",
+   "lat": 29.958,
+   "lng": -90.063755,
+   "px": 695.92,
+   "py": 524.51,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Caesars Superdome",
+   "osm": "r4598860",
+   "lat": 29.951052,
+   "lng": -90.081088,
+   "px": 292.16,
+   "py": 711.39,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Ernest N. Morial Convention Center",
+   "osm": "w758091670",
+   "lat": 29.939701,
+   "lng": -90.063272,
+   "px": 707.18,
+   "py": 1016.63,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "New Orleans Union Passenger Terminal",
+   "osm": "w328803040",
+   "lat": 29.946332,
+   "lng": -90.078696,
+   "px": 347.89,
+   "py": 838.33,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "New Orleans City Hall",
+   "osm": "r4597508",
+   "lat": 29.952113,
+   "lng": -90.077127,
+   "px": 384.44,
+   "py": 682.85,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "New Orleans Mint",
+   "osm": "w345253057",
+   "lat": 29.961396,
+   "lng": -90.057801,
+   "px": 834.63,
+   "py": 433.19,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  }
+ ]
+}

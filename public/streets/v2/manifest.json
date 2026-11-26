@@ -114,7 +114,31 @@
    "sha256": "27a10f953cdba79f3dac45fe1d893727c8c92ae2a30e2de2e74ca0002be653f2",
    "origin": "local",
    "url": "/streets/v2/nola.028a3776a2.json.gz",
-   "overlay": null
+   "overlay": {
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/nola-overlay.4f35f29cdf6e2a6989c76891ebcb611d72fd6c984ac729dd45e305ce359bea8e.webp",
+    "sha256": "4f35f29cdf6e2a6989c76891ebcb611d72fd6c984ac729dd45e305ce359bea8e",
+    "bytes": 146432,
+    "w": 1400,
+    "h": 1527,
+    "bounds": {
+     "nw": [
+      29.9775,
+      -90.09363
+     ],
+     "ne": [
+      29.9775,
+      -90.03353
+     ],
+     "se": [
+      29.92072,
+      -90.03353
+     ],
+     "sw": [
+      29.92072,
+      -90.09363
+     ]
+    }
+   }
   },
   "nyc": {
    "file": "nyc.112b31841d.json.gz",
