@@ -56,6 +56,29 @@ def cut(box,keep):
     img=Image.fromarray(rgba,'RGBA')
     bb=img.getchannel('A').point(lambda v:255 if v>8 else 0).getbbox()
     return img.crop(bb)
+# 0.1.188: Ryan (Nov 26, 6:36 AM CT) "Make the lamppost ornament brass". The 5th ornament's painted metal is a
+# desaturated taupe; its metal pixels are gradient-mapped (luminance kept) onto the Keyline brass ramp from
+# docs/ART_DIRECTION.md (shadow #6e5320, mid #c9a35e, highlight #e0c788). The red bow, the snow, the lit glass and
+# the alpha are left as painted.
+BRASS=[(0.00,(26,18,8)),(0.18,(70,50,20)),(0.38,(138,106,56)),(0.58,(201,163,94)),(0.78,(224,199,136)),(1.00,(238,214,152))]
+def brass(img):
+    a=np.asarray(img).astype(float); rgb=a[...,:3]/255
+    mx=rgb.max(2); mn=rgb.min(2); v=mx; s=np.where(mx>0,(mx-mn)/np.maximum(mx,1e-6),0)
+    r,g,b=rgb[...,0],rgb[...,1],rgb[...,2]; d=np.maximum(mx-mn,1e-6)
+    h=np.where(mx==r,((g-b)/d)%6,np.where(mx==g,(b-r)/d+2,(r-g)/d+4))*60
+    h=np.where(mx-mn<1e-6,0,h)
+    metal=(h>=12)&(h<=52)&(s>=0.16)&(s<=0.62)&(v<0.86)&(a[...,3]>0)
+    # soft edge of the mask in hue/value so the glass falloff and the bow edge blend, never band
+    w=np.clip((v-0.0)/0.06,0,1)*np.clip((0.90-v)/0.04,0,1)*np.clip((h-8)/4,0,1)*np.clip((56-h)/4,0,1)*np.clip((0.66-s)/0.04,0,1)*np.clip((s-0.12)/0.04,0,1)
+    w=np.where(metal|(w>0),w,0)
+    w=w*(1-np.clip((v-0.58)/0.06,0,1)*np.clip((0.30-s)/0.04,0,1))  # snow stays white
+    L=(0.299*r+0.587*g+0.114*b)
+    L=np.clip((L-0.05)/0.75,0,1)
+    xs=[p for p,_ in BRASS]; out=np.zeros_like(rgb)
+    for c in range(3): out[...,c]=np.interp(L,xs,[col[c]/255 for _,col in BRASS])
+    rgb2=rgb*(1-w[...,None])+out*w[...,None]
+    a[...,:3]=np.clip(rgb2*255,0,255)
+    return Image.fromarray(a.astype(np.uint8),'RGBA')
 def webp(img,cap=2000):
     A=np.asarray(img.getchannel('A')).astype(int); A=np.where(A<10,0,np.where(A>245,255,A))
     arr=np.asarray(img).copy(); arr[...,3]=A; arr[A==0,:3]=0; img=Image.fromarray(arr,'RGBA')
@@ -68,7 +91,8 @@ def webp(img,cap=2000):
     return best
 tot=0
 for k,(box,h,keep) in PIECES.items():
-    m=cut(box,keep); pass
+    m=cut(box,keep)
+    if k=='orn-5': m=brass(m)
     w=round(m.width*h/m.height)
     s=m.resize((w,h),Image.LANCZOS)
     data,q=webp(s); open(f'{OUT}/{k}.webp','wb').write(data); tot+=len(data)

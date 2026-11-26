@@ -858,16 +858,11 @@ test("client: text only. One Field Guide line, the label rides the server award,
 });
 
 test("version: the 0.1.187 / k1187a changelog line, the test entry, and no migration", () => {
+  // 0.1.188: the live version moved on; the current-version pins live in the newest slice's test.
   const v = src("../version.ts");
-  assert.match(v, /APP_VERSION = "0\.1\.187"/);
-  assert.match(v, /PUBLISH_STAMP = "k1187a"/);
-  assert.match(v, /\n\/\/ 0\.1\.187: Fading block — [^\n]*\(k1187a\)\.\n$/);
+  assert.match(v, /\n\/\/ 0\.1\.187: Fading block — [^\n]*\(k1187a\)\.\n/);
   const pkg = JSON.parse(src("../../package.json")) as { version: string; scripts: { test: string } };
-  assert.equal(pkg.version, "0.1.187");
   assert.match(pkg.scripts.test, / src\/game\/fadingBlock0187\.test\.ts /);
-  const lock = JSON.parse(src("../../package-lock.json")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.187");
-  assert.equal(lock.packages[""]!.version, "0.1.187");
   // No migration: 0021 (Meet you there) is still the newest, and no migration knows the fade.
   const migs = readdirSync(new URL("../../migrations/", import.meta.url)).filter((f) => f.endsWith(".sql")).sort();
   assert.equal(migs.at(-1), "0021_meet_drops.sql");
