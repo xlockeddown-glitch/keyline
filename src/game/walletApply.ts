@@ -72,6 +72,7 @@ import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./st
 import { ENCORE_DAY_CAP, MAGNET_DAY_CAP, MAGNET_GAP_MS, encoreLine, encorePays, hasEncore, hasOdometer, odometerPays, roadTripPays, v2lPays } from "./carPerks.ts";
 import { TIER_VALUE } from "./rewards.ts";
 import { SUNDAY_COIN, SUNDAY_DAY_CAP, SUNDAY_KM_M, SUNDAY_OPEN_MS, sundayCeiling, sundayDayAt, sundayKey, sundayLeg, sundayLine, type SundayDay, type SundayMode } from "./sundayDrive.ts";
+import { RADIO_HOP_M, radioKey, type RadioHop } from "./radioHop.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
@@ -1490,7 +1491,7 @@ export type ClientOp =
   | { kind: "refund"; token: string }
   | { kind: "street"; id: string; tier: Tier; city: CityId; lat: number; lng: number; via?: "magnet" }
   | { kind: "drive"; city: CityId }
-  | { kind: "sunday"; mode: SundayMode; meters: number }
+  | { kind: "sunday"; mode: SundayMode; meters: number; city?: CityId }
   | { kind: "lights"; city: CityId; lamp: string; lat: number; lng: number }
   | { kind: "quest"; period: string; id: string }
   | { kind: "legacy"; claimed: string[]; circuits: string[]; unfinished: boolean; charms: string[] }
@@ -1571,6 +1572,8 @@ export type ClientResult = Applied & {
   pull?: PressPull;
   /** 0.1.181 Sunday Drive: today's paid km (ledger rows) and the Chicago day. */
   sunday?: SundayDay;
+  /** 0.1.183 Radio hop: only on the one ping that unlocked a city's hop for its local day. */
+  radio?: RadioHop;
   /** 0.1.182 Holiday Lights: the account's stamped route lamps and paid cities (ledger rows). */
   holiday?: HolidayState;
 };
@@ -1640,6 +1643,35 @@ export async function sundayOf(sql: Sql, userId: string, now = Date.now()): Prom
 }
 
 /**
+ * 0.1.183 Radio hop: put one ping's accepted drive metres on (player, city)'s counter for the city's local day, and
+ * unlock the hop when it reaches RADIO_HOP_M. One upsert both adds and drops yesterday's leftover. Returns the hop
+ * only when this call wrote the ledger row; an already-unlocked day, a replay or a race returns null, so the sting
+ * is never replayed. The meter keeps counting after the unlock; nothing more happens. Zero delta: no coin, no keys.
+ */
+async function radioCount(sql: Sql, sessionUserId: string, id: string, city: CityId, add: number, now: number): Promise<RadioHop | null> {
+  const day = cityDay(city, now);
+  try {
+    const up = await sql<{ meters: number }>`
+      insert into radio_hop (user_id, city, day, meters)
+      values (${id}, ${city}, ${day}, ${add})
+      on conflict (user_id, city) do update set
+        meters = case when radio_hop.day = ${day} then radio_hop.meters + ${add} else ${add} end,
+        day = ${day}
+      returning meters
+    `;
+    if (!((Number(up[0]?.meters) || 0) >= RADIO_HOP_M)) return null;
+  } catch {
+    // Migration 0020 has not run: no hop, and Sunday Drive is untouched.
+    return null;
+  }
+  const key = radioKey(city, day);
+  const had = await sql<{ n: number }>`select count(*)::int as n from wallet_ledger where user_id = ${id} and op_key = ${key}`;
+  if (Number(had[0]?.n) > 0) return null;
+  const r = await mutateWallet(sql, sessionUserId, key, (w) => ({ ...applyDelta(w, { coins: 0, keys: {} }), detail: JSON.stringify({ rh: 1 }) }));
+  return r.ok && !r.replay ? { city, day, fresh: true } : null;
+}
+
+/**
  * 0.1.181 Sunday Drive: one "I moved X m in mode M" ping, at server time `now` (rules: sundayDrive.ts).
  *  - Clock: one upsert moves this account's clock to `now` and hands back the time before it (prev_at). Every ping
  *    the server receives moves it, a rejected one too, so a bad ping burns its own window and can never bank time
@@ -1652,8 +1684,12 @@ export async function sundayOf(sql: Sql, userId: string, now = Date.now()): Prom
  *    returns the stored row and there is no 9th. Pays go by the count of those rows, so a km whose pay was lost to
  *    a crash is paid by the next accepted ping. The meter itself keeps counting past 8 km; nothing more is paid.
  *  - A bad ping voids only itself: there are no strikes, and paid km stay paid.
+ *  - 0.1.183 Radio hop (rules: radioHop.ts): the same accepted metres, when the ping is a drive and names a city,
+ *    also go on that city's own counter (radio_hop, migration 0020) for the city's local day. At 2,000 m the
+ *    unlock is one zero-delta ledger row `radio:<city>:<cityDay>`; the reply carries `radio` only on the ping
+ *    that wrote it. Walk metres never count. No coin. A missing table means no hop and nothing else changes.
  */
-export async function sundayPing(sql: Sql, sessionUserId: string, op: { mode: SundayMode; meters: number }, now = Date.now()): Promise<ClientResult> {
+export async function sundayPing(sql: Sql, sessionUserId: string, op: { mode: SundayMode; meters: number; city?: CityId }, now = Date.now()): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
   if (!wallet.migrated) return { ...applied({ ok: false, replay: false, reason: "sync", wallet }), authoritative: false };
   const mode: SundayMode = op.mode === "drive" ? "drive" : "walk";
@@ -1693,9 +1729,10 @@ export async function sundayPing(sql: Sql, sessionUserId: string, op: { mode: Su
       if (r.ok && !r.replay) coin += SUNDAY_COIN;
     }
   }
+  const radio = mode === "drive" && add > 0 && typeof op.city === "string" && Object.hasOwn(CITIES, op.city) ? await radioCount(sql, sessionUserId, id, op.city, add, now) : null;
   const fresh = coin ? (await canonicalWallet(sql, sessionUserId)).wallet : wallet;
   const award = coin ? { coins: coin, keys: {}, boosts: [sundayLine(coin)] } : undefined;
-  return { ...applied({ ok: true, replay: false, wallet: fresh, award }), authoritative: true, sunday: await sundayOf(sql, sessionUserId, now) };
+  return { ...applied({ ok: true, replay: false, wallet: fresh, award }), authoritative: true, sunday: await sundayOf(sql, sessionUserId, now), ...(radio ? { radio } : {}) };
 }
 
 /** `clock.now` is the server's own time for clocked events (Holiday Lights); only the dev server ever shifts it. */

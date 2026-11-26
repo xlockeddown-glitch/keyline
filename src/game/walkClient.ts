@@ -5,6 +5,7 @@ import { useGame } from "./store";
 import { postWalk } from "./walkApi";
 import { commitWallet, walletLive } from "./walletClient";
 import { SUNDAY_MIN_LEG_M, sundayLine, type SundayMode } from "./sundayDrive";
+import { sfx } from "./audio";
 
 const FLUSH_MS = 8_000;
 /** A single store tick is a few frames. Bigger than this is a save load, not a step. */
@@ -67,10 +68,21 @@ export async function flushWalk(opts?: { min?: number }) {
 const SUNDAY_BAG_CAP_M = 5_000;
 const sundayBag: Record<SundayMode, number> = { walk: 0, drive: 0 };
 let sundayBusy = false;
+// 0.1.183 Radio hop: the city the bag's metres were moved in (a drive ping carries it as a label), and the hops
+// already played this session. Nothing here is saved or put in the store: the unlock is the server's ledger row.
+let sundayCity: CityId | null = null;
+const radioPlayed = new Set<string>();
 
 /** One map tick's snapped step. A tick bigger than MAX_TICK_M is a teleport or a save load, not a step. */
 export function noteSunday(mode: SundayMode, meters: number) {
   if (!(meters > 0) || meters > MAX_TICK_M || !walletLive()) return;
+  // A new city: the old city's unsent metres are dropped, so they are never labelled with this one.
+  const city = useGame.getState().cityId;
+  if (city !== sundayCity) {
+    sundayBag.walk = 0;
+    sundayBag.drive = 0;
+    sundayCity = city;
+  }
   sundayBag[mode] = Math.min(SUNDAY_BAG_CAP_M, sundayBag[mode] + meters);
 }
 
@@ -92,10 +104,19 @@ export async function flushSunday() {
   sundayBag[mode] -= whole;
   sundayBusy = true;
   try {
-    const r = await commitWallet({ kind: "sunday", mode, meters: whole });
+    // Only a drive ping names its city (walk metres never count toward a hop).
+    const city = sundayCity;
+    const r = await (mode === "drive" && city ? commitWallet({ kind: "sunday", mode, meters: whole, city }) : commitWallet({ kind: "sunday", mode, meters: whole }));
     if (!r) {
-      sundayBag[mode] = Math.min(SUNDAY_BAG_CAP_M, sundayBag[mode] + whole);
+      if (sundayCity === city) sundayBag[mode] = Math.min(SUNDAY_BAG_CAP_M, sundayBag[mode] + whole);
       return;
+    }
+    if (r.radio?.fresh) {
+      const hop = `${r.radio.city}:${r.radio.day}`;
+      if (!radioPlayed.has(hop)) {
+        radioPlayed.add(hop);
+        sfx.radioHop();
+      }
     }
     if (r.sunday) useGame.setState({ sunday: r.sunday });
     const coin = r.award?.coins ?? 0;

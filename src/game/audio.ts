@@ -283,6 +283,20 @@ export const sfx = {
   ui: () => beep(640, 0.05, "square", 0.12),
   /** 0.0.92: the wheel pointer clicking past a slice peg. */
   tick: () => beep(1700, 0.022, "square", 0.07),
+  /**
+   * 0.1.183 Radio hop: the city bed ducks for about 2.5 s under a short sting made of two pack recipes already
+   * here (the Loop swoop, then the station chime). No new sound data. The bed comes back through applyGains, so a
+   * mute or a music-off pressed during the dip is kept.
+   */
+  radioHop: () => {
+    if (!ctx || !sfxBus || muted) return;
+    if (musicBus && musicOn) {
+      musicBus.gain.setTargetAtTime(0.25, ctx.currentTime, 0.08);
+      setTimeout(applyGains, 2500);
+    }
+    playPack("loopWhoosh");
+    setTimeout(() => playPack("cityArrive"), 700);
+  },
   fireworks: (kind: "mini" | "grand") => {
     if (!ctx || !sfxBus || muted) return;
     const t0 = ctx.currentTime;
