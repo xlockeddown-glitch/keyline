@@ -19,6 +19,7 @@ import { clampCloth, clampLoot, clampStreak, LUCKY_MATCH_CHANCE, PERFECT_BLUE_CH
 import { cleanOrder, type OrderOutcome } from "./orderPay.ts";
 import { awardGrade, carsOf, noteBlitzCard, ownedOf, spendDealt } from "./walletApply.ts";
 import { isComet } from "./eventVault.ts";
+import { canonicalId } from "./playerLinks.ts";
 export { DealIn, GradeIn, SEEN_MAX } from "./triviaSchema.ts";
 export type { DealInput, DealResult, GradeInput, GradeResult, Grade, PublicCard } from "./triviaSchema";
 export { NEAR_EXTRA_MS, nearScore } from "./nearScore.ts";
@@ -365,7 +366,9 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
   // 0.1.159: once per window per walker (signed in: the `ev:<id>` row survives reloads and other devices).
   if (comet && viewer.userId && deps.sql) {
     try {
-      if (await eventDone(sql ?? (await deps.sql()), viewer.userId, input.poiId)) return { ok: false, reason: "comet-done" };
+      const cometSql = sql ?? (await deps.sql());
+      // Once per pocket, not per sign-in. A linked alias shares the canonical wallet, so it shares this claim.
+      if (await eventDone(cometSql, await canonicalId(cometSql, viewer.userId), input.poiId)) return { ok: false, reason: "comet-done" };
     } catch (e) {
       console.warn("[trivia] comet ledger read failed", e instanceof Error ? e.message : e);
     }
@@ -452,7 +455,10 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   const pub = fq ? publicFormatId(fq) : publicCardId(plate as TriviaQ);
   // Closest Number gets 8 s more for typing.
   const windowMs = clampWindow(input.windowMs + (fq?.kind === "near" ? NEAR_EXTRA_MS : 0));
-  const scout = scoutOf(input.pay?.scout);
+  // A coat's strike, loot and other paid perks apply only when provePerks found that coat on this account.
+  // The request can name any coat. Raccoon is the one coat provePerks accepts with no ledger row.
+  const claimedScout = scoutOf(input.pay?.scout);
+  const scout = proven.scout && proven.scout === claimedScout ? proven.scout : null;
   const named = deps.namedPoi(input.city, input.poiId);
   const pay = input.pay;
   let pv = "";
@@ -697,8 +703,9 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   if (signedIn && credited && correct && isComet(cometPi) && deps.sql) {
     try {
       const sql = await deps.sql();
+      const pocket = await canonicalId(sql, viewer.userId!);
       const got = await sql<{ op_key: string }>`
-        insert into wallet_ledger (user_id, op_key, detail) values (${viewer.userId}, ${eventKey(cometPi)}, ${JSON.stringify({ n: t.n, at: t.t })})
+        insert into wallet_ledger (user_id, op_key, detail) values (${pocket}, ${eventKey(cometPi)}, ${JSON.stringify({ n: t.n, at: t.t })})
         on conflict (user_id, op_key) do nothing returning op_key
       `;
       cometSpent = got.length === 0;
@@ -712,6 +719,8 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
       const sql = await deps.sql();
       const x = t.x;
       const rand = deps.rand ?? Math.random;
+      // `fs` is set only when the coat was on the account at deal time. A token that merely names a coat pays none of its perks.
+      const worn = x?.fs === 1 ? scoutOf(x.sc) : null;
       const awarded = await awardGrade(sql, viewer.userId!, t.n, {
         correct,
         elapsedMs,
@@ -737,13 +746,13 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         ...(cometSpent ? { cometSpent: true } : {}),
         luckyHit: x?.lk === 1 && rand() < LUCKY_MATCH_CHANCE,
         perfectBlue: g?.grade === "perfect" && rand() < PERFECT_BLUE_CHANCE,
-        scout: scoutOf(x?.sc),
-        rummage: rummageHit(scoutOf(x?.sc), rand()),
-        doubleUp: doubleUpHit(scoutOf(x?.sc), rand()),
+        scout: worn,
+        rummage: rummageHit(worn, rand()),
+        doubleUp: doubleUpHit(worn, rand()),
         // 0.1.45: Roadster Regen (1 in 5, from the nonce) only when no stronger coat refund (Turtle 1 in 3) is worn.
-        shellBack: shellBackHit(scoutOf(x?.sc), rand()) || (!SCOUTS[scoutOf(x?.sc) ?? "raccoon"]?.perk.shellBack && regenHit(isCarId(x?.cr) ? x.cr : null, t.n)),
+        shellBack: shellBackHit(worn, rand()) || (!SCOUTS[worn ?? "raccoon"]?.perk.shellBack && regenHit(isCarId(x?.cr) ? x.cr : null, t.n)),
         random: x?.rn === 1,
-        favs: perkFavs(scoutOf(x?.sc), x?.fs === 1, isCarId(x?.cr) ? x.cr : null),
+        favs: perkFavs(worn, x?.fs === 1, isCarId(x?.cr) ? x.cr : null),
         car: isCarId(x?.cr) ? x.cr : null,
         // 0.1.179 Encore: the server's own facts about this grade (its clock and its sealed token), never the request's.
         // A choice that arrived past the window (by either clock) is a timeout too, not a wrong answer.

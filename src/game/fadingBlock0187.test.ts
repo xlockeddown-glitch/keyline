@@ -231,9 +231,9 @@ test("a 6th right in the same square the same city day pays floor(50%)", async (
   assert.deepEqual(flags, [false, false, false, true, true, true, true, true]);
   assert.match(await gradeDetail(sql, "ann", "n6"), /"fb":1/);
   assert.equal(JSON.parse(await gradeDetail(sql, "ann", "n6")).coins, 47);
-  // The fade is of whatever the grade would have paid: a slower, harder, luckier answer fades from its own coin.
-  const full = Math.round(rewardPoints(TIER, { mult: 0.7, bonus: 1.2, diffMult: DIFF_MULT[3], loot: 2 }));
-  const r9 = await right(sql, "ann", "n9", A1, T0 + 9 * MIN, { mult: 0.7, streak: 3, diff: 3, loot: 2 });
+  // Eight prior rights: the server run is 8, so this answer's bonus is 1.40. The request's streak and loot are ignored.
+  const full = Math.round(rewardPoints(TIER, { mult: 0.7, bonus: 1.4, diffMult: DIFF_MULT[3], loot: 1 }));
+  const r9 = await right(sql, "ann", "n9", A1, T0 + 9 * MIN, { mult: 0.7, streak: 80, diff: 3, loot: 1.1 });
   assert.equal(r9.award!.coins, Math.floor(0.5 * full));
 });
 
@@ -292,7 +292,8 @@ test("the 1-coin fixture pays 0: floor(0.5 x 1) = 0, and the keys still arrive",
   const r = await right(sql, "ann", "n4", A1, T0 + 4 * MIN, { poiTier: "white", clearTier: "white", mult: 0.03 });
   assert.equal(faded(r), true);
   assert.equal(r.award!.coins, 0);
-  assert.deepEqual(r.award!.keys, one.award!.keys);
+  // gradeGrant still applies the request's empty charm list (a topic key). The server has already paid science today, so only the white key-back remains.
+  assert.deepEqual(r.award!.keys, { white: 1 });
   assert.equal(await coinsOf(sql, "ann"), coins);
 });
 

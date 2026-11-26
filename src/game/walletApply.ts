@@ -2,6 +2,7 @@ import { isSkinId, skinOf, skinOwned } from "./skins.ts";
 import { SHOP_PRICE, shopAnchor, shopOutput, type ShopState } from "./shop.ts";
 import { loopCrate, loopCrateLoot, posterKey } from "./loop.ts";
 import { canFly, souvenirKey } from "./flight.ts";
+import { utcDay } from "./boosts.ts";
 import { hasShield, scoutOf } from "./scoutPerks.ts";
 import { LORD_AT, STREAK_LOOKBACK, VIOLET_AT, crossed, mileCrossLabels, streakWalk } from "./streakMile.ts";
 import { marketMult } from "./nightMarket.ts";
@@ -36,6 +37,8 @@ import {
   dailyOp,
   friendOp,
   goalOp,
+  clampLoot,
+  clampStreak,
   gradeGrant,
   cometPays,
   gradedPlace,
@@ -820,6 +823,39 @@ function odoHolder(detail: unknown): string {
  * count; a fresh claim is left alone, because its grade may still be mid-write.
  */
 const ODO_CLAIM_STALE_MIN = 2;
+
+/** Loot multiplier the worn coat actually has. A number on the deal request is not a coat. */
+function serverLoot(scout: ScoutId | null | undefined): number {
+  const n = scout ? SCOUTS[scout]?.perk.loot : undefined;
+  return typeof n === "number" ? clampLoot(n) : 1;
+}
+
+/**
+ * Topics this pocket already answered correctly today (UTC), from its own grade rows.
+ * The topic-bonus white key is the first correct of a topic, three topics a day. The request's
+ * charm list is not read: an empty list would otherwise pay that key on every answer.
+ */
+async function topicsSeenToday(sql: Sql, id: string, nonce: string, dealAt: Date): Promise<GradePay["charmTopics"]> {
+  const day = utcDay(dealAt);
+  const start = `${day}T00:00:00.000Z`;
+  const end = new Date(Date.parse(start) + 86_400_000).toISOString();
+  const rows = await sql<{ detail: string }>`
+    select detail from wallet_ledger
+    where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + nonce}
+      and created_at >= ${start} and created_at < ${end}
+      and detail like ${'%"tp":%'}
+  `;
+  const seen: GradePay["charmTopics"] = [];
+  for (const row of rows) {
+    try {
+      const tp = (JSON.parse(String(row.detail)) as { tp?: unknown }).tp;
+      if (typeof tp === "string" && !(seen as string[]).includes(tp)) seen.push(tp as GradePay["charmTopics"][number]);
+    } catch {
+      /* a note that isn't JSON */
+    }
+  }
+  return seen;
+}
 async function claimOdometer(sql: Sql, id: string, count: number, nonce: string): Promise<boolean> {
   const key = `odo:${count}`;
   const mine = JSON.stringify({ g: nonce, n: count });
@@ -902,6 +938,15 @@ export async function awardGrade(
   const after = afterWalk.run;
   const anchor = after > 0 ? afterWalk.anchor : "";
   full.serverRun = after;
+  // Lamp coin (+40% at a long run) and the every-third white key read `streak`. It cannot exceed the
+  // run already on this pocket's grade rows. A request that says 80 on a cold run pays the cold run.
+  full.streak = Math.min(clampStreak(pay.streak), before);
+  full.loot = serverLoot(full.scout);
+  // The topic key is "first correct of this topic on the deal's UTC day". The deal time is the server's
+  // seal (t), not a clock the answer request can move. The request's charm list is not read.
+  const dealAt = new Date(full.dealtAt);
+  full.charmDay = utcDay(dealAt);
+  full.charmTopics = await topicsSeenToday(sql, id, nonce, dealAt);
   const streakTier = full.correct ? streakPrize(after) : null;
   // 0.1.14: new-district bonus on a lamp: has this 800 m square been lit today here?
   const district = full.correct && full.clearTier ? districtOf(full.city, full.lat, full.lng) : "";

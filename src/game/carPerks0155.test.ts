@@ -69,7 +69,10 @@ test("Road trip: first lit lamp per city per day only, once per grade, not on a 
   const a = await awardGrade(sql, "rt", "a1", pay({ car: "belair57" }));
   assert.ok(a.award?.boosts.includes(RT), JSON.stringify(a.award));
   await syncPlayer(sql, "plain", snap, "plain-phone");
+  // The topic-bonus key is once per topic per day. Both pockets have already taken science, so the only extra white is Road trip.
+  await awardGrade(sql, "plain", "pre", pay({}));
   const plain = await awardGrade(sql, "plain", "p0", pay({}));
+  assert.equal(plain.award?.keys.white ?? 0, 0);
   assert.equal(a.award?.keys.white ?? 0, (plain.award?.keys.white ?? 0) + 1, "exactly one extra white");
   await awardGrade(sql, "rt", "a1", pay({ car: "belair57" }));
   const second = await awardGrade(sql, "rt", "a2", pay({ car: "belair57" }));
