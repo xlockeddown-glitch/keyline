@@ -244,7 +244,10 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   mkdirSync(CACHE, { recursive: true });
   const manPath = `${OUT}/manifest.json`;
-  const manifest: { v: number; source: string; cities: Record<string, { file: string; snapshot: string; bytes: number; gz: number }> } = existsSync(manPath)
+  // 0.1.180: every entry pins its file (sha256 of the .json.gz, gz length, URL). A bake writes a bundled ("local")
+  // entry; a city served on demand ("remote", Philly) is published to the keyline-packs host and pinned by hand.
+  type Entry = { file: string; snapshot: string; bytes: number; gz: number; sha256: string; origin: "local" | "remote"; url: string; overlay: unknown };
+  const manifest: { v: number; source: string; cities: Record<string, Entry> } = existsSync(manPath)
     ? JSON.parse(readFileSync(manPath, "utf8"))
     : { v: 2, source: "© OpenStreetMap contributors, ODbL", cities: {} };
   for (const city of cities) {
@@ -265,7 +268,8 @@ async function main() {
     const gz = gzipSync(body, { level: 9 });
     for (const f of readdirSync(OUT)) if (f.startsWith(`${city}.`) && f !== file) unlinkSync(`${OUT}/${f}`);
     if (!existsSync(`${OUT}/${file}`)) writeFileSync(`${OUT}/${file}`, gz);
-    manifest.cities[city] = { file, snapshot, bytes: body.length, gz: gz.length };
+    if (manifest.cities[city]?.origin === "remote") console.warn(`${city} was an on-demand pack: this bake bundles it again (publish the file to the pack host and re-pin it to keep it remote)`);
+    manifest.cities[city] = { file, snapshot, bytes: body.length, gz: gz.length, sha256: createHash("sha256").update(gz).digest("hex"), origin: "local", url: `/streets/v2/${file}`, overlay: null };
     console.log(city, file, `${(body.length / 1e6).toFixed(2)} MB, ${(gz.length / 1e6).toFixed(2)} MB gz`, `${data.ways.length} ways`, `${data.nodes.length / 2} nodes`);
   }
   manifest.cities = Object.fromEntries(Object.entries(manifest.cities).sort(([a], [b]) => a.localeCompare(b)));

@@ -4,6 +4,7 @@
 // sit in the spawn's walk component; 200 seeded lamp-to-lamp walks via routeOnGraph exist, are ≤ 2.5× the straight
 // line and ride no freeway; the largest walk component holds > 95% of the walk length; gz size within budget.
 // Drive gets the same snap/component/route report (informational until slice 2 drives from the baked map).
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { CITIES } from "../src/game/data.ts";
@@ -104,7 +105,9 @@ function rng(seed: number) {
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
 }
 
-const man = JSON.parse(readFileSync("public/streets/v2/manifest.json", "utf8")) as { cities: Record<string, { file: string }> };
+const man = JSON.parse(readFileSync("public/streets/v2/manifest.json", "utf8")) as { cities: Record<string, { file: string; gz: number; sha256: string; origin: "local" | "remote" }> };
+// 0.1.180: a "remote" city (Philly) is not in public/: its exact pack bytes are vendored for the checks and tests.
+const PACKS = "src/game/fixtures/packs";
 const only = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 let bad = 0;
 const summary: string[] = [];
@@ -113,10 +116,12 @@ const fail = (msg: string) => {
   bad++;
   console.log("FAIL", msg);
 };
-for (const [city, { file }] of Object.entries(man.cities)) {
+for (const [city, { file, gz: pinGz, sha256, origin }] of Object.entries(man.cities)) {
   if (only.length && !only.includes(city)) continue;
   const c = CITIES[city as keyof typeof CITIES];
-  const packed = readFileSync(`public/streets/v2/${file}`);
+  const packed = readFileSync(`${origin === "remote" ? PACKS : "public/streets/v2"}/${file}`);
+  if (packed.length !== pinGz) fail(`${city} file is ${packed.length} B, manifest pins ${pinGz}`);
+  if (createHash("sha256").update(packed).digest("hex") !== sha256) fail(`${city} file does not match the manifest sha256`);
   const raw = file.endsWith(".gz") ? gunzipSync(packed) : packed;
   const gz = packed.length;
   const d = JSON.parse(raw.toString("utf8")) as BakedCity;

@@ -36,6 +36,7 @@ import {
   MATCH_GRAB_M,
   bootstrapDrive,
   bootstrapStreets,
+  PackUnavailableError,
   canCutBuildings,
   clearCorner,
   closestOnPath,
@@ -67,6 +68,7 @@ import {
   type Pt,
   type StreetGraph,
 } from "@/game/streets";
+import { mountCityOverlay } from "@/game/cityOverlay";
 import { fareDesk, isFareDesk } from "@/game/ticket";
 import { HOLD_CAP, holdAction, tapAction, type PlanStop } from "@/game/routePlan";
 import { clampWard, inWard, wardFrom, wardRing, type Ward } from "@/game/ward";
@@ -293,7 +295,12 @@ export function GameMap() {
   const lastFence = useRef(0);
   const cityId = useGame((s) => s.cityId);
   const scoutName = useGame((s) => SCOUTS[s.scout]?.name ?? "The walker");
-  const [streets, setStreets] = useState<"loading" | "ready" | "error">("loading");
+  // 0.1.180: "pack" = an on-demand city (Philly) whose street pack could not be had: the retry notice shows.
+  const [streets, setStreets] = useState<"loading" | "ready" | "error" | "pack">("loading");
+  /** 0.1.180: true while that pack is down. No walk, drive, route or new match until a retry brings the streets in. */
+  const packDown = useRef(false);
+  /** 0.1.180: removes the city's painted overlay (Philly); null when none is on the map. */
+  const overlayDrop = useRef<(() => void) | null>(null);
   const cacheRef = useRef<{ lat: number; lng: number; seed: { lat: number; lng: number } | null; marker: { remove: () => void; setLatLng: (ll: [number, number]) => unknown } } | null>(null);
   const [boardOpen, setBoardOpen] = useState(false);
   // 0.1.110: repaint pins when the city's Hearth vaults arrive.
@@ -1161,6 +1168,7 @@ export function GameMap() {
     wardRef.current = null;
     useGame.getState().setHud({ seated: false });
     setStreets("loading");
+    packDown.current = false;
     abortRef.current?.abort();
     const abort = new AbortController();
     abortRef.current = abort;
@@ -1189,6 +1197,7 @@ export function GameMap() {
       }).addTo(map);
 
       mapRef.current = map;
+      paintOverlay(L, map, city.id); // 0.1.180: Philly only; the manifest says which city has one
       if (import.meta.env.DEV) {
         // 0.1.159 QA: `?comet=open|cooling|locked` forces this city's Comet window open (6 min in) on the dev clock,
         // and for cooling / locked marks it cleared / locked out locally. Production never reads it.
@@ -1374,9 +1383,10 @@ export function GameMap() {
           if (!cancelled) paintDealer(g);
         });
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled || abort.signal.aborted) return;
-        setStreets("error");
+        if (err instanceof PackUnavailableError) packFailed();
+        else setStreets("error");
       })
       // 0.1.176: the road graph is ingested once the walk graph is in and the browser has had a turn, so the first
       // walk paint and input are not stuck behind it.
@@ -1398,6 +1408,8 @@ export function GameMap() {
       cancelled = true;
       abort.abort();
       bindWalkGraph(null);
+      overlayDrop.current?.();
+      overlayDrop.current = null;
       map?.remove();
       mapRef.current = null;
       playerMarker.current = null;
@@ -1440,6 +1452,7 @@ export function GameMap() {
   }
 
   async function setDestination(lat: number, lng: number, door = false, keepQueue = false, keyId?: string) {
+    if (packDown.current) return; // 0.1.180: no streets, no route (the retry notice is up)
     follow.current = true;
     const L = Lref.current;
     const map = mapRef.current;
@@ -1768,7 +1781,8 @@ export function GameMap() {
     }
     for (const m of keyMarkers.current.values()) m.remove();
     keyMarkers.current.clear();
-    for (const k of st.mapKeys) {
+    // 0.1.180: matches wait for the streets when the city's pack is down (they are placed on the walk graph).
+    for (const k of packDown.current ? [] : st.mapKeys) {
       const marker = L.marker([k.lat, k.lng], {
         icon: L.divIcon({
           className: "",
@@ -2042,6 +2056,12 @@ export function GameMap() {
 
       steer = Math.max(-1, Math.min(1, steer));
       throttle = Math.max(-1, Math.min(1, throttle));
+      if (packDown.current) {
+        // 0.1.180: the city's street pack is down. Stand still rather than step across the map off the streets.
+        steer = 0;
+        throttle = 0;
+        pos.current.speed = 0;
+      }
       const driveG = driveRef.current;
       const arterial = seated && onArterial(driveG, pos.current.lat, pos.current.lng);
       // 0.1.133: turbo and the faster ramp only while this signed-in streak says so, and only while driving.
@@ -2133,7 +2153,7 @@ export function GameMap() {
       if (!seated && stepped > 0.2) distAcc.current += stepped;
       if (t - lastKeyCheck.current > 1000) {
         lastKeyCheck.current = t;
-        st.maybeSpawnKey(Date.now());
+        if (!packDown.current) st.maybeSpawnKey(Date.now()); // 0.1.180: no match lands off the streets
         // 0.0.93: walk onto the day's match cache to open it.
         const c = cacheRef.current;
         if (c?.seed) {
@@ -2228,7 +2248,7 @@ export function GameMap() {
         const d = distM(pos.current.lat, pos.current.lng, p.lat, p.lng);
         if (d < nearestPoi.d) nearestPoi = { id: p.id, d, lat: p.lat, lng: p.lng };
       }
-      for (const k of st.mapKeys) {
+      for (const k of packDown.current ? [] : st.mapKeys) {
         // 0.1.35: your own car picks matches up from the window as you drive past; the city cab still doesn't.
         if (!lampFromRide(ride())) break;
         if (canGrabMatch(foot, pos.current, k, bestReach(reachMult(st.scout), seatedCar(st)))) {
@@ -2484,6 +2504,29 @@ export function GameMap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyShow, dailyLit, streets, cityId]);
 
+  /**
+   * 0.1.180: the city's painted overlay, for a city whose manifest entry pins one (Philly). Verified bytes on a blob
+   * URL, on its own class so the tile filter never touches it. A failed overlay is silent: the tiles are the map.
+   */
+  function paintOverlay(L: LModule, map: LMap, id: string) {
+    if (overlayDrop.current) return;
+    void mountCityOverlay(L, map, id, () => mapRef.current === map && !overlayDrop.current)
+      .then((drop) => {
+        if (drop) overlayDrop.current = drop;
+      })
+      .catch(() => {});
+  }
+
+  /** 0.1.180: an on-demand city's pack failed every attempt with no verified cached copy. */
+  function packFailed() {
+    packDown.current = true;
+    clearRoute();
+    setStreets("pack");
+    const L = Lref.current;
+    const m = mapRef.current;
+    if (L && m) rebuildPins(L, m);
+  }
+
   function retryStreets() {
     const city = CITIES[cityId];
     setStreets("loading");
@@ -2500,14 +2543,25 @@ export function GameMap() {
         paintMarket(); // 0.1.6: the lit roads need the street graph
         paintDealer(g); // 0.1.8: and the car lot door snaps onto it
         paintHouse(g); // 0.1.12: and the house lot
+        if (packDown.current) {
+          // 0.1.180: the pack came in on a retry: the matches held back go on the map again.
+          packDown.current = false;
+          const L = Lref.current;
+          const m = mapRef.current;
+          if (L && m) {
+            rebuildPins(L, m);
+            paintOverlay(L, m, city.id); // the host is back: the overlay that failed with the pack gets its turn
+          }
+        }
         void fillSurroundings(g, city.spawn.lat, city.spawn.lng, city.pois, abort.signal).then(() => {
           snapKeys(g);
           fillWardLamps(g);
         });
       })
-      .catch(() => {
+      .catch((err) => {
         if (abort.signal.aborted) return;
-        setStreets("error");
+        if (err instanceof PackUnavailableError) packFailed();
+        else setStreets("error");
       })
       // 0.1.176: roads after the walk graph, as at map setup.
       .finally(() =>
@@ -2669,10 +2723,17 @@ const CACHE_PIN_HTML =
         />
       ) : null}
       {streets !== "ready" ? (
-        <div className="pointer-events-none absolute inset-x-0 top-24 z-[700] flex justify-center px-4">
+        <div className={`pointer-events-none absolute inset-x-0 z-[700] flex justify-center px-4 ${streets === "pack" ? "top-64" : "top-24"}`}>
           <div className="panel pointer-events-auto max-w-sm px-4 py-3">
             {streets === "loading" ? (
               <p className="text-sm text-fg-muted">Charting streets and paths. {scoutName} stays on the grid.</p>
+            ) : streets === "pack" ? (
+              <div className="flex flex-col gap-2" data-testid="pack-notice" role="status">
+                <p className="text-sm text-fg-muted">Philadelphia streets couldn't load. You can retry, or play in another city.</p>
+                <button type="button" className="btn btn-primary" data-testid="pack-retry" onClick={retryStreets}>
+                  Retry
+                </button>
+              </div>
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-sm text-fg-muted">Couldn't read the street map. Retry, and {scoutName} stays on the roads.</p>

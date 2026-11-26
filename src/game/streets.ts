@@ -1,6 +1,7 @@
 import { FREEWAY_HIGHWAY_RE, isFreeway, isWalkableWay, sharedVertices, WALK_HIGHWAY_RE, WALK_OVERPASS_FILTERS, type WayTags } from "./walkable.ts";
 import { dest, distM, metersPerDegLng, yawToTarget } from "./geo.ts";
 import { getOsmWays } from "./streetApi.ts";
+import { fetchVerified, packEnv, STREETS_CACHE, type PackPin } from "./packFetch.ts";
 import type { Poi, Tier } from "./types";
 
 export type Pt = { lat: number; lng: number };
@@ -1191,6 +1192,7 @@ export async function fetchStreets(
   signal?: AbortSignal,
   drive = false,
 ): Promise<OsmWay[]> {
+  if (liveBlocked) throw new Error("city pack unavailable");
   try {
     const packed = await getOsmWays({ data: { lat, lng, radius }, signal });
     if (drive) {
@@ -1243,6 +1245,7 @@ export async function expandGraph(
 export async function osrmRoute(from: Pt, to: Pt, signal?: AbortSignal, drive = false): Promise<Pt[] | null> {
   const path = `${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
   const bases = drive ? OSRM_DRIVE : OSRM_FOOT;
+  if (liveBlocked) return null;
   for (const base of bases) {
     if (signal?.aborted) return null;
     try {
@@ -1609,6 +1612,8 @@ export async function bootstrapDrive(lat: number, lng: number, hubs: Pt[], signa
     ingestBaked(g, baked, true);
     if (g.segs.length >= 8) return g;
   }
+  // 0.1.180: an on-demand city whose pack didn't load has no roads: no live Overpass, no OSRM standing in.
+  if (!baked && cityId && isPackCity(cityId)) return g;
   // 0.1.170: missing or small v2 maps fall through to live Overpass, then OSRM.
   const live = expandGraph(g, lat, lng, 2000, signal, true).then(
     () => true,
@@ -1669,89 +1674,148 @@ export const BAKED_FREEWAY = 4;
 export const BAKED_ARTERIAL = 8;
 
 const bakedCache = new Map<string, Promise<BakedCity | null>>();
-/** 0.1.50: the browser cache that keeps visited cities' baked maps (and the last manifest) for offline play. */
-export const STREETS_CACHE = "keyline-streets-v2";
-async function streetsCache(): Promise<Cache | null> {
-  try {
-    return typeof caches === "undefined" ? null : await caches.open(STREETS_CACHE);
-  } catch {
-    return null;
+export { STREETS_CACHE };
+
+/** 0.1.180: a painted layer over the city's tiles, pinned like the street map. Corners are [lat, lng]. */
+export type CityOverlay = {
+  url: string;
+  sha256: string;
+  bytes: number;
+  w: number;
+  h: number;
+  bounds: { nw: [number, number]; ne: [number, number]; se: [number, number]; sw: [number, number] };
+};
+/**
+ * One city in /streets/v2/manifest.json. 0.1.180: every entry pins its file by sha256 + gz length + hashed URL.
+ * "local" ships with the build (same-origin /streets/v2/<file>); "remote" is an on-demand pack on the keyline-packs host.
+ */
+export type CityEntry = {
+  file: string;
+  snapshot: string;
+  bytes: number;
+  gz: number;
+  sha256: string;
+  origin: "local" | "remote";
+  url: string;
+  overlay: CityOverlay | null;
+};
+type StreetsManifest = { cities?: Record<string, CityEntry> };
+
+/**
+ * 0.1.180: cities whose street map is not in the build (manifest origin "remote"; a test holds the two in step).
+ * Known without the manifest, so a failed load never falls back to live Overpass / OSRM for them.
+ */
+export const PACK_CITIES: ReadonlySet<string> = new Set(["philly"]);
+export function isPackCity(cityId: string) {
+  return PACK_CITIES.has(cityId);
+}
+/** Thrown by bootstrapStreets when an on-demand city's pack can't be had (host down, no verified cached copy). */
+export class PackUnavailableError extends Error {
+  cityId: string;
+  constructor(cityId: string) {
+    super(`city pack unavailable: ${cityId}`);
+    this.name = "PackUnavailableError";
+    this.cityId = cityId;
   }
 }
+/** While the current city's pack is down, nothing asks Overpass, getOsmWays or the online routers. */
+let liveBlocked = false;
+let bootSeq = 0;
+
 /** The manifest: network first (a new publish's bake wins), the cached copy when offline. */
-async function fetchManifest(): Promise<{ cities?: Record<string, { file: string }> } | null> {
+async function fetchManifest(): Promise<StreetsManifest | null> {
   const url = "/streets/v2/manifest.json";
-  const cache = await streetsCache();
+  const env = packEnv();
+  const cache = await env.openCache();
   try {
-    const res = await fetch(url, { cache: "no-cache" });
+    const res = await env.fetch(url, { cache: "no-cache", signal: AbortSignal.timeout(15_000) });
     if (res.ok) {
       if (cache) void cache.put(url, res.clone()).catch(() => {});
-      return (await res.json()) as { cities?: Record<string, { file: string }> };
+      return (await res.json()) as StreetsManifest;
     }
   } catch {
     /* offline: the cached manifest below */
   }
   const hit = await cache?.match(url);
-  return hit ? ((await hit.json()) as { cities?: Record<string, { file: string }> }) : null;
+  return hit ? ((await hit.json()) as StreetsManifest) : null;
 }
 /** 0.1.50: the date of the OpenStreetMap snapshot the city's baked map was made from ("2026-10-27"), or null. */
 export async function bakedSnapshot(cityId: string): Promise<string | null> {
-  const man = (await fetchManifest().catch(() => null)) as { cities?: Record<string, { snapshot?: string }> } | null;
+  const man = await fetchManifest().catch(() => null);
   return man?.cities?.[cityId]?.snapshot ?? null;
 }
-/** A city file: hashed names never change, so cache first; a fresh download is stored and older files of the city dropped. */
-async function fetchCityFile(file: string): Promise<Response | null> {
-  const url = `/streets/v2/${file}`;
-  const cache = await streetsCache();
-  const hit = await cache?.match(url);
-  if (hit) return hit;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  if (!cache) return res;
-  // Read it once and store those bytes before handing them on, so a reload right after finds the city.
-  const body = await res.arrayBuffer();
-  const type = res.headers.get("content-type") ?? "application/octet-stream";
-  try {
-    await cache.put(url, new Response(body, { headers: { "content-type": type } }));
-    const city = file.split(".")[0];
-    for (const req of await cache.keys()) {
-      const name = new URL(req.url).pathname.split("/").pop() ?? "";
-      if (name !== file && name !== "manifest.json" && name.split(".")[0] === city) await cache.delete(req);
-    }
-  } catch {
-    /* storage full or blocked: play on without the offline copy */
-  }
-  return new Response(body, { headers: { "content-type": type } });
+/** 0.1.180: the city's manifest entry (file pin, overlay pin), or null. */
+export async function cityEntry(cityId: string): Promise<CityEntry | null> {
+  const man = await fetchManifest().catch(() => null);
+  return man?.cities?.[cityId] ?? null;
 }
-/** Fetch the city's baked map (null when the city has none or the fetch fails); one download per city per session. */
+/** The pin fetchVerified checks a city file against; null for an entry without one (a pre-0.1.180 cached manifest). */
+export function cityPin(e: CityEntry | null | undefined): PackPin | null {
+  if (!e || typeof e.url !== "string" || typeof e.sha256 !== "string" || !Number.isFinite(e.gz)) return null;
+  const remote = e.origin === "remote";
+  return { url: e.url, sha256: e.sha256, bytes: e.gz, remote, decodedBytes: remote ? undefined : e.bytes };
+}
+
+/** 0.1.180: where the city's baked map stands. "failed" = every attempt lost and there is no verified cached copy. */
+export type CityLoadStatus = "idle" | "loading" | "ok" | "failed";
+const loadStatus = new Map<string, CityLoadStatus>();
+const statusSubs = new Set<(cityId: string, status: CityLoadStatus) => void>();
+function setLoadStatus(cityId: string, status: CityLoadStatus) {
+  if (loadStatus.get(cityId) === status) return;
+  loadStatus.set(cityId, status);
+  for (const fn of statusSubs) fn(cityId, status);
+}
+export function cityLoadStatus(cityId: string): CityLoadStatus {
+  return loadStatus.get(cityId) ?? "idle";
+}
+export function onCityLoadStatus(fn: (cityId: string, status: CityLoadStatus) => void): () => void {
+  statusSubs.add(fn);
+  return () => void statusSubs.delete(fn);
+}
+/** Clear a failed load and try again (three attempts again). A load that is in flight or done is returned as is. */
+export function retryCityLoad(cityId: string): Promise<BakedCity | null> {
+  if (cityLoadStatus(cityId) === "failed") bakedCache.delete(cityId);
+  return loadBakedCity(cityId);
+}
+/** Tests only: forget every loaded city and status. */
+export function resetCityLoads() {
+  bakedCache.clear();
+  loadStatus.clear();
+  liveBlocked = false;
+}
+
+/**
+ * Fetch the city's baked map (null when the city has none or the fetch fails); one download per city per session.
+ * 0.1.180: verified against the manifest pin before use (packFetch.ts). A bundled city that fails is tried again on
+ * the next call, as before; an on-demand city stays "failed" until retryCityLoad or the next arrival.
+ */
 export function loadBakedCity(cityId: string): Promise<BakedCity | null> {
   let p = bakedCache.get(cityId);
   if (!p) {
-    p = fetchManifest()
+    setLoadStatus(cityId, "loading");
+    const mine: Promise<BakedCity | null> = fetchManifest()
       .then((man) => {
-        const file = man?.cities?.[cityId]?.file;
-        return file ? fetchCityFile(file).then((res) => (res ? readBaked(res) : null)) : null;
+        const pin = cityPin(man?.cities?.[cityId]);
+        return pin ? fetchVerified(pin).then((bytes) => (bytes ? gunzipJson<BakedCity>(bytes) : null)) : null;
       })
       .then((d) => (d && d.v === 3 ? d : null))
       .catch(() => null);
-    bakedCache.set(cityId, p);
-    void p.then((d) => {
-      if (!d) bakedCache.delete(cityId);
+    p = mine;
+    bakedCache.set(cityId, mine);
+    void mine.then((d) => {
+      if (bakedCache.get(cityId) !== mine) return;
+      if (!d && !isPackCity(cityId)) bakedCache.delete(cityId);
+      setLoadStatus(cityId, d ? "ok" : "failed");
     });
   }
   return p;
 }
 
 /** The file ships as .json.gz; inflate it unless the host already sent it decoded (Content-Encoding: gzip). */
-async function readGzJson<T>(res: Response): Promise<T> {
-  const buf = new Uint8Array(await res.arrayBuffer());
+async function gunzipJson<T>(buf: Uint8Array): Promise<T> {
   let bytes: Uint8Array | ArrayBuffer = buf;
-  if (buf[0] === 0x1f && buf[1] === 0x8b) bytes = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+  if (buf[0] === 0x1f && buf[1] === 0x8b) bytes = await new Response(new Blob([buf as unknown as BlobPart]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
   return JSON.parse(new TextDecoder().decode(bytes)) as T;
-}
-/** 0.1.163: the fallback maps (/streets/<id>.json.gz, <id>-fw.json.gz) read the same way. */
-function readBaked(res: Response): Promise<BakedCity> {
-  return readGzJson<BakedCity>(res);
 }
 
 /** Straight into the graph: walk (flag 1, freeways to the no-walk layer) or drive (flag 2, arterial from flag 8). */
@@ -1832,12 +1896,19 @@ function addBakedSeg(g: StreetGraph, ia: number, ib: number, arterial: boolean) 
 
 export async function bootstrapStreets(cityId: string, lat: number, lng: number, hubs: Pt[], signal?: AbortSignal) {
   const g = createGraph(lat, lng);
+  const seq = ++bootSeq;
+  // 0.1.180: an on-demand city asks nothing live until its pack is in (first load and every retry).
+  liveBlocked = isPackCity(cityId);
   // 0.1.48: the baked city map first. When it loads, it is the walk graph inside its bbox (live Overpass only past it).
-  const baked = await loadBakedCity(cityId);
+  // 0.1.180: arriving (or Retry) in an on-demand city gives a failed pack a fresh three attempts.
+  const baked = await (isPackCity(cityId) ? retryCityLoad(cityId) : loadBakedCity(cityId));
   if (baked) {
+    if (seq === bootSeq) liveBlocked = false;
     ingestBaked(g, baked);
     if (g.segs.length >= 8) return g;
   }
+  // 0.1.180: no pack, no streets. Live Overpass and the online routers stay shut until another city (or a retry) boots.
+  if (!baked && isPackCity(cityId)) throw new PackUnavailableError(cityId);
   // 0.1.170: v2 contains the baked road layers; no legacy v1 fetches.
   if (g.segs.length < 8) {
     try {
