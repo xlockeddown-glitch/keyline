@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { DYE_TARGETS, recolorSheet, type SheetKind } from "@/game/dyeRecolor";
+import { DYE_TARGETS, recolorSheet, type DyeTarget, type SheetKind } from "@/game/dyeRecolor";
 import { V2_DEFAULT_COAT, V2_PALETTE, V2_SCOUTS, applyCoatLayer, v2MaskUrl, v2SheetUrl } from "@/game/coatLayer";
 import { visibleCoat } from "@/game/paint";
 import { ALL_PRINTS, applyPrintLayer } from "@/game/cityPrints";
@@ -66,7 +66,68 @@ function publish(css: string) {
   tag.textContent = css;
 }
 
-function toUrl(data: Uint8ClampedArray, w: number, h: number): string {
+// ---- 0.1.193: v2 scouts. Until 0.1.192 every print and coat (27 recoloured sheets) was built on the title screen and
+// the whole <style> text was rewritten after each one (a 13.8 MB tag by the end; about 8 s of main-thread time on a
+// phone-class CPU). Now the worn look is built first, on its own; the rest are built one at a time in idle time once
+// play has started, or at once when the print shop opens. Rules are added to the sheet one by one (insertRule), and each
+// picture is a blob URL (the PNG is encoded off the main thread) instead of a megabyte data URL inside the stylesheet.
+type V2Sheets = { base: Sheet; mask: Sheet; def: DyeTarget };
+type Sheet = { data: Uint8ClampedArray; w: number; h: number };
+
+const v2Loads = new Map<string, Promise<V2Sheets | null>>();
+const v2Rules = new Map<string, Map<string, string>>();
+const v2Inflight = new Map<string, Promise<void>>();
+const printById = new Map<string, (typeof ALL_PRINTS)[number]>(ALL_PRINTS.map((p) => [p.id, p]));
+/** Everything a v2 scout can wear, worn-first order is applied by the callers. */
+const V2_IDS: string[] = [...ALL_PRINTS.map((p) => p.id), ...Object.keys(V2_PALETTE)];
+let sheetScout = "";
+const inSheet = new Set<string>();
+let liveScout = "";
+
+function dyeSheet(): CSSStyleSheet | null {
+  let tag = document.getElementById("dye-sheets") as HTMLStyleElement | null;
+  if (!tag) {
+    tag = document.createElement("style");
+    tag.id = "dye-sheets";
+    document.head.appendChild(tag);
+  }
+  return tag.sheet;
+}
+
+function resetSheet(scout: string) {
+  const sh = dyeSheet();
+  if (sh) while (sh.cssRules.length) sh.deleteRule(0);
+  inSheet.clear();
+  sheetScout = scout;
+}
+
+function put(scout: string, id: string, rule: string) {
+  if (sheetScout !== scout || inSheet.has(id)) return;
+  const sh = dyeSheet();
+  if (!sh) return;
+  try {
+    sh.insertRule(rule, sh.cssRules.length);
+    inSheet.add(id);
+  } catch {
+    // a rule the browser refuses is skipped; the walker keeps its default look
+  }
+}
+
+function loadV2(scout: string): Promise<V2Sheets | null> {
+  let hit = v2Loads.get(scout);
+  if (!hit) {
+    hit = (async () => {
+      const [base, mask] = await Promise.all([loadSheet(v2SheetUrl(scout)), loadSheet(v2MaskUrl(scout))]);
+      const def = V2_DEFAULT_COAT[scout];
+      if (!def || base.w !== mask.w || base.h !== mask.h) return null;
+      return { base, mask, def };
+    })();
+    v2Loads.set(scout, hit);
+  }
+  return hit;
+}
+
+async function blobUrl(data: Uint8ClampedArray, w: number, h: number): Promise<string> {
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
@@ -75,34 +136,67 @@ function toUrl(data: Uint8ClampedArray, w: number, h: number): string {
   const image = ctx.createImageData(w, h);
   image.data.set(data);
   ctx.putImageData(image, 0, 0);
-  return canvas.toDataURL("image/png");
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+  return blob ? URL.createObjectURL(blob) : canvas.toDataURL("image/png");
 }
 
-async function cssForV2(scout: string, cancel: () => boolean): Promise<void> {
-  const [base, mask] = await Promise.all([loadSheet(v2SheetUrl(scout)), loadSheet(v2MaskUrl(scout))]);
-  if (cancel()) return;
-  const def = V2_DEFAULT_COAT[scout];
-  if (!def || base.w !== mask.w || base.h !== mask.h) return;
-  const lines: string[] = [];
-  // The coat being worn first, so it is on screen in one step; the rest follow for the print shop.
-  const worn = visibleCoat(useGame.getState().paints.wornCoat, useGame.getState().wardrobe.coat);
-  // 0.0.99 city prints: few and small, so they go first (a worn print is on screen right away).
-  for (const p of ALL_PRINTS) {
-    const url = toUrl(applyPrintLayer(base.data, mask.data, base.w, p, def), base.w, base.h);
-    const sel = `.scout-marker[data-scout="${scout}"][data-coat="${p.id}"]`;
-    lines.push(`${sel},${sel}.is-idle,${sel}.is-idle.is-side{background-image:url("${url}")}`);
+/** Build (once) and publish one print or coat for a v2 scout. */
+async function buildOne(scout: string, id: string): Promise<void> {
+  const have = v2Rules.get(scout)?.get(id);
+  if (have) {
+    put(scout, id, have);
+    return;
   }
-  if (lines.length) publish(lines.join("\n"));
-  const order = Object.entries(V2_PALETTE).sort(([a], [b]) => Number(b === worn) - Number(a === worn));
-  for (const [coat, tgt] of order) {
-    await new Promise((r) => setTimeout(r, 0));
-    if (cancel()) return;
-    const url = toUrl(applyCoatLayer(base.data, mask.data, tgt, def, base.w), base.w, base.h);
-    const sel = `.scout-marker[data-scout="${scout}"][data-coat="${coat}"]`;
-    lines.push(`${sel},${sel}.is-idle,${sel}.is-idle.is-side{background-image:url("${url}")}`);
-    publish(lines.join("\n"));
+  const key = `${scout}|${id}`;
+  let job = v2Inflight.get(key);
+  if (!job) {
+    job = (async () => {
+      const L = await loadV2(scout);
+      if (!L) return;
+      const print = printById.get(id);
+      const tgt = V2_PALETTE[id];
+      if (!print && !tgt) return;
+      const data = print ? applyPrintLayer(L.base.data, L.mask.data, L.base.w, print, L.def) : applyCoatLayer(L.base.data, L.mask.data, tgt, L.def, L.base.w);
+      const url = await blobUrl(data, L.base.w, L.base.h);
+      if (!url) return;
+      const sel = `.scout-marker[data-scout="${scout}"][data-coat="${id}"]`;
+      let m = v2Rules.get(scout);
+      if (!m) v2Rules.set(scout, (m = new Map()));
+      m.set(id, `${sel},${sel}.is-idle,${sel}.is-idle.is-side{background-image:url("${url}")}`);
+    })().finally(() => v2Inflight.delete(key));
+    v2Inflight.set(key, job);
   }
-  ready.set(scout, lines.join("\n"));
+  await job;
+  const rule = v2Rules.get(scout)?.get(id);
+  if (rule) put(scout, id, rule);
+}
+
+function idleSlot(urgent: boolean): Promise<void> {
+  return new Promise((res) => {
+    if (!urgent && "requestIdleCallback" in window) (window as unknown as { requestIdleCallback: (cb: () => void, o: { timeout: number }) => void }).requestIdleCallback(() => res(), { timeout: 1500 });
+    else setTimeout(res, urgent ? 0 : 50);
+  });
+}
+
+/** The rest of the wardrobe for a v2 scout, one picture at a time. */
+async function fillV2(scout: string, worn: string | null, urgent: boolean, cancel: () => boolean): Promise<void> {
+  const ids = V2_IDS.filter((id) => id !== worn);
+  for (const id of ids) {
+    if (v2Rules.get(scout)?.has(id)) {
+      put(scout, id, v2Rules.get(scout)!.get(id)!);
+      continue;
+    }
+    await idleSlot(urgent);
+    if (cancel() || liveScout !== scout) return;
+    await buildOne(scout, id);
+  }
+  // Everything is built and cached as rules: the decoded sheets are no longer needed.
+  v2Loads.delete(scout);
+}
+
+/** The print shop calls this on open: every coat preview is wanted now. */
+export function requestAllDyes(): void {
+  if (liveScout && V2_SCOUTS.has(liveScout)) void fillV2(liveScout, null, true, () => false);
 }
 
 async function cssFor(scout: string, cancel: () => boolean): Promise<void> {
@@ -111,7 +205,6 @@ async function cssFor(scout: string, cancel: () => boolean): Promise<void> {
     publish(hit);
     return;
   }
-  if (V2_SCOUTS.has(scout)) return cssForV2(scout, cancel);
   const sheets = await Promise.all(KINDS.map(async (kind) => [kind, await loadSheet(sheetUrl(scout, kind))] as const));
   if (cancel()) return;
   const lines: string[] = [];
@@ -131,12 +224,38 @@ async function cssFor(scout: string, cancel: () => boolean): Promise<void> {
 
 export function DyeSync() {
   const scout = useGame((s) => s.scout);
+  const worn = useGame((s) => s.printWorn ?? visibleCoat(s.paints.wornCoat, s.wardrobe.coat));
+  const inPlay = useGame((s) => s.screen !== "title" && s.screen !== "cities");
+  const v2 = V2_SCOUTS.has(scout);
+  // A scout change starts a fresh sheet with whatever is already built for that scout.
   useEffect(() => {
+    liveScout = scout;
+    if (!v2) return;
+    resetSheet(scout);
+    for (const [id, rule] of v2Rules.get(scout) ?? []) put(scout, id, rule);
+  }, [scout, v2]);
+  // The look being worn comes first, on its own.
+  useEffect(() => {
+    if (v2 && worn && (printById.has(worn) || V2_PALETTE[worn])) void buildOne(scout, worn);
+  }, [scout, worn, v2]);
+  // The rest follow once play has begun, in idle time.
+  useEffect(() => {
+    if (!v2 || !inPlay) return;
+    let dead = false;
+    const t = window.setTimeout(() => void fillV2(scout, worn, false, () => dead), 2500);
+    return () => {
+      dead = true;
+      window.clearTimeout(t);
+    };
+  }, [scout, worn, v2, inPlay]);
+  // Other scouts keep the old all-at-once build.
+  useEffect(() => {
+    if (v2) return;
     let dead = false;
     void cssFor(scout, () => dead);
     return () => {
       dead = true;
     };
-  }, [scout]);
+  }, [scout, v2]);
   return null;
 }

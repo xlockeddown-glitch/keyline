@@ -185,7 +185,10 @@ export default defineConfig(({ command, isPreview }) => ({
   experimental: {
     renderBuiltUrl(filename) {
       const path = filename.startsWith("/") ? filename : `/${filename}`;
-      if (path.startsWith("/assets/")) return `${path}?v=${PUBLISH_STAMP}`;
+      // 0.1.193: JS chunks keep their plain hashed URL. The ?v= copy that the preload helper added for each chunk was a
+      // second download of the same bytes (28 chunks, 467,537 B on a cold load); the plain URL is what the page runs.
+      // A missing chunk is still a no-store 404 (deploy-guard), so no stale 404 gets cached under it.
+      if (path.startsWith("/assets/") && !/\.m?js$/.test(path)) return `${path}?v=${PUBLISH_STAMP}`;
     },
   },
   plugins: [

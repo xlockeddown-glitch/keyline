@@ -501,15 +501,22 @@ test("0.1.192 cleanup: stale rate-limit rows (including keys for emails that nev
   await pg.close();
 });
 
-test("0.1.192: version 0.1.192 / k1192a everywhere", () => {
+test("0.1.192: the changelog line", () => {
+  // 0.1.193: the live version moved on; the current-version pins live in the newest slice's test (below).
   const root = new URL("../../../", import.meta.url);
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.192"/);
-  assert.match(v, /PUBLISH_STAMP = "k1192a"/);
-  assert.match(v, /\n\/\/ 0\.1\.192: Sign-in lockout step-up — [^\n]*\(k1192a\)\.\n$/);
+  assert.match(v, /\n\/\/ 0\.1\.192: Sign-in lockout step-up — [^\n]*\(k1192a\)\.\n/);
+});
+
+test("0.1.193: version 0.1.193 / k1193a everywhere", () => {
+  const root = new URL("../../../", import.meta.url);
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.193"/);
+  assert.match(v, /PUBLISH_STAMP = "k1193a"/);
+  assert.match(v, /\n\/\/ 0\.1\.193: Performance pass — [^\n]*\(k1193a\)\.\n$/);
   const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.192");
+  assert.equal(pkg.version, "0.1.193");
   const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.192");
-  assert.equal(lock.packages[""]!.version, "0.1.192");
+  assert.equal(lock.version, "0.1.193");
+  assert.equal(lock.packages[""]!.version, "0.1.193");
 });

@@ -169,6 +169,9 @@ function coatAttr(coat: string | null) {
   return coat ? ` data-coat="${coat}"` : "";
 }
 
+/** 0.1.193: the last background-position the map loop wrote to each walker. */
+const bgWritten = new WeakMap<HTMLElement, string>();
+
 function setCoat(el: HTMLElement, coat: string | null) {
   if (coat) {
     if (el.dataset.coat !== coat) el.dataset.coat = coat;
@@ -2394,9 +2397,12 @@ export function GameMap() {
       const el = (pawn?.querySelector(".scout-marker") ??
         playerMarker.current?.getElement()?.querySelector(".scout-marker")) as HTMLElement | null;
       if (el) {
-        el.dataset.scout = st.scout;
-        if (st.quests.worn) el.dataset.cloth = st.quests.worn;
-        else el.removeAttribute("data-cloth");
+        // 0.1.193: write an attribute or custom property only when its value changed. Rewriting the same value every frame
+        // still marks the element dirty, and on a phone-class CPU the style recalcs were most of the idle map's cost.
+        if (el.dataset.scout !== st.scout) el.dataset.scout = st.scout;
+        if (st.quests.worn) {
+          if (el.dataset.cloth !== st.quests.worn) el.dataset.cloth = st.quests.worn;
+        } else if (el.hasAttribute("data-cloth")) el.removeAttribute("data-cloth");
         setCoat(el, wornLook(st.paints.wornCoat, st.wardrobe.coat));
         // 0.0.83: redrawn scouts use one 8x6 sheet (8-frame strides) — same stride time, twice the frames.
         const v2 = V2_SCOUTS.has(st.scout);
@@ -2404,31 +2410,46 @@ export function GameMap() {
         const cell = v2
           ? { sheet: !moving && (row === 1 || row === 2) ? "idle-side" : moving ? "walk" : "idle", position: v2Cell(moving, row, tick).position }
           : spriteCell(moving, row, anim.current.frame);
-        if (v2) el.dataset.art = "v2";
-        else if (el.hasAttribute("data-art")) el.removeAttribute("data-art");
+        if (v2) {
+          if (el.dataset.art !== "v2") el.dataset.art = "v2";
+        } else if (el.hasAttribute("data-art")) el.removeAttribute("data-art");
         el.classList.toggle("is-idle", !moving);
         el.classList.toggle("is-side", cell.sheet === "idle-side");
         el.classList.toggle("is-seated", seated);
-        if (!seated) el.style.backgroundPosition = cell.position;
+        // (The browser re-serialises percentages, so compare with what was last written, not with what it reads back.)
+        if (!seated && bgWritten.get(el) !== cell.position) {
+          bgWritten.set(el, cell.position);
+          el.style.backgroundPosition = cell.position;
+        }
         // 0.0.81 art polish: facing, plus a step phase synced to the sheet frame, read by CSS for the bob,
         // lean, breathing and ground shadow (see "0.0.81 art polish" in styles.css).
-        el.dataset.face = faceFromYaw(pos.current.yaw);
+        const faceNow = faceFromYaw(pos.current.yaw);
+        if (el.dataset.face !== faceNow) el.dataset.face = faceNow;
         const phase = tick / 4;
         const stride = moving ? Math.abs(Math.sin(phase * Math.PI * 2)) : 0;
-        const breath = moving ? 0 : 0.5 + 0.5 * Math.sin(t / 520);
-        pawn?.style.setProperty("--step", stride.toFixed(3));
-        pawn?.style.setProperty("--breath", breath.toFixed(3));
+        // 0.1.193: breath moves in eighths (it scales the sprite by 1.2 to 2.2 per cent in all, so a step is under a fifth of a pixel).
+        const breath = moving ? 0 : Math.round((0.5 + 0.5 * Math.sin(t / 520)) * 8) / 8;
+        if (pawn) {
+          const stepTxt = stride.toFixed(3);
+          const breathTxt = breath.toFixed(3);
+          if (pawn.style.getPropertyValue("--step") !== stepTxt) pawn.style.setProperty("--step", stepTxt);
+          if (pawn.style.getPropertyValue("--breath") !== breathTxt) pawn.style.setProperty("--breath", breathTxt);
+        }
       }
       const cabEl = pawn?.querySelector(".cab-sprite") as HTMLElement | null;
       if (cabEl && seated) {
-        cabEl.dataset.face = faceFromYaw(pos.current.yaw);
+        const cabFace = faceFromYaw(pos.current.yaw);
+        if (cabEl.dataset.face !== cabFace) cabEl.dataset.face = cabFace;
         cabEl.classList.toggle("is-lamps", moving);
       }
       // 0.1.57: an open car (the Bel Air) shows the worn scout's head and shoulders above the door (styles.css .has-driver).
       const face = faceFromYaw(pos.current.yaw);
       const driver = seated && driverShows(cabEl?.dataset.car as CarId | undefined, st.scout, face);
       pawn?.classList.toggle("has-driver", driver);
-      if (driver && el) el.style.backgroundPosition = driverCell(face).position;
+      if (driver && el) {
+        bgWritten.delete(el);
+        el.style.backgroundPosition = driverCell(face).position;
+      }
       pawn?.classList.toggle("is-seated", seated);
       // Trail and pixel marks sit on the pawn. The cab sprite, data-car and data-paint are untouched.
       const fx = perksAt(mileKnown ? mileRun : 0);

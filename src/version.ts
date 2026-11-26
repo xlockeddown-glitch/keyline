@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.192";
+export const APP_VERSION = "0.1.193";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1192a";
+export const PUBLISH_STAMP = "k1193a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -293,3 +293,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.190: Vault pay sealing — a deal request can no longer raise lamp coin, loot or the topic-bonus key, and an unowned coat no longer strikes a card or refunds a spent key: awardGrade overwrites streak from this pocket's grade rows, loot from the worn coat, and today's topics from the ledger (the request's charm list is not read); a coat's strike, loot and other paid perks apply only when provePerks found that coat on the account at deal time. A linked sign-in shares the Comet claim: deal and grade sit on the canonical pocket, so a second sign-in cannot take the bonus twice (k1190a).
 // 0.1.191: Sign-in lockout is per account, not per session — five tries on one email in a minute lock that email even from a new IP or a fresh session; the existing per-IP cap still applies (and covers a request with no email); counts live in the rateLimit table from 0017, no new migration (k1191a).
 // 0.1.192: Sign-in lockout step-up — the per-account cap (0.1.191) counted tries before the password was checked, so anyone who knew an email could lock its owner out. A device the player already signed in or up from now carries a signed HttpOnly cookie (HMAC of the user id and expiry with the app secret, 90 days, bound to that one account); a sign-in with it skips the per-account cap (the per-IP cap and the password check still apply), while strangers and new devices are still held to the cap, so cross-IP guessing stays limited. The per-email key is now a hash (no address in the table, fixed length) and stale rateLimit rows are swept (idle over 2 h, at most every 10 min); no new table, no migration, nothing on screen changes (k1192a).
+// 0.1.193: Performance pass — the worn print or coat is recoloured first and the other 26 are built one at a time in idle time (or at once when the print shop opens), added to the sheet with insertRule and served as blob URLs instead of rewriting a 14 MB style tag; JS chunks no longer get a second ?v= copy (images and CSS keep it, a missing /assets file is still a no-store 404); the map loop writes attributes and custom properties only when they change and moves --breath in eighths; the title street painting is preloaded from the saved city; the unused assets/styles-*.css duplicate is left out of the output (k1193a).

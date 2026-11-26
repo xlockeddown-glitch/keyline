@@ -6,7 +6,7 @@
  * are CDN-cached for a year) and stop missing /assets/* from inheriting
  * immutable cache via the SSR HTML fallback.
  */
-import { copyFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, rmSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** Our own ceiling on .vercel/output/static (the host allows far more); see the check below. */
@@ -86,7 +86,10 @@ if (existsSync(staticDir)) {
   const cssFiles = existsSync(assetsDir)
     ? readdirSync(assetsDir).filter((f) => /^styles-.*\.css$/.test(f))
     : [];
-  if (!cssFiles.length) {
+  if (!cssFiles.length && existsSync(join(staticDir, SHEET_NAME)) && statSync(join(staticDir, SHEET_NAME)).size >= 1000) {
+    // A second run over the same output: the hashed copy was already moved to /sheet-k07d.css.
+    console.log(`[deploy-guard] css already at /${SHEET_NAME}`);
+  } else if (!cssFiles.length) {
     errors.push("missing hashed stylesheet in .vercel/output/static/assets");
   } else {
     const src = join(assetsDir, cssFiles[0]);
@@ -98,6 +101,12 @@ if (existsSync(staticDir)) {
       errors.push(`${SHEET_NAME} missing or empty after copy`);
     }
     console.log(`[deploy-guard] css ${cssFiles[0]} (${statSync(src).size}B) copied to /${SHEET_NAME}`);
+    // 0.1.193: nothing links /assets/styles-*.css (the page uses /sheet-k07d.css), so drop the 205 KB duplicate from the
+    // output. A request for it now takes the /assets miss route below: 404, no-store.
+    if (existsSync(dest) && statSync(dest).size >= 1000) {
+      for (const f of cssFiles) rmSync(join(assetsDir, f));
+      console.log(`[deploy-guard] removed unused assets/${cssFiles.join(", assets/")}`);
+    }
   }
 } else {
   errors.push("missing .vercel/output/static");

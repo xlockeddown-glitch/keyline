@@ -5,6 +5,11 @@ import { APP_VERSION, PUBLISH_STAMP, SHEET_HREF } from "@/version";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "KEYLINE";
+/** 0.1.193: the title street painting is the largest paint on the page but only appears once the app has hydrated, so
+ * the browser found it seconds late. This reads the saved city the same way TitleScreen picks the skyline and asks for
+ * the picture at once (a wrong guess costs one cached webp; the first visit gets the generic street). */
+const TITLE_STREET_PRELOAD = `try{var s=JSON.parse(localStorage.getItem("keyline-save-v1")||"null"),k="generic";if(s&&s.cities&&s.cities.start&&(s.cityId==="chicago"||s.cityId==="nyc"||s.cityId==="sf"))k=s.cityId;var l=document.createElement("link");l.rel="preload";l.as="image";l.href="/title/street-"+k+".webp";l.setAttribute("fetchpriority","high");document.head.appendChild(l)}catch(e){}`;
+
 const cssHref = import.meta.env.PROD ? `${SHEET_HREF}?v=${PUBLISH_STAMP}` : appCss;
 
 export const Route = createRootRoute({
@@ -21,6 +26,7 @@ export const Route = createRootRoute({
         content: "Walk a real city. Open vaults. Answer trivia.",
       },
     ],
+    scripts: [{ children: TITLE_STREET_PRELOAD }],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "stylesheet", href: cssHref },
