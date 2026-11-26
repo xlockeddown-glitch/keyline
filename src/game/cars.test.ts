@@ -8,6 +8,7 @@ test("0.1.8 cars: Ryan's prices and speeds, each car dearer and faster, Roadster
   assert.deepEqual(CARS.map((c) => [c.id, c.price, c.pace]), [
     ["civic", 30_000, 1.05],
     ["f150", 50_000, 1.08],
+    ["microbus", 70_000, 1.09],
     ["ioniq5", 90_000, 1.1],
     ["mustang", 150_000, 1.15],
     ["belair57", 200_000, 1.17],
@@ -90,10 +91,13 @@ test("0.1.161 painted cars: every base view ships as an RGBA webp, sides 640 px 
   const { readFileSync, existsSync } = await import("node:fs");
   const { CAR_COLORS, carSprite, factoryColor } = await import("./carPaint.ts");
   const file = (p: string) => new URL(`../../public${p}`, import.meta.url);
-  assert.equal(CARS.length, 9);
+  assert.equal(CARS.length, 10);
   // 0.1.178: the Duesenberg is an upright 1929 body, so its approved front and back cuts are narrower and a touch
   // taller than wide. Its three files are pinned to their exact sizes; every other car keeps the bounds below.
-  const UPRIGHT: Record<string, Record<string, [number, number]>> = { duesenberg: { side: [640, 258], front: [268, 275], back: [282, 285] } };
+  const UPRIGHT: Record<string, Record<string, [number, number]>> = { duesenberg: { side: [640, 258], front: [268, 275], back: [282, 285] },
+    // 0.1.179: the VW Microbus is a tall van; its three approved cuts are pinned to their exact sizes too.
+    microbus: { side: [640, 326], front: [330, 327], back: [307, 327] },
+  };
   for (const c of CARS) {
     for (const view of ["side", "front", "back"] as const) {
       const path = carSprite(c.id, view);
@@ -126,7 +130,9 @@ test("0.1.161 painted cars: the stylesheet points at the webps only and never pi
   const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
   assert.equal(/\/sprites\/cars\/[^")]*\.png/.test(css), false, "no car png left in the stylesheet");
   const urls = [...new Set(css.match(/\/sprites\/cars\/[^")]+\.webp/g) ?? [])];
-  assert.equal(urls.length, 8 * 3 * 6 + 3, "8 cars, 3 views, 6 colours, plus the factory-only Duesenberg's 3 views");
+  assert.equal(urls.length, 8 * 3 * 6 + 3 + 3, "8 cars, 3 views, 6 colours, plus the factory-only Duesenberg's and Microbus's 3 views each");
+  assert.equal(urls.filter((u) => u.includes("microbus")).length, 3, "the Microbus has no paint files");
+  assert.doesNotMatch(css, /data-car="microbus"\]\[data-paint/, "and no paint rules");
   assert.equal(urls.filter((u) => u.includes("duesenberg")).length, 3, "the Duesenberg has no paint files");
   assert.doesNotMatch(css, /data-car="duesenberg"\]\[data-paint/, "and no paint rules");
   for (const u of urls) assert.ok(existsSync(new URL(`../../public${u}`, import.meta.url)), `${u} exists`);

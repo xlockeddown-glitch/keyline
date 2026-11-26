@@ -69,7 +69,8 @@ import { WARDROBE_UPSERT } from "./wardrobeSql.ts";
 import { buildWheel, grantWheelPrize, WHEEL_EVERY } from "./wheel.ts";
 import { isPlace, surveyProven } from "./survey.ts";
 import { parseStreetId, STREET_DAY_CAP, STREET_FRESH_MS, streetSpot } from "./streetSpots.ts";
-import { MAGNET_DAY_CAP, MAGNET_GAP_MS, hasOdometer, odometerPays, roadTripPays, v2lPays } from "./carPerks.ts";
+import { ENCORE_DAY_CAP, MAGNET_DAY_CAP, MAGNET_GAP_MS, encoreLine, encorePays, hasEncore, hasOdometer, odometerPays, roadTripPays, v2lPays } from "./carPerks.ts";
+import { TIER_VALUE } from "./rewards.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
@@ -98,7 +99,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; encore?: EncoreDay; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -640,7 +641,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const until = await doubleUntil(sql, userId);
   const streak = await rememberStreak(sql, userId);
   const fresh = (await canonicalWallet(sql, userId)).wallet;
-  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId) };
+  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId), encore: await encoreOf(sql, userId) };
   return giftNotes.length ? { ...out, giftNotes } : out;
 }
 
@@ -737,6 +738,26 @@ function chicagoDay(at: unknown): string {
   return d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
 }
 
+/** 0.1.179 Encore for the HUD: today's pays and the Chicago day they belong to (the server's clock, the server's rows). */
+export type EncoreDay = { used: number; day: string };
+
+/**
+ * 0.1.179 VW Microbus Encore: how many Encore pays this account has had today. "Today" is the America/Chicago
+ * calendar day (midnight CT) for every city, on purpose, like Vehicle-to-load, the Magnet and sparks; never a
+ * city-local midnight. Read from the server's own grade rows only (those flagged `"en":1`, by their created_at).
+ * There is no wallet field, no save field and no client op behind it, so nothing a device sends can move it.
+ * `exceptNonce` leaves one grade out.
+ */
+export async function encoreOf(sql: Sql, userId: string, exceptNonce?: string): Promise<EncoreDay> {
+  const { id } = await canonicalWallet(sql, userId);
+  const day = chicagoDay(new Date());
+  const rows = await sql<{ created_at: unknown }>`
+    select created_at from wallet_ledger where user_id = ${id} and op_key like ${"grade:%"} and op_key <> ${"grade:" + (exceptNonce ?? "")}
+      and created_at >= ${new Date(Date.now() - 30 * 3600_000).toISOString()} and detail like ${'%"en":1%'}
+  `;
+  return { used: Math.min(ENCORE_DAY_CAP, rows.filter((row) => chicagoDay(row.created_at) === day).length), day };
+}
+
 /** The Odometer count a grade row carries (`"od":N` in its detail JSON), or 0. */
 function odOfDetail(detail: unknown): number {
   try {
@@ -803,8 +824,10 @@ export async function awardGrade(
   sql: Sql,
   userId: string,
   nonce: string,
-  pay: GradePay & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null },
-): Promise<Applied & { can?: Can; odometer?: number }> {
+  // `timedOut` and `struck` are server facts (triviaService.grade: the wick ran out / no answer came; a wrong option
+  // was struck when the card was dealt, sealed in the token). Neither is ever read from a request.
+  pay: GradePay & { prevNonce: string; canRoll?: [number, number]; car?: CarId | null; timedOut?: boolean; struck?: boolean },
+): Promise<Applied & { can?: Can; odometer?: number; encore?: EncoreDay }> {
   const { id } = await canonicalWallet(sql, userId);
   const prevNonce = pay.prevNonce;
   const refunded = pay.clearTier
@@ -923,10 +946,24 @@ export async function awardGrade(
       odPays = odometerPays(pay.car ?? null, odCount) && (await claimOdometer(sql, id, odCount, nonce));
     }
   }
+  // 0.1.179 VW Microbus Encore: a failed vault pays back floor(ENCORE_RATE * base) coin, ENCORE_DAY_CAP a day.
+  //  - "A failed vault" is the lit lamp above with the answer WRONG: the server graded a submitted answer wrong on
+  //    a card that spent a key, never a blitz card. A timeout (the wick ran out / no answer) is not an answer, and a
+  //    card with a struck option (the Fox's strike or Autopilot) already had its help: neither pays. A walked-away
+  //    card never reaches this write at all (its key is refunded instead), and blitz cards never call awardGrade.
+  //  - base is that vault color's BASE ladder coin, TIER_VALUE[poiTier]: the table rewardPoints starts a right
+  //    answer from, before streak, booster, hearth, market or any other modifier.
+  //  - Seat: pay.car, the car the server sealed into the deal. Nothing in the answer request can say otherwise.
+  //  - Cap: today's pays are this account's own grade rows flagged "en":1, by Chicago day (encoreOf). A pay of 0
+  //    (base below 5) pays nothing and writes no flag, so it takes no slot. No RNG, no new table.
+  //  - Same nonce again: mutateWallet replays the stored row (same award, nothing new).
+  const encoreLamp = !full.correct && pay.timedOut !== true && pay.struck !== true && full.clearTier != null && !full.poiId.startsWith("blitz-");
+  const encoreCoin = encoreLamp && hasEncore(pay.car ?? null) ? encorePays(pay.car ?? null, TIER_VALUE[full.poiTier] ?? 0, (await encoreOf(sql, userId, nonce)).used) : 0;
   let v2Paid = false;
   let rtPaid = false;
   let odSeen = false;
   let odPaid = false;
+  let enPaid = false;
   const letter = full.elapsedMs <= 3000 ? "perfect" : full.elapsedMs <= 10000 ? "great" : "good";
   const cometClear = full.correct && cometPays(full);
   // 0.1.22: a quest lamp is a right answer on a lamp that spent a match (never a spark, never a blitz card).
@@ -950,6 +987,7 @@ export async function awardGrade(
       ...(rtPaid ? { rt: 1 } : {}),
       ...(odSeen ? { od: odCount } : {}),
       ...(odPaid ? { odp: 1 } : {}),
+      ...(enPaid ? { en: 1 } : {}),
       // 0.0.98: night-market lamp, for the Night Owl title. 0.1.159: a Comet clear is never a market lamp.
       ...(full.correct && !cometClear && marketMult(full.city, full.dealtAt, { kind: "lamp", poiId: full.poiId, lat: full.lat, lng: full.lng }) > 1 ? { mk: 1 } : {}),
       // 0.1.159: a Comet vault clear that paid the comet bonus, for later quests and titles.
@@ -1018,7 +1056,19 @@ export async function awardGrade(
     else rtPaid = true;
     return withMile({ ok: true, wallet: extra.wallet, award: v2Award, detail: detailOf(v2Award) });
   };
+  // 0.1.179 Encore: add the pay-back coin to a miss's result (whatever else that miss did: nothing, or a Shell key
+  // back) and flag the row. With no Encore due this returns its argument untouched, so every other miss is as before.
+  const withEncore = (res: OpResult & { detail?: string }): OpResult & { detail?: string } => {
+    if (!encoreCoin || !res.ok || !res.wallet.migrated) return res;
+    const extra = applyDelta(res.wallet, { coins: encoreCoin, keys: {} });
+    if (!extra.ok) return res;
+    const award = res.award ?? { coins: 0, keys: {}, boosts: [] };
+    const enAward = { ...award, coins: award.coins + encoreCoin, boosts: [...award.boosts, encoreLine(encoreCoin)] };
+    enPaid = true;
+    return { ok: true, wallet: extra.wallet, award: enAward, detail: detailOf(enAward) };
+  };
   let r = await mutateWallet(sql, userId, `grade:${nonce}`, (w) => {
+    enPaid = false;
     matchLost = false;
     v2Paid = false;
     rtPaid = false;
@@ -1054,10 +1104,10 @@ export async function awardGrade(
       if (back.ok) {
         matchLost = false;
         const award = { coins: p.coin, keys: k, boosts: p.up ? ["Shell: key back ↑"] : ["Shell: key back"] };
-        return withMile({ ok: true, wallet: back.wallet, award, detail: detailOf(award) });
+        return withMile(withEncore({ ok: true, wallet: back.wallet, award, detail: detailOf(award) }));
       }
     }
-    if (!base.migrated || !full.correct) return withMile({ ok: true, wallet: base, award: grant.award, detail });
+    if (!base.migrated || !full.correct) return withMile(withEncore({ ok: true, wallet: base, award: grant.award, detail }));
     if (streakTier && grant.ok) {
       // 0.0.98: a level boost (15 min, spent from a token) doubles the streak pay.
       const doubled = grant.wallet.meta.boostUntil > Date.now();
@@ -1109,7 +1159,8 @@ export async function awardGrade(
   }
   // 0.1.178: the Odometer count this grade row holds (a replay reads the stored row), for the HUD's plain text.
   const odRow = r.ok ? odOfDetail(r.detail) : 0;
-  const odo = odRow ? { odometer: odRow } : {};
+  // 0.1.179: after a failed vault in the Microbus, today's Encore count (this row included) for the HUD's plain text.
+  const odo = { ...(odRow ? { odometer: odRow } : {}), ...(r.ok && encoreLamp && hasEncore(pay.car ?? null) ? { encore: await encoreOf(sql, userId) } : {}) };
   // 0.1.9: a right answer on an amber / red vault sometimes turns up a paint can.
   const odds = full.clearTier === "amber" ? CAN_ODDS.amber : full.clearTier === "red" ? CAN_ODDS.red : 0;
   // 0.1.117: a Double/Triple Hearth rolls its can on the last question only (like a ladder's last card).

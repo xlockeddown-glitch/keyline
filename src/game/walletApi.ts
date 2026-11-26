@@ -182,6 +182,8 @@ export type SyncWire = {
   streakLord?: boolean;
   /** 0.1.178: Duesenberg Odometer, the server's lifetime count of vaults opened in that car (ledger grade rows). */
   odometer?: number;
+  /** 0.1.179: VW Microbus Encore pays used today (ledger grade rows flagged "en":1) and the Chicago day they are for. */
+  encore?: { used: number; day: string };
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
@@ -218,6 +220,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       streakRun: r.view.streakRun ?? r.streakRun ?? 0,
       streakLord: r.view.streakLord === true || r.streakLord === true,
       odometer: r.odometer ?? 0,
+      ...(r.encore ? { encore: r.encore } : {}),
     };
   });
 

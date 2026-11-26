@@ -115,6 +115,8 @@ type TokenBody = {
     cr?: string;
     /** 0.1.45: 1 when the server found the worn coat among the account's scouts (its favorite category counts). */
     fs?: 1;
+    /** 0.1.179: 1 when the server struck a wrong option on this card (the Fox's strike or Autopilot). */
+    st?: 1;
   };
 };
 
@@ -459,6 +461,16 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     const subject = viewer.userId ? `u:${viewer.userId}` : "g";
     if (prev && prev.s === subject) pv = prev.n;
   }
+  // 0.0.96 Fox: the server strikes one wrong option on red/violet lamps (never the answer).
+  // 0.1.51 Model 3 Autopilot: 1 in 10 lamp questions (rolled from the nonce) lose one wrong option, never on top of the Fox's.
+  // 0.1.158: never on a True/False or Closest Number card.
+  // 0.1.179: decided before the token is sealed, so the token can say a strike happened (`st`): a miss on a struck
+  // card is not an Encore fail.
+  const struck =
+    fq || input.spark
+      ? null
+      : (strikeOption(scout, (plate as TriviaQ).rarity, (plate as TriviaQ).choices, (plate as TriviaQ).answer, (deps.rand ?? Math.random)(), (plate as TriviaQ).kind) ??
+        autopilotStrike(proven.car ?? null, nonce, (plate as TriviaQ).choices, (plate as TriviaQ).answer, (plate as TriviaQ).kind));
   const token = sealToken(deps.secret, {
     v: TOKEN_VERSION,
     c: pub,
@@ -491,11 +503,9 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
       ...(scout ? { sc: scout } : {}),
       ...(proven.car ? { cr: proven.car } : {}),
       ...(scout && proven.scout === scout ? { fs: 1 as const } : {}),
+      ...(struck ? { st: 1 as const } : {}),
     },
   });
-  // 0.0.96 Fox: the server strikes one wrong option on red/violet lamps (never the answer).
-  // 0.1.51 Model 3 Autopilot: 1 in 10 lamp questions (rolled from the nonce) lose one wrong option, never on top of the Fox's.
-  // 0.1.158: never on a True/False or Closest Number card.
   if (fq) {
     const card =
       fq.kind === "tf"
@@ -506,9 +516,6 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     return { ok: true, token, windowMs, card };
   }
   const four = plate as TriviaQ;
-  const struck = input.spark
-    ? null
-    : (strikeOption(scout, four.rarity, four.choices, four.answer, (deps.rand ?? Math.random)(), four.kind) ?? autopilotStrike(proven.car ?? null, nonce, four.choices, four.answer, four.kind));
   return {
     ok: true,
     token,
@@ -681,6 +688,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
   let wallet: ServerWallet | undefined;
   let award: ServerAward | undefined;
   let can: { car: string; color: string } | undefined;
+  let encore: { used: number; day: string } | undefined;
   let odometer: number | undefined;
   // 0.1.159: a right Comet answer claims this window's `ev:<id>` row. If another token already claimed it (two cards
   // dealt before either was graded), this one pays as an ordinary green vault: the comet bonus is paid once.
@@ -737,6 +745,10 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         random: x?.rn === 1,
         favs: perkFavs(scoutOf(x?.sc), x?.fs === 1, isCarId(x?.cr) ? x.cr : null),
         car: isCarId(x?.cr) ? x.cr : null,
+        // 0.1.179 Encore: the server's own facts about this grade (its clock and its sealed token), never the request's.
+        // A choice that arrived past the window (by either clock) is a timeout too, not a wrong answer.
+        timedOut: timedOut || elapsedMs > t.w + LATE_GRACE_MS,
+        struck: x?.st === 1,
         canRoll: [rand(), rand()],
       });
       if (awarded.authoritative) {
@@ -744,6 +756,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
         award = awarded.award;
         can = awarded.can;
         odometer = awarded.odometer;
+        encore = awarded.encore;
       }
       // 0.1.173: a replayed order grade reports what the first grade paid: the stored row says exact or swap.
       if (orderCard && correct && awarded.replay && awarded.detail) {
@@ -771,6 +784,7 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
     ...(wallet ? { wallet, ...(award ? { award } : {}) } : {}),
     ...(can ? { can } : {}),
     ...(odometer ? { odometer } : {}),
+    ...(encore ? { encore } : {}),
     // 0.1.173: `result` is the one half-coin signal. `coins` is the server wallet's award (stored value on a replay);
     // 0 when the server paid nothing here (a guest pays locally from `result`, see store settleAnswer).
     ...(orderCard ? { order: { result: ordered ?? "miss", labels: orderLabels(orderCard), coins: award?.coins ?? 0 } } : {}),

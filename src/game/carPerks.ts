@@ -21,11 +21,16 @@ export const DRIVE_PING_MS = 60_000;
 export const V2L_DAY_CAP = 20;
 /** 0.1.178 Duesenberg Odometer: every this-many-th vault opened while seated in it pays +1 amber key (lifetime count, no RNG). */
 export const ODOMETER_EVERY = 25;
-export type CarPerk = { label: string; odometer?: number; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number; roadTrip?: boolean };
+/** 0.1.179 VW Microbus Encore: a failed vault pays back this share of that vault color's base ladder coin (TIER_VALUE), rounded down. */
+export const ENCORE_RATE = 0.2;
+/** Encore pays at most this many times a day per player (America/Chicago calendar day, for every city). */
+export const ENCORE_DAY_CAP = 20;
+export type CarPerk = { label: string; encore?: number; odometer?: number; vaultMs?: number; reach?: number; cool?: number; refund?: number; magnet?: boolean; v2l?: number; autopilot?: number; roadTrip?: boolean };
 
 export const CAR_PERKS: Record<CarId, CarPerk> = {
   civic: { label: "Glovebox · +1 s on vault timers", vaultMs: 1000 },
   f150: { label: "Truck bed · 1.5× key pickup reach", reach: 1.5 },
+  microbus: { label: `Encore · a failed vault pays back ${Math.round(ENCORE_RATE * 100)}% of its base coin (${ENCORE_DAY_CAP} a day)`, encore: ENCORE_RATE },
   ioniq5: { label: `Vehicle-to-load · each vault opened pays +1 white key, ${V2L_DAY_CAP} a day`, v2l: 1 },
   mustang: { label: "Quick stop · vault rests 15% shorter", cool: 0.85 },
   belair57: { label: "Road trip · the first vault you open in each city each day pays +1 white key", roadTrip: true },
@@ -37,7 +42,7 @@ export const CAR_PERKS: Record<CarId, CarPerk> = {
 
 export const hasMagnet = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].magnet);
 
-export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", ioniq5: "arts", mustang: "sports",
+export const CAR_FAV: Record<CarId, TriviaCat> = { civic: "local", f150: "nature", microbus: "music", ioniq5: "arts", mustang: "sports",
   belair57: "geography",
   model3: "math", roadster: "science", duesenberg: "history", roadster2: "games" };
 export const SCOUT_FAV: Record<ScoutId, FieldPick> = {
@@ -175,6 +180,41 @@ export function odometerText(count: number): string {
   const n = Math.max(0, Math.floor(count) || 0);
   return `Odometer ${n % ODOMETER_EVERY}/${ODOMETER_EVERY}`;
 }
+
+/** 0.1.179 VW Microbus Encore: does a car carry the perk at all (only a fail graded while seated in it pays)? */
+export const hasEncore = (car: CarId | null | undefined) => Boolean(car && CAR_PERKS[car].encore);
+
+/**
+ * 0.1.179 VW Microbus Encore: the coin a failed vault pays back. `base` is that vault color's BASE ladder coin
+ * (rewards.TIER_VALUE: no streak, booster, hearth, market, car-pace or any other modifier) and `usedToday` is the
+ * server's count of Encore pays already made this Chicago day. Pay = Math.floor(ENCORE_RATE * base), an integer.
+ * 0 when not seated in the Microbus, when the day's ENCORE_DAY_CAP is used up, or when the floor is 0 (base below
+ * 5): a 0 pays nothing and takes no daily slot. No roll.
+ */
+export function encorePays(car: CarId | null | undefined, base: number, usedToday: number): number {
+  const rate = car ? CAR_PERKS[car].encore : undefined;
+  if (!rate || !Number.isFinite(base) || base <= 0) return 0;
+  if (!Number.isInteger(usedToday) || usedToday < 0 || usedToday >= ENCORE_DAY_CAP) return 0;
+  // Integer math (rate is a whole percent), so 0.2 * 15 can never land on 2.9999.
+  return Math.max(0, Math.floor((Math.round(rate * 100) * Math.floor(base)) / 100));
+}
+
+/** "Encore 3/20" for the HUD and the showroom: today's pays out of the daily cap, from the server's count. */
+export function encoreText(usedToday: number): string {
+  const n = Math.min(ENCORE_DAY_CAP, Math.max(0, Math.floor(usedToday) || 0));
+  return `Encore ${n}/${ENCORE_DAY_CAP}`;
+}
+
+/**
+ * The server's Encore count as it stands at `nowMs`: its `used` while its Chicago day is still today, 0 once that
+ * day has passed (the cap has reset; the next sync or grade reply brings the new day's count). Display only.
+ */
+export function encoreToday(e: { used: number; day: string } | null | undefined, nowMs: number): number {
+  return e && e.day === chicagoDay(nowMs) ? e.used : 0;
+}
+
+/** The boost line a paid Encore puts on the miss result. */
+export const encoreLine = (coin: number) => `Encore +${coin} coin`;
 
 /** Favorite categories that count on a lamp: the worn coat's (when proven) and the seated car's. */
 export function perkFavs(scout: ScoutId | null, scoutProven: boolean, car: CarId | null): FieldPick[] {

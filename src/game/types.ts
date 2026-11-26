@@ -207,6 +207,8 @@ export type MissFlash = {
   order?: OrderReveal;
   /** 0.1.107: the vault locked out for this long (ms) after the wrong answer. */
   lockMs?: number;
+  /** 0.1.179 VW Microbus Encore: the server's pay-back line for this miss ("Encore +54 coin"). Absent: nothing paid. */
+  encore?: string;
 };
 
 export type Screen = "title" | "cities" | "play" | "loop" | "flight";

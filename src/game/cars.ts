@@ -8,13 +8,15 @@
  */
 import type { CityId } from "./types";
 
-export type CarId = "civic" | "f150" | "ioniq5" | "mustang" | "belair57" | "model3" | "roadster" | "duesenberg" | "roadster2";
+export type CarId = "civic" | "f150" | "microbus" | "ioniq5" | "mustang" | "belair57" | "model3" | "roadster" | "duesenberg" | "roadster2";
 
 export type Car = { id: CarId; name: string; year: string; blurb: string; price: number; pace: number; star?: boolean };
 
 export const CARS: readonly Car[] = [
   { id: "civic", name: "Used Honda Civic Hatchback", year: "2017", blurb: "Dented, reliable, always starts.", price: 30_000, pace: 1.05 },
   { id: "f150", name: "Ford F-150", year: "2026", blurb: "A pickup with room for the crates.", price: 50_000, pace: 1.08 },
+  // 0.1.179: pace is a multiplier on the city cab's speed (cabSpeed) while seated; 1.00 = the city cab, so 1.09 = 9% faster than the city cab (carBoost shows "+9%"). NOT relative to the previous best car.
+  { id: "microbus", name: "VW Microbus", year: "1967", blurb: "Teal and white, whitewalls, room for everyone.", price: 70_000, pace: 1.09 },
   { id: "ioniq5", name: "Hyundai Ioniq 5", year: "2025", blurb: "Pixel lights, and it powers the lamps.", price: 90_000, pace: 1.1 },
   { id: "mustang", name: "Shelby GT500", year: "2020", blurb: "760 hp, silver, striped.", price: 150_000, pace: 1.15 },
   { id: "belair57", name: "Chevrolet Bel Air Convertible", year: "1957", blurb: "Top down, tank full, nowhere to be.", price: 200_000, pace: 1.17 },

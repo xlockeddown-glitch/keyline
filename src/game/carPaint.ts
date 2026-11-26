@@ -27,6 +27,9 @@ export const CAR_COLORS: Record<CarId, readonly PaintColor[]> = {
     { id: "blue", name: "Antimatter Blue", hex: "#1d2c4f" },
     { id: "sig", name: "Atlas Blue", hex: "#2e5f9a" },
   ],
+  // 0.1.179: the VW Microbus ships in its factory teal-and-white 3-view only (like the Duesenberg): no colours, so
+  // no can rolls for it, the paint op refuses it, and the showroom offers no repaint.
+  microbus: [],
   ioniq5: [
     { id: "white", name: "Atlas White", hex: "#eeeeea" },
     { id: "black", name: "Abyss Black Pearl", hex: "#1a1c22" },

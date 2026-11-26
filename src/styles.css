@@ -3311,6 +3311,12 @@ h3 {
 .cab-sprite[data-car="duesenberg"][data-face="down"] { background-image: url("/sprites/cars/duesenberg-front.webp"); }
 .cab-sprite[data-car="duesenberg"][data-face="up"] { background-image: url("/sprites/cars/duesenberg-back.webp"); }
 .cab-sprite[data-car="duesenberg"][data-face="left"], .cab-sprite[data-car="duesenberg"][data-face="right"] { background-image: url("/sprites/cars/duesenberg-side.webp"); }
+/* 0.1.179 VW Microbus: factory 3-view only, so no data-paint rules. Its side is 640x326 (a tall van: contain fills the
+   56px box width at 56x28.5, wheels on the box floor) and its front and back are 330x327 / 307x327 (40px wide by the
+   shared rule below: 39.6px and 42.6px tall, inside the 56px box). */
+.cab-sprite[data-car="microbus"][data-face="down"] { background-image: url("/sprites/cars/microbus-front.webp"); }
+.cab-sprite[data-car="microbus"][data-face="up"] { background-image: url("/sprites/cars/microbus-back.webp"); }
+.cab-sprite[data-car="microbus"][data-face="left"], .cab-sprite[data-car="microbus"][data-face="right"] { background-image: url("/sprites/cars/microbus-side.webp"); }
 /* 0.1.9 car paint: recolours from scripts/art/cars-paint.py (side mirrored for left, as above). */
 .cab-sprite[data-car="civic"][data-paint="black"][data-face="down"] { background-image: url("/sprites/cars/paint/civic-black-front.webp"); }
 .cab-sprite[data-car="civic"][data-paint="black"][data-face="up"] { background-image: url("/sprites/cars/paint/civic-black-back.webp"); }

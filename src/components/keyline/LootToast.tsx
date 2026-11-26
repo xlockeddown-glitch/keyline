@@ -77,6 +77,11 @@ export function LootToast() {
                   <p className="mt-1 text-base font-medium text-pretty">{miss!.answer}</p>
                 )}
                 {miss!.fact ? <p className="mt-2 text-xs text-fg-subtle text-pretty">{miss!.fact}</p> : null}
+                {miss!.encore ? (
+                  <p className="mt-2 text-sm font-medium tabular-nums" data-testid="miss-encore">
+                    {miss!.encore}
+                  </p>
+                ) : null}
               </>
             )}
           </button>

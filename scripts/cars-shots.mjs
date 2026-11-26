@@ -12,7 +12,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 const [base = "http://127.0.0.1:8093", out = "shots/cars"] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
 const CITY = process.env.CARS_CITY ?? "austin";
-const CARS = ["civic", "f150", "ioniq5", "mustang", "belair57", "model3", "roadster", "duesenberg", "roadster2"];
+const CARS = ["civic", "f150", "microbus", "ioniq5", "mustang", "belair57", "model3", "roadster", "duesenberg", "roadster2"];
 const errors = [];
 const notes = { faces: {}, boxes: {} };
 

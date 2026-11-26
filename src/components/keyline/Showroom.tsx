@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CAR_FAV, CAR_PERKS, CAT_LABEL, FAV_BONUS, FAV_BOTH, hasOdometer, odometerText } from "@/game/carPerks";
+import { CAR_FAV, CAR_PERKS, CAT_LABEL, FAV_BONUS, FAV_BOTH, encoreText, encoreToday, hasEncore, hasOdometer, odometerText } from "@/game/carPerks";
 import { X } from "lucide-react";
 import { CAR_COLORS, carSprite, factoryColor, paintPrice, paintable } from "@/game/carPaint";
 import { CARS, carBoost, dealerOf } from "@/game/cars";
@@ -22,6 +22,7 @@ export function Showroom() {
   const paint = useGame((s) => s.carPaint);
   const paintCar = useGame((s) => s.paintCar);
   const odometer = useGame((s) => s.odometer);
+  const encore = useGame((s) => s.encore);
   const [painting, setPainting] = useState<string | null>(null);
   useSheetOpen(open);
   if (!open) return null;
@@ -68,6 +69,11 @@ export function Showroom() {
                       {mine && hasOdometer(c.id) && odometer != null ? (
                         <p className="text-sm tabular-nums text-fg-muted" data-testid={`car-odometer-${c.id}`}>
                           {odometerText(odometer)}
+                        </p>
+                      ) : null}
+                      {mine && hasEncore(c.id) && encore != null ? (
+                        <p className="text-sm tabular-nums text-fg-muted" data-testid={`car-encore-${c.id}`}>
+                          {encoreText(encoreToday(encore, Date.now()))}
                         </p>
                       ) : null}
                     </div>

@@ -71,7 +71,7 @@ test("data: Duesenberg Model J — 1,000,000 coin, pace 1.25 (+25%), History fav
   // Factory 3-view only: no colours, so no can and no repaint.
   assert.deepEqual(CAR_COLORS.duesenberg, []);
   assert.equal(paintable(DUES), false);
-  for (const c of CARS) if (c.id !== DUES) assert.equal(paintable(c.id), true, c.id);
+  for (const c of CARS) if (c.id !== DUES && c.id !== "microbus") assert.equal(paintable(c.id), true, c.id);
   assert.equal(factoryColor(DUES), "");
   assert.equal(colorOf(DUES, "red"), null);
   assert.equal(parseCan("duesenberg:red"), null);

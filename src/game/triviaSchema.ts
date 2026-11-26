@@ -127,6 +127,8 @@ export type GradeResult =
       can?: { car: string; color: string };
       /** 0.1.178: Duesenberg Odometer count after this grade (server ledger). Only on a vault that counted. */
       odometer?: number;
+      /** 0.1.179: VW Microbus Encore pays used today (server ledger, Chicago day). Only after a failed vault seated in it. */
+      encore?: { used: number; day: string };
       /** True when this token had already been graded: the first result stands and nothing is credited. */
       replay: boolean;
       /** 0.1.107: a wrong answer at a keyed vault locks it this long (ms). Absent when nothing locks. */

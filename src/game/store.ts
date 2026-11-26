@@ -243,6 +243,9 @@ export type GameState = {
   /** 0.1.178: Duesenberg Odometer count from the server (sync and grade replies). Not written into the save, never
    *  counted on the device. Null until this session syncs (guests: the perk is server-paid, so no count). */
   odometer: number | null;
+  /** 0.1.179: VW Microbus Encore pays used today and the Chicago day they are for, from the server (sync and grade
+   *  replies). Not written into the save, never counted on the device. Null until this session syncs. */
+  encore: { used: number; day: string } | null;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
   matchPop: MatchPop | null;
   /** 0.0.96 Tabby (Nine lives): Chicago day the first miss was forgiven. */
@@ -1082,6 +1085,10 @@ function applyServerGrade(
   const loot = st.loot;
   st.adoptWallet(wallet);
   if (typeof wallet.streakRun === "number") useGame.setState({ serverStreak: wallet.streakRun, streakLord: wallet.streakLord === true });
+  // 0.1.179 Encore: the server's pay-back line rides on the miss result. Only that line: every other miss is as before.
+  const encoreNote = award?.boosts.find((b) => b.startsWith("Encore +"));
+  const missNow = useGame.getState().miss;
+  if (encoreNote && missNow) useGame.setState({ miss: { ...missNow, encore: encoreNote } });
   if (award && loot && useGame.getState().loot) {
     const amber = (award.keys.amber ?? 0) + (contractDone ? 1 : 0);
     const keys = { ...award.keys };
@@ -1190,6 +1197,7 @@ function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, 
       if (res.wallet) applyServerGrade(res.wallet, res.award, surveyBefore, goalsBefore, contractBefore);
       if (res.can) gotCan(res.can);
       if (typeof res.odometer === "number") useGame.setState({ odometer: Math.max(useGame.getState().odometer ?? 0, res.odometer) });
+      if (res.encore) useGame.setState({ encore: res.encore });
     })
     .catch(() => lost());
 }
@@ -1242,6 +1250,7 @@ export const useGame = create<GameState>((set, get) => ({
   serverStreak: null,
   streakLord: false,
   odometer: null,
+  encore: null,
   matchPop: null,
   shieldDay: saved?.shieldDay ?? "",
   bestStreak: saved?.bestStreak ?? 0,

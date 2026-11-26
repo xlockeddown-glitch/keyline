@@ -8,7 +8,7 @@ import { CREDIT_CALM_MS, Calm } from "@/game/calm";
 import { LevelHudBadge } from "./Levels";
 import { livePois } from "@/game/nightMarket";
 import { dealerOf } from "@/game/cars";
-import { hasOdometer, odometerText } from "@/game/carPerks";
+import { encoreToday, encoreText, hasEncore, hasOdometer, odometerText } from "@/game/carPerks";
 import { houseOf, lotOf } from "@/game/houses";
 import { CITIES, KIND_LABEL, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop } from "@/game/data";
 import { TIERS } from "@/game/items";
@@ -69,6 +69,7 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const streak = useGame((s) => s.streak);
   const serverStreak = useGame((s) => s.serverStreak);
   const odometer = useGame((s) => s.odometer);
+  const encore = useGame((s) => s.encore);
   const streakLord = useGame((s) => s.streakLord);
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
@@ -283,6 +284,12 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             {hud.seated && hasOdometer(carOn) && odometer != null ? (
               <span className="odo-chip tabular-nums" data-testid="hud-odometer">
                 {odometerText(odometer)}
+              </span>
+            ) : null}
+            {/* 0.1.179 VW Microbus Encore: the same plain text line (never on the sprite); today's count is the server's. */}
+            {hud.seated && hasEncore(carOn) && encore != null ? (
+              <span className="odo-chip tabular-nums" data-testid="hud-encore">
+                {encoreText(encoreToday(encore, Date.now()))}
               </span>
             ) : null}
             <div className="hud-tool-row">
