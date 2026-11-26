@@ -1,0 +1,56 @@
+{
+ "image": {
+  "w": 1571,
+  "h": 1612
+ },
+ "anchors": [
+  {
+   "name": "Philadelphia City Hall",
+   "osm": "r4720912",
+   "lat": 39.952401,
+   "lng": -75.163593,
+   "px": 801.51,
+   "py": 763.4,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Rittenhouse Square",
+   "osm": "w32122312",
+   "lat": 39.949479,
+   "lng": -75.171888,
+   "px": 608.28,
+   "py": 852.24,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Washington Square",
+   "osm": "w705317585",
+   "lat": 39.947047,
+   "lng": -75.152317,
+   "px": 1064.18,
+   "py": 926.18,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Logan Square",
+   "osm": "r21281848",
+   "lat": 39.958164,
+   "lng": -75.170541,
+   "px": 638.64,
+   "py": 590.21,
+   "shift_img_px": [
+    -1,
+    2
+   ]
+  }
+ ]
+}
