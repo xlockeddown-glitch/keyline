@@ -580,16 +580,10 @@ test("a bundled city served already decoded (Content-Encoding: gzip) passes on t
   }
 });
 
-test("0.1.189: version 0.1.189 / k1189a everywhere, and Austin's overlay is the only new pin", () => {
+test("0.1.189: the changelog line, and Austin's overlay is the only new pin", () => {
+  // 0.1.190: the live version moved on; the current-version pins live in the newest slice's test (wallet.test.ts).
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.189"/);
-  assert.match(v, /PUBLISH_STAMP = "k1189a"/);
-  assert.match(v, /\n\/\/ 0\.1\.189: Austin city map — [^\n]*\(k1189a\)\.\n$/);
-  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.189");
-  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.189");
-  assert.equal(lock.packages[""]!.version, "0.1.189");
+  assert.match(v, /\n\/\/ 0\.1\.189: Austin city map — [^\n]*\(k1189a\)\.\n/);
   // Austin's graph is still the bundled file and still pinned; only the overlay changed.
   assert.equal(manifest.cities.austin!.file, "austin.ff665e2015.json.gz");
   assert.equal(manifest.cities.austin!.origin, "local");

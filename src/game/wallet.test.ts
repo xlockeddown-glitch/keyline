@@ -1498,3 +1498,43 @@ test("0.1.159 Comet: ×1.5 vault coin and a blue key only when the sealed deal t
   // A wrong answer pays nothing either way.
   assert.equal(gradeGrant(emptyWallet(), pay({ ...base, correct: false, dealtAt: cometStart(city, w) + 1 })).award?.coins, 0);
 });
+
+test("a deal request cannot raise lamp coin, loot, or the topic-bonus key", async () => {
+  const sql = await db();
+  const cities = { ...freshUnlocks(), start: "austin" as const, unlocked: ["austin"] as const, freePick: false };
+  await syncPlayer(sql, "honest", snap({ cities }), "honest-phone");
+  await syncPlayer(sql, "forged", snap({ cities }), "forged-phone");
+  const topic = "science" as const;
+  const dealtAt = Date.now();
+  const honest = await awardGrade(sql, "honest", "h1", { ...pay({ topic, dealtAt }), prevNonce: "" });
+  const forged = await awardGrade(sql, "forged", "f1", {
+    ...pay({ topic, dealtAt, streak: 80, loot: 1.1, charmDay: "", charmTopics: [] }),
+    prevNonce: "",
+  });
+  assert.equal(forged.award?.coins, honest.award?.coins, "streak 80 and loot 1.1 do not add coin");
+  assert.ok((forged.award?.coins ?? 0) < rewardPoints("blue", { mult: 1, bonus: 1.4, diffMult: 1, loot: 1.1 }));
+  assert.equal(forged.wallet.keys.white, honest.wallet.keys.white);
+  assert.ok(forged.award?.boosts.includes("Topic bonus"), "the first science answer of the day still pays");
+  assert.ok(!forged.award?.boosts.includes("Streak spark"), "streak 80 is not a run of 3");
+  const again = await awardGrade(sql, "forged", "f2", {
+    ...pay({ topic, dealtAt, streak: 80, loot: 1.1, charmDay: "", charmTopics: [] }),
+    prevNonce: "",
+  });
+  assert.equal(again.wallet.keys.white, forged.wallet.keys.white, "an empty charm list does not pay the topic key again");
+  assert.ok(!again.award?.boosts.includes("Topic bonus"));
+  assert.ok(!again.award?.boosts.includes("Streak spark"));
+  assert.equal(again.award?.coins, rewardPoints("blue", { mult: 1, bonus: 1.1, diffMult: 1, loot: 1 }), "one prior right is a 10% run, not 40%");
+});
+
+test("0.1.190: version 0.1.190 / k1190a everywhere", () => {
+  const root = new URL("../../", import.meta.url);
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.190"/);
+  assert.match(v, /PUBLISH_STAMP = "k1190a"/);
+  assert.match(v, /\n\/\/ 0\.1\.190: Vault pay sealing — [^\n]*\(k1190a\)\.\n$/);
+  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
+  assert.equal(pkg.version, "0.1.190");
+  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
+  assert.equal(lock.version, "0.1.190");
+  assert.equal(lock.packages[""]!.version, "0.1.190");
+});

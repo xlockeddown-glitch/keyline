@@ -670,7 +670,10 @@ export type GradePay = {
   poiId: string;
   lat: number;
   lng: number;
-  /** Streak before this answer. The +40% lamp bonus still reads this. Milestone perks do not. */
+  /**
+   * Streak before this answer. `awardGrade` overwrites this from the account's grade rows.
+   * A number on the deal request is ignored. Milestone perks read `serverRun`.
+   */
   streak: number;
   /**
    * 0.1.133: answer-streak length after this grade, counted by the server from its own grade rows.

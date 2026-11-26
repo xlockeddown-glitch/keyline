@@ -383,6 +383,9 @@ test("0.1.159 Comet vault: server clock + baked spot only, once per window, a re
   assert.equal(twinG.award?.keys.blue ?? 0, 0, "no second blue key");
   // A fresh deal (a reload, another device) after the clear is refused for the rest of the window.
   assert.deepEqual(await dealFor(d, { userId: "ann" }, comet()), { ok: false, reason: "comet-done" });
+  // A second sign-in linked to the same pocket shares that claim. The bonus was already paid into it.
+  await sql`insert into player_links (alias_id, primary_id, how) values ('ann-alias', 'ann', 'code')`;
+  assert.deepEqual(await dealFor(d, { userId: "ann-alias" }, comet()), { ok: false, reason: "comet-done" }, "a linked sign-in does not take the comet again");
   // The next window is a new comet.
   clock.t = cometStart(city, w + 1) + 60_000;
   const next = await dealFor(d, { userId: "ann" }, dealIn({ poiId: cometId(city, w + 1) }));
@@ -558,6 +561,52 @@ test("0.1.158: a wrong Closest Number answer locks the vault and a replay keeps 
   assert.ok(miss.ok && !miss.correct && miss.lockoutMs && miss.lockoutMs > 0);
   const again = await grade(d, { userId: "ann" }, { token: r.token, choice: null, clientMs: 2900, guess: 16254 });
   assert.ok(again.ok && again.replay && !again.correct, "learning the value and re-sending doesn't flip the grade");
+});
+
+test("an unowned coat does not strike a card or refund a spent key", async () => {
+  const { syncPlayer } = await import("./walletApply.ts");
+  const { freshUnlocks } = await import("./cityPass.ts");
+  const { lampGiftClock, welcomeClock } = await import("./lampGift.ts");
+  const { thanksClock } = await import("./thanksGift.ts");
+  welcomeClock.cutoff = "2999-01-01T00:00:00Z";
+  lampGiftClock.cutoff = "2000-01-01T00:00:00Z";
+  thanksClock.cutoff = "2000-01-01T00:00:00Z";
+  const sql = await db(["0013_trivia_recent.sql"]);
+  const clock = { t: 5_000_000 };
+  const red: TriviaQ = {
+    q: "Which river runs through Austin at dusk?",
+    choices: ["Colorado", "Brazos", "Pecos", "Trinity"],
+    answer: "Colorado",
+    diff: 3,
+    id: "red-dusk",
+    rarity: "red",
+  };
+  const lamp: Poi = { ...LAMP, id: "red-lamp", tier: "red" };
+  const d = depsAt(clock, sql);
+  d.rand = () => 0;
+  d.pick = () => red;
+  d.card = (id) => (id === red.id || id === publicCardId(red) ? red : null);
+  d.namedPoi = (_c, id) => (id === lamp.id ? lamp : null);
+  const pay = { streak: 0, loot: 1.1, lucky: false, cloth: null, charmDay: "", charmTopics: [] as ("history" | "science")[], lat: lamp.lat, lng: lamp.lng, scout: "fox" as const };
+  const bare = deal(d, { userId: "ann" }, dealIn({ poiId: lamp.id, pay }), [], {});
+  assert.ok(bare.ok);
+  if (!bare.ok) return;
+  assert.equal(bare.card.struck, undefined, "the Fox's strike needs the coat");
+  assert.equal(openToken("test-secret", bare.token)?.x?.sc, undefined, "an unowned coat is not sealed");
+  const owned = deal(d, { userId: "ann" }, dealIn({ poiId: lamp.id, pay }), [], { scout: "fox" });
+  assert.ok(owned.ok && typeof owned.card.struck === "string", "a proven Fox still strikes one wrong option");
+
+  await syncPlayer(sql, "ann", { coins: 0, keys: { red: 1 }, cities: { ...freshUnlocks(), start: "austin", unlocked: ["austin"] } }, "annphone1");
+  const dealt = await dealFor(d, { userId: "ann" }, dealIn({ poiId: lamp.id, pay: { ...pay, scout: "turtle" as const } }));
+  assert.ok(dealt.ok && dealt.wallet, "dealt, and the red key left the server pocket");
+  if (!dealt.ok || !dealt.wallet) return;
+  assert.equal(dealt.wallet.keys.red, 0, "the red key is spent on the deal");
+  clock.t += 2000;
+  const miss = await grade(d, { userId: "ann" }, { token: dealt.token, choice: "nope", clientMs: 1500 });
+  assert.ok(miss.ok && !miss.correct);
+  if (!miss.ok) return;
+  assert.equal(miss.wallet?.keys.red ?? 0, 0, "Plate's key refund needs the coat");
+  assert.equal(miss.award?.coins ?? 0, 0, "loot 1.1 without the Fox or Penguin adds no coin");
 });
 
 test("0.1.158: Fox and Autopilot never strike a True/False card", () => {
