@@ -103,6 +103,7 @@ import { holidayOpen, holidayRoute } from "@/game/holidayLights";
 import { checkHoliday } from "@/game/holidayClient";
 import { WARD_LAMPS, wardRoute } from "@/game/wardCircuit";
 import { checkWard } from "@/game/wardClient";
+import { noteMeetSpot } from "@/game/meetClient";
 import { walletLive } from "@/game/walletClient";
 import { STRAY_PIN_TITLE, strayLampAt } from "@/game/strayLamp";
 import { cityDay } from "@/game/vaultStack";
@@ -2493,6 +2494,12 @@ export function GameMap() {
         });
         // 0.1.184 Ward Circuit: the same at-lamp check, on foot or seated; the server decides the light.
         checkWard(st.cityId, { lat: pos.current.lat, lng: pos.current.lng }, (lat, lng) => {
+          const g = graphRef.current;
+          const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
+          return c ? { lat: c.lat, lng: c.lng } : null;
+        });
+        // 0.1.186 Meet you there: only a note of where the walker is, for the same at-lamp check when they ask.
+        noteMeetSpot({ lat: pos.current.lat, lng: pos.current.lng }, (lat, lng) => {
           const g = graphRef.current;
           const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
           return c ? { lat: c.lat, lng: c.lng } : null;

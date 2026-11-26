@@ -31,6 +31,7 @@ import { useSheetOpen } from "./useSheetOpen";
 import { PlacesTab, TapRow } from "./JournalPlaces";
 import { HolidayJournal } from "./HolidayJournal";
 import { WardJournal } from "./WardJournal";
+import { MeetJournal } from "./MeetJournal";
 
 const TABS = ["Places", "Supplies", "Goals", "Progress", "Leaderboard"] as const;
 
@@ -164,6 +165,7 @@ export function HqPanel() {
               <DailyGoals act={false} />
               <HolidayJournal />
               <WardJournal />
+              <MeetJournal />
               <div>
                 <p className="kicker">Daily Blitz</p>
                 <p className="mt-1 text-xs text-fg-muted">

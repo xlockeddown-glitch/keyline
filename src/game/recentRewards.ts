@@ -11,7 +11,7 @@ export type RecentReward = { at: number; src: RewardSource; where?: string; coin
 export const RECENT_MAX = 20;
 
 const PREFIX: [string, RewardSource][] = [
-  ["grade:", "lamp"], ["street:", "street"], ["cache:", "cache"], ["gift:", "gift"], ["lvgot:", "gift"], ["wheel:", "wheel"],
+  ["grade:", "lamp"], ["street:", "street"], ["cache:", "cache"], ["gift:", "gift"], ["lvgot:", "gift"], ["meetget:", "gift"], ["wheel:", "wheel"],
   ["ride:", "ride"], ["level:", "level"], ["goal:", "goal"], ["dgoal:", "goal"], ["daily:", "daily"], ["blitz", "blitz"], ["contract:", "blitz"],
   ["friend:", "gift"], ["survey:", "goal"], ["crate:", "cache"], ["quest:", "quest"], ["legacy:", "reward"], ["ownpay:", "own"], ["hook:", "house"], ["shopc:", "shop"],
 ];
@@ -19,6 +19,8 @@ const PREFIX: [string, RewardSource][] = [
 /** One ledger row → a reward, or null when it gave nothing (spends, purchases, syncs). */
 export function rewardOfRow(opKey: string, detail: string, at: number, poiName: (id: string) => string | undefined): RecentReward | null {
   if (opKey.startsWith("migrate")) return null;
+  // 0.1.186 Meet you there: the dropper's debit (meet:) and their own coin or key coming back (meetback:) are not rewards.
+  if (opKey.startsWith("meet:") || opKey.startsWith("meetback:")) return null;
   let o: Record<string, unknown> = {};
   try {
     const p = JSON.parse(detail || "{}");

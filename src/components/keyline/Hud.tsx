@@ -28,6 +28,7 @@ import { CometHudLine } from "./CometHud";
 import { isComet } from "@/game/eventVault";
 import { MARKET_TAG, onMarket } from "@/game/nightMarket";
 import { StreakPlate } from "./StreakPlate";
+import { MeetCard } from "./MeetCard";
 
 type Props = {
   onVector: (x: number, y: number) => void;
@@ -269,6 +270,8 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
         </div>
       </div>
 
+      {/* 0.1.186 Meet you there: a plain text card above the dock at a street lamp in reach (never over the vault button). */}
+      {busy ? null : <MeetCard cityId={cityId} lampId={nearest?.id ?? null} inReach={inReach} />}
       {busy || !houseNear || hud.seated ? null : (
         // 0.1.12: on foot at the house lot → the house sheet.
         <button type="button" className="dealer-btn pointer-events-auto" data-testid="house-btn" onClick={() => setHouseOpen(true)}>

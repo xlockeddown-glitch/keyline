@@ -607,17 +607,12 @@ test("client wiring: the Comet's painted pin on the lamp's own marker, the pin k
   assert.equal(STRAY_GUIDE, "Stray lamp: signed in, one street lamp in each city wakes with a halo for 15 minutes every 90 minutes (never while a Comet is open). A right answer there pays +50% of that vault's base coin, once per waking; the next one wakes in another district.");
 });
 
-test("version: 0.1.185 / k1185a everywhere, and no migration for the stray lamp", () => {
+test("version: the 0.1.185 / k1185a changelog line, the test entry, and no migration for the stray lamp", () => {
+  // 0.1.186: the live version moved on; the current-version pins live in the newest slice's test.
   const v = src("../version.ts");
-  assert.match(v, /APP_VERSION = "0\.1\.185"/);
-  assert.match(v, /PUBLISH_STAMP = "k1185a"/);
-  assert.match(v, /\n\/\/ 0\.1\.185: Stray lamp — [^\n]*\(k1185a\)\.\n$/);
+  assert.match(v, /\n\/\/ 0\.1\.185: Stray lamp — [^\n]*\(k1185a\)\.\n/);
   const pkg = JSON.parse(src("../../package.json")) as { version: string; scripts: { test: string } };
-  assert.equal(pkg.version, "0.1.185");
   assert.match(pkg.scripts.test, / src\/game\/strayLamp0185\.test\.ts /);
-  const lock = JSON.parse(src("../../package-lock.json")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.185");
-  assert.equal(lock.packages[""]!.version, "0.1.185");
   assert.doesNotMatch(src("./strayLamp.ts"), /migration 00|create table/);
   // The fade (CARD-189) is not built: the extra only has to be part of the grade's coin, and says so.
   assert.match(src("./walletApply.ts"), /Fade \(CARD-189, not built\): the extra is part of award\.coins/);
