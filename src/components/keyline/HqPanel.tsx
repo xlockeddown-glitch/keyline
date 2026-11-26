@@ -29,6 +29,7 @@ import { PlayerLinkRow } from "./PlayerLink";
 import { PassProgressRow } from "./CityPass";
 import { useSheetOpen } from "./useSheetOpen";
 import { PlacesTab, TapRow } from "./JournalPlaces";
+import { HolidayJournal } from "./HolidayJournal";
 
 const TABS = ["Places", "Supplies", "Goals", "Progress", "Leaderboard"] as const;
 
@@ -160,6 +161,7 @@ export function HqPanel() {
           {tab === "Goals" ? (
             <div className="grid gap-4 text-sm">
               <DailyGoals act={false} />
+              <HolidayJournal />
               <div>
                 <p className="kicker">Daily Blitz</p>
                 <p className="mt-1 text-xs text-fg-muted">

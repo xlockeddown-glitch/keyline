@@ -99,6 +99,8 @@ import { DailyFinishCard, DailyRunPanel } from "./DailyRun";
 import { DailyBlitz } from "./DailyBlitz";
 import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
+import { holidayOpen, holidayRoute } from "@/game/holidayLights";
+import { checkHoliday } from "@/game/holidayClient";
 import { MARKET_TAG, closestOnStreet, inZone, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
 import { patronLive } from "@/game/patron";
 import { visibleCoat, visibleLantern } from "@/game/paint";
@@ -342,6 +344,10 @@ export function GameMap() {
   }, [plant.placing, plant.name]);
   const dailyLines = useRef<Polyline[]>([]);
   const dailyPins = useRef<Marker[]>([]);
+  // 0.1.182 Holiday Lights: one painted lamp per route lamp while the event is open (signed in only).
+  const holidayPins = useRef<Marker[]>([]);
+  const holiday = useGame((s) => s.holiday);
+  const [holidayOn, setHolidayOn] = useState(() => holidayOpen(gameNow()));
   const dailyKey = useRef("");
   const dailyShow = useDaily((s) => s.show);
   const dailyLit = useDaily((s) => activeProgress(s.runs, cityId)?.lit ?? 0);
@@ -915,6 +921,36 @@ export function GameMap() {
     dailyLines.current = [];
     dailyPins.current = [];
     dailyKey.current = "";
+  }
+
+  /**
+   * 0.1.182 Holiday Lights: the garland-dressed lamp (the painted image and nothing else) standing just left of each
+   * route lamp's vault, foot on the vault's street level. The marker sits on the vault's own point and its box is
+   * anchored 42 px to the right of its left edge, so the 17 px lamp clears the 48 px vault painting and scales with
+   * it around the same point. Stamped lamps dim as a whole image. None while the window is closed, for a guest, or
+   * in a city without a route.
+   */
+  function paintHoliday() {
+    for (const m of holidayPins.current) m.remove();
+    holidayPins.current = [];
+    const L = Lref.current;
+    const map = mapRef.current;
+    const st = useGame.getState();
+    if (!L || !map || !st.holiday || !holidayOpen(gameNow())) return;
+    const have = st.holiday.stamped[st.cityId] ?? [];
+    holidayPins.current = holidayRoute(st.cityId).map((lamp) =>
+      L.marker([lamp.lat, lamp.lng], {
+        icon: L.divIcon({
+          className: "",
+          html: worldObj(`<div class="holiday-lamp${have.includes(lamp.id) ? " is-stamped" : ""}" data-testid="holiday-lamp"><img src="/sprites/holiday/lamp.webp" width="17" height="52" alt="" draggable="false"></div>`, 42, 51, false),
+          iconSize: [17, 52],
+          iconAnchor: [42, 51],
+        }),
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 390,
+      }).addTo(map),
+    );
   }
 
   /** Daily Lantern Run: the five lamps, numbered, and the foot route between them. */
@@ -2399,6 +2435,12 @@ export function GameMap() {
           const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
           return c ? { lat: c.lat, lng: c.lng } : null;
         });
+        // 0.1.182 Holiday Lights: the same at-lamp check, on foot or seated; the server decides the stamp.
+        checkHoliday(st.cityId, { lat: pos.current.lat, lng: pos.current.lng }, (lat, lng) => {
+          const g = graphRef.current;
+          const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
+          return c ? { lat: c.lat, lng: c.lng } : null;
+        });
         const desk = fareDesk(city);
         let aimLat = nearestPoi.lat;
         let aimLng = nearestPoi.lng;
@@ -2505,6 +2547,16 @@ export function GameMap() {
     paintDaily();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyShow, dailyLit, streets, cityId]);
+
+  // 0.1.182 Holiday Lights: the window opens and closes on the game clock (the dev clock too), so look every 5 s.
+  useEffect(() => {
+    const id = window.setInterval(() => setHolidayOn(holidayOpen(gameNow())), 5_000);
+    return () => window.clearInterval(id);
+  }, []);
+  useEffect(() => {
+    paintHoliday();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holiday, holidayOn, streets, cityId]);
 
   /**
    * 0.1.180: the city's painted overlay, for a city whose manifest entry pins one (Philly). Verified bytes on a blob

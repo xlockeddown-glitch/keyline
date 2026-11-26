@@ -4052,6 +4052,13 @@ img.match-glyph{ width:auto; filter:drop-shadow(1px 2px 2px #0009) }
 .vault-sprite{ display:block; width:48px; height:50px; object-fit:contain; pointer-events:none; user-select:none; -webkit-user-drag:none }
 .painted-vault-pin.near .vault-sprite{ transform:scale(1.08); transform-origin:50% 90% }
 .painted-vault-pin.cooling .vault-sprite{ filter:grayscale(.85) brightness(.7) }
+/* 0.1.182 Holiday Lights: the route lamp is the painted image only (no shadow, ring or overlay). A stamped lamp
+   dims as a whole image, the way cooling dims a vault painting. Journal ornaments are bare images, 28 px tall. */
+.holiday-lamp{ width:17px; height:52px; pointer-events:none }
+.holiday-lamp img{ display:block; width:17px; height:52px }
+.holiday-lamp.is-stamped img{ filter:grayscale(.85) brightness(.7); opacity:.8 }
+.holiday-orns{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; margin-top:4px }
+.holiday-orns img{ height:28px; width:auto }
 .painted-vault-pin.locked-out .vault-sprite{ filter:grayscale(1) brightness(.5) contrast(1.1) }
 @media (prefers-reduced-motion: reduce){ .painted-vault-pin.near .vault-sprite{ transform:none } }
 /* The vault card's hero is the same painting. */

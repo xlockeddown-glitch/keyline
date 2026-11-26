@@ -75,6 +75,7 @@ import { SUNDAY_COIN, SUNDAY_DAY_CAP, SUNDAY_KM_M, SUNDAY_OPEN_MS, sundayCeiling
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
+import { HOLIDAY_FINISH_COIN, HOLIDAY_LAMPS, holidayCheck, holidayDoneKey, holidayFinishLine, holidayFromKeys, holidayOrnament, holidayStampKey, holidayStampLine, type HolidayState } from "./holidayLights.ts";
 import { OWN_CLAIM_USER, OWN_DAILY_CAP, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
 import { standingName } from "./standingName.ts";
 import { LOVE_COIN, LOVE_EMAIL, LOVE_X_ID, LOVE_X_NAME, LOVE_GIFT_KEY, LOVE_NOTE, DOUBLE_MS, GIFT_TIERS, LAMP_GIFTS, WELCOME_COIN, WELCOME_HOUSE, WELCOME_KEY, giftKeysFor, lampGiftClock, lampGiftNote, welcomeClock, welcomeNote } from "./lampGift.ts";
@@ -100,7 +101,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; encore?: EncoreDay; sunday?: SundayDay; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; encore?: EncoreDay; sunday?: SundayDay; holiday?: HolidayState; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -642,7 +643,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const until = await doubleUntil(sql, userId);
   const streak = await rememberStreak(sql, userId);
   const fresh = (await canonicalWallet(sql, userId)).wallet;
-  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId), encore: await encoreOf(sql, userId), sunday: await sundayOf(sql, userId) };
+  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId), encore: await encoreOf(sql, userId), sunday: await sundayOf(sql, userId), holiday: await holidayOf(sql, userId) };
   return giftNotes.length ? { ...out, giftNotes } : out;
 }
 
@@ -1490,6 +1491,7 @@ export type ClientOp =
   | { kind: "street"; id: string; tier: Tier; city: CityId; lat: number; lng: number; via?: "magnet" }
   | { kind: "drive"; city: CityId }
   | { kind: "sunday"; mode: SundayMode; meters: number }
+  | { kind: "lights"; city: CityId; lamp: string; lat: number; lng: number }
   | { kind: "quest"; period: string; id: string }
   | { kind: "legacy"; claimed: string[]; circuits: string[]; unfinished: boolean; charms: string[] }
   | { kind: "cloth"; id: string }
@@ -1569,7 +1571,61 @@ export type ClientResult = Applied & {
   pull?: PressPull;
   /** 0.1.181 Sunday Drive: today's paid km (ledger rows) and the Chicago day. */
   sunday?: SundayDay;
+  /** 0.1.182 Holiday Lights: the account's stamped route lamps and paid cities (ledger rows). */
+  holiday?: HolidayState;
 };
+
+/**
+ * 0.1.182 Holiday Lights for the map and the Journal: which route lamps this account has stamped, per city, and
+ * which cities' finish has paid. Read from the account's own `lights:` / `lights-done:` ledger rows and nothing
+ * else (no wallet field, save field or op argument carries it), with no clock: ornaments stay after the window.
+ * The prefix and route membership are checked in JS (holidayFromKeys), not by LIKE.
+ */
+export async function holidayOf(sql: Sql, userId: string): Promise<HolidayState> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string }>`select op_key from wallet_ledger where user_id = ${id} and op_key like ${"lights%"} order by op_key`;
+  return holidayFromKeys(rows.map((r) => r.op_key));
+}
+
+/**
+ * 0.1.182 Holiday Lights: "I am at this route lamp", at server time `now` (rules: holidayLights.ts).
+ *  - Refused, nothing written: a guest / unsynced wallet ("sync"), outside the window ("closed"), a lamp that is
+ *    not on that city's route ("route"), or a spot farther than DAILY_REACH_M from the lamp ("far").
+ *  - Stamp: one ledger row `lights:<city>:<lamp>` with a zero delta. Reach only: no vault answer, no grade, no
+ *    token. It is not a grade row and carries no district, so no district / Fading Block count ever sees it, and it
+ *    pays 0, so the night market's multiplier has nothing to touch.
+ *  - Finish: when the account's own stamp rows cover all five lamps of that city's route, `lights-done:<city>:2026`
+ *    pays a flat 200 coin (COIN_CAP as usual), once per city for the event. A replay or a race returns the stored
+ *    row. A finish whose pay was lost to a crash is paid by the next stamp op at any of that city's lamps.
+ */
+export async function holidayStamp(sql: Sql, sessionUserId: string, op: { city: CityId; lamp: string; lat: number; lng: number }, now = Date.now()): Promise<ClientResult> {
+  const { wallet } = await canonicalWallet(sql, sessionUserId);
+  if (!wallet.migrated) return { ...applied({ ok: false, replay: false, reason: "sync", wallet }), authoritative: false };
+  const chk = holidayCheck(op.city, String(op.lamp), Number(op.lat), Number(op.lng), now);
+  if (!chk.ok) return { ...refused(wallet, chk.reason), holiday: await holidayOf(sql, sessionUserId) };
+  const n = holidayOrnament(op.city, chk.lamp.id);
+  const stamp = await mutateWallet(sql, sessionUserId, holidayStampKey(op.city, chk.lamp.id), (w) => ({ ...applyDelta(w, { coins: 0, keys: {} }), detail: JSON.stringify({ hl: n }) }));
+  if (!stamp.ok) return { ...applied(stamp), holiday: await holidayOf(sql, sessionUserId) };
+  const boosts: string[] = [];
+  let have = await holidayOf(sql, sessionUserId);
+  const count = have.stamped[op.city]?.length ?? 0;
+  if (!stamp.replay) boosts.push(holidayStampLine(count));
+  let coin = 0;
+  if (count >= HOLIDAY_LAMPS) {
+    const pay = await mutateWallet(sql, sessionUserId, holidayDoneKey(op.city), (w) => {
+      const res = applyDelta(w, { coins: HOLIDAY_FINISH_COIN, keys: {} });
+      return res.ok ? { ...res, award: { coins: HOLIDAY_FINISH_COIN, keys: {}, boosts: [holidayFinishLine()] } } : res;
+    });
+    if (pay.ok && !pay.replay) {
+      coin = HOLIDAY_FINISH_COIN;
+      boosts.push(holidayFinishLine());
+      have = await holidayOf(sql, sessionUserId);
+    }
+  }
+  const fresh = (await canonicalWallet(sql, sessionUserId)).wallet;
+  const award = boosts.length ? { coins: coin, keys: {}, boosts } : undefined;
+  return { ...applied({ ok: true, replay: stamp.replay && !coin, wallet: fresh, award }), authoritative: true, holiday: have };
+}
 
 /**
  * 0.1.181 Sunday Drive for the HUD: how many km this account has been paid for today, and the Chicago day. The count
@@ -1642,7 +1698,8 @@ export async function sundayPing(sql: Sql, sessionUserId: string, op: { mode: Su
   return { ...applied({ ok: true, replay: false, wallet: fresh, award }), authoritative: true, sunday: await sundayOf(sql, sessionUserId, now) };
 }
 
-export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp): Promise<ClientResult> {
+/** `clock.now` is the server's own time for clocked events (Holiday Lights); only the dev server ever shifts it. */
+export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientOp, clock: { now?: number } = {}): Promise<ClientResult> {
   const { id, wallet } = await canonicalWallet(sql, sessionUserId);
   if (!wallet.migrated) return { ...applied({ ok: false, replay: false, reason: "sync", wallet }), authoritative: false };
 
@@ -1965,6 +2022,9 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
   }
 
   if (op.kind === "sunday") return sundayPing(sql, sessionUserId, op);
+
+  // 0.1.182 Holiday Lights: only city, lamp and the spot are read; the window is the server clock's.
+  if (op.kind === "lights") return holidayStamp(sql, sessionUserId, { city: op.city, lamp: op.lamp, lat: op.lat, lng: op.lng }, clock.now ?? Date.now());
 
   if (op.kind === "street") {
     const parsed = parseStreetId(op.id);

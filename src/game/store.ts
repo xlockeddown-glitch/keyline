@@ -31,6 +31,7 @@ import { markFriendPaid, payFriend } from "./friendTicket";
 import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type PlateEvent, type PlateRollMap } from "./telemetry";
 import { fetchRetune } from "./retuneJob";
 import { setQuarantine, setRetune } from "./rarity";
+import type { HolidayState } from "./holidayLights";
 import type {
   CityId,
   Journey,
@@ -249,6 +250,9 @@ export type GameState = {
   /** 0.1.181: Sunday Drive km paid today and the Chicago day, from the server (sync and ping replies). Not written
    *  into the save, never counted on the device. Null for guests and until this session syncs. */
   sunday: { paid: number; day: string } | null;
+  /** 0.1.182: Holiday Lights stamps per city and paid cities, from the server's ledger rows (sync and stamp replies).
+   *  Not written into the save, never counted on the device. Null for guests and until this session syncs. */
+  holiday: HolidayState | null;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
   matchPop: MatchPop | null;
   /** 0.0.96 Tabby (Nine lives): Chicago day the first miss was forgiven. */
@@ -1255,6 +1259,7 @@ export const useGame = create<GameState>((set, get) => ({
   odometer: null,
   encore: null,
   sunday: null,
+  holiday: null,
   matchPop: null,
   shieldDay: saved?.shieldDay ?? "",
   bestStreak: saved?.bestStreak ?? 0,

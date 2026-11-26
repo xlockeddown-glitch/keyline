@@ -11,6 +11,8 @@ import { COSMETIC_IDS, type Wardrobe } from "./cosmetics";
 import type { CityUnlocks } from "./cityPass";
 import type { CityId, Tier } from "./types";
 import { SUNDAY_PING_MAX_M } from "./sundayDrive";
+import { holidayClock, type HolidayState } from "./holidayLights";
+import { DEV_CLOCK_COOKIE } from "./gameClock";
 
 /**
  * 0.0.78 signed-in wallet. Guests never call these. Every handler takes the session user
@@ -118,6 +120,8 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("drive"), city: City }),
   // 0.1.181 Sunday Drive: a claim of meters moved in one mode, nothing else. Unknown keys (a count, a total) are stripped.
   z.object({ kind: z.literal("sunday"), mode: z.enum(["walk", "drive"]), meters: z.number().int().positive().max(SUNDAY_PING_MAX_M) }),
+  // 0.1.182 Holiday Lights: "I am at this route lamp, here". No count, no ornament number, no time. Unknown keys are stripped.
+  z.object({ kind: z.literal("lights"), city: City, lamp: z.string().min(1).max(80), lat: z.number().finite().min(-90).max(90), lng: z.number().finite().min(-180).max(180) }),
   z.object({ kind: z.literal("quest"), period: z.string().regex(QUEST_PERIOD_KEY), id: z.string().min(1).max(20) }),
   z.object({
     kind: z.literal("legacy"),
@@ -177,7 +181,23 @@ export type WalletWire = {
   patron?: { bulb: "brass" | "copper" | "night"; cycle: number; until: number };
   /** 0.1.181 Sunday Drive: today's paid km (the server's `sd:` ledger rows) and the Chicago day they are for. */
   sunday?: { paid: number; day: string };
+  /** 0.1.182 Holiday Lights: stamped route lamps per city and paid cities, from the account's ledger rows. */
+  holiday?: HolidayState;
 };
+
+/**
+ * 0.1.182: the server clock the Holiday Lights window is judged on. A production build always returns the real
+ * clock (the cookie is never read); the dev server honours the QA shift cookie exactly like triviaBank.ts.
+ */
+async function holidayNow(): Promise<number> {
+  if (!import.meta.env?.DEV) return Date.now();
+  try {
+    const { getCookie } = await import("@tanstack/react-start/server");
+    return holidayClock(Date.now(), true, getCookie(DEV_CLOCK_COOKIE));
+  } catch {
+    return Date.now();
+  }
+}
 
 export type SyncWire = {
   /** 0.1.44: a new player's double-coin hour ends here (ms); absent when none. */
@@ -191,6 +211,8 @@ export type SyncWire = {
   encore?: { used: number; day: string };
   /** 0.1.181: Sunday Drive km paid today (ledger rows `sd:<day>:<k>`) and the Chicago day they are for. */
   sunday?: { paid: number; day: string };
+  /** 0.1.182: Holiday Lights stamps and paid cities (ledger rows `lights:` / `lights-done:`). */
+  holiday?: HolidayState;
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
@@ -229,6 +251,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       odometer: r.odometer ?? 0,
       ...(r.encore ? { encore: r.encore } : {}),
       ...(r.sunday ? { sunday: r.sunday } : {}),
+      ...(r.holiday ? { holiday: r.holiday } : {}),
     };
   });
 
@@ -238,7 +261,7 @@ export const applyWallet = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<WalletWire> => {
     const { getSql } = await import("@/lib/db");
     const { applyClientOp } = await import("./walletApply");
-    const r = await applyClientOp(await getSql(), context.userId, data as ClientOp);
+    const r = await applyClientOp(await getSql(), context.userId, data as ClientOp, data.kind === "lights" ? { now: await holidayNow() } : {});
     return {
       ok: r.ok,
       replay: r.replay,
@@ -259,6 +282,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       legacy: r.legacy,
       patron: r.patron,
       ...(r.sunday ? { sunday: r.sunday } : {}),
+      ...(r.holiday ? { holiday: r.holiday } : {}),
     };
   });
 
