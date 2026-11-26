@@ -553,16 +553,10 @@ test("art budget: every file in public/sprites/holiday is at most 2,048 B and th
   assert.ok(total <= 20 * 1024, `folder: ${total} B (cap 20,480 B)`);
 });
 
-test("0.1.188: version 0.1.188 / k1188a everywhere, and the 5th ornament is the brass recut (the rest unchanged)", async () => {
+test("0.1.188: the changelog line, and the 5th ornament is the brass recut (the rest unchanged)", async () => {
+  // 0.1.189: the live version moved on; the current-version pins live in the newest slice's test (cityPack.test.ts).
   const v = src("../version.ts");
-  assert.match(v, /APP_VERSION = "0\.1\.188"/);
-  assert.match(v, /PUBLISH_STAMP = "k1188a"/);
-  assert.match(v, /\n\/\/ 0\.1\.188: Holiday Lights art rework — [^\n]*\(k1188a\)\.\n$/);
-  const pkg = JSON.parse(src("../../package.json")) as { version: string };
-  assert.equal(pkg.version, "0.1.188");
-  const lock = JSON.parse(src("../../package-lock.json")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.188");
-  assert.equal(lock.packages[""]!.version, "0.1.188");
+  assert.match(v, /\n\/\/ 0\.1\.188: Holiday Lights art rework — [^\n]*\(k1188a\)\.\n/);
   const { createHash } = await import("node:crypto");
   const sha = (f: string) => createHash("sha256").update(readFileSync(new URL(`../../public/sprites/holiday/${f}`, import.meta.url))).digest("hex");
   assert.equal(sha("orn-5.webp"), "bc5b8b625a9b4153db4f2ca30bc414b2e550b908785b774c19f2f87b83ad4a7f");

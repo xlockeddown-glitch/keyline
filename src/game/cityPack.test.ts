@@ -30,6 +30,8 @@ const manifest = JSON.parse(manifestText) as { v: number; cities: Record<string,
 const philly = manifest.cities.philly!;
 const PHILLY_SHA = "d659096900a0265dda7f575b0422366ef6cddbdf0112e0e5b53db6535db7f786";
 const OVERLAY_SHA = "ac97070fe9b0327736fecfe75398da3bfecf10b15aa654d5fc14839689f34463";
+const AUSTIN_OVERLAY_SHA = "21c5b5aba3535dffd0412c7c98ce314cd4ba888ed2786c9e76e4b9ac5a5bc6b9";
+const AUSTIN_OVERLAY_BYTES = 259_308;
 const HOST = "https://xlockeddown-glitch.github.io/keyline-packs/v2/";
 const pack = read(`src/game/fixtures/packs/${philly.file}`);
 const phillyPin = cityPin(philly)!;
@@ -174,7 +176,8 @@ test("manifest: one field shape for all 16 cities; local pins match public/stree
     if (id === "philly") continue;
     assert.equal(e.origin, "local", `${id} is bundled`);
     assert.equal(e.url, `/streets/v2/${e.file}`);
-    assert.equal(e.overlay, null, `${id} has no overlay`);
+    if (id === "austin") assert.ok(e.overlay, "austin pins an overlay (0.1.189): its graph stays bundled, the painted layer is on the pack host");
+    else assert.equal(e.overlay, null, `${id} has no overlay`);
     const bytes = read(`public/streets/v2/${e.file}`);
     assert.equal(bytes.length, e.gz, `${id} gz length`);
     assert.equal(sha(bytes), e.sha256, `${id} sha256 of the file on disk`);
@@ -198,8 +201,22 @@ test("manifest: one field shape for all 16 cities; local pins match public/stree
     bounds: { nw: [39.97751, -75.198], ne: [39.97751, -75.13056], se: [39.92448, -75.13056], sw: [39.92448, -75.198] },
   });
 
-  const stray = filesUnder(new URL("public/", root)).filter((f) => /^philly.*\.json\.gz$/.test(f) || f.startsWith("philly-overlay"));
-  assert.deepEqual(stray, [], "no philly*.json.gz and no philly-overlay* anywhere under public/");
+  const stray = filesUnder(new URL("public/", root)).filter((f) => /^philly.*\.json\.gz$/.test(f) || f.startsWith("philly-overlay") || f.startsWith("austin-overlay"));
+  assert.deepEqual(stray, [], "no philly*.json.gz and no philly-/austin-overlay* anywhere under public/");
+
+  // 0.1.189: Austin keeps its bundled graph (origin local); only the painted overlay is remote.
+  const austin = manifest.cities.austin!;
+  assert.equal(austin.origin, "local");
+  assert.equal(austin.url, `/streets/v2/${austin.file}`);
+  assert.deepEqual(austin.overlay, {
+    url: `${HOST}austin-overlay.${AUSTIN_OVERLAY_SHA}.webp`,
+    sha256: AUSTIN_OVERLAY_SHA,
+    bytes: AUSTIN_OVERLAY_BYTES,
+    w: 1545,
+    h: 3191,
+    bounds: { nw: [30.32908, -97.78296], ne: [30.32908, -97.71664], se: [30.21082, -97.71664], sw: [30.21082, -97.78296] },
+  });
+  assert.ok(austin.overlay!.bytes <= 262_144, "the pack overlay cap (256 KiB) holds for Austin too");
 });
 
 test("the pack fetch is a simple CORS GET: mode cors, credentials omit, no headers; a bundled city stays a plain same-origin GET", async () => {
@@ -438,13 +455,16 @@ test("a fetch that exceeds the 15 s timeout is a failed attempt and is retried o
   }
 });
 
-test("overlay renders only in Philly", async () => {
+test("overlay renders only in Philly and Austin", async () => {
   // The real overlay bytes live on the pack host only; a stand-in file pinned the same way exercises the path.
   const art = new TextEncoder().encode("RIFF....WEBPVP8L stand-in overlay bytes");
   const man = JSON.parse(manifestText) as typeof manifest;
   const o = man.cities.philly!.overlay!;
   o.sha256 = sha(art);
   o.bytes = art.length;
+  const oa = man.cities.austin!.overlay!; // 0.1.189
+  oa.sha256 = sha(art);
+  oa.bytes = art.length;
   const h = harness({ manifest: JSON.stringify(man) });
   const made: { url: string; bounds: unknown; options: Record<string, unknown>; on: unknown; removed: boolean }[] = [];
   const L = {
@@ -458,11 +478,22 @@ test("overlay renders only in Philly", async () => {
   try {
     h.remote.set(o.url, art);
     for (const id of Object.keys(CITIES)) {
-      if (id === "philly") continue;
+      if (id === "philly" || id === "austin") continue;
       assert.equal(await h.clock.run(mountCityOverlay(L, map, id)), null, `${id}: no overlay`);
     }
     assert.equal(made.length, 0, "no other city creates an overlay");
     assert.equal(h.to(o.url).length, 0, "or downloads one");
+    assert.equal(h.to(oa.url).length, 0);
+
+    // 0.1.189: Austin (bundled graph, remote overlay) mounts its own, over its own box.
+    h.remote.set(oa.url, art);
+    const dropA = await h.clock.run(mountCityOverlay(L, map, "austin"));
+    assert.equal(made.length, 1);
+    assert.deepEqual(made[0]!.bounds, [[30.21082, -97.78296], [30.32908, -97.71664]]);
+    assert.deepEqual(made[0]!.options, { interactive: false, className: "city-overlay", opacity: 0.9, zIndex: -1 });
+    dropA!();
+    assert.equal(made[0]!.removed, true);
+    made.length = 0;
 
     const drop = await h.clock.run(mountCityOverlay(L, map, "philly"));
     assert.equal(made.length, 1);
@@ -547,4 +578,19 @@ test("a bundled city served already decoded (Content-Encoding: gzip) passes on t
     assert.equal(await verifyPack(decoded.subarray(0, decoded.length - 1), pin, env), false, `${id} short decoded body rejected`);
     assert.equal(await verifyPack(decoded, { ...pin, remote: true }, env), false, `${id} remote never accepts a decoded body`);
   }
+});
+
+test("0.1.189: version 0.1.189 / k1189a everywhere, and Austin's overlay is the only new pin", () => {
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.189"/);
+  assert.match(v, /PUBLISH_STAMP = "k1189a"/);
+  assert.match(v, /\n\/\/ 0\.1\.189: Austin city map — [^\n]*\(k1189a\)\.\n$/);
+  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
+  assert.equal(pkg.version, "0.1.189");
+  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
+  assert.equal(lock.version, "0.1.189");
+  assert.equal(lock.packages[""]!.version, "0.1.189");
+  // Austin's graph is still the bundled file and still pinned; only the overlay changed.
+  assert.equal(manifest.cities.austin!.file, "austin.ff665e2015.json.gz");
+  assert.equal(manifest.cities.austin!.origin, "local");
 });

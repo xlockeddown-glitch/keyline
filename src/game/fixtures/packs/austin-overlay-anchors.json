@@ -1,0 +1,68 @@
+{
+ "image": {
+  "w": 1545,
+  "h": 3191
+ },
+ "anchors": [
+  {
+   "name": "Texas State Capitol",
+   "osm": "w25758443",
+   "lat": 30.274701,
+   "lng": -97.740337,
+   "px": 992.95,
+   "py": 1467.77,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Texas State Cemetery",
+   "osm": "w258826225",
+   "lat": 30.266055,
+   "lng": -97.726247,
+   "px": 1321.19,
+   "py": 1701.08,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Frank Erwin Center",
+   "osm": "w27397928",
+   "lat": 30.276939,
+   "lng": -97.7322,
+   "px": 1182.51,
+   "py": 1407.38,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "DKR Memorial Stadium",
+   "osm": "r1639372",
+   "lat": 30.283834,
+   "lng": -97.732599,
+   "px": 1173.22,
+   "py": 1221.33,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Austin City Hall",
+   "osm": "w204413180",
+   "lat": 30.264811,
+   "lng": -97.747245,
+   "px": 832.03,
+   "py": 1734.65,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  }
+ ]
+}
