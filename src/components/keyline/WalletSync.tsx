@@ -63,6 +63,7 @@ export function WalletSync() {
       setWalletLive(false);
       useGame.setState({ serverStreak: null, streakLord: false, odometer: null, encore: null, sunday: null });
       useGame.setState({ holiday: null });
+      useGame.setState({ ward: null });
       return;
     }
     let live = true;
@@ -80,6 +81,8 @@ export function WalletSync() {
         useGame.setState({ serverStreak: r.streakRun ?? 0, streakLord: r.streakLord === true, odometer: r.odometer ?? 0, encore: r.encore ?? null, sunday: r.sunday ?? null });
         // 0.1.182 Holiday Lights: the account's stamps, from its ledger rows.
         useGame.setState({ holiday: r.holiday ?? { stamped: {}, done: [] } });
+        // 0.1.184 Ward Circuit: today's lights and finish, from its ledger rows.
+        useGame.setState({ ward: r.ward ?? {} });
         // 0.1.82: the server pays this account's stock trade-in, so this device never pays it again locally.
         useGame.setState({ stockPaid: true });
         if (r.owned) useGame.getState().adoptOwned(r.owned);

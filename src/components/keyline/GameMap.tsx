@@ -101,6 +101,9 @@ import { activeProgress, todayRoute, useDaily } from "@/game/dailyStore";
 import { DAILY_CURB_MAX_M, dailyRoute } from "@/game/dailyRun";
 import { holidayOpen, holidayRoute } from "@/game/holidayLights";
 import { checkHoliday } from "@/game/holidayClient";
+import { WARD_LAMPS, wardRoute } from "@/game/wardCircuit";
+import { checkWard } from "@/game/wardClient";
+import { cityDay } from "@/game/vaultStack";
 import { MARKET_TAG, closestOnStreet, inZone, marketAnchor, marketAt, marketLeft } from "@/game/nightMarket";
 import { patronLive } from "@/game/patron";
 import { visibleCoat, visibleLantern } from "@/game/paint";
@@ -348,6 +351,10 @@ export function GameMap() {
   const holidayPins = useRef<Marker[]>([]);
   const holiday = useGame((s) => s.holiday);
   const [holidayOn, setHolidayOn] = useState(() => holidayOpen(gameNow()));
+  // 0.1.184 Ward Circuit: today's four circuit lamps, lettered, on the Daily Run's own pin (signed in only).
+  const circuitPins = useRef<Marker[]>([]);
+  const circuit = useGame((s) => s.ward);
+  const [circuitDay, setCircuitDay] = useState(() => cityDay(cityId, Date.now()));
   const dailyKey = useRef("");
   const dailyShow = useDaily((s) => s.show);
   const dailyLit = useDaily((s) => activeProgress(s.runs, cityId)?.lit ?? 0);
@@ -1009,6 +1016,37 @@ export function GameMap() {
       // Foot router first (never a car profile); the walk graph wins if it strays off walkable ways.
       void routeWalk(g, a, b, signal).then((path) => draw(i - 1, path));
     }
+  }
+
+  /**
+   * 0.1.184 Ward Circuit: today's four circuit lamps for this city on the Daily Lantern Run's existing pin (same
+   * markup and classes, is-lit once lit), lettered A to D instead of numbered because any order counts, and with
+   * no route line. None for a guest, in a city with no circuit today, or once today's circuit has paid.
+   */
+  function paintCircuit() {
+    for (const m of circuitPins.current) m.remove();
+    circuitPins.current = [];
+    const L = Lref.current;
+    const map = mapRef.current;
+    const st = useGame.getState();
+    if (!L || !map || !st.ward) return;
+    const day = cityDay(st.cityId, Date.now());
+    const route = wardRoute(st.cityId, day);
+    const mine = st.ward[st.cityId]?.day === day ? st.ward[st.cityId]! : null;
+    if (route.length !== WARD_LAMPS || mine?.done) return;
+    circuitPins.current = route.map((lamp, i) =>
+      L.marker([lamp.lat, lamp.lng], {
+        icon: L.divIcon({
+          className: "",
+          html: `<div class="daily-pin${mine?.lit.includes(lamp.id) ? " is-lit" : ""}" data-testid="ward-pin" title="Ward Circuit lamp: ${lamp.name.replace(/"/g, "&quot;")}"><span>${"ABCD"[i]}</span></div>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 44],
+        }),
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 690,
+      }).addTo(map),
+    );
   }
 
   function clearMarket() {
@@ -2441,6 +2479,12 @@ export function GameMap() {
           const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
           return c ? { lat: c.lat, lng: c.lng } : null;
         });
+        // 0.1.184 Ward Circuit: the same at-lamp check, on foot or seated; the server decides the light.
+        checkWard(st.cityId, { lat: pos.current.lat, lng: pos.current.lng }, (lat, lng) => {
+          const g = graphRef.current;
+          const c = g ? nearest(g, lat, lng, DAILY_CURB_MAX_M) : null;
+          return c ? { lat: c.lat, lng: c.lng } : null;
+        });
         const desk = fareDesk(city);
         let aimLat = nearestPoi.lat;
         let aimLng = nearestPoi.lng;
@@ -2557,6 +2601,16 @@ export function GameMap() {
     paintHoliday();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [holiday, holidayOn, streets, cityId]);
+
+  // 0.1.184 Ward Circuit: the circuit changes at the city's own midnight, so look at the day every 30 s.
+  useEffect(() => {
+    setCircuitDay(cityDay(cityId, Date.now()));
+    const id = window.setInterval(() => setCircuitDay(cityDay(cityId, Date.now())), 30_000);
+    return () => window.clearInterval(id);
+  }, [cityId]);
+  useEffect(() => {
+    paintCircuit();
+  }, [circuit, circuitDay, streets, cityId]);
 
   /**
    * 0.1.180: the city's painted overlay, for a city whose manifest entry pins one (Philly). Verified bytes on a blob

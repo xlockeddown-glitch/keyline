@@ -12,6 +12,7 @@ import type { CityUnlocks } from "./cityPass";
 import type { CityId, Tier } from "./types";
 import { SUNDAY_PING_MAX_M } from "./sundayDrive";
 import { holidayClock, type HolidayState } from "./holidayLights";
+import type { WardState } from "./wardCircuit";
 import { DEV_CLOCK_COOKIE } from "./gameClock";
 
 /**
@@ -123,6 +124,8 @@ const Op = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("sunday"), city: City.optional(), mode: z.enum(["walk", "drive"]), meters: z.number().int().positive().max(SUNDAY_PING_MAX_M) }),
   // 0.1.182 Holiday Lights: "I am at this route lamp, here". No count, no ornament number, no time. Unknown keys are stripped.
   z.object({ kind: z.literal("lights"), city: City, lamp: z.string().min(1).max(80), lat: z.number().finite().min(-90).max(90), lng: z.number().finite().min(-180).max(180) }),
+  // 0.1.184 Ward Circuit: "I am at this circuit lamp, here". No count, no lit list, no done flag, no time. Unknown keys are stripped.
+  z.object({ kind: z.literal("ward"), city: City, lamp: z.string().min(1).max(80), lat: z.number().finite().min(-90).max(90), lng: z.number().finite().min(-180).max(180) }),
   z.object({ kind: z.literal("quest"), period: z.string().regex(QUEST_PERIOD_KEY), id: z.string().min(1).max(20) }),
   z.object({
     kind: z.literal("legacy"),
@@ -186,6 +189,8 @@ export type WalletWire = {
   radio?: { city: string; day: string; fresh: true };
   /** 0.1.182 Holiday Lights: stamped route lamps per city and paid cities, from the account's ledger rows. */
   holiday?: HolidayState;
+  /** 0.1.184 Ward Circuit: today's lit lamps, window start and paid flag per city, from the account's ledger rows. */
+  ward?: WardState;
 };
 
 /**
@@ -216,6 +221,8 @@ export type SyncWire = {
   sunday?: { paid: number; day: string };
   /** 0.1.182: Holiday Lights stamps and paid cities (ledger rows `lights:` / `lights-done:`). */
   holiday?: HolidayState;
+  /** 0.1.184: Ward Circuit lights and finish today (ledger rows `ward:` / `ward-done:`). */
+  ward?: WardState;
   coins: number;
   keys: Record<Tier, number>;
   cities: CityUnlocks;
@@ -255,6 +262,7 @@ export const syncWallet = createServerFn({ method: "POST" })
       ...(r.encore ? { encore: r.encore } : {}),
       ...(r.sunday ? { sunday: r.sunday } : {}),
       ...(r.holiday ? { holiday: r.holiday } : {}),
+      ...(r.ward ? { ward: r.ward } : {}),
     };
   });
 
@@ -287,6 +295,7 @@ export const applyWallet = createServerFn({ method: "POST" })
       ...(r.sunday ? { sunday: r.sunday } : {}),
       ...(r.radio ? { radio: r.radio } : {}),
       ...(r.holiday ? { holiday: r.holiday } : {}),
+      ...(r.ward ? { ward: r.ward } : {}),
     };
   });
 

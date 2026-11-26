@@ -7,6 +7,7 @@ import { SUNDAY_COIN, SUNDAY_DAY_CAP } from "@/game/sundayDrive";
 import { RADIO_HOP_GUIDE } from "@/game/radioHop";
 import { HOLIDAY_FINISH_COIN, HOLIDAY_LAMPS, holidayOpen } from "@/game/holidayLights";
 import { gameNow } from "@/game/gameClock";
+import { WARD_COIN, WARD_LAMPS } from "@/game/wardCircuit";
 import { X } from "lucide-react";
 import { SCOUT_LIST, TIER_LABEL } from "@/game/data";
 import { PAY_NOTES, lampPayRows, paintFromClears, paintOddsLine } from "@/game/vaultPay";
@@ -107,6 +108,7 @@ export function FieldGuide() {
                 ))}
                 <li>Sunday Drive: signed in, every whole km you walk or drive on the streets pays {SUNDAY_COIN} coin, {SUNDAY_DAY_CAP} times a day (the day turns at midnight Central, and leftover meters don&apos;t carry over).</li>
                 <li>{RADIO_HOP_GUIDE}</li>
+                <li>Ward Circuit: signed in, each city sets {WARD_LAMPS} lettered lamps in {WARD_LAMPS} different districts every day (it changes at the city&apos;s midnight). Reach all {WARD_LAMPS}, in any order, within 2 hours of the first for {WARD_COIN} coin. One try a day per city; reaching a lamp is enough, no answer needed.</li>
                 {holidayOpen(gameNow()) ? (
                   <li>Holiday Lights (Dec 12 to Jan 2, Central): signed in, reach the {HOLIDAY_LAMPS} dressed lamps across town for a Journal ornament each; all {HOLIDAY_LAMPS} in a city pays {HOLIDAY_FINISH_COIN} coin once. Ornaments are yours to keep.</li>
                 ) : null}

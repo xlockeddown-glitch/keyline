@@ -10,6 +10,7 @@ import { livePois } from "@/game/nightMarket";
 import { dealerOf } from "@/game/cars";
 import { encoreToday, encoreText, hasEncore, hasOdometer, odometerText } from "@/game/carPerks";
 import { sundayText, sundayToday } from "@/game/sundayDrive";
+import { wardText, wardView } from "@/game/wardCircuit";
 import { houseOf, lotOf } from "@/game/houses";
 import { CITIES, KIND_LABEL, TIER_LABEL, interactRadius, isBoard, isCounter, isScoutShop } from "@/game/data";
 import { TIERS } from "@/game/items";
@@ -72,10 +73,12 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
   const odometer = useGame((s) => s.odometer);
   const encore = useGame((s) => s.encore);
   const sunday = useGame((s) => s.sunday);
+  const ward = useGame((s) => s.ward);
   const streakLord = useGame((s) => s.streakLord);
   const vaults = useGame((s) => s.vaults);
   const busy = useGame((s) => Boolean(s.openVault || s.hqOpen || s.invOpen));
   const city = CITIES[cityId];
+  const wardNow = ward ? wardView(ward, cityId, Date.now()) : null;
   const blanks = useGame((s) => s.blanks);
   const nearest = livePois(city, blanks).find((p) => p.id === hud.nearestId);
   const reachM = interactRadius();
@@ -301,6 +304,13 @@ export function Hud({ onVector, onInteract, onCab, onTimetable, onDesk, onMarket
             {sunday != null ? (
               <span className="odo-chip tabular-nums" data-testid="hud-sunday">
                 {sundayText(sundayToday(sunday, Date.now()))}
+              </span>
+            ) : null}
+            {/* 0.1.184 Ward Circuit: the same plain text line, signed in only (null for guests) and only in a city with
+                a circuit today; the count, the window and "done" are the server's ledger rows. */}
+            {wardNow ? (
+              <span className="odo-chip tabular-nums" data-testid="hud-ward">
+                {wardText(wardNow)}
               </span>
             ) : null}
             </div>

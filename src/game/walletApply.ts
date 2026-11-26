@@ -76,6 +76,8 @@ import { RADIO_HOP_M, radioKey, type RadioHop } from "./radioHop.ts";
 import { fareMs, FARES_CAP, lampCoolMs, sparkAllowed, sparkTier, hurryCost, hurryTarget, VAULTS_PER_FARE } from "./ticket.ts";
 import { BLITZ_STEPS, CONTRACT_LAMPS } from "./dailyBlitz.ts";
 import type { CityId, Tier } from "./types.ts";
+import { DAILY_JITTER_MS } from "./dailyRun.ts";
+import { WARD_COIN, WARD_DONE_PREFIX, WARD_LAMPS, WARD_LIGHT_PREFIX, wardCheck, wardDoneKey, wardFinishLine, wardFinished, wardFloorMs, wardFromRows, wardLightKey, wardLightLine, wardLitOf, wardRouteAt, type WardState } from "./wardCircuit.ts";
 import { HOLIDAY_FINISH_COIN, HOLIDAY_LAMPS, holidayCheck, holidayDoneKey, holidayFinishLine, holidayFromKeys, holidayOrnament, holidayStampKey, holidayStampLine, type HolidayState } from "./holidayLights.ts";
 import { OWN_CLAIM_USER, OWN_DAILY_CAP, ownPayFor, type OwnedLamp } from "./ownLamps.ts";
 import { standingName } from "./standingName.ts";
@@ -102,7 +104,7 @@ function applied(r: MutateResult): Applied {
 export const DEVICE_CAP = 5;
 const DEVICE_RE = /^[A-Za-z0-9_-]{8,64}$/;
 
-export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; encore?: EncoreDay; sunday?: SundayDay; holiday?: HolidayState; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
+export type SyncApplied = Applied & { deviceClosed: boolean; playerId: string; giftNotes?: string[]; doubleUntil?: number; streakRun?: number; streakLord?: boolean; odometer?: number; encore?: EncoreDay; sunday?: SundayDay; holiday?: HolidayState; ward?: WardState; owned?: { scouts: ScoutId[]; charms: string[]; cloths: string[]; lights?: string[]; cars?: string[]; cans?: string[]; paint?: Partial<Record<CarId, string>>; houses?: Partial<Record<CityId, HouseState>>; homeClaims?: string[]; skins?: string[]; skin?: string | null; dyes?: AccountDyes; worn?: AccountWorn; patron?: PatronHold | null } };
 
 function deviceOf(opKey: string): string | null {
   if (opKey.startsWith("migrate-revise:")) return opKey.slice("migrate-revise:".length);
@@ -644,7 +646,7 @@ export async function syncPlayer(sql: Sql, userId: string, local: LocalSnap, dev
   const until = await doubleUntil(sql, userId);
   const streak = await rememberStreak(sql, userId);
   const fresh = (await canonicalWallet(sql, userId)).wallet;
-  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId), encore: await encoreOf(sql, userId), sunday: await sundayOf(sql, userId), holiday: await holidayOf(sql, userId) };
+  const out = { ...done, wallet: fresh, view: viewOf(fresh), owned, ...(until ? { doubleUntil: until } : {}), streakRun: streak.run, streakLord: streak.lord, odometer: await odometerOf(sql, userId), encore: await encoreOf(sql, userId), sunday: await sundayOf(sql, userId), holiday: await holidayOf(sql, userId), ward: await wardOf(sql, userId) };
   return giftNotes.length ? { ...out, giftNotes } : out;
 }
 
@@ -1493,6 +1495,7 @@ export type ClientOp =
   | { kind: "drive"; city: CityId }
   | { kind: "sunday"; mode: SundayMode; meters: number; city?: CityId }
   | { kind: "lights"; city: CityId; lamp: string; lat: number; lng: number }
+  | { kind: "ward"; city: CityId; lamp: string; lat: number; lng: number }
   | { kind: "quest"; period: string; id: string }
   | { kind: "legacy"; claimed: string[]; circuits: string[]; unfinished: boolean; charms: string[] }
   | { kind: "cloth"; id: string }
@@ -1576,6 +1579,8 @@ export type ClientResult = Applied & {
   radio?: RadioHop;
   /** 0.1.182 Holiday Lights: the account's stamped route lamps and paid cities (ledger rows). */
   holiday?: HolidayState;
+  /** 0.1.184 Ward Circuit: today's lit route lamps, window start and paid flag per city (ledger rows). */
+  ward?: WardState;
 };
 
 /**
@@ -1733,6 +1738,103 @@ export async function sundayPing(sql: Sql, sessionUserId: string, op: { mode: Su
   const fresh = coin ? (await canonicalWallet(sql, sessionUserId)).wallet : wallet;
   const award = coin ? { coins: coin, keys: {}, boosts: [sundayLine(coin)] } : undefined;
   return { ...applied({ ok: true, replay: false, wallet: fresh, award }), authoritative: true, sunday: await sundayOf(sql, sessionUserId, now), ...(radio ? { radio } : {}) };
+}
+
+/**
+ * 0.1.184 Ward Circuit for the map, the HUD and the Journal: per city with a light today (the city's own local day
+ * at server time `now`), the lit route lamps, when the window opened and whether the finish paid. Read from the
+ * account's own `ward:` / `ward-done:` ledger rows and nothing else (no wallet field, save field or op argument
+ * carries it). Only the last two days of rows are read, so the read stays small; the prefix, the day and route
+ * membership are checked in JS (wardFromRows), not by LIKE.
+ */
+export async function wardOf(sql: Sql, userId: string, now = Date.now()): Promise<WardState> {
+  const { id } = await canonicalWallet(sql, userId);
+  const rows = await sql<{ op_key: string; detail: string }>`
+    select op_key, detail from wallet_ledger where user_id = ${id} and op_key like ${"ward%"}
+      and created_at >= ${new Date(now - 2 * 86_400_000).toISOString()} order by op_key`;
+  return wardFromRows(rows.filter((r) => r.op_key.startsWith(WARD_LIGHT_PREFIX) || r.op_key.startsWith(WARD_DONE_PREFIX)), now);
+}
+
+/**
+ * 0.1.184 Ward Circuit: "I am at this circuit lamp", at server time `now` (rules: wardCircuit.ts).
+ *  - The day is the city's own (cityDay at `now`) and only that day's route and rows are looked at, so a window
+ *    never carries across the city's midnight: a light after midnight is judged against the NEW day's route and is
+ *    the first light of a new attempt there.
+ *  - Refused, nothing written: a guest / unsynced wallet ("sync"); a city with no circuit today or a lamp off
+ *    today's route ("route"); the finish already paid ("done"); a spot farther than DAILY_REACH_M from the lamp
+ *    ("far"); more than two hours after the day's first light ("expired": one attempt per city-day, no restart, no
+ *    new set); a teleport from an earlier light ("fast": sooner than the straight line between the two lamps at
+ *    the account's fastest honest speed, wardFloorMs, less DAILY_JITTER_MS).
+ *  - Light: one ledger row `ward:<city>:<day>:<lamp>` with a zero delta and {"wd":1,"at":<server ms>}. Reach only:
+ *    no vault answer, no grade, no token. It is not a grade row and carries no district, so no district / Fading
+ *    Block count ever sees it. The same lamp twice is one row.
+ *  - Finish: when the account's own rows cover all four route lamps of that city-day, every `at` inside two hours
+ *    of the first, `ward-done:<city>:<day>` pays a flat 200 coin (COIN_CAP as usual), no keys, once. A replay or a
+ *    race returns the stored row. A finish whose pay was lost to a crash is paid by the next light op of that
+ *    city-day while the window is still open.
+ */
+export async function wardLight(sql: Sql, sessionUserId: string, op: { city: CityId; lamp: string; lat: number; lng: number }, now = Date.now()): Promise<ClientResult> {
+  const { id, wallet } = await canonicalWallet(sql, sessionUserId);
+  if (!wallet.migrated) return { ...applied({ ok: false, replay: false, reason: "sync", wallet }), authoritative: false };
+  const city = String(op.city) as CityId;
+  const lampId = String(op.lamp);
+  const route = wardRouteAt(city, now);
+  if (route.length !== WARD_LAMPS) return { ...refused(wallet, "route"), ward: await wardOf(sql, sessionUserId, now) };
+  const day = cityDay(city, now);
+  const doneKey = wardDoneKey(city, day);
+  const keys = route.map((l) => wardLightKey(city, day, l.id));
+  const read = () => sql<{ op_key: string; detail: string }>`
+    select op_key, detail from wallet_ledger where user_id = ${id} and op_key in (${keys[0]!}, ${keys[1]!}, ${keys[2]!}, ${keys[3]!}, ${doneKey})`;
+  let rows = await read();
+  const before = wardLitOf(rows, city, now);
+  // The op does not say on foot or seated (and could lie), so the teleport floor is timed at the fastest this
+  // account can honestly move: the Sunday Drive seated ceiling for the cars it owns on the server.
+  const top = before.length ? sundayCeiling("drive", await carsOf(sql, sessionUserId)) : 0;
+  const chk = wardCheck(city, lampId, Number(op.lat), Number(op.lng), now, before, rows.some((r) => r.op_key === doneKey), top);
+  if (!chk.ok) return { ...refused(wallet, chk.reason), ward: await wardOf(sql, sessionUserId, now) };
+  const wardKey = wardLightKey(city, day, chk.lamp.id);
+  const light = await mutateWallet(sql, sessionUserId, wardKey, (w) => ({ ...applyDelta(w, { coins: 0, keys: {} }), detail: JSON.stringify({ wd: 1, at: now }) }));
+  if (!light.ok) return { ...applied(light), ward: await wardOf(sql, sessionUserId, now) };
+  rows = await read();
+  // A row is claimed before its detail is written. Give another request's light a moment to land its server time.
+  for (let i = 0; i < 3 && rows.some((r) => r.op_key !== doneKey && r.op_key !== wardKey && !r.detail); i++) {
+    await new Promise((res) => setTimeout(res, 60));
+    rows = await read();
+  }
+  if (light.replay && !rows.find((r) => r.op_key === wardKey)?.detail) {
+    // This lamp's own row was claimed by a write that never finished (a crash): give it its server time now.
+    await sql`update wallet_ledger set detail = ${JSON.stringify({ wd: 1, at: now })} where user_id = ${id} and op_key = ${wardKey} and detail = ${""}`;
+    rows = await read();
+  }
+  const lit = wardLitOf(rows, city, now);
+  if (!light.replay) {
+    // Two requests at once (two devices) each saw no earlier light: the later one of an impossible pair steps back.
+    const top2 = top || (lit.length > 1 ? sundayCeiling("drive", await carsOf(sql, sessionUserId)) : 0);
+    const clash = lit.some((r) => {
+      if (r.lamp === chk.lamp.id || r.at > now || (r.at === now && r.lamp > chk.lamp.id)) return false;
+      return now - r.at < wardFloorMs(route.find((l) => l.id === r.lamp)!, chk.lamp, top2) - DAILY_JITTER_MS;
+    });
+    if (clash) {
+      await sql`delete from wallet_ledger where user_id = ${id} and op_key = ${wardKey}`;
+      return { ...refused((await canonicalWallet(sql, sessionUserId)).wallet, "fast"), ward: await wardOf(sql, sessionUserId, now) };
+    }
+  }
+  const boosts: string[] = [];
+  if (!light.replay) boosts.push(wardLightLine(lit.length));
+  let coin = 0;
+  if (wardFinished(route, lit)) {
+    const pay = await mutateWallet(sql, sessionUserId, doneKey, (w) => {
+      const res = applyDelta(w, { coins: WARD_COIN, keys: {} });
+      return res.ok ? { ...res, award: { coins: WARD_COIN, keys: {}, boosts: [wardFinishLine()] } } : res;
+    });
+    if (pay.ok && !pay.replay) {
+      coin = WARD_COIN;
+      boosts.push(wardFinishLine());
+    }
+  }
+  const fresh = (await canonicalWallet(sql, sessionUserId)).wallet;
+  const award = boosts.length ? { coins: coin, keys: {}, boosts } : undefined;
+  return { ...applied({ ok: true, replay: light.replay && !coin, wallet: fresh, award }), authoritative: true, ward: await wardOf(sql, sessionUserId, now) };
 }
 
 /** `clock.now` is the server's own time for clocked events (Holiday Lights); only the dev server ever shifts it. */
@@ -2062,6 +2164,8 @@ export async function applyClientOp(sql: Sql, sessionUserId: string, op: ClientO
 
   // 0.1.182 Holiday Lights: only city, lamp and the spot are read; the window is the server clock's.
   if (op.kind === "lights") return holidayStamp(sql, sessionUserId, { city: op.city, lamp: op.lamp, lat: op.lat, lng: op.lng }, clock.now ?? Date.now());
+  // 0.1.184 Ward Circuit: only city, lamp and the spot are read; the day, the window and the pay are the server clock's.
+  if (op.kind === "ward") return wardLight(sql, sessionUserId, { city: op.city, lamp: op.lamp, lat: op.lat, lng: op.lng }, clock.now ?? Date.now());
 
   if (op.kind === "street") {
     const parsed = parseStreetId(op.id);

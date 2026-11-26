@@ -32,6 +32,7 @@ import { emptyAgg, emitOnAnswer, mintSaveId, PLATE_KEEP, type PlateAgg, type Pla
 import { fetchRetune } from "./retuneJob";
 import { setQuarantine, setRetune } from "./rarity";
 import type { HolidayState } from "./holidayLights";
+import type { WardState } from "./wardCircuit";
 import type {
   CityId,
   Journey,
@@ -253,6 +254,10 @@ export type GameState = {
   /** 0.1.182: Holiday Lights stamps per city and paid cities, from the server's ledger rows (sync and stamp replies).
    *  Not written into the save, never counted on the device. Null for guests and until this session syncs. */
   holiday: HolidayState | null;
+  /** 0.1.184: Ward Circuit lights, window start and paid flag per city for today, from the server's ledger rows
+   *  (sync and light replies). Not written into the save, never counted on the device. Null for guests and until
+   *  this session syncs. */
+  ward: WardState | null;
   /** 0.0.95: celebratory match-reward pop (streak, cache, gift): emblem(s), big line, flies to the pocket. */
   matchPop: MatchPop | null;
   /** 0.0.96 Tabby (Nine lives): Chicago day the first miss was forgiven. */
@@ -1260,6 +1265,7 @@ export const useGame = create<GameState>((set, get) => ({
   encore: null,
   sunday: null,
   holiday: null,
+  ward: null,
   matchPop: null,
   shieldDay: saved?.shieldDay ?? "",
   bestStreak: saved?.bestStreak ?? 0,
