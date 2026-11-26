@@ -86,9 +86,11 @@ if (existsSync(staticDir)) {
   const cssFiles = existsSync(assetsDir)
     ? readdirSync(assetsDir).filter((f) => /^styles-.*\.css$/.test(f))
     : [];
-  if (!cssFiles.length && existsSync(join(staticDir, SHEET_NAME)) && statSync(join(staticDir, SHEET_NAME)).size >= 1000) {
-    // A second run over the same output: the hashed copy was already moved to /sheet-k07d.css.
-    console.log(`[deploy-guard] css already at /${SHEET_NAME}`);
+  const sheetOut = join(staticDir, SHEET_NAME);
+  if (!cssFiles.length && process.env.DEPLOY_GUARD_RERUN === "1" && existsSync(sheetOut) && statSync(sheetOut).size >= 1000) {
+    // An explicit second run over the same build (DEPLOY_GUARD_RERUN=1): the hashed copy was already moved to /sheet-k07d.css.
+    // Without the flag a missing hashed stylesheet still fails: /sheet-k07d.css is also in public/, so it is always present.
+    console.log(`[deploy-guard] css already at /${SHEET_NAME} (rerun)`);
   } else if (!cssFiles.length) {
     errors.push("missing hashed stylesheet in .vercel/output/static/assets");
   } else {

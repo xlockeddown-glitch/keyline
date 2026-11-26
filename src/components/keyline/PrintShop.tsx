@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { requestAllDyes } from "./DyeSync";
+import { useDyesWanted } from "./dyeWanted";
 import { cityShop, SCOUTS } from "@/game/data";
 import { CATALOGUE, owing, payable, priceLine, quotePrice, type Cosmetic, type CosmeticSlot } from "@/game/cosmetics";
 import { vaultPinHtml } from "@/game/pins";
@@ -69,7 +68,7 @@ export function PrintShop({ counter }: { counter: boolean }) {
   const worn = (slot: CosmeticSlot) => (slot === "coat" ? wardrobe.coat : wardrobe.lantern);
   const paints = useGame((s) => s.paints);
   // 0.1.193: the coat swatches below need every look built; DyeSync builds only the worn one until play has settled.
-  useEffect(() => requestAllDyes(), []);
+  useDyesWanted();
 
   const section = (slot: CosmeticSlot, title: string, lede: string) => {
     const items = CATALOGUE.filter((c) => c.slot === slot);

@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { shopIsOpen, subscribeShop } from "./dyeWanted";
 import { DYE_TARGETS, recolorSheet, type DyeTarget, type SheetKind } from "@/game/dyeRecolor";
 import { V2_DEFAULT_COAT, V2_PALETTE, V2_SCOUTS, applyCoatLayer, v2MaskUrl, v2SheetUrl } from "@/game/coatLayer";
 import { visibleCoat } from "@/game/paint";
 import { ALL_PRINTS, applyPrintLayer } from "@/game/cityPrints";
 import { useGame } from "@/game/store";
+import { retryingCache } from "@/game/dyeCache";
 
 /**
  * Paints the worn dye onto the walker. The browser mixes it from the scout's own
@@ -74,9 +76,13 @@ function publish(css: string) {
 type V2Sheets = { base: Sheet; mask: Sheet; def: DyeTarget };
 type Sheet = { data: Uint8ClampedArray; w: number; h: number };
 
-const v2Loads = new Map<string, Promise<V2Sheets | null>>();
-const v2Rules = new Map<string, Map<string, string>>();
-const v2Inflight = new Map<string, Promise<void>>();
+// Memory bounds: only the current scout keeps rules and blob URLs (a scout change revokes the old ones), and the decoded
+// base and mask sheets (two RGBA buffers) are held only while a build or a fill for that scout is running.
+const v2Loads = retryingCache<V2Sheets>();
+type V2Rule = { rule: string; url: string };
+const v2Rules = new Map<string, Map<string, V2Rule>>();
+const v2Inflight = new Map<string, Promise<boolean>>();
+const fillsActive = new Map<string, number>();
 const printById = new Map<string, (typeof ALL_PRINTS)[number]>(ALL_PRINTS.map((p) => [p.id, p]));
 /** Everything a v2 scout can wear, worn-first order is applied by the callers. */
 const V2_IDS: string[] = [...ALL_PRINTS.map((p) => p.id), ...Object.keys(V2_PALETTE)];
@@ -113,18 +119,32 @@ function put(scout: string, id: string, rule: string) {
   }
 }
 
-function loadV2(scout: string): Promise<V2Sheets | null> {
-  let hit = v2Loads.get(scout);
-  if (!hit) {
-    hit = (async () => {
-      const [base, mask] = await Promise.all([loadSheet(v2SheetUrl(scout)), loadSheet(v2MaskUrl(scout))]);
-      const def = V2_DEFAULT_COAT[scout];
-      if (!def || base.w !== mask.w || base.h !== mask.h) return null;
-      return { base, mask, def };
-    })();
-    v2Loads.set(scout, hit);
+async function loadSheets(scout: string): Promise<V2Sheets | null> {
+  const [base, mask] = await Promise.all([loadSheet(v2SheetUrl(scout)), loadSheet(v2MaskUrl(scout))]);
+  const def = V2_DEFAULT_COAT[scout];
+  if (!def || base.w !== mask.w || base.h !== mask.h) return null;
+  return { base, mask, def };
+}
+
+function revokeUrl(url: string) {
+  if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+}
+
+/** A scout change: drop every other scout's rules (revoking their pictures) and decoded sheets. */
+function evictOthers(keep: string) {
+  for (const [s, m] of v2Rules) {
+    if (s === keep) continue;
+    for (const r of m.values()) revokeUrl(r.url);
+    v2Rules.delete(s);
   }
-  return hit;
+  for (const k of v2Loads.keys()) if (k !== keep) v2Loads.delete(k);
+}
+
+/** Let go of the decoded sheets once nothing is building or filling for this scout. */
+function releaseSheets(scout: string) {
+  if (fillsActive.get(scout)) return;
+  for (const k of v2Inflight.keys()) if (k.startsWith(`${scout}|`)) return;
+  v2Loads.delete(scout);
 }
 
 async function blobUrl(data: Uint8ClampedArray, w: number, h: number): Promise<string> {
@@ -140,35 +160,49 @@ async function blobUrl(data: Uint8ClampedArray, w: number, h: number): Promise<s
   return blob ? URL.createObjectURL(blob) : canvas.toDataURL("image/png");
 }
 
-/** Build (once) and publish one print or coat for a v2 scout. */
-async function buildOne(scout: string, id: string): Promise<void> {
+/** Build (once) and publish one print or coat for a v2 scout. Never rejects; false means the scout's sheets could not be loaded. */
+async function buildOne(scout: string, id: string): Promise<boolean> {
   const have = v2Rules.get(scout)?.get(id);
   if (have) {
-    put(scout, id, have);
-    return;
+    put(scout, id, have.rule);
+    return true;
   }
   const key = `${scout}|${id}`;
   let job = v2Inflight.get(key);
   if (!job) {
     job = (async () => {
-      const L = await loadV2(scout);
-      if (!L) return;
-      const print = printById.get(id);
-      const tgt = V2_PALETTE[id];
-      if (!print && !tgt) return;
-      const data = print ? applyPrintLayer(L.base.data, L.mask.data, L.base.w, print, L.def) : applyCoatLayer(L.base.data, L.mask.data, tgt, L.def, L.base.w);
-      const url = await blobUrl(data, L.base.w, L.base.h);
-      if (!url) return;
-      const sel = `.scout-marker[data-scout="${scout}"][data-coat="${id}"]`;
-      let m = v2Rules.get(scout);
-      if (!m) v2Rules.set(scout, (m = new Map()));
-      m.set(id, `${sel},${sel}.is-idle,${sel}.is-idle.is-side{background-image:url("${url}")}`);
-    })().finally(() => v2Inflight.delete(key));
+      try {
+        const L = await v2Loads.get(scout, () => loadSheets(scout));
+        if (!L) return false;
+        const print = printById.get(id);
+        const tgt = V2_PALETTE[id];
+        if (!print && !tgt) return true;
+        if (liveScout !== scout) return true; // evicted while the sheets loaded
+        const data = print ? applyPrintLayer(L.base.data, L.mask.data, L.base.w, print, L.def) : applyCoatLayer(L.base.data, L.mask.data, tgt, L.def, L.base.w);
+        const url = await blobUrl(data, L.base.w, L.base.h);
+        if (!url) return true;
+        if (liveScout !== scout) {
+          revokeUrl(url); // finished after the scout changed: nothing will use it
+          return true;
+        }
+        const sel = `.scout-marker[data-scout="${scout}"][data-coat="${id}"]`;
+        let m = v2Rules.get(scout);
+        if (!m) v2Rules.set(scout, (m = new Map()));
+        m.set(id, { url, rule: `${sel},${sel}.is-idle,${sel}.is-idle.is-side{background-image:url("${url}")}` });
+        return true;
+      } catch {
+        return true; // one look failed to encode: the rest still build, and this one is tried again next time
+      }
+    })().finally(() => {
+      v2Inflight.delete(key);
+      releaseSheets(scout);
+    });
     v2Inflight.set(key, job);
   }
-  await job;
-  const rule = v2Rules.get(scout)?.get(id);
-  if (rule) put(scout, id, rule);
+  const ok = await job;
+  const r = v2Rules.get(scout)?.get(id);
+  if (r) put(scout, id, r.rule);
+  return ok;
 }
 
 function idleSlot(urgent: boolean): Promise<void> {
@@ -180,23 +214,23 @@ function idleSlot(urgent: boolean): Promise<void> {
 
 /** The rest of the wardrobe for a v2 scout, one picture at a time. */
 async function fillV2(scout: string, worn: string | null, urgent: boolean, cancel: () => boolean): Promise<void> {
-  const ids = V2_IDS.filter((id) => id !== worn);
-  for (const id of ids) {
-    if (v2Rules.get(scout)?.has(id)) {
-      put(scout, id, v2Rules.get(scout)!.get(id)!);
-      continue;
+  fillsActive.set(scout, (fillsActive.get(scout) ?? 0) + 1);
+  try {
+    for (const id of V2_IDS) {
+      if (id === worn) continue;
+      const have = v2Rules.get(scout)?.get(id);
+      if (have) {
+        put(scout, id, have.rule);
+        continue;
+      }
+      await idleSlot(urgent);
+      if (cancel() || liveScout !== scout) return;
+      if (!(await buildOne(scout, id))) return; // no sheets: a later fill tries again
     }
-    await idleSlot(urgent);
-    if (cancel() || liveScout !== scout) return;
-    await buildOne(scout, id);
+  } finally {
+    fillsActive.set(scout, (fillsActive.get(scout) ?? 1) - 1);
+    releaseSheets(scout);
   }
-  // Everything is built and cached as rules: the decoded sheets are no longer needed.
-  v2Loads.delete(scout);
-}
-
-/** The print shop calls this on open: every coat preview is wanted now. */
-export function requestAllDyes(): void {
-  if (liveScout && V2_SCOUTS.has(liveScout)) void fillV2(liveScout, null, true, () => false);
 }
 
 async function cssFor(scout: string, cancel: () => boolean): Promise<void> {
@@ -226,28 +260,30 @@ export function DyeSync() {
   const scout = useGame((s) => s.scout);
   const worn = useGame((s) => s.printWorn ?? visibleCoat(s.paints.wornCoat, s.wardrobe.coat));
   const inPlay = useGame((s) => s.screen !== "title" && s.screen !== "cities");
+  const shopOpen = useSyncExternalStore(subscribeShop, shopIsOpen, () => false);
   const v2 = V2_SCOUTS.has(scout);
-  // A scout change starts a fresh sheet with whatever is already built for that scout.
+  // A scout change starts a fresh sheet with whatever is already built for that scout, and drops everything else.
   useEffect(() => {
     liveScout = scout;
+    evictOthers(scout);
     if (!v2) return;
     resetSheet(scout);
-    for (const [id, rule] of v2Rules.get(scout) ?? []) put(scout, id, rule);
+    for (const [id, r] of v2Rules.get(scout) ?? []) put(scout, id, r.rule);
   }, [scout, v2]);
   // The look being worn comes first, on its own.
   useEffect(() => {
-    if (v2 && worn && (printById.has(worn) || V2_PALETTE[worn])) void buildOne(scout, worn);
+    if (v2 && worn && (printById.has(worn) || V2_PALETTE[worn])) void buildOne(scout, worn).catch(() => {});
   }, [scout, worn, v2]);
-  // The rest follow once play has begun, in idle time.
+  // The rest follow once play has begun, in idle time; at once while the print shop is open (re-run on a scout change).
   useEffect(() => {
-    if (!v2 || !inPlay) return;
+    if (!v2 || !(inPlay || shopOpen)) return;
     let dead = false;
-    const t = window.setTimeout(() => void fillV2(scout, worn, false, () => dead), 2500);
+    const t = window.setTimeout(() => void fillV2(scout, worn, shopOpen, () => dead).catch(() => {}), shopOpen ? 0 : 2500);
     return () => {
       dead = true;
       window.clearTimeout(t);
     };
-  }, [scout, worn, v2, inPlay]);
+  }, [scout, worn, v2, inPlay, shopOpen]);
   // Other scouts keep the old all-at-once build.
   useEffect(() => {
     if (v2) return;
