@@ -781,16 +781,16 @@ test("0.1.197: the changelog line, and the Philly-style Austin, New Orleans and 
   assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
 });
 
-test("0.1.199: version 0.1.199 / k1199a everywhere, and Nashville is the new Philly-style pin", () => {
+test("0.1.200: version 0.1.200 / k1200a everywhere, and Nashville stays the Philly-style pin", () => {
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.199"/);
-  assert.match(v, /PUBLISH_STAMP = "k1199a"/);
-  assert.match(v, /\n\/\/ 0\.1\.199: Nashville city map — [^\n]*\(k1199a\)\.\n$/);
+  assert.match(v, /APP_VERSION = "0\.1\.200"/);
+  assert.match(v, /PUBLISH_STAMP = "k1200a"/);
+  assert.match(v, /\n\/\/ 0\.1\.200: weekly trivia 2026-11-27 — [^\n]*\(k1200a\)\.\n$/);
   const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.199");
+  assert.equal(pkg.version, "0.1.200");
   const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.199");
-  assert.equal(lock.packages[""]!.version, "0.1.199");
+  assert.equal(lock.version, "0.1.200");
+  assert.equal(lock.packages[""]!.version, "0.1.200");
   assert.equal(manifest.cities.denver!.file, "denver.1adef533df.json.gz");
   assert.equal(manifest.cities.denver!.origin, "local");
   assert.equal(manifest.cities.denver!.overlay!.sha256, DENVER_OVERLAY_SHA);

@@ -1,0 +1,64 @@
+# Trivia current-events sources — batch 20261127 (weekly run)
+
+Bank: `src/game/banks/plus_20261127.ts`. Window: settled facts from 27 October 2026 through 27 November 2026 (mostly news since 20 November), each prompt time-anchored. Wikipedia pages fetched 27 Nov 2026 (America/Chicago); in-window hooks were first located on the Wikipedia Current events portal pages for the same dates. Every card was source-checked against the page text (the free-model cross-check cannot run; trial over).
+
+- [arts] Which film won Best Narrative Feature at the Golden Horse Awards in November 2026? — **We Are Born Good** — https://en.wikipedia.org/wiki/63rd_Golden_Horse_Awards
+- [arts] Who won Best Leading Actor at the 63rd Golden Horse Awards in November 2026? — **Liu Kuan-ting** — https://en.wikipedia.org/wiki/63rd_Golden_Horse_Awards
+- [arts] Which Hong Kong actress won Best Leading Actress at the Golden Horse Awards in November 2026? — **Angela Yuen** — https://en.wikipedia.org/wiki/63rd_Golden_Horse_Awards
+- [arts] In which city were the 63rd Golden Horse Awards held in November 2026? — **Taipei** — https://en.wikipedia.org/wiki/63rd_Golden_Horse_Awards
+- [arts] In November 2026, what weather hazard led Macy's to postpone its Thanksgiving Day Parade? — **High winds** — https://en.wikipedia.org/wiki/Macy%27s_Thanksgiving_Day_Parade
+- [arts] In November 2026, Macy's moved its Thanksgiving Day Parade to which day of the week? — **Saturday** — https://en.wikipedia.org/wiki/Macy%27s_Thanksgiving_Day_Parade
+- [arts] On Thanksgiving Day 2026, what aired in place of the postponed Macy's parade? — **A rerun of the 2025 parade** — https://en.wikipedia.org/wiki/Macy%27s_Thanksgiving_Day_Parade
+- [arts] The Macy's Thanksgiving Day Parade postponed in November 2026 was which edition of the event? — **100th** — https://en.wikipedia.org/wiki/Macy%27s_Thanksgiving_Day_Parade
+- [books] In November 2026, Spanish writer Cristina Fernández Cubas was awarded which literary prize? — **Miguel de Cervantes Prize** — https://en.wikipedia.org/wiki/Cristina_Fern%C3%A1ndez_Cubas
+- [celebrity] Which Paralympic athlete was crowned champion of Dancing with the Stars season 35 in November 2026? — **Ezra Frech** — https://en.wikipedia.org/wiki/Dancing_with_the_Stars_%28American_TV_series%29_season_35
+- [celebrity] Which professional dancer won Dancing with the Stars season 35 in 2026 as Ezra Frech's partner? — **Daniella Karagach** — https://en.wikipedia.org/wiki/Dancing_with_the_Stars_%28American_TV_series%29_season_35
+- [celebrity] Which Olympic figure skater finished second on Dancing with the Stars season 35 in 2026? — **Amber Glenn** — https://en.wikipedia.org/wiki/Dancing_with_the_Stars_%28American_TV_series%29_season_35
+- [celebrity] Jennifer Barreto's November 2026 Miss Universe win made her the first what to take the title? — **Married woman** — https://en.wikipedia.org/wiki/Jennifer_Barreto
+- [celebrity] With Jennifer Barreto's November 2026 win, how many Miss Universe titles has Puerto Rico won? — **Six** — https://en.wikipedia.org/wiki/Jennifer_Barreto
+- [celebrity] Before Jennifer Barreto in November 2026, who was the last Puerto Rican to win Miss Universe? — **Zuleyka Rivera** — https://en.wikipedia.org/wiki/Jennifer_Barreto
+- [celebrity] Who was crowned Miss Universe in November 2026? — **Jennifer Barreto** — https://en.wikipedia.org/wiki/Miss_Universe_2026
+- [celebrity] Which city hosted the Miss Universe pageant in November 2026? — **San Juan** — https://en.wikipedia.org/wiki/Miss_Universe_2026
+- [celebrity] Which outgoing Miss Universe did Jennifer Barreto succeed in November 2026? — **Fátima Bosch** — https://en.wikipedia.org/wiki/Miss_Universe_2026
+- [games] At the November 2026 Golden Joystick Awards, which game won Ultimate Game of the Year? — **Resident Evil Requiem** — https://en.wikipedia.org/wiki/Golden_Joystick_Awards
+- [games] At the November 2026 Golden Joystick Awards, which company was named Studio of the Year? — **Capcom** — https://en.wikipedia.org/wiki/Golden_Joystick_Awards
+- [games] At the November 2026 Golden Joystick Awards, which title won PC Game of the Year? — **Crimson Desert** — https://en.wikipedia.org/wiki/Golden_Joystick_Awards
+- [games] At the November 2026 Golden Joystick Awards, which upcoming title won Most Wanted Game? — **The Witcher IV** — https://en.wikipedia.org/wiki/Golden_Joystick_Awards
+- [games] Which country hosted the World Chess Championship 2026 match that began in November 2026? — **Switzerland** — https://en.wikipedia.org/wiki/World_Chess_Championship_2026
+- [games] At the World Chess Championship 2026, which challenger faced Gukesh Dommaraju from November 2026? — **Javokhir Sindarov** — https://en.wikipedia.org/wiki/World_Chess_Championship_2026
+- [history] In November 2026, Oxford's Pitt Rivers Museum returned ancestral Naga skulls to which country? — **India** — https://en.wikipedia.org/wiki/Pitt_Rivers_Museum
+- [music] At the 2026 ARIA Music Awards in November 2026, which act won the most awards? — **Tame Impala** — https://en.wikipedia.org/wiki/2026_ARIA_Music_Awards
+- [music] Which Sydney venue hosted the 2026 ARIA Music Awards in November 2026? — **Hordern Pavilion** — https://en.wikipedia.org/wiki/2026_ARIA_Music_Awards
+- [music] The ARIA Music Awards held in November 2026 were which annual edition of the ceremony? — **40th** — https://en.wikipedia.org/wiki/2026_ARIA_Music_Awards
+- [nature] What issue blocked a climate pact at the COP31 summit in November 2026? — **Mentioning fossil fuels** — https://en.wikipedia.org/wiki/2026_United_Nations_Climate_Change_Conference
+- [political] In November 2026, Matthew Wale said Solomon Islands would not renew its security pact with which country? — **China** — https://en.wikipedia.org/wiki/Matthew_Wale
+- [political] Which Australian job sectors did the November 2026 Solomon Islands security pact open to Solomon Islanders? — **Childcare and aged care** — https://en.wikipedia.org/wiki/Matthew_Wale
+- [political] In November 2026, Solomon Islands prime minister Matthew Wale signed a new security pact with which nation? — **Australia** — https://en.wikipedia.org/wiki/Matthew_Wale
+- [political] In November 2026, the European Council nominated which Spanish economist to lead the European Central Bank? — **Pablo Hernández de Cos** — https://en.wikipedia.org/wiki/Pablo_Hern%C3%A1ndez_de_Cos
+- [science] In November 2026, which planet did the BepiColombo spacecraft enter orbit around? — **Mercury** — https://en.wikipedia.org/wiki/BepiColombo
+- [science] What problem cut short BepiColombo's thruster burn at Mercury in November 2026? — **A software glitch** — https://en.wikipedia.org/wiki/BepiColombo
+- [science] BepiColombo, which reached Mercury orbit in November 2026, is a joint mission of ESA and which agency? — **JAXA** — https://en.wikipedia.org/wiki/BepiColombo
+- [science] In November 2026, which Chinese mission carried Muhammad Zeeshan Ali to orbit? — **Shenzhou 24** — https://en.wikipedia.org/wiki/Muhammad_Zeeshan_Ali
+- [science] Shenzhou 24's November 2026 launch carried the first astronaut from which country to reach orbit? — **Pakistan** — https://en.wikipedia.org/wiki/Shenzhou_24
+- [science] Which space station did China's Shenzhou 24 dock with in November 2026? — **Tiangong** — https://en.wikipedia.org/wiki/Shenzhou_24
+- [science] Who commanded China's Shenzhou 24 mission, launched in November 2026? — **Tang Hongbo** — https://en.wikipedia.org/wiki/Shenzhou_24
+- [science] From which launch center did Shenzhou 24 lift off in November 2026? — **Jiuquan** — https://en.wikipedia.org/wiki/Shenzhou_24
+- [sports] In November 2026, which nation did CAS reinstate as winners of the 2025 Africa Cup of Nations? — **Senegal** — https://en.wikipedia.org/wiki/2025_Africa_Cup_of_Nations_final
+- [sports] In November 2026, CAS based its 2025 Africa Cup of Nations final ruling on which legal doctrine? — **Field of play** — https://en.wikipedia.org/wiki/2025_Africa_Cup_of_Nations_final
+- [sports] Which player lost the singles final of the 2026 ATP Finals in November 2026? — **Alexander Zverev** — https://en.wikipedia.org/wiki/2026_ATP_Finals
+- [sports] Which pair won the doubles title at the 2026 ATP Finals in November 2026? — **Arribagé / Olivetti** — https://en.wikipedia.org/wiki/2026_ATP_Finals
+- [sports] Which Italian city hosted the 2026 ATP Finals in November 2026? — **Turin** — https://en.wikipedia.org/wiki/2026_ATP_Finals
+- [sports] In November 2026, Carlos Alcaraz beat Alexander Zverev in the final of which season-ending tennis event? — **ATP Finals** — https://en.wikipedia.org/wiki/2026_ATP_Finals
+- [sports] In November 2026, which club won the Copa Sudamericana final? — **Boca Juniors** — https://en.wikipedia.org/wiki/2026_Copa_Sudamericana_final
+- [sports] Which city hosted the Copa Sudamericana final in November 2026? — **Barranquilla** — https://en.wikipedia.org/wiki/2026_Copa_Sudamericana_final
+- [sports] At the November 2026 Las Vegas Grand Prix, which driver topped qualifying but lost pole to a grid penalty? — **Kimi Antonelli** — https://en.wikipedia.org/wiki/2026_Las_Vegas_Grand_Prix
+- [sports] At the November 2026 Las Vegas Grand Prix, which driver reached the podium after starting 17th? — **Oscar Piastri** — https://en.wikipedia.org/wiki/2026_Las_Vegas_Grand_Prix
+- [sports] Max Verstappen won which Formula One race from pole position on November 21, 2026? — **Las Vegas Grand Prix** — https://en.wikipedia.org/wiki/2026_Las_Vegas_Grand_Prix
+- [sports] In November 2026, which team won its first NWSL Championship? — **Kansas City Current** — https://en.wikipedia.org/wiki/2026_NWSL_Championship
+- [sports] Who was named Most Valuable Player of the November 2026 NWSL Championship? — **Vanessa DiBernardo** — https://en.wikipedia.org/wiki/2026_NWSL_Championship
+- [sports] Which stadium hosted the November 2026 NWSL Championship? — **Audi Field** — https://en.wikipedia.org/wiki/2026_NWSL_Championship
+- [sports] In November 2026, FIFA approved which Caribbean nation as a 2031 Women's World Cup co-host? — **Jamaica** — https://en.wikipedia.org/wiki/2031_FIFA_Women%27s_World_Cup
+- [sports] In which city did the FIFA Congress award the 2031 Women's World Cup hosting rights in November 2026? — **Zürich** — https://en.wikipedia.org/wiki/2031_FIFA_Women%27s_World_Cup
+- [sports] As of November 2026, which nation joins England, Scotland and Wales as 2035 Women's World Cup hosts? — **Northern Ireland** — https://en.wikipedia.org/wiki/2035_FIFA_Women%27s_World_Cup
+- [sports] As of November 2026, how many MotoGP-class world titles had Marc Márquez won? — **Eight** — https://en.wikipedia.org/wiki/Marc_M%C3%A1rquez
+- [sports] Marc Márquez won the 2026 MotoGP championship riding for which manufacturer? — **Ducati** — https://en.wikipedia.org/wiki/Marc_M%C3%A1rquez
