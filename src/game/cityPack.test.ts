@@ -30,12 +30,12 @@ const manifest = JSON.parse(manifestText) as { v: number; cities: Record<string,
 const philly = manifest.cities.philly!;
 const PHILLY_SHA = "d659096900a0265dda7f575b0422366ef6cddbdf0112e0e5b53db6535db7f786";
 const OVERLAY_SHA = "ac97070fe9b0327736fecfe75398da3bfecf10b15aa654d5fc14839689f34463";
-const AUSTIN_OVERLAY_SHA = "21c5b5aba3535dffd0412c7c98ce314cd4ba888ed2786c9e76e4b9ac5a5bc6b9";
-const AUSTIN_OVERLAY_BYTES = 259_308;
-const NOLA_OVERLAY_SHA = "4f35f29cdf6e2a6989c76891ebcb611d72fd6c984ac729dd45e305ce359bea8e";
-const NOLA_OVERLAY_BYTES = 146_432;
-const BOSTON_OVERLAY_SHA = "a1e74f0806cc890c13739118279a9d89694c891189bd8f012d76c24a0165afcc";
-const BOSTON_OVERLAY_BYTES = 260_158;
+const AUSTIN_OVERLAY_SHA = "3f77b3e6e1684fbbedc8be08e863107b658e966b10e06f168fbf666577bd191e";
+const AUSTIN_OVERLAY_BYTES = 239_076;
+const NOLA_OVERLAY_SHA = "fc23d3d35bccb1076ba74c56d399fa3fb938e1575f722b2554c27222dc344ce1";
+const NOLA_OVERLAY_BYTES = 190_378;
+const BOSTON_OVERLAY_SHA = "c20c243bfac92b48bd0eedadf5c7d9d78b242707495bd71adccb04e1ad52fdc2";
+const BOSTON_OVERLAY_BYTES = 261_344;
 const SEATTLE_OVERLAY_SHA = "06129459ebcc2c50ace82b5d5b59c020baa671f987e8a1a4824cae96477462f9";
 const SEATTLE_OVERLAY_BYTES = 252_738;
 const HOST = "https://xlockeddown-glitch.github.io/keyline-packs/v2/";
@@ -699,18 +699,31 @@ test("0.1.195: the changelog line, and Boston's overlay pin still holds", () => 
   assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
 });
 
-test("0.1.196: version 0.1.196 / k1196a everywhere, and Seattle's overlay is the only new pin", () => {
+test("0.1.196: the changelog line, and Seattle's overlay pin still holds", () => {
+  // 0.1.197: the live version moved on; the current-version pins live in the newest slice's test.
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.196"/);
-  assert.match(v, /PUBLISH_STAMP = "k1196a"/);
-  assert.match(v, /\n\/\/ 0\.1\.196: Seattle city map — [^\n]*\(k1196a\)\.\n$/);
-  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.196");
-  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.196");
-  assert.equal(lock.packages[""]!.version, "0.1.196");
+  assert.match(v, /\n\/\/ 0\.1\.196: Seattle city map — [^\n]*\(k1196a\)\.\n/);
   assert.equal(manifest.cities.seattle!.file, "seattle.fe65f44198.json.gz");
   assert.equal(manifest.cities.seattle!.origin, "local");
   assert.equal(manifest.cities.seattle!.overlay!.sha256, SEATTLE_OVERLAY_SHA);
   assert.equal(manifest.cities.seattle!.overlay!.bytes, SEATTLE_OVERLAY_BYTES);
+});
+
+test("0.1.197: version 0.1.197 / k1197a everywhere, and Austin, New Orleans and Boston are the new Philly-style pins", () => {
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.197"/);
+  assert.match(v, /PUBLISH_STAMP = "k1197a"/);
+  assert.match(v, /\n\/\/ 0\.1\.197: Philly-style redo of the Austin, New Orleans and Boston city maps — [^\n]*\(k1197a\)\.\n$/);
+  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
+  assert.equal(pkg.version, "0.1.197");
+  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
+  assert.equal(lock.version, "0.1.197");
+  assert.equal(lock.packages[""]!.version, "0.1.197");
+  assert.equal(manifest.cities.austin!.overlay!.sha256, AUSTIN_OVERLAY_SHA);
+  assert.equal(manifest.cities.austin!.overlay!.bytes, AUSTIN_OVERLAY_BYTES);
+  assert.equal(manifest.cities.nola!.overlay!.sha256, NOLA_OVERLAY_SHA);
+  assert.equal(manifest.cities.nola!.overlay!.bytes, NOLA_OVERLAY_BYTES);
+  assert.equal(manifest.cities.boston!.overlay!.sha256, BOSTON_OVERLAY_SHA);
+  assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
+  assert.ok(AUSTIN_OVERLAY_BYTES <= 262_144 && NOLA_OVERLAY_BYTES <= 262_144 && BOSTON_OVERLAY_BYTES <= 262_144);
 });
