@@ -791,7 +791,7 @@ test("0.1.201: version 0.1.201 / k1201a everywhere, and Philly is the Gemini-pai
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
   assert.match(v, /APP_VERSION = "0\.1\.201"/);
   assert.match(v, /PUBLISH_STAMP = "k1201a"/);
-  assert.match(v, /\n\/\/ 0\.1\.201: Gemini-painted Philly overlay preview — [^\n]*\(k1201a\)\.\n$/);
+  assert.match(v, /\n\/\/ 0\.1\.201: Gemini-painted Philly overlay — [^\n]*\(k1201a\)\.\n$/);
   const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
   assert.equal(pkg.version, "0.1.201");
   const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
