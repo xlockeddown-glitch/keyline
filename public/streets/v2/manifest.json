@@ -140,7 +140,19 @@
    "sha256": "3c52adcb2751851801787fec8a52c49ff95b384c09a74f3cbab41673a1e7665c",
    "origin": "local",
    "url": "/streets/v2/nashville.7eccff252a.json.gz",
-   "overlay": null
+   "overlay": {
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/nashville-overlay.2d00c13cffd0e526b3a3e620955ef9549cdea4553d58f90af48d2946ca8a2912.webp",
+    "sha256": "2d00c13cffd0e526b3a3e620955ef9549cdea4553d58f90af48d2946ca8a2912",
+    "bytes": 252980,
+    "w": 2737,
+    "h": 2577,
+    "bounds": {
+     "nw": [36.18158, -86.81392],
+     "ne": [36.18158, -86.75518],
+     "se": [36.13693, -86.75518],
+     "sw": [36.13693, -86.81392]
+    }
+   }
   },
   "nola": {
    "file": "nola.028a3776a2.json.gz",

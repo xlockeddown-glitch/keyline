@@ -1,0 +1,92 @@
+{
+ "image": {
+  "w": 2737,
+  "h": 2577
+ },
+ "anchors": [
+  {
+   "name": "Tennessee State Capitol",
+   "osm": "w249147622",
+   "lat": 36.165846,
+   "lng": -86.784231,
+   "px": 1383.35,
+   "py": 908.25,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Parthenon",
+   "osm": "w130913355",
+   "lat": 36.149838,
+   "lng": -86.813207,
+   "px": 33.21,
+   "py": 1832.15,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Nissan Stadium",
+   "osm": "w58759639",
+   "lat": 36.166445,
+   "lng": -86.771322,
+   "px": 1984.86,
+   "py": 873.67,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Ryman Auditorium",
+   "osm": "w130905906",
+   "lat": 36.161286,
+   "lng": -86.778476,
+   "px": 1651.54,
+   "py": 1171.48,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Bridgestone Arena",
+   "osm": "w130905914",
+   "lat": 36.159312,
+   "lng": -86.778405,
+   "px": 1654.81,
+   "py": 1285.38,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Country Music Hall of Fame and Museum",
+   "osm": "w130905919",
+   "lat": 36.15837,
+   "lng": -86.776164,
+   "px": 1759.24,
+   "py": 1339.77,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Union Station Hotel",
+   "osm": "w130905896",
+   "lat": 36.157211,
+   "lng": -86.784773,
+   "px": 1358.11,
+   "py": 1406.65,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  }
+ ]
+}
