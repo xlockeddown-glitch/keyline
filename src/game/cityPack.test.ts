@@ -36,6 +36,8 @@ const NOLA_OVERLAY_SHA = "4f35f29cdf6e2a6989c76891ebcb611d72fd6c984ac729dd45e305
 const NOLA_OVERLAY_BYTES = 146_432;
 const BOSTON_OVERLAY_SHA = "a1e74f0806cc890c13739118279a9d89694c891189bd8f012d76c24a0165afcc";
 const BOSTON_OVERLAY_BYTES = 260_158;
+const SEATTLE_OVERLAY_SHA = "06129459ebcc2c50ace82b5d5b59c020baa671f987e8a1a4824cae96477462f9";
+const SEATTLE_OVERLAY_BYTES = 252_738;
 const HOST = "https://xlockeddown-glitch.github.io/keyline-packs/v2/";
 const pack = read(`src/game/fixtures/packs/${philly.file}`);
 const phillyPin = cityPin(philly)!;
@@ -180,7 +182,7 @@ test("manifest: one field shape for all 16 cities; local pins match public/stree
     if (id === "philly") continue;
     assert.equal(e.origin, "local", `${id} is bundled`);
     assert.equal(e.url, `/streets/v2/${e.file}`);
-    if (id === "austin" || id === "nola" || id === "boston") assert.ok(e.overlay, `${id} pins an overlay: its graph stays bundled, the painted layer is on the pack host`);
+    if (id === "austin" || id === "nola" || id === "boston" || id === "seattle") assert.ok(e.overlay, `${id} pins an overlay: its graph stays bundled, the painted layer is on the pack host`);
     else assert.equal(e.overlay, null, `${id} has no overlay`);
     const bytes = read(`public/streets/v2/${e.file}`);
     assert.equal(bytes.length, e.gz, `${id} gz length`);
@@ -205,8 +207,8 @@ test("manifest: one field shape for all 16 cities; local pins match public/stree
     bounds: { nw: [39.97751, -75.198], ne: [39.97751, -75.13056], se: [39.92448, -75.13056], sw: [39.92448, -75.198] },
   });
 
-  const stray = filesUnder(new URL("public/", root)).filter((f) => /^philly.*\.json\.gz$/.test(f) || f.startsWith("philly-overlay") || f.startsWith("austin-overlay") || f.startsWith("nola-overlay") || f.startsWith("boston-overlay"));
-  assert.deepEqual(stray, [], "no philly*.json.gz and no philly-/austin-/nola-/boston-overlay* anywhere under public/");
+  const stray = filesUnder(new URL("public/", root)).filter((f) => /^philly.*\.json\.gz$/.test(f) || f.startsWith("philly-overlay") || f.startsWith("austin-overlay") || f.startsWith("nola-overlay") || f.startsWith("boston-overlay") || f.startsWith("seattle-overlay"));
+  assert.deepEqual(stray, [], "no philly*.json.gz and no philly-/austin-/nola-/boston-/seattle-overlay* anywhere under public/");
 
   // 0.1.189: Austin keeps its bundled graph (origin local); only the painted overlay is remote.
   const austin = manifest.cities.austin!;
@@ -249,6 +251,20 @@ test("manifest: one field shape for all 16 cities; local pins match public/stree
     bounds: { nw: [42.38518, -71.12784], ne: [42.38518, -71.03094], se: [42.33012, -71.03094], sw: [42.33012, -71.12784] },
   });
   assert.ok(boston.overlay!.bytes <= 262_144, "the pack overlay cap (256 KiB) holds for Boston too");
+
+  // 0.1.196: Seattle keeps its bundled graph (origin local); only the painted overlay is remote.
+  const seattle = manifest.cities.seattle!;
+  assert.equal(seattle.origin, "local");
+  assert.equal(seattle.url, `/streets/v2/${seattle.file}`);
+  assert.deepEqual(seattle.overlay, {
+    url: `${HOST}seattle-overlay.${SEATTLE_OVERLAY_SHA}.webp`,
+    sha256: SEATTLE_OVERLAY_SHA,
+    bytes: SEATTLE_OVERLAY_BYTES,
+    w: 1542,
+    h: 1872,
+    bounds: { nw: [47.63744, -122.37189], ne: [47.63744, -122.30572], se: [47.58328, -122.30572], sw: [47.58328, -122.37189] },
+  });
+  assert.ok(seattle.overlay!.bytes <= 262_144, "the pack overlay cap (256 KiB) holds for Seattle too");
 });
 
 test("the pack fetch is a simple CORS GET: mode cors, credentials omit, no headers; a bundled city stays a plain same-origin GET", async () => {
@@ -487,7 +503,7 @@ test("a fetch that exceeds the 15 s timeout is a failed attempt and is retried o
   }
 });
 
-test("overlay renders only in Philly, Austin, New Orleans and Boston", async () => {
+test("overlay renders only in Philly, Austin, New Orleans, Boston and Seattle", async () => {
   // The real overlay bytes live on the pack host only; a stand-in file pinned the same way exercises the path.
   const art = new TextEncoder().encode("RIFF....WEBPVP8L stand-in overlay bytes");
   const man = JSON.parse(manifestText) as typeof manifest;
@@ -503,6 +519,9 @@ test("overlay renders only in Philly, Austin, New Orleans and Boston", async () 
   const ob = man.cities.boston!.overlay!; // 0.1.195
   ob.sha256 = sha(art);
   ob.bytes = art.length;
+  const os = man.cities.seattle!.overlay!; // 0.1.196
+  os.sha256 = sha(art);
+  os.bytes = art.length;
   const h = harness({ manifest: JSON.stringify(man) });
   const made: { url: string; bounds: unknown; options: Record<string, unknown>; on: unknown; removed: boolean }[] = [];
   const L = {
@@ -516,7 +535,7 @@ test("overlay renders only in Philly, Austin, New Orleans and Boston", async () 
   try {
     h.remote.set(o.url, art);
     for (const id of Object.keys(CITIES)) {
-      if (id === "philly" || id === "austin" || id === "nola" || id === "boston") continue;
+      if (id === "philly" || id === "austin" || id === "nola" || id === "boston" || id === "seattle") continue;
       assert.equal(await h.clock.run(mountCityOverlay(L, map, id)), null, `${id}: no overlay`);
     }
     assert.equal(made.length, 0, "no other city creates an overlay");
@@ -524,6 +543,17 @@ test("overlay renders only in Philly, Austin, New Orleans and Boston", async () 
     assert.equal(h.to(oa.url).length, 0);
     assert.equal(h.to(on.url).length, 0);
     assert.equal(h.to(ob.url).length, 0);
+    assert.equal(h.to(os.url).length, 0);
+
+    // 0.1.196: Seattle (bundled graph, remote overlay) mounts its own, over its own box.
+    h.remote.set(os.url, art);
+    const dropS = await h.clock.run(mountCityOverlay(L, map, "seattle"));
+    assert.equal(made.length, 1);
+    assert.deepEqual(made[0]!.bounds, [[47.58328, -122.37189], [47.63744, -122.30572]]);
+    assert.deepEqual(made[0]!.options, { interactive: false, className: "city-overlay", opacity: 0.9, zIndex: -1 });
+    dropS!();
+    assert.equal(made[0]!.removed, true);
+    made.length = 0;
 
     // 0.1.195: Boston (bundled graph, remote overlay) mounts its own, over its own box.
     h.remote.set(ob.url, art);
@@ -659,18 +689,28 @@ test("0.1.194: the changelog line, and New Orleans' overlay pin still holds", ()
   assert.equal(manifest.cities.nola!.overlay!.bytes, NOLA_OVERLAY_BYTES);
 });
 
-test("0.1.195: version 0.1.195 / k1195a everywhere, and Boston's overlay is the only new pin", () => {
+test("0.1.195: the changelog line, and Boston's overlay pin still holds", () => {
+  // 0.1.196: the live version moved on; the current-version pins live in the newest slice's test.
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.195"/);
-  assert.match(v, /PUBLISH_STAMP = "k1195a"/);
-  assert.match(v, /\n\/\/ 0\.1\.195: Boston city map — [^\n]*\(k1195a\)\.\n$/);
-  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.195");
-  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.195");
-  assert.equal(lock.packages[""]!.version, "0.1.195");
+  assert.match(v, /\n\/\/ 0\.1\.195: Boston city map — [^\n]*\(k1195a\)\.\n/);
   assert.equal(manifest.cities.boston!.file, "boston.ee65ed59d9.json.gz");
   assert.equal(manifest.cities.boston!.origin, "local");
   assert.equal(manifest.cities.boston!.overlay!.sha256, BOSTON_OVERLAY_SHA);
   assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
+});
+
+test("0.1.196: version 0.1.196 / k1196a everywhere, and Seattle's overlay is the only new pin", () => {
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.196"/);
+  assert.match(v, /PUBLISH_STAMP = "k1196a"/);
+  assert.match(v, /\n\/\/ 0\.1\.196: Seattle city map — [^\n]*\(k1196a\)\.\n$/);
+  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
+  assert.equal(pkg.version, "0.1.196");
+  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
+  assert.equal(lock.version, "0.1.196");
+  assert.equal(lock.packages[""]!.version, "0.1.196");
+  assert.equal(manifest.cities.seattle!.file, "seattle.fe65f44198.json.gz");
+  assert.equal(manifest.cities.seattle!.origin, "local");
+  assert.equal(manifest.cities.seattle!.overlay!.sha256, SEATTLE_OVERLAY_SHA);
+  assert.equal(manifest.cities.seattle!.overlay!.bytes, SEATTLE_OVERLAY_BYTES);
 });

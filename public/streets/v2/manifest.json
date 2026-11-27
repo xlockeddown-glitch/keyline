@@ -216,7 +216,19 @@
    "sha256": "a78a6447a3eb269381204c2a9ce4fc48d28d4ceb13056c21123f198157f11936",
    "origin": "local",
    "url": "/streets/v2/seattle.fe65f44198.json.gz",
-   "overlay": null
+   "overlay": {
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/seattle-overlay.06129459ebcc2c50ace82b5d5b59c020baa671f987e8a1a4824cae96477462f9.webp",
+    "sha256": "06129459ebcc2c50ace82b5d5b59c020baa671f987e8a1a4824cae96477462f9",
+    "bytes": 252738,
+    "w": 1542,
+    "h": 1872,
+    "bounds": {
+     "nw": [47.63744, -122.37189],
+     "ne": [47.63744, -122.30572],
+     "se": [47.58328, -122.30572],
+     "sw": [47.58328, -122.37189]
+    }
+   }
   },
   "sf": {
    "file": "sf.000b2e5402.json.gz",

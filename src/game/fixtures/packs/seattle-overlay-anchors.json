@@ -1,0 +1,80 @@
+{
+ "image": {
+  "w": 1542,
+  "h": 1872
+ },
+ "anchors": [
+  {
+   "name": "Space Needle",
+   "osm": "w12903132",
+   "lat": 47.620592,
+   "lng": -122.349523,
+   "px": 521.22,
+   "py": 582.55,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Climate Pledge Arena",
+   "osm": "w25123756",
+   "lat": 47.622001,
+   "lng": -122.35398,
+   "px": 417.36,
+   "py": 533.85,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Smith Tower",
+   "osm": "w52781661",
+   "lat": 47.602029,
+   "lng": -122.331857,
+   "px": 932.91,
+   "py": 1224.16,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "King Street Station",
+   "osm": "w4725281",
+   "lat": 47.598344,
+   "lng": -122.329702,
+   "px": 983.13,
+   "py": 1351.52,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "The Seattle Public Library - Central Library",
+   "osm": "w37056442",
+   "lat": 47.606692,
+   "lng": -122.332671,
+   "px": 913.95,
+   "py": 1063.03,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Amazon.com The Spheres",
+   "osm": "w868099742",
+   "lat": 47.615837,
+   "lng": -122.339913,
+   "px": 745.18,
+   "py": 746.92,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  }
+ ]
+}
