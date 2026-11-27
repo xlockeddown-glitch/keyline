@@ -19,7 +19,7 @@ const manifest = JSON.parse(readFileSync(new URL("public/streets/v2/manifest.jso
 type Anchors = { image: { w: number; h: number }; anchors: { name: string; lat: number; lng: number; px: number; py: number }[] };
 /** 0.1.189 / 0.1.194 / 0.1.195 / 0.1.196 / 0.1.198 / 0.1.199: Austin, New Orleans, Boston, Seattle, Denver and Nashville join Philly (graphs bundled, overlays on the pack host); each city has its own box, anchors and anchor name. */
 const CASES = [
-  { id: "philly", file: "philly-overlay-anchors.json", main: "Philadelphia City Hall", box: { nw: [39.97751, -75.198], ne: [39.97751, -75.13056], se: [39.92448, -75.13056], sw: [39.92448, -75.198] }, wh: [1571, 1612] },
+  { id: "philly", file: "philly-overlay-anchors.json", main: "Philadelphia City Hall", box: { nw: [39.97751, -75.198], ne: [39.97751, -75.13056], se: [39.92448, -75.13056], sw: [39.92448, -75.198] }, wh: [2222, 2280] },
   { id: "austin", file: "austin-overlay-anchors.json", main: "Texas State Capitol", box: { nw: [30.32908, -97.78296], ne: [30.32908, -97.71664], se: [30.21082, -97.71664], sw: [30.21082, -97.78296] }, wh: [1545, 3191] },
   { id: "nola", file: "nola-overlay-anchors.json", main: "St. Louis Cathedral", box: { nw: [29.9775, -90.09363], ne: [29.9775, -90.03353], se: [29.92072, -90.03353], sw: [29.92072, -90.09363] }, wh: [1400, 1527] },
   { id: "boston", file: "boston-overlay-anchors.json", main: "Massachusetts State House", box: { nw: [42.38518, -71.12784], ne: [42.38518, -71.03094], se: [42.33012, -71.03094], sw: [42.33012, -71.12784] }, wh: [2258, 1736] },
