@@ -1,0 +1,80 @@
+{
+ "image": {
+  "w": 1719,
+  "h": 1353
+ },
+ "anchors": [
+  {
+   "name": "Colorado State Capitol",
+   "osm": "w34008043",
+   "lat": 39.739241,
+   "lng": -104.984862,
+   "px": 1045.25,
+   "py": 888.22,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Denver City and County Building",
+   "osm": "r4661432",
+   "lat": 39.73924,
+   "lng": -104.991018,
+   "px": 902.82,
+   "py": 888.25,
+   "shift_img_px": [
+    1,
+    0
+   ]
+  },
+  {
+   "name": "Union Station",
+   "osm": "w25650822",
+   "lat": 39.753183,
+   "lng": -105.000203,
+   "px": 687.86,
+   "py": 465.77,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Coors Field",
+   "osm": "r4423251",
+   "lat": 39.756115,
+   "lng": -104.994103,
+   "px": 829.96,
+   "py": 376.89,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Empower Field at Mile High",
+   "osm": "r4423254",
+   "lat": 39.743949,
+   "lng": -105.020108,
+   "px": 224.15,
+   "py": 745.57,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "Denver Art Museum",
+   "osm": "w35205743",
+   "lat": 39.737419,
+   "lng": -104.989613,
+   "px": 934.56,
+   "py": 943.45,
+   "shift_img_px": [
+    0,
+    0
+   ]
+  }
+ ]
+}

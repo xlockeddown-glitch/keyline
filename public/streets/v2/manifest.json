@@ -88,7 +88,19 @@
    "sha256": "87c24a89ca995e6aba254ca1417e3c309d9c2c12835def5dbdd8f901278549df",
    "origin": "local",
    "url": "/streets/v2/denver.1adef533df.json.gz",
-   "overlay": null
+   "overlay": {
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/denver-overlay.bba1c8a640dc514bd3f04033c7fda504727a16d18e77ce1c4c835dbee4698566.webp",
+    "sha256": "bba1c8a640dc514bd3f04033c7fda504727a16d18e77ce1c4c835dbee4698566",
+    "bytes": 218124,
+    "w": 1719,
+    "h": 1353,
+    "bounds": {
+     "nw": [39.76855, -105.02973],
+     "ne": [39.76855, -104.95594],
+     "se": [39.7239, -104.95594],
+     "sw": [39.7239, -105.02973]
+    }
+   }
   },
   "detroit": {
    "file": "detroit.608d21ddfc.json.gz",
