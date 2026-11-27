@@ -29,7 +29,7 @@ const manifestText = readFileSync(new URL("public/streets/v2/manifest.json", roo
 const manifest = JSON.parse(manifestText) as { v: number; cities: Record<string, CityEntry> };
 const philly = manifest.cities.philly!;
 const PHILLY_SHA = "d659096900a0265dda7f575b0422366ef6cddbdf0112e0e5b53db6535db7f786";
-const OVERLAY_SHA = "ac97070fe9b0327736fecfe75398da3bfecf10b15aa654d5fc14839689f34463";
+const OVERLAY_SHA = "66f40ca5c3c8aba4fd656f22f772cfbf6a9964e628da40002b61c77d43844e41";
 const AUSTIN_OVERLAY_SHA = "3f77b3e6e1684fbbedc8be08e863107b658e966b10e06f168fbf666577bd191e";
 const AUSTIN_OVERLAY_BYTES = 239_076;
 const NOLA_OVERLAY_SHA = "fc23d3d35bccb1076ba74c56d399fa3fb938e1575f722b2554c27222dc344ce1";
@@ -205,9 +205,9 @@ test("manifest: one field shape for all 16 cities; local pins match public/stree
   assert.deepEqual(philly.overlay, {
     url: `${HOST}philly-overlay.${OVERLAY_SHA}.webp`,
     sha256: OVERLAY_SHA,
-    bytes: 218_632,
-    w: 1571,
-    h: 1612,
+    bytes: 261_622,
+    w: 2222,
+    h: 2280,
     bounds: { nw: [39.97751, -75.198], ne: [39.97751, -75.13056], se: [39.92448, -75.13056], sw: [39.92448, -75.198] },
   });
 
@@ -781,16 +781,21 @@ test("0.1.197: the changelog line, and the Philly-style Austin, New Orleans and 
   assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
 });
 
-test("0.1.200: version 0.1.200 / k1200a everywhere, and Nashville stays the Philly-style pin", () => {
+test("0.1.201: version 0.1.201 / k1201a everywhere, and Philly is the sharpened pin", () => {
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.200"/);
-  assert.match(v, /PUBLISH_STAMP = "k1200a"/);
-  assert.match(v, /\n\/\/ 0\.1\.200: weekly trivia 2026-11-27 — [^\n]*\(k1200a\)\.\n$/);
+  assert.match(v, /APP_VERSION = "0\.1\.201"/);
+  assert.match(v, /PUBLISH_STAMP = "k1201a"/);
+  assert.match(v, /\n\/\/ 0\.1\.201: Philly city map sharpening — [^\n]*\(k1201a\)\.\n$/);
   const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.200");
+  assert.equal(pkg.version, "0.1.201");
   const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.200");
-  assert.equal(lock.packages[""]!.version, "0.1.200");
+  assert.equal(lock.version, "0.1.201");
+  assert.equal(lock.packages[""]!.version, "0.1.201");
+  assert.equal(manifest.cities.philly!.overlay!.sha256, OVERLAY_SHA);
+  assert.equal(manifest.cities.philly!.overlay!.bytes, 261_622);
+  assert.equal(manifest.cities.philly!.overlay!.w, 2222);
+  assert.equal(manifest.cities.philly!.overlay!.h, 2280);
+  assert.ok(manifest.cities.philly!.overlay!.bytes <= 262_144);
   assert.equal(manifest.cities.denver!.file, "denver.1adef533df.json.gz");
   assert.equal(manifest.cities.denver!.origin, "local");
   assert.equal(manifest.cities.denver!.overlay!.sha256, DENVER_OVERLAY_SHA);
