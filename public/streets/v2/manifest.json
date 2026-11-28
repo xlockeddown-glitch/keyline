@@ -45,11 +45,11 @@
    "origin": "local",
    "url": "/streets/v2/boston.ee65ed59d9.json.gz",
    "overlay": {
-    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/boston-overlay.c20c243bfac92b48bd0eedadf5c7d9d78b242707495bd71adccb04e1ad52fdc2.webp",
-    "sha256": "c20c243bfac92b48bd0eedadf5c7d9d78b242707495bd71adccb04e1ad52fdc2",
-    "bytes": 261344,
-    "w": 2258,
-    "h": 1736,
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/boston-overlay.eb8ae3ae31441835e05f871e49aef58a2763c63a17796c2f3e0db5ac42738a52.webp",
+    "sha256": "eb8ae3ae31441835e05f871e49aef58a2763c63a17796c2f3e0db5ac42738a52",
+    "bytes": 261394,
+    "w": 2420,
+    "h": 1861,
     "bounds": {
      "nw": [
       42.38518,
