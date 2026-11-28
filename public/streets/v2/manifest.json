@@ -11,11 +11,11 @@
    "origin": "local",
    "url": "/streets/v2/austin.ff665e2015.json.gz",
    "overlay": {
-    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/austin-overlay.3f77b3e6e1684fbbedc8be08e863107b658e966b10e06f168fbf666577bd191e.webp",
-    "sha256": "3f77b3e6e1684fbbedc8be08e863107b658e966b10e06f168fbf666577bd191e",
-    "bytes": 239076,
-    "w": 1545,
-    "h": 3191,
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/austin-overlay.c0ae9f0f4f1e68a27f5f1c66a8df8e536822c57e999eaeed74b743c058e2f4bf.webp",
+    "sha256": "c0ae9f0f4f1e68a27f5f1c66a8df8e536822c57e999eaeed74b743c058e2f4bf",
+    "bytes": 261858,
+    "w": 1838,
+    "h": 3794,
     "bounds": {
      "nw": [
       30.32908,

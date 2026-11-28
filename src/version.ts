@@ -1,7 +1,7 @@
 /** Bump on each publish: 0.0.01 → … → 0.0.99 → 0.1.0 → 0.1.1 (package.json needs valid semver, so no "0.1.00"). Keep in sync with package.json "version". */
-export const APP_VERSION = "0.1.202";
+export const APP_VERSION = "0.1.203";
 /** Cache-bust token for hashed /assets JS. */
-export const PUBLISH_STAMP = "k1202a";
+export const PUBLISH_STAMP = "k1203a";
 /** Stylesheet outside /assets — that prefix caches 404s for a year. Smoke asserts this path 200. */
 export const SHEET_HREF = "/sheet-k07d.css";
 
@@ -303,3 +303,4 @@ export const SHEET_HREF = "/sheet-k07d.css";
 // 0.1.200: weekly trivia 2026-11-27 — 293 new cards in plus_20261127 (233 evergreen, 60 current events Oct 27–Nov 27 2026; diff 94/132/67, lean celebrity and games, no math), every card source-checked; no stale fixes needed (k1200a).
 // 0.1.201: Gemini-painted Philly overlay — the sharpened 0.1.180-recipe Z=15.5 render (2222×2280, 0.386 px/m) restyled by gemini-3.1-flash-image as img2img, then the original alpha reapplied so geography stays locked to the same four corners; invented empty-block features were masked out; 259,144 B WebP pin, by sha256, byte length and the same four corners; a dead host leaves the plain map; no CSS or SVG on sprites (k1201a).
 // 0.1.202: Gemini-painted Seattle overlay — the sharpened 0.1.180-recipe Z=15.5 render (2181×2647, 0.439 px/m) restyled by gemini-3.1-flash-image as img2img, then the original alpha reapplied so geography stays locked to the same four corners; invented empty-block features were masked out; Gemini-invented street grids in Elliott Bay were restored to the procedural navy so the shoreline stays locked; 259,158 B WebP pin, by sha256, byte length and the same four corners; a dead host leaves the plain map; no CSS or SVG on sprites (k1202a).
+// 0.1.203: Gemini-painted Austin overlay — the sharpened 0.1.180-recipe Z=15.25 render (1838×3794, 0.288 px/m) restyled by gemini-3.1-flash-image as img2img, then the original alpha reapplied so geography stays locked to the same four corners; invented empty-block features were masked out; Gemini-invented marks in Lady Bird Lake were restored to the procedural navy so the shoreline stays locked; unnamed yard-scale landuse=grass parcels under 500 m² were left unpainted so the sharper canvas could stay under the overlay cap with soft edges; 261,858 B WebP pin, by sha256, byte length and the same four corners; a dead host leaves the plain map; no CSS or SVG on sprites (k1203a).
