@@ -38,8 +38,10 @@ const NOLA_OVERLAY_SHA_197 = "fc23d3d35bccb1076ba74c56d399fa3fb938e1575f722b2554
 const NOLA_OVERLAY_BYTES_197 = 190_378;
 const NOLA_OVERLAY_SHA = "1a23efd7eba409bbb34f072968d6c59f1c6e8596d1589577158289ebb3848722";
 const NOLA_OVERLAY_BYTES = 254_634;
-const BOSTON_OVERLAY_SHA = "c20c243bfac92b48bd0eedadf5c7d9d78b242707495bd71adccb04e1ad52fdc2";
-const BOSTON_OVERLAY_BYTES = 261_344;
+const BOSTON_OVERLAY_SHA_197 = "c20c243bfac92b48bd0eedadf5c7d9d78b242707495bd71adccb04e1ad52fdc2";
+const BOSTON_OVERLAY_BYTES_197 = 261_344;
+const BOSTON_OVERLAY_SHA = "eb8ae3ae31441835e05f871e49aef58a2763c63a17796c2f3e0db5ac42738a52";
+const BOSTON_OVERLAY_BYTES = 261_394;
 const SEATTLE_OVERLAY_SHA = "c6462088519b55cf9f2956a64d4b41229897bce5af02d2210216cda02154bc4a";
 const SEATTLE_OVERLAY_BYTES = 259_158;
 const SEATTLE_OVERLAY_SHA_196 = "06129459ebcc2c50ace82b5d5b59c020baa671f987e8a1a4824cae96477462f9";
@@ -256,8 +258,8 @@ test("manifest: one field shape for all 16 cities; local pins match public/stree
     url: `${HOST}boston-overlay.${BOSTON_OVERLAY_SHA}.webp`,
     sha256: BOSTON_OVERLAY_SHA,
     bytes: BOSTON_OVERLAY_BYTES,
-    w: 2258,
-    h: 1736,
+    w: 2420,
+    h: 1861,
     bounds: { nw: [42.38518, -71.12784], ne: [42.38518, -71.03094], se: [42.33012, -71.03094], sw: [42.33012, -71.12784] },
   });
   assert.ok(boston.overlay!.bytes <= 262_144, "the pack overlay cap (256 KiB) holds for Boston too");
@@ -755,14 +757,14 @@ test("0.1.194: the changelog line, and New Orleans' graph is still bundled", () 
   assert.notEqual(manifest.cities.nola!.overlay!.bytes, NOLA_OVERLAY_BYTES_197);
 });
 
-test("0.1.195: the changelog line, and Boston's overlay pin still holds", () => {
-  // 0.1.196: the live version moved on; the current-version pins live in the newest slice's test.
+test("0.1.195: the changelog line, and Boston's graph is still bundled", () => {
+  // 0.1.205: the painted overlay pin moved; the current-version pins live in the newest slice's test.
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
   assert.match(v, /\n\/\/ 0\.1\.195: Boston city map — [^\n]*\(k1195a\)\.\n/);
   assert.equal(manifest.cities.boston!.file, "boston.ee65ed59d9.json.gz");
   assert.equal(manifest.cities.boston!.origin, "local");
-  assert.equal(manifest.cities.boston!.overlay!.sha256, BOSTON_OVERLAY_SHA);
-  assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
+  assert.notEqual(manifest.cities.boston!.overlay!.sha256, BOSTON_OVERLAY_SHA_197);
+  assert.notEqual(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES_197);
 });
 
 test("0.1.196: the changelog line still holds, and Seattle's graph is still bundled", () => {
@@ -775,16 +777,16 @@ test("0.1.196: the changelog line still holds, and Seattle's graph is still bund
   assert.notEqual(manifest.cities.seattle!.overlay!.bytes, SEATTLE_OVERLAY_BYTES_196);
 });
 
-test("0.1.197: the changelog line, and the Philly-style New Orleans and Boston pins still hold", () => {
-  // 0.1.204: New Orleans' painted overlay pin moved; the current-version pins live in the newest slice's test.
+test("0.1.197: the changelog line, and the Philly-style graphs still hold", () => {
+  // 0.1.205: Boston's painted overlay pin moved; the current-version pins live in the newest slice's test.
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
   assert.match(v, /\n\/\/ 0\.1\.197: Philly-style redo of the Austin, New Orleans and Boston city maps — [^\n]*\(k1197a\)\.\n/);
   assert.notEqual(manifest.cities.austin!.overlay!.sha256, AUSTIN_OVERLAY_SHA_197);
   assert.notEqual(manifest.cities.austin!.overlay!.bytes, AUSTIN_OVERLAY_BYTES_197);
   assert.notEqual(manifest.cities.nola!.overlay!.sha256, NOLA_OVERLAY_SHA_197);
   assert.notEqual(manifest.cities.nola!.overlay!.bytes, NOLA_OVERLAY_BYTES_197);
-  assert.equal(manifest.cities.boston!.overlay!.sha256, BOSTON_OVERLAY_SHA);
-  assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
+  assert.notEqual(manifest.cities.boston!.overlay!.sha256, BOSTON_OVERLAY_SHA_197);
+  assert.notEqual(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES_197);
 });
 
 test("0.1.200: the changelog line still holds", () => {
@@ -846,21 +848,40 @@ test("0.1.203: the changelog line, and the Gemini-painted Austin pin still holds
   assert.equal(manifest.cities.philly!.overlay!.bytes, 259_144);
 });
 
-test("0.1.204: version 0.1.204 / k1204a everywhere, and New Orleans is the Gemini-painted pin", () => {
+test("0.1.204: the changelog line, and the Gemini-painted New Orleans pin still holds", () => {
+  // 0.1.205: the live version moved on; the current-version pins live in the newest slice's test.
   const v = readFileSync(new URL("src/version.ts", root), "utf8");
-  assert.match(v, /APP_VERSION = "0\.1\.204"/);
-  assert.match(v, /PUBLISH_STAMP = "k1204a"/);
-  assert.match(v, /\n\/\/ 0\.1\.204: Gemini-painted New Orleans overlay — [^\n]*\(k1204a\)\.\n$/);
-  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
-  assert.equal(pkg.version, "0.1.204");
-  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
-  assert.equal(lock.version, "0.1.204");
-  assert.equal(lock.packages[""]!.version, "0.1.204");
+  assert.match(v, /\n\/\/ 0\.1\.204: Gemini-painted New Orleans overlay — [^\n]*\(k1204a\)\.\n/);
   assert.equal(manifest.cities.nola!.overlay!.sha256, NOLA_OVERLAY_SHA);
   assert.equal(manifest.cities.nola!.overlay!.bytes, NOLA_OVERLAY_BYTES);
   assert.equal(manifest.cities.nola!.overlay!.w, 2801);
   assert.equal(manifest.cities.nola!.overlay!.h, 3054);
   assert.ok(manifest.cities.nola!.overlay!.bytes <= 262_144);
+  assert.equal(manifest.cities.austin!.overlay!.sha256, AUSTIN_OVERLAY_SHA);
+  assert.equal(manifest.cities.austin!.overlay!.bytes, AUSTIN_OVERLAY_BYTES);
+  assert.equal(manifest.cities.seattle!.overlay!.sha256, SEATTLE_OVERLAY_SHA);
+  assert.equal(manifest.cities.seattle!.overlay!.bytes, SEATTLE_OVERLAY_BYTES);
+  assert.equal(manifest.cities.philly!.overlay!.sha256, OVERLAY_SHA);
+  assert.equal(manifest.cities.philly!.overlay!.bytes, 259_144);
+});
+
+test("0.1.205: version 0.1.205 / k1205a everywhere, and Boston is the Gemini-painted pin", () => {
+  const v = readFileSync(new URL("src/version.ts", root), "utf8");
+  assert.match(v, /APP_VERSION = "0\.1\.205"/);
+  assert.match(v, /PUBLISH_STAMP = "k1205a"/);
+  assert.match(v, /\n\/\/ 0\.1\.205: Gemini-painted Boston overlay — [^\n]*\(k1205a\)\.\n$/);
+  const pkg = JSON.parse(readFileSync(new URL("package.json", root), "utf8")) as { version: string };
+  assert.equal(pkg.version, "0.1.205");
+  const lock = JSON.parse(readFileSync(new URL("package-lock.json", root), "utf8")) as { version: string; packages: Record<string, { version?: string }> };
+  assert.equal(lock.version, "0.1.205");
+  assert.equal(lock.packages[""]!.version, "0.1.205");
+  assert.equal(manifest.cities.boston!.overlay!.sha256, BOSTON_OVERLAY_SHA);
+  assert.equal(manifest.cities.boston!.overlay!.bytes, BOSTON_OVERLAY_BYTES);
+  assert.equal(manifest.cities.boston!.overlay!.w, 2420);
+  assert.equal(manifest.cities.boston!.overlay!.h, 1861);
+  assert.ok(manifest.cities.boston!.overlay!.bytes <= 262_144);
+  assert.equal(manifest.cities.nola!.overlay!.sha256, NOLA_OVERLAY_SHA);
+  assert.equal(manifest.cities.nola!.overlay!.bytes, NOLA_OVERLAY_BYTES);
   assert.equal(manifest.cities.austin!.overlay!.sha256, AUSTIN_OVERLAY_SHA);
   assert.equal(manifest.cities.austin!.overlay!.bytes, AUSTIN_OVERLAY_BYTES);
   assert.equal(manifest.cities.seattle!.overlay!.sha256, SEATTLE_OVERLAY_SHA);
