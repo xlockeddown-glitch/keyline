@@ -18,6 +18,7 @@ import { ItemIcon } from "./ItemIcon";
 import { OwnerPlate } from "./OwnLamps";
 import { useOwnedPoi } from "@/game/ownLampsClient";
 import { choiceButtons, dropStaleFocus } from "@/game/choiceMarkup";
+import { picSrc } from "@/game/picClue";
 
 const CAT_ICON: Record<TriviaCat, typeof Trophy> = {
   sports: Trophy,
@@ -328,7 +329,7 @@ export function VaultModal() {
               </div>
             </div>
           ) : (
-            <div className="plate-quiz mt-4">
+            <div className={`plate-quiz mt-4${quiz.kind === "pic" ? " is-pic" : ""}`}>
               <div className={`wick ${wickClass}`} aria-hidden>
                 <i style={{ width: `${frac * 100}%` }} />
               </div>
@@ -340,6 +341,11 @@ export function VaultModal() {
               </p>
 
               <p className="plate-q">{quiz.q}</p>
+              {quiz.kind === "pic" && quiz.pic ? (
+                <div className="pic-well" role="img" aria-label="Picture clue">
+                  <img src={picSrc(quiz.pic)} width={160} height={160} alt="" draggable={false} />
+                </div>
+              ) : null}
               {quiz.kind === "order" ? (
                 <form className="order-form mt-3 flex flex-col gap-2" data-testid="order-form" onSubmit={(e) => {
                   e.preventDefault();

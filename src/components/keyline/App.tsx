@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { setCityBed } from "@/game/audio";
 import { useGame } from "@/game/store";
+import { precachePics } from "@/game/picClue";
 import { LevelSync } from "./Levels";
 import { PrintSync } from "./Prints";
 import { TitleScreen } from "./TitleScreen";
@@ -22,6 +23,7 @@ export function KeylineApp() {
   // 0.1.62: in play each city has its own music bed; the title screen and city picker keep the scout bed.
   const inPlay = screen !== "title" && screen !== "cities";
   useEffect(() => setCityBed(inPlay ? cityId : null), [inPlay, cityId]);
+  useEffect(() => { void precachePics(); }, []);
   const view = screen === "title" ? <TitleScreen /> : screen === "cities" ? <CitySelect /> : screen === "loop" && looping ? <LoopScreen /> : screen === "flight" && flying ? <FlightScreen /> : <GameMap />;
   return (
     <>

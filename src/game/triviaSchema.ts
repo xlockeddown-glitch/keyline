@@ -51,7 +51,7 @@ export const DealIn = z.object({
     })
     .optional(),
   /** 0.1.158: the card formats this client can show (street lamps only). Absent: four-choice cards only. */
-  formats: z.array(z.enum(["tf", "near", "order"])).max(3).optional(),
+  formats: z.array(z.enum(["tf", "near", "order", "pic"])).max(4).optional(),
 });
 export type DealInput = z.infer<typeof DealIn>;
 
@@ -68,6 +68,8 @@ export const GradeIn = z.object({
   order: z.array(z.string().max(64)).max(8).optional().catch([]),
   /** 0.1.158 Closest Number: the typed guess (only read on a Closest Number card). */
   guess: z.number().finite().min(-1e12).max(1e12).optional(),
+  /** 0.1.207 picture clue: the tapped choice index (0–3). Graded by this index only; choice text is ignored. */
+  pick: z.number().int().min(0).max(3).optional(),
 });
 export type GradeInput = z.infer<typeof GradeIn>;
 
@@ -80,8 +82,10 @@ export type PublicCard = {
   rarity: Tier;
   /** 0.0.96 Fox: a wrong option the server crossed out. */
   struck?: string;
-  /** 0.1.158: "tf" (choices are True, False) or "near" (type a number), "order" (tap a permutation), "where" (ride clue). Absent: classic four choices. */
-  kind?: "classic" | "where" | "tf" | "near" | "order";
+  /** 0.1.158: "tf" (choices are True, False) or "near" (type a number), "order" (tap a permutation), "where" (ride clue), "pic" (picture clue). Absent: classic four choices. */
+  kind?: "classic" | "where" | "tf" | "near" | "order" | "pic";
+  /** 0.1.207: opaque stamp id for a picture clue (p01–p24). Never a country or landmark name. */
+  pic?: string;
   items?: { token: string; label: string }[];
   /** 0.1.158 Closest Number: a unit to show after the input, if any. */
   unit?: string;

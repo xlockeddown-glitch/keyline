@@ -58,7 +58,22 @@ export type TriviaQ = {
 export type FormatQ =
   | { kind: "tf"; q: string; answer: "True" | "False"; fact?: string; cat?: TriviaCat; diff: TriviaDiff; id: string; rarity: Tier }
   | { kind: "near"; q: string; value: number; unit?: string; diff: TriviaDiff; id: string; rarity: Tier }
-  | { kind: "order"; q: string; items: { label: string; key: number }[]; gap: "relative" | "years"; fact: string; cat: "history" | "geography" | "science" | "math"; diff: TriviaDiff; id: string; rarity: Tier };
+  | { kind: "order"; q: string; items: { label: string; key: number }[]; gap: "relative" | "years"; fact: string; cat: "history" | "geography" | "science" | "math"; diff: TriviaDiff; id: string; rarity: Tier }
+  | {
+      kind: "pic";
+      /** Opaque stamp id (p01–p24); the public path is /sprites/pic/<pic>.webp. */
+      pic: string;
+      role: "name" | "capital" | "continent" | "extra";
+      q: string;
+      choices: [string, string, string, string];
+      answer: string;
+      fact: string;
+      sources: readonly string[];
+      cat: "geography";
+      diff: TriviaDiff;
+      id: string;
+      rarity: Tier;
+    };
 
 /**
  * 0.1.173 Put in order reveal. `result` is the only half-coin signal ("swap" pays floor(total / 2)).
