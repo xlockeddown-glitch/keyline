@@ -196,3 +196,18 @@ export const PIC_CARDS: PicCard[] = SEEDS.map((s) => ({
 export function picCards(): PicCard[] {
   return PIC_CARDS;
 }
+
+/** Pick a fresh picture-clue card: name-it off amber, a derived fact on amber. Prefer an unused stamp. */
+export function pickPicCard(tier: Tier, avoid: readonly string[], roll: number, opts?: { pic?: string }): PicCard | null {
+  const seen = new Set(avoid);
+  const derived = tier === "amber";
+  let fresh = PIC_CARDS.filter((c) => !seen.has(c.id) && (derived ? c.role !== "name" : c.role === "name"));
+  if (opts?.pic) {
+    const pinned = fresh.filter((c) => c.pic === opts.pic);
+    if (pinned.length) fresh = pinned;
+  }
+  const unused = fresh.filter((c) => !seen.has(c.pic));
+  const pool = unused.length ? unused : fresh;
+  if (!pool.length) return null;
+  return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))]!;
+}

@@ -157,6 +157,11 @@ async function main() {
     console.error("[no-answers] PIC_UNIQUE no longer match the picture-clue bank (pick new ones)");
     process.exit(1);
   }
+  const plantedAlt = `jsx("img",{alt:${JSON.stringify(PIC_UNIQUE[0])}})`;
+  if (!new RegExp("(?:alt|aria-label)[\"']?\\s*[:=]\\s*[\"'][^\"']*" + PIC_UNIQUE[0].replace(/[.*+?^${}()|[\\]\\]/g, "\\$&") + "[^\"']*[\"']", "i").test(plantedAlt)) {
+    console.error("[no-answers] self-check failed: the detector missed a planted JSX alt");
+    process.exit(1);
+  }
   for (const c of PIC_CARDS) {
     if (c.q.length >= MIN_PROMPT && !prompts.includes(c.q)) prompts.push(c.q);
     if (c.fact.length >= MIN_PROMPT && !prompts.includes(c.fact)) prompts.push(c.fact);
@@ -168,7 +173,7 @@ async function main() {
     const hits = scanText(text, { prompts, answers: [...KNOWN_ANSWERS, ...orderAnswers, ...PIC_UNIQUE] });
     for (const a of [...new Set(PIC_CARDS.map((c) => c.answer))]) {
       const esc = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      if (new RegExp("(?:alt|aria-label)\\s*=\\s*[\"'][^\"']*" + esc + "[^\"']*[\"']", "i").test(text)) {
+      if (new RegExp("(?:alt|aria-label)[\"']?\\s*[:=]\\s*[\"'][^\"']*" + esc + "[^\"']*[\"']", "i").test(text)) {
         hits.push({ kind: "picture clue alt/aria leak", sample: a });
       }
     }

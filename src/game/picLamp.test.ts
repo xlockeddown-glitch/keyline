@@ -4,18 +4,17 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { PIC_CARDS, picCards } from "./banks/pic.ts";
+import { PIC_CARDS, picCards, pickPicCard } from "./banks/pic.ts";
 import { PIC_IDS } from "./picClue.ts";
-import { deal, formatFor, grade, nonceRoll, openToken, picShuffled, publicFormatId, resetGradeRing, FORMAT_CHANCE, type TriviaDeps } from "./triviaService.ts";
-import { strikeOption } from "./scoutPerks.ts";
-import { autopilotStrike } from "./carPerks.ts";
+import { avoidList, deal, formatFor, grade, nonceRoll, openToken, picShuffled, publicFormatId, resetGradeRing, FORMAT_CHANCE, type TriviaDeps } from "./triviaService.ts";
+import { autopilotHit } from "./carPerks.ts";
 import type { DealInput } from "./triviaSchema.ts";
-import type { FormatQ, Poi, TriviaQ } from "./types.ts";
+import type { Poi, TriviaQ } from "./types.ts";
 
 const root = new URL("../../", import.meta.url);
-const WHITE_LAMP: Poi = { id: "lamp-1", name: "Test", kind: "landmark", tier: "white", lat: 0, lng: 0, lore: "" };
-const BLUE_LAMP: Poi = { ...WHITE_LAMP, tier: "blue" };
-const GREEN_LAMP: Poi = { ...WHITE_LAMP, tier: "green" };
+const WHITE_LAMP: Poi = { id: "lamp-w", name: "Test", kind: "landmark", tier: "white", lat: 0, lng: 0, lore: "" };
+const BLUE_LAMP: Poi = { ...WHITE_LAMP, id: "lamp-b", tier: "blue" };
+const GREEN_LAMP: Poi = { ...WHITE_LAMP, id: "lamp-g", tier: "green" };
 const AMBER_LAMP: Poi = { ...WHITE_LAMP, id: "lamp-a", tier: "amber" };
 const RED_LAMP: Poi = { ...WHITE_LAMP, id: "lamp-r", tier: "red" };
 
@@ -49,20 +48,6 @@ function formatHitNonce(wantHit: boolean, prefix = "pic-n") {
   throw new Error("no nonce");
 }
 
-function pickPic(tier: "white" | "blue" | "green" | "amber" | "red" | "violet", avoid: readonly string[], roll: number, opts?: { pic?: string }): FormatQ | null {
-  const seen = new Set(avoid);
-  const roleName = tier === "amber";
-  let fresh = PIC_CARDS.filter((c) => !seen.has(c.id) && (roleName ? c.role !== "name" : c.role === "name"));
-  if (opts?.pic) {
-    const pinned = fresh.filter((c) => c.pic === opts.pic);
-    if (pinned.length) fresh = pinned;
-  }
-  const unused = fresh.filter((c) => !seen.has(c.pic));
-  const pool = unused.length ? unused : fresh;
-  if (!pool.length) return null;
-  return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))]!;
-}
-
 function deps(over: Partial<TriviaDeps> = {}): TriviaDeps {
   return {
     now: () => 1_000_000,
@@ -70,7 +55,7 @@ function deps(over: Partial<TriviaDeps> = {}): TriviaDeps {
     pick: () => CLASSIC,
     card: (id) => (id === CLASSIC.id ? CLASSIC : null),
     fmt: (id) => PIC_CARDS.find((c) => c.id === id || publicFormatId(c) === id) ?? null,
-    pickFormat: (kind, _cat, tier, avoid, roll, opts) => (kind === "pic" ? pickPic(tier, avoid, roll, opts) : null),
+    pickFormat: (kind, _cat, tier, avoid, roll, opts) => (kind === "pic" ? pickPicCard(tier, avoid, roll, opts) : null),
     namedPoi: (_city, id) => (id === AMBER_LAMP.id ? AMBER_LAMP : id === RED_LAMP.id ? RED_LAMP : id === GREEN_LAMP.id ? GREEN_LAMP : id === BLUE_LAMP.id ? BLUE_LAMP : WHITE_LAMP),
     nonce: () => formatHitNonce(true),
     ...over,
@@ -92,7 +77,7 @@ test("0.1.207: 24 stamps × 4 sourced geography cards, unique ids, answer in cho
     assert.ok(c.sources.length >= 1, c.id);
     assert.ok(c.sources.every((s) => s.startsWith("https://en.wikipedia.org/wiki/")), c.id);
     assert.ok(c.fact.length >= 20, c.id);
-    assert.ok(!c.id.includes(c.answer.toLowerCase().split(" ")[0]!) || c.id.startsWith("pic-p"), "raw id stays opaque");
+    assert.match(c.id, /^pic-p\d{2}-(name|capital|continent|extra)$/);
     const list = byPic.get(c.pic) ?? [];
     list.push(c);
     byPic.set(c.pic, list);
@@ -130,15 +115,19 @@ test("formatFor prefers pic at geography white/blue/green/amber when the client 
   assert.equal(formatFor(dealIn({ poiId: "comet-denver-1" }), { ...WHITE_LAMP, id: "comet-denver-1" }, "geography", hit), null);
 });
 
-test("pickFormatCard deals name-it at white/blue/green and a derived fact at amber, and rotates stamps", () => {
-  const name = pickPic("white", [], 0);
+test("pickPicCard deals name-it off amber and a derived fact at amber, and rotates stamps via avoidList", () => {
+  const name = pickPicCard("white", [], 0);
   assert.ok(name && name.kind === "pic" && name.role === "name");
-  const derived = pickPic("amber", [], 0);
+  const derived = pickPicCard("amber", [], 0);
   assert.ok(derived && derived.kind === "pic" && derived.role !== "name");
-  const avoid = PIC_CARDS.filter((c) => c.pic === name!.pic).map((c) => c.id);
-  const next = pickPic("white", avoid, 0);
+  const d = deps();
+  const avoid = avoidList(d, [publicFormatId(name!)]);
+  assert.ok(avoid.includes(name!.id));
+  assert.ok(avoid.includes(name!.pic), "avoidList records the opaque stamp id");
+  assert.ok(!avoid.includes(name!.q), "shared prompts are not avoided");
+  const next = pickPicCard("white", avoid, 0);
   assert.ok(next && next.kind === "pic" && next.pic !== name!.pic, "rotate to an unused stamp");
-  const pinned = pickPic("white", [], 0, { pic: "p01" });
+  const pinned = pickPicCard("white", [], 0, { pic: "p01" });
   assert.ok(pinned && pinned.kind === "pic" && pinned.pic === "p01" && pinned.role === "name");
 });
 
@@ -149,6 +138,7 @@ test("deal shuffles with a secret seed, public card carries the opaque pic id, t
   if (!r.ok) return;
   assert.equal(r.card.kind, "pic");
   assert.equal(r.card.pic, "p01");
+  assert.equal(r.card.rarity, "white");
   assert.equal(r.card.choices.length, 4);
   assert.match(r.card.id, /^f[A-Za-z0-9_-]+$/);
   const body = openToken(d.secret, r.token);
@@ -211,13 +201,25 @@ test("publicFormatId differs for two name-it cards that share a prompt, and neve
   assert.doesNotMatch(publicFormatId(a), /Italy|p01name/i);
 });
 
-test("a picture clue may be struck like a classic four-choice card", () => {
-  const card = PIC_CARDS.find((c) => c.pic === "p01" && c.role === "name")!;
-  assert.equal(strikeOption("fox", "red", card.choices, card.answer, 0, undefined)?.length ? true : false, true);
-  assert.notEqual(strikeOption("fox", "red", card.choices, card.answer, 0, undefined), card.answer);
-  const hit = autopilotStrike("model3", "nonce-that-hits-maybe", card.choices, card.answer, undefined);
-  // deterministic: either null or a wrong option
-  if (hit) assert.notEqual(hit, card.answer);
+test("deal records the lamp tier on a pic card, and Autopilot can strike a wrong option", () => {
+  let nonce = "ap-0";
+  for (let i = 0; i < 20000; i++) {
+    nonce = `ap-${i}`;
+    if (autopilotHit("model3", nonce)) break;
+  }
+  assert.equal(autopilotHit("model3", nonce), true);
+  const d = deps({ nonce: () => nonce, forcePic: "p01" });
+  const r = deal(d, { userId: null }, dealIn({ poiId: BLUE_LAMP.id }), [], { car: "model3" });
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.equal(r.card.kind, "pic");
+  assert.equal(r.card.rarity, "blue", "the public card and token use the lamp tier, not the bank white");
+  const body = openToken(d.secret, r.token);
+  assert.equal(body?.r, "blue");
+  assert.ok(r.card.struck);
+  assert.notEqual(r.card.struck, "Italy");
+  assert.ok(r.card.choices.includes(r.card.struck!));
+  assert.equal(body?.x?.st, 1);
 });
 
 test("sources doc lists every card", () => {

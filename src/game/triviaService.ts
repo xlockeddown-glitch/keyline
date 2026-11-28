@@ -516,7 +516,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   const picFq = fq?.kind === "pic" ? fq : null;
   const strikeChoices = picFq ? picFq.choices : !fq ? (plate as TriviaQ).choices : null;
   const strikeAnswer = picFq ? picFq.answer : !fq ? (plate as TriviaQ).answer : null;
-  const strikeRarity = picFq ? picFq.rarity : !fq ? (plate as TriviaQ).rarity : null;
+  const strikeRarity = picFq ? poi.tier : !fq ? (plate as TriviaQ).rarity : null;
   const struck =
     !strikeChoices || !strikeAnswer || strikeRarity == null || input.spark
       ? null
@@ -529,7 +529,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     t: deps.now(),
     w: windowMs,
     city: input.city,
-    r: plate.rarity,
+    r: picFq ? poi.tier : plate.rarity,
     d: plate.diff ?? 2,
     k: clearTier,
     pr: paintRoll ? 1 : 0,
@@ -564,7 +564,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
         : fq.kind === "order"
           ? { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "order" as const, items: shuffle(orderItems(fq, deps.secret, nonce), deps.rand) }
           : fq.kind === "pic"
-            ? { id: pub, q: fq.q, choices: picShuffled(fq.choices, deps.secret, nonce), diff: fq.diff, rarity: fq.rarity, kind: "pic" as const, pic: fq.pic, ...(struck ? { struck } : {}) }
+            ? { id: pub, q: fq.q, choices: picShuffled(fq.choices, deps.secret, nonce), diff: fq.diff, rarity: poi.tier, kind: "pic" as const, pic: fq.pic, ...(struck ? { struck } : {}) }
             : { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "near" as const, ...(fq.unit ? { unit: fq.unit } : {}) };
     return { ok: true, token, windowMs, card };
   }

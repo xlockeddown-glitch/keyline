@@ -7,6 +7,7 @@ import { sealPlate } from "./rarity";
 import { everyCard, everyCardCat, pickTrivia } from "./trivia";
 import { publicCardId, publicFormatId, type TriviaDeps } from "./triviaService";
 import { formatCards } from "./banks/formats";
+import { pickPicCard } from "./banks/pic";
 import { pickWhere, whereCards } from "./whereAmI";
 import type { CityId, FormatQ, Poi, Tier, TriviaCat, TriviaQ } from "./types";
 
@@ -65,16 +66,8 @@ export function pickFormatCard(kind: "tf" | "near" | "order" | "pic", cat: Trivi
   formatAny("");
   const seen = new Set(avoid);
   if (kind === "pic") {
-    const roleName = tier === "amber";
-    let fresh = fmtAll!.filter((c): c is Extract<FormatQ, { kind: "pic" }> => c.kind === "pic" && !seen.has(c.id) && (roleName ? c.role !== "name" : c.role === "name"));
-    if (opts?.pic) {
-      const pinned = fresh.filter((c) => c.pic === opts.pic);
-      if (pinned.length) fresh = pinned;
-    }
-    const unused = fresh.filter((c) => !seen.has(c.pic));
-    const pool = unused.length ? unused : fresh;
-    if (!pool.length) return null;
-    return pool[Math.min(pool.length - 1, Math.floor(roll * pool.length))]!;
+    formatAny("");
+    return pickPicCard(tier, avoid, roll, opts);
   }
   const fresh = fmtAll!.filter((c) => c.kind === kind && !seen.has(c.id) && (c.kind === "order" || !seen.has(c.q)) && (c.kind === "near" ? c.rarity === tier : c.kind === "order" ? c.rarity === tier && c.cat === cat : c.cat === cat));
   const pool = kind === "tf" ? (fresh.some((c) => c.rarity === tier) ? fresh.filter((c) => c.rarity === tier) : fresh) : fresh;
