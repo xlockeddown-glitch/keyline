@@ -163,11 +163,11 @@
    "origin": "local",
    "url": "/streets/v2/nola.028a3776a2.json.gz",
    "overlay": {
-    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/nola-overlay.fc23d3d35bccb1076ba74c56d399fa3fb938e1575f722b2554c27222dc344ce1.webp",
-    "sha256": "fc23d3d35bccb1076ba74c56d399fa3fb938e1575f722b2554c27222dc344ce1",
-    "bytes": 190378,
-    "w": 1400,
-    "h": 1527,
+    "url": "https://xlockeddown-glitch.github.io/keyline-packs/v2/nola-overlay.1a23efd7eba409bbb34f072968d6c59f1c6e8596d1589577158289ebb3848722.webp",
+    "sha256": "1a23efd7eba409bbb34f072968d6c59f1c6e8596d1589577158289ebb3848722",
+    "bytes": 254634,
+    "w": 2801,
+    "h": 3054,
     "bounds": {
      "nw": [
       29.9775,

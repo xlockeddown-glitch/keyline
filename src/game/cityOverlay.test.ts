@@ -21,7 +21,7 @@ type Anchors = { image: { w: number; h: number }; anchors: { name: string; lat: 
 const CASES = [
   { id: "philly", file: "philly-overlay-anchors.json", main: "Philadelphia City Hall", box: { nw: [39.97751, -75.198], ne: [39.97751, -75.13056], se: [39.92448, -75.13056], sw: [39.92448, -75.198] }, wh: [2222, 2280] },
   { id: "austin", file: "austin-overlay-anchors.json", main: "Texas State Capitol", box: { nw: [30.32908, -97.78296], ne: [30.32908, -97.71664], se: [30.21082, -97.71664], sw: [30.21082, -97.78296] }, wh: [1838, 3794] },
-  { id: "nola", file: "nola-overlay-anchors.json", main: "St. Louis Cathedral", box: { nw: [29.9775, -90.09363], ne: [29.9775, -90.03353], se: [29.92072, -90.03353], sw: [29.92072, -90.09363] }, wh: [1400, 1527] },
+  { id: "nola", file: "nola-overlay-anchors.json", main: "St. Louis Cathedral", box: { nw: [29.9775, -90.09363], ne: [29.9775, -90.03353], se: [29.92072, -90.03353], sw: [29.92072, -90.09363] }, wh: [2801, 3054] },
   { id: "boston", file: "boston-overlay-anchors.json", main: "Massachusetts State House", box: { nw: [42.38518, -71.12784], ne: [42.38518, -71.03094], se: [42.33012, -71.03094], sw: [42.33012, -71.12784] }, wh: [2258, 1736] },
   { id: "seattle", file: "seattle-overlay-anchors.json", main: "Space Needle", box: { nw: [47.63744, -122.37189], ne: [47.63744, -122.30572], se: [47.58328, -122.30572], sw: [47.58328, -122.37189] }, wh: [2181, 2647] },
   { id: "denver", file: "denver-overlay-anchors.json", main: "Colorado State Capitol", box: { nw: [39.76855, -105.02973], ne: [39.76855, -104.95594], se: [39.7239, -104.95594], sw: [39.7239, -105.02973] }, wh: [1719, 1353] },
