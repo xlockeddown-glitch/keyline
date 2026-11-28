@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ORDER_CARDS, generatedOrder } from "./banks/order.ts";
 import { TF_CARDS, formatCards, generatedNear } from "./banks/formats.ts";
+import { picCards } from "./banks/pic.ts";
 import { publicFormatId } from "./triviaService.ts";
 
 test("0.1.158 TF seed: 24 cards, 4 in each of 6 fields, white/blue/green, always difficulty 1, each with a fact", () => {
@@ -38,5 +39,5 @@ test("generatedNear fills 40 cards per amber/red/violet and is included in forma
   const one = near[0]!;
   assert.equal(one.kind, "near");
   assert.match(publicFormatId(one), /^f/);
-  assert.equal(formatCards().length, TF_CARDS.length + near.length + ORDER_CARDS.length + generatedOrder().length);
+  assert.equal(formatCards().length, TF_CARDS.length + near.length + ORDER_CARDS.length + generatedOrder().length + picCards().length);
 });

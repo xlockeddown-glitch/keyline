@@ -85,7 +85,7 @@ type TokenBody = {
   sv: string;
   n: string;
   /** 0.1.158: the card's format, set by the server ("tf" True/False, "near" Closest Number). Absent: four choices. */
-  f?: "tf" | "near" | "order";
+  f?: "tf" | "near" | "order" | "pic";
   /**
    * Pay context sealed at deal (0.0.78). The grade recomputes coins from this plus its own clock and rolls.
    * Absent on a token dealt before the wallet moved server-side: that grade pays with the defaults.
@@ -132,7 +132,9 @@ export type TriviaDeps = {
   /** 0.1.158: a True/False or Closest Number card by public or raw id (a separate index from `card`). */
   fmt?: (id: string) => FormatQ | null;
   /** 0.1.158: a format card for this lamp, or null (nothing fits or everything was seen): deal four choices then. */
-  pickFormat?: (kind: "tf" | "near" | "order", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number) => FormatQ | null;
+  pickFormat?: (kind: "tf" | "near" | "order" | "pic", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number, opts?: { pic?: string }) => FormatQ | null;
+  /** 0.1.207 DEV only: force a picture-clue deal of this opaque stamp id. */
+  forcePic?: string;
   /** 0.1.168: a Where am I? card for the Loop (whereAmI.ts), or null: the deal falls back to `pick`. */
   pickWhere?: (city: CityId, avoid: readonly string[], rand?: () => number) => TriviaQ | null;
   /** A named lamp of this city, or null. */
@@ -154,8 +156,8 @@ export function publicCardId(card: { q: string; choices: readonly string[] }): s
 }
 
 /** 0.1.158: a format card's public id. `f` + sha256(kind + prompt): never the answer or the value. */
-export function publicFormatId(card: { kind: "tf" | "near" | "order"; q: string; items?: { label: string }[] }): string {
-  const identity = card.kind === "order" ? `\0${JSON.stringify(card.items?.map((x) => x.label).sort())}` : "";
+export function publicFormatId(card: { kind: "tf" | "near" | "order" | "pic"; q: string; items?: { label: string }[]; pic?: string }): string {
+  const identity = card.kind === "order" ? `\0${JSON.stringify(card.items?.map((x) => x.label).sort())}` : card.kind === "pic" ? `\0${card.pic ?? ""}` : "";
   const h = createHash("sha256").update(`klf158\0${card.kind}\0${card.q}${identity}`).digest();
   return `f${b64u(h).slice(0, 14)}`;
 }
@@ -174,11 +176,16 @@ export function nonceRoll(label: string, nonce: string): number {
  * 0.1.158: which format this deal is, if any. Only a deal that opts in (`formats`), only a street lamp (no spark,
  * Hearth, Blitz, Flight or Comet vault), TF at white/blue/green lamps, Closest Number at amber/red/violet math lamps.
  */
-export function formatFor(input: DealInput, poi: Poi, cat: TriviaCat, nonce: string): "tf" | "near" | "order" | null {
+const PIC_TIERS: readonly Tier[] = ["white", "blue", "green", "amber"];
+
+export function formatFor(input: DealInput, poi: Poi, cat: TriviaCat, nonce: string): "tf" | "near" | "order" | "pic" | null {
   const want = input.formats;
   if (!want?.length || input.spark) return null;
   if (poi.id.startsWith("placed-") || poi.id.startsWith("blitz-") || poi.id.startsWith("flight-") || isComet(poi.id)) return null;
   if (nonceRoll("kl-format", nonce) >= FORMAT_CHANCE) return null;
+  // 0.1.207: prefer a picture clue in the 20% format slot when geography is eligible (white/blue/green name-it, amber derived).
+  const picEligible = want.includes("pic") && cat === "geography" && PIC_TIERS.includes(poi.tier);
+  if (picEligible) return "pic";
   // Keep the existing 20% slot. Where TF/near also fits, give order one quarter of it.
   const orderEligible = want.includes("order") && ["history", "geography", "science", "math"].includes(cat) && ["green", "amber", "red"].includes(poi.tier);
   const existing = (want.includes("tf") && TF_TIERS.includes(poi.tier)) || (want.includes("near") && cat === "math" && NEAR_TIERS.includes(poi.tier));
@@ -227,6 +234,27 @@ export function shuffle<T>(xs: readonly T[], rand: () => number = Math.random): 
   return out;
 }
 
+/** Deterministic RNG from the deal secret + nonce (the client can decode the token, so the shuffle is not stored in it). */
+export function seededRand(secret: string, nonce: string, label: string): () => number {
+  let n = 0;
+  let pool = Buffer.alloc(0);
+  let off = 0;
+  return () => {
+    if (off + 4 > pool.length) {
+      pool = createHmac("sha256", secret).update(`${label}\0${nonce}\0${n++}`).digest();
+      off = 0;
+    }
+    const v = pool.readUInt32BE(off);
+    off += 4;
+    return v / 4294967296;
+  };
+}
+
+/** 0.1.207: the shuffled picture-clue choices the client saw, recomputed at grade from secret + nonce. */
+export function picShuffled(choices: readonly string[], secret: string, nonce: string): string[] {
+  return shuffle(choices, seededRand(secret, nonce, "pic-shuffle"));
+}
+
 /** Answer time the grade uses: the client's stopwatch, but never more than RTT_GRACE_MS faster than the server saw. */
 export function effectiveMs(clientMs: number, serverMs: number): number {
   return Math.max(0, Math.round(Math.max(clientMs, serverMs - RTT_GRACE_MS)));
@@ -253,7 +281,8 @@ export function avoidList(deps: Pick<TriviaDeps, "card" | "fmt">, seen: readonly
       continue;
     }
     ids.push(c.id);
-    if (c.kind !== "order") qs.push(c.q);
+    if ("pic" in c && typeof (c as { pic?: string }).pic === "string") ids.push((c as { pic: string }).pic);
+    if (c.kind !== "order" && c.kind !== "pic") qs.push(c.q);
   }
   return [...ids, ...qs];
 }
@@ -400,6 +429,16 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
     const stepPoi: Poi = { ...hp.poi, tier: hearthTierAt(h.v, h.step) };
     dealDeps = { ...deps, namedPoi: (c, id) => (id === stepPoi.id ? stepPoi : deps.namedPoi(c, id)) };
   }
+  if (import.meta.env?.DEV) {
+    try {
+      const { getCookie } = await import("@tanstack/react-start/server");
+      const raw = getCookie("kl-dev-pic") ?? "";
+      const pic = raw === "1" || raw === "true" ? "p01" : /^p\d{2}$/.test(raw) ? raw : "";
+      if (pic) dealDeps = { ...dealDeps, forcePic: pic };
+    } catch {
+      // no cookie API in a unit test
+    }
+  }
   const r = deal(dealDeps, viewer, { ...input, blank: input.poiId.startsWith("placed-") || comet ? undefined : input.blank }, recent, proven, hearth);
   if (!r.ok) return r;
   // A migrated pocket pays its match here, once per token. Guests and a wallet not yet synced still pay on the device.
@@ -421,7 +460,7 @@ export async function dealFor(deps: TriviaDeps, viewer: Viewer, input: DealInput
   if (sql && viewer.userId) {
     try {
       // 0.1.173: a four-choice card may now name its kind ("where", "classic"); only format cards live in the format index.
-      const isFormat = r.card.kind === "tf" || r.card.kind === "near" || r.card.kind === "order";
+      const isFormat = r.card.kind === "tf" || r.card.kind === "near" || r.card.kind === "order" || r.card.kind === "pic";
       const raw = (isFormat ? deps.fmt?.(r.card.id)?.id : deps.card(r.card.id)?.id) ?? r.card.id;
       await noteDealt(sql, viewer.userId, raw, new Date(deps.now()));
     } catch (e) {
@@ -446,8 +485,9 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   const nonce = deps.nonce?.() ?? b64u(randomBytes(12));
   const avoid = avoidList(deps, [...recent, ...input.seen]);
   // 0.1.158: a street lamp that opted in may deal True/False or Closest Number (rolled from the nonce).
-  const kind = deps.pickFormat ? formatFor(input, poi, cat, nonce) : null;
-  const fq = kind ? deps.pickFormat!(kind, cat, poi.tier, avoid, nonceRoll("kl-format-pick", nonce)) : null;
+  let kind = deps.pickFormat ? formatFor(input, poi, cat, nonce) : null;
+  if (deps.forcePic && input.formats?.includes("pic") && !input.spark && !poi.id.startsWith("placed-") && !poi.id.startsWith("blitz-") && !poi.id.startsWith("flight-") && !isComet(poi.id)) kind = "pic";
+  const fq = kind ? deps.pickFormat!(kind, cat, poi.tier, avoid, nonceRoll("kl-format-pick", nonce), kind === "pic" && deps.forcePic ? { pic: deps.forcePic } : undefined) : null;
   // 0.1.168: the Loop's Where am I? deals from the city's places, not the bank.
   const where = !fq && input.poiId.startsWith(WHERE_PREFIX) ? (deps.pickWhere?.(input.city, avoid, deps.rand) ?? null) : null;
   const plate: TriviaQ | FormatQ = fq ?? where ?? deps.pick(input.city, cat, poi, poi.tier, avoid);
@@ -472,11 +512,16 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
   // 0.1.158: never on a True/False or Closest Number card.
   // 0.1.179: decided before the token is sealed, so the token can say a strike happened (`st`): a miss on a struck
   // card is not an Encore fail.
+  // 0.1.207: a picture clue is a four-choice card, so Fox and Autopilot may strike a wrong option (unlike TF/near/order).
+  const picFq = fq?.kind === "pic" ? fq : null;
+  const strikeChoices = picFq ? picFq.choices : !fq ? (plate as TriviaQ).choices : null;
+  const strikeAnswer = picFq ? picFq.answer : !fq ? (plate as TriviaQ).answer : null;
+  const strikeRarity = picFq ? poi.tier : !fq ? (plate as TriviaQ).rarity : null;
   const struck =
-    fq || input.spark
+    !strikeChoices || !strikeAnswer || strikeRarity == null || input.spark
       ? null
-      : (strikeOption(scout, (plate as TriviaQ).rarity, (plate as TriviaQ).choices, (plate as TriviaQ).answer, (deps.rand ?? Math.random)(), (plate as TriviaQ).kind) ??
-        autopilotStrike(proven.car ?? null, nonce, (plate as TriviaQ).choices, (plate as TriviaQ).answer, (plate as TriviaQ).kind));
+      : (strikeOption(scout, strikeRarity, strikeChoices, strikeAnswer, (deps.rand ?? Math.random)(), picFq ? undefined : (plate as TriviaQ).kind) ??
+        autopilotStrike(proven.car ?? null, nonce, strikeChoices, strikeAnswer, picFq ? undefined : (plate as TriviaQ).kind));
   const token = sealToken(deps.secret, {
     v: TOKEN_VERSION,
     c: pub,
@@ -484,7 +529,7 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
     t: deps.now(),
     w: windowMs,
     city: input.city,
-    r: plate.rarity,
+    r: picFq ? poi.tier : plate.rarity,
     d: plate.diff ?? 2,
     k: clearTier,
     pr: paintRoll ? 1 : 0,
@@ -518,7 +563,9 @@ export function deal(deps: TriviaDeps, viewer: Viewer, input: DealInput, recent:
         ? { id: pub, q: fq.q, choices: ["True", "False"], diff: 1 as const, rarity: fq.rarity, kind: "tf" as const }
         : fq.kind === "order"
           ? { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "order" as const, items: shuffle(orderItems(fq, deps.secret, nonce), deps.rand) }
-          : { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "near" as const, ...(fq.unit ? { unit: fq.unit } : {}) };
+          : fq.kind === "pic"
+            ? { id: pub, q: fq.q, choices: picShuffled(fq.choices, deps.secret, nonce), diff: fq.diff, rarity: poi.tier, kind: "pic" as const, pic: fq.pic, ...(struck ? { struck } : {}) }
+            : { id: pub, q: fq.q, choices: [], diff: fq.diff, rarity: fq.rarity, kind: "near" as const, ...(fq.unit ? { unit: fq.unit } : {}) };
     return { ok: true, token, windowMs, card };
   }
   const four = plate as TriviaQ;
@@ -563,27 +610,32 @@ export async function grade(deps: TriviaDeps, viewer: Viewer, input: GradeInput)
       ? { id: fc.id, answer: fc.answer, fact: fc.fact }
       : fc.kind === "order"
         ? { id: fc.id, answer: orderLabels(fc).join(" → "), fact: fc.fact }
-        : { id: fc.id, answer: fc.value.toLocaleString("en-US") }
+        : fc.kind === "pic"
+          ? { id: fc.id, answer: fc.answer, fact: fc.fact }
+          : { id: fc.id, answer: fc.value.toLocaleString("en-US") }
     : four;
   if (!card) return { ok: false, reason: "unknown-card" };
   const now = deps.now();
   const serverMs = Math.max(0, now - t.t);
   const late = serverMs > t.w + LATE_GRACE_MS;
-  // Closest Number reads only `guess` (a missing one is a timeout); every other card reads only `choice`.
+  // Closest Number reads only `guess` (a missing one is a timeout); picture clues read only `pick`; every other card reads only `choice`.
   const nearCard = fc?.kind === "near" ? fc : null;
   const orderCard = fc?.kind === "order" ? fc : null;
+  const picCard = fc?.kind === "pic" ? fc : null;
   const prior = ring.get(t.n);
   // 0.1.173: only a short list of short strings is read; anything else is [] (a miss). Absent: the wick ran out.
   const submitted = orderCard && input.order != null ? cleanOrder(input.order) : null;
   let ordered: OrderOutcome | null = orderCard ? (prior?.order ?? orderScore(orderCard, deps.secret, t.n, submitted)) : null;
   const guess = nearCard ? (prior?.near?.guess ?? input.guess) : undefined;
-  const timedOut = orderCard && prior ? prior.timedOut : (nearCard ? guess == null || !Number.isFinite(guess) : orderCard ? submitted == null : input.choice == null) || late;
+  const picPick = picCard && typeof input.pick === "number" && input.pick >= 0 && input.pick <= 3 ? input.pick : null;
+  const picText = picCard && picPick != null ? picShuffled(picCard.choices, deps.secret, t.n)[picPick] : undefined;
+  const timedOut = orderCard && prior ? prior.timedOut : (nearCard ? guess == null || !Number.isFinite(guess) : orderCard ? submitted == null : picCard ? picText == null : input.choice == null) || late;
   const elapsedMs = orderCard && prior ? prior.elapsedMs : timedOut ? Math.max(serverMs, Math.round(input.clientMs)) : effectiveMs(input.clientMs, serverMs);
   const near = nearCard && guess != null && Number.isFinite(guess) ? nearScore(guess, nearCard.value) : null;
   let correct =
     !timedOut &&
     elapsedMs <= t.w + LATE_GRACE_MS &&
-    (nearCard ? near!.correct : orderCard ? ordered !== "miss" : input.guess == null && input.choice === card.answer);
+    (nearCard ? near!.correct : orderCard ? ordered !== "miss" : picCard ? picText === picCard.answer : input.guess == null && input.choice === card.answer);
   let replay = false;
   let credited = false;
   let paints: PaintId[] | undefined;

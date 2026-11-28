@@ -7,6 +7,7 @@ import { sealPlate } from "./rarity";
 import { everyCard, everyCardCat, pickTrivia } from "./trivia";
 import { publicCardId, publicFormatId, type TriviaDeps } from "./triviaService";
 import { formatCards } from "./banks/formats";
+import { pickPicCard } from "./banks/pic";
 import { pickWhere, whereCards } from "./whereAmI";
 import type { CityId, FormatQ, Poi, Tier, TriviaCat, TriviaQ } from "./types";
 
@@ -61,9 +62,13 @@ export function formatAny(id: string): FormatQ | null {
  * 0.1.158: a format card for this lamp. TF: a statement in the chosen field (same colour first, then any TF colour).
  * Closest Number: a sum for the lamp's colour. Unseen cards only; null when none is left (the lamp deals four choices).
  */
-export function pickFormatCard(kind: "tf" | "near" | "order", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number): FormatQ | null {
+export function pickFormatCard(kind: "tf" | "near" | "order" | "pic", cat: TriviaCat, tier: Tier, avoid: readonly string[], roll: number, opts?: { pic?: string }): FormatQ | null {
   formatAny("");
   const seen = new Set(avoid);
+  if (kind === "pic") {
+    formatAny("");
+    return pickPicCard(tier, avoid, roll, opts);
+  }
   const fresh = fmtAll!.filter((c) => c.kind === kind && !seen.has(c.id) && (c.kind === "order" || !seen.has(c.q)) && (c.kind === "near" ? c.rarity === tier : c.kind === "order" ? c.rarity === tier && c.cat === cat : c.cat === cat));
   const pool = kind === "tf" ? (fresh.some((c) => c.rarity === tier) ? fresh.filter((c) => c.rarity === tier) : fresh) : fresh;
   if (!pool.length) return null;

@@ -151,10 +151,32 @@ async function main() {
     console.error("[no-answers] self-check failed: the detector missed a planted order item");
     process.exit(1);
   }
+  const { PIC_CARDS } = await import("../src/game/banks/pic.ts");
+  const PIC_UNIQUE = ["Antananarivo", "Christ the Redeemer", "Leaning Tower of Pisa", "Great Pyramid of Giza", "Sydney Opera House"];
+  if (PIC_UNIQUE.some((a) => !PIC_CARDS.some((c) => c.answer === a))) {
+    console.error("[no-answers] PIC_UNIQUE no longer match the picture-clue bank (pick new ones)");
+    process.exit(1);
+  }
+  const plantedAlt = `jsx("img",{alt:${JSON.stringify(PIC_UNIQUE[0])}})`;
+  if (!new RegExp("(?:alt|aria-label)[\"']?\\s*[:=]\\s*[\"'][^\"']*" + PIC_UNIQUE[0].replace(/[.*+?^${}()|[\\]\\]/g, "\\$&") + "[^\"']*[\"']", "i").test(plantedAlt)) {
+    console.error("[no-answers] self-check failed: the detector missed a planted JSX alt");
+    process.exit(1);
+  }
+  for (const c of PIC_CARDS) {
+    if (c.q.length >= MIN_PROMPT && !prompts.includes(c.q)) prompts.push(c.q);
+    if (c.fact.length >= MIN_PROMPT && !prompts.includes(c.fact)) prompts.push(c.fact);
+  }
   const files = walk(dir);
   let bad = 0;
   for (const f of files) {
-    const hits = scanText(readFileSync(f, "utf8"), { prompts, answers: [...KNOWN_ANSWERS, ...orderAnswers] });
+    const text = readFileSync(f, "utf8");
+    const hits = scanText(text, { prompts, answers: [...KNOWN_ANSWERS, ...orderAnswers, ...PIC_UNIQUE] });
+    for (const a of [...new Set(PIC_CARDS.map((c) => c.answer))]) {
+      const esc = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp("(?:alt|aria-label)[\"']?\\s*[:=]\\s*[\"'][^\"']*" + esc + "[^\"']*[\"']", "i").test(text)) {
+        hits.push({ kind: "picture clue alt/aria leak", sample: a });
+      }
+    }
     if (!hits.length) continue;
     bad += 1;
     console.error(`[no-answers] ${relative(root, f)}`);
@@ -164,7 +186,7 @@ async function main() {
     console.error(`[no-answers] FAIL — ${bad} client file(s) carry trivia answers or cards`);
     process.exit(1);
   }
-  console.log(`[no-answers] ok — ${files.length} client files in ${relative(root, dir) || "."}, ${prompts.length} bank prompts, ${KNOWN_ANSWERS.length} known answers and ${orderAnswers.length} order labels/facts absent, no answer keys`);
+  console.log(`[no-answers] ok — ${files.length} client files in ${relative(root, dir) || "."}, ${prompts.length} bank prompts, ${KNOWN_ANSWERS.length} known answers and ${orderAnswers.length} order labels/facts absent, ${PIC_CARDS.length} picture clues, no answer keys or leaky alt/aria`);
 }
 
 if (isMainModule(import.meta.url)) await main();

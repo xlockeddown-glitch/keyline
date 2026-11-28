@@ -17,6 +17,7 @@ import { MARKET_MULT, MARKET_TAG, anyPois, isMarketLantern, lanternCycleEnd, liv
 import { patronBulb, patronCycle, patronLive, patronOpen, patronUntil, cleanPatron, type PatronBulb, type PatronHold } from "./patron";
 import { DIFF_MULT, ASKED_KEEP } from "./triviaMeta";
 import { dealTrivia, gradeTrivia } from "./triviaApi";
+import { picsReady } from "./picClue";
 import { SEEN_MAX, type DealInput, type Grade, type GradeResult, type PublicCard, type ServerAward, type ServerWallet } from "./triviaSchema";
 import { RECENT_MAX, pushRecent, type RecentReward, type RewardSource } from "./recentRewards";
 import { bestLight, nextLight, type LightId } from "./marketLights";
@@ -962,7 +963,7 @@ async function dealCard(
       scout: st.scout,
       ...(seatedCar(st) ? { car: seatedCar(st)! } : {}),
     },
-    ...(street ? { formats: ["tf", "near", "order"] as ("tf" | "near" | "order")[] } : {}),
+    ...(street ? { formats: picsReady() ? (["tf", "near", "order", "pic"] as const) : (["tf", "near", "order"] as const) } : {}),
   };
   try {
     const r = await dealTrivia({ data: input });
@@ -1162,11 +1163,11 @@ const oldCharms: string[] = Array.isArray(oldCharmsRaw) ? oldCharmsRaw.filter((x
 const savedCity = saved?.cityId && saved.cityId in CITIES ? saved.cityId : "austin";
 
 /** Send the open card's answer to the server and apply its grade. `choice` and `guess` both absent: the wick ran out. */
-function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, choice: string | null, guess: number | undefined, now: number, order?: string[]) {
+function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, choice: string | null, guess: number | undefined, now: number, order?: string[], pick?: number) {
   const ov = get().openVault;
   if (!ov?.question || ov.pending) return;
   const token = ov.token;
-  const timeout = choice == null && guess == null && order == null;
+  const timeout = choice == null && guess == null && order == null && pick == null;
   const clientMs = Math.max(0, now - ov.startedAt);
   if (!token) return;
   set({ openVault: { ...ov, pending: "grade" } });
@@ -1182,7 +1183,7 @@ function sendAnswer(set: (p: Partial<GameState>) => void, get: () => GameState, 
     set({ openVault: { ...cur, pending: undefined } });
     flashToast(set, get, "The vault lost its line. Tap your answer again.", 2600);
   };
-  void gradeTrivia({ data: { token, choice: timeout ? null : choice, clientMs, ...(guess != null ? { guess } : {}), ...(order ? { order } : {}) } })
+  void gradeTrivia({ data: { token, choice: timeout || pick != null ? null : choice, clientMs, ...(guess != null ? { guess } : {}), ...(order ? { order } : {}), ...(pick != null ? { pick } : {}) } })
     .then((res: GradeResult) => {
       const cur = get().openVault;
       if (!cur || cur.token !== token) return;
@@ -1718,7 +1719,20 @@ export const useGame = create<GameState>((set, get) => ({
       saveNow(get);
     });
   },
-  answer: (choice, now) => sendAnswer(set, get, choice === "__timeout__" ? null : choice, undefined, now),
+  answer: (choice, now) => {
+    const q = get().openVault?.question;
+    if (q?.kind === "pic") {
+      if (choice === "__timeout__") {
+        sendAnswer(set, get, null, undefined, now);
+        return;
+      }
+      const idx = q.choices.indexOf(choice);
+      if (idx < 0) return;
+      sendAnswer(set, get, null, undefined, now, undefined, idx);
+      return;
+    }
+    sendAnswer(set, get, choice === "__timeout__" ? null : choice, undefined, now);
+  },
   answerOrder: (tokens, now) => {
     if (get().openVault?.question?.kind !== "order") return;
     sendAnswer(set, get, null, undefined, now, tokens);
